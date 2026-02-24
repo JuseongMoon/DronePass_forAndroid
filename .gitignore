@@ -1,0 +1,31 @@
+*.iml
+.gradle
+/local.properties
+local.properties
+
+# IDE
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+
+# Build
+/build
+**/build/
+/captures
+
+# Native
+.externalNativeBuild
+.cxx
+
+# macOS
+.DS_Store
+
+# Keystore (보안)
+*.jks
+*.keystore
+
+# Signing config
+/keystore.properties
