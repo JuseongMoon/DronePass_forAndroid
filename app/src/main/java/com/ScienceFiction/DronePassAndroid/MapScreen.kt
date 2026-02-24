@@ -32,6 +32,7 @@ import com.naver.maps.map.CameraPosition
 import com.naver.maps.map.LocationTrackingMode
 import com.naver.maps.map.MapView
 import com.naver.maps.map.NaverMap
+import com.naver.maps.map.NaverMapSdk
 import com.naver.maps.map.util.FusedLocationSource
 
 @OptIn(ExperimentalPermissionsApi::class)
@@ -39,7 +40,11 @@ import com.naver.maps.map.util.FusedLocationSource
 fun MapScreen() {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
-    val mapView = remember { MapView(context) }
+    val mapView = remember {
+        NaverMapSdk.getInstance(context).client =
+            NaverMapSdk.NcpKeyClient("47b5di8weq")
+        MapView(context)
+    }
     var naverMap by remember { mutableStateOf<NaverMap?>(null) }
     var mapReady by remember { mutableStateOf(false) }
 

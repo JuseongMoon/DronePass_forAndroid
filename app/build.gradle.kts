@@ -42,6 +42,7 @@ android {
 }
 
 dependencies {
+    implementation("androidx.appcompat:appcompat:1.7.0")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -52,7 +53,7 @@ dependencies {
     implementation(libs.androidx.compose.material3)
 
     // 네이버 Maps SDK
-    implementation("com.naver.maps:map-sdk:3.19.1")
+    implementation("com.naver.maps:map-sdk:3.23.1")
 
     // Google Play Services - Location
     implementation("com.google.android.gms:play-services-location:21.3.0")

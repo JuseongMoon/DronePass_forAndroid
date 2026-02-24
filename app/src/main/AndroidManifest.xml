@@ -19,9 +19,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.DronePassAndroid">
 
-        <!-- 네이버 지도 클라이언트 ID -->
+        <!-- 네이버 지도 NCP 키 -->
         <meta-data
-            android:name="com.naver.maps.map.CLIENT_ID"
+            android:name="com.naver.maps.map.NCP_KEY_ID"
             android:value="47b5di8weq" />
 
         <activity
