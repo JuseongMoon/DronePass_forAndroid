@@ -29,3 +29,6 @@ local.properties
 
 # Signing config
 /keystore.properties
+
+# Kotlin build cache
+.kotlin/

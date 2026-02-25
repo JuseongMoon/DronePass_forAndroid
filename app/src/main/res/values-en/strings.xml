@@ -1,0 +1,274 @@
+<resources>
+    <string name="app_name">DronePass</string>
+
+    <!-- Common -->
+    <string name="common_back">Back</string>
+    <string name="common_refresh">Refresh</string>
+    <string name="common_cancel">Cancel</string>
+    <string name="common_confirm">OK</string>
+    <string name="common_save">Save</string>
+    <string name="common_delete">Delete</string>
+    <string name="common_edit">Edit</string>
+    <string name="common_retry">Retry</string>
+    <string name="common_unknown_error">Unknown error</string>
+    <string name="common_no_title">No title</string>
+    <string name="common_not_set">Not set</string>
+    <string name="common_memo">Memo</string>
+
+    <!-- Navigation / Screen titles -->
+    <string name="screen_login">Login</string>
+    <string name="screen_map">Map</string>
+    <string name="screen_saved_list">Saved List</string>
+    <string name="screen_settings">Settings</string>
+
+    <!-- LoginScreen -->
+    <string name="login_logo_description">DronePass logo</string>
+    <string name="login_subtitle">Drone flight zone visualization</string>
+    <string name="login_loading">Signing in\u2026</string>
+    <string name="login_google">Sign in with Google</string>
+    <string name="login_skip">Continue without login</string>
+
+    <!-- MapScreen -->
+    <string name="map_permission_dialog_title">Location permission required</string>
+    <string name="map_permission_dialog_message">Location permission is required to show your current position on the map.</string>
+    <string name="map_permission_allow">Allow</string>
+    <string name="map_permission_required">Location permission is required</string>
+    <string name="map_permission_request">Request permission</string>
+
+    <!-- MapFloatingButtons -->
+    <string name="map_fab_flight_zone_layer">Flight zone layer</string>
+    <string name="map_fab_sketch">Sketch</string>
+    <string name="map_fab_add_shape">Add shape</string>
+
+    <!-- DroneSelectionDropdown -->
+    <string name="drone_dropdown_select">Select drone</string>
+    <string name="drone_dropdown_toggle">Open drone list</string>
+    <string name="drone_dropdown_collapse">Close drone list</string>
+
+    <!-- WeatherForecastScreen -->
+    <string name="weather_title">Weather Info</string>
+    <string name="weather_wind_speed">Wind speed</string>
+    <string name="weather_wind_direction">Wind direction</string>
+    <string name="weather_gust">Gust</string>
+    <string name="weather_sunrise">Sunrise</string>
+    <string name="weather_sunset">Sunset</string>
+    <string name="weather_drone_category">Drone category</string>
+    <string name="weather_temperature">Temperature</string>
+    <string name="weather_gust_difference">Gust difference</string>
+    <string name="weather_precipitation">Precipitation</string>
+    <string name="weather_cri">Condensation Risk (CRI)</string>
+    <string name="weather_hourly_forecast">Hourly forecast</string>
+    <string name="weather_hourly_precipitation">Precip.</string>
+    <string name="weather_flight_safety_level">Flight safety level: %s</string>
+    <string name="weather_gust_safe">Current wind conditions are safe</string>
+    <string name="weather_gust_localized">Beware of localized gusts</string>
+    <string name="weather_gust_caution">Strong wind. Caution is advised</string>
+    <string name="weather_gust_danger">Dangerous wind conditions for flight</string>
+
+    <!-- KpForecastScreen -->
+    <string name="kp_title">Kp Index</string>
+    <string name="kp_current">Current Kp Index</string>
+    <string name="kp_no_data">No data</string>
+    <string name="kp_last_updated">Last updated: %s</string>
+    <string name="kp_level_guide">Kp Level Guide</string>
+    <string name="kp_forecast_data">Forecast data</string>
+    <string name="kp_27day_forecast">27-day forecast</string>
+    <string name="kp_27day_ap_value">Ap %d</string>
+
+    <!-- SavedListScreen -->
+    <string name="saved_search_placeholder">Search title, address, memo</string>
+    <string name="saved_search_icon">Search</string>
+    <string name="saved_clear_search">Clear search</string>
+    <string name="saved_total_count">Total %d</string>
+    <string name="saved_section_active">Active</string>
+    <string name="saved_section_not_started">Not started</string>
+    <string name="saved_section_expired">Expired</string>
+    <string name="saved_empty_no_search">No saved shapes</string>
+    <string name="saved_empty_with_search">No search results</string>
+    <string name="saved_empty_hint">Add shapes from the Map tab</string>
+
+    <!-- SavedShapeListItem -->
+    <string name="saved_item_status_expired">Expired</string>
+    <string name="saved_item_status_waiting">Waiting</string>
+    <string name="saved_item_status_active">Active</string>
+
+    <!-- ShapeDetailSheet -->
+    <string name="shape_detail_type">Shape type</string>
+    <string name="shape_detail_coordinate">Coordinate</string>
+    <string name="shape_detail_copy_coordinate">Copy coordinate</string>
+    <string name="shape_detail_address">Address</string>
+    <string name="shape_detail_radius">Radius</string>
+    <string name="shape_detail_altitude">Altitude</string>
+    <string name="shape_detail_flight_start">Flight start date</string>
+    <string name="shape_detail_flight_end">Flight end date</string>
+    <string name="shape_detail_status_expired">Expired</string>
+    <string name="shape_detail_status_not_started">Not started</string>
+    <string name="shape_detail_status_active">In progress</string>
+    <string name="shape_detail_delete_title">Delete shape</string>
+    <string name="shape_detail_delete_message">Delete shape \"%s\"?</string>
+    <string name="shape_detail_clipboard_label">Coordinate</string>
+    <string name="shape_detail_copied">Coordinate copied</string>
+
+    <!-- ShapeEditScreen -->
+    <string name="shape_edit_title_edit">Edit shape</string>
+    <string name="shape_edit_title_create">Create new shape</string>
+    <string name="shape_edit_section_basic">Basic info</string>
+    <string name="shape_edit_label_title">Title</string>
+    <string name="shape_edit_label_coordinate">Coordinate</string>
+    <string name="shape_edit_label_address">Address</string>
+    <string name="shape_edit_placeholder_address">Enter address</string>
+    <string name="shape_edit_label_radius">Radius (m)</string>
+    <string name="shape_edit_label_altitude">Altitude (optional)</string>
+    <string name="shape_edit_section_flight_period">Flight period</string>
+    <string name="shape_edit_start_date">Start date</string>
+    <string name="shape_edit_end_date">End date</string>
+    <string name="shape_edit_section_memo">Memo</string>
+    <string name="shape_edit_label_memo">Memo</string>
+    <string name="shape_edit_placeholder_memo">Enter memo</string>
+    <string name="shape_edit_default_title">New shape</string>
+
+    <!-- DroneListScreen -->
+    <string name="drone_list_title">My drones</string>
+    <string name="drone_list_back">Back</string>
+    <string name="drone_list_add">Add new drone</string>
+    <string name="drone_list_empty">No drones</string>
+    <string name="drone_list_empty_hint">Tap the button below to add a drone</string>
+
+    <!-- DroneDetailSheet -->
+    <string name="drone_detail_linked_shapes">Linked shapes</string>
+    <string name="drone_detail_shape_count">%d</string>
+    <string name="drone_detail_serial_number">Serial number</string>
+    <string name="drone_detail_takeoff_weight">Takeoff weight</string>
+    <string name="drone_detail_size">Size</string>
+    <string name="drone_detail_delete_impossible_title">Cannot delete</string>
+    <string name="drone_detail_delete_impossible_message">At least one drone is required.\nThe last drone cannot be deleted.</string>
+    <string name="drone_detail_delete_title">Delete drone</string>
+    <string name="drone_detail_delete_message">Delete drone \"%s\"?</string>
+    <string name="drone_detail_delete_with_shapes_message">Drone \"%1$s\" has %2$d linked shapes.\nHow would you like to handle the shapes?</string>
+    <string name="drone_detail_reassign">Move to another drone</string>
+    <string name="drone_detail_delete_all_shapes">Delete shapes as well</string>
+
+    <!-- DroneEditSheet -->
+    <string name="drone_edit_title_edit">Edit drone</string>
+    <string name="drone_edit_title_create">Add new drone</string>
+    <string name="drone_edit_label_name">Drone name *</string>
+    <string name="drone_edit_duplicate_warning">A drone with the same name already exists</string>
+    <string name="drone_edit_color">Color</string>
+    <string name="drone_edit_additional_info">Additional info</string>
+    <string name="drone_edit_serial_number">Serial number</string>
+    <string name="drone_edit_takeoff_weight">Takeoff weight</string>
+    <string name="drone_edit_size">Size</string>
+    <string name="drone_edit_memo">Memo</string>
+    <string name="drone_edit_memo_placeholder">Enter memo</string>
+    <string name="drone_edit_color_selected">%s selected</string>
+
+    <!-- SettingsScreen -->
+    <string name="settings_section_my_info">My info</string>
+    <string name="settings_profile">Profile</string>
+    <string name="settings_profile_logged_in">Signed in</string>
+    <string name="settings_profile_logged_out">Not signed in</string>
+    <string name="settings_profile_loading">Checking\u2026</string>
+    <string name="settings_profile_error">Error</string>
+    <string name="settings_drone_manage">Drone management</string>
+    <string name="settings_drone_manage_subtitle">Add, edit, or delete drones</string>
+    <string name="settings_section_map_display">Map display</string>
+    <string name="settings_hide_expired">Hide expired shapes</string>
+    <string name="settings_hide_expired_subtitle">Hide shapes past their flight end date from the map</string>
+    <string name="settings_hide_not_started">Hide not-started shapes</string>
+    <string name="settings_hide_not_started_subtitle">Hide shapes before their flight start date from the map</string>
+    <string name="settings_keep_screen_awake">Keep screen on</string>
+    <string name="settings_keep_screen_awake_subtitle">Screen stays on while using the map</string>
+    <string name="settings_flight_zone_layers">Show flight zone layers</string>
+    <string name="settings_flight_zone_layers_subtitle">Display no-fly zones, control areas, etc. on the map</string>
+    <string name="settings_section_app_info">App info</string>
+    <string name="settings_app_version">App version</string>
+    <string name="settings_section_account">Account</string>
+    <string name="settings_sign_out">Sign out</string>
+    <string name="settings_sign_out_confirm">Do you want to sign out?</string>
+    <string name="settings_sign_out_success">Signed out successfully</string>
+    <string name="settings_delete_account">Delete account</string>
+    <string name="settings_delete_account_subtitle">All data will be deleted</string>
+    <string name="settings_delete_account_confirm">Are you sure you want to delete your account?\nAll data will be permanently deleted and cannot be recovered.</string>
+    <string name="settings_delete_account_button">Delete</string>
+    <string name="settings_section_notifications">Notifications</string>
+    <string name="settings_sunrise_alarm">Sunrise alarm</string>
+    <string name="settings_sunrise_alarm_subtitle">Get notified 30 and 10 minutes before sunrise</string>
+    <string name="settings_sunset_alarm">Sunset alarm</string>
+    <string name="settings_sunset_alarm_subtitle">Get notified 30 and 10 minutes before sunset</string>
+    <string name="settings_end_date_alarm">End date alarm</string>
+    <string name="settings_end_date_alarm_subtitle">Get notified 7 days before the flight end date</string>
+
+    <!-- SketchToolbar -->
+    <string name="sketch_eraser">Eraser</string>
+    <string name="sketch_undo">Undo</string>
+    <string name="sketch_redo">Redo</string>
+    <string name="sketch_delete_all">Delete all</string>
+    <string name="sketch_done">Done</string>
+    <string name="sketch_pen">Pen</string>
+    <string name="sketch_color">Color</string>
+    <string name="sketch_stroke_width">Stroke width</string>
+    <string name="sketch_opacity">Opacity %d%%</string>
+
+    <!-- FlightZoneLayerSelector -->
+    <string name="flight_zone_layer_title">Flight zone layers</string>
+    <string name="flight_zone_select_all">Select all</string>
+    <string name="flight_zone_deselect_all">Deselect all</string>
+
+    <!-- Notification -->
+    <string name="notification_sunrise_title">Sunrise alarm</string>
+    <string name="notification_sunrise_30min_body">30 minutes until sunrise. Start preparing for flight.</string>
+    <string name="notification_sunrise_10min_body">10 minutes until sunrise. Flight time is almost here.</string>
+    <string name="notification_sunset_title">Sunset alarm</string>
+    <string name="notification_sunset_30min_body">30 minutes until sunset. Prepare to end your flight.</string>
+    <string name="notification_sunset_10min_body">10 minutes until sunset. Flight will soon be restricted.</string>
+    <string name="notification_end_date_title">Flight end date alarm</string>
+    <string name="notification_end_date_body">7 days until the flight end date. Check if an extension is needed.</string>
+
+    <!-- VWorldZoneDetailSheet -->
+    <string name="zone_detail_code">Zone code</string>
+    <string name="zone_detail_altitude_range">Altitude range</string>
+    <string name="zone_detail_surface">Surface</string>
+    <string name="zone_detail_unlimited">Unlimited</string>
+    <string name="zone_detail_restriction_level">Restriction level</string>
+    <string name="zone_detail_prohibited">No-fly zone - Flight is strictly prohibited</string>
+    <string name="zone_detail_restricted">Restricted - Flight not allowed without authorization</string>
+    <string name="zone_detail_consultation">Consultation required - Coordination with authorities needed</string>
+    <string name="zone_detail_advisory">Advisory - Caution is advised during flight</string>
+
+    <!-- Phase 9-A: Map & Shape Edit enhancements -->
+    <string name="shape_edit_section_drone">Select drone</string>
+    <string name="shape_edit_no_drone">Not linked</string>
+    <string name="shape_edit_section_color">Color</string>
+    <string name="shape_edit_coordinate_hint">Enter coordinates (e.g. 37.5665, 126.9780)</string>
+    <string name="shape_edit_coordinate_invalid">Invalid coordinate format</string>
+    <string name="shape_edit_search_address">Search address</string>
+    <string name="search_address_title">Search address</string>
+    <string name="search_address_placeholder">Search for an address</string>
+    <string name="search_address_no_result">No results found</string>
+    <string name="search_address_road">Road name</string>
+    <string name="search_address_jibun">Lot number</string>
+    <string name="search_address_error">Error searching address</string>
+    <string name="map_long_press_hint">Long press on the map to add a shape</string>
+
+    <!-- Phase 9-B/C: Detail & List enhancements -->
+    <string name="shape_detail_open_external_map">Open in external map app</string>
+    <string name="shape_detail_open_naver_map">Naver Map</string>
+    <string name="shape_detail_open_kakao_map">KakaoMap</string>
+    <string name="shape_detail_open_tmap">TMAP</string>
+    <string name="shape_detail_open_google_map">Google Maps</string>
+    <string name="shape_detail_duplicate">Duplicate</string>
+    <string name="shape_detail_duplicated">Shape duplicated</string>
+    <string name="shape_detail_drone_connected">Linked drone</string>
+    <string name="shape_detail_no_drone">None</string>
+    <string name="shape_detail_copy_suffix">(copy)</string>
+    <string name="login_terms">Terms of Service</string>
+    <string name="login_privacy">Privacy Policy</string>
+    <string name="saved_drone_filter_all">All</string>
+    <string name="saved_drone_filter_no_drone">Unlinked</string>
+    <string name="settings_delete_expired_shapes">Delete all expired shapes</string>
+    <string name="settings_delete_expired_shapes_subtitle">Delete all shapes past their flight end date</string>
+    <string name="settings_delete_expired_confirm">Delete all expired shapes?\nThis action cannot be undone.</string>
+    <string name="settings_delete_expired_success">%d expired shapes deleted</string>
+    <string name="settings_delete_expired_none">No expired shapes to delete</string>
+    <string name="settings_section_data_management">Data management</string>
+</resources>

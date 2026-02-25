@@ -1,19 +1,56 @@
-<?xml version="1.0" encoding="utf-8"?><!--
-   Sample data extraction rules file; uncomment and customize as necessary.
-   See https://developer.android.com/about/versions/12/backup-restore#xml-changes
-   for details.
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+   DronePass Android - Data Extraction Rules (API 31+)
+   https://developer.android.com/about/versions/12/backup-restore#xml-changes
 -->
 <data-extraction-rules>
+    <!-- 클라우드 백업 규칙 (Google 백업) -->
     <cloud-backup>
-        <!-- TODO: Use <include> and <exclude> to control what is backed up.
-        <include .../>
-        <exclude .../>
-        -->
+        <!-- DataStore preferences 포함 -->
+        <include domain="file" path="datastore/" />
+
+        <!-- 일반 SharedPreferences 포함 (특정 파일 제외 적용을 위해 도메인 전체 포함) -->
+        <include domain="sharedpref" path="." />
+
+        <!-- 데이터베이스 도메인 포함 (특정 DB 제외 적용을 위해) -->
+        <include domain="database" path="." />
+
+        <!-- EncryptedSharedPreferences 제외 (기기별 암호화 키로 인해 복원 불가) -->
+        <exclude domain="sharedpref" path="encrypted_prefs.xml" />
+        <exclude domain="sharedpref" path="__androidx_security_crypto_encrypted_prefs__.xml" />
+
+        <!-- Room 데이터베이스 제외 (Firebase에서 동기화) -->
+        <exclude domain="database" path="dronepass_database" />
+        <exclude domain="database" path="dronepass_database-wal" />
+        <exclude domain="database" path="dronepass_database-shm" />
+
+        <!-- Firebase 관련 내부 파일 제외 -->
+        <exclude domain="sharedpref" path="com.google.firebase.crashlytics.xml" />
+        <exclude domain="sharedpref" path="com.google.firebase.messaging.xml" />
     </cloud-backup>
-    <!--
+
+    <!-- 기기 간 전송 규칙 (D2D Transfer) -->
     <device-transfer>
-        <include .../>
-        <exclude .../>
+        <!-- DataStore preferences 포함 -->
+        <include domain="file" path="datastore/" />
+
+        <!-- 일반 SharedPreferences 포함 (특정 파일 제외 적용을 위해 도메인 전체 포함) -->
+        <include domain="sharedpref" path="." />
+
+        <!-- 데이터베이스 도메인 포함 (특정 DB 제외 적용을 위해) -->
+        <include domain="database" path="." />
+
+        <!-- EncryptedSharedPreferences 제외 (기기별 암호화 키로 인해 복원 불가) -->
+        <exclude domain="sharedpref" path="encrypted_prefs.xml" />
+        <exclude domain="sharedpref" path="__androidx_security_crypto_encrypted_prefs__.xml" />
+
+        <!-- Room 데이터베이스 제외 (Firebase에서 동기화) -->
+        <exclude domain="database" path="dronepass_database" />
+        <exclude domain="database" path="dronepass_database-wal" />
+        <exclude domain="database" path="dronepass_database-shm" />
+
+        <!-- Firebase 관련 내부 파일 제외 -->
+        <exclude domain="sharedpref" path="com.google.firebase.crashlytics.xml" />
+        <exclude domain="sharedpref" path="com.google.firebase.messaging.xml" />
     </device-transfer>
-    -->
 </data-extraction-rules>

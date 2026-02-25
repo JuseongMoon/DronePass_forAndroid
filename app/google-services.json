@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "307728758098",
+    "project_id": "dronepass-91564",
+    "storage_bucket": "dronepass-91564.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:307728758098:android:248e79a064ad7aed99768b",
+        "android_client_info": {
+          "package_name": "com.ScienceFiction.DronePassAndroid"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCatBavlFo_9vGIV76h4tvCTW01H0I1xVo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

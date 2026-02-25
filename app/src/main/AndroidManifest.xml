@@ -9,7 +9,17 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
+    <!-- 알림 권한 (Android 13+) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- 정확한 알람 예약 권한 (Android 12+) -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+
+    <!-- 재부팅 후 알림 재예약을 위한 권한 -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
     <application
+        android:name=".app.DronePassApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -19,10 +29,10 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.DronePassAndroid">
 
-        <!-- 네이버 지도 NCP 키 -->
+        <!-- 네이버 지도 NCP 키 (local.properties에서 로드) -->
         <meta-data
             android:name="com.naver.maps.map.NCP_KEY_ID"
-            android:value="47b5di8weq" />
+            android:value="${NAVER_MAP_CLIENT_ID}" />
 
         <activity
             android:name=".MainActivity"
@@ -35,6 +45,29 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- FCM 서비스 -->
+        <service
+            android:name=".service.FcmService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
+        <!-- 로컬 알림 리시버 -->
+        <receiver
+            android:name=".service.NotificationReceiver"
+            android:exported="false" />
+
+        <!-- 재부팅 시 알림 재예약 리시버 -->
+        <receiver
+            android:name=".service.BootCompletedReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>

@@ -1,0 +1,289 @@
+package com.ScienceFiction.DronePassAndroid.core.data.repository
+
+import android.util.Log
+import com.ScienceFiction.DronePassAndroid.core.data.remote.kp.KpGfzApi
+import com.ScienceFiction.DronePassAndroid.core.data.remote.kp.KpNoaa27DayApi
+import com.ScienceFiction.DronePassAndroid.core.data.remote.kp.KpNoaaApi
+import com.ScienceFiction.DronePassAndroid.domain.model.Kp27DayForecast
+import com.ScienceFiction.DronePassAndroid.domain.model.KpIndexData
+import org.json.JSONArray
+import javax.inject.Inject
+import javax.inject.Singleton
+
+/**
+ * Kp 지수 데이터 Repository
+ *
+ * 30분 캐시를 사용하며, GFZ -> NOAA -> 캐시 순서로 Fallback한다.
+ */
+@Singleton
+class KpIndexRepository @Inject constructor(
+    private val gfzApi: KpGfzApi,
+    private val noaaApi: KpNoaaApi,
+    private val noaa27DayApi: KpNoaa27DayApi
+) {
+    companion object {
+        private const val TAG = "KpIndexRepository"
+        private const val CACHE_DURATION_MS = 30 * 60 * 1000L // 30분
+    }
+
+    private var cachedCurrentKp: KpIndexData? = null
+    private var cachedForecast: List<KpIndexData>? = null
+    private var cached27DayForecast: List<Kp27DayForecast>? = null
+    private var lastFetchTime: Long = 0L
+    private var last27DayFetchTime: Long = 0L
+
+    /**
+     * 현재 Kp 지수 조회
+     *
+     * Fallback 순서: GFZ Potsdam -> NOAA SWPC -> 캐시
+     */
+    suspend fun getCurrentKp(): Result<KpIndexData> {
+        // 캐시 확인
+        if (isCacheValid()) {
+            cachedCurrentKp?.let { return Result.success(it) }
+        }
+
+        // 1차: GFZ Potsdam
+        try {
+            val gfzResult = fetchFromGfz()
+            if (gfzResult != null) {
+                cachedCurrentKp = gfzResult
+                lastFetchTime = System.currentTimeMillis()
+                return Result.success(gfzResult)
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "GFZ 데이터 로드 실패: ${e.message}")
+        }
+
+        // 2차: NOAA SWPC
+        try {
+            val noaaResult = fetchForecastFromNoaa()
+            if (noaaResult.isNotEmpty()) {
+                // 가장 최근 observed/estimated 데이터 사용
+                val current = noaaResult.lastOrNull { it.observed == "observed" }
+                    ?: noaaResult.lastOrNull { it.observed == "estimated" }
+                    ?: noaaResult.first()
+                cachedCurrentKp = current
+                cachedForecast = noaaResult
+                lastFetchTime = System.currentTimeMillis()
+                return Result.success(current)
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "NOAA 데이터 로드 실패: ${e.message}")
+        }
+
+        // 3차: 캐시
+        cachedCurrentKp?.let { return Result.success(it) }
+
+        return Result.failure(Exception("Kp 지수 데이터를 가져올 수 없습니다"))
+    }
+
+    /**
+     * Kp 지수 예보 데이터 조회
+     */
+    suspend fun getForecast(): Result<List<KpIndexData>> {
+        // 캐시 확인
+        if (isCacheValid()) {
+            cachedForecast?.let { return Result.success(it) }
+        }
+
+        // NOAA SWPC에서 예보 데이터 가져오기
+        try {
+            val forecast = fetchForecastFromNoaa()
+            if (forecast.isNotEmpty()) {
+                cachedForecast = forecast
+                lastFetchTime = System.currentTimeMillis()
+                return Result.success(forecast)
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "예보 데이터 로드 실패: ${e.message}")
+        }
+
+        cachedForecast?.let { return Result.success(it) }
+
+        return Result.failure(Exception("Kp 지수 예보 데이터를 가져올 수 없습니다"))
+    }
+
+    /**
+     * 27일 장기 예보 데이터 조회
+     *
+     * NOAA SWPC 27-day outlook 텍스트를 파싱하여 일별 Kp/Ap 예측값을 반환한다.
+     */
+    suspend fun get27DayForecast(): Result<List<Kp27DayForecast>> {
+        // 캐시 확인 (27일 예보는 하루에 1번만 변경되므로 30분 캐시 재사용)
+        if (System.currentTimeMillis() - last27DayFetchTime < CACHE_DURATION_MS) {
+            cached27DayForecast?.let { return Result.success(it) }
+        }
+
+        try {
+            val response = noaa27DayApi.get27DayOutlook()
+            val text = response.string()
+            val forecasts = parse27DayOutlook(text)
+            if (forecasts.isNotEmpty()) {
+                cached27DayForecast = forecasts
+                last27DayFetchTime = System.currentTimeMillis()
+                return Result.success(forecasts)
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "27일 장기예보 로드 실패: ${e.message}")
+        }
+
+        cached27DayForecast?.let { return Result.success(it) }
+
+        return Result.failure(Exception("27일 장기예보 데이터를 가져올 수 없습니다"))
+    }
+
+    /**
+     * NOAA SWPC 27-day outlook 텍스트 파싱
+     *
+     * 텍스트 형식 예:
+     * ```
+     * :Product: 27-day Space Weather Outlook Table 27DO.txt
+     * ...
+     * 2026 Feb 25     5     20     0.01
+     * 2026 Feb 26     3     12     0.05
+     * ```
+     *
+     * 데이터 행: 날짜(Year Mon Day) + Kp + Ap + (기타) 형식
+     * 해당하지 않는 행(주석, 빈 행, 헤더)은 건너뛴다.
+     */
+    private fun parse27DayOutlook(text: String): List<Kp27DayForecast> {
+        val results = mutableListOf<Kp27DayForecast>()
+        val months = setOf(
+            "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+        )
+
+        for (line in text.lines()) {
+            val trimmed = line.trim()
+            // 주석, 빈 줄, 헤더 건너뛰기
+            if (trimmed.isEmpty() || trimmed.startsWith(":") || trimmed.startsWith("#")) continue
+
+            val parts = trimmed.split("\\s+".toRegex())
+            // 데이터 행: Year Month Day RadioFlux AIndex KpIndex
+            // 예: 2026 Feb 23     112          20          5
+            if (parts.size >= 6) {
+                val yearStr = parts[0]
+                val monthStr = parts[1]
+                val dayStr = parts[2]
+
+                // 연도가 4자리 숫자이고 월이 영문 약어인 경우만 파싱
+                val year = yearStr.toIntOrNull() ?: continue
+                if (year < 2000 || year > 2100) continue
+                if (monthStr !in months) continue
+                val day = dayStr.toIntOrNull() ?: continue
+                if (day < 1 || day > 31) continue
+
+                // parts[3]=RadioFlux, parts[4]=AIndex, parts[5]=KpIndex
+                val kp = parts[5].toDoubleOrNull() ?: continue
+                val ap = parts[4].toIntOrNull() ?: continue
+
+                results.add(
+                    Kp27DayForecast(
+                        date = "$year $monthStr $day",
+                        kp = kp,
+                        ap = ap
+                    )
+                )
+            }
+        }
+
+        return results
+    }
+
+    /**
+     * 캐시 초기화
+     */
+    fun clearCache() {
+        cachedCurrentKp = null
+        cachedForecast = null
+        cached27DayForecast = null
+        lastFetchTime = 0L
+        last27DayFetchTime = 0L
+    }
+
+    private fun isCacheValid(): Boolean {
+        return System.currentTimeMillis() - lastFetchTime < CACHE_DURATION_MS
+    }
+
+    /**
+     * GFZ Potsdam 텍스트 데이터 파싱
+     *
+     * 텍스트 파일 형식:
+     * - # 으로 시작하는 줄은 주석
+     * - 공백으로 구분된 컬럼, Kp 값은 7번째 인덱스(0-based)
+     * - 역순 검색으로 가장 최근 데이터 사용
+     */
+    private suspend fun fetchFromGfz(): KpIndexData? {
+        val response = gfzApi.getKpNowcast()
+        val text = response.string()
+
+        val lines = text.lines()
+            .filter { it.isNotBlank() && !it.startsWith("#") }
+
+        // 역순으로 유효한 데이터 찾기
+        for (line in lines.reversed()) {
+            try {
+                val parts = line.trim().split("\\s+".toRegex())
+                if (parts.size >= 8) {
+                    val year = parts[0]
+                    val month = parts[1]
+                    val day = parts[2]
+                    val hour = parts[3]
+
+                    val kpStr = parts[7]
+                    val kp = kpStr.toDoubleOrNull() ?: continue
+
+                    // 유효하지 않은 Kp 값 (-1 등) 건너뛰기
+                    if (kp < 0) continue
+
+                    val timeTag = "$year-$month-$day ${hour}:00:00"
+                    return KpIndexData(
+                        timeTag = timeTag,
+                        kp = kp,
+                        observed = "observed"
+                    )
+                }
+            } catch (e: Exception) {
+                continue
+            }
+        }
+        return null
+    }
+
+    /**
+     * NOAA SWPC JSON 데이터 파싱
+     *
+     * JSON 배열 형식:
+     * [["time_tag","kp","observed","noaa_scale"], ["2026-02-24 00:00:00","2.33","observed","0"], ...]
+     */
+    private suspend fun fetchForecastFromNoaa(): List<KpIndexData> {
+        val response = noaaApi.getKpForecast()
+        val text = response.string()
+        val jsonArray = JSONArray(text)
+
+        val results = mutableListOf<KpIndexData>()
+
+        // 첫 번째 행은 헤더이므로 건너뛰기
+        for (i in 1 until jsonArray.length()) {
+            try {
+                val row = jsonArray.getJSONArray(i)
+                val timeTag = row.getString(0)
+                val kp = row.getString(1).toDoubleOrNull() ?: continue
+                val observed = row.optString(2, null)
+
+                results.add(
+                    KpIndexData(
+                        timeTag = timeTag,
+                        kp = kp,
+                        observed = observed
+                    )
+                )
+            } catch (e: Exception) {
+                continue
+            }
+        }
+
+        return results
+    }
+}

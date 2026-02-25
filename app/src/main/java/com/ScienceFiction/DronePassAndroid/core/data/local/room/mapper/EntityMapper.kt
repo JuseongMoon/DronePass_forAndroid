@@ -1,0 +1,101 @@
+package com.ScienceFiction.DronePassAndroid.core.data.local.room.mapper
+
+import com.ScienceFiction.DronePassAndroid.core.data.local.room.entity.DroneEntity
+import com.ScienceFiction.DronePassAndroid.core.data.local.room.entity.ShapeEntity
+import com.ScienceFiction.DronePassAndroid.core.data.local.room.entity.SketchEntity
+import com.ScienceFiction.DronePassAndroid.domain.model.Coordinate
+import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
+import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
+import com.ScienceFiction.DronePassAndroid.domain.model.ShapeType
+import com.ScienceFiction.DronePassAndroid.domain.model.SketchModel
+
+// ===== Shape 매퍼 =====
+
+fun ShapeEntity.toDomain(): ShapeModel = ShapeModel(
+    id = id,
+    title = title,
+    shapeType = ShapeType.valueOf(shapeType),
+    baseCoordinate = Coordinate(baseLatitude, baseLongitude),
+    address = address,
+    radius = radius,
+    height = height,
+    memo = memo,
+    color = color,
+    droneId = droneId,
+    createdAt = createdAt,
+    deletedAt = deletedAt,
+    flightStartDate = flightStartDate,
+    flightEndDate = flightEndDate,
+    updatedAt = updatedAt
+)
+
+fun ShapeModel.toEntity(): ShapeEntity = ShapeEntity(
+    id = id,
+    title = title,
+    shapeType = shapeType.name,
+    baseLatitude = baseCoordinate.latitude,
+    baseLongitude = baseCoordinate.longitude,
+    address = address,
+    radius = radius,
+    height = height,
+    memo = memo,
+    color = color,
+    droneId = droneId,
+    createdAt = createdAt,
+    deletedAt = deletedAt,
+    flightStartDate = flightStartDate,
+    flightEndDate = flightEndDate,
+    updatedAt = updatedAt
+)
+
+// ===== Drone 매퍼 =====
+
+fun DroneEntity.toDomain(): DroneModel = DroneModel(
+    id = id,
+    name = name,
+    color = color,
+    serialNumber = serialNumber,
+    takeoffWeight = takeoffWeight,
+    size = size,
+    memo = memo,
+    createdAt = createdAt,
+    updatedAt = updatedAt,
+    deletedAt = deletedAt
+)
+
+fun DroneModel.toEntity(): DroneEntity = DroneEntity(
+    id = id,
+    name = name,
+    color = color,
+    serialNumber = serialNumber,
+    takeoffWeight = takeoffWeight,
+    size = size,
+    memo = memo,
+    createdAt = createdAt,
+    updatedAt = updatedAt,
+    deletedAt = deletedAt
+)
+
+// ===== Sketch 매퍼 =====
+
+fun SketchEntity.toDomain(): SketchModel = SketchModel(
+    id = id,
+    points = Coordinate.listFromJson(points),
+    color = color,
+    strokeWidth = strokeWidth,
+    opacity = opacity,
+    createdAt = createdAt,
+    updatedAt = updatedAt,
+    deletedAt = deletedAt
+)
+
+fun SketchModel.toEntity(): SketchEntity = SketchEntity(
+    id = id,
+    points = Coordinate.listToJson(points),
+    color = color,
+    strokeWidth = strokeWidth,
+    opacity = opacity,
+    createdAt = createdAt,
+    updatedAt = updatedAt,
+    deletedAt = deletedAt
+)
