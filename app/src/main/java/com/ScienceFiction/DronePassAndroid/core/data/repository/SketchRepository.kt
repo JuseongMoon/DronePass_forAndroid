@@ -50,39 +50,62 @@ class SketchRepository @Inject constructor(
 
     /**
      * 새 스케치 삽입 (동일 ID 존재 시 교체)
+     * 로그인 상태이면 Firestore에도 즉시 푸시한다.
      */
     suspend fun insertSketch(sketch: SketchModel) {
         sketchDao.insertSketch(sketch.toEntity())
+        syncSketchToFirebase(sketch)
     }
 
     /**
      * 스케치 정보 업데이트
+     * 로그인 상태이면 Firestore에도 즉시 푸시한다.
      */
     suspend fun updateSketch(sketch: SketchModel) {
         sketchDao.updateSketch(sketch.toEntity())
+        syncSketchToFirebase(sketch)
     }
 
     /**
      * 스케치 소프트 삭제 (deletedAt 타임스탬프 설정)
+     * 로그인 상태이면 Firestore에도 즉시 푸시한다.
      */
     suspend fun softDeleteSketch(sketch: SketchModel) {
         val deletedSketch = sketch.softDelete()
         sketchDao.updateSketch(deletedSketch.toEntity())
+        syncSketchToFirebase(deletedSketch)
     }
 
     /**
      * 소프트 삭제된 스케치 복원
+     * 로그인 상태이면 Firestore에도 즉시 푸시한다.
      */
     suspend fun restoreSketch(sketch: SketchModel) {
         val restoredSketch = sketch.restore()
         sketchDao.updateSketch(restoredSketch.toEntity())
+        syncSketchToFirebase(restoredSketch)
     }
 
     /**
-     * 모든 스케치 삭제 (하드 삭제)
+     * 모든 스케치 삭제 (하드 삭제, 로컬만)
+     * Firestore는 사용자 의도에 따라 별도 처리해야 하므로 자동 푸시하지 않는다.
      */
     suspend fun deleteAllSketches() {
         sketchDao.deleteAllSketches()
+    }
+
+    /**
+     * 단일 스케치를 Firestore에 즉시 푸시한다.
+     * 로그인 상태가 아니면 NO-OP. Firestore SDK의 offline persistence가 큐잉/재시도를 담당한다.
+     */
+    private suspend fun syncSketchToFirebase(sketch: SketchModel) {
+        val userId = auth.currentUser?.uid ?: return
+        try {
+            sketchFirebaseStore.saveSketch(userId, sketch)
+            sketchFirebaseStore.updateServerMetadata(userId)
+        } catch (e: Exception) {
+            Log.w(TAG, "Firebase 즉시 푸시 실패: sketchId=${sketch.id}", e)
+        }
     }
 
     // ===== Firebase 동기화 메서드 =====

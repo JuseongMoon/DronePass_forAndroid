@@ -139,7 +139,11 @@ class RealtimeSyncManager @Inject constructor(
             }
 
             if (snapshot != null && snapshot.exists()) {
-                val lastModified = snapshot.getLong("lastModified") ?: return@addSnapshotListener
+                // lastModified는 FieldValue.serverTimestamp()로 기록되므로 Timestamp 타입.
+                // 레거시 Long 데이터가 있는 경우를 대비해 getLong 폴백 유지.
+                val lastModified = snapshot.getTimestamp("lastModified")?.toDate()?.time
+                    ?: snapshot.getLong("lastModified")
+                    ?: return@addSnapshotListener
                 Log.d(TAG, "Shape/Drone 서버 메타데이터 변경 감지: lastModified=$lastModified")
 
                 // 자신의 변경에 의한 트리거 스킵
@@ -176,7 +180,11 @@ class RealtimeSyncManager @Inject constructor(
             }
 
             if (snapshot != null && snapshot.exists()) {
-                val lastModified = snapshot.getLong("lastModified") ?: return@addSnapshotListener
+                // lastModified는 FieldValue.serverTimestamp()로 기록되므로 Timestamp 타입.
+                // 레거시 Long 데이터가 있는 경우를 대비해 getLong 폴백 유지.
+                val lastModified = snapshot.getTimestamp("lastModified")?.toDate()?.time
+                    ?: snapshot.getLong("lastModified")
+                    ?: return@addSnapshotListener
                 Log.d(TAG, "Sketch 서버 메타데이터 변경 감지: lastModified=$lastModified")
 
                 // 자신의 변경에 의한 트리거 스킵

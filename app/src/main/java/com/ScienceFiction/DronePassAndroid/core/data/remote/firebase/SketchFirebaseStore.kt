@@ -29,9 +29,11 @@ class SketchFirebaseStore @Inject constructor(
     private fun sketchesCollection(userId: String) =
         firestore.collection("users").document(userId).collection("sketches")
 
+    // RealtimeSyncManager가 metadata/sketchServer 를 리스닝하므로 동일 경로에 기록해야 한다.
+    // metadata/server 는 Shape/Drone 공용. Sketch는 별도 문서를 사용해 Shape/Drone 동기화와 분리한다.
     private fun metadataDocument(userId: String) =
         firestore.collection("users").document(userId)
-            .collection("metadata").document("server")
+            .collection("metadata").document("sketchServer")
 
     // endregion
 

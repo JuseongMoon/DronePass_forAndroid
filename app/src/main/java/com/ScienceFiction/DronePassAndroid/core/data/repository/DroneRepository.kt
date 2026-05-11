@@ -50,39 +50,62 @@ class DroneRepository @Inject constructor(
 
     /**
      * 새 드론 삽입 (동일 ID 존재 시 교체)
+     * 로그인 상태이면 Firestore에도 즉시 푸시한다.
      */
     suspend fun insertDrone(drone: DroneModel) {
         droneDao.insertDrone(drone.toEntity())
+        syncDroneToFirebase(drone)
     }
 
     /**
      * 드론 정보 업데이트
+     * 로그인 상태이면 Firestore에도 즉시 푸시한다.
      */
     suspend fun updateDrone(drone: DroneModel) {
         droneDao.updateDrone(drone.toEntity())
+        syncDroneToFirebase(drone)
     }
 
     /**
      * 드론 소프트 삭제 (deletedAt 타임스탬프 설정)
+     * 로그인 상태이면 Firestore에도 즉시 푸시한다.
      */
     suspend fun softDeleteDrone(drone: DroneModel) {
         val deletedDrone = drone.softDelete()
         droneDao.updateDrone(deletedDrone.toEntity())
+        syncDroneToFirebase(deletedDrone)
     }
 
     /**
      * 소프트 삭제된 드론 복원
+     * 로그인 상태이면 Firestore에도 즉시 푸시한다.
      */
     suspend fun restoreDrone(drone: DroneModel) {
         val restoredDrone = drone.restore()
         droneDao.updateDrone(restoredDrone.toEntity())
+        syncDroneToFirebase(restoredDrone)
     }
 
     /**
-     * 모든 드론 삭제 (하드 삭제)
+     * 모든 드론 삭제 (하드 삭제, 로컬만)
+     * Firestore는 사용자 의도에 따라 별도 처리해야 하므로 자동 푸시하지 않는다.
      */
     suspend fun deleteAllDrones() {
         droneDao.deleteAllDrones()
+    }
+
+    /**
+     * 단일 드론을 Firestore에 즉시 푸시한다.
+     * 로그인 상태가 아니면 NO-OP. Firestore SDK의 offline persistence가 큐잉/재시도를 담당한다.
+     */
+    private suspend fun syncDroneToFirebase(drone: DroneModel) {
+        val userId = auth.currentUser?.uid ?: return
+        try {
+            droneFirebaseStore.saveDrone(userId, drone)
+            droneFirebaseStore.updateServerMetadata(userId)
+        } catch (e: Exception) {
+            Log.w(TAG, "Firebase 즉시 푸시 실패: droneId=${drone.id}", e)
+        }
     }
 
     // ===== Firebase 동기화 메서드 =====

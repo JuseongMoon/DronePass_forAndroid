@@ -24,6 +24,12 @@ object FlightZoneCalculator {
     /**
      * 점이 폴리곤 내부에 있는지 판정 (Ray Casting Algorithm)
      *
+     * iOS FlightZoneCalculator.swift 의 isPointInPolygon 과 동일한 식을 사용한다.
+     * 변수명을 latI/lonI 등으로 명시하여 좌표축 혼선을 방지한다.
+     *
+     * 안전 기준: 비행구역 오판 0건 허용. 변경 시 FlightZoneCalculatorTest 의
+     * 단위 테스트(정사각형 내부/외부/꼭짓점/변/홀수교차)를 반드시 통과해야 한다.
+     *
      * @param lat 검사할 점의 위도
      * @param lon 검사할 점의 경도
      * @param polygon 폴리곤 좌표 리스트 (Pair(lat, lon))
@@ -40,11 +46,13 @@ object FlightZoneCalculator {
         var j = polygon.size - 1
 
         for (i in polygon.indices) {
-            val (yi, xi) = polygon[i]
-            val (yj, xj) = polygon[j]
+            val (latI, lonI) = polygon[i]
+            val (latJ, lonJ) = polygon[j]
 
-            if ((yi > lon) != (yj > lon) &&
-                lat < (xj - xi) * (lon - yi) / (yj - yi) + xi
+            // Ray casting: 점에서 동쪽으로 수평선을 그어 폴리곤 변과의 교차 횟수 세기.
+            // 점의 위도가 두 꼭짓점의 위도 사이일 때만 변 교차 후보가 된다.
+            if ((latI > lat) != (latJ > lat) &&
+                lon < (lonJ - lonI) * (lat - latI) / (latJ - latI) + lonI
             ) {
                 inside = !inside
             }
