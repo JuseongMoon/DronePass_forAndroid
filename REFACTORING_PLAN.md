@@ -32,19 +32,21 @@
 | Phase | 기간 | 범위 | 종료 기준 |
 |---|---|---|---|
 | Pri 0 | (완료) | Critical 5건 | PR 머지 + 빌드 통과 |
-| **Phase 1** | 1~2주 | 잔여 Critical 19건 | 출시 차단 결함 해소, 빌드 + 핵심 회귀 테스트 통과 |
+| Phase 1 | (완료) | 잔여 Critical 19건 | 출시 차단 결함 해소, 빌드 + 핵심 회귀 테스트 통과 |
 | **Phase 2** | 2~3주 | High 45건 | 성능/UX/일관성 개선, 60fps 기준 회귀 통과 |
 | **Phase 3** | 1~2주 | Medium 55건 | 코드 품질/유지보수 정비, Lint 0건 유지 |
 
 ---
 
-## 2. Phase 1 — 잔여 Critical (19건)
+## 2. Phase 1 — 잔여 Critical (19건) ✅ 완료
 
-> 출시 차단·데이터 손실·크래시 위험. PR 1~3개로 묶어 처리 권장.
+> 출시 차단·데이터 손실·크래시 위험. 5개 영역별 5개 커밋으로 처리 완료
+> (`fix/critical-pri0-fixes` 브랜치, 커밋 `967bab8` ~ `a755801`).
+> ./gradlew :app:assembleDebug + :app:testDebugUnitTest BUILD SUCCESSFUL.
 
 ### 2.1 데이터 레이어 (1건)
 
-- [ ] **A-C1: EncryptedPrefsHelper MasterKeys deprecation + 손상 대비 try-catch**
+- [x] **A-C1: EncryptedPrefsHelper MasterKeys deprecation + 손상 대비 try-catch**
   - 파일: `core/data/local/EncryptedPrefsHelper.kt:25-32`, `service/FcmService.kt:94-103, 235-244`
   - 문제: `MasterKeys.getOrCreate` 는 `security-crypto 1.1.0-alpha06` 에서 deprecated. KeyStore 손상(앱 재설치/백업 복원/일부 OEM)에 대한 `GeneralSecurityException`/`IOException` 처리 없음.
   - 영향: 일부 단말 첫 실행 크래시 + FcmService에서 중복 EncryptedPrefs 생성으로 SRP 위반.
@@ -55,13 +57,13 @@
 
 ### 2.2 지도/오버레이/스케치 (4건)
 
-- [ ] **B-C1: AndroidView update 람다의 위치 추적 재설정 누수**
+- [x] **B-C1: AndroidView update 람다의 위치 추적 재설정 누수**
   - 파일: `feature/map/MapScreen.kt:333-391`
   - 문제: `update` 람다가 매 recomposition마다 `setupLocationTracking(naverMap!!, context)` 호출 → 매번 새 `FusedLocationSource(activity, 1000)` 생성.
   - 영향: 메모리 누수 + 콜백 중복 등록으로 카메라가 위치로 점프.
   - 수정: `LaunchedEffect(allPermissionsGranted, mapReady) { setupLocationTracking(naverMap, context) }` 형태로 1회 실행 보장. `update` 람다에서는 호출 제거.
 
-- [ ] **B-C2: Configuration change(회전) 시 MapView 카메라 상태 손실**
+- [x] **B-C2: Configuration change(회전) 시 MapView 카메라 상태 손실**
   - 파일: `feature/map/MapScreen.kt:84-88, 622-641`, `AndroidManifest.xml` MainActivity
   - 문제: factory 람다의 `mapView.onCreate(null)`이 `savedInstanceState`를 항상 null로 전달 → 회전 시 카메라가 서울 시청(13.0)으로 초기화.
   - 영향: 사용자가 줌/이동한 위치가 회전 시 사라짐.
@@ -69,13 +71,13 @@
     1. `MainActivity`에 `android:configChanges="orientation|screenSize|keyboardHidden"` 추가 (간단).
     2. 또는 `rememberSaveable`로 `CameraPosition`(target lat/lng, zoom, tilt, bearing) 4요소 보존 + factory에서 적용.
 
-- [ ] **B-C3: MapView 리스너 해제 누락 (`addOnCameraIdleListener`, `setOnMapLongClickListener`)**
+- [x] **B-C3: MapView 리스너 해제 누락 (`addOnCameraIdleListener`, `setOnMapLongClickListener`)**
   - 파일: `feature/map/MapScreen.kt:366-380` + 주변 `DisposableEffect`
   - 문제: factory에서 등록한 리스너가 `onDispose`에서 제거되지 않음.
   - 영향: 재초기화 시 중복 등록으로 `onCameraIdle` 폭주.
   - 수정: 등록한 리스너 참조를 `remember`로 보관 후 `DisposableEffect`의 `onDispose`에서 `naverMap.removeOnCameraIdleListener(...)` 명시.
 
-- [ ] **B-C4: OverlayManager 3종의 `naverMap` 참조 미해제 → 활동 누수**
+- [x] **B-C4: OverlayManager 3종의 `naverMap` 참조 미해제 → 활동 누수**
   - 파일: `feature/map/overlay/ShapeOverlayManager.kt:163-172`, `feature/sketch/SketchOverlayManager.kt:142-145, 154-158`, `feature/vworld/FlightZoneOverlayManager.kt:127-133`
   - 문제: `clearOverlays()`는 overlay 인스턴스의 `map=null`만 호출하고, manager가 보유한 `naverMap` 참조는 끊지 않음. Activity 파괴 후에도 NaverMap 보유.
   - 영향: 메모리 누수.
@@ -83,19 +85,19 @@
 
 ### 2.3 알고리즘 (3건)
 
-- [ ] **C-C1: Haversine 지구 반지름을 WGS-84 적도반지름으로 통일**
+- [x] **C-C1: Haversine 지구 반지름을 WGS-84 적도반지름으로 통일**
   - 파일: `core/util/FlightZoneCalculator.kt:22, 65-73`, `core/util/DistanceCalculator.kt:24, 42-54`
   - 문제: 두 구현 모두 `6371.0 km`(평균반지름) 사용. iOS 원본은 `6378137.0 m`(WGS-84 적도반지름). 한국 영역에서 0.112% 오차. 또한 Android는 `2*asin(sqrt(a))`인데 iOS는 `2*atan2(sqrt(a), sqrt(1-a))`로 수치 안정성 차이.
   - 영향: iOS↔Android 거리 결과가 100km당 약 112m 다름. 비행구역 경계 부근에서 안전 판정 일관성 결여 가능.
   - 수정: 상수 `EARTH_RADIUS_M = 6_378_137.0` 통일. `c = 2 * atan2(sqrt(a), sqrt(1-a))`로 통일. `FlightZoneCalculatorTest`에 iOS와 동일한 거리 결과 검증 추가(서울-부산 ≈ 325km 허용 범위 좁히기).
 
-- [ ] **C-C2: CRICalculator Magnus 공식의 NaN/0-division 가드**
+- [x] **C-C2: CRICalculator Magnus 공식의 NaN/0-division 가드**
   - 파일: `core/util/CRICalculator.kt:57-68`
   - 문제: `b + temperature = 243.04 + temperature`이 0이면 `exp` 인자가 NaN. `Double.isNaN(...)` 입력 가드도 없어 NaN이 그대로 전파.
   - 영향: 비현실적이지만 API 오류 시 위험 등급이 누락되어 사용자에게 안전 표시.
   - 수정: 함수 진입부에서 `temperature.isNaN() || dewPoint.isNaN() || temperature <= -243.04 || dewPoint <= -243.04` 시 sentinel(예: `Double.NaN` 또는 `CRIResult.Unknown`) 반환. 호출자에서 "측정 불가" UI 분기.
 
-- [ ] **C-C3: SketchPointsCache TOCTOU 중복 계산 방지**
+- [x] **C-C3: SketchPointsCache TOCTOU 중복 계산 방지**
   - 파일: `core/util/SketchPointsCache.kt:43-53`
   - 문제: 캐시 miss 시 mutex 해제 → `smoothUsingCatmullRom` 호출 → 다시 mutex 락으로 저장. 동일 sketchId 동시 호출 시 N개 코루틴이 동일 작업 수행.
   - 영향: 큰 스케치(수백~수천 포인트) 동시 요청 시 GC 압박/UI 렉.
@@ -103,31 +105,31 @@
 
 ### 2.4 Feature UI (5건)
 
-- [ ] **D-C1: LoginScreen 이중 `LaunchedEffect(authState)` 충돌**
+- [x] **D-C1: LoginScreen 이중 `LaunchedEffect(authState)` 충돌**
   - 파일: `feature/auth/LoginScreen.kt:61-74`
   - 문제: 동일한 `authState` 키로 두 `LaunchedEffect`가 등록되어 `LoggedIn`→`Error` 전이 시 첫 effect는 `onLoginSuccess`, 두 번째는 스낵바 표시.
   - 영향: 화면 전환 + 스낵바 동시 발생 가능.
   - 수정: 단일 `LaunchedEffect(authState) { when(authState) { is Success -> ...; is Error -> ... } }` 패턴으로 통합.
 
-- [ ] **D-C2: SettingsViewModel.signOut() / deleteAccount()에서 FCM 토큰 비활성화 + 실시간 동기화 중단 누락**
+- [x] **D-C2: SettingsViewModel.signOut() / deleteAccount()에서 FCM 토큰 비활성화 + 실시간 동기화 중단 누락**
   - 파일: `feature/settings/SettingsViewModel.kt:312, 357` (cf. `feature/auth/AuthViewModel.kt`)
   - 문제: `authRepository.signOut()`만 호출. `AuthViewModel.signOut`은 FCM 비활성화 + `realtimeSyncManager.stopListening()`까지 처리하나 SettingsViewModel은 누락.
   - 영향: 로그아웃 후 Firestore 권한 오류 + FCM 토큰 잔존(타 계정 알림 위험).
   - 수정: 공통 `SignOutUseCase` 추출 → AuthViewModel/SettingsViewModel 모두 호출. (`FcmService.deactivateToken(...)` + `RealtimeSyncManager.stopListening()` + `authRepository.signOut()` 순서)
 
-- [ ] **D-C3: WebDocumentScreen JavaScript 활성화 + 도메인 화이트리스트 부재**
+- [x] **D-C3: WebDocumentScreen JavaScript 활성화 + 도메인 화이트리스트 부재**
   - 파일: `feature/settings/WebDocumentScreen.kt:55, 92-93`
   - 문제: `@SuppressLint("SetJavaScriptEnabled")` + 외부 URL(Notion 등) 로드. `shouldOverrideUrlLoading`으로 도메인 제한 없음.
   - 영향: 악성 리다이렉트 페이지 경유 시 JS 실행 가능성.
   - 수정: `WebViewClient.shouldOverrideUrlLoading`에서 허용 도메인(`notion.so`, `*.dronepass.app` 등) 화이트리스트 검증. JS는 필요한 페이지만 활성화하거나 비활성화.
 
-- [ ] **D-C4: AuthViewModel init 순서 — checkAuthState 누락**
+- [x] **D-C4: AuthViewModel init 순서 — checkAuthState 누락**
   - 파일: `feature/auth/AuthViewModel.kt:55-58`
   - 문제: init에서 `isLoggedIn` 분기 → `performFullSync` + `startRealtimeSync` 호출. 그러나 `checkAuthState()`가 먼저 호출되지 않아 `_authState`가 `LoggedIn`으로 갱신되기 전에 동기화 시작 → 일시적 Loading→Main 깜빡임.
   - 영향: UX 결함(앱 시작 시 LoginScreen이 잠깐 보일 수 있음).
   - 수정: init 순서를 `checkAuthState() → performFullSync() → startRealtimeSync()`로 명시. 또는 `combine`된 단일 흐름으로 처리.
 
-- [ ] **D-C5: SavedListScreen LazyColumn key 충돌 잠재 위험**
+- [x] **D-C5: SavedListScreen LazyColumn key 충돌 잠재 위험**
   - 파일: `feature/saved/SavedListScreen.kt:120-187`
   - 문제: 세 섹션(active/notStarted/expired)이 모두 `key = { it.id }`. 분류가 mutually exclusive하지만 `flightStartDate == flightEndDate == 현재시각` 경계조건에서 다른 분기 가능성.
   - 영향: 동일 key가 두 번 등장 시 `IllegalStateException` 크래시.
@@ -135,31 +137,31 @@
 
 ### 2.5 인프라 (6건)
 
-- [ ] **E-C1: 백업 규칙 파일명 불일치 — `dronepass_encrypted_prefs.xml`**
+- [x] **E-C1: 백업 규칙 파일명 불일치 — `dronepass_encrypted_prefs.xml`**
   - 파일: `app/src/main/res/xml/backup_rules.xml:20`, `data_extraction_rules.xml:19, 44`
   - 문제: `encrypted_prefs.xml`로 제외, 실제 파일명은 `dronepass_encrypted_prefs.xml` (`EncryptedPrefsHelper.kt:20`, `FcmService.kt:98,239`).
   - 영향: 암호화 파일이 클라우드 백업됨 → 복원 시 마스터키 불일치로 SharedPreferences 폭주(즉시 크래시).
   - 수정: 두 XML 모두 `<exclude domain="sharedpref" path="dronepass_encrypted_prefs.xml"/>` 으로 정정. 가능하면 상수화하여 코드와 동기화.
 
-- [ ] **E-C2: POST_NOTIFICATIONS 런타임 권한 요청 흐름 추가**
+- [x] **E-C2: POST_NOTIFICATIONS 런타임 권한 요청 흐름 추가**
   - 파일: `AndroidManifest.xml:13` + 신규 `feature/settings/NotificationPermissionRequest.kt`
   - 문제: 선언만 있고 어디서도 `ActivityResultContracts.RequestPermission` 호출 없음. Android 13+에서 알림 미노출.
   - 영향: FCM·AlarmManager 알림이 사용자에게 보이지 않음.
   - 수정: 설정 화면의 알림 토글 ON 시점에 권한 요청. denied 시 안내 다이얼로그 + 설정 진입 Intent.
 
-- [ ] **E-C3: SCHEDULE_EXACT_ALARM 사용자 설정 진입 흐름 추가 (Android 12~13)**
+- [x] **E-C3: SCHEDULE_EXACT_ALARM 사용자 설정 진입 흐름 추가 (Android 12~13)**
   - 파일: `service/NotificationScheduler.kt:241-273` + 신규 UI
   - 문제: `canScheduleExactAlarms()` 분기는 있으나 `ACTION_REQUEST_SCHEDULE_EXACT_ALARM` Intent로 사용자가 설정 부여하도록 유도하는 UI 없음.
   - 영향: 알람 해제 시 일출/일몰 알림 미발송.
   - 수정: 알림 설정 화면에서 권한 부재 감지 시 안내 카드 + "정확한 알람 권한 부여" 버튼 → settings intent.
 
-- [ ] **E-C4: AppCompat 테마 → Material3 변환**
+- [x] **E-C4: AppCompat 테마 → Material3 변환**
   - 파일: `app/src/main/res/values/themes.xml:4`, `app/src/main/res/values-night/themes.xml` (신규)
   - 문제: parent가 `Theme.AppCompat.Light.NoActionBar`. Compose Material3 앱 부정합. `values-night/themes.xml` 부재로 다크 모드 시스템 테마 분리 안 됨.
   - 영향: statusBar 색상/inflation 단계의 AppCompat 의존성. `Theme.kt`의 dynamicColor와 충돌.
   - 수정: parent를 `Theme.Material3.DayNight.NoActionBar` 또는 `android:Theme.Material.Light.NoActionBar`로 변경. `values-night` 분리. 가능하면 `androidx.appcompat:appcompat` 의존성 제거.
 
-- [ ] **E-C5: Release signingConfig + buildTypes.debug 블록 추가**
+- [x] **E-C5: Release signingConfig + buildTypes.debug 블록 추가**
   - 파일: `app/build.gradle.kts:46-55`
   - 문제: `signingConfigs { release { ... } }` 부재 → release가 debug 키로 서명 → Play Store 업로드 불가. `debug { applicationIdSuffix=".debug" }` 등 dev/prod 분리도 없음.
   - 영향: 출시 차단.
@@ -168,7 +170,7 @@
     2. `keystore.properties`로 비밀 분리 + `.gitignore`.
     3. `buildTypes { debug { applicationIdSuffix = ".debug" }; release { signingConfig = ... } }`.
 
-- [ ] **E-C6: `<queries>` 블록 추가 — 외부 지도 앱 호출 보장**
+- [x] **E-C6: `<queries>` 블록 추가 — 외부 지도 앱 호출 보장**
   - 파일: `AndroidManifest.xml`
   - 문제: Android 11+ package visibility 제한으로 `Intent.resolveActivity()` 가 다른 앱 가시성 없이 호출 시 `null` 반환. `ShapeDetailSheet.kt:367,383`의 kakaomap/tmap 호출에 영향.
   - 영향: 외부 지도 앱 열기 실패.
