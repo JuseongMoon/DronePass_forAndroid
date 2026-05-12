@@ -16,18 +16,34 @@ object CRICalculator {
     /**
      * CRI 계산
      *
+     * 입력이 비물리적(NaN, Infinity, 절대영도 이하)이거나 Magnus 공식의 분모가
+     * 0 이하가 되는 경우 [Double.NaN] 을 반환한다. 호출자(WeatherRepository 등)에서는
+     * 결과의 NaN 여부를 확인하여 "측정 불가" UI 분기에 사용한다.
+     *
      * @param temperature 온도 (Celsius)
      * @param dewPoint 이슬점 (Celsius)
      * @param windSpeed 풍속 (m/s)
-     * @return CRI 값 (1-100)
+     * @return CRI 값 (1-100) 또는 비정상 입력 시 NaN
      */
     fun calculate(temperature: Double, dewPoint: Double, windSpeed: Double): Double {
+        // 입력 유효성 검증 (NaN/Infinity)
+        if (!temperature.isFinite() || !dewPoint.isFinite() || !windSpeed.isFinite()) {
+            return Double.NaN
+        }
+        // 비물리적 입력 (절대영도 -273.15°C 이하)
+        if (temperature <= ABSOLUTE_ZERO_C || dewPoint <= ABSOLUTE_ZERO_C) {
+            return Double.NaN
+        }
+        // 풍속은 음수가 될 수 없음 (Open-Meteo 데이터 오류 방어)
+        val safeWindSpeed = windSpeed.coerceAtLeast(0.0)
+
         // 채널1: 온도-이슬점 차이 기반
         val deltaT = temperature - dewPoint
         val criDeltaT = (100.0 - 10.0 * deltaT).coerceIn(1.0, 100.0)
 
-        // 채널2: 상대습도 기반 (Magnus 공식)
+        // 채널2: 상대습도 기반 (Magnus 공식). 비정상 시 NaN.
         val relativeHumidity = calculateRelativeHumidity(temperature, dewPoint)
+        if (!relativeHumidity.isFinite()) return Double.NaN
         val criRH = relativeHumidity.coerceIn(1.0, 100.0)
 
         // 합성: 둘 중 큰 값
@@ -35,8 +51,8 @@ object CRICalculator {
 
         // 풍속 보정
         val windFactor = when {
-            windSpeed >= 5.0 -> 0.8
-            windSpeed >= 2.0 -> 0.9
+            safeWindSpeed >= 5.0 -> 0.8
+            safeWindSpeed >= 2.0 -> 0.9
             else -> 1.0
         }
         val criWindAdjusted = criCombined * windFactor
@@ -53,18 +69,31 @@ object CRICalculator {
      *
      * RH = 100 * exp(17.625 * dewPoint / (243.04 + dewPoint))
      *     / exp(17.625 * temperature / (243.04 + temperature))
+     *
+     * 분모가 0 이하가 되는 비물리적 입력(temperature ≤ -243.04°C 등)이나
+     * exp 결과가 Infinity가 되는 극단값에 대해 [Double.NaN]을 반환한다.
      */
     private fun calculateRelativeHumidity(temperature: Double, dewPoint: Double): Double {
         val a = 17.625
         val b = 243.04
 
-        val numerator = exp(a * dewPoint / (b + dewPoint))
-        val denominator = exp(a * temperature / (b + temperature))
-
-        return if (denominator > 0) {
-            100.0 * numerator / denominator
-        } else {
-            100.0
+        // Magnus 공식 분모가 0 이하가 되면 의미 없는 결과 → NaN
+        val denomT = b + temperature
+        val denomDP = b + dewPoint
+        if (denomT <= 0.0 || denomDP <= 0.0) {
+            return Double.NaN
         }
+
+        val numerator = exp(a * dewPoint / denomDP)
+        val denominator = exp(a * temperature / denomT)
+
+        // 극단값에서 exp가 Infinity가 될 수 있음
+        if (!numerator.isFinite() || !denominator.isFinite() || denominator <= 0.0) {
+            return Double.NaN
+        }
+        return 100.0 * numerator / denominator
     }
+
+    /** 절대 0도 (Celsius) — 입력 유효성 가드용 */
+    private const val ABSOLUTE_ZERO_C = -273.15
 }

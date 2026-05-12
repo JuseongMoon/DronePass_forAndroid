@@ -1,7 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.core.util
 
 import com.ScienceFiction.DronePassAndroid.domain.model.Coordinate
-import kotlin.math.asin
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.max
@@ -20,8 +19,12 @@ import kotlin.math.sqrt
  */
 object DistanceCalculator {
 
-    /** 지구 반지름 (미터) */
-    private const val EARTH_RADIUS = 6371000.0
+    /**
+     * WGS-84 적도 반지름 (미터).
+     * iOS 원본(FlightZoneCalculator.swift)과 동일한 값을 사용하여
+     * 크로스 플랫폼 거리 계산 결과를 일치시킨다.
+     */
+    private const val EARTH_RADIUS = 6_378_137.0
 
     // ──────────────────────────────────────────────
     // Haversine 공식 (정확한 거리)
@@ -48,7 +51,8 @@ object DistanceCalculator {
         val a = sin(dLat / 2) * sin(dLat / 2) +
                 cos(radLat1) * cos(radLat2) *
                 sin(dLon / 2) * sin(dLon / 2)
-        val c = 2 * asin(sqrt(a))
+        // a ≈ 1 인 대원거리 입력에서 수치 안정성을 위해 atan2 사용 (iOS 원본과 동일)
+        val c = 2 * atan2(sqrt(a), sqrt(1 - a))
 
         return EARTH_RADIUS * c
     }

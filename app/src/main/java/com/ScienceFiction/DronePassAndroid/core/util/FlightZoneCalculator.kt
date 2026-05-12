@@ -3,7 +3,6 @@ package com.ScienceFiction.DronePassAndroid.core.util
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.DroneZoneFeature
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.FlightRestrictionLevel
 import kotlin.math.abs
-import kotlin.math.asin
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.sin
@@ -13,13 +12,17 @@ import kotlin.math.sqrt
  * 비행구역 관련 계산 유틸리티
  *
  * - 포인트 인 폴리곤 (Ray Casting Algorithm)
- * - 거리 계산 (Haversine Formula)
+ * - 거리 계산 (Haversine Formula, WGS-84 적도반지름)
  * - 비행 가능 여부 판정
  * - 바운딩 박스 생성
  */
 object FlightZoneCalculator {
 
-    private const val EARTH_RADIUS_KM = 6371.0
+    /**
+     * WGS-84 적도 반지름 (미터).
+     * iOS 원본(FlightZoneCalculator.swift) 및 [DistanceCalculator]와 동일한 값.
+     */
+    private const val EARTH_RADIUS_M = 6_378_137.0
 
     /**
      * 점이 폴리곤 내부에 있는지 판정 (Ray Casting Algorithm)
@@ -76,8 +79,9 @@ object FlightZoneCalculator {
         val a = sin(dLat / 2) * sin(dLat / 2) +
                 cos(Math.toRadians(lat1)) * cos(Math.toRadians(lat2)) *
                 sin(dLon / 2) * sin(dLon / 2)
-        val c = 2 * asin(sqrt(a))
-        return EARTH_RADIUS_KM * c * 1000 // 미터로 변환
+        // a ≈ 1 인 대원거리 입력에서 수치 안정성을 위해 atan2 사용 (iOS 원본과 동일)
+        val c = 2 * atan2(sqrt(a), sqrt(1 - a))
+        return EARTH_RADIUS_M * c
     }
 
     /**
