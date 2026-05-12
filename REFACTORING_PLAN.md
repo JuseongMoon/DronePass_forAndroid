@@ -33,7 +33,7 @@
 |---|---|---|---|
 | Pri 0 | (완료) | Critical 5건 | PR 머지 + 빌드 통과 |
 | Phase 1 | (완료) | 잔여 Critical 19건 | 출시 차단 결함 해소, 빌드 + 핵심 회귀 테스트 통과 |
-| **Phase 2** | 2~3주 | High 45건 | 성능/UX/일관성 개선, 60fps 기준 회귀 통과 |
+| Phase 2 | (완료) | High 45건 | 성능/UX/일관성 개선, 60fps 기준 회귀 통과 |
 | **Phase 3** | 1~2주 | Medium 55건 | 코드 품질/유지보수 정비, Lint 0건 유지 |
 
 ---
@@ -178,69 +178,71 @@
 
 ---
 
-## 3. Phase 2 — High (45건)
+## 3. Phase 2 — High (45건) ✅ 완료
 
-> 사용자 체감/성능/UX/일관성 결함. 영역별 PR 분할 권장.
+> 사용자 체감/성능/UX/일관성 결함. 5개 영역별 5개 커밋으로 처리 완료
+> (`fix/critical-pri0-fixes` 브랜치, 커밋 `ea7b74d` ~ `43c5d5c`).
+> ./gradlew :app:assembleDebug + :app:testDebugUnitTest BUILD SUCCESSFUL.
 
 ### 3.1 데이터 레이어 (9건)
 
-- [ ] **A-H1: `syncFromFirebase`에 LWW 비교 추가** — Repository 3종 모두 forEach로 단순 덮어쓰기. (`{Drone,Shape,Sketch}Repository.syncFromFirebase`)
-- [ ] **A-H2: `performFullSync`의 "로컬 우세 데이터" 업로드 누락 보완** — `localOnly = merged.filter { it.id !in serverById }` 만으로는 로컬이 LWW에서 이긴 데이터가 업로드되지 않음. (`ShapeRepository.kt:174-211` 외 2개)
-- [ ] **A-H3: `RealtimeSyncManager.onShapesUpdated/onDronesUpdated/onSketchesUpdated` 콜백 — 데드 코드 제거 또는 실제 연결**
-- [ ] **A-H4: `shapeSyncInProgress`/`sketchSyncInProgress` Boolean → Mutex 또는 AtomicBoolean** (`RealtimeSyncManager.kt:81-86`)
-- [ ] **A-H5: `RealtimeSyncManager.scheduleShapeRetrySync` — 재시도 코루틴 안에서 `currentListeningUserId == null` 가드 추가** (로그아웃 후 잔여 동기화 시도 방지)
-- [ ] **A-H6: `SketchRepository.softDeleteSketch`/`restoreSketch` 디바운싱/배치 push** — Undo/Redo 빈도 높음
-- [ ] **A-H7: `*FirebaseStore.load*` catch 블록의 `emptyList()` 반환을 `Result<List<T>>` 또는 sealed 결과로 변경** — 네트워크 오류와 빈 데이터 구분
-- [ ] **A-H8: `ShapeFirebaseStore.firestoreDataToShape:208-209` baseCoordinate 부재 시 서울 시청 fallback 제거** — `return null`로 스킵 + Crashlytics 로깅
-- [ ] **A-H9: `EntityMapper.toDomain`의 `ShapeType.valueOf` try-catch 폴백 추가** (`mapper/EntityMapper.kt:14-30`)
+- [x] **A-H1: `syncFromFirebase`에 LWW 비교 추가** — Repository 3종 모두 forEach로 단순 덮어쓰기. (`{Drone,Shape,Sketch}Repository.syncFromFirebase`)
+- [x] **A-H2: `performFullSync`의 "로컬 우세 데이터" 업로드 누락 보완** — `localOnly = merged.filter { it.id !in serverById }` 만으로는 로컬이 LWW에서 이긴 데이터가 업로드되지 않음. (`ShapeRepository.kt:174-211` 외 2개)
+- [x] **A-H3: `RealtimeSyncManager.onShapesUpdated/onDronesUpdated/onSketchesUpdated` 콜백 — 데드 코드 제거 또는 실제 연결**
+- [x] **A-H4: `shapeSyncInProgress`/`sketchSyncInProgress` Boolean → Mutex 또는 AtomicBoolean** (`RealtimeSyncManager.kt:81-86`)
+- [x] **A-H5: `RealtimeSyncManager.scheduleShapeRetrySync` — 재시도 코루틴 안에서 `currentListeningUserId == null` 가드 추가** (로그아웃 후 잔여 동기화 시도 방지)
+- [x] **A-H6: `SketchRepository.softDeleteSketch`/`restoreSketch` 디바운싱/배치 push** — Undo/Redo 빈도 높음
+- [x] **A-H7: `*FirebaseStore.load*` catch 블록의 `emptyList()` 반환을 `Result<List<T>>` 또는 sealed 결과로 변경** — 네트워크 오류와 빈 데이터 구분
+- [x] **A-H8: `ShapeFirebaseStore.firestoreDataToShape:208-209` baseCoordinate 부재 시 서울 시청 fallback 제거** — `return null`로 스킵 + Crashlytics 로깅
+- [x] **A-H9: `EntityMapper.toDomain`의 `ShapeType.valueOf` try-catch 폴백 추가** (`mapper/EntityMapper.kt:14-30`)
 
 ### 3.2 지도/오버레이/스케치 (9건)
 
-- [ ] **B-H1: `ShapeOverlayManager` Diff 패턴 도입** — 현재 매번 `clearOverlays()` 후 전체 재생성. `SketchOverlayManager`의 Map 기반 Diff(add/remove/update) 차용.
-- [ ] **B-H2: `FlightZoneOverlayManager` Diff 패턴 도입 + zone.id 기반 캐시** — 카메라 이동마다 전체 재생성
-- [ ] **B-H3: `removeOutOfBoundsOverlays` 실제 호출 추가** — 함수만 정의되어 있고 어디서도 호출되지 않음 (`FlightZoneOverlayManager.kt:111-122`)
-- [ ] **B-H4: `currentDrawingPoints` LaunchedEffect key 좁히기** — color/strokeWidth/opacity는 별도 effect로 분리 (`MapScreen.kt:251-262`)
-- [ ] **B-H5: `SketchViewModel.continueDrawing`의 O(n²) 리스트 복사** — MutableStateList 또는 내부 ArrayList + 새 리스트 emit 분리 (`SketchViewModel.kt:138-147`)
-- [ ] **B-H6: `SketchViewModel.deleteSketchAtPoint` Mutex 직렬화** — 지우개 드래그 시 race condition 방지 (`SketchViewModel.kt:215-217`)
-- [ ] **B-H7: BoundingBox 경도 변환을 위도 보정(cosLat) 기반으로 변경** — 현재 85km 고정 (`SketchViewModel.kt:237-238`)
-- [ ] **B-H8: `filteredShapes` 시간 기반 재평가** — 만료 시점이 흘러도 즉시 반영 안 됨 (`MapViewModel.kt:309-348`)
-- [ ] **B-H9: `cameraEvent` SharedFlow replay=1 또는 mapReady와 combine** — 첫 emit 손실 가능성 (`MapScreen.kt:282-302`)
+- [x] **B-H1: `ShapeOverlayManager` Diff 패턴 도입** — 현재 매번 `clearOverlays()` 후 전체 재생성. `SketchOverlayManager`의 Map 기반 Diff(add/remove/update) 차용.
+- [x] **B-H2: `FlightZoneOverlayManager` Diff 패턴 도입 + zone.id 기반 캐시** — 카메라 이동마다 전체 재생성
+- [x] **B-H3: `removeOutOfBoundsOverlays` 실제 호출 추가** — 함수만 정의되어 있고 어디서도 호출되지 않음 (`FlightZoneOverlayManager.kt:111-122`)
+- [x] **B-H4: `currentDrawingPoints` LaunchedEffect key 좁히기** — color/strokeWidth/opacity는 별도 effect로 분리 (`MapScreen.kt:251-262`)
+- [x] **B-H5: `SketchViewModel.continueDrawing`의 O(n²) 리스트 복사** — MutableStateList 또는 내부 ArrayList + 새 리스트 emit 분리 (`SketchViewModel.kt:138-147`)
+- [x] **B-H6: `SketchViewModel.deleteSketchAtPoint` Mutex 직렬화** — 지우개 드래그 시 race condition 방지 (`SketchViewModel.kt:215-217`)
+- [x] **B-H7: BoundingBox 경도 변환을 위도 보정(cosLat) 기반으로 변경** — 현재 85km 고정 (`SketchViewModel.kt:237-238`)
+- [x] **B-H8: `filteredShapes` 시간 기반 재평가** — 만료 시점이 흘러도 즉시 반영 안 됨 (`MapViewModel.kt:309-348`)
+- [x] **B-H9: `cameraEvent` SharedFlow replay=1 또는 mapReady와 combine** — 첫 emit 손실 가능성 (`MapScreen.kt:282-302`)
 
 ### 3.3 알고리즘 (8건)
 
-- [ ] **C-H1: `SketchSmoothingAlgorithm.segmentsPerOriginal=0` 가드** (`SketchSmoothingAlgorithm.kt:29-77`)
-- [ ] **C-H2: Catmull-Rom 보간 시작점 정합 — iOS의 `(0,1]` 구간과 일치하도록 수정** (`SketchSmoothingAlgorithm.kt:66-71`)
-- [ ] **C-H3: `CoordinateParser` DMS 분/초 범위 검증** (`CoordinateParser.kt:20-23, 117-128`)
-- [ ] **C-H4: `CoordinateParser` Decimal 패턴 anchoring** — `Regex.find()`가 입력 어디서나 매치 (`CoordinateParser.kt:29-31, 139-144`)
-- [ ] **C-H5: `GustDifferenceCalculator` NaN/음수 입력 방어** — `sustainedWind < 0`/`gustWind < 0`/`NaN` 가드 (`GustDifferenceCalculator.kt:60-111`)
-- [ ] **C-H6: `GeocodingResponse` non-null 필드를 nullable로 완화** — 에러 응답 가변성 대응 (`GeocodingResponse.kt:10-14`)
-- [ ] **C-H7: `Coordinate.toString` `String.format` Locale.ROOT 명시** — 유럽 로케일에서 소수점 콤마 변환 방지 (`Coordinate.kt:46`)
-- [ ] **C-H8: `VWorldModels` NOTAM 2-digit year → 4-digit + Calendar non-lenient** (`VWorldModels.kt:155-170`)
+- [x] **C-H1: `SketchSmoothingAlgorithm.segmentsPerOriginal=0` 가드** (`SketchSmoothingAlgorithm.kt:29-77`)
+- [x] **C-H2: Catmull-Rom 보간 시작점 정합 — iOS의 `(0,1]` 구간과 일치하도록 수정** (`SketchSmoothingAlgorithm.kt:66-71`)
+- [x] **C-H3: `CoordinateParser` DMS 분/초 범위 검증** (`CoordinateParser.kt:20-23, 117-128`)
+- [x] **C-H4: `CoordinateParser` Decimal 패턴 anchoring** — `Regex.find()`가 입력 어디서나 매치 (`CoordinateParser.kt:29-31, 139-144`)
+- [x] **C-H5: `GustDifferenceCalculator` NaN/음수 입력 방어** — `sustainedWind < 0`/`gustWind < 0`/`NaN` 가드 (`GustDifferenceCalculator.kt:60-111`)
+- [x] **C-H6: `GeocodingResponse` non-null 필드를 nullable로 완화** — 에러 응답 가변성 대응 (`GeocodingResponse.kt:10-14`)
+- [x] **C-H7: `Coordinate.toString` `String.format` Locale.ROOT 명시** — 유럽 로케일에서 소수점 콤마 변환 방지 (`Coordinate.kt:46`)
+- [x] **C-H8: `VWorldModels` NOTAM 2-digit year → 4-digit + Calendar non-lenient** (`VWorldModels.kt:155-170`)
 
 ### 3.4 Feature UI (13건)
 
-- [ ] **D-H1: KpViewModel/WeatherViewModel `while(true) { delay }` → `Lifecycle.repeatOnLifecycle(STARTED)`** — 백그라운드 자동 갱신 중단 (`KpViewModel.kt:107-114`, `WeatherViewModel.kt:105-112`)
-- [ ] **D-H2: SavedListViewModel 4개 파생 StateFlow → 단일 `data class Sections` 통합 + Dispatchers.Default** — 검색 1글자에 500개 정렬 (`SavedListViewModel.kt:52-89`)
-- [ ] **D-H3: SavedListScreen 11번 collect → 자식 Composable 분리** (`SavedListScreen.kt:60-77`)
-- [ ] **D-H4: ShapeEditScreen `remember`에 `shape` key 부여** — 편집 모드 전환 시 잔존값 방지 (`ShapeEditScreen.kt:89, 117-128, 132-137`)
-- [ ] **D-H5: DroneEditSheet 키 입력마다 List 순회 → `remember(name, drone?.id)`로 메모이즈** (`DroneEditSheet.kt:83-84`)
-- [ ] **D-H6: DroneViewModel.suggestNextColor/isDuplicateName — StateFlow.value 시점 문제** — 빈 상태에서 항상 BLUE 제안 가능 (`DroneViewModel.kt:121-123, 130-133`)
-- [ ] **D-H7: DroneListScreen에서 `suggestNextColor()` 매번 호출 → `remember(drones)`로 메모이즈** (`DroneListScreen.kt:163`)
-- [ ] **D-H8: DroneDetailSheet shapeCount 깜빡임 → `mutableStateOf<Int?>(null)` + 로딩 표시** (`DroneDetailSheet.kt:75-77`)
-- [ ] **D-H9: ShapeEditScreen DatePicker 타임존 처리 명시화 + 취소 시 입력 보존** (`ShapeEditScreen.kt:602-605, 651-664`)
-- [ ] **D-H10: ShapeEditScreen 좌표 파싱 에러 시 Save 버튼 `enabled = !coordinateParseError`** (`ShapeEditScreen.kt:223-256`)
-- [ ] **D-H11: SavedListScreen에서 `getDroneName` O(N*M) → droneId→droneName Map 캐시** (`SavedListScreen.kt:62-77`, `SavedShapeListItem.kt:129,156,183,207`)
-- [ ] **D-H12: KpForecastScreen Refresh 버튼 `enabled = !isLoading`** (`KpForecastScreen.kt:78`)
-- [ ] **D-H13: SavedListScreen 스와이프 삭제 → 확인 다이얼로그 또는 Undo Snackbar** (`SavedListScreen.kt:218-258`)
+- [x] **D-H1: KpViewModel/WeatherViewModel `while(true) { delay }` → `Lifecycle.repeatOnLifecycle(STARTED)`** — 백그라운드 자동 갱신 중단 (`KpViewModel.kt:107-114`, `WeatherViewModel.kt:105-112`)
+- [x] **D-H2: SavedListViewModel 4개 파생 StateFlow → 단일 `data class Sections` 통합 + Dispatchers.Default** — 검색 1글자에 500개 정렬 (`SavedListViewModel.kt:52-89`)
+- [x] **D-H3: SavedListScreen 11번 collect → 자식 Composable 분리** (`SavedListScreen.kt:60-77`)
+- [x] **D-H4: ShapeEditScreen `remember`에 `shape` key 부여** — 편집 모드 전환 시 잔존값 방지 (`ShapeEditScreen.kt:89, 117-128, 132-137`)
+- [x] **D-H5: DroneEditSheet 키 입력마다 List 순회 → `remember(name, drone?.id)`로 메모이즈** (`DroneEditSheet.kt:83-84`)
+- [x] **D-H6: DroneViewModel.suggestNextColor/isDuplicateName — StateFlow.value 시점 문제** — 빈 상태에서 항상 BLUE 제안 가능 (`DroneViewModel.kt:121-123, 130-133`)
+- [x] **D-H7: DroneListScreen에서 `suggestNextColor()` 매번 호출 → `remember(drones)`로 메모이즈** (`DroneListScreen.kt:163`)
+- [x] **D-H8: DroneDetailSheet shapeCount 깜빡임 → `mutableStateOf<Int?>(null)` + 로딩 표시** (`DroneDetailSheet.kt:75-77`)
+- [x] **D-H9: ShapeEditScreen DatePicker 타임존 처리 명시화 + 취소 시 입력 보존** (`ShapeEditScreen.kt:602-605, 651-664`)
+- [x] **D-H10: ShapeEditScreen 좌표 파싱 에러 시 Save 버튼 `enabled = !coordinateParseError`** (`ShapeEditScreen.kt:223-256`)
+- [x] **D-H11: SavedListScreen에서 `getDroneName` O(N*M) → droneId→droneName Map 캐시** (`SavedListScreen.kt:62-77`, `SavedShapeListItem.kt:129,156,183,207`)
+- [x] **D-H12: KpForecastScreen Refresh 버튼 `enabled = !isLoading`** (`KpForecastScreen.kt:78`)
+- [x] **D-H13: SavedListScreen 스와이프 삭제 → 확인 다이얼로그 또는 Undo Snackbar** (`SavedListScreen.kt:218-258`)
 
 ### 3.5 인프라 (6건)
 
-- [ ] **E-H1: BootCompletedReceiver 서울 좌표 하드코딩 제거 + 마지막 위치 DataStore 캐시 사용** (`BootCompletedReceiver.kt:39-40, 74-75`)
-- [ ] **E-H2: NotificationChannel `IMPORTANCE_HIGH` 분리 — 비행 시각 알림 채널 별도 생성** (`FcmService.kt:42`)
-- [ ] **E-H3: NavGraph dead route 정리 — `Screen.SavedList`/`Screen.KpForecast` 진입 경로 일관화** (`ui/navigation/NavGraph.kt:46-50`, `MainScreen.kt:48,142-156`)
-- [ ] **E-H4: FcmService를 `@AndroidEntryPoint`로 변경 + `@Inject lateinit var` 패턴 적용** (`service/FcmService.kt:57,67,182,204`)
-- [ ] **E-H5: NetworkModule의 `HttpLoggingInterceptor.Level.BODY`를 `BuildConfig.DEBUG`에서만 적용** — Release에서 API 키/PII 노출 차단 (`core/di/NetworkModule.kt:30-43`)
-- [ ] **E-H6: Naver OkHttp Retrofit 분리 — `@Named("NaverRetrofit")`** (다른 API에 Naver 헤더 누설 방지) (`core/di/NetworkModule.kt:71-77`)
+- [x] **E-H1: BootCompletedReceiver 서울 좌표 하드코딩 제거 + 마지막 위치 DataStore 캐시 사용** (`BootCompletedReceiver.kt:39-40, 74-75`)
+- [x] **E-H2: NotificationChannel `IMPORTANCE_HIGH` 분리 — 비행 시각 알림 채널 별도 생성** (`FcmService.kt:42`)
+- [x] **E-H3: NavGraph dead route 정리 — `Screen.SavedList`/`Screen.KpForecast` 진입 경로 일관화** (`ui/navigation/NavGraph.kt:46-50`, `MainScreen.kt:48,142-156`)
+- [x] **E-H4: FcmService를 `@AndroidEntryPoint`로 변경 + `@Inject lateinit var` 패턴 적용** (`service/FcmService.kt:57,67,182,204`)
+- [x] **E-H5: NetworkModule의 `HttpLoggingInterceptor.Level.BODY`를 `BuildConfig.DEBUG`에서만 적용** — Release에서 API 키/PII 노출 차단 (`core/di/NetworkModule.kt:30-43`)
+- [x] **E-H6: Naver OkHttp Retrofit 분리 — `@Named("NaverRetrofit")`** (다른 API에 Naver 헤더 누설 방지) (`core/di/NetworkModule.kt:71-77`)
 
 ---
 
