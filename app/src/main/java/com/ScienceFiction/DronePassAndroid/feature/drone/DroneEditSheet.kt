@@ -33,6 +33,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -79,9 +80,12 @@ fun DroneEditSheet(
     var size by remember { mutableStateOf(drone?.size ?: "") }
     var memo by remember { mutableStateOf(drone?.memo ?: "") }
 
-    // 검증 상태
+    // 검증 상태 — isDuplicateName 은 List 순회를 동반하므로 name/drone?.id 가 변할 때만 재계산.
+    // 이전: 매 recomposition (예: 다른 필드 입력) 마다 List 순회 반복.
     val nameError = name.isBlank()
-    val duplicateWarning = name.isNotBlank() && isDuplicateName(name, drone?.id)
+    val duplicateWarning by remember(name, drone?.id) {
+        derivedStateOf { name.isNotBlank() && isDuplicateName(name, drone?.id) }
+    }
 
     // 색상 목록 (GRAY 제외)
     val selectableColors = remember {

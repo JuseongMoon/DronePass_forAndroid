@@ -86,6 +86,7 @@
     <string name="saved_empty_no_search">No saved shapes</string>
     <string name="saved_empty_with_search">No search results</string>
     <string name="saved_empty_hint">Add shapes from the Map tab</string>
+    <string name="shape_delete_confirm_message">Delete shape \'%s\'?</string>
 
     <!-- SavedShapeListItem -->
     <string name="saved_item_status_expired">Expired</string>

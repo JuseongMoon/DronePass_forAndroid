@@ -82,6 +82,21 @@ fun WeatherForecastContent(
     val error by viewModel.error.collectAsStateWithLifecycle()
     val selectedCategory by viewModel.selectedCategory.collectAsStateWithLifecycle()
 
+    // 화면이 START 상태일 때만 3분 자동 갱신. ON_STOP 시 중단하여 백그라운드
+    // 무한 새로고침으로 인한 배터리/요금 소모를 차단한다.
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            when (event) {
+                androidx.lifecycle.Lifecycle.Event.ON_START -> viewModel.startAutoRefresh()
+                androidx.lifecycle.Lifecycle.Event.ON_STOP -> viewModel.stopAutoRefresh()
+                else -> {}
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
     Box(
         modifier = modifier.fillMaxSize()
     ) {

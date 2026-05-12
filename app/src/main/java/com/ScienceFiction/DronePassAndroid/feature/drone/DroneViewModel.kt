@@ -115,19 +115,28 @@ class DroneViewModel @Inject constructor(
     }
 
     /**
-     * 다음 색상 추천 (사용되지 않은 PaletteColor 반환, GRAY 제외)
+     * 다음 색상 추천 (사용되지 않은 PaletteColor 반환, GRAY 제외).
+     *
+     * StateFlow.value 가 stateIn upstream emit 전에는 빈 리스트인 시점 문제를 회피하기
+     * 위해 [drones] 를 명시 인자로 받는 형태를 권장한다. 인자 미지정 시 fallback 으로
+     * activeDrones.value 를 사용하되 빈 리스트일 가능성을 호출자가 인지해야 한다.
      */
-    fun suggestNextColor(): PaletteColor {
-        val usedColors = activeDrones.value.mapNotNull { PaletteColor.fromHex(it.color) }.toSet()
+    fun suggestNextColor(drones: List<DroneModel> = activeDrones.value): PaletteColor {
+        val usedColors = drones.mapNotNull { PaletteColor.fromHex(it.color) }.toSet()
         val availableColors = PaletteColor.entries.filter { it != PaletteColor.GRAY && it !in usedColors }
         return availableColors.firstOrNull() ?: PaletteColor.BLUE
     }
 
     /**
-     * 이름 중복 체크
+     * 이름 중복 체크. 마찬가지로 호출자가 collectAsStateWithLifecycle 결과를 직접
+     * 전달하는 것을 권장 (시점 race 회피).
      */
-    fun isDuplicateName(name: String, excludeId: String? = null): Boolean {
-        return activeDrones.value.any {
+    fun isDuplicateName(
+        name: String,
+        excludeId: String? = null,
+        drones: List<DroneModel> = activeDrones.value
+    ): Boolean {
+        return drones.any {
             it.name.equals(name, ignoreCase = true) && it.id != excludeId
         }
     }

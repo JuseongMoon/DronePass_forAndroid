@@ -90,6 +90,7 @@
     <string name="saved_empty_no_search">저장된 도형이 없습니다</string>
     <string name="saved_empty_with_search">검색 결과가 없습니다</string>
     <string name="saved_empty_hint">지도 탭에서 도형을 추가해보세요</string>
+    <string name="shape_delete_confirm_message">\'%s\' 도형을 삭제하시겠습니까?</string>
 
     <!-- SavedShapeListItem -->
     <string name="saved_item_status_expired">만료</string>

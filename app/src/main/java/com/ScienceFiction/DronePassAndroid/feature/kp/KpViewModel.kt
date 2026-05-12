@@ -8,10 +8,12 @@ import com.ScienceFiction.DronePassAndroid.domain.model.Kp27DayForecast
 import com.ScienceFiction.DronePassAndroid.domain.model.KpIndexData
 import com.ScienceFiction.DronePassAndroid.domain.model.KpLevel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -55,9 +57,15 @@ class KpViewModel @Inject constructor(
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
+    /**
+     * 자동 갱신 Job. Composable 의 ON_START/ON_STOP 라이프사이클에 맞춰 시작/중단된다.
+     * 백그라운드에서 무한 새로고침이 도는 것을 차단해 배터리/요금을 절약한다.
+     */
+    private var autoRefreshJob: Job? = null
+
     init {
+        // 초기 1회 로드만 init 에서 수행. 자동 갱신은 화면이 START 될 때만 시작.
         loadKpData()
-        startAutoRefresh()
     }
 
     /**
@@ -102,14 +110,24 @@ class KpViewModel @Inject constructor(
     }
 
     /**
-     * 5분 간격 자동 갱신
+     * 화면이 START 상태일 때만 5분 간격 자동 갱신을 시작한다.
+     * Composable 의 DisposableEffect(ON_START) 에서 호출한다.
      */
-    private fun startAutoRefresh() {
-        viewModelScope.launch {
-            while (true) {
+    fun startAutoRefresh() {
+        if (autoRefreshJob?.isActive == true) return
+        autoRefreshJob = viewModelScope.launch {
+            while (isActive) {
                 delay(AUTO_REFRESH_INTERVAL_MS)
                 loadKpData()
             }
         }
+    }
+
+    /**
+     * 화면이 STOP 될 때 자동 갱신을 중단한다.
+     */
+    fun stopAutoRefresh() {
+        autoRefreshJob?.cancel()
+        autoRefreshJob = null
     }
 }

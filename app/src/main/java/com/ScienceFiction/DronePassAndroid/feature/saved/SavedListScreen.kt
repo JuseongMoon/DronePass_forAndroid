@@ -36,7 +36,10 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextButton
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -224,16 +227,50 @@ private fun SwipeToDeleteItem(
     onDelete: () -> Unit,
     content: @Composable () -> Unit
 ) {
+    // 스와이프 → 확인 다이얼로그 → 삭제 흐름. 이전엔 즉시 onDelete 호출되어 실수 삭제 위험.
+    var pendingDelete by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = { dismissValue ->
             if (dismissValue == SwipeToDismissBoxValue.EndToStart) {
-                onDelete()
-                true
+                pendingDelete = true
+                false  // 다이얼로그에서 확인할 때까지 실제 dismiss 보류
             } else {
                 false
             }
         }
     )
+
+    if (pendingDelete) {
+        AlertDialog(
+            onDismissRequest = {
+                pendingDelete = false
+                scope.launch { dismissState.reset() }
+            },
+            title = { Text(stringResource(R.string.common_delete)) },
+            text = { Text(stringResource(R.string.shape_delete_confirm_message, shape.title)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        pendingDelete = false
+                        onDelete()
+                    }
+                ) {
+                    Text(stringResource(R.string.common_delete), color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        pendingDelete = false
+                        scope.launch { dismissState.reset() }
+                    }
+                ) {
+                    Text(stringResource(R.string.common_cancel))
+                }
+            }
+        )
+    }
 
     SwipeToDismissBox(
         state = dismissState,

@@ -69,10 +69,13 @@ fun DroneDetailSheet(
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var showDeleteDialog by remember { mutableStateOf(false) }
-    var shapeCount by remember { mutableIntStateOf(0) }
+    // null = 로딩 중 (UI 에서 "..." 또는 빈 문자열). 0 = 도형 없음. 이전(Int = 0 초기값)
+    // 에서는 시트가 열리자마자 잠시 "0개" 로 표시됐다가 실제 값으로 바뀌는 깜빡임이 있었음.
+    var shapeCount by remember { mutableStateOf<Int?>(null) }
 
     // 도형 수 조회
     LaunchedEffect(drone.id) {
+        shapeCount = null  // drone 변경 시 로딩 상태로 리셋
         shapeCount = getShapeCount(drone.id)
     }
 
@@ -120,10 +123,11 @@ fun DroneDetailSheet(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // 연결된 도형 수
+            // 연결된 도형 수 — 로딩 중(null)이면 "..." 로 표시하여 깜빡임 차단
             DetailRow(
                 label = stringResource(R.string.drone_detail_linked_shapes),
-                value = stringResource(R.string.drone_detail_shape_count, shapeCount)
+                value = shapeCount?.let { stringResource(R.string.drone_detail_shape_count, it) }
+                    ?: "..."
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -211,8 +215,8 @@ fun DroneDetailSheet(
                     }
                 }
             )
-        } else if (shapeCount == 0) {
-            // 연결된 도형 없으면 바로 삭제 확인
+        } else if (shapeCount == 0 || shapeCount == null) {
+            // 연결된 도형이 0개거나 아직 로딩 중이면 바로 삭제 확인 (보수적으로 단순 흐름).
             AlertDialog(
                 onDismissRequest = { showDeleteDialog = false },
                 title = { Text(stringResource(R.string.drone_detail_delete_title)) },
@@ -236,10 +240,10 @@ fun DroneDetailSheet(
                 }
             )
         } else {
-            // 연결된 도형이 있으면 처리 방법 선택
+            // 연결된 도형이 있으면 처리 방법 선택 (shapeCount 가 1 이상이라는 의미)
             DroneDeleteWithShapesDialog(
                 drone = drone,
-                shapeCount = shapeCount,
+                shapeCount = shapeCount ?: 0,
                 otherDrones = activeDrones.filter { it.id != drone.id },
                 onConfirm = { handling ->
                     showDeleteDialog = false

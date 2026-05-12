@@ -30,6 +30,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -159,12 +160,20 @@ fun DroneListScreen(
 
     // 드론 편집/추가 시트
     if (showDroneEdit) {
+        // 매 recomposition 마다 suggestNextColor() / isDuplicateName 람다가 새로 생성되어
+        // 내부 List 순회를 반복하던 문제를 메모이즈로 차단. drones 목록이 변할 때만 재계산.
+        val suggestedColor = remember(drones) {
+            droneViewModel.suggestNextColor(drones)
+        }
+        val duplicateNameChecker = remember(drones) {
+            { name: String, excludeId: String? ->
+                droneViewModel.isDuplicateName(name, excludeId, drones)
+            }
+        }
         DroneEditSheet(
             drone = selectedDrone,
-            suggestedColor = droneViewModel.suggestNextColor(),
-            isDuplicateName = { name, excludeId ->
-                droneViewModel.isDuplicateName(name, excludeId)
-            },
+            suggestedColor = suggestedColor,
+            isDuplicateName = duplicateNameChecker,
             onSave = { drone ->
                 if (selectedDrone != null) {
                     droneViewModel.updateDrone(drone)

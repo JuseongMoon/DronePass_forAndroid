@@ -88,45 +88,47 @@ fun ShapeEditScreen(
     val isEditMode = shape != null
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    // 상태 초기화
+    // 상태 초기화 — shape?.id 를 key 로 부여하여 편집 모드에서 외부 shape 이 변경되면
+    // (예: ShapeDetailSheet 의 다른 도형으로 전환) 잔존값이 재사용되지 않고 새로 초기화되게 한다.
+    val editKey = shape?.id  // 신규 모드는 null
     val defaultTitle = stringResource(R.string.shape_edit_default_title)
-    var title by remember {
+    var title by remember(editKey) {
         mutableStateOf(shape?.title ?: defaultTitle)
     }
     // 주소: 편집 모드면 기존 주소, 신규 모드면 역지오코딩 결과 또는 빈 문자열
-    var address by remember {
+    var address by remember(editKey) {
         mutableStateOf(shape?.address ?: reverseGeocodedAddress ?: "")
     }
-    var radiusText by remember {
+    var radiusText by remember(editKey) {
         mutableStateOf(shape?.radius?.toString() ?: "500")
     }
-    var heightText by remember {
+    var heightText by remember(editKey) {
         mutableStateOf(shape?.height?.toString() ?: "")
     }
-    var memo by remember {
+    var memo by remember(editKey) {
         mutableStateOf(shape?.memo ?: "")
     }
-    var flightStartDate by remember {
+    var flightStartDate by remember(editKey) {
         mutableStateOf(shape?.flightStartDate ?: System.currentTimeMillis())
     }
-    var flightEndDate by remember {
+    var flightEndDate by remember(editKey) {
         mutableStateOf(shape?.flightEndDate)
     }
 
     // 좌표 상태 (편집 가능)
-    var coordinate by remember {
+    var coordinate by remember(editKey) {
         mutableStateOf(
             shape?.baseCoordinate ?: initialCoordinate ?: Coordinate(37.5665, 126.9780)
         )
     }
-    var coordinateText by remember {
+    var coordinateText by remember(editKey) {
         mutableStateOf(
             CoordinateParser.formatDecimal(
                 shape?.baseCoordinate ?: initialCoordinate ?: Coordinate(37.5665, 126.9780)
             )
         )
     }
-    var coordinateParseError by remember { mutableStateOf(false) }
+    var coordinateParseError by remember(editKey) { mutableStateOf(false) }
 
     // 드론 선택 상태
     var selectedDrone by remember {
@@ -586,6 +588,9 @@ fun ShapeEditScreen(
                         onSave(resultShape)
                     },
                     modifier = Modifier.weight(1f),
+                    // 좌표 파싱 에러가 있는 동안 저장 비활성화 — 사용자가 잘못된 좌표를
+                    // 입력한 채 저장해 마지막 유효 좌표로 의도와 다르게 저장되는 버그 차단.
+                    enabled = !coordinateParseError,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary
                     )
@@ -649,6 +654,10 @@ fun ShapeEditScreen(
                 TextButton(
                     onClick = {
                         pendingStartDateMillis?.let { dateMillis ->
+                            // DatePicker.selectedDateMillis 는 항상 UTC 자정 epoch 를 반환한다.
+                            // 사용자가 "한국 시간 기준 2026-05-13" 을 선택하면 UTC 00:00 epoch ms 가 옴.
+                            // UTC 캘린더로 풀어 year/month/day 만 추출 후 사용자 로컬 타임존의
+                            // year/month/day 로 다시 합성하여 사용자 의도(KST 2026-05-13 hh:mm)를 보존.
                             val cal = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
                                 timeInMillis = dateMillis
                             }

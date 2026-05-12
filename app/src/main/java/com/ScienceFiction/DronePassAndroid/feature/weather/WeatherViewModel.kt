@@ -17,6 +17,7 @@ import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -24,6 +25,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
@@ -66,11 +68,15 @@ class WeatherViewModel @Inject constructor(
     private var currentLatitude: Double = 0.0
     private var currentLongitude: Double = 0.0
 
+    /**
+     * 자동 갱신 Job. Composable 의 ON_START/ON_STOP 라이프사이클에 맞춰 시작/중단된다.
+     * 백그라운드 무한 새로고침으로 인한 배터리/요금 부담을 차단한다.
+     */
+    private var autoRefreshJob: Job? = null
+
     init {
-        // 초기 로드
+        // 초기 1회 로드만 init 에서. 자동 갱신은 화면이 START 될 때만 시작.
         refreshWeather()
-        // 3분 자동 갱신
-        startAutoRefresh()
     }
 
     /**
@@ -100,15 +106,25 @@ class WeatherViewModel @Inject constructor(
     }
 
     /**
-     * 3분 자동 갱신 시작
+     * 화면이 START 상태일 때만 3분 간격 자동 갱신을 시작한다.
+     * Composable 의 DisposableEffect(ON_START) 에서 호출한다.
      */
-    private fun startAutoRefresh() {
-        viewModelScope.launch {
-            while (true) {
+    fun startAutoRefresh() {
+        if (autoRefreshJob?.isActive == true) return
+        autoRefreshJob = viewModelScope.launch {
+            while (isActive) {
                 delay(AUTO_REFRESH_INTERVAL_MS)
                 fetchCurrentLocationAndWeather()
             }
         }
+    }
+
+    /**
+     * 화면이 STOP 될 때 자동 갱신을 중단한다.
+     */
+    fun stopAutoRefresh() {
+        autoRefreshJob?.cancel()
+        autoRefreshJob = null
     }
 
     /**

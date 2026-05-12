@@ -75,7 +75,11 @@ fun KpForecastScreen(
                         strokeWidth = 2.dp
                     )
                 }
-                IconButton(onClick = { viewModel.loadKpData() }) {
+                // 로딩 중 다중 클릭으로 코루틴이 누적되어 마지막 결과만 표시되는 race 차단
+                IconButton(
+                    onClick = { viewModel.loadKpData() },
+                    enabled = !isLoading
+                ) {
                     Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.common_refresh))
                 }
             }
@@ -102,6 +106,21 @@ fun KpForecastContent(
     val longTermForecast by viewModel.longTermForecast.collectAsStateWithLifecycle()
     val lastUpdated by viewModel.lastUpdated.collectAsStateWithLifecycle()
     val errorMessage by viewModel.errorMessage.collectAsStateWithLifecycle()
+
+    // 화면이 START 일 때만 5분 간격 자동 갱신. ON_STOP 시 중단하여 백그라운드
+    // 무한 새로고침으로 인한 배터리/요금 소모를 차단한다.
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            when (event) {
+                androidx.lifecycle.Lifecycle.Event.ON_START -> viewModel.startAutoRefresh()
+                androidx.lifecycle.Lifecycle.Event.ON_STOP -> viewModel.stopAutoRefresh()
+                else -> {}
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 
     LazyColumn(
         modifier = modifier
