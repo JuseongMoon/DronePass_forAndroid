@@ -88,23 +88,11 @@ class FcmService : FirebaseMessagingService() {
 
         /**
          * 저장된 디바이스 ID 조회 (없으면 null)
+         *
+         * EncryptedPrefs 생성/손상 복구 로직은 [EncryptedPrefsHelper.createEncryptedPrefs]가 담당.
          */
         private fun getDeviceId(context: Context): String? {
-            val prefs = try {
-                val masterKeyAlias = androidx.security.crypto.MasterKeys.getOrCreate(
-                    androidx.security.crypto.MasterKeys.AES256_GCM_SPEC
-                )
-                androidx.security.crypto.EncryptedSharedPreferences.create(
-                    "dronepass_encrypted_prefs",
-                    masterKeyAlias,
-                    context,
-                    androidx.security.crypto.EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-                    androidx.security.crypto.EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-                )
-            } catch (e: Exception) {
-                Log.e(TAG, "EncryptedSharedPreferences 생성 실패, 일반 SharedPreferences 사용", e)
-                context.getSharedPreferences("dronepass_device_prefs", Context.MODE_PRIVATE)
-            }
+            val prefs = EncryptedPrefsHelper.createEncryptedPrefs(context)
             return prefs.getString(KEY_DEVICE_ID, null)
         }
     }
@@ -229,24 +217,11 @@ class FcmService : FirebaseMessagingService() {
 
     /**
      * 고유 디바이스 ID를 EncryptedSharedPreferences에서 가져오거나 새로 생성
+     *
+     * EncryptedPrefs 생성/손상 복구 로직은 [EncryptedPrefsHelper.createEncryptedPrefs]가 담당.
      */
     private fun getOrCreateDeviceId(): String {
-        val prefs = try {
-            val masterKeyAlias = androidx.security.crypto.MasterKeys.getOrCreate(
-                androidx.security.crypto.MasterKeys.AES256_GCM_SPEC
-            )
-            androidx.security.crypto.EncryptedSharedPreferences.create(
-                "dronepass_encrypted_prefs",
-                masterKeyAlias,
-                this,
-                androidx.security.crypto.EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-                androidx.security.crypto.EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-            )
-        } catch (e: Exception) {
-            Log.e(TAG, "EncryptedSharedPreferences 생성 실패, 일반 SharedPreferences 사용", e)
-            getSharedPreferences("dronepass_device_prefs", Context.MODE_PRIVATE)
-        }
-
+        val prefs = EncryptedPrefsHelper.createEncryptedPrefs(this)
         var deviceId = prefs.getString(KEY_DEVICE_ID, null)
         if (deviceId == null) {
             deviceId = UUID.randomUUID().toString()
