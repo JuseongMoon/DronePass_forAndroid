@@ -2,6 +2,7 @@ package com.ScienceFiction.DronePassAndroid.domain.model
 
 import com.naver.maps.geometry.LatLng
 import org.json.JSONObject
+import java.util.Locale
 import kotlin.math.abs
 
 data class Coordinate(
@@ -41,9 +42,12 @@ data class Coordinate(
     /**
      * 십진수 형식 문자열
      * 예: "37.648611, 126.686667"
+     *
+     * Locale.ROOT 명시로 일부 유럽 로케일에서 소수점이 쉼표(,)로 변환되어
+     * 파싱/표시 양쪽이 깨지는 문제를 차단한다.
      */
     val decimalCoordinate: String
-        get() = String.format("%.6f, %.6f", latitude, longitude)
+        get() = String.format(Locale.ROOT, "%.6f, %.6f", latitude, longitude)
 
     companion object {
         /**

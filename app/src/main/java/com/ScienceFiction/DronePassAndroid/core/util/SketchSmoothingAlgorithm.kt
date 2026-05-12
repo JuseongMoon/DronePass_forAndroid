@@ -34,6 +34,8 @@ object SketchSmoothingAlgorithm {
         if (points.size == 2) return linearInterpolation(points[0], points[1])
 
         val segments = segmentsPerOriginal ?: dynamicSegmentCount(points.size)
+        // segments == 0/음수 가드 (iOS: guard segments > 0). 보간 불가하면 원본 반환.
+        if (segments <= 0) return points
 
         // 가상 끝점 생성 (자연스러운 시작/끝을 위해)
         val extendedPoints = buildList {
@@ -55,23 +57,24 @@ object SketchSmoothingAlgorithm {
         }
 
         val result = mutableListOf<Coordinate>()
+        // 첫 원본 포인트 (t=0 위치)를 명시 추가 — iOS 원본 알고리즘과 동일.
+        result.add(points.first())
 
-        // i=1 부터 extendedPoints.size-3 까지 순회하면 원본 구간에 대응
+        // 각 원본 구간(i=1..extendedPoints.size-3)에 대해 t ∈ (0, 1] 구간을 보간.
+        // iOS: `for j in 1...segments { t = j/segments }`. 마지막 t=1 위치가 다음 구간의
+        // p2(=원본 포인트)와 일치하므로 별도 endpoint 추가가 필요 없다.
         for (i in 1 until extendedPoints.size - 2) {
             val p0 = extendedPoints[i - 1]
             val p1 = extendedPoints[i]
             val p2 = extendedPoints[i + 1]
             val p3 = extendedPoints[i + 2]
 
-            for (s in 0 until segments) {
+            for (s in 1..segments) {
                 val t = s.toDouble() / segments
                 val coord = catmullRomPoint(p0, p1, p2, p3, t)
                 result.add(coord)
             }
         }
-
-        // 마지막 원본 포인트 추가
-        result.add(points.last())
 
         return result
     }

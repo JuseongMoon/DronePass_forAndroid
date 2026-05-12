@@ -1,6 +1,7 @@
 package com.ScienceFiction.DronePassAndroid.core.util
 
 import com.ScienceFiction.DronePassAndroid.domain.model.Coordinate
+import java.util.Locale
 import kotlin.math.abs
 
 /**
@@ -25,9 +26,12 @@ object CoordinateParser {
     /**
      * 십진수 패턴: 위도, 경도
      * 예: 37.5661, 126.9781 또는 37.5661 126.9781
+     *
+     * 입력 전체에 anchor(`^`/`$`) 적용하여 "abc 99.9, 99.9" 같은 부분 매치를
+     * 거부한다. 소수점 뒤 자릿수도 명시적으로 강제(`(?:\.\d+)?`).
      */
     private val DECIMAL_PATTERN = Regex(
-        """(-?\d{1,3}\.?\d*)\s*[,\s]\s*(-?\d{1,3}\.?\d*)"""
+        """^\s*(-?\d{1,3}(?:\.\d+)?)\s*[,\s]\s*(-?\d{1,3}(?:\.\d+)?)\s*$"""
     )
 
     /**
@@ -35,7 +39,7 @@ object CoordinateParser {
      * 예: geo:37.5661,126.9781
      */
     private val GEO_URI_PATTERN = Regex(
-        """geo:\s*(-?\d{1,3}\.?\d*)\s*,\s*(-?\d{1,3}\.?\d*)"""
+        """^\s*geo:\s*(-?\d{1,3}(?:\.\d+)?)\s*,\s*(-?\d{1,3}(?:\.\d+)?)\s*$"""
     )
 
     /**
@@ -82,7 +86,7 @@ object CoordinateParser {
         val lonMin = lonMinDecimal.toInt()
         val lonSec = (lonMinDecimal - lonMin) * 60
 
-        return String.format(
+        return String.format(Locale.ROOT,
             "%d\u00B0%d'%.1f\"%s %d\u00B0%d'%.1f\"%s",
             latDeg, latMin, latSec, latDirection,
             lonDeg, lonMin, lonSec, lonDirection
@@ -95,7 +99,7 @@ object CoordinateParser {
      * 예: "37.566100, 126.978100"
      */
     fun formatDecimal(coordinate: Coordinate): String {
-        return String.format("%.6f, %.6f", coordinate.latitude, coordinate.longitude)
+        return String.format(Locale.ROOT, "%.6f, %.6f", coordinate.latitude, coordinate.longitude)
     }
 
     /**
@@ -110,6 +114,9 @@ object CoordinateParser {
 
     /**
      * DMS 형식 파싱
+     *
+     * 분/초는 [0, 60) 범위만 유효. 60 이상의 입력은 사용자의 형식 오타로 간주하고 거부한다.
+     * (예: "37°60'00\"N" 같은 입력은 38°N 으로 취급되지 않고 null 반환.)
      */
     private fun parseDms(input: String): Coordinate? {
         val match = DMS_PATTERN.find(input) ?: return null
@@ -123,6 +130,13 @@ object CoordinateParser {
         val lonMin = match.groupValues[6].toIntOrNull() ?: return null
         val lonSec = match.groupValues[7].toDoubleOrNull() ?: return null
         val lonDir = match.groupValues[8].uppercase()
+
+        // 분/초 자체 범위 검증 (NaN/음수도 차단)
+        if (latMin !in 0..59) return null
+        if (lonMin !in 0..59) return null
+        if (latSec.isNaN() || latSec < 0.0 || latSec >= 60.0) return null
+        if (lonSec.isNaN() || lonSec < 0.0 || lonSec >= 60.0) return null
+        // 도(degree) 자체 범위는 validateAndCreate 가 최종 검증
 
         var lat = latDeg + latMin / 60.0 + latSec / 3600.0
         var lon = lonDeg + lonMin / 60.0 + lonSec / 3600.0

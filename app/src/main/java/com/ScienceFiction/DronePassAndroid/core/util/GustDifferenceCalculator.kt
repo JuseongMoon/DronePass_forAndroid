@@ -64,19 +64,29 @@ object GustDifferenceCalculator {
     ): GustDifferenceLevel {
         val thresholds = thresholdsMap[category] ?: return GustDifferenceLevel.SAFE
 
+        // 입력 유효성 가드: NaN/Infinity 입력은 평가 불가 → SAFE 로 보수적 분류하지 않고
+        // 호출자가 명시적으로 "측정 불가" UI 분기를 처리하도록 SAFE 반환.
+        // 음수 풍속은 API 데이터 오류로 간주하고 0으로 클램프 (실제 풍속은 음수일 수 없음).
+        if (!sustainedWind.isFinite()) return GustDifferenceLevel.SAFE
+        if (gustWind != null && !gustWind.isFinite()) return GustDifferenceLevel.SAFE
+        val safeSustained = sustainedWind.coerceAtLeast(0.0)
+        val safeGust = gustWind?.coerceAtLeast(0.0)
+
         // 돌풍 추정: 실제 돌풍 없으면 평균풍 x 1.3
-        val effectiveGust = gustWind ?: (sustainedWind * 1.3)
-        val gustDifference = effectiveGust - sustainedWind
+        val effectiveGust = safeGust ?: (safeSustained * 1.3)
+        // gustDifference 가 음수가 되는 경우(돌풍 < 평균풍, API 잡음) 0으로 클램프하여
+        // evaluateAxis 가 비현실적 음수 입력으로 잘못 SAFE 판정하는 것을 방지.
+        val gustDifference = (effectiveGust - safeSustained).coerceAtLeast(0.0)
 
         // 하드-스톱: 돌풍 >= (위험+0.8) 또는 평균풍 >= (위험+0.8) -> 즉시 DANGER
         if (effectiveGust >= thresholds.windDanger + 0.8 ||
-            sustainedWind >= thresholds.windDanger + 0.8
+            safeSustained >= thresholds.windDanger + 0.8
         ) {
             return GustDifferenceLevel.DANGER
         }
 
         // Floor 체크: 평균풍 < 최소평균풍 -> 국지 돌풍 정책
-        if (sustainedWind < MIN_SUSTAINED_WIND) {
+        if (safeSustained < MIN_SUSTAINED_WIND) {
             return if (effectiveGust >= thresholds.gustDiffCaution) {
                 GustDifferenceLevel.LOCALIZED_GUST
             } else {
@@ -89,11 +99,11 @@ object GustDifferenceCalculator {
         val axisA = evaluateAxis(gustDifference, thresholds.gustDiffCaution, thresholds.gustDiffDanger)
 
         // 축B: Gust Factor (평균풍 >= 1.0 일 때만)
-        val gustFactor = if (sustainedWind >= 1.0) effectiveGust / sustainedWind else 1.0
+        val gustFactor = if (safeSustained >= 1.0) effectiveGust / safeSustained else 1.0
         val axisB = evaluateAxis(gustFactor, thresholds.gfCaution, thresholds.gfDanger)
 
         // 축C: 절대값 (평균풍 또는 돌풍 중 큰 값)
-        val maxWind = maxOf(sustainedWind, effectiveGust)
+        val maxWind = maxOf(safeSustained, effectiveGust)
         val axisC = evaluateAxis(maxWind, thresholds.windCaution, thresholds.windDanger)
 
         // 2-out-of-3 투표

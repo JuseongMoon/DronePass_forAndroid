@@ -80,7 +80,10 @@ fun SearchAddressSheet(
                 try {
                     val response = geocodingApi.geocode(searchQuery)
                     if (response.status == "OK") {
+                        // x/y 가 없는 결과는 표시해도 클릭 시 좌표 변환이 실패하므로 사전 필터링.
                         results = response.addresses
+                            ?.filter { !it.x.isNullOrBlank() && !it.y.isNullOrBlank() }
+                            .orEmpty()
                     } else {
                         results = emptyList()
                     }
@@ -158,8 +161,10 @@ fun SearchAddressSheet(
                         AddressResultItem(
                             address = addressItem,
                             onClick = {
-                                val lat = addressItem.y.toDoubleOrNull() ?: return@AddressResultItem
-                                val lon = addressItem.x.toDoubleOrNull() ?: return@AddressResultItem
+                                // x/y 가 nullable 이지만 위 collectLatest 에서 사전 필터링했으므로
+                                // 여기서는 빈 문자열에 대한 toDoubleOrNull null 분기만으로 충분.
+                                val lat = addressItem.y?.toDoubleOrNull() ?: return@AddressResultItem
+                                val lon = addressItem.x?.toDoubleOrNull() ?: return@AddressResultItem
                                 val displayAddress = addressItem.roadAddress
                                     ?: addressItem.jibunAddress
                                     ?: ""

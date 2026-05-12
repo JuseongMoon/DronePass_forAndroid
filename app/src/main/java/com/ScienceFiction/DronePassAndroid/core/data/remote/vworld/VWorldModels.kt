@@ -157,16 +157,33 @@ private fun parseNotamDate(notam: String, field: String): Date? {
     val match = pattern.find(notam) ?: return null
     val dateString = match.groupValues[1]
 
-    val year = 2000 + (dateString.substring(0, 2).toIntOrNull() ?: return null)
+    val twoDigitYear = dateString.substring(0, 2).toIntOrNull() ?: return null
     val month = (dateString.substring(2, 4).toIntOrNull() ?: return null) - 1 // Calendar는 0-indexed
     val day = dateString.substring(4, 6).toIntOrNull() ?: return null
     val hour = dateString.substring(6, 8).toIntOrNull() ?: return null
     val minute = dateString.substring(8, 10).toIntOrNull() ?: return null
 
+    // 2-digit year 를 4-digit 으로 변환 (sliding window: 현재 연도 ± 50 범위).
+    // NOTAM 은 표준상 YY 형식을 사용하므로 단순 +2000 만 적용하면 2099 년 이후는
+    // 잘못된 연도로 파싱됨. 항공 분야는 늘 현재/근미래 NOTAM 이므로 현재 시점 기준
+    // 가까운 세기를 선택한다.
+    val currentYear = Calendar.getInstance(TimeZone.getTimeZone("UTC")).get(Calendar.YEAR)
+    val century = (currentYear / 100) * 100
+    val candidateThis = century + twoDigitYear
+    val candidatePrev = century - 100 + twoDigitYear
+    val year = if (kotlin.math.abs(candidateThis - currentYear) <=
+        kotlin.math.abs(candidatePrev - currentYear)
+    ) candidateThis else candidatePrev
+
     val cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
-    cal.set(year, month, day, hour, minute, 0)
+    cal.isLenient = false // 비정상 값(예: month=12, day=31, hour=24) 자동 보정 차단 → 명시적 실패
     cal.set(Calendar.MILLISECOND, 0)
-    return cal.time
+    return try {
+        cal.set(year, month, day, hour, minute, 0)
+        cal.time
+    } catch (e: IllegalArgumentException) {
+        null
+    }
 }
 
 // ============================================================

@@ -19,9 +19,13 @@ class GeocodingRepository @Inject constructor(
         return try {
             val response = api.geocode(address)
             if (response.status == "OK") {
-                Result.success(response.addresses)
+                // x/y 가 누락된 결과(에러 응답의 부분 결과)는 사용 불가하므로 필터링.
+                val valid = response.addresses
+                    ?.filter { !it.x.isNullOrBlank() && !it.y.isNullOrBlank() }
+                    .orEmpty()
+                Result.success(valid)
             } else {
-                Result.failure(Exception("Geocoding 실패: status=${response.status}"))
+                Result.failure(Exception("Geocoding 실패: status=${response.status ?: "(unknown)"}"))
             }
         } catch (e: Exception) {
             Result.failure(e)
