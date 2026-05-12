@@ -21,6 +21,7 @@ import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -29,6 +30,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -134,9 +136,13 @@ class MapViewModel @Inject constructor(
     val reverseGeocodedAddress: StateFlow<String?> = _reverseGeocodedAddress.asStateFlow()
 
     /**
-     * 카메라 이동 이벤트 (SharedFlow로 1회성 이벤트 처리)
+     * 카메라 이동 이벤트 (SharedFlow로 1회성 이벤트 처리).
+     *
+     * replay=1: NaverMap 이 준비되기 전(naverMap==null) 에 발생한 첫 카메라 이벤트가
+     * MapScreen 의 collect 가 시작되면 자동 재생되도록 보장. 이전(replay=0)에는
+     * 저장 목록 → 지도 진입 직후 focusShapeId 이동이 손실되는 경우가 있었음.
      */
-    private val _cameraEvent = MutableSharedFlow<CameraEvent>()
+    private val _cameraEvent = MutableSharedFlow<CameraEvent>(replay = 1)
     val cameraEvent: SharedFlow<CameraEvent> = _cameraEvent.asSharedFlow()
 
     /**
@@ -332,14 +338,28 @@ class MapViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     /**
+     * 60초 간격 tick. 시간이 흘러 isExpired/isNotStarted 가 바뀌어도 filteredShapes 가
+     * 즉시 재평가되도록 한다. (이전: shapes/설정 변경 시에만 재평가되어 만료 시각이
+     * 지나도 새 변경이 없으면 만료 도형이 그대로 표시될 수 있었음.)
+     */
+    private val expirationTicker: Flow<Long> = flow {
+        while (true) {
+            emit(System.currentTimeMillis())
+            kotlinx.coroutines.delay(60_000L)
+        }
+    }
+
+    /**
      * 설정에 따라 필터링된 도형 목록 (지도 표시용)
-     * hideExpiredShapes/hideNotStartedShapes 설정에 따라 만료/미시작 도형을 제외
+     * hideExpiredShapes/hideNotStartedShapes 설정에 따라 만료/미시작 도형을 제외하며
+     * 60초마다 만료 상태가 재평가된다.
      */
     val filteredShapes: StateFlow<List<ShapeModel>> = combine(
         activeShapes,
         hideExpiredShapes,
-        hideNotStartedShapes
-    ) { shapes, hideExpired, hideNotStarted ->
+        hideNotStartedShapes,
+        expirationTicker
+    ) { shapes, hideExpired, hideNotStarted, _ ->
         shapes.filter { shape ->
             val passExpiredFilter = !hideExpired || !shape.isExpired
             val passNotStartedFilter = !hideNotStarted || !shape.isNotStarted

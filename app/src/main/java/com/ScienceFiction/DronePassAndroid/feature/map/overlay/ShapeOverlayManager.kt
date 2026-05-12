@@ -16,12 +16,44 @@ import com.ScienceFiction.DronePassAndroid.domain.model.ShapeType
 class ShapeOverlayManager {
 
     private var naverMap: NaverMap? = null
-    private val overlays = mutableListOf<CircleOverlay>()
-    private val overlayToShapeMap = mutableMapOf<CircleOverlay, String>()
+
+    /**
+     * shapeId → CircleOverlay 매핑. Diff 기반 갱신을 위해 Map 구조 사용.
+     * (이전: List 단일 구조로 매번 clear → 전체 재생성 → 100개 60fps 기준 위반 위험.)
+     */
+    private val overlays = mutableMapOf<String, CircleOverlay>()
+
+    /** updateOverlays 의 Diff 비교를 위해 마지막으로 적용된 shape state 캐시. */
+    private val appliedShapeKeys = mutableMapOf<String, ShapeKey>()
+
     private var highlightOverlay: CircleOverlay? = null
 
     /** 도형 탭 시 호출되는 콜백. shapeId를 전달한다. */
     var onShapeTapped: ((String) -> Unit)? = null
+
+    /** Diff 비교를 위한 도형 속성 키 (변경 감지에 영향을 주는 모든 필드). */
+    private data class ShapeKey(
+        val lat: Double,
+        val lon: Double,
+        val radius: Double,
+        val color: String,
+        val isExpired: Boolean,
+        val isNotStarted: Boolean,
+        val updatedAt: Long
+    )
+
+    private fun ShapeModel.toKey(): ShapeKey? {
+        val r = radius ?: return null
+        return ShapeKey(
+            lat = baseCoordinate.latitude,
+            lon = baseCoordinate.longitude,
+            radius = r,
+            color = effectiveColor,
+            isExpired = isExpired,
+            isNotStarted = isNotStarted,
+            updatedAt = updatedAt
+        )
+    }
 
     /**
      * 지도 인스턴스를 설정한다.
@@ -31,46 +63,80 @@ class ShapeOverlayManager {
     }
 
     // ──────────────────────────────────────────────
-    // 전체 오버레이 갱신
+    // Diff 기반 오버레이 갱신
     // ──────────────────────────────────────────────
 
     /**
-     * shapes 리스트를 기반으로 전체 오버레이를 갱신한다.
-     * 기존 오버레이를 모두 제거한 뒤 새로 추가한다.
+     * shapes 리스트를 기반으로 오버레이를 갱신한다.
+     * Diff: 신규는 add, 사라진 것은 remove, 속성 변경된 것만 in-place update.
+     * 한 도형의 updatedAt 만 변해도 100개를 전부 destroy/create 하던 이전 동작을 제거.
      */
     fun updateOverlays(shapes: List<ShapeModel>) {
-        clearOverlays()
-        shapes.forEach { shape -> addCircleOverlay(shape) }
+        val map = naverMap ?: return
+        val newKeys = shapes.mapNotNull { shape -> shape.toKey()?.let { shape.id to it } }.toMap()
+
+        // 1. 사라진 도형의 오버레이 제거
+        val removedIds = overlays.keys - newKeys.keys
+        removedIds.forEach { id ->
+            overlays.remove(id)?.map = null
+            appliedShapeKeys.remove(id)
+        }
+
+        // 2. 신규/변경된 도형만 add 또는 in-place 속성 갱신
+        shapes.forEach { shape ->
+            val newKey = newKeys[shape.id] ?: return@forEach
+            val oldKey = appliedShapeKeys[shape.id]
+            when {
+                oldKey == null -> {
+                    addCircleOverlay(shape, map)
+                    appliedShapeKeys[shape.id] = newKey
+                }
+                oldKey != newKey -> {
+                    overlays[shape.id]?.let { overlay -> updateCircleOverlay(overlay, shape) }
+                    appliedShapeKeys[shape.id] = newKey
+                }
+                // oldKey == newKey 면 in-place 갱신도 불필요 → skip
+            }
+        }
     }
 
     // ──────────────────────────────────────────────
-    // 원형 오버레이 추가
+    // 원형 오버레이 add / update
     // ──────────────────────────────────────────────
 
     /**
-     * 원형 오버레이를 추가한다.
+     * 원형 오버레이를 새로 추가한다.
      */
-    private fun addCircleOverlay(shape: ShapeModel) {
+    private fun addCircleOverlay(shape: ShapeModel, map: NaverMap) {
         val radius = shape.radius ?: return
-        val center = shape.baseCoordinate.toLatLng()
 
         val circleOverlay = CircleOverlay().apply {
-            this.center = center
+            this.center = shape.baseCoordinate.toLatLng()
             this.radius = radius
             this.color = calculateFillColor(shape)
             this.outlineColor = calculateOutlineColor(shape)
             this.outlineWidth = if (shape.isNotStarted) 1 else 2
             this.globalZIndex = 50
-            this.map = naverMap
+            this.map = map
 
             setOnClickListener {
                 onShapeTapped?.invoke(shape.id)
                 true
             }
         }
+        overlays[shape.id] = circleOverlay
+    }
 
-        overlays.add(circleOverlay)
-        overlayToShapeMap[circleOverlay] = shape.id
+    /**
+     * 기존 오버레이의 속성만 in-place 로 갱신한다 (overlay 인스턴스 재사용).
+     */
+    private fun updateCircleOverlay(overlay: CircleOverlay, shape: ShapeModel) {
+        val radius = shape.radius ?: return
+        overlay.center = shape.baseCoordinate.toLatLng()
+        overlay.radius = radius
+        overlay.color = calculateFillColor(shape)
+        overlay.outlineColor = calculateOutlineColor(shape)
+        overlay.outlineWidth = if (shape.isNotStarted) 1 else 2
     }
 
     // ──────────────────────────────────────────────
@@ -161,11 +227,9 @@ class ShapeOverlayManager {
      * 모든 오버레이를 지도에서 제거하고 내부 상태를 초기화한다.
      */
     fun clearOverlays() {
-        overlays.forEach { overlay ->
-            overlay.map = null
-        }
+        overlays.values.forEach { overlay -> overlay.map = null }
         overlays.clear()
-        overlayToShapeMap.clear()
+        appliedShapeKeys.clear()
 
         highlightOverlay?.map = null
         highlightOverlay = null

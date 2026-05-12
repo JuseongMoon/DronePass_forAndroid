@@ -251,8 +251,12 @@ fun MapScreen(
         }
     }
 
-    // 스케치 프리뷰 오버레이 갱신: 그리는 중 실시간 업데이트
-    LaunchedEffect(currentDrawingPoints, currentColor, currentStrokeWidth, currentOpacity) {
+    // 스케치 프리뷰: 좌표 변경과 스타일 변경의 effect 를 분리.
+    // 이전: 단일 LaunchedEffect 가 4개 키에 묶여 그리기 중 매 5m 마다 코루틴이 재시작
+    //   되며 dpToPx/색상 파싱이 매번 수행됨.
+    // 수정: currentDrawingPoints 변경 시에는 좌표만 업데이트 (스타일은 기존 값 그대로),
+    //   색상/두께/투명도가 바뀔 때만 별도 effect 가 스타일을 갱신.
+    LaunchedEffect(currentDrawingPoints) {
         if (currentDrawingPoints.isNotEmpty()) {
             sketchOverlayManager.updatePreviewOverlay(
                 points = currentDrawingPoints,
@@ -262,6 +266,16 @@ fun MapScreen(
             )
         } else {
             sketchOverlayManager.clearPreviewOverlay()
+        }
+    }
+    LaunchedEffect(currentColor, currentStrokeWidth, currentOpacity) {
+        if (currentDrawingPoints.isNotEmpty()) {
+            sketchOverlayManager.updatePreviewOverlay(
+                points = currentDrawingPoints,
+                color = currentColor,
+                strokeWidth = currentStrokeWidth,
+                opacity = currentOpacity
+            )
         }
     }
 

@@ -15,6 +15,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlin.math.cos
 import javax.inject.Inject
 
 /**
@@ -53,9 +56,20 @@ class SketchViewModel @Inject constructor(
     private val _currentOpacity = MutableStateFlow(1.0)
     val currentOpacity: StateFlow<Double> = _currentOpacity.asStateFlow()
 
+    /**
+     * 현재 그리는 중인 포인트 버퍼.
+     * 내부 ArrayList 에 add 후 toList() 로 새 List 인스턴스를 emit 하여 StateFlow 가
+     * 변경을 감지하도록 한다. (이전: _currentDrawingPoints.value + coordinate 는 매 호출
+     * 마다 전체 리스트 복사 → O(n²). 새 패턴은 add O(1) + toList O(n) → O(n).)
+     */
+    private val drawingBuffer = mutableListOf<Coordinate>()
+
     /** 현재 그리는 중인 포인트 리스트 (실시간 프리뷰용) */
     private val _currentDrawingPoints = MutableStateFlow<List<Coordinate>>(emptyList())
     val currentDrawingPoints: StateFlow<List<Coordinate>> = _currentDrawingPoints.asStateFlow()
+
+    /** 지우개 동시 호출 직렬화용 Mutex. 빠른 드래그 시 N 개 코루틴이 race 로 중복 삭제하던 문제 차단. */
+    private val eraserMutex = Mutex()
 
     /** Undo 가능 여부 */
     private val _canUndo = MutableStateFlow(false)
@@ -109,6 +123,7 @@ class SketchViewModel @Inject constructor(
      * 진행 중인 그리기가 있으면 취소한다.
      */
     fun exitSketchMode() {
+        drawingBuffer.clear()
         _currentDrawingPoints.value = emptyList()
         lastSampledPoint = null
         _isSketchMode.value = false
@@ -126,14 +141,16 @@ class SketchViewModel @Inject constructor(
      */
     fun startDrawing(coordinate: Coordinate) {
         if (_isEraserMode.value) return
-        _currentDrawingPoints.value = listOf(coordinate)
+        drawingBuffer.clear()
+        drawingBuffer.add(coordinate)
+        _currentDrawingPoints.value = drawingBuffer.toList()
         lastSampledPoint = coordinate
     }
 
     /**
      * 그리기를 계속한다. 최소 5m 샘플링 적용.
-     *
-     * @param coordinate 현재 좌표
+     * 내부 ArrayList 에 add 후 toList() 로 emit 하여 매 호출의 리스트 복사 비용을
+     * O(이전 길이) 에서 O(1)+O(현재 길이) 로 분산. 누적 시간복잡도 O(n).
      */
     fun continueDrawing(coordinate: Coordinate) {
         if (_isEraserMode.value) return
@@ -141,7 +158,8 @@ class SketchViewModel @Inject constructor(
 
         val distance = DistanceCalculator.fastApprox(lastPoint, coordinate)
         if (distance >= MIN_SAMPLING_DISTANCE_METERS) {
-            _currentDrawingPoints.value = _currentDrawingPoints.value + coordinate
+            drawingBuffer.add(coordinate)
+            _currentDrawingPoints.value = drawingBuffer.toList()
             lastSampledPoint = coordinate
         }
     }
@@ -151,7 +169,8 @@ class SketchViewModel @Inject constructor(
      * 포인트가 2개 이상이면 스케치를 저장한다.
      */
     fun finishDrawing() {
-        val points = _currentDrawingPoints.value
+        val points = drawingBuffer.toList()
+        drawingBuffer.clear()
         if (points.size < 2) {
             _currentDrawingPoints.value = emptyList()
             lastSampledPoint = null
@@ -205,21 +224,25 @@ class SketchViewModel @Inject constructor(
         if (sketches.isEmpty()) return
 
         viewModelScope.launch {
-            for (sketch in sketches) {
-                if (sketch.points.size < 2) continue
+            // 동일 드래그 안에서 빠르게 연속 호출되는 N 개 코루틴 사이의 race 를 직렬화한다.
+            // (이전: 동시 삭제로 같은 스케치가 두 번 softDelete 되거나, 여러 스케치가 동시 삭제됨.)
+            eraserMutex.withLock {
+                for (sketch in sketches) {
+                    if (sketch.points.size < 2) continue
 
-                // 1단계: BoundingBox 필터링
-                if (!isPointNearBoundingBox(point, sketch.points)) continue
+                    // 1단계: BoundingBox 필터링 (cosLat 보정)
+                    if (!isPointNearBoundingBox(point, sketch.points)) continue
 
-                // 2단계: 정밀 거리 계산 (점-선분 거리)
-                val isNear = sketch.points.zipWithNext().any { (start, end) ->
-                    DistanceCalculator.distanceToSegment(point, start, end) < ERASER_THRESHOLD_METERS
-                }
+                    // 2단계: 정밀 거리 계산 (점-선분 거리)
+                    val isNear = sketch.points.zipWithNext().any { (start, end) ->
+                        DistanceCalculator.distanceToSegment(point, start, end) < ERASER_THRESHOLD_METERS
+                    }
 
-                if (isNear) {
-                    sketchRepository.softDeleteSketch(sketch)
-                    pushUndoAction(SketchAction.Delete(sketch))
-                    break // 한 번에 하나의 스케치만 삭제
+                    if (isNear) {
+                        sketchRepository.softDeleteSketch(sketch)
+                        pushUndoAction(SketchAction.Delete(sketch))
+                        break // 한 번에 하나의 스케치만 삭제
+                    }
                 }
             }
         }
@@ -227,15 +250,18 @@ class SketchViewModel @Inject constructor(
 
     /**
      * BoundingBox 내에 포인트가 있는지 빠르게 확인한다.
-     * 여유 영역(threshold)을 포함한다.
+     * 경도 1° 당 거리는 위도에 따라 달라지므로 (지구는 회전 타원체) cosLat 보정으로 정확도를 높인다.
+     * (이전: lngThreshold = 30 / 85000 으로 한국 평균을 고정 → 위도 차이에 따른 오차).
      */
     private fun isPointNearBoundingBox(
         point: Coordinate,
         sketchPoints: List<Coordinate>
     ): Boolean {
-        // 약 30m에 해당하는 위도/경도 여유값
-        val latThreshold = ERASER_THRESHOLD_METERS / 111000.0
-        val lngThreshold = ERASER_THRESHOLD_METERS / 85000.0  // 한국 위도 기준 대략적인 값
+        val latThreshold = ERASER_THRESHOLD_METERS / 111_000.0
+        // 평균 위도(cos)로 경도 임계값 동적 계산. 한국 영역(35~38°)에서 약 1/0.79~0.81.
+        val avgLatRad = Math.toRadians(sketchPoints.map { it.latitude }.average())
+        val cosLat = cos(avgLatRad).coerceAtLeast(0.01) // 극점 근처 0 으로 나누기 방지
+        val lngThreshold = ERASER_THRESHOLD_METERS / (111_000.0 * cosLat)
 
         val minLat = sketchPoints.minOf { it.latitude } - latThreshold
         val maxLat = sketchPoints.maxOf { it.latitude } + latThreshold
