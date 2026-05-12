@@ -14,7 +14,9 @@ import com.ScienceFiction.DronePassAndroid.domain.model.SketchModel
 fun ShapeEntity.toDomain(): ShapeModel = ShapeModel(
     id = id,
     title = title,
-    shapeType = ShapeType.valueOf(shapeType),
+    // 손상된 enum 문자열(앱 다운그레이드, 외부 마이그레이션 등)이 들어와도 Flow 전체가
+    // IllegalArgumentException 으로 깨지지 않도록 CIRCLE 로 폴백.
+    shapeType = runCatching { ShapeType.valueOf(shapeType) }.getOrDefault(ShapeType.CIRCLE),
     baseCoordinate = Coordinate(baseLatitude, baseLongitude),
     address = address,
     radius = radius,

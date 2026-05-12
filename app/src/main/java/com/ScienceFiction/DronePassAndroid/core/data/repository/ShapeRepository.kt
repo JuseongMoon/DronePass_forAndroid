@@ -195,7 +195,8 @@ class ShapeRepository @Inject constructor(
 
     /**
      * Firebase 데이터를 Room 로컬 DB로 다운로드
-     * LWW(Last Write Wins) 전략 적용
+     * LWW(Last Write Wins) 전략 적용 — 서버의 updatedAt 이 로컬 이상일 때만 덮어쓴다.
+     * 이전: forEach 단순 덮어쓰기 → 로컬에 더 최신 변경이 있어도 서버 값으로 강제 덮어씀.
      */
     suspend fun syncFromFirebase() {
         val userId = auth.currentUser?.uid ?: run {
@@ -204,11 +205,17 @@ class ShapeRepository @Inject constructor(
         }
 
         try {
-            val serverShapes = shapeFirebaseStore.loadAllShapesIncludingDeleted(userId)
-            serverShapes.forEach { shape ->
-                shapeDao.insertShape(shape.toEntity())
+            val serverShapes = shapeFirebaseStore.loadAllShapesIncludingDeleted(userId).getOrThrow()
+            val localShapesById = shapeDao.getAllShapesOnce().associateBy { it.id }
+            var applied = 0
+            serverShapes.forEach { serverShape ->
+                val local = localShapesById[serverShape.id]?.toDomain()
+                if (local == null || serverShape.updatedAt >= local.updatedAt) {
+                    shapeDao.insertShape(serverShape.toEntity())
+                    applied++
+                }
             }
-            Log.d(TAG, "syncFromFirebase: ${serverShapes.size}개 도형 다운로드 완료")
+            Log.d(TAG, "syncFromFirebase: 서버=${serverShapes.size}, LWW 통과=$applied")
         } catch (e: Exception) {
             Log.e(TAG, "syncFromFirebase 실패", e)
             throw e
@@ -235,8 +242,8 @@ class ShapeRepository @Inject constructor(
             // 1. 로컬 전체 로드
             val localShapes = shapeDao.getAllShapesOnce().map { it.toDomain() }
 
-            // 2. 서버 전체 로드 (삭제된 것 포함)
-            val serverShapes = shapeFirebaseStore.loadAllShapesIncludingDeleted(userId)
+            // 2. 서버 전체 로드 (Result → 실패 시 throw 로 재시도 큐에 위임)
+            val serverShapes = shapeFirebaseStore.loadAllShapesIncludingDeleted(userId).getOrThrow()
 
             // 3. LWW 머지
             val serverById = serverShapes.associateBy { it.id }
@@ -259,16 +266,20 @@ class ShapeRepository @Inject constructor(
                 shapeDao.insertShape(shape.toEntity())
             }
 
-            // 5. Firebase에 로컬 전용 데이터 업로드
-            val localOnly = merged.filter { it.id !in serverById }
-            if (localOnly.isNotEmpty()) {
-                shapeFirebaseStore.saveShapes(userId, localOnly)
+            // 5. Firebase에 업로드: 서버에 없는 로컬 데이터 + 로컬이 LWW 에서 이긴 데이터.
+            //    이전: localOnly = !in serverById 만 처리 → local-newer 가 다른 기기에 전파 안 됨.
+            val toUpload = merged.filter { mergedShape ->
+                val server = serverById[mergedShape.id]
+                server == null || mergedShape.updatedAt > server.updatedAt
+            }
+            if (toUpload.isNotEmpty()) {
+                shapeFirebaseStore.saveShapes(userId, toUpload)
             }
 
             // 6. 서버 메타데이터 업데이트
             shapeFirebaseStore.updateServerMetadata(userId)
 
-            Log.d(TAG, "performFullSync 완료: 로컬=${localShapes.size}, 서버=${serverShapes.size}, 머지=${merged.size}")
+            Log.d(TAG, "performFullSync 완료: 로컬=${localShapes.size}, 서버=${serverShapes.size}, 머지=${merged.size}, 업로드=${toUpload.size}")
         } catch (e: Exception) {
             Log.e(TAG, "performFullSync 실패", e)
             throw e

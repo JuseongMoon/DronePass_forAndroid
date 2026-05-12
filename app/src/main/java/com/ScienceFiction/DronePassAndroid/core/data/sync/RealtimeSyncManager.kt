@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -60,14 +61,9 @@ class RealtimeSyncManager @Inject constructor(
     private val _syncState = MutableStateFlow<SyncState>(SyncState.Idle)
     val syncState: StateFlow<SyncState> = _syncState.asStateFlow()
 
-    /** Shape 데이터 변경 시 호출되는 콜백 */
-    var onShapesUpdated: (suspend () -> Unit)? = null
-
-    /** Drone 데이터 변경 시 호출되는 콜백 */
-    var onDronesUpdated: (suspend () -> Unit)? = null
-
-    /** Sketch 데이터 변경 시 호출되는 콜백 */
-    var onSketchesUpdated: (suspend () -> Unit)? = null
+    // 데이터 변경 콜백은 Room Flow 가 UI 까지 직접 흐르므로 별도 신호가 불필요.
+    // 이전에는 onShapesUpdated/onDronesUpdated/onSketchesUpdated 가 선언만 되어 있고
+    // 어디에서도 설정되지 않아 데드 코드였음. 제거하여 향후 디버깅 혼란을 차단한다.
 
     /** 디바운싱용 코루틴 스코프 및 Job */
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
@@ -75,11 +71,12 @@ class RealtimeSyncManager @Inject constructor(
     private var sketchDebounceJob: Job? = null
 
     /** 현재 리스닝 중인 userId (중복 리스너 방지) */
+    @Volatile
     private var currentListeningUserId: String? = null
 
-    /** 동기화 진행 중 여부 (중복 동기화 방지) */
-    private var shapeSyncInProgress = false
-    private var sketchSyncInProgress = false
+    /** 동기화 진행 중 여부 (중복 동기화 방지). 멀티스레드 race 방지를 위해 AtomicBoolean. */
+    private val shapeSyncInProgress = AtomicBoolean(false)
+    private val sketchSyncInProgress = AtomicBoolean(false)
 
     /** 재시도 횟수 추적 */
     private var shapeRetryCount = 0
@@ -210,26 +207,22 @@ class RealtimeSyncManager @Inject constructor(
      * LWW 기반 양방향 동기화를 실행합니다.
      */
     private suspend fun performShapeAndDroneSync() {
-        if (shapeSyncInProgress) {
+        // compareAndSet 으로 race 없이 단일 진입 보장
+        if (!shapeSyncInProgress.compareAndSet(false, true)) {
             Log.d(TAG, "Shape/Drone 동기화가 이미 진행 중입니다.")
             return
         }
-
-        shapeSyncInProgress = true
         _syncState.value = SyncState.Syncing
 
         try {
             Log.d(TAG, "Shape/Drone 실시간 동기화 시작")
 
-            // Shape 동기화
+            // Shape/Drone 동기화 (Room Flow 가 UI 까지 자동 전파되므로 별도 콜백 불필요)
             shapeRepository.performFullSync()
             Log.d(TAG, "Shape 동기화 완료")
-            onShapesUpdated?.invoke()
 
-            // Drone 동기화
             droneRepository.performFullSync()
             Log.d(TAG, "Drone 동기화 완료")
-            onDronesUpdated?.invoke()
 
             // 동기화 시각 업데이트
             lastShapeSyncTime = System.currentTimeMillis()
@@ -246,7 +239,7 @@ class RealtimeSyncManager @Inject constructor(
             // 재시도 스케줄링
             scheduleShapeRetrySync()
         } finally {
-            shapeSyncInProgress = false
+            shapeSyncInProgress.set(false)
         }
     }
 
@@ -257,34 +250,26 @@ class RealtimeSyncManager @Inject constructor(
      * LWW 기반 양방향 동기화를 실행합니다.
      */
     private suspend fun performSketchSync() {
-        if (sketchSyncInProgress) {
+        if (!sketchSyncInProgress.compareAndSet(false, true)) {
             Log.d(TAG, "Sketch 동기화가 이미 진행 중입니다.")
             return
         }
-
-        sketchSyncInProgress = true
 
         try {
             Log.d(TAG, "Sketch 실시간 동기화 시작")
 
             sketchRepository.performFullSync()
             Log.d(TAG, "Sketch 동기화 완료")
-            onSketchesUpdated?.invoke()
 
-            // 동기화 시각 업데이트
             lastSketchSyncTime = System.currentTimeMillis()
-
-            // 재시도 카운터 초기화
             sketchRetryCount = 0
 
             Log.d(TAG, "Sketch 실시간 동기화 완료")
         } catch (e: Exception) {
             Log.e(TAG, "Sketch 실시간 동기화 실패", e)
-
-            // 재시도 스케줄링
             scheduleSketchRetrySync()
         } finally {
-            sketchSyncInProgress = false
+            sketchSyncInProgress.set(false)
         }
     }
 
@@ -301,6 +286,12 @@ class RealtimeSyncManager @Inject constructor(
             debounceJob?.cancel()
             debounceJob = scope.launch {
                 delay(retryDelay)
+                // 로그아웃 후 재시도 차단: stopListening() 직후 잔여 재시도 코루틴이
+                // performFullSync 를 호출하지 않도록 한다.
+                if (currentListeningUserId == null) {
+                    Log.d(TAG, "리스닝 중단 상태이므로 Shape/Drone 재시도를 건너뜁니다.")
+                    return@launch
+                }
                 performShapeAndDroneSync()
             }
         } else {
@@ -322,6 +313,10 @@ class RealtimeSyncManager @Inject constructor(
             sketchDebounceJob?.cancel()
             sketchDebounceJob = scope.launch {
                 delay(retryDelay)
+                if (currentListeningUserId == null) {
+                    Log.d(TAG, "리스닝 중단 상태이므로 Sketch 재시도를 건너뜁니다.")
+                    return@launch
+                }
                 performSketchSync()
             }
         } else {
@@ -348,8 +343,8 @@ class RealtimeSyncManager @Inject constructor(
 
         // 상태 초기화
         currentListeningUserId = null
-        shapeSyncInProgress = false
-        sketchSyncInProgress = false
+        shapeSyncInProgress.set(false)
+        sketchSyncInProgress.set(false)
         shapeRetryCount = 0
         sketchRetryCount = 0
         _syncState.value = SyncState.Idle

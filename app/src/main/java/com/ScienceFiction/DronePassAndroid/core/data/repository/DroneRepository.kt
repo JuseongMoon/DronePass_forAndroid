@@ -133,7 +133,8 @@ class DroneRepository @Inject constructor(
     }
 
     /**
-     * Firebase 데이터를 Room 로컬 DB로 다운로드
+     * Firebase 데이터를 Room 로컬 DB로 다운로드 (LWW 적용).
+     * 이전: forEach 단순 덮어쓰기 → 로컬 우세 데이터가 서버 값으로 덮임.
      */
     suspend fun syncFromFirebase() {
         val userId = auth.currentUser?.uid ?: run {
@@ -142,11 +143,17 @@ class DroneRepository @Inject constructor(
         }
 
         try {
-            val serverDrones = droneFirebaseStore.loadAllDronesIncludingDeleted(userId)
-            serverDrones.forEach { drone ->
-                droneDao.insertDrone(drone.toEntity())
+            val serverDrones = droneFirebaseStore.loadAllDronesIncludingDeleted(userId).getOrThrow()
+            val localDronesById = droneDao.getAllDronesOnce().associateBy { it.id }
+            var applied = 0
+            serverDrones.forEach { serverDrone ->
+                val local = localDronesById[serverDrone.id]?.toDomain()
+                if (local == null || serverDrone.updatedAt >= local.updatedAt) {
+                    droneDao.insertDrone(serverDrone.toEntity())
+                    applied++
+                }
             }
-            Log.d(TAG, "syncFromFirebase: ${serverDrones.size}개 드론 다운로드 완료")
+            Log.d(TAG, "syncFromFirebase: 서버=${serverDrones.size}, LWW 통과=$applied")
         } catch (e: Exception) {
             Log.e(TAG, "syncFromFirebase 실패", e)
             throw e
@@ -170,13 +177,9 @@ class DroneRepository @Inject constructor(
         }
 
         try {
-            // 1. 로컬 전체 로드
             val localDrones = droneDao.getAllDronesOnce().map { it.toDomain() }
+            val serverDrones = droneFirebaseStore.loadAllDronesIncludingDeleted(userId).getOrThrow()
 
-            // 2. 서버 전체 로드 (삭제된 것 포함)
-            val serverDrones = droneFirebaseStore.loadAllDronesIncludingDeleted(userId)
-
-            // 3. LWW 머지
             val serverById = serverDrones.associateBy { it.id }
             val localById = localDrones.associateBy { it.id }
             val allIds = (serverById.keys + localById.keys)
@@ -187,26 +190,25 @@ class DroneRepository @Inject constructor(
                 when {
                     local == null -> server!!
                     server == null -> local
-                    server.updatedAt >= local.updatedAt -> server  // LWW: 서버 우선
+                    server.updatedAt >= local.updatedAt -> server
                     else -> local
                 }
             }
 
-            // 4. Room에 머지 결과 저장
-            merged.forEach { drone ->
-                droneDao.insertDrone(drone.toEntity())
+            merged.forEach { drone -> droneDao.insertDrone(drone.toEntity()) }
+
+            // 서버에 없는 로컬 + 로컬-우세(LWW 통과) 모두 업로드.
+            val toUpload = merged.filter { mergedDrone ->
+                val server = serverById[mergedDrone.id]
+                server == null || mergedDrone.updatedAt > server.updatedAt
+            }
+            if (toUpload.isNotEmpty()) {
+                droneFirebaseStore.saveDrones(userId, toUpload)
             }
 
-            // 5. Firebase에 로컬 전용 데이터 업로드
-            val localOnly = merged.filter { it.id !in serverById }
-            if (localOnly.isNotEmpty()) {
-                droneFirebaseStore.saveDrones(userId, localOnly)
-            }
-
-            // 6. 서버 메타데이터 업데이트
             droneFirebaseStore.updateServerMetadata(userId)
 
-            Log.d(TAG, "performFullSync 완료: 로컬=${localDrones.size}, 서버=${serverDrones.size}, 머지=${merged.size}")
+            Log.d(TAG, "performFullSync 완료: 로컬=${localDrones.size}, 서버=${serverDrones.size}, 머지=${merged.size}, 업로드=${toUpload.size}")
         } catch (e: Exception) {
             Log.e(TAG, "performFullSync 실패", e)
             throw e

@@ -37,34 +37,37 @@ class DroneFirebaseStore @Inject constructor(
     // region 읽기
 
     /**
-     * 활성(deletedAt == null) 드론만 로드
+     * 활성(deletedAt == null) 드론만 로드.
+     * 네트워크/권한 오류와 "서버에 데이터 없음" 을 구분하기 위해 Result 반환.
      */
-    suspend fun loadDrones(userId: String): List<DroneModel> {
+    suspend fun loadDrones(userId: String): Result<List<DroneModel>> {
         return try {
             val snapshot = dronesCollection(userId).get().await()
-            snapshot.documents.mapNotNull { doc ->
+            val drones = snapshot.documents.mapNotNull { doc ->
                 val data = doc.data ?: return@mapNotNull null
                 firestoreDataToDrone(data)
             }.filter { it.deletedAt == null }
+            Result.success(drones)
         } catch (e: Exception) {
             Log.e(TAG, "드론 로드 실패: userId=$userId", e)
-            emptyList()
+            Result.failure(e)
         }
     }
 
     /**
-     * 삭제된 드론을 포함한 전체 드론 로드
+     * 삭제된 드론을 포함한 전체 드론 로드.
      */
-    suspend fun loadAllDronesIncludingDeleted(userId: String): List<DroneModel> {
+    suspend fun loadAllDronesIncludingDeleted(userId: String): Result<List<DroneModel>> {
         return try {
             val snapshot = dronesCollection(userId).get().await()
-            snapshot.documents.mapNotNull { doc ->
+            val drones = snapshot.documents.mapNotNull { doc ->
                 val data = doc.data ?: return@mapNotNull null
                 firestoreDataToDrone(data)
             }
+            Result.success(drones)
         } catch (e: Exception) {
             Log.e(TAG, "전체 드론 로드 실패: userId=$userId", e)
-            emptyList()
+            Result.failure(e)
         }
     }
 

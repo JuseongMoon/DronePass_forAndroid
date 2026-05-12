@@ -40,34 +40,37 @@ class SketchFirebaseStore @Inject constructor(
     // region 읽기
 
     /**
-     * 활성(deletedAt == null) 스케치만 로드
+     * 활성(deletedAt == null) 스케치만 로드.
+     * 네트워크/권한 오류와 "서버에 데이터 없음" 을 구분하기 위해 Result 반환.
      */
-    suspend fun loadSketches(userId: String): List<SketchModel> {
+    suspend fun loadSketches(userId: String): Result<List<SketchModel>> {
         return try {
             val snapshot = sketchesCollection(userId).get().await()
-            snapshot.documents.mapNotNull { doc ->
+            val sketches = snapshot.documents.mapNotNull { doc ->
                 val data = doc.data ?: return@mapNotNull null
                 firestoreDataToSketch(data)
             }.filter { it.deletedAt == null }
+            Result.success(sketches)
         } catch (e: Exception) {
             Log.e(TAG, "스케치 로드 실패: userId=$userId", e)
-            emptyList()
+            Result.failure(e)
         }
     }
 
     /**
-     * 삭제된 스케치를 포함한 전체 스케치 로드
+     * 삭제된 스케치를 포함한 전체 스케치 로드.
      */
-    suspend fun loadAllSketchesIncludingDeleted(userId: String): List<SketchModel> {
+    suspend fun loadAllSketchesIncludingDeleted(userId: String): Result<List<SketchModel>> {
         return try {
             val snapshot = sketchesCollection(userId).get().await()
-            snapshot.documents.mapNotNull { doc ->
+            val sketches = snapshot.documents.mapNotNull { doc ->
                 val data = doc.data ?: return@mapNotNull null
                 firestoreDataToSketch(data)
             }
+            Result.success(sketches)
         } catch (e: Exception) {
             Log.e(TAG, "전체 스케치 로드 실패: userId=$userId", e)
-            emptyList()
+            Result.failure(e)
         }
     }
 

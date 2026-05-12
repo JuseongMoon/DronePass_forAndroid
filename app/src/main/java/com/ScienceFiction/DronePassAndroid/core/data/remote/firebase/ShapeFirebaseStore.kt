@@ -39,34 +39,41 @@ class ShapeFirebaseStore @Inject constructor(
     // region 읽기
 
     /**
-     * 활성(deletedAt == null) 도형만 로드
+     * 활성(deletedAt == null) 도형만 로드.
+     *
+     * 네트워크/권한 오류와 "서버에 데이터 없음" 을 구분하기 위해 [Result] 를 반환한다.
+     * 호출자는 실패 시 동기화를 중단하고 재시도 큐로 위임해야 한다.
+     * 이전: 실패 시 emptyList() 반환 → 호출자가 "서버에 데이터 없음" 으로 오인하여
+     * 잘못된 머지/덮어쓰기를 수행할 위험이 있었음.
      */
-    suspend fun loadShapes(userId: String): List<ShapeModel> {
+    suspend fun loadShapes(userId: String): Result<List<ShapeModel>> {
         return try {
             val snapshot = shapesCollection(userId).get().await()
-            snapshot.documents.mapNotNull { doc ->
+            val shapes = snapshot.documents.mapNotNull { doc ->
                 val data = doc.data ?: return@mapNotNull null
                 firestoreDataToShape(data)
             }.filter { it.deletedAt == null }
+            Result.success(shapes)
         } catch (e: Exception) {
             Log.e(TAG, "도형 로드 실패: userId=$userId", e)
-            emptyList()
+            Result.failure(e)
         }
     }
 
     /**
-     * 삭제된 도형을 포함한 전체 도형 로드
+     * 삭제된 도형을 포함한 전체 도형 로드.
      */
-    suspend fun loadAllShapesIncludingDeleted(userId: String): List<ShapeModel> {
+    suspend fun loadAllShapesIncludingDeleted(userId: String): Result<List<ShapeModel>> {
         return try {
             val snapshot = shapesCollection(userId).get().await()
-            snapshot.documents.mapNotNull { doc ->
+            val shapes = snapshot.documents.mapNotNull { doc ->
                 val data = doc.data ?: return@mapNotNull null
                 firestoreDataToShape(data)
             }
+            Result.success(shapes)
         } catch (e: Exception) {
             Log.e(TAG, "전체 도형 로드 실패: userId=$userId", e)
-            emptyList()
+            Result.failure(e)
         }
     }
 
@@ -197,16 +204,17 @@ class ShapeFirebaseStore @Inject constructor(
 
             val deletedAt = (data["deletedAt"] as? Timestamp)?.toDate()?.time
 
-            // baseCoordinate 파싱
-            val coordMap = data["baseCoordinate"] as? Map<String, Any>
-            val baseCoordinate = if (coordMap != null) {
-                Coordinate(
-                    latitude = (coordMap["latitude"] as? Number)?.toDouble() ?: 37.5665,
-                    longitude = (coordMap["longitude"] as? Number)?.toDouble() ?: 126.9780
-                )
-            } else {
-                Coordinate(37.5665, 126.9780)
+            // baseCoordinate 파싱. 좌표가 없거나 숫자 변환 실패 시 데이터 손상으로 간주하고
+            // null 반환 → 호출자가 mapNotNull 로 스킵. 이전: 서울 시청(37.5665, 126.978)
+            // 으로 fallback 하여 손상을 침묵 처리하던 문제 제거.
+            val coordMap = data["baseCoordinate"] as? Map<*, *>
+            val lat = (coordMap?.get("latitude") as? Number)?.toDouble()
+            val lon = (coordMap?.get("longitude") as? Number)?.toDouble()
+            if (lat == null || lon == null) {
+                Log.w(TAG, "baseCoordinate 누락/손상으로 도형 스킵: id=$id")
+                return null
             }
+            val baseCoordinate = Coordinate(latitude = lat, longitude = lon)
 
             // shapeType 파싱
             val shapeTypeString = data["shapeType"] as? String ?: "CIRCLE"

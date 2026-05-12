@@ -7,8 +7,16 @@ import com.ScienceFiction.DronePassAndroid.core.data.local.room.mapper.toEntity
 import com.ScienceFiction.DronePassAndroid.core.data.remote.firebase.SketchFirebaseStore
 import com.ScienceFiction.DronePassAndroid.domain.model.SketchModel
 import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -19,8 +27,18 @@ class SketchRepository @Inject constructor(
     private val auth: FirebaseAuth
 ) {
 
+    /**
+     * 스케치 변경(insert/update/softDelete/restore) → Firebase push 디바운싱 스코프.
+     * 스케치는 Undo/Redo, 지우개 등으로 변경 빈도가 높아 매 호출마다 Firebase 푸시하면
+     * 부담이 큼. 동일 sketchId 의 변경을 500ms 윈도우로 묶어 마지막 한 번만 push.
+     */
+    private val debounceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val pendingSyncs = mutableMapOf<String, Job>()
+    private val pendingSyncsMutex = Mutex()
+
     companion object {
         private const val TAG = "SketchRepository"
+        private const val SYNC_DEBOUNCE_MS = 500L
     }
 
     /**
@@ -95,16 +113,28 @@ class SketchRepository @Inject constructor(
     }
 
     /**
-     * 단일 스케치를 Firestore에 즉시 푸시한다.
-     * 로그인 상태가 아니면 NO-OP. Firestore SDK의 offline persistence가 큐잉/재시도를 담당한다.
+     * 동일 sketchId 의 변경을 [SYNC_DEBOUNCE_MS] 윈도우로 묶어 마지막 한 번만
+     * Firestore 에 푸시한다. Undo/Redo·지우개로 변경 빈도가 매우 높은 스케치 영역의
+     * 네트워크/IO 부담을 줄인다 (중간 상태를 모두 송신하지 않고 최종 상태만 전송).
+     *
+     * 로그인 상태가 아니면 보류 작업도 즉시 NO-OP. 보류 중 동일 id 의 새 변경이 오면
+     * 이전 작업을 취소하여 최신 변경만 살아남는다.
      */
     private suspend fun syncSketchToFirebase(sketch: SketchModel) {
-        val userId = auth.currentUser?.uid ?: return
-        try {
-            sketchFirebaseStore.saveSketch(userId, sketch)
-            sketchFirebaseStore.updateServerMetadata(userId)
-        } catch (e: Exception) {
-            Log.w(TAG, "Firebase 즉시 푸시 실패: sketchId=${sketch.id}", e)
+        pendingSyncsMutex.withLock {
+            pendingSyncs[sketch.id]?.cancel()
+            pendingSyncs[sketch.id] = debounceScope.launch {
+                delay(SYNC_DEBOUNCE_MS)
+                val userId = auth.currentUser?.uid ?: return@launch
+                try {
+                    sketchFirebaseStore.saveSketch(userId, sketch)
+                    sketchFirebaseStore.updateServerMetadata(userId)
+                } catch (e: Exception) {
+                    Log.w(TAG, "Firebase 디바운스 푸시 실패: sketchId=${sketch.id}", e)
+                } finally {
+                    pendingSyncsMutex.withLock { pendingSyncs.remove(sketch.id) }
+                }
+            }
         }
     }
 
@@ -133,7 +163,7 @@ class SketchRepository @Inject constructor(
     }
 
     /**
-     * Firebase 데이터를 Room 로컬 DB로 다운로드
+     * Firebase 데이터를 Room 로컬 DB로 다운로드 (LWW 적용).
      */
     suspend fun syncFromFirebase() {
         val userId = auth.currentUser?.uid ?: run {
@@ -142,11 +172,17 @@ class SketchRepository @Inject constructor(
         }
 
         try {
-            val serverSketches = sketchFirebaseStore.loadAllSketchesIncludingDeleted(userId)
-            serverSketches.forEach { sketch ->
-                sketchDao.insertSketch(sketch.toEntity())
+            val serverSketches = sketchFirebaseStore.loadAllSketchesIncludingDeleted(userId).getOrThrow()
+            val localSketchesById = sketchDao.getAllSketchesOnce().associateBy { it.id }
+            var applied = 0
+            serverSketches.forEach { serverSketch ->
+                val local = localSketchesById[serverSketch.id]?.toDomain()
+                if (local == null || serverSketch.updatedAt >= local.updatedAt) {
+                    sketchDao.insertSketch(serverSketch.toEntity())
+                    applied++
+                }
             }
-            Log.d(TAG, "syncFromFirebase: ${serverSketches.size}개 스케치 다운로드 완료")
+            Log.d(TAG, "syncFromFirebase: 서버=${serverSketches.size}, LWW 통과=$applied")
         } catch (e: Exception) {
             Log.e(TAG, "syncFromFirebase 실패", e)
             throw e
@@ -170,13 +206,9 @@ class SketchRepository @Inject constructor(
         }
 
         try {
-            // 1. 로컬 전체 로드
             val localSketches = sketchDao.getAllSketchesOnce().map { it.toDomain() }
+            val serverSketches = sketchFirebaseStore.loadAllSketchesIncludingDeleted(userId).getOrThrow()
 
-            // 2. 서버 전체 로드 (삭제된 것 포함)
-            val serverSketches = sketchFirebaseStore.loadAllSketchesIncludingDeleted(userId)
-
-            // 3. LWW 머지
             val serverById = serverSketches.associateBy { it.id }
             val localById = localSketches.associateBy { it.id }
             val allIds = (serverById.keys + localById.keys)
@@ -187,26 +219,25 @@ class SketchRepository @Inject constructor(
                 when {
                     local == null -> server!!
                     server == null -> local
-                    server.updatedAt >= local.updatedAt -> server  // LWW: 서버 우선
+                    server.updatedAt >= local.updatedAt -> server
                     else -> local
                 }
             }
 
-            // 4. Room에 머지 결과 저장
-            merged.forEach { sketch ->
-                sketchDao.insertSketch(sketch.toEntity())
+            merged.forEach { sketch -> sketchDao.insertSketch(sketch.toEntity()) }
+
+            // 서버에 없는 로컬 + 로컬-우세(LWW 통과) 모두 업로드.
+            val toUpload = merged.filter { mergedSketch ->
+                val server = serverById[mergedSketch.id]
+                server == null || mergedSketch.updatedAt > server.updatedAt
+            }
+            if (toUpload.isNotEmpty()) {
+                sketchFirebaseStore.saveSketches(userId, toUpload)
             }
 
-            // 5. Firebase에 로컬 전용 데이터 업로드
-            val localOnly = merged.filter { it.id !in serverById }
-            if (localOnly.isNotEmpty()) {
-                sketchFirebaseStore.saveSketches(userId, localOnly)
-            }
-
-            // 6. 서버 메타데이터 업데이트
             sketchFirebaseStore.updateServerMetadata(userId)
 
-            Log.d(TAG, "performFullSync 완료: 로컬=${localSketches.size}, 서버=${serverSketches.size}, 머지=${merged.size}")
+            Log.d(TAG, "performFullSync 완료: 로컬=${localSketches.size}, 서버=${serverSketches.size}, 머지=${merged.size}, 업로드=${toUpload.size}")
         } catch (e: Exception) {
             Log.e(TAG, "performFullSync 실패", e)
             throw e
