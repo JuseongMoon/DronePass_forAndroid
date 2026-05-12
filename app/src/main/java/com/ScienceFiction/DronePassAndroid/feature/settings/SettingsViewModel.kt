@@ -10,6 +10,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ScienceFiction.DronePassAndroid.BuildConfig
+import com.ScienceFiction.DronePassAndroid.core.data.UserLocationKeys
 import com.ScienceFiction.DronePassAndroid.core.data.repository.DroneRepository
 import com.ScienceFiction.DronePassAndroid.core.data.repository.ShapeRepository
 import com.ScienceFiction.DronePassAndroid.core.data.repository.SketchRepository
@@ -221,7 +222,7 @@ class SettingsViewModel @Inject constructor(
      */
     @SuppressLint("MissingPermission")
     private suspend fun getUserLocation(): Pair<Double, Double> {
-        return try {
+        val resolved = try {
             val location = fusedLocationClient.getCurrentLocation(
                 Priority.PRIORITY_BALANCED_POWER_ACCURACY,
                 CancellationTokenSource().token
@@ -240,6 +241,19 @@ class SettingsViewModel @Inject constructor(
             Log.w(TAG, "위치 조회 실패, 기본 좌표 사용: ${e.message}")
             Pair(DEFAULT_LATITUDE, DEFAULT_LONGITUDE)
         }
+
+        // 위치 캐시 갱신 (BootCompletedReceiver 가 재부팅 후 사용).
+        // 폴백 좌표는 캐시하지 않아 다음 실행 때 재시도가 가능하게 한다.
+        if (resolved.first != DEFAULT_LATITUDE || resolved.second != DEFAULT_LONGITUDE) {
+            runCatching {
+                dataStore.edit { prefs ->
+                    prefs[UserLocationKeys.KEY_LAST_LATITUDE] = resolved.first
+                    prefs[UserLocationKeys.KEY_LAST_LONGITUDE] = resolved.second
+                }
+            }.onFailure { Log.w(TAG, "위치 캐시 갱신 실패", it) }
+        }
+
+        return resolved
     }
 
     /**

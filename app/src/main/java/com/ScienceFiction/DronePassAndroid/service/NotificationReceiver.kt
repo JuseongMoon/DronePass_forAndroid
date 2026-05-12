@@ -32,12 +32,15 @@ class NotificationReceiver : BroadcastReceiver() {
         val notificationManager =
             context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        val notification = NotificationCompat.Builder(context, FcmService.CHANNEL_ID)
+        // 일출/일몰/비행 종료는 시간 민감 알림 채널(IMPORTANCE_HIGH)로 보낸다.
+        // FCM 푸시 등 일반 정보 알림은 FcmService 가 CHANNEL_ID 를 그대로 사용.
+        val notification = NotificationCompat.Builder(context, FcmService.CHANNEL_ID_TIME_SENSITIVE)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle(title)
             .setContentText(body)
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_REMINDER)
             .setStyle(NotificationCompat.BigTextStyle().bigText(body))
             .build()
 

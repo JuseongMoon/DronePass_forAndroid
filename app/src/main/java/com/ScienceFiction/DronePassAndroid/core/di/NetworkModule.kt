@@ -25,10 +25,25 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
+    /**
+     * 디버그 빌드에서만 본문(BODY) 로깅. Release 에서는 NONE 으로 API 키/PII 노출을 차단.
+     */
+    private fun httpLoggingLevel(): HttpLoggingInterceptor.Level =
+        if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY
+        else HttpLoggingInterceptor.Level.NONE
+
+    /**
+     * Naver Maps APIGW 전용 OkHttpClient.
+     * X-NCP-APIGW-API-KEY-ID / -API-KEY 헤더를 모든 요청에 부착하므로 다른 API 에서
+     * 재사용하지 않아야 한다. @Named("NaverOkHttp") 한정자로 명시 분리.
+     */
     @Provides
     @Singleton
-    fun provideOkHttpClient(): OkHttpClient {
+    @Named("NaverOkHttp")
+    fun provideNaverOkHttpClient(): OkHttpClient {
         return OkHttpClient.Builder()
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
             .addInterceptor { chain ->
                 val request = chain.request().newBuilder()
                     .addHeader("X-NCP-APIGW-API-KEY-ID", BuildConfig.NAVER_MAP_CLIENT_ID)
@@ -36,14 +51,12 @@ object NetworkModule {
                     .build()
                 chain.proceed(request)
             }
-            .addInterceptor(HttpLoggingInterceptor().apply {
-                level = HttpLoggingInterceptor.Level.BODY
-            })
+            .addInterceptor(HttpLoggingInterceptor().apply { level = httpLoggingLevel() })
             .build()
     }
 
     /**
-     * VWorld / Kp API용 범용 OkHttpClient (네이버 헤더 없음)
+     * VWorld / Kp / Weather API 용 범용 OkHttpClient (네이버 헤더 없음).
      */
     @Provides
     @Singleton
@@ -53,7 +66,9 @@ object NetworkModule {
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .addInterceptor(HttpLoggingInterceptor().apply {
-                level = HttpLoggingInterceptor.Level.BASIC
+                // 범용 클라이언트는 BODY 까지는 필요 없고 BASIC(요청 라인) 정도만.
+                level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BASIC
+                        else HttpLoggingInterceptor.Level.NONE
             })
             .build()
     }
@@ -66,9 +81,18 @@ object NetworkModule {
             .build()
     }
 
+    /**
+     * Naver Maps APIGW 전용 Retrofit. @Named("NaverOkHttp") OkHttpClient 만 사용한다.
+     * 기본 Retrofit 으로 사용되면 다른 API 호출에도 Naver 헤더가 부착되어 키가 의도치 않게
+     * 노출될 위험이 있으므로 @Named 한정자로 명시 분리.
+     */
     @Provides
     @Singleton
-    fun provideRetrofit(okHttpClient: OkHttpClient, moshi: Moshi): Retrofit {
+    @Named("NaverRetrofit")
+    fun provideNaverRetrofit(
+        @Named("NaverOkHttp") okHttpClient: OkHttpClient,
+        moshi: Moshi
+    ): Retrofit {
         return Retrofit.Builder()
             .baseUrl("https://maps.apigw.ntruss.com/")
             .client(okHttpClient)
@@ -78,7 +102,7 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideNaverGeocodingApi(retrofit: Retrofit): NaverGeocodingApi {
+    fun provideNaverGeocodingApi(@Named("NaverRetrofit") retrofit: Retrofit): NaverGeocodingApi {
         return retrofit.create(NaverGeocodingApi::class.java)
     }
 

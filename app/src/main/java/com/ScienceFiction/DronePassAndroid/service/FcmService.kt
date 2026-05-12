@@ -16,37 +16,70 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import dagger.hilt.android.AndroidEntryPoint
 import java.util.UUID
+import javax.inject.Inject
 
 /**
  * FCM 푸시 알림 서비스
  * Firebase Cloud Messaging을 통해 수신된 메시지를 처리하고 알림을 표시합니다.
+ *
+ * @AndroidEntryPoint 로 Hilt 통합 — 인스턴스 메서드에서는 @Inject 필드를 사용하고
+ * 정적 헬퍼([deactivateToken] 등)는 [EncryptedPrefsHelper.createEncryptedPrefs]
+ * 등 명시적 헬퍼만 사용한다.
  */
+@AndroidEntryPoint
 class FcmService : FirebaseMessagingService() {
+
+    @Inject lateinit var firebaseAuth: FirebaseAuth
+    @Inject lateinit var firestore: FirebaseFirestore
 
     companion object {
         private const val TAG = "FcmService"
+
+        /** 일반 정보성 알림(FCM 푸시 등) */
         const val CHANNEL_ID = "dronepass_notifications"
         private const val CHANNEL_NAME = "DronePass 알림"
-        private const val CHANNEL_DESCRIPTION = "DronePass 앱의 알림을 수신합니다"
+        private const val CHANNEL_DESCRIPTION = "DronePass 앱의 일반 알림을 수신합니다"
+
+        /** 시간 민감 알림(일출/일몰/비행 종료 등 — 잠금화면+소리+진동) */
+        const val CHANNEL_ID_TIME_SENSITIVE = "dronepass_time_sensitive"
+        private const val CHANNEL_NAME_TIME_SENSITIVE = "비행 시각 알림"
+        private const val CHANNEL_DESCRIPTION_TIME_SENSITIVE =
+            "일출/일몰 및 비행 종료 등 정해진 시각에 도착해야 하는 알림"
+
         private const val KEY_DEVICE_ID = "fcm_device_id"
 
         /**
-         * 알림 채널 생성 (Android 8.0+ 필수)
+         * 알림 채널 생성 (Android 8.0+ 필수). 두 채널을 모두 등록한다:
+         *  - CHANNEL_ID: 일반 정보 (IMPORTANCE_DEFAULT)
+         *  - CHANNEL_ID_TIME_SENSITIVE: 시간 민감 (IMPORTANCE_HIGH + sound/vibration)
          */
         fun createNotificationChannel(context: Context) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                val channel = NotificationChannel(
-                    CHANNEL_ID,
-                    CHANNEL_NAME,
-                    NotificationManager.IMPORTANCE_DEFAULT
-                ).apply {
-                    description = CHANNEL_DESCRIPTION
-                }
-                val notificationManager =
-                    context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-                notificationManager.createNotificationChannel(channel)
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+
+            val notificationManager =
+                context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+            val defaultChannel = NotificationChannel(
+                CHANNEL_ID,
+                CHANNEL_NAME,
+                NotificationManager.IMPORTANCE_DEFAULT
+            ).apply { description = CHANNEL_DESCRIPTION }
+
+            val timeSensitiveChannel = NotificationChannel(
+                CHANNEL_ID_TIME_SENSITIVE,
+                CHANNEL_NAME_TIME_SENSITIVE,
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = CHANNEL_DESCRIPTION_TIME_SENSITIVE
+                enableVibration(true)
+                setShowBadge(true)
             }
+
+            notificationManager.createNotificationChannels(
+                listOf(defaultChannel, timeSensitiveChannel)
+            )
         }
 
         /**
@@ -167,7 +200,7 @@ class FcmService : FirebaseMessagingService() {
      * FieldValue.serverTimestamp()를 사용하여 서버 시간으로 lastUpdated 기록
      */
     private fun saveTokenToFirestore(token: String) {
-        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: run {
+        val userId = firebaseAuth.currentUser?.uid ?: run {
             Log.d(TAG, "로그인 상태가 아니므로 FCM 토큰 저장을 건너뜁니다.")
             return
         }
@@ -189,7 +222,6 @@ class FcmService : FirebaseMessagingService() {
             "lastUpdated" to FieldValue.serverTimestamp()
         )
 
-        val firestore = FirebaseFirestore.getInstance()
         val deviceRef = firestore
             .collection("users")
             .document(userId)

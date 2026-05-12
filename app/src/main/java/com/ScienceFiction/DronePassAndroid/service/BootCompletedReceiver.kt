@@ -7,8 +7,10 @@ import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.doublePreferencesKey
 import com.ScienceFiction.DronePassAndroid.core.data.repository.ShapeRepository
 import com.ScienceFiction.DronePassAndroid.core.data.repository.WeatherRepository
+import com.ScienceFiction.DronePassAndroid.core.data.UserLocationKeys
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -36,8 +38,6 @@ class BootCompletedReceiver : BroadcastReceiver() {
         private val KEY_SUNRISE_ALARM_ENABLED = booleanPreferencesKey("sunrise_alarm_enabled")
         private val KEY_SUNSET_ALARM_ENABLED = booleanPreferencesKey("sunset_alarm_enabled")
         private val KEY_END_DATE_ALARM_ENABLED = booleanPreferencesKey("end_date_alarm_enabled")
-        private const val DEFAULT_LATITUDE = 37.5665
-        private const val DEFAULT_LONGITUDE = 126.9780
     }
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
@@ -71,9 +71,13 @@ class BootCompletedReceiver : BroadcastReceiver() {
         // 일출/일몰 알림 재예약
         if (sunriseEnabled || sunsetEnabled) {
             try {
-                val weatherData = weatherRepository.fetchWeather(
-                    DEFAULT_LATITUDE, DEFAULT_LONGITUDE
-                ).getOrNull()
+                // SettingsViewModel.getUserLocation 이 마지막 호출 시점에 캐시한 좌표를 사용한다.
+                // 캐시가 없으면(첫 실행 직후 재부팅 등) 서울 시청 폴백.
+                val lat = preferences[UserLocationKeys.KEY_LAST_LATITUDE]
+                    ?: UserLocationKeys.FALLBACK_LATITUDE
+                val lon = preferences[UserLocationKeys.KEY_LAST_LONGITUDE]
+                    ?: UserLocationKeys.FALLBACK_LONGITUDE
+                val weatherData = weatherRepository.fetchWeather(lat, lon).getOrNull()
 
                 if (sunriseEnabled) {
                     notificationScheduler.scheduleSunriseAlarms(weatherData?.sunrise)
