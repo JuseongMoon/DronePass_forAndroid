@@ -1,7 +1,9 @@
 package com.ScienceFiction.DronePassAndroid.feature.settings
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.graphics.Bitmap
+import android.net.Uri
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
@@ -42,6 +44,25 @@ import com.ScienceFiction.DronePassAndroid.R
  * @param url 로드할 웹 URL
  * @param onBack 뒤로가기 콜백
  */
+/**
+ * WebView 로드를 허용할 도메인 화이트리스트.
+ * 약관/개인정보처리방침은 Notion 호스팅을 사용한다.
+ *
+ * 화이트리스트 외 도메인으로의 이동은 시스템 브라우저로 위임하여 WebView 안에서
+ * JS 가 활성화된 채 임의 페이지가 로드되는 것을 방지한다.
+ */
+private val ALLOWED_DOMAINS = setOf(
+    "dronepass.notion.site",
+    "www.notion.so",
+    "notion.so"
+)
+
+private fun isAllowedUrl(url: String?): Boolean {
+    if (url.isNullOrBlank()) return false
+    val host = runCatching { Uri.parse(url).host }.getOrNull() ?: return false
+    return ALLOWED_DOMAINS.any { host == it || host.endsWith(".$it") }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
@@ -104,6 +125,29 @@ fun WebDocumentScreen(
                             settings.domStorageEnabled = true
 
                             this.webViewClient = object : WebViewClient() {
+                                /**
+                                 * 도메인 화이트리스트 검증.
+                                 * 화이트리스트 외 URL 은 시스템 브라우저로 위임하여
+                                 * WebView 가 임의 도메인을 JavaScript 활성 상태로 로드하지 않도록 한다.
+                                 */
+                                override fun shouldOverrideUrlLoading(
+                                    view: WebView?,
+                                    request: WebResourceRequest?
+                                ): Boolean {
+                                    val nextUrl = request?.url?.toString()
+                                    return if (isAllowedUrl(nextUrl)) {
+                                        // 화이트리스트 도메인은 WebView 안에서 계속 로드
+                                        false
+                                    } else {
+                                        // 외부 도메인은 시스템 브라우저로 위임
+                                        nextUrl?.let {
+                                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(it))
+                                            view?.context?.startActivity(intent)
+                                        }
+                                        true
+                                    }
+                                }
+
                                 override fun onPageStarted(
                                     view: WebView?,
                                     url: String?,

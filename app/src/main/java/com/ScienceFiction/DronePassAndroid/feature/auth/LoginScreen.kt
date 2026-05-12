@@ -57,19 +57,14 @@ fun LoginScreen(
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // 로그인 성공 시 메인 화면으로 이동
+    // authState 전이 처리는 단일 LaunchedEffect 로 통합한다.
+    // 이전: 두 개의 LaunchedEffect(authState) 가 동시 등록되어 LoggedIn → Error 빠른 전이 시
+    //   화면 전환과 스낵바가 경쟁할 수 있었음.
     LaunchedEffect(authState) {
-        if (authState is AuthState.LoggedIn) {
-            onLoginSuccess()
-        }
-    }
-
-    // 에러 발생 시 스낵바 표시
-    LaunchedEffect(authState) {
-        if (authState is AuthState.Error) {
-            snackbarHostState.showSnackbar(
-                message = (authState as AuthState.Error).message
-            )
+        when (val state = authState) {
+            is AuthState.LoggedIn -> onLoginSuccess()
+            is AuthState.Error -> snackbarHostState.showSnackbar(message = state.message)
+            else -> Unit // Loading, LoggedOut 은 동작 없음 (UI 상태만 변경)
         }
     }
 

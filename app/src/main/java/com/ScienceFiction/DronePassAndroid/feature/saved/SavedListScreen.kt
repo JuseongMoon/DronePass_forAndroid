@@ -117,7 +117,11 @@ fun SavedListScreen(
                             color = MaterialTheme.colorScheme.primary
                         )
                     }
-                    items(activeShapes, key = { it.id }) { shape ->
+                    // 섹션 prefix 를 키에 포함하여 활성/시작전/만료 분류가 흔들리는 경계 시각
+                    // (예: flightStartDate == flightEndDate == 현재시각) 등 잠재적 race 에서
+                    // 동일 id 가 두 섹션에 동시 등장 시 LazyColumn 이
+                    // IllegalStateException("Key was already used") 으로 크래시하는 것을 방지.
+                    items(activeShapes, key = { "active-${it.id}" }) { shape ->
                         SwipeToDeleteItem(
                             shape = shape,
                             onDelete = { viewModel.deleteShape(shape) }
@@ -144,7 +148,7 @@ fun SavedListScreen(
                             color = MaterialTheme.colorScheme.tertiary
                         )
                     }
-                    items(notStartedShapes, key = { it.id }) { shape ->
+                    items(notStartedShapes, key = { "notStarted-${it.id}" }) { shape ->
                         SwipeToDeleteItem(
                             shape = shape,
                             onDelete = { viewModel.deleteShape(shape) }
@@ -171,7 +175,7 @@ fun SavedListScreen(
                             color = MaterialTheme.colorScheme.error
                         )
                     }
-                    items(expiredShapes, key = { it.id }) { shape ->
+                    items(expiredShapes, key = { "expired-${it.id}" }) { shape ->
                         SwipeToDeleteItem(
                             shape = shape,
                             onDelete = { viewModel.deleteShape(shape) }

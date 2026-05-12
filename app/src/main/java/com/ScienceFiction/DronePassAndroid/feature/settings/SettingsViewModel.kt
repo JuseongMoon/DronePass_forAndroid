@@ -1,6 +1,7 @@
 package com.ScienceFiction.DronePassAndroid.feature.settings
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
@@ -13,8 +14,10 @@ import com.ScienceFiction.DronePassAndroid.core.data.repository.DroneRepository
 import com.ScienceFiction.DronePassAndroid.core.data.repository.ShapeRepository
 import com.ScienceFiction.DronePassAndroid.core.data.repository.SketchRepository
 import com.ScienceFiction.DronePassAndroid.core.data.repository.WeatherRepository
+import com.ScienceFiction.DronePassAndroid.core.data.sync.RealtimeSyncManager
 import com.ScienceFiction.DronePassAndroid.feature.auth.AuthRepository
 import com.ScienceFiction.DronePassAndroid.feature.auth.AuthState
+import com.ScienceFiction.DronePassAndroid.service.FcmService
 import com.ScienceFiction.DronePassAndroid.service.NotificationScheduler
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.Priority
@@ -23,6 +26,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -48,7 +52,9 @@ class SettingsViewModel @Inject constructor(
     private val droneRepository: DroneRepository,
     private val sketchRepository: SketchRepository,
     private val firestore: FirebaseFirestore,
-    private val fusedLocationClient: FusedLocationProviderClient
+    private val fusedLocationClient: FusedLocationProviderClient,
+    private val realtimeSyncManager: RealtimeSyncManager,
+    @ApplicationContext private val appContext: Context
 ) : ViewModel() {
 
     companion object {
@@ -306,8 +312,21 @@ class SettingsViewModel @Inject constructor(
 
     /**
      * 로그아웃
+     *
+     * 단일 책임 원칙을 위해 AuthViewModel.signOut() 과 동일한 정리 순서를 따른다:
+     * 1) FCM 토큰 비활성화 (userId 가 살아있는 동안)
+     * 2) 실시간 동기화 리스너 중단
+     * 3) Firebase Auth 로그아웃
      */
     fun signOut() {
+        runCatching {
+            FcmService.deactivateToken(appContext)
+        }.onFailure { Log.w(TAG, "FCM 토큰 비활성화 실패", it) }
+
+        runCatching {
+            realtimeSyncManager.stopListening()
+        }.onFailure { Log.w(TAG, "실시간 동기화 리스너 중단 실패", it) }
+
         authRepository.signOut()
         _authState.value = AuthState.LoggedOut
     }
@@ -351,7 +370,15 @@ class SettingsViewModel @Inject constructor(
                 Log.e(TAG, "로컬 DB 삭제 실패", e)
             }
 
-            // 4. Firebase Auth 계정 삭제
+            // 4. FCM 토큰 비활성화 + 실시간 동기화 리스너 중단 (Auth 삭제 전 정리)
+            runCatching {
+                FcmService.deactivateToken(appContext)
+            }.onFailure { Log.w(TAG, "FCM 토큰 비활성화 실패 (계정 삭제 흐름)", it) }
+            runCatching {
+                realtimeSyncManager.stopListening()
+            }.onFailure { Log.w(TAG, "실시간 동기화 리스너 중단 실패 (계정 삭제 흐름)", it) }
+
+            // 5. Firebase Auth 계정 삭제
             authRepository.deleteAccount().fold(
                 onSuccess = {
                     _authState.value = AuthState.LoggedOut

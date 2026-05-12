@@ -50,9 +50,18 @@ class AuthViewModel @Inject constructor(
     }
 
     init {
-        checkAuthState()
-        // 앱 시작 시 이미 로그인 상태이면 동기화 실행 및 실시간 리스너 시작
-        if (authRepository.isLoggedIn) {
+        // 1. 로그인 상태를 _authState 에 동기 반영 (Loading → LoggedIn/LoggedOut)
+        val currentUser = authRepository.currentUser
+        _authState.value = if (currentUser != null) {
+            AuthState.LoggedIn(currentUser)
+        } else {
+            AuthState.LoggedOut
+        }
+
+        // 2. 이미 로그인 상태이면 Firebase 양방향 동기화 + 실시간 리스너 시작.
+        //    LoginScreen 의 LaunchedEffect 가 LoggedIn 전이를 받기 전에 동기화가
+        //    시작되어 화면이 잠시 깜빡이는 일이 없도록 1번을 먼저 수행한다.
+        if (currentUser != null) {
             performFullSync()
             startRealtimeSync()
         }
