@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        다크 모드용 테마 오버라이드.
+        statusBar/navigationBar 는 투명이며 light status bar 아이콘은 비활성화.
+        Compose 측은 Theme.kt 의 dark color scheme로 처리한다.
+    -->
+    <style name="Theme.DronePassAndroid" parent="android:Theme.Material.NoActionBar">
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+</resources>

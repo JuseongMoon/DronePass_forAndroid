@@ -15,9 +15,15 @@
         <!-- 데이터베이스 도메인 포함 (특정 DB 제외 적용을 위해) -->
         <include domain="database" path="." />
 
-        <!-- EncryptedSharedPreferences 제외 (기기별 암호화 키로 인해 복원 불가) -->
-        <exclude domain="sharedpref" path="encrypted_prefs.xml" />
+        <!--
+            EncryptedSharedPreferences 제외 (기기별 암호화 키로 인해 복원 불가)
+            실제 파일명은 EncryptedPrefsHelper.PREFS_FILE_NAME = "dronepass_encrypted_prefs"
+        -->
+        <exclude domain="sharedpref" path="dronepass_encrypted_prefs.xml" />
         <exclude domain="sharedpref" path="__androidx_security_crypto_encrypted_prefs__.xml" />
+
+        <!-- 손상 시 폴백용 평문 prefs (deviceId/uid가 기기에 종속이라 복원 부적합) -->
+        <exclude domain="sharedpref" path="dronepass_prefs_fallback.xml" />
 
         <!-- Room 데이터베이스 제외 (Firebase에서 동기화) -->
         <exclude domain="database" path="dronepass_database" />
@@ -40,9 +46,15 @@
         <!-- 데이터베이스 도메인 포함 (특정 DB 제외 적용을 위해) -->
         <include domain="database" path="." />
 
-        <!-- EncryptedSharedPreferences 제외 (기기별 암호화 키로 인해 복원 불가) -->
-        <exclude domain="sharedpref" path="encrypted_prefs.xml" />
+        <!--
+            EncryptedSharedPreferences 제외 (기기별 암호화 키로 인해 복원 불가)
+            실제 파일명은 EncryptedPrefsHelper.PREFS_FILE_NAME = "dronepass_encrypted_prefs"
+        -->
+        <exclude domain="sharedpref" path="dronepass_encrypted_prefs.xml" />
         <exclude domain="sharedpref" path="__androidx_security_crypto_encrypted_prefs__.xml" />
+
+        <!-- 손상 시 폴백용 평문 prefs (deviceId/uid가 기기에 종속이라 복원 부적합) -->
+        <exclude domain="sharedpref" path="dronepass_prefs_fallback.xml" />
 
         <!-- Room 데이터베이스 제외 (Firebase에서 동기화) -->
         <exclude domain="database" path="dronepass_database" />

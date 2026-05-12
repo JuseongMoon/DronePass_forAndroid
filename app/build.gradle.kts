@@ -18,6 +18,15 @@ val localProperties = Properties().apply {
     }
 }
 
+// keystore.properties 에서 Release 서명 정보 로드 (CI/로컬 모두 지원)
+// 파일이 없으면 release 빌드는 debug 키로 폴백한다. Play Store 출시 전 반드시 추가 필요.
+val keystoreProperties = Properties().apply {
+    val keystorePropertiesFile = rootProject.file("keystore.properties")
+    if (keystorePropertiesFile.exists()) {
+        load(keystorePropertiesFile.inputStream())
+    }
+}
+
 android {
     namespace = "com.ScienceFiction.DronePassAndroid"
     compileSdk {
@@ -43,14 +52,42 @@ android {
         buildConfigField("String", "WEB_CLIENT_ID", "\"${localProperties.getProperty("WEB_CLIENT_ID", "")}\"")
     }
 
+    signingConfigs {
+        // Release 서명 설정. keystore.properties + 키스토어 파일이 존재할 때만 생성한다.
+        // 파일이 없으면 buildTypes.release 가 debug 키로 폴백 (Play Store 업로드 불가).
+        val hasReleaseKeystore = keystoreProperties.getProperty("storeFile")?.let { path ->
+            rootProject.file(path).exists()
+        } ?: false
+
+        if (hasReleaseKeystore) {
+            create("release") {
+                storeFile = rootProject.file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
+        debug {
+            // Firebase google-services.json 의 패키지명과 일치시키기 위해 applicationIdSuffix 미사용.
+            // dev/prod 분리가 필요해지면 productFlavors 로 분리하고 Firebase 콘솔에 별도 앱 등록 필요.
+            versionNameSuffix = "-debug"
+            isMinifyEnabled = false
+            isDebuggable = true
+        }
         release {
             isMinifyEnabled = true
             isShrinkResources = true
+            isDebuggable = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            // keystore.properties 가 있으면 release 서명 사용, 없으면 debug 폴백
+            signingConfig = signingConfigs.findByName("release")
+                ?: signingConfigs.getByName("debug")
         }
     }
     compileOptions {

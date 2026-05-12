@@ -248,6 +248,10 @@ private fun SettingsMainContent(
             // ===== 3. 알림 섹션 =====
             SectionHeader(title = stringResource(R.string.settings_section_notifications))
 
+            // POST_NOTIFICATIONS (Android 13+) + SCHEDULE_EXACT_ALARM (Android 12+)
+            // 권한 부재 시 안내 카드 표시 + 요청/설정 진입 흐름 제공
+            NotificationPermissionRequest()
+
             // 일출 알림
             SettingsToggleItem(
                 icon = Icons.Default.WbSunny,

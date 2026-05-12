@@ -2,6 +2,30 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!--
+        Android 11+ package visibility 대응.
+        ShapeDetailSheet 등에서 외부 지도 앱(카카오맵/티맵/네이버맵/구글맵)을
+        intent로 열 때 resolveActivity() 가 null 을 반환하지 않도록
+        <queries> 블록에 패키지/인텐트 가시성을 선언한다.
+    -->
+    <queries>
+        <!-- 외부 지도 앱 패키지 (도형 위치 열기) -->
+        <package android:name="net.daum.android.map" />
+        <package android:name="com.skt.tmap.ku" />
+        <package android:name="com.nhn.android.nmap" />
+        <package android:name="com.google.android.apps.maps" />
+
+        <!-- 일반적인 https URL 뷰어 (브라우저 등) -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="https" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="geo" />
+        </intent>
+    </queries>
+
     <!-- 인터넷 권한 -->
     <uses-permission android:name="android.permission.INTERNET" />
 

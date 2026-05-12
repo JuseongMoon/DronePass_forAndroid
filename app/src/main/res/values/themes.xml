@@ -1,5 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
-    <style name="Theme.DronePassAndroid" parent="Theme.AppCompat.Light.NoActionBar" />
+    <!--
+        Compose Material3 앱 베이스 테마.
+        ActionBar 없이 Compose가 모든 UI를 그리므로 NoActionBar 변형 사용.
+        시스템 inflation 단계에서 적용되는 windowBackground/statusBar 처리는
+        Theme.kt 의 dynamicColor + WindowCompat 으로 처리한다.
+    -->
+    <style name="Theme.DronePassAndroid" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
 </resources>
