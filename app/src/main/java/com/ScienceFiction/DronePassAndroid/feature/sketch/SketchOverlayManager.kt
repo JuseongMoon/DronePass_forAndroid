@@ -157,6 +157,15 @@ class SketchOverlayManager {
         clearPreviewOverlay()
     }
 
+    /**
+     * 오버레이 정리 후 NaverMap 참조까지 해제한다.
+     * Composable 의 DisposableEffect onDispose 에서 호출하여 Activity 파괴 후 누수 방지.
+     */
+    fun detach() {
+        clearOverlays()
+        naverMap = null
+    }
+
     // ──────────────────────────────────────────────
     // 유틸리티
     // ──────────────────────────────────────────────

@@ -92,6 +92,10 @@ fun MapScreen(
     val sketchOverlayManager = remember { SketchOverlayManager() }
     val flightZoneOverlayManager = remember { FlightZoneOverlayManager() }
 
+    // factory 에서 등록한 NaverMap 리스너 참조 — onDispose 에서 해제할 수 있도록 보관.
+    var cameraIdleListener by remember { mutableStateOf<NaverMap.OnCameraIdleListener?>(null) }
+    var mapLongClickListener by remember { mutableStateOf<NaverMap.OnMapLongClickListener?>(null) }
+
     // ViewModel 상태 수집
     val activeShapes by viewModel.activeShapes.collectAsStateWithLifecycle()
     val filteredShapes by viewModel.filteredShapes.collectAsStateWithLifecycle()
@@ -278,6 +282,14 @@ fun MapScreen(
         }
     }
 
+    // 위치 추적 설정 — 권한과 mapReady 가 모두 충족된 시점에 단 1회 실행.
+    // (이전: AndroidView update 람다에서 매 recomposition 마다 호출되어 FusedLocationSource 누수)
+    LaunchedEffect(allPermissionsGranted, mapReady) {
+        if (allPermissionsGranted && mapReady) {
+            naverMap?.let { setupLocationTracking(it, context) }
+        }
+    }
+
     // 카메라 이벤트 수집
     LaunchedEffect(Unit) {
         viewModel.cameraEvent.collect { event ->
@@ -339,7 +351,6 @@ fun MapScreen(
                         overlayManager.setMap(map)
                         sketchOverlayManager.setMap(map)
                         flightZoneOverlayManager.setMap(map)
-                        mapReady = true
 
                         Log.d("NaverMapDebug", "네이버 지도 준비 완료")
 
@@ -350,11 +361,6 @@ fun MapScreen(
                         )
                         map.cameraPosition = defaultPosition
 
-                        // 위치 권한이 허용된 경우 위치 추적 활성화
-                        if (allPermissionsGranted) {
-                            setupLocationTracking(map, context)
-                        }
-
                         // 지도 UI 설정
                         map.uiSettings.apply {
                             isLocationButtonEnabled = true
@@ -363,7 +369,8 @@ fun MapScreen(
                         }
 
                         // 카메라 이동 완료 시 비행구역 로드 (Debounce는 ViewModel에서 처리)
-                        map.addOnCameraIdleListener {
+                        // 리스너 참조를 보관하여 onDispose 에서 명시적 제거 가능하게 한다.
+                        val cameraListener = NaverMap.OnCameraIdleListener {
                             val bounds = map.contentBounds
                             viewModel.onMapBoundsChanged(
                                 southWestLat = bounds.southWest.latitude,
@@ -372,22 +379,25 @@ fun MapScreen(
                                 northEastLon = bounds.northEast.longitude
                             )
                         }
+                        map.addOnCameraIdleListener(cameraListener)
+                        cameraIdleListener = cameraListener
 
                         // 지도 롱프레스 시 해당 좌표에 도형 생성 + 역지오코딩
-                        map.setOnMapLongClickListener { _, latLng ->
+                        val longClickListener = NaverMap.OnMapLongClickListener { _, latLng ->
                             val coordinate = Coordinate.fromLatLng(latLng)
                             viewModel.onCreateShapeAtCoordinate(coordinate)
                         }
+                        map.setOnMapLongClickListener(longClickListener)
+                        mapLongClickListener = longClickListener
+
+                        // 모든 초기 설정 완료 후 mapReady 신호 — 권한/위치 추적 LaunchedEffect 의 트리거.
+                        mapReady = true
                     }
                 }
             },
-            modifier = Modifier.fillMaxSize(),
-            update = { _ ->
-                // 권한 상태가 변경되었을 때 위치 추적 재설정
-                if (allPermissionsGranted && naverMap != null) {
-                    setupLocationTracking(naverMap!!, context)
-                }
-            }
+            modifier = Modifier.fillMaxSize()
+            // update 람다 제거: setupLocationTracking 호출은 별도의 LaunchedEffect 에서 수행한다.
+            // (이전 update 람다는 매 recomposition 마다 호출되어 FusedLocationSource 가 재생성되며 누수 발생)
         )
 
         // 스케치 모드일 때 터치 인터셉트 레이어
@@ -633,9 +643,19 @@ fun MapScreen(
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
-            overlayManager.clearOverlays()
-            sketchOverlayManager.clearOverlays()
-            flightZoneOverlayManager.clearAllOverlays()
+            // factory 에서 등록한 NaverMap 리스너 제거 (중복 등록 방지)
+            naverMap?.let { map ->
+                cameraIdleListener?.let { map.removeOnCameraIdleListener(it) }
+                map.onMapLongClickListener = null
+            }
+            cameraIdleListener = null
+            mapLongClickListener = null
+
+            // 오버레이 매니저 3종은 detach() 로 NaverMap 참조까지 해제 → 누수 방지
+            overlayManager.detach()
+            sketchOverlayManager.detach()
+            flightZoneOverlayManager.detach()
+
             lifecycleOwner.lifecycle.removeObserver(observer)
         }
     }

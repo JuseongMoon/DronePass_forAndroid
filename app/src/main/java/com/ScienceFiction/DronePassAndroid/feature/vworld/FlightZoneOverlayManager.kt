@@ -133,6 +133,16 @@ class FlightZoneOverlayManager {
     }
 
     /**
+     * 오버레이 정리 후 NaverMap 참조까지 해제한다.
+     * Composable 의 DisposableEffect onDispose 에서 호출하여 Activity 파괴 후 누수 방지.
+     */
+    fun detach() {
+        clearAllOverlays()
+        onZoneTapped = null
+        naverMap = null
+    }
+
+    /**
      * 현재 표시 중인 모든 구역 목록 반환
      */
     fun getAllDisplayedZones(): List<DroneZoneFeature> {

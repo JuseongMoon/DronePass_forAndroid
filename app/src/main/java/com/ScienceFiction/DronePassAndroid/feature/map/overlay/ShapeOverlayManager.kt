@@ -170,4 +170,15 @@ class ShapeOverlayManager {
         highlightOverlay?.map = null
         highlightOverlay = null
     }
+
+    /**
+     * 오버레이 정리 후 NaverMap 참조까지 해제한다.
+     * Composable 의 [androidx.compose.runtime.DisposableEffect] onDispose 에서 호출하여
+     * Activity 파괴 후 NaverMap 인스턴스 누수를 방지한다.
+     */
+    fun detach() {
+        clearOverlays()
+        onShapeTapped = null
+        naverMap = null
+    }
 }
