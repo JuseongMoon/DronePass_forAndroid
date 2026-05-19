@@ -357,32 +357,34 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             val userId = firebaseAuth.currentUser?.uid
 
-            try {
-                // 1. 익명화 통계 수집
-                saveAnonymizedStats()
-            } catch (e: Exception) {
-                Log.e(TAG, "익명화 통계 저장 실패", e)
-            }
+            // 1. 익명화 통계 (분석용, 실패해도 진행)
+            runCatching { saveAnonymizedStats() }
+                .onFailure { Log.e(TAG, "익명화 통계 저장 실패", it) }
 
-            // 2. Firestore 사용자 데이터 전체 삭제
+            // 2. Firestore 사용자 데이터 전체 삭제 — CRITICAL.
+            //    여기서 실패하면 Auth 계정만 삭제되고 서버에 데이터가 남는 좀비 상태가 되므로
+            //    fail-fast 로 Auth 삭제를 보류하고 사용자에게 재시도 요청.
             if (userId != null) {
-                try {
-                    deleteFirestoreUserData(userId)
-                    Log.d(TAG, "Firestore 사용자 데이터 삭제 완료: userId=$userId")
-                } catch (e: Exception) {
-                    Log.e(TAG, "Firestore 데이터 삭제 실패", e)
+                val firestoreResult = runCatching { deleteFirestoreUserData(userId) }
+                if (firestoreResult.isFailure) {
+                    val err = firestoreResult.exceptionOrNull()
+                    Log.e(TAG, "Firestore 데이터 삭제 실패 — 계정 삭제 보류", err)
+                    onResult(
+                        false,
+                        err?.localizedMessage ?: "데이터 삭제에 실패했습니다. 네트워크 확인 후 다시 시도해 주세요."
+                    )
+                    return@launch
                 }
+                Log.d(TAG, "Firestore 사용자 데이터 삭제 완료: userId=$userId")
             }
 
-            // 3. 로컬 Room DB 전체 삭제
-            try {
+            // 3. 로컬 Room DB 전체 삭제 — 실패해도 진행 (앱 재설치/캐시 클리어로 복구 가능).
+            runCatching {
                 shapeRepository.deleteAllShapes()
                 droneRepository.deleteAllDrones()
                 sketchRepository.deleteAllSketches()
                 Log.d(TAG, "로컬 DB 전체 삭제 완료")
-            } catch (e: Exception) {
-                Log.e(TAG, "로컬 DB 삭제 실패", e)
-            }
+            }.onFailure { Log.e(TAG, "로컬 DB 삭제 실패", it) }
 
             // 4. FCM 토큰 비활성화 + 실시간 동기화 리스너 중단 (Auth 삭제 전 정리)
             runCatching {

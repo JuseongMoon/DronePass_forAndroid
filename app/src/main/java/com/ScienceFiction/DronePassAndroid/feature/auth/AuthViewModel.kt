@@ -12,8 +12,11 @@ import com.ScienceFiction.DronePassAndroid.core.data.sync.RealtimeSyncManager
 import com.ScienceFiction.DronePassAndroid.service.FcmService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -41,13 +44,18 @@ class AuthViewModel @Inject constructor(
     private val _authState = MutableStateFlow<AuthState>(AuthState.Loading)
     val authState: StateFlow<AuthState> = _authState.asStateFlow()
 
-    /** 동기화 상태 메시지 (1회성 이벤트) */
-    private val _syncMessage = MutableStateFlow<String?>(null)
-    val syncMessage: StateFlow<String?> = _syncMessage.asStateFlow()
-
-    fun consumeSyncMessage() {
-        _syncMessage.value = null
-    }
+    /**
+     * 동기화 상태 메시지 (1회성 이벤트).
+     *
+     * StateFlow + consume nullable 패턴 대신 SharedFlow 로 변경하여 이벤트 의미를 명확화한다.
+     * - replay = 0 : 늦은 collector 는 이전 이벤트를 받지 않음 (한 번 보여진 메시지는 끝).
+     * - extraBufferCapacity = 1 : collect 가 시작되기 전 emit 도 1개 버퍼링 가능.
+     */
+    private val _syncMessage = MutableSharedFlow<String>(
+        replay = 0,
+        extraBufferCapacity = 1,
+    )
+    val syncMessage: SharedFlow<String> = _syncMessage.asSharedFlow()
 
     init {
         // 1. 로그인 상태를 _authState 에 동기 반영 (Loading → LoggedIn/LoggedOut)
@@ -140,7 +148,7 @@ class AuthViewModel @Inject constructor(
                 Log.d(TAG, "Firebase 양방향 동기화 완료")
             } catch (e: Exception) {
                 Log.e(TAG, "Firebase 동기화 실패", e)
-                _syncMessage.value = "데이터 동기화에 실패했습니다. 네트워크 상태를 확인해주세요."
+                _syncMessage.tryEmit("데이터 동기화에 실패했습니다. 네트워크 상태를 확인해주세요.")
             }
         }
     }

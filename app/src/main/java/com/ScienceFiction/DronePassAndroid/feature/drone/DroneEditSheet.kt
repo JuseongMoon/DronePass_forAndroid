@@ -170,10 +170,12 @@ fun DroneEditSheet(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // 이륙 무게
+            // 이륙 무게. 단위/형식("250g", "1.5kg", "1500" 등) 자유 입력 의도이므로
+            // 숫자 strict 검증은 적용하지 않는다. 향후 항공안전법 카테고리 자동 판정이
+            // 필요해지면 별도 파서를 두고 입력은 자유 유지 (UX 제약 최소화).
             OutlinedTextField(
                 value = takeoffWeight,
-                onValueChange = { takeoffWeight = it },
+                onValueChange = { takeoffWeight = it.take(20) }, // 과도한 입력 길이만 컷
                 label = { Text(stringResource(R.string.drone_edit_takeoff_weight)) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
@@ -181,10 +183,10 @@ fun DroneEditSheet(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // 크기
+            // 크기 ("28cm × 21cm" 등 자유 형식). 동일 정책으로 길이만 제한.
             OutlinedTextField(
                 value = size,
-                onValueChange = { size = it },
+                onValueChange = { size = it.take(40) },
                 label = { Text(stringResource(R.string.drone_edit_size)) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true

@@ -20,6 +20,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -42,7 +43,8 @@ fun SavedShapeListItem(
     modifier: Modifier = Modifier,
     droneName: String? = null
 ) {
-    val dateFormat = SimpleDateFormat("yyyy.MM.dd", Locale.KOREA)
+    // 한국 시장 타겟이므로 Locale.KOREA 명시. 매 호출 SimpleDateFormat 생성 부담 회피.
+    val dateFormat = remember { SimpleDateFormat("yyyy.MM.dd", Locale.KOREA) }
     val shapeColor = PaletteColor.fromHex(shape.color)?.composeColor
         ?: Color(android.graphics.Color.parseColor(shape.color))
     val displayColor = if (shape.isExpired) Color.Gray else shapeColor

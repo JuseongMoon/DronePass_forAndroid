@@ -51,6 +51,12 @@ class WeatherViewModel @Inject constructor(
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
+    /**
+     * 에러 메시지. 현재는 한국어 하드코딩이지만 다국어 지원을 위해 향후
+     * `sealed class WeatherError { ... val messageRes: Int }` 형태로 변경하고
+     * 호출처(WeatherForecastContent)에서 `stringResource()` 로 변환하는 것을 권장.
+     * strings.xml 에 weather_error_load_failed/weather_error_unknown 키는 이미 추가됨 (D-M9).
+     */
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 

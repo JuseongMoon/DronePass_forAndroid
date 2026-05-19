@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.kp
 
+import java.util.Locale
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -252,7 +253,7 @@ private fun CurrentKpCard(
 
             if (currentKp != null) {
                 Text(
-                    text = String.format("%.2f", currentKp.kp),
+                    text = String.format(Locale.ROOT, "%.2f", currentKp.kp),
                     style = MaterialTheme.typography.displayLarge.copy(fontSize = 56.sp),
                     fontWeight = FontWeight.Bold,
                     color = Color(kpLevel.color.toInt())
@@ -585,7 +586,7 @@ private fun ForecastItem(data: KpIndexData) {
 
         // Kp 값
         Text(
-            text = String.format("%.1f", data.kp),
+            text = String.format(Locale.ROOT, "%.1f", data.kp),
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.SemiBold,
             color = Color(level.color.toInt()),
@@ -651,7 +652,7 @@ private fun LongTermForecastItem(data: Kp27DayForecast) {
 
         // Kp 값
         Text(
-            text = String.format("%.0f", data.kp),
+            text = String.format(Locale.ROOT, "%.0f", data.kp),
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.SemiBold,
             color = Color(level.color.toInt()),

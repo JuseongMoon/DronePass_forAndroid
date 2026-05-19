@@ -21,9 +21,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.ScienceFiction.DronePassAndroid.R
 import java.util.Calendar
 
@@ -43,6 +45,9 @@ fun SunTimeline(
     modifier: Modifier = Modifier
 ) {
     if (sunrise == null && sunset == null) return
+
+    // 라벨 텍스트 크기를 sp 기반으로 미리 계산 (사용자 폰트 크기 설정 반영)
+    val labelTextSizePx = with(LocalDensity.current) { 12.sp.toPx() }
 
     // ISO "2026-02-24T06:45" -> 시간 파싱
     val sunriseMinutes = parseTimeToMinutes(sunrise)
@@ -168,7 +173,7 @@ fun SunTimeline(
 
                 val labelPaint = Paint().apply {
                     color = onSurfaceVariant.copy(alpha = 0.8f).toArgb()
-                    textSize = 24f
+                    textSize = labelTextSizePx // sp 단위 (사용자 폰트 크기 반영)
                     isAntiAlias = true
                     typeface = Typeface.DEFAULT
                 }

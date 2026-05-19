@@ -83,11 +83,17 @@ class DroneViewModel @Inject constructor(
 
     /**
      * 드론 삭제 (연결된 도형 처리 포함)
+     *
+     * 트랜잭션 일관성 한계: shape 처리 → drone 삭제는 두 Repository 호출이라 한 트랜잭션이
+     * 아니다. 사이에 앱이 죽으면 shape 만 reassign/삭제되고 drone 은 살아있는 상태가 가능.
+     * 회복 경로: 다음 launch 시 사용자가 동일 작업을 재시도하거나 drone 화면에서 직접 삭제.
+     * 진정한 atomic update 가 필요해지면 Room @Transaction 으로 묶는 도메인 서비스가 필요.
+     *
      * @return 삭제 성공 여부
      */
     fun deleteDrone(drone: DroneModel, shapeHandling: ShapeHandling) {
         viewModelScope.launch {
-            // 마지막 드론 삭제 불가 체크
+            // 마지막 드론 삭제 불가 체크 (방어적, UI 에서도 막혀야 함)
             val currentDrones = activeDrones.value
             if (currentDrones.size <= 1) return@launch
 
@@ -104,7 +110,7 @@ class DroneViewModel @Inject constructor(
                 }
             }
 
-            // 드론 소프트 삭제
+            // 드론 소프트 삭제 (Repository 내부에서 softDelete() 로 updatedAt 갱신됨 — stale 가드 불필요)
             droneRepository.softDeleteDrone(drone)
 
             // 상세/편집 시트 닫기

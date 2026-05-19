@@ -40,7 +40,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
@@ -66,12 +68,29 @@ fun ShapeDetailSheet(
 ) {
     val context = LocalContext.current
     val configuration = LocalConfiguration.current
-    val maxSheetHeight = (configuration.screenHeightDp * 0.8f).dp
+    // 회전 시 screenHeightDp 가 바뀌어 maxSheetHeight 가 변하면 heightIn 으로 인해
+    // 시트 높이가 점프한다. configuration 기준 remember 로 같은 orientation 동안은 안정화하고,
+    // 회전 시에는 한 번만 재계산되도록 한다.
+    val maxSheetHeight = remember(configuration.orientation, configuration.screenHeightDp) {
+        (configuration.screenHeightDp * 0.8f).dp
+    }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val coroutineScope = rememberCoroutineScope()
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     var showExternalMapDialog by remember { mutableStateOf(false) }
 
     val dateFormat = remember { SimpleDateFormat("yyyy년 MM월 dd일 HH:mm", Locale.KOREA) }
+
+    /**
+     * 시트 dismiss 애니메이션을 await 한 뒤 외부 액션을 호출한다.
+     * Edit 클릭 → 화면 전환 흐름에서 시트가 갑자기 사라지는 대신 매끄럽게 닫히도록 한다.
+     */
+    fun hideAndThen(action: () -> Unit) {
+        coroutineScope.launch {
+            runCatching { sheetState.hide() }
+            action()
+        }
+    }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -238,7 +257,8 @@ fun ShapeDetailSheet(
                     )
                 }
                 OutlinedButton(
-                    onClick = onEdit,
+                    // 시트가 매끄럽게 닫힌 뒤 편집 화면으로 전환 (애니메이션 끊김 방지)
+                    onClick = { hideAndThen(onEdit) },
                     modifier = Modifier.weight(1f)
                 ) {
                     Icon(

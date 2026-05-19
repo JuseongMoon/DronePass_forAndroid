@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.weather
 
+import java.util.Locale
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -70,7 +71,7 @@ fun WeatherOverlayCard(
 
                 // 온도
                 Text(
-                    text = "${String.format("%.0f", currentWeather.temperature)}\u00B0",
+                    text = "${String.format(Locale.ROOT, "%.0f", currentWeather.temperature)}\u00B0",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -88,7 +89,7 @@ fun WeatherOverlayCard(
                         )
                         Spacer(modifier = Modifier.width(2.dp))
                         Text(
-                            text = "${String.format("%.1f", currentWeather.windSpeed)}",
+                            text = "${String.format(Locale.ROOT, "%.1f", currentWeather.windSpeed)}",
                             style = MaterialTheme.typography.bodySmall,
                             fontSize = 11.sp
                         )

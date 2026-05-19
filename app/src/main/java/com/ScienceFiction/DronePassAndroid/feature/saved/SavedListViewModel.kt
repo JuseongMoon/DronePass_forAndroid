@@ -155,6 +155,10 @@ class SavedListViewModel @Inject constructor(
         _showShapeDetail.value = true
     }
 
+    /**
+     * 도형 상세 시트 닫기. selectedShapeId 와 showShapeDetail 을 동시 리셋한다.
+     * 호출처는 deleteShape 내부에서 한 번만 호출하면 됨 (외부 중복 호출 불필요).
+     */
     fun dismissShapeDetail() {
         _selectedShapeId.value = null
         _showShapeDetail.value = false

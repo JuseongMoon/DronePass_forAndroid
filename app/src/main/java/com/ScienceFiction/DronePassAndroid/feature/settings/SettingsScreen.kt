@@ -70,7 +70,11 @@ import com.ScienceFiction.DronePassAndroid.feature.auth.AuthState
 import com.ScienceFiction.DronePassAndroid.feature.drone.DroneListScreen
 
 /**
- * 설정 화면의 서브 스크린 상태
+ * 설정 화면의 서브 스크린 상태.
+ *
+ * 향후 정비 (D-M14, 별도 PR): Terms/Privacy/LocationTerms 는 WebDocumentScreen 으로
+ * URL 만 다른 동일 분기이므로 `sealed class` + `WebDoc(titleRes, url)` 로 통합 가능.
+ * 현재는 호출처 분기가 명시적이고 코드 가독성이 충분히 좋아 enum 유지.
  */
 private enum class SettingsSubScreen {
     Main,

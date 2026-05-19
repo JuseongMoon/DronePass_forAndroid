@@ -144,19 +144,19 @@ internal fun FlightSuitabilityCard(
 
             SuitabilityCheckItem(
                 label = stringResource(R.string.weather_wind_speed),
-                value = "${String.format("%.1f", current.windSpeed)} m/s",
+                value = "${String.format(Locale.ROOT, "%.1f", current.windSpeed)} m/s",
                 isGood = gustLevel == GustDifferenceLevel.SAFE || gustLevel == GustDifferenceLevel.LOCALIZED_GUST
             )
             Spacer(modifier = Modifier.height(4.dp))
             SuitabilityCheckItem(
                 label = stringResource(R.string.weather_gust),
-                value = current.windGusts?.let { "${String.format("%.1f", it)} m/s" } ?: "-",
+                value = current.windGusts?.let { "${String.format(Locale.ROOT, "%.1f", it)} m/s" } ?: "-",
                 isGood = gustLevel == GustDifferenceLevel.SAFE
             )
             Spacer(modifier = Modifier.height(4.dp))
             SuitabilityCheckItem(
                 label = stringResource(R.string.weather_precipitation),
-                value = "${String.format("%.1f", current.precipitation)} mm",
+                value = "${String.format(Locale.ROOT, "%.1f", current.precipitation)} mm",
                 isGood = current.precipitation <= 0.5
             )
         }
@@ -342,7 +342,7 @@ internal fun WindCompassCard(
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "${String.format("%.1f", windSpeed)} m/s",
+                        text = "${String.format(Locale.ROOT, "%.1f", windSpeed)} m/s",
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Medium
                     )
@@ -384,7 +384,7 @@ internal fun CurrentWeatherCard(
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "${String.format("%.1f", current.temperature)}\u00B0C",
+                text = "${String.format(Locale.ROOT, "%.1f", current.temperature)}\u00B0C",
                 style = MaterialTheme.typography.displaySmall,
                 fontWeight = FontWeight.Bold
             )
@@ -404,7 +404,7 @@ internal fun CurrentWeatherCard(
                 WeatherInfoChip(
                     icon = Icons.Default.Air,
                     label = stringResource(R.string.weather_wind_speed),
-                    value = "${String.format("%.1f", current.windSpeed)} m/s"
+                    value = "${String.format(Locale.ROOT, "%.1f", current.windSpeed)} m/s"
                 )
                 WeatherInfoChip(
                     icon = Icons.Default.Navigation,
@@ -416,7 +416,7 @@ internal fun CurrentWeatherCard(
                     WeatherInfoChip(
                         icon = Icons.Default.Air,
                         label = stringResource(R.string.weather_gust),
-                        value = "${String.format("%.1f", gusts)} m/s"
+                        value = "${String.format(Locale.ROOT, "%.1f", gusts)} m/s"
                     )
                 }
             }
@@ -564,13 +564,13 @@ internal fun WeatherDataGrid(
                 modifier = Modifier.weight(1f),
                 icon = Icons.Default.Thermostat,
                 label = stringResource(R.string.weather_temperature),
-                value = "${String.format("%.1f", current.temperature)}\u00B0C"
+                value = "${String.format(Locale.ROOT, "%.1f", current.temperature)}\u00B0C"
             )
             WeatherGridItem(
                 modifier = Modifier.weight(1f),
                 icon = Icons.Default.Air,
                 label = stringResource(R.string.weather_wind_speed),
-                value = "${String.format("%.1f", current.windSpeed)} m/s",
+                value = "${String.format(Locale.ROOT, "%.1f", current.windSpeed)} m/s",
                 level = gustLevel
             )
         }
@@ -589,7 +589,7 @@ internal fun WeatherDataGrid(
                 modifier = Modifier.weight(1f),
                 icon = Icons.Default.Warning,
                 label = stringResource(R.string.weather_gust_difference),
-                value = "${String.format("%.1f", gustDiff)} m/s",
+                value = "${String.format(Locale.ROOT, "%.1f", gustDiff)} m/s",
                 level = gustLevel
             )
         }
@@ -602,7 +602,7 @@ internal fun WeatherDataGrid(
                 modifier = Modifier.weight(1f),
                 icon = Icons.Default.WaterDrop,
                 label = stringResource(R.string.weather_precipitation),
-                value = "${String.format("%.1f", current.precipitation)} mm",
+                value = "${String.format(Locale.ROOT, "%.1f", current.precipitation)} mm",
                 level = if (current.precipitation > 0) GustDifferenceLevel.CAUTION else GustDifferenceLevel.SAFE
             )
             WeatherGridItem(
@@ -785,7 +785,7 @@ internal fun HourlyWeatherItem(
                     fontSize = 10.sp
                 )
                 Text(
-                    text = "${String.format("%.0f", hourly.temperature)}\u00B0",
+                    text = "${String.format(Locale.ROOT, "%.0f", hourly.temperature)}\u00B0",
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
@@ -803,7 +803,7 @@ internal fun HourlyWeatherItem(
                     fontSize = 10.sp
                 )
                 Text(
-                    text = "${String.format("%.1f", hourly.windSpeed)}",
+                    text = "${String.format(Locale.ROOT, "%.1f", hourly.windSpeed)}",
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
@@ -821,7 +821,7 @@ internal fun HourlyWeatherItem(
                     fontSize = 10.sp
                 )
                 Text(
-                    text = hourly.windGusts?.let { String.format("%.1f", it) } ?: "-",
+                    text = hourly.windGusts?.let { String.format(Locale.ROOT, "%.1f", it) } ?: "-",
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color(gustLevel.colorLong)
                 )
@@ -840,7 +840,7 @@ internal fun HourlyWeatherItem(
                     fontSize = 10.sp
                 )
                 Text(
-                    text = if (hourly.precipitation > 0) "${String.format("%.1f", hourly.precipitation)}" else "-",
+                    text = if (hourly.precipitation > 0) "${String.format(Locale.ROOT, "%.1f", hourly.precipitation)}" else "-",
                     style = MaterialTheme.typography.bodyMedium,
                     color = if (hourly.precipitation > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
                 )

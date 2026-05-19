@@ -25,9 +25,11 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.domain.model.HourlyWeatherData
 import java.text.SimpleDateFormat
@@ -46,12 +48,15 @@ private fun WeatherLineChart(
     dangerThreshold: Double? = null,
     invertWarning: Boolean = false,
     yAxisLabel: String = "",
-    formatValue: (Double) -> String = { String.format("%.1f", it) }
+    formatValue: (Double) -> String = { String.format(Locale.ROOT, "%.1f", it) }
 ) {
     if (dataPoints.isEmpty()) return
 
     val onSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant
     val surfaceColor = MaterialTheme.colorScheme.surface
+    // Canvas 내부 nativeCanvas.drawText 의 Paint.textSize 는 px 단위라 sp 환산이 필요.
+    // 11.sp 는 Material labelSmall 크기와 비슷하며 사용자 폰트 크기 설정에 반응한다.
+    val axisLabelPx = with(LocalDensity.current) { 11.sp.toPx() }
 
     Canvas(
         modifier = modifier
@@ -108,7 +113,7 @@ private fun WeatherLineChart(
         // Y축 라벨 (3개: 상, 중, 하)
         val yLabelPaint = Paint().apply {
             color = onSurfaceVariant.copy(alpha = 0.7f).toArgb()
-            textSize = 22f
+            textSize = axisLabelPx
             textAlign = Paint.Align.RIGHT
             isAntiAlias = true
         }
@@ -126,7 +131,7 @@ private fun WeatherLineChart(
         // X축 시간 라벨 (3시간 간격)
         val xLabelPaint = Paint().apply {
             color = onSurfaceVariant.copy(alpha = 0.7f).toArgb()
-            textSize = 22f
+            textSize = axisLabelPx
             textAlign = Paint.Align.CENTER
             isAntiAlias = true
         }
@@ -246,6 +251,7 @@ private fun PrecipitationBarChart(
 
     val onSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant
     val barColor = Color(0xFF42A5F5)
+    val axisLabelPx = with(LocalDensity.current) { 11.sp.toPx() }
 
     Canvas(
         modifier = modifier
@@ -291,7 +297,7 @@ private fun PrecipitationBarChart(
         // Y축 라벨
         val yLabelPaint = Paint().apply {
             color = onSurfaceVariant.copy(alpha = 0.7f).toArgb()
-            textSize = 22f
+            textSize = axisLabelPx
             textAlign = Paint.Align.RIGHT
             isAntiAlias = true
         }
@@ -299,7 +305,7 @@ private fun PrecipitationBarChart(
             val value = yMax - (yMax - yMin) * i / 2
             val y = topPadding + chartHeight * i / 2
             drawContext.canvas.nativeCanvas.drawText(
-                String.format("%.1f", value),
+                String.format(Locale.ROOT, "%.1f", value),
                 leftPadding - 6f,
                 y + 6f,
                 yLabelPaint
@@ -309,7 +315,7 @@ private fun PrecipitationBarChart(
         // X축 시간 라벨
         val xLabelPaint = Paint().apply {
             color = onSurfaceVariant.copy(alpha = 0.7f).toArgb()
-            textSize = 22f
+            textSize = axisLabelPx
             textAlign = Paint.Align.CENTER
             isAntiAlias = true
         }
@@ -422,7 +428,7 @@ fun WindSpeedChart(
             lineColor = Color(0xFF42A5F5),
             fillAlpha = 0.1f,
             yAxisLabel = "m/s",
-            formatValue = { String.format("%.1f", it) }
+            formatValue = { String.format(Locale.ROOT, "%.1f", it) }
         )
     }
 }
@@ -444,7 +450,7 @@ fun GustDifferenceChart(
             warningThreshold = 5.0,
             dangerThreshold = 8.0,
             yAxisLabel = "m/s",
-            formatValue = { String.format("%.1f", it) }
+            formatValue = { String.format(Locale.ROOT, "%.1f", it) }
         )
     }
 }
@@ -482,7 +488,7 @@ fun VisibilityChart(
             warningThreshold = 5.0,
             invertWarning = true,
             yAxisLabel = "km",
-            formatValue = { String.format("%.0f", it) }
+            formatValue = { String.format(Locale.ROOT, "%.0f", it) }
         )
     }
 }
@@ -504,7 +510,7 @@ fun CriChart(
             warningThreshold = 60.0,
             dangerThreshold = 80.0,
             yAxisLabel = "%",
-            formatValue = { String.format("%.0f", it) }
+            formatValue = { String.format(Locale.ROOT, "%.0f", it) }
         )
     }
 }

@@ -422,7 +422,7 @@ private fun SortControls(
                 FilterChip(
                     selected = true,
                     onClick = { showSortMenu = true },
-                    label = { Text(sortOption.label) }
+                    label = { Text(stringResource(sortOption.labelRes)) }
                 )
                 DropdownMenu(
                     expanded = showSortMenu,
@@ -432,7 +432,7 @@ private fun SortControls(
                         DropdownMenuItem(
                             text = {
                                 Text(
-                                    text = option.label,
+                                    text = stringResource(option.labelRes),
                                     color = if (option == sortOption)
                                         MaterialTheme.colorScheme.primary
                                     else
@@ -452,7 +452,7 @@ private fun SortControls(
                 Icon(
                     imageVector = if (sortDirection == SortDirection.ASCENDING)
                         Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
-                    contentDescription = sortDirection.label,
+                    contentDescription = stringResource(sortDirection.labelRes),
                     modifier = Modifier.size(20.dp)
                 )
             }
