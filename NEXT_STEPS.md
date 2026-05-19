@@ -1,6 +1,6 @@
 # 작업 이어가기 핸드오프 노트
 
-> 마지막 업데이트: 2026-05-14
+> 마지막 업데이트: 2026-05-19 (Phase 3 완료)
 > 다음 세션에서 이 문서 + `REFACTORING_PLAN.md` 를 함께 읽으면 즉시 이어서 진행할 수 있다.
 
 ---
@@ -10,19 +10,24 @@
 | 항목 | 값 |
 |---|---|
 | **브랜치** | `fix/critical-pri0-fixes` |
-| **마지막 커밋** | `e2de3d1` (Phase 2 완료 표기) |
-| **워킹 트리** | clean (변경 없음) |
-| **원격 동기화** | `origin/fix/critical-pri0-fixes` 보다 6 커밋 ahead (push 미수행) |
-| **누적 처리** | **124건 중 69건 완료 (55.6%)** |
-| **잔여** | Phase 3 Medium **55건** |
+| **마지막 커밋** | `4f890ae` (Phase 3.5 UI Medium 15건) |
+| **워킹 트리** | clean (변경 없음 — REFACTORING_PLAN/NEXT_STEPS 갱신 후) |
+| **원격 동기화** | `origin/fix/critical-pri0-fixes` 보다 12 커밋 ahead (push 미수행) |
+| **누적 처리** | **124건 중 124건 완료 (100%)** ✅ |
+| **잔여** | 없음 — Phase 1/2/3 모두 종료 |
 
 ---
 
-## 2. 완료된 작업 누적 (14 커밋)
+## 2. 완료된 작업 누적 (19 커밋)
 
 `git log --oneline fix/critical-pri0-fixes ^main` 결과:
 
 ```
+4f890ae fix(ui): Phase 3.5 Medium 15건 - 다국어/SharedFlow/sp/포맷 정비
+266579a fix(map): Phase 3.4 Medium 10건 - 오버레이 성능/density/zIndex/debounce 정비
+a82f4db fix(infra): Phase 3.3 Medium 11건 - DI/테마/매니페스트 정비
+71a8b6a fix(data): Phase 3.2 Medium 8건 - 캐시 동시성/sync 헬퍼/배치 insert
+f10dde9 fix(algorithm): Phase 3.1 Medium 11건 - 코드 품질/일관성 정비
 e2de3d1 docs: REFACTORING_PLAN.md - Phase 2 완료 표기 (High 45건 모두 [x])
 43c5d5c fix(ui): Phase 2.5 High 13건 - Kp/Weather 라이프사이클/Sections/메모이즈/검증
 1d3a81b fix(map): Phase 2.4 High 9건 - Overlay Diff/메모이즈/Mutex/Ticker/replay
@@ -65,12 +70,21 @@ efed981 docs: REFACTORING_PLAN.md 추가 - 잔여 119건 단계별 체크리스�
 - **Phase 2.4 지도 (9건)** `1d3a81b`: ShapeOverlayManager Map+ShapeKey Diff / FlightZoneOverlayManager zoneId Diff / setOutOfBoundsVisibility / LaunchedEffect key 좁히기 / continueDrawing O(n²)→O(n) / 지우개 Mutex / cosLat 보정 / filteredShapes 60초 ticker / cameraEvent replay=1
 - **Phase 2.5 UI (13건)** `43c5d5c`: Kp/Weather start/stopAutoRefresh / SavedListVM Sections+Default / ShapeEdit shape.id key / DroneEditSheet 메모이즈 / suggestNextColor 명시 인자 / DroneList 메모이즈 / DroneDetailSheet shapeCount nullable / DatePicker 주석 / Save 비활성 / droneId→name Map / Kp Refresh 비활성 / 스와이프 확인 다이얼로그
 
-### 2.4 신규 파일
+### 2.4 Phase 3 — Medium (55건) — 5개 영역 커밋
+
+- **Phase 3.1 알고리즘 (11건)** `f10dde9`: FlightZoneCalc KM 상수 / CRI windFactor / SketchSmoothing segments / WMO 4·5·10 / AltitudeFormatter Regex 캐시 / ShapeModel effectiveColor 제거 / ShapeType 확장 가이드 / PaletteColor parseColor 폴백 / VWorldModels typed accessor / SketchPointsCache LRU 코멘트 / KpIndexModel.fromKp NaN 가드
+- **Phase 3.2 데이터 (8건)** `71a8b6a`: SyncMerge.kt 신규 (mergeLWW/filterServerNewer) → Shape/Drone/Sketch Repo 정리 / KpIndex·Weather·VWorld 캐시 동시성(@Volatile+Mutex) / SketchFirebaseStore unchecked cast 단계 검증 / Coordinate StringBuilder JSON+NaN 안전화 / DAO 배치 insert / EntityMapper 폴백
+- **Phase 3.3 인프라 (11건)** `a82f4db`: RepositoryModule @Provides 제거 → @Inject constructor 자동 / Retrofit 4종 @Named 분리 (vWorld/kpNoaa/kpNoaa27Day/kpGfz) / Naver timeout 코멘트 / Color Brand/Neutral/Accent 팔레트 + 기존 토큰 @Deprecated alias / Type.kt 8종 토큰 / Theme dynamicColor=false 정책 / MIGRATION 정리 / appcompat 직접 의존 제거 / Compose BOM 업그레이드 코멘트 / BootReceiver category.DEFAULT / LocalLifecycleOwner deprecation 해결
+- **Phase 3.4 지도/오버레이 (10건)** `266579a`: OverlayManager 의도 코멘트 / SketchOverlayManager density 주입 + Catmull-Rom 병렬 + keepScreenOn 양방향 / FlightZoneOverlayManager BASE_Z_INDEX 10 / MapScreen SideEffect 콜백 / 향후 분리 코멘트 / MapFloatingButtons format 메모이즈+Locale.ROOT / SketchToolbar slider SSOT / MapViewModel SharedFlow.debounce+distinctUntilChanged
+- **Phase 3.5 UI (15건)** `4f890ae`: SortOption @StringRes / SimpleDateFormat remember / AuthVM syncMessage SharedFlow / deleteAccount fail-fast / DroneVM 트랜잭션 코멘트 / dismissShapeDetail 코멘트 / ShapeDetailSheet hide await / SearchAddressSheet 검토 / WeatherVM error 다국어 코멘트 / Locale.ROOT 일괄 / sp.toPx (SunTimeline/WeatherCharts) / KpCharts density 잔재 제거 / maxSheetHeight remember / SettingsSubScreen 코멘트 / DroneEditSheet 길이 컷
+
+### 2.5 신규 파일
 
 | 파일 | 용도 |
 |---|---|
-| `REFACTORING_PLAN.md` | 124건 전체 체크리스트 (Phase 1/2 모두 [x]) |
+| `REFACTORING_PLAN.md` | 124건 전체 체크리스트 (Phase 1/2/3 모두 [x]) |
 | `app/src/main/java/.../core/data/UserLocationKeys.kt` | BootReceiver 위치 캐시 공유 키 |
+| `app/src/main/java/.../core/data/sync/SyncMerge.kt` | mergeLWW / filterServerNewer 헬퍼 (Phase 3.2) |
 | `app/src/main/java/.../feature/settings/NotificationPermissionRequest.kt` | 알림 권한 안내 카드 |
 | `app/src/main/res/values-night/themes.xml` | 다크 모드 테마 |
 | `keystore.properties.example` | Release 서명 샘플 |
@@ -91,47 +105,32 @@ export PATH="$JAVA_HOME/bin:$PATH"
 
 ---
 
-## 3. 다음 진행할 Phase 3 — Medium (55건)
+## 3. Phase 3 종료 — 다음 단계 옵션
 
-> `REFACTORING_PLAN.md` 의 `## 4. Phase 3 — Medium (55건)` 섹션 참조.
+Phase 1/2/3 모두 완료. 다음 세션에서 진행할 수 있는 작업:
 
-### 3.1 영역별 분포
+1. **운영 작업 (5.1)**: gh CLI 설치 → push → PR 생성 → 머지
+2. **회귀 테스트 사이클**: 실기기에서 핵심 시나리오(지도/도형 CRUD/스케치/로그인/설정) 5가지 검증
+3. **별도 PR 후보**: NEXT_STEPS 2.4 의 향후 작업 코멘트로 표시된 항목들
+   - MapScreen 자식 Composable 4종 분리 (B-M6 향후 작업)
+   - SettingsSubScreen sealed class 통합 (D-M14)
+   - WeatherViewModel error sealed class + @StringRes (D-M9)
+   - Compose BOM 2025.x 업그레이드 (E-M9)
+   - 통합 테스트(Espresso) 추가
 
-| 영역 | 항목 수 | 대표 작업 |
-|---|---:|---|
-| **A. 데이터** | 8 | Repository 3종 추상화(SyncableRepository<T>) / Cache 동시성 / Coordinate JSON 성능 / DAO 배치 |
-| **B. 지도/오버레이** | 10 | OverlayManager ViewModel scope 이전 / dpToPx displayMetrics / zIndex 우선순위 / SketchToolbar SSOT / Catmull-Rom 병렬화 / MapScreen 25+ collect 분할 |
-| **C. 알고리즘/모델** | 11 | FlightZoneCalculator latI/lonI 통일 정리 / CRI windFactor 검토 / WMO 누락 코드 / AltitudeFormatter Regex 캐시 / ShapeType 확장 / KpIndexModel.fromKp 경계 |
-| **D. UI** | 15 | SortOption.labelRes / 날짜 포맷 다국어 / SharedFlow 이벤트 / deleteAccount 트랜잭션 / atomic update 일관성 / 시트 dismiss 후 전환 / 에러 메시지 stringResource / Locale.ROOT String.format / sp 단위 / 등 |
-| **E. 인프라** | 11 | Hilt RepositoryModule 중복 @Provides 제거 / Retrofit @Named 명시 / Naver Retrofit timeout / Color/Type 브랜드 팔레트 / Theme dynamicColor 정책 / appcompat 의존성 제거 / Compose BOM 업그레이드 / BootReceiver category.DEFAULT |
-
-### 3.2 권장 진행 방식 (Phase 1/2 와 동일 패턴)
-
-5개 영역별 5개 커밋 + 종료 검증 + REFACTORING_PLAN.md 체크박스 일괄 처리.
-
-```
-Phase 3.1 알고리즘/모델 (C-M1~M11)
-Phase 3.2 데이터 (A-M1~M8)
-Phase 3.3 인프라 (E-M1~M11)
-Phase 3.4 지도/오버레이 (B-M1~M10)
-Phase 3.5 UI (D-M1~M15)
-Phase 3 종료 검증 + REFACTORING_PLAN.md 갱신 커밋
-```
-
-각 단계마다:
-1. 대상 파일 정독 (병렬 Read)
-2. 수정
-3. `./gradlew :app:assembleDebug` 통과 확인
-4. 영역별 커밋 (커밋 메시지에 처리 항목 명시)
+> `REFACTORING_PLAN.md` 의 `## 4. Phase 3 — Medium (55건)` 섹션 참조 (모두 [x] 처리됨).
 
 ---
 
-## 4. 부분 처리 / 미완 항목 (Phase 2 잔여)
+## 4. 부분 처리 / 미완 항목 (향후 별도 PR)
 
 | 항목 | 상태 | 메모 |
 |---|---|---|
-| **D-H3** SavedListScreen 11번 collect → 자식 Composable 분리 | 부분 완료 | D-H2(Sections+Default 디스패처)와 D-H11(droneId→name 캐시)로 부담 핵심은 해결. 남은 자식 분리는 Phase 3 또는 별도 리팩토링 |
-| Phase 2.3 deprecated 경고 1건 | 무시 가능 | `NotificationPermissionRequest.kt:61` — `LocalLifecycleOwner` 가 lifecycle-runtime-compose 로 이동. Phase 3 E-M 에서 정리 가능 |
+| **B-M6** MapScreen 25+ collect → 4종 자식 Composable 분리 | 코멘트 표시됨 | D-H2/D-H11 로 핵심 성능 부담 해소. 추가 분리는 우선순위 낮음. MapScreen.kt 상단 코멘트에 분리 가이드 포함 |
+| **D-M9** WeatherViewModel/KpViewModel error sealed class + @StringRes | 향후 작업 | strings.xml 키는 이미 추가됨 (weather_error_*). ViewModel 모델 변경은 별도 PR |
+| **D-M14** SettingsSubScreen sealed class 통합 | 향후 작업 | Terms/Privacy/LocationTerms 통합 가능, 현재 enum 가독성 충분 |
+| **E-M9** Compose BOM 2024.09 → 2025.x | 검토 코멘트 | libs.versions.toml 에 검증 항목 명시 |
+| Phase 2.3 deprecated 경고 (해결됨) | ✅ | `NotificationPermissionRequest.kt:61` LocalLifecycleOwner — Phase 3.3 에서 lifecycle.compose 패키지로 이전 완료 |
 
 ---
 
@@ -178,32 +177,26 @@ cp keystore.properties.example keystore.properties
 
 가장 좋은 시작 문구 (복사해서 붙여넣으면 즉시 이어서 진행):
 
-### 6.1 Phase 3 전체 진행
-
-```
-NEXT_STEPS.md 참조해서 Phase 3 (Medium 55건) 진행해줘
-```
-
-### 6.2 특정 영역만 진행
-
-```
-NEXT_STEPS.md 의 Phase 3.1 알고리즘/모델 (C-M1~M11) 만 진행해줘
-```
-또는
-```
-REFACTORING_PLAN.md 의 4.4 Feature UI Medium 15건 처리해줘
-```
-
-### 6.3 push/PR 만 진행
+### 6.1 push/PR 생성
 
 ```
 NEXT_STEPS.md 5.1 따라 gh CLI 설치하고 push + PR 생성 도와줘
 ```
 
-### 6.4 마무리 (Phase 3 미진행 결정 시)
+### 6.2 회귀 테스트 시나리오
 
 ```
-NEXT_STEPS.md 5.1 부터 운영 작업만 진행하고 Phase 3 는 보류해줘
+NEXT_STEPS.md 의 핵심 회귀 시나리오 5가지(지도/도형 CRUD/스케치/로그인/설정)를 함께 점검해줘
+```
+
+### 6.3 별도 PR 진행 (4. 미완 항목)
+
+```
+NEXT_STEPS.md 4. 의 B-M6 MapScreen 4종 자식 Composable 분리 진행해줘
+```
+또는
+```
+WeatherViewModel/KpViewModel error 를 sealed class + @StringRes 로 정비해줘
 ```
 
 ---

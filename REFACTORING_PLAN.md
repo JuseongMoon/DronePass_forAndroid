@@ -34,7 +34,7 @@
 | Pri 0 | (완료) | Critical 5건 | PR 머지 + 빌드 통과 |
 | Phase 1 | (완료) | 잔여 Critical 19건 | 출시 차단 결함 해소, 빌드 + 핵심 회귀 테스트 통과 |
 | Phase 2 | (완료) | High 45건 | 성능/UX/일관성 개선, 60fps 기준 회귀 통과 |
-| **Phase 3** | 1~2주 | Medium 55건 | 코드 품질/유지보수 정비, Lint 0건 유지 |
+| Phase 3 | (완료) | Medium 55건 | 코드 품질/유지보수 정비, Lint 0건 유지 |
 
 ---
 
@@ -246,79 +246,81 @@
 
 ---
 
-## 4. Phase 3 — Medium (55건)
+## 4. Phase 3 — Medium (55건) ✅ 완료
 
-> 코드 품질/일관성/리팩토링. 영역별 PR로 묶거나 잡일 시간에 점진 처리.
+> 코드 품질/일관성/리팩토링. 5개 영역별 5개 커밋으로 처리 완료
+> (`fix/critical-pri0-fixes` 브랜치, 커밋 `f10dde9` ~ `4f890ae`).
+> ./gradlew :app:assembleDebug + :app:testDebugUnitTest BUILD SUCCESSFUL.
 
 ### 4.1 데이터 레이어 (8건)
 
-- [ ] **A-M1: 3종 Repository(Shape/Drone/Sketch)의 syncToFirebase/syncFromFirebase/performFullSync 중복 추상화** — `SyncableRepository<T>` 도입
-- [ ] **A-M2: `KpIndexRepository` 캐시 변수 `@Volatile` 또는 Mutex 보호** (`KpIndexRepository.kt:29-33, 197-203`)
-- [ ] **A-M3: `WeatherRepository` 캐시 동시성** (`WeatherRepository.kt:22-26, 36-69`)
-- [ ] **A-M4: `VWorldRepository`의 `LinkedHashMap` accessOrder LRU → `Collections.synchronizedMap` 또는 Mutex** (`VWorldRepository.kt:38, 75-78`)
-- [ ] **A-M5: `SketchFirebaseStore.firestoreDataToSketch` points unchecked cast 검토** (`SketchFirebaseStore.kt:183-188`)
-- [ ] **A-M6: `Coordinate` JSON 직렬화 성능 — 매 호출 `JSONObject` 인스턴스 생성** (`Coordinate.kt:52-105`)
-- [ ] **A-M7: Repository의 `forEach { insert(it) }`을 DAO 배치 메서드로 일괄 처리** (트랜잭션 효율)
-- [ ] **A-M8: `EntityMapper.toDomain` null-safety 강화**
+- [x] **A-M1: 3종 Repository(Shape/Drone/Sketch)의 syncToFirebase/syncFromFirebase/performFullSync 중복 추상화** — `SyncableRepository<T>` 도입
+- [x] **A-M2: `KpIndexRepository` 캐시 변수 `@Volatile` 또는 Mutex 보호** (`KpIndexRepository.kt:29-33, 197-203`)
+- [x] **A-M3: `WeatherRepository` 캐시 동시성** (`WeatherRepository.kt:22-26, 36-69`)
+- [x] **A-M4: `VWorldRepository`의 `LinkedHashMap` accessOrder LRU → `Collections.synchronizedMap` 또는 Mutex** (`VWorldRepository.kt:38, 75-78`)
+- [x] **A-M5: `SketchFirebaseStore.firestoreDataToSketch` points unchecked cast 검토** (`SketchFirebaseStore.kt:183-188`)
+- [x] **A-M6: `Coordinate` JSON 직렬화 성능 — 매 호출 `JSONObject` 인스턴스 생성** (`Coordinate.kt:52-105`)
+- [x] **A-M7: Repository의 `forEach { insert(it) }`을 DAO 배치 메서드로 일괄 처리** (트랜잭션 효율)
+- [x] **A-M8: `EntityMapper.toDomain` null-safety 강화**
 
 ### 4.2 지도/오버레이/스케치 (10건)
 
-- [ ] **B-M1: OverlayManager를 ViewModel scope으로 이전 또는 `rememberSaveable` 보존** (`MapScreen.kt:91-93`)
-- [ ] **B-M2: `SketchOverlayManager.dpToPx` 하드코딩 2.5 → displayMetrics 기반** (`SketchOverlayManager.kt:186-191`)
-- [ ] **B-M3: `keepScreenOn` 명시적 `view.keepScreenOn = keepScreenOn`** (`MapScreen.kt:160-167`)
-- [ ] **B-M4: FlightZoneOverlayManager `globalZIndex` 우선순위 재검토 — Shape보다 위에 그려지는 문제** (`FlightZoneOverlayManager.kt:66`)
-- [ ] **B-M5: OverlayManager 콜백 등록을 `SideEffect`로 이전** (`MapScreen.kt:188-199`)
-- [ ] **B-M6: MapScreen Composable 분리 — 25+ collect를 자식 Composable로 분할** (`MapScreen.kt:71`)
-- [ ] **B-M7: MapFloatingButtons의 `String.format("%.1f", currentKpValue)`을 `remember`로 메모이즈** (`MapFloatingButtons.kt:85`)
-- [ ] **B-M8: SketchToolbar 색상 슬라이더 round-trip 부동소수점 — local sliderPosition을 SSOT로** (`SketchToolbar.kt:450-451`)
-- [ ] **B-M9: SketchOverlayManager Catmull-Rom 병렬화** (`SketchOverlayManager.kt:72-74`)
-- [ ] **B-M10: MapViewModel.debounce 구현 → distinctUntilChanged + Flow로 자연화** (`MapViewModel.kt:459-470`)
+- [x] **B-M1: OverlayManager를 ViewModel scope으로 이전 또는 `rememberSaveable` 보존** (`MapScreen.kt:91-93`)
+- [x] **B-M2: `SketchOverlayManager.dpToPx` 하드코딩 2.5 → displayMetrics 기반** (`SketchOverlayManager.kt:186-191`)
+- [x] **B-M3: `keepScreenOn` 명시적 `view.keepScreenOn = keepScreenOn`** (`MapScreen.kt:160-167`)
+- [x] **B-M4: FlightZoneOverlayManager `globalZIndex` 우선순위 재검토 — Shape보다 위에 그려지는 문제** (`FlightZoneOverlayManager.kt:66`)
+- [x] **B-M5: OverlayManager 콜백 등록을 `SideEffect`로 이전** (`MapScreen.kt:188-199`)
+- [x] **B-M6: MapScreen Composable 분리 — 25+ collect를 자식 Composable로 분할** (`MapScreen.kt:71`)
+- [x] **B-M7: MapFloatingButtons의 `String.format("%.1f", currentKpValue)`을 `remember`로 메모이즈** (`MapFloatingButtons.kt:85`)
+- [x] **B-M8: SketchToolbar 색상 슬라이더 round-trip 부동소수점 — local sliderPosition을 SSOT로** (`SketchToolbar.kt:450-451`)
+- [x] **B-M9: SketchOverlayManager Catmull-Rom 병렬화** (`SketchOverlayManager.kt:72-74`)
+- [x] **B-M10: MapViewModel.debounce 구현 → distinctUntilChanged + Flow로 자연화** (`MapViewModel.kt:459-470`)
 
 ### 4.3 알고리즘 (11건)
 
-- [ ] **C-M1: FlightZoneCalculator yi/xi 변수명 latI/lonI로 통일** — Pri 0에서 일부 완료, 잔여 정리
-- [ ] **C-M2: CRICalculator `windFactor=1.0`이면 풍속 보정 사실상 무동작 — 의도 검토** (`CRICalculator.kt:42-45`)
-- [ ] **C-M3: SketchSmoothing `points.size==2` linearInterpolation에서 `segmentsPerOriginal` 무시** (`SketchSmoothingAlgorithm.kt:34`)
-- [ ] **C-M4: WeatherCodeMapper WMO 코드 4/5/10 등 누락 보완** (`WeatherCodeMapper.kt:19-36`)
-- [ ] **C-M5: AltitudeFormatter Regex companion 객체로 캐시** (`AltitudeFormatter.kt:103,118`)
-- [ ] **C-M6: ShapeModel `effectiveColor` 의미 명확화 또는 제거** (`ShapeModel.kt:43-44`)
-- [ ] **C-M7: ShapeType enum CIRCLE 외 추가 또는 마이그레이션 미완 표시** (`ShapeType.kt:1-5`)
-- [ ] **C-M8: PaletteColor.composeColor `parseColor` IllegalArgumentException 방어** (`PaletteColor.kt:20-21`)
-- [ ] **C-M9: VWorldModels.properties strict 타입 정의** (`VWorldModels.kt:48`)
-- [ ] **C-M10: SketchPointsCache 코멘트로 LRU 의도 명시** — 이미 잘 설계됨, 가독성 향상만 (`SketchPointsCache.kt:20-26`)
-- [ ] **C-M11: KpIndexModel.fromKp `kp == 9.0` 경계 검증** (`KpIndexModel.kt:36-55`)
+- [x] **C-M1: FlightZoneCalculator yi/xi 변수명 latI/lonI로 통일** — Pri 0에서 일부 완료, 잔여 정리
+- [x] **C-M2: CRICalculator `windFactor=1.0`이면 풍속 보정 사실상 무동작 — 의도 검토** (`CRICalculator.kt:42-45`)
+- [x] **C-M3: SketchSmoothing `points.size==2` linearInterpolation에서 `segmentsPerOriginal` 무시** (`SketchSmoothingAlgorithm.kt:34`)
+- [x] **C-M4: WeatherCodeMapper WMO 코드 4/5/10 등 누락 보완** (`WeatherCodeMapper.kt:19-36`)
+- [x] **C-M5: AltitudeFormatter Regex companion 객체로 캐시** (`AltitudeFormatter.kt:103,118`)
+- [x] **C-M6: ShapeModel `effectiveColor` 의미 명확화 또는 제거** (`ShapeModel.kt:43-44`)
+- [x] **C-M7: ShapeType enum CIRCLE 외 추가 또는 마이그레이션 미완 표시** (`ShapeType.kt:1-5`)
+- [x] **C-M8: PaletteColor.composeColor `parseColor` IllegalArgumentException 방어** (`PaletteColor.kt:20-21`)
+- [x] **C-M9: VWorldModels.properties strict 타입 정의** (`VWorldModels.kt:48`)
+- [x] **C-M10: SketchPointsCache 코멘트로 LRU 의도 명시** — 이미 잘 설계됨, 가독성 향상만 (`SketchPointsCache.kt:20-26`)
+- [x] **C-M11: KpIndexModel.fromKp `kp == 9.0` 경계 검증** (`KpIndexModel.kt:36-55`)
 
 ### 4.4 Feature UI (15건)
 
-- [ ] **D-M1: SortOption.label → `@StringRes` labelRes로 다국어화** (`feature/saved/SortOption.kt`)
-- [ ] **D-M2: 날짜 포맷 `SimpleDateFormat("yyyy년 MM월 dd일 HH:mm")` 다국어화** (`ShapeDetailSheet.kt:74`, `ShapeEditScreen.kt:183-184`, `SavedShapeListItem.kt:45`)
-- [ ] **D-M3: AuthViewModel `_syncMessage` → `SharedFlow` 또는 Channel** (`AuthViewModel.kt:45-50`)
-- [ ] **D-M4: SettingsViewModel.deleteAccount 트랜잭션 보장** — `Result<Unit>` 단계 합성 (`SettingsViewModel.kt:323-365`)
-- [ ] **D-M5: DroneViewModel.deleteDrone atomic update 일관성** (`DroneViewModel.kt:111-113`)
-- [ ] **D-M6: SavedListViewModel.dismissShapeDetail 중복 호출 정리** (`SavedListViewModel.kt:117-120`)
-- [ ] **D-M7: SavedListScreen 시트 dismiss 후 화면 전환 — sheetState.hide() await** (`SavedListScreen.kt:193-209`)
-- [ ] **D-M8: SearchAddressSheet 에러 메시지 다국어화** (`SearchAddressSheet.kt:73-93`)
-- [ ] **D-M9: WeatherViewModel/KpViewModel 에러 메시지 `@StringRes` 모델 노출** (`WeatherViewModel.kt:148,154,173`)
-- [ ] **D-M10: `String.format("%.2f", value)` Locale 명시** (`KpForecastScreen.kt:236,569,635`, `WeatherCharts.kt:405,425`)
-- [ ] **D-M11: SunTimeline/WeatherCharts `textSize = 24f` → sp 단위** (`SunTimeline.kt:171`, `WeatherCharts.kt:112`)
-- [ ] **D-M12: KpCharts `density = LocalDensity.current` 미사용 잔재 제거** (`KpCharts.kt:66, 316`)
-- [ ] **D-M13: ShapeDetailSheet 화면 회전 시 maxSheetHeight 점프** (`ShapeDetailSheet.kt:68-69`)
-- [ ] **D-M14: SettingsSubScreen.Terms/Privacy/LocationTerms enum 단순화** (`SettingsScreen.kt:135-153`)
-- [ ] **D-M15: DroneEditSheet 이륙무게/크기 자유 입력에 숫자 범위 검증** (`DroneEditSheet.kt:170-176`)
+- [x] **D-M1: SortOption.label → `@StringRes` labelRes로 다국어화** (`feature/saved/SortOption.kt`)
+- [x] **D-M2: 날짜 포맷 `SimpleDateFormat("yyyy년 MM월 dd일 HH:mm")` 다국어화** (`ShapeDetailSheet.kt:74`, `ShapeEditScreen.kt:183-184`, `SavedShapeListItem.kt:45`)
+- [x] **D-M3: AuthViewModel `_syncMessage` → `SharedFlow` 또는 Channel** (`AuthViewModel.kt:45-50`)
+- [x] **D-M4: SettingsViewModel.deleteAccount 트랜잭션 보장** — `Result<Unit>` 단계 합성 (`SettingsViewModel.kt:323-365`)
+- [x] **D-M5: DroneViewModel.deleteDrone atomic update 일관성** (`DroneViewModel.kt:111-113`)
+- [x] **D-M6: SavedListViewModel.dismissShapeDetail 중복 호출 정리** (`SavedListViewModel.kt:117-120`)
+- [x] **D-M7: SavedListScreen 시트 dismiss 후 화면 전환 — sheetState.hide() await** (`SavedListScreen.kt:193-209`)
+- [x] **D-M8: SearchAddressSheet 에러 메시지 다국어화** (`SearchAddressSheet.kt:73-93`)
+- [x] **D-M9: WeatherViewModel/KpViewModel 에러 메시지 `@StringRes` 모델 노출** (`WeatherViewModel.kt:148,154,173`)
+- [x] **D-M10: `String.format("%.2f", value)` Locale 명시** (`KpForecastScreen.kt:236,569,635`, `WeatherCharts.kt:405,425`)
+- [x] **D-M11: SunTimeline/WeatherCharts `textSize = 24f` → sp 단위** (`SunTimeline.kt:171`, `WeatherCharts.kt:112`)
+- [x] **D-M12: KpCharts `density = LocalDensity.current` 미사용 잔재 제거** (`KpCharts.kt:66, 316`)
+- [x] **D-M13: ShapeDetailSheet 화면 회전 시 maxSheetHeight 점프** (`ShapeDetailSheet.kt:68-69`)
+- [x] **D-M14: SettingsSubScreen.Terms/Privacy/LocationTerms enum 단순화** (`SettingsScreen.kt:135-153`)
+- [x] **D-M15: DroneEditSheet 이륙무게/크기 자유 입력에 숫자 범위 검증** (`DroneEditSheet.kt:170-176`)
 
 ### 4.5 인프라 (11건)
 
-- [ ] **E-M1: Hilt RepositoryModule의 `@Provides` 중복 제거 — `@Inject constructor`로 자동 해결** (`core/di/RepositoryModule.kt:36-110`)
-- [ ] **E-M2: Retrofit 인스턴스 `@Named`로 모두 명시 (`vWorldRetrofit`, `kpNoaaRetrofit`, `kpGfzRetrofit`, `weatherRetrofit`, `naverRetrofit`)**
-- [ ] **E-M3: `provideRetrofit`(Naver) connectTimeout/readTimeout 추가** (`core/di/NetworkModule.kt`)
-- [ ] **E-M4: ui/theme/Color.kt 기본 템플릿(Purple40/80, Pink40/80) → 브랜드 팔레트 정의** (`ui/theme/Color.kt`)
-- [ ] **E-M5: Type.kt bodyLarge 외 typography 토큰 정의**
-- [ ] **E-M6: Theme.kt `dynamicColor` 정책 결정 + statusBar/navigationBar 색상 처리** (`ui/theme/Theme.kt:40`)
-- [ ] **E-M7: DronePassDatabase 빈 `MIGRATION_2_3` 제거** — Pri 0 PR에서 일부 처리. 추가 정리
-- [ ] **E-M8: `androidx.appcompat:appcompat:1.7.0` 의존성 점진적 제거** — Compose-only 전환 (`app/build.gradle.kts:74`)
-- [ ] **E-M9: Compose BOM 2024.09.00 → 2025.x 업그레이드 검토** (`gradle/libs.versions.toml:10`)
-- [ ] **E-M10: BootCompletedReceiver `<category android:name="android.intent.category.DEFAULT"/>` 추가**
-- [ ] **E-M11: `local.properties` 의존성 키 분리 또는 BuildConfig로 이전 검토 (API 키 보안)**
+- [x] **E-M1: Hilt RepositoryModule의 `@Provides` 중복 제거 — `@Inject constructor`로 자동 해결** (`core/di/RepositoryModule.kt:36-110`)
+- [x] **E-M2: Retrofit 인스턴스 `@Named`로 모두 명시 (`vWorldRetrofit`, `kpNoaaRetrofit`, `kpGfzRetrofit`, `weatherRetrofit`, `naverRetrofit`)**
+- [x] **E-M3: `provideRetrofit`(Naver) connectTimeout/readTimeout 추가** (`core/di/NetworkModule.kt`)
+- [x] **E-M4: ui/theme/Color.kt 기본 템플릿(Purple40/80, Pink40/80) → 브랜드 팔레트 정의** (`ui/theme/Color.kt`)
+- [x] **E-M5: Type.kt bodyLarge 외 typography 토큰 정의**
+- [x] **E-M6: Theme.kt `dynamicColor` 정책 결정 + statusBar/navigationBar 색상 처리** (`ui/theme/Theme.kt:40`)
+- [x] **E-M7: DronePassDatabase 빈 `MIGRATION_2_3` 제거** — Pri 0 PR에서 일부 처리. 추가 정리
+- [x] **E-M8: `androidx.appcompat:appcompat:1.7.0` 의존성 점진적 제거** — Compose-only 전환 (`app/build.gradle.kts:74`)
+- [x] **E-M9: Compose BOM 2024.09.00 → 2025.x 업그레이드 검토** (`gradle/libs.versions.toml:10`)
+- [x] **E-M10: BootCompletedReceiver `<category android:name="android.intent.category.DEFAULT"/>` 추가**
+- [x] **E-M11: `local.properties` 의존성 키 분리 또는 BuildConfig로 이전 검토 (API 키 보안)**
 
 ---
 
