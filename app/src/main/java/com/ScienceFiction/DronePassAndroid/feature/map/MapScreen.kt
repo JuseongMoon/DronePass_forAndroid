@@ -3,9 +3,7 @@ package com.ScienceFiction.DronePassAndroid.feature.map
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
-import android.graphics.PointF
 import android.util.Log
-import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,52 +15,45 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import com.ScienceFiction.DronePassAndroid.BuildConfig
-import com.ScienceFiction.DronePassAndroid.R
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.ScienceFiction.DronePassAndroid.BuildConfig
+import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.domain.model.Coordinate
-import com.ScienceFiction.DronePassAndroid.feature.map.component.DroneSelectionDropdown
-import com.ScienceFiction.DronePassAndroid.feature.map.component.MapFloatingButtons
-import com.ScienceFiction.DronePassAndroid.feature.map.overlay.ShapeOverlayManager
-import com.ScienceFiction.DronePassAndroid.feature.shape.ShapeDetailSheet
-import com.ScienceFiction.DronePassAndroid.feature.shape.ShapeEditScreen
-import com.ScienceFiction.DronePassAndroid.feature.sketch.SketchOverlayManager
-import com.ScienceFiction.DronePassAndroid.feature.sketch.SketchToolbar
-import com.ScienceFiction.DronePassAndroid.feature.sketch.SketchViewModel
-import com.ScienceFiction.DronePassAndroid.feature.vworld.FlightZoneLayerSelector
-import com.ScienceFiction.DronePassAndroid.feature.vworld.FlightZoneOverlayManager
-import com.ScienceFiction.DronePassAndroid.feature.vworld.VWorldZoneDetailSheet
-import com.ScienceFiction.DronePassAndroid.feature.kp.KpForecastContent
 import com.ScienceFiction.DronePassAndroid.feature.kp.KpViewModel
-import com.ScienceFiction.DronePassAndroid.feature.weather.WeatherForecastContent
+import com.ScienceFiction.DronePassAndroid.feature.map.overlay.ShapeOverlayManager
+import com.ScienceFiction.DronePassAndroid.feature.sketch.SketchOverlayManager
+import com.ScienceFiction.DronePassAndroid.feature.sketch.SketchViewModel
+import com.ScienceFiction.DronePassAndroid.feature.vworld.FlightZoneOverlayManager
 import com.ScienceFiction.DronePassAndroid.feature.weather.WeatherViewModel
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.ui.graphics.Color
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.accompanist.permissions.shouldShowRationale
 import com.google.android.gms.location.LocationServices
 import com.naver.maps.geometry.LatLng
+import com.naver.maps.map.CameraAnimation
 import com.naver.maps.map.CameraPosition
 import com.naver.maps.map.CameraUpdate
-import com.naver.maps.map.CameraAnimation
 import com.naver.maps.map.LocationTrackingMode
 import com.naver.maps.map.MapView
 import com.naver.maps.map.NaverMap
@@ -72,16 +63,13 @@ import com.naver.maps.map.util.FusedLocationSource
 /**
  * 지도 메인 화면.
  *
- * NOTE(향후 분리): 현 함수는 25+ collectAsStateWithLifecycle 호출로 인해 ViewModel 의 모든
- * Flow 변경에 대해 전체 함수가 재컴포지션된다. 성능 측면에서 다음 자식 Composable 분리를
- * 권장한다 (별도 PR):
- *  - `MapOverlayLayer(naverMap, shapes, sketches, zones, density, overlayManagers...)`
- *  - `MapFloatingControlsLayer(activeDrones, currentKp, currentWeather, ...)`
- *  - `MapBottomSheetsLayer(showShapeDetail, showShapeEdit, showLayerSelector, ...)`
- *  - `MapSketchModeLayer(isSketchMode, currentDrawingPoints, ...)`
- *  현재는 D-H2/D-H11(Phase 2)로 핵심 부담은 해소되어 우선순위가 낮다.
+ * 본체는 NaverMap factory + lifecycle + 권한 + 위치 추적 + 카메라 이벤트만 담당하고,
+ * 각 영역별 state collect 와 UI 렌더링은 [MapScreenLayers] 의 4개 자식 Composable
+ * ([MapOverlayEffects], [MapFloatingControls], [MapSketchInput], [MapBottomSheets])
+ * 에 위임한다. 자식별로 recomposition 범위가 좁혀져 25+ Flow 중 어느 하나가 emit 해도
+ * 부모 함수가 전체 재컴포지션되지 않는다 (B-M6 처리).
  */
-@OptIn(ExperimentalPermissionsApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun MapScreen(
     focusShapeId: String? = null,
@@ -90,10 +78,11 @@ fun MapScreen(
     viewModel: MapViewModel = hiltViewModel(),
     sketchViewModel: SketchViewModel = hiltViewModel(),
     weatherViewModel: WeatherViewModel = hiltViewModel(),
-    kpViewModel: KpViewModel = hiltViewModel()
+    kpViewModel: KpViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
+
     val mapView = remember {
         NaverMapSdk.getInstance(context).client =
             NaverMapSdk.NcpKeyClient(BuildConfig.NAVER_MAP_CLIENT_ID)
@@ -101,9 +90,9 @@ fun MapScreen(
     }
     var naverMap by remember { mutableStateOf<NaverMap?>(null) }
     var mapReady by remember { mutableStateOf(false) }
-    // OverlayManager 3종은 NaverMap lifecycle 에 묶이므로 Composable 의 remember 로 유지한다.
-    // ViewModel 로 이전하면 MapView/NaverMap 생명주기보다 길어져 setMap 호출 시점 추적이
-    // 복잡해지고 onDispose 시 detach 가 누락될 위험. 현 구조가 안전한 trade-off.
+
+    // OverlayManager 3종은 NaverMap lifecycle 에 묶이므로 Composable 의 remember 로 유지.
+    // ViewModel 로 이전하면 MapView/NaverMap 생명주기보다 길어져 detach 가 누락될 위험.
     val overlayManager = remember { ShapeOverlayManager() }
     val sketchOverlayManager = remember { SketchOverlayManager() }
     val flightZoneOverlayManager = remember { FlightZoneOverlayManager() }
@@ -118,80 +107,30 @@ fun MapScreen(
     var cameraIdleListener by remember { mutableStateOf<NaverMap.OnCameraIdleListener?>(null) }
     var mapLongClickListener by remember { mutableStateOf<NaverMap.OnMapLongClickListener?>(null) }
 
-    // ViewModel 상태 수집
-    val activeShapes by viewModel.activeShapes.collectAsStateWithLifecycle()
-    val filteredShapes by viewModel.filteredShapes.collectAsStateWithLifecycle()
-    val selectedShapeId by viewModel.selectedShapeId.collectAsStateWithLifecycle()
-    val selectedShape by viewModel.selectedShape.collectAsStateWithLifecycle()
-    val showShapeDetail by viewModel.showShapeDetail.collectAsStateWithLifecycle()
-    val showShapeEdit by viewModel.showShapeEdit.collectAsStateWithLifecycle()
-    val newShapeCoordinate by viewModel.newShapeCoordinate.collectAsStateWithLifecycle()
-    val activeDrones by viewModel.activeDrones.collectAsStateWithLifecycle()
-    val selectedDroneIds by viewModel.selectedDroneIds.collectAsStateWithLifecycle()
-    val highlightedDroneId by viewModel.highlightedDroneId.collectAsStateWithLifecycle()
-    val reverseGeocodedAddress by viewModel.reverseGeocodedAddress.collectAsStateWithLifecycle()
-
-    // 스케치 ViewModel 상태 수집
-    val isSketchMode by sketchViewModel.isSketchMode.collectAsStateWithLifecycle()
-    val isEraserMode by sketchViewModel.isEraserMode.collectAsStateWithLifecycle()
-    val activeSketches by sketchViewModel.activeSketches.collectAsStateWithLifecycle()
-    val currentDrawingPoints by sketchViewModel.currentDrawingPoints.collectAsStateWithLifecycle()
-    val currentColor by sketchViewModel.currentColor.collectAsStateWithLifecycle()
-    val currentStrokeWidth by sketchViewModel.currentStrokeWidth.collectAsStateWithLifecycle()
-    val currentOpacity by sketchViewModel.currentOpacity.collectAsStateWithLifecycle()
-    val canUndo by sketchViewModel.canUndo.collectAsStateWithLifecycle()
-    val canRedo by sketchViewModel.canRedo.collectAsStateWithLifecycle()
-
-    // KP ViewModel 상태 수집
-    val currentKp by kpViewModel.currentKp.collectAsStateWithLifecycle()
-    val kpLevel by kpViewModel.kpLevel.collectAsStateWithLifecycle()
-
-    // Sheet 상태
-    var showKpSheet by remember { mutableStateOf(false) }
-    var showWeatherSheet by remember { mutableStateOf(false) }
-
-    // 날씨 ViewModel 상태 수집
-    val weatherData by weatherViewModel.weatherData.collectAsStateWithLifecycle()
-
-    // 비행구역 ViewModel 상태 수집
-    val visibleLayers by viewModel.visibleLayers.collectAsStateWithLifecycle()
-    val flightZones by viewModel.flightZones.collectAsStateWithLifecycle()
-    val showLayerSelector by viewModel.showLayerSelector.collectAsStateWithLifecycle()
-    val showZoneDetail by viewModel.showZoneDetail.collectAsStateWithLifecycle()
-    val selectedZone by viewModel.selectedZone.collectAsStateWithLifecycle()
-
-    // DataStore 설정값 수집
-    val showFlightZoneLayersSetting by viewModel.showFlightZoneLayersSetting.collectAsStateWithLifecycle()
-    val keepScreenOn by viewModel.keepScreenOn.collectAsStateWithLifecycle()
-
-    // 위치 권한 상태
+    // 위치 권한
     val locationPermissionsState = rememberMultiplePermissionsState(
         listOf(
             Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.ACCESS_COARSE_LOCATION
-        )
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+        ),
     )
-
-    // Snackbar 상태
+    val allPermissionsGranted = locationPermissionsState.permissions.all { it.status.isGranted }
     val snackbarHostState = remember { SnackbarHostState() }
-
-    // 권한 요청 다이얼로그 표시 상태
     var showRationaleDialog by remember { mutableStateOf(false) }
 
-    // 권한이 허용되었는지 확인
-    val allPermissionsGranted = locationPermissionsState.permissions.all { it.status.isGranted }
+    // KP/Weather 시트는 부모에서 보유 (FloatingControls 가 열고 BottomSheets 가 표시)
+    var showKpSheet by remember { mutableStateOf(false) }
+    var showWeatherSheet by remember { mutableStateOf(false) }
 
-    // 화면 항상 켜기 설정 적용. true/false 양쪽 모두 명시 적용 (이전: true 만 설정 후
-    // 토글 시 false 가 반영되지 않음 — onDispose 의존이라 토글에 즉시 반응 못함).
+    // 화면 항상 켜기 설정 (Phase 3.4 B-M3 양방향 적용)
+    val keepScreenOn by viewModel.keepScreenOn.collectAsStateWithLifecycle()
     val view = LocalView.current
     DisposableEffect(keepScreenOn) {
         view.keepScreenOn = keepScreenOn
-        onDispose {
-            view.keepScreenOn = false
-        }
+        onDispose { view.keepScreenOn = false }
     }
 
-    // 권한 요청
+    // 권한 요청 (앱 초기 진입 시 1회)
     LaunchedEffect(Unit) {
         if (!allPermissionsGranted) {
             if (locationPermissionsState.permissions.any { it.status.shouldShowRationale }) {
@@ -202,111 +141,23 @@ fun MapScreen(
         }
     }
 
-    // 비행구역 에러 메시지 수집
+    // 비행구역 에러 메시지 → Snackbar
     LaunchedEffect(Unit) {
         viewModel.flightZonesError.collect { message ->
             snackbarHostState.showSnackbar(message)
         }
     }
 
-    // 오버레이 매니저 콜백 설정. SideEffect 로 매 successful recomposition 후 최신
-    // ViewModel 참조의 람다를 할당 → ViewModel 변경(예: 테스트 환경 교체)에도 즉시 반영.
-    // 이전 LaunchedEffect(overlayManager) 는 key 불변이라 첫 컴포지션 1회만 실행되어
-    // ViewModel 재바인딩 시 stale 콜백이 잔존할 가능성이 있었음.
+    // 오버레이 매니저 콜백 — SideEffect 로 매 successful recomposition 후 최신 ViewModel 참조 할당
     SideEffect {
-        overlayManager.onShapeTapped = { shapeId ->
-            viewModel.onShapeSelected(shapeId)
-        }
-        flightZoneOverlayManager.onZoneTapped = { zone ->
-            viewModel.onZoneSelected(zone)
-        }
-    }
-
-    // 비행구역 오버레이 갱신: flightZones 변경 시 지도에 반영
-    // showFlightZoneLayersSetting이 OFF이면 모든 비행구역 오버레이 클리어
-    LaunchedEffect(flightZones, mapReady, showFlightZoneLayersSetting) {
-        if (mapReady) {
-            if (!showFlightZoneLayersSetting) {
-                flightZoneOverlayManager.clearAllOverlays()
-            } else {
-                flightZones.forEach { (layer, zones) ->
-                    flightZoneOverlayManager.setZones(layer, zones)
-                }
-            }
-        }
-    }
-
-    // visibleLayers 변경 시 비행구역 로드 트리거
-    LaunchedEffect(visibleLayers, mapReady) {
-        if (mapReady) {
-            val map = naverMap ?: return@LaunchedEffect
-            val bounds = map.contentBounds
-            viewModel.onMapBoundsChanged(
-                southWestLat = bounds.southWest.latitude,
-                southWestLon = bounds.southWest.longitude,
-                northEastLat = bounds.northEast.latitude,
-                northEastLon = bounds.northEast.longitude
-            )
-        }
-    }
-
-    // 오버레이 갱신: filteredShapes 변경 시 지도에 반영 (만료/미시작 도형 필터 적용)
-    LaunchedEffect(filteredShapes, mapReady) {
-        if (mapReady) {
-            overlayManager.updateOverlays(filteredShapes)
-        }
-    }
-
-    // 선택된 도형 하이라이트 표시
-    LaunchedEffect(selectedShapeId, filteredShapes, mapReady) {
-        if (mapReady) {
-            overlayManager.setHighlight(selectedShapeId, filteredShapes)
-        }
-    }
-
-    // 스케치 오버레이 갱신: activeSketches 변경 시 지도에 반영
-    LaunchedEffect(activeSketches, mapReady) {
-        if (mapReady) {
-            sketchOverlayManager.updateOverlays(activeSketches)
-        }
-    }
-
-    // 스케치 프리뷰: 좌표 변경과 스타일 변경의 effect 를 분리.
-    // 이전: 단일 LaunchedEffect 가 4개 키에 묶여 그리기 중 매 5m 마다 코루틴이 재시작
-    //   되며 dpToPx/색상 파싱이 매번 수행됨.
-    // 수정: currentDrawingPoints 변경 시에는 좌표만 업데이트 (스타일은 기존 값 그대로),
-    //   색상/두께/투명도가 바뀔 때만 별도 effect 가 스타일을 갱신.
-    LaunchedEffect(currentDrawingPoints) {
-        if (currentDrawingPoints.isNotEmpty()) {
-            sketchOverlayManager.updatePreviewOverlay(
-                points = currentDrawingPoints,
-                color = currentColor,
-                strokeWidth = currentStrokeWidth,
-                opacity = currentOpacity
-            )
-        } else {
-            sketchOverlayManager.clearPreviewOverlay()
-        }
-    }
-    LaunchedEffect(currentColor, currentStrokeWidth, currentOpacity) {
-        if (currentDrawingPoints.isNotEmpty()) {
-            sketchOverlayManager.updatePreviewOverlay(
-                points = currentDrawingPoints,
-                color = currentColor,
-                strokeWidth = currentStrokeWidth,
-                opacity = currentOpacity
-            )
-        }
-    }
-
-    // 스케치 모드 진입/종료 시 지도 제스처 토글
-    LaunchedEffect(isSketchMode) {
-        naverMap?.uiSettings?.setAllGesturesEnabled(!isSketchMode)
+        overlayManager.onShapeTapped = { shapeId -> viewModel.onShapeSelected(shapeId) }
+        flightZoneOverlayManager.onZoneTapped = { zone -> viewModel.onZoneSelected(zone) }
     }
 
     // 탭 간 연동: 저장 목록에서 도형 선택 시 해당 도형으로 포커스
     LaunchedEffect(focusShapeId, mapReady) {
         if (focusShapeId != null && mapReady) {
+            val activeShapes = viewModel.activeShapes.value
             val shape = activeShapes.find { it.id == focusShapeId }
             if (shape != null) {
                 viewModel.onShapeSelected(shape.id)
@@ -316,15 +167,14 @@ fun MapScreen(
         }
     }
 
-    // 위치 추적 설정 — 권한과 mapReady 가 모두 충족된 시점에 단 1회 실행.
-    // (이전: AndroidView update 람다에서 매 recomposition 마다 호출되어 FusedLocationSource 누수)
+    // 위치 추적 설정 — 권한과 mapReady 가 모두 충족된 시점에 단 1회.
     LaunchedEffect(allPermissionsGranted, mapReady) {
         if (allPermissionsGranted && mapReady) {
             naverMap?.let { setupLocationTracking(it, context) }
         }
     }
 
-    // 카메라 이벤트 수집
+    // 카메라 이벤트 (MoveTo / MoveWithoutZoom)
     LaunchedEffect(Unit) {
         viewModel.cameraEvent.collect { event ->
             naverMap?.let { map ->
@@ -332,13 +182,13 @@ fun MapScreen(
                     is CameraEvent.MoveTo -> {
                         val cameraUpdate = CameraUpdate.scrollAndZoomTo(
                             LatLng(event.coordinate.latitude, event.coordinate.longitude),
-                            event.zoom
+                            event.zoom,
                         ).animate(CameraAnimation.Easing, 500)
                         map.moveCamera(cameraUpdate)
                     }
                     is CameraEvent.MoveWithoutZoom -> {
                         val cameraUpdate = CameraUpdate.scrollTo(
-                            LatLng(event.coordinate.latitude, event.coordinate.longitude)
+                            LatLng(event.coordinate.latitude, event.coordinate.longitude),
                         ).animate(CameraAnimation.Easing, 500)
                         map.moveCamera(cameraUpdate)
                     }
@@ -346,6 +196,17 @@ fun MapScreen(
             }
         }
     }
+
+    // ── 자식 1: 오버레이 갱신 LaunchedEffect 묶음 (UI 없음) ──
+    MapOverlayEffects(
+        naverMap = naverMap,
+        mapReady = mapReady,
+        overlayManager = overlayManager,
+        sketchOverlayManager = sketchOverlayManager,
+        flightZoneOverlayManager = flightZoneOverlayManager,
+        viewModel = viewModel,
+        sketchViewModel = sketchViewModel,
+    )
 
     // 권한 설명 다이얼로그
     if (showRationaleDialog) {
@@ -354,12 +215,10 @@ fun MapScreen(
             title = { Text(stringResource(R.string.map_permission_dialog_title)) },
             text = { Text(stringResource(R.string.map_permission_dialog_message)) },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        showRationaleDialog = false
-                        locationPermissionsState.launchMultiplePermissionRequest()
-                    }
-                ) {
+                TextButton(onClick = {
+                    showRationaleDialog = false
+                    locationPermissionsState.launchMultiplePermissionRequest()
+                }) {
                     Text(stringResource(R.string.map_permission_allow))
                 }
             },
@@ -367,15 +226,13 @@ fun MapScreen(
                 TextButton(onClick = { showRationaleDialog = false }) {
                     Text(stringResource(R.string.common_cancel))
                 }
-            }
+            },
         )
     }
 
-    // 메인 레이아웃 (Box - MainScreen이 이미 Scaffold 제공)
-    Box(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        // 네이버 지도 표시
+    // 메인 레이아웃 (Box - MainScreen 이 이미 Scaffold 제공)
+    Box(modifier = Modifier.fillMaxSize()) {
+        // 네이버 지도
         AndroidView(
             factory = {
                 mapView.apply {
@@ -388,280 +245,94 @@ fun MapScreen(
 
                         Log.d("NaverMapDebug", "네이버 지도 준비 완료")
 
-                        // 기본 카메라 위치 설정 (서울 시청)
-                        val defaultPosition = CameraPosition(
-                            LatLng(37.5665, 126.9780),
-                            13.0
-                        )
-                        map.cameraPosition = defaultPosition
-
-                        // 지도 UI 설정
+                        map.cameraPosition = CameraPosition(LatLng(37.5665, 126.9780), 13.0)
                         map.uiSettings.apply {
                             isLocationButtonEnabled = true
                             isZoomControlEnabled = true
                             isCompassEnabled = true
                         }
 
-                        // 카메라 이동 완료 시 비행구역 로드 (Debounce는 ViewModel에서 처리)
-                        // 리스너 참조를 보관하여 onDispose 에서 명시적 제거 가능하게 한다.
                         val cameraListener = NaverMap.OnCameraIdleListener {
                             val bounds = map.contentBounds
                             viewModel.onMapBoundsChanged(
                                 southWestLat = bounds.southWest.latitude,
                                 southWestLon = bounds.southWest.longitude,
                                 northEastLat = bounds.northEast.latitude,
-                                northEastLon = bounds.northEast.longitude
+                                northEastLon = bounds.northEast.longitude,
                             )
                         }
                         map.addOnCameraIdleListener(cameraListener)
                         cameraIdleListener = cameraListener
 
-                        // 지도 롱프레스 시 해당 좌표에 도형 생성 + 역지오코딩
                         val longClickListener = NaverMap.OnMapLongClickListener { _, latLng ->
-                            val coordinate = Coordinate.fromLatLng(latLng)
-                            viewModel.onCreateShapeAtCoordinate(coordinate)
+                            viewModel.onCreateShapeAtCoordinate(Coordinate.fromLatLng(latLng))
                         }
                         map.setOnMapLongClickListener(longClickListener)
                         mapLongClickListener = longClickListener
 
-                        // 모든 초기 설정 완료 후 mapReady 신호 — 권한/위치 추적 LaunchedEffect 의 트리거.
                         mapReady = true
                     }
                 }
             },
-            modifier = Modifier.fillMaxSize()
-            // update 람다 제거: setupLocationTracking 호출은 별도의 LaunchedEffect 에서 수행한다.
-            // (이전 update 람다는 매 recomposition 마다 호출되어 FusedLocationSource 가 재생성되며 누수 발생)
+            modifier = Modifier.fillMaxSize(),
         )
 
-        // 스케치 모드일 때 터치 인터셉트 레이어
-        if (isSketchMode) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .pointerInput(isEraserMode) {
-                        detectDragGestures(
-                            onDragStart = { offset ->
-                                val map = naverMap ?: return@detectDragGestures
-                                val latLng = map.projection.fromScreenLocation(
-                                    PointF(offset.x, offset.y)
-                                )
-                                val coordinate = Coordinate.fromLatLng(latLng)
-
-                                if (isEraserMode) {
-                                    sketchViewModel.deleteSketchAtPoint(coordinate)
-                                } else {
-                                    sketchViewModel.startDrawing(coordinate)
-                                }
-                            },
-                            onDrag = { change, _ ->
-                                change.consume()
-                                val map = naverMap ?: return@detectDragGestures
-                                val latLng = map.projection.fromScreenLocation(
-                                    PointF(
-                                        change.position.x,
-                                        change.position.y
-                                    )
-                                )
-                                val coordinate = Coordinate.fromLatLng(latLng)
-
-                                if (isEraserMode) {
-                                    sketchViewModel.deleteSketchAtPoint(coordinate)
-                                } else {
-                                    sketchViewModel.continueDrawing(coordinate)
-                                }
-                            },
-                            onDragEnd = {
-                                if (!isEraserMode) {
-                                    sketchViewModel.finishDrawing()
-                                }
-                            }
-                        )
-                    }
-            )
-        }
+        // ── 자식 3: 스케치 입력 인터셉터 + 툴바 (isSketchMode = true 일 때만 내부에서 렌더) ──
+        MapSketchInput(
+            naverMap = naverMap,
+            sketchViewModel = sketchViewModel,
+        )
 
         // 지도 로딩 중 인디케이터
         if (!mapReady) {
-            CircularProgressIndicator(
-                modifier = Modifier.align(Alignment.Center)
-            )
+            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
         }
 
-        // 권한이 거부된 경우 안내 메시지
+        // 권한 거부 안내
         if (!allPermissionsGranted) {
             Column(
                 modifier = Modifier.align(Alignment.Center),
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(stringResource(R.string.map_permission_required))
-                Button(
-                    onClick = { locationPermissionsState.launchMultiplePermissionRequest() }
-                ) {
+                Button(onClick = { locationPermissionsState.launchMultiplePermissionRequest() }) {
                     Text(stringResource(R.string.map_permission_request))
                 }
             }
         }
 
-        // 드론 선택 드롭다운 (상단 우측) - 스케치 모드가 아닐 때만 표시
-        if (!isSketchMode && mapReady) {
-            DroneSelectionDropdown(
-                activeDrones = activeDrones,
-                selectedDroneIds = selectedDroneIds,
-                highlightedDroneId = highlightedDroneId,
-                onToggleSelection = { viewModel.toggleDroneSelection(it) },
-                onToggleHighlight = { viewModel.toggleDroneHighlight(it) },
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(top = 16.dp, end = 16.dp)
-            )
-        }
+        // ── 자식 2: 드론 드롭다운 + FAB + KP/Weather 카드 ──
+        MapFloatingControls(
+            mapReady = mapReady,
+            naverMap = naverMap,
+            viewModel = viewModel,
+            sketchViewModel = sketchViewModel,
+            kpViewModel = kpViewModel,
+            weatherViewModel = weatherViewModel,
+            onShowKpForecast = { showKpSheet = true },
+            onShowWeather = { showWeatherSheet = true },
+            modifier = Modifier.fillMaxSize(),
+        )
 
-        // 플로팅 버튼 (도형 추가 + 스케치 + KP + 날씨 + 레이어) - 스케치 모드가 아닐 때만 표시
-        if (!isSketchMode) {
-            MapFloatingButtons(
-                onCreateShape = {
-                    // 현재 지도 중심 좌표를 새 도형의 좌표로 사용
-                    val centerCoordinate = naverMap?.cameraPosition?.target?.let {
-                        Coordinate(it.latitude, it.longitude)
-                    } ?: Coordinate(37.5665, 126.9780)
-                    viewModel.onCreateShapeRequested(centerCoordinate)
-                },
-                onEnterSketchMode = {
-                    sketchViewModel.enterSketchMode()
-                },
-                onShowFlightZoneLayers = {
-                    viewModel.toggleLayerSelector()
-                },
-                flightZoneLayersActive = visibleLayers.isNotEmpty(),
-                showFlightZoneLayerButton = showFlightZoneLayersSetting,
-                currentKpValue = currentKp?.kp,
-                kpLevelColor = Color(kpLevel.color.toInt()),
-                onShowKpForecast = { showKpSheet = true },
-                currentWeather = weatherData?.current,
-                sunrise = weatherData?.sunrise,
-                sunset = weatherData?.sunset,
-                onWeatherClick = { showWeatherSheet = true },
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(end = 16.dp, bottom = 16.dp)
-            )
-        }
-
-        // Snackbar (에러 메시지 표시)
         SnackbarHost(
             hostState = snackbarHostState,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = 80.dp)
-        )
-
-        // 스케치 모드일 때 툴바 표시 (하단)
-        if (isSketchMode) {
-            SketchToolbar(
-                currentColor = currentColor,
-                currentStrokeWidth = currentStrokeWidth,
-                currentOpacity = currentOpacity,
-                isEraserMode = isEraserMode,
-                canUndo = canUndo,
-                canRedo = canRedo,
-                sketchCount = activeSketches.size,
-                onColorChanged = { sketchViewModel.setColor(it) },
-                onStrokeWidthChanged = { sketchViewModel.setStrokeWidth(it) },
-                onOpacityChanged = { sketchViewModel.setOpacity(it) },
-                onToggleEraser = { sketchViewModel.toggleEraserMode() },
-                onUndo = { sketchViewModel.undo() },
-                onRedo = { sketchViewModel.redo() },
-                onDeleteAll = { sketchViewModel.deleteAllSketches() },
-                onDone = { sketchViewModel.exitSketchMode() },
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = 16.dp)
-            )
-        }
-    }
-
-    // 도형 상세 BottomSheet
-    if (showShapeDetail) {
-        selectedShape?.let { shape ->
-            ShapeDetailSheet(
-                shape = shape,
-                onEdit = {
-                    viewModel.onEditShapeRequested(shape)
-                },
-                onDelete = {
-                    viewModel.deleteShape(shape)
-                },
-                onDismiss = {
-                    viewModel.dismissShapeDetail()
-                }
-            )
-        }
-    }
-
-    // 도형 생성/편집 BottomSheet
-    if (showShapeEdit) {
-        ShapeEditScreen(
-            shape = selectedShape,
-            initialCoordinate = newShapeCoordinate,
-            drones = activeDrones,
-            reverseGeocodedAddress = reverseGeocodedAddress,
-            geocodingApi = viewModel.naverGeocodingApi,
-            onSave = { shape ->
-                viewModel.saveShape(shape)
-            },
-            onDismiss = {
-                viewModel.dismissShapeEdit()
-            }
+                .padding(bottom = 80.dp),
         )
     }
 
-    // 비행구역 레이어 선택 BottomSheet
-    if (showLayerSelector) {
-        FlightZoneLayerSelector(
-            visibleLayers = visibleLayers,
-            onToggleLayer = { layer -> viewModel.toggleLayer(layer) },
-            onShowAll = { viewModel.showAllLayers() },
-            onHideAll = { viewModel.hideAllLayers() },
-            onDismiss = { viewModel.dismissLayerSelector() }
-        )
-    }
-
-    // 비행구역 상세 BottomSheet
-    if (showZoneDetail) {
-        selectedZone?.let { zone ->
-            VWorldZoneDetailSheet(
-                zone = zone,
-                onDismiss = { viewModel.dismissZoneDetail() }
-            )
-        }
-    }
-
-    // KP 지수 BottomSheet
-    if (showKpSheet) {
-        ModalBottomSheet(
-            onDismissRequest = { showKpSheet = false },
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-        ) {
-            KpForecastContent(
-                viewModel = kpViewModel,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-        }
-    }
-
-    // 날씨 BottomSheet
-    if (showWeatherSheet) {
-        ModalBottomSheet(
-            onDismissRequest = { showWeatherSheet = false },
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-        ) {
-            WeatherForecastContent(
-                viewModel = weatherViewModel,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-        }
-    }
+    // ── 자식 4: BottomSheets 6종 ──
+    MapBottomSheets(
+        showKpSheet = showKpSheet,
+        onDismissKpSheet = { showKpSheet = false },
+        showWeatherSheet = showWeatherSheet,
+        onDismissWeatherSheet = { showWeatherSheet = false },
+        viewModel = viewModel,
+        kpViewModel = kpViewModel,
+        weatherViewModel = weatherViewModel,
+        onNavigateToWeather = onNavigateToWeather,
+    )
 
     // 생명주기 관리 - LifecycleOwner 연동
     DisposableEffect(lifecycleOwner, mapView) {
@@ -685,7 +356,7 @@ fun MapScreen(
             cameraIdleListener = null
             mapLongClickListener = null
 
-            // 오버레이 매니저 3종은 detach() 로 NaverMap 참조까지 해제 → 누수 방지
+            // OverlayManager 3종 detach → NaverMap 참조 해제 (Activity 누수 방지)
             overlayManager.detach()
             sketchOverlayManager.detach()
             flightZoneOverlayManager.detach()
@@ -696,10 +367,7 @@ fun MapScreen(
 }
 
 @SuppressLint("MissingPermission")
-private fun setupLocationTracking(
-    map: NaverMap,
-    context: android.content.Context
-) {
+private fun setupLocationTracking(map: NaverMap, context: android.content.Context) {
     try {
         val activity = context as? Activity ?: run {
             Log.e("MapScreen", "Context is not an Activity, cannot setup location tracking")
@@ -713,11 +381,7 @@ private fun setupLocationTracking(
         val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
         fusedLocationClient.lastLocation.addOnSuccessListener { location ->
             location?.let {
-                val cameraPosition = CameraPosition(
-                    LatLng(it.latitude, it.longitude),
-                    15.0
-                )
-                map.cameraPosition = cameraPosition
+                map.cameraPosition = CameraPosition(LatLng(it.latitude, it.longitude), 15.0)
             }
         }
     } catch (e: Exception) {

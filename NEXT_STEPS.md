@@ -1,6 +1,6 @@
 # 작업 이어가기 핸드오프 노트
 
-> 마지막 업데이트: 2026-05-19 (Phase 3 완료)
+> 마지막 업데이트: 2026-05-19 (Phase 3 완료 + B-M6 후속 분리)
 > 다음 세션에서 이 문서 + `REFACTORING_PLAN.md` 를 함께 읽으면 즉시 이어서 진행할 수 있다.
 
 ---
@@ -10,9 +10,9 @@
 | 항목 | 값 |
 |---|---|
 | **브랜치** | `fix/critical-pri0-fixes` |
-| **마지막 커밋** | `4f890ae` (Phase 3.5 UI Medium 15건) |
+| **마지막 커밋** | `<TBD>` (B-M6 MapScreen 자식 4종 분리) |
 | **워킹 트리** | clean (변경 없음 — REFACTORING_PLAN/NEXT_STEPS 갱신 후) |
-| **원격 동기화** | `origin/fix/critical-pri0-fixes` 보다 12 커밋 ahead (push 미수행) |
+| **원격 동기화** | `origin/fix/critical-pri0-fixes` 보다 13 커밋 ahead (push 미수행) |
 | **누적 처리** | **124건 중 124건 완료 (100%)** ✅ |
 | **잔여** | 없음 — Phase 1/2/3 모두 종료 |
 
@@ -85,6 +85,7 @@ efed981 docs: REFACTORING_PLAN.md 추가 - 잔여 119건 단계별 체크리스�
 | `REFACTORING_PLAN.md` | 124건 전체 체크리스트 (Phase 1/2/3 모두 [x]) |
 | `app/src/main/java/.../core/data/UserLocationKeys.kt` | BootReceiver 위치 캐시 공유 키 |
 | `app/src/main/java/.../core/data/sync/SyncMerge.kt` | mergeLWW / filterServerNewer 헬퍼 (Phase 3.2) |
+| `app/src/main/java/.../feature/map/MapScreenLayers.kt` | MapScreen 자식 Composable 4종 (B-M6 후속) |
 | `app/src/main/java/.../feature/settings/NotificationPermissionRequest.kt` | 알림 권한 안내 카드 |
 | `app/src/main/res/values-night/themes.xml` | 다크 모드 테마 |
 | `keystore.properties.example` | Release 서명 샘플 |
@@ -126,7 +127,7 @@ Phase 1/2/3 모두 완료. 다음 세션에서 진행할 수 있는 작업:
 
 | 항목 | 상태 | 메모 |
 |---|---|---|
-| **B-M6** MapScreen 25+ collect → 4종 자식 Composable 분리 | 코멘트 표시됨 | D-H2/D-H11 로 핵심 성능 부담 해소. 추가 분리는 우선순위 낮음. MapScreen.kt 상단 코멘트에 분리 가이드 포함 |
+| **B-M6** MapScreen 25+ collect → 4종 자식 Composable 분리 | ✅ 완료 | `MapScreenLayers.kt` 신규 (MapOverlayEffects/MapFloatingControls/MapSketchInput/MapBottomSheets). 본체 728→392줄. 자식별 recomposition 범위 격리 |
 | **D-M9** WeatherViewModel/KpViewModel error sealed class + @StringRes | 향후 작업 | strings.xml 키는 이미 추가됨 (weather_error_*). ViewModel 모델 변경은 별도 PR |
 | **D-M14** SettingsSubScreen sealed class 통합 | 향후 작업 | Terms/Privacy/LocationTerms 통합 가능, 현재 enum 가독성 충분 |
 | **E-M9** Compose BOM 2024.09 → 2025.x | 검토 코멘트 | libs.versions.toml 에 검증 항목 명시 |
