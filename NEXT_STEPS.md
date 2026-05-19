@@ -10,7 +10,7 @@
 | 항목 | 값 |
 |---|---|
 | **브랜치** | `fix/critical-pri0-fixes` |
-| **마지막 커밋** | `<TBD>` (B-M6 MapScreen 자식 4종 분리) |
+| **마지막 커밋** | `a0af424` (B-M6 MapScreen 자식 4종 분리) |
 | **워킹 트리** | clean (변경 없음 — REFACTORING_PLAN/NEXT_STEPS 갱신 후) |
 | **원격 동기화** | `origin/fix/critical-pri0-fixes` 보다 13 커밋 ahead (push 미수행) |
 | **누적 처리** | **124건 중 124건 완료 (100%)** ✅ |
