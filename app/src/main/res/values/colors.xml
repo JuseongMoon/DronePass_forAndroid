@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="purple_200">#FFBB86FC</color>
-    <color name="purple_500">#FF6200EE</color>
-    <color name="purple_700">#FF3700B3</color>
-    <color name="teal_200">#FF03DAC5</color>
-    <color name="teal_700">#FF018786</color>
-    <color name="black">#FF000000</color>
+    <!--
+        앱은 Compose Material3 의 색상 토큰만 사용한다(Theme.kt 참고).
+        리소스 색상은 ic_launcher_background, splash 배경 등 시스템 inflation 경로에서
+        필요한 최소 값만 둔다.
+    -->
     <color name="white">#FFFFFFFF</color>
+    <color name="black">#FF000000</color>
 </resources>
