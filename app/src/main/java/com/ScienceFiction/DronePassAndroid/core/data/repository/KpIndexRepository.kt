@@ -6,6 +6,8 @@ import com.ScienceFiction.DronePassAndroid.core.data.remote.kp.KpNoaa27DayApi
 import com.ScienceFiction.DronePassAndroid.core.data.remote.kp.KpNoaaApi
 import com.ScienceFiction.DronePassAndroid.domain.model.Kp27DayForecast
 import com.ScienceFiction.DronePassAndroid.domain.model.KpIndexData
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.json.JSONArray
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -26,11 +28,14 @@ class KpIndexRepository @Inject constructor(
         private const val CACHE_DURATION_MS = 30 * 60 * 1000L // 30분
     }
 
-    private var cachedCurrentKp: KpIndexData? = null
-    private var cachedForecast: List<KpIndexData>? = null
-    private var cached27DayForecast: List<Kp27DayForecast>? = null
-    private var lastFetchTime: Long = 0L
-    private var last27DayFetchTime: Long = 0L
+    // 동시 호출(여러 ViewModel 의 refresh)에 대비한 캐시 동시성.
+    // @Volatile 로 가시성 확보 + Mutex 로 read-modify-write 직렬화.
+    @Volatile private var cachedCurrentKp: KpIndexData? = null
+    @Volatile private var cachedForecast: List<KpIndexData>? = null
+    @Volatile private var cached27DayForecast: List<Kp27DayForecast>? = null
+    @Volatile private var lastFetchTime: Long = 0L
+    @Volatile private var last27DayFetchTime: Long = 0L
+    private val cacheMutex = Mutex()
 
     /**
      * 현재 Kp 지수 조회
@@ -38,70 +43,79 @@ class KpIndexRepository @Inject constructor(
      * Fallback 순서: GFZ Potsdam -> NOAA SWPC -> 캐시
      */
     suspend fun getCurrentKp(): Result<KpIndexData> {
-        // 캐시 확인
+        // 캐시 hit-path 는 락 없이 빠르게 통과 (@Volatile 가시성).
         if (isCacheValid()) {
             cachedCurrentKp?.let { return Result.success(it) }
         }
 
-        // 1차: GFZ Potsdam
-        try {
-            val gfzResult = fetchFromGfz()
-            if (gfzResult != null) {
-                cachedCurrentKp = gfzResult
-                lastFetchTime = System.currentTimeMillis()
-                return Result.success(gfzResult)
+        // miss-path 는 직렬화하여 동시 GFZ/NOAA 호출 중복 방지.
+        return cacheMutex.withLock {
+            // 락 획득 후 재확인 (다른 코루틴이 이미 갱신했을 수 있음)
+            if (isCacheValid()) {
+                cachedCurrentKp?.let { return@withLock Result.success(it) }
             }
-        } catch (e: Exception) {
-            Log.w(TAG, "GFZ 데이터 로드 실패: ${e.message}")
-        }
 
-        // 2차: NOAA SWPC
-        try {
-            val noaaResult = fetchForecastFromNoaa()
-            if (noaaResult.isNotEmpty()) {
-                // 가장 최근 observed/estimated 데이터 사용
-                val current = noaaResult.lastOrNull { it.observed == "observed" }
-                    ?: noaaResult.lastOrNull { it.observed == "estimated" }
-                    ?: noaaResult.first()
-                cachedCurrentKp = current
-                cachedForecast = noaaResult
-                lastFetchTime = System.currentTimeMillis()
-                return Result.success(current)
+            // 1차: GFZ Potsdam
+            try {
+                val gfzResult = fetchFromGfz()
+                if (gfzResult != null) {
+                    cachedCurrentKp = gfzResult
+                    lastFetchTime = System.currentTimeMillis()
+                    return@withLock Result.success(gfzResult)
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "GFZ 데이터 로드 실패: ${e.message}")
             }
-        } catch (e: Exception) {
-            Log.w(TAG, "NOAA 데이터 로드 실패: ${e.message}")
+
+            // 2차: NOAA SWPC
+            try {
+                val noaaResult = fetchForecastFromNoaa()
+                if (noaaResult.isNotEmpty()) {
+                    val current = noaaResult.lastOrNull { it.observed == "observed" }
+                        ?: noaaResult.lastOrNull { it.observed == "estimated" }
+                        ?: noaaResult.first()
+                    cachedCurrentKp = current
+                    cachedForecast = noaaResult
+                    lastFetchTime = System.currentTimeMillis()
+                    return@withLock Result.success(current)
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "NOAA 데이터 로드 실패: ${e.message}")
+            }
+
+            // 3차: 캐시 (만료된 stale 캐시라도 반환)
+            cachedCurrentKp?.let { return@withLock Result.success(it) }
+
+            Result.failure(Exception("Kp 지수 데이터를 가져올 수 없습니다"))
         }
-
-        // 3차: 캐시
-        cachedCurrentKp?.let { return Result.success(it) }
-
-        return Result.failure(Exception("Kp 지수 데이터를 가져올 수 없습니다"))
     }
 
     /**
      * Kp 지수 예보 데이터 조회
      */
     suspend fun getForecast(): Result<List<KpIndexData>> {
-        // 캐시 확인
         if (isCacheValid()) {
             cachedForecast?.let { return Result.success(it) }
         }
 
-        // NOAA SWPC에서 예보 데이터 가져오기
-        try {
-            val forecast = fetchForecastFromNoaa()
-            if (forecast.isNotEmpty()) {
-                cachedForecast = forecast
-                lastFetchTime = System.currentTimeMillis()
-                return Result.success(forecast)
+        return cacheMutex.withLock {
+            if (isCacheValid()) {
+                cachedForecast?.let { return@withLock Result.success(it) }
             }
-        } catch (e: Exception) {
-            Log.w(TAG, "예보 데이터 로드 실패: ${e.message}")
+            try {
+                val forecast = fetchForecastFromNoaa()
+                if (forecast.isNotEmpty()) {
+                    cachedForecast = forecast
+                    lastFetchTime = System.currentTimeMillis()
+                    return@withLock Result.success(forecast)
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "예보 데이터 로드 실패: ${e.message}")
+            }
+
+            cachedForecast?.let { return@withLock Result.success(it) }
+            Result.failure(Exception("Kp 지수 예보 데이터를 가져올 수 없습니다"))
         }
-
-        cachedForecast?.let { return Result.success(it) }
-
-        return Result.failure(Exception("Kp 지수 예보 데이터를 가져올 수 없습니다"))
     }
 
     /**
@@ -110,27 +124,30 @@ class KpIndexRepository @Inject constructor(
      * NOAA SWPC 27-day outlook 텍스트를 파싱하여 일별 Kp/Ap 예측값을 반환한다.
      */
     suspend fun get27DayForecast(): Result<List<Kp27DayForecast>> {
-        // 캐시 확인 (27일 예보는 하루에 1번만 변경되므로 30분 캐시 재사용)
         if (System.currentTimeMillis() - last27DayFetchTime < CACHE_DURATION_MS) {
             cached27DayForecast?.let { return Result.success(it) }
         }
 
-        try {
-            val response = noaa27DayApi.get27DayOutlook()
-            val text = response.string()
-            val forecasts = parse27DayOutlook(text)
-            if (forecasts.isNotEmpty()) {
-                cached27DayForecast = forecasts
-                last27DayFetchTime = System.currentTimeMillis()
-                return Result.success(forecasts)
+        return cacheMutex.withLock {
+            if (System.currentTimeMillis() - last27DayFetchTime < CACHE_DURATION_MS) {
+                cached27DayForecast?.let { return@withLock Result.success(it) }
             }
-        } catch (e: Exception) {
-            Log.w(TAG, "27일 장기예보 로드 실패: ${e.message}")
+            try {
+                val response = noaa27DayApi.get27DayOutlook()
+                val text = response.string()
+                val forecasts = parse27DayOutlook(text)
+                if (forecasts.isNotEmpty()) {
+                    cached27DayForecast = forecasts
+                    last27DayFetchTime = System.currentTimeMillis()
+                    return@withLock Result.success(forecasts)
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "27일 장기예보 로드 실패: ${e.message}")
+            }
+
+            cached27DayForecast?.let { return@withLock Result.success(it) }
+            Result.failure(Exception("27일 장기예보 데이터를 가져올 수 없습니다"))
         }
-
-        cached27DayForecast?.let { return Result.success(it) }
-
-        return Result.failure(Exception("27일 장기예보 데이터를 가져올 수 없습니다"))
     }
 
     /**

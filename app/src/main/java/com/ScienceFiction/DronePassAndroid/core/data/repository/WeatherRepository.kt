@@ -8,6 +8,8 @@ import com.ScienceFiction.DronePassAndroid.core.util.GustDifferenceCalculator
 import com.ScienceFiction.DronePassAndroid.domain.model.CurrentWeatherData
 import com.ScienceFiction.DronePassAndroid.domain.model.HourlyWeatherData
 import com.ScienceFiction.DronePassAndroid.domain.model.WeatherData
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -18,12 +20,13 @@ import javax.inject.Singleton
 class WeatherRepository @Inject constructor(
     private val weatherApi: WeatherApi
 ) {
-    // 3분 캐시
-    private var cachedData: WeatherData? = null
-    private var cachedLatitude: Double = 0.0
-    private var cachedLongitude: Double = 0.0
-    private var cacheTimestamp: Long = 0L
-    private var cachedCategory: DroneCategory = DroneCategory.TOY
+    // 3분 캐시 — 동시 fetchWeather 호출에서 가시성 + R/M/W 직렬화.
+    @Volatile private var cachedData: WeatherData? = null
+    @Volatile private var cachedLatitude: Double = 0.0
+    @Volatile private var cachedLongitude: Double = 0.0
+    @Volatile private var cacheTimestamp: Long = 0L
+    @Volatile private var cachedCategory: DroneCategory = DroneCategory.TOY
+    private val cacheMutex = Mutex()
 
     companion object {
         private const val CACHE_DURATION_MS = 3 * 60 * 1000L // 3분
@@ -38,34 +41,40 @@ class WeatherRepository @Inject constructor(
         longitude: Double,
         category: DroneCategory = DroneCategory.TOY
     ): Result<WeatherData> {
-        // 캐시 확인
-        val now = System.currentTimeMillis()
+        // 캐시 hit-path: 락 없이 빠르게 검사 (@Volatile 가시성 보장)
+        if (isCacheHit(latitude, longitude, category)) {
+            cachedData?.let { return Result.success(it) }
+        }
+
+        // miss-path: 직렬화하여 동일 좌표 동시 호출이 동일 API 를 다회 호출하지 않도록.
+        return cacheMutex.withLock {
+            if (isCacheHit(latitude, longitude, category)) {
+                cachedData?.let { return@withLock Result.success(it) }
+            }
+            try {
+                val response = weatherApi.getWeather(latitude = latitude, longitude = longitude)
+                val weatherData = mapToWeatherData(response, category)
+
+                cachedData = weatherData
+                cachedLatitude = latitude
+                cachedLongitude = longitude
+                cachedCategory = category
+                cacheTimestamp = System.currentTimeMillis()
+
+                Result.success(weatherData)
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+    }
+
+    private fun isCacheHit(latitude: Double, longitude: Double, category: DroneCategory): Boolean {
         val locationChanged = kotlin.math.abs(latitude - cachedLatitude) > LOCATION_THRESHOLD ||
                 kotlin.math.abs(longitude - cachedLongitude) > LOCATION_THRESHOLD
         val categoryChanged = cachedCategory != category
-
-        if (!locationChanged && !categoryChanged &&
-            cachedData != null &&
-            now - cacheTimestamp < CACHE_DURATION_MS
-        ) {
-            return Result.success(cachedData!!)
-        }
-
-        return try {
-            val response = weatherApi.getWeather(latitude = latitude, longitude = longitude)
-            val weatherData = mapToWeatherData(response, category)
-
-            // 캐시 업데이트
-            cachedData = weatherData
-            cachedLatitude = latitude
-            cachedLongitude = longitude
-            cachedCategory = category
-            cacheTimestamp = now
-
-            Result.success(weatherData)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
+        return !locationChanged && !categoryChanged &&
+                cachedData != null &&
+                System.currentTimeMillis() - cacheTimestamp < CACHE_DURATION_MS
     }
 
     /**

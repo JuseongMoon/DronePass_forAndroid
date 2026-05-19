@@ -5,6 +5,8 @@ import com.ScienceFiction.DronePassAndroid.core.data.local.room.dao.SketchDao
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.mapper.toDomain
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.mapper.toEntity
 import com.ScienceFiction.DronePassAndroid.core.data.remote.firebase.SketchFirebaseStore
+import com.ScienceFiction.DronePassAndroid.core.data.sync.filterServerNewer
+import com.ScienceFiction.DronePassAndroid.core.data.sync.mergeLWW
 import com.ScienceFiction.DronePassAndroid.domain.model.SketchModel
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.CoroutineScope
@@ -173,16 +175,17 @@ class SketchRepository @Inject constructor(
 
         try {
             val serverSketches = sketchFirebaseStore.loadAllSketchesIncludingDeleted(userId).getOrThrow()
-            val localSketchesById = sketchDao.getAllSketchesOnce().associateBy { it.id }
-            var applied = 0
-            serverSketches.forEach { serverSketch ->
-                val local = localSketchesById[serverSketch.id]?.toDomain()
-                if (local == null || serverSketch.updatedAt >= local.updatedAt) {
-                    sketchDao.insertSketch(serverSketch.toEntity())
-                    applied++
-                }
+            val localSketches = sketchDao.getAllSketchesOnce().map { it.toDomain() }
+            val toApply = filterServerNewer(
+                local = localSketches,
+                server = serverSketches,
+                idOf = { it.id },
+                updatedAtOf = { it.updatedAt },
+            )
+            if (toApply.isNotEmpty()) {
+                sketchDao.insertSketches(toApply.map { it.toEntity() })
             }
-            Log.d(TAG, "syncFromFirebase: 서버=${serverSketches.size}, LWW 통과=$applied")
+            Log.d(TAG, "syncFromFirebase: 서버=${serverSketches.size}, LWW 통과=${toApply.size}")
         } catch (e: Exception) {
             Log.e(TAG, "syncFromFirebase 실패", e)
             throw e
@@ -190,14 +193,7 @@ class SketchRepository @Inject constructor(
     }
 
     /**
-     * 양방향 동기화 (LWW 충돌 해결)
-     *
-     * 1. 로컬 전체 로드
-     * 2. 서버 전체 로드 (삭제된 것 포함)
-     * 3. LWW 머지 (updatedAt이 더 큰 쪽 우선)
-     * 4. Room에 머지 결과 저장
-     * 5. Firebase에 로컬 전용 데이터 업로드
-     * 6. 서버 메타데이터 업데이트
+     * 양방향 동기화 (LWW 충돌 해결). [mergeLWW] 헬퍼 사용.
      */
     suspend fun performFullSync() {
         val userId = auth.currentUser?.uid ?: run {
@@ -209,35 +205,24 @@ class SketchRepository @Inject constructor(
             val localSketches = sketchDao.getAllSketchesOnce().map { it.toDomain() }
             val serverSketches = sketchFirebaseStore.loadAllSketchesIncludingDeleted(userId).getOrThrow()
 
-            val serverById = serverSketches.associateBy { it.id }
-            val localById = localSketches.associateBy { it.id }
-            val allIds = (serverById.keys + localById.keys)
+            val result = mergeLWW(
+                local = localSketches,
+                server = serverSketches,
+                idOf = { it.id },
+                updatedAtOf = { it.updatedAt },
+            )
 
-            val merged = allIds.map { id ->
-                val local = localById[id]
-                val server = serverById[id]
-                when {
-                    local == null -> server!!
-                    server == null -> local
-                    server.updatedAt >= local.updatedAt -> server
-                    else -> local
-                }
+            if (result.merged.isNotEmpty()) {
+                sketchDao.insertSketches(result.merged.map { it.toEntity() })
             }
 
-            merged.forEach { sketch -> sketchDao.insertSketch(sketch.toEntity()) }
-
-            // 서버에 없는 로컬 + 로컬-우세(LWW 통과) 모두 업로드.
-            val toUpload = merged.filter { mergedSketch ->
-                val server = serverById[mergedSketch.id]
-                server == null || mergedSketch.updatedAt > server.updatedAt
-            }
-            if (toUpload.isNotEmpty()) {
-                sketchFirebaseStore.saveSketches(userId, toUpload)
+            if (result.toUpload.isNotEmpty()) {
+                sketchFirebaseStore.saveSketches(userId, result.toUpload)
             }
 
             sketchFirebaseStore.updateServerMetadata(userId)
 
-            Log.d(TAG, "performFullSync 완료: 로컬=${localSketches.size}, 서버=${serverSketches.size}, 머지=${merged.size}, 업로드=${toUpload.size}")
+            Log.d(TAG, "performFullSync 완료: 로컬=${localSketches.size}, 서버=${serverSketches.size}, 머지=${result.merged.size}, 업로드=${result.toUpload.size}")
         } catch (e: Exception) {
             Log.e(TAG, "performFullSync 실패", e)
             throw e

@@ -171,9 +171,13 @@ class SketchFirebaseStore @Inject constructor(
     }
 
     /**
-     * Firestore 문서 데이터 -> SketchModel로 변환
+     * Firestore 문서 데이터 -> SketchModel로 변환.
+     *
+     * Firestore SDK 가 반환하는 Map 은 Any 컨테이너이므로, 이전의
+     * `as? List<Map<String, Any>>` 는 erasure 후 List 만 확인하던 unchecked cast 였다.
+     * 각 원소를 단계별로 Map<*, *> → Number 로 안전 검사하여 손상된 문서에서도
+     * 부분 복구 가능하도록 한다.
      */
-    @Suppress("UNCHECKED_CAST")
     fun firestoreDataToSketch(data: Map<String, Any?>): SketchModel? {
         return try {
             val id = data["id"] as? String ?: return null
@@ -184,9 +188,10 @@ class SketchFirebaseStore @Inject constructor(
                 ?: System.currentTimeMillis()
             val deletedAt = (data["deletedAt"] as? Timestamp)?.toDate()?.time
 
-            // points 파싱: List<Map<String, Double>> -> List<Coordinate>
-            val pointsList = data["points"] as? List<Map<String, Any>> ?: emptyList()
-            val points = pointsList.mapNotNull { pointMap ->
+            // points 파싱: List<*> 로 받은 뒤 각 원소를 Map<*, *> 단계 검사.
+            val rawPoints = data["points"] as? List<*> ?: emptyList<Any?>()
+            val points = rawPoints.mapNotNull { entry ->
+                val pointMap = entry as? Map<*, *> ?: return@mapNotNull null
                 val latitude = (pointMap["latitude"] as? Number)?.toDouble() ?: return@mapNotNull null
                 val longitude = (pointMap["longitude"] as? Number)?.toDouble() ?: return@mapNotNull null
                 Coordinate(latitude = latitude, longitude = longitude)

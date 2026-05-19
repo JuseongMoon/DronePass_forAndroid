@@ -51,7 +51,7 @@ data class Coordinate(
 
     companion object {
         /**
-         * JSON 문자열로부터 Coordinate 객체 생성
+         * JSON 문자열로부터 Coordinate 객체 생성. 손상된 JSON 은 JSONException.
          */
         fun fromJson(json: String): Coordinate {
             val jsonObject = JSONObject(json)
@@ -62,44 +62,58 @@ data class Coordinate(
         }
 
         /**
-         * Coordinate 객체를 JSON 문자열로 변환
+         * Coordinate 객체를 JSON 문자열로 변환.
+         *
+         * 스케치는 포인트가 수백~수천 개라 매 호출 JSONObject 할당 부담이 크므로
+         * 단순 문자열 조립으로 변경 (NaN/Infinity 는 0.0 으로 안전화). Locale.ROOT 명시로
+         * 유럽 로케일에서 소수점 콤마 변환 차단.
          */
-        fun toJson(coordinate: Coordinate): String {
-            val jsonObject = JSONObject().apply {
-                put("latitude", coordinate.latitude)
-                put("longitude", coordinate.longitude)
-            }
-            return jsonObject.toString()
-        }
+        fun toJson(coordinate: Coordinate): String =
+            String.format(
+                Locale.ROOT,
+                "{\"latitude\":%s,\"longitude\":%s}",
+                safe(coordinate.latitude).toString(),
+                safe(coordinate.longitude).toString(),
+            )
 
         /**
-         * JSON 배열 문자열로부터 Coordinate 리스트 생성
+         * JSON 배열 문자열로부터 Coordinate 리스트 생성. 빈 문자열/손상 입력은 빈 리스트.
          */
         fun listFromJson(json: String): List<Coordinate> {
-            val jsonArray = org.json.JSONArray(json)
-            return (0 until jsonArray.length()).map { i ->
-                val obj = jsonArray.getJSONObject(i)
-                Coordinate(
-                    latitude = obj.getDouble("latitude"),
-                    longitude = obj.getDouble("longitude")
-                )
+            if (json.isBlank()) return emptyList()
+            return try {
+                val jsonArray = org.json.JSONArray(json)
+                (0 until jsonArray.length()).map { i ->
+                    val obj = jsonArray.getJSONObject(i)
+                    Coordinate(
+                        latitude = obj.getDouble("latitude"),
+                        longitude = obj.getDouble("longitude")
+                    )
+                }
+            } catch (e: org.json.JSONException) {
+                emptyList()
             }
         }
 
         /**
-         * Coordinate 리스트를 JSON 배열 문자열로 변환
+         * Coordinate 리스트를 JSON 배열 문자열로 변환 (StringBuilder 빠른 경로).
          */
-        fun listToJson(coordinates: List<Coordinate>): String {
-            val jsonArray = org.json.JSONArray()
-            coordinates.forEach { coordinate ->
-                val obj = JSONObject().apply {
-                    put("latitude", coordinate.latitude)
-                    put("longitude", coordinate.longitude)
-                }
-                jsonArray.put(obj)
+        fun listToJson(coordinates: List<Coordinate>): String = buildString(coordinates.size * 48) {
+            append('[')
+            coordinates.forEachIndexed { i, c ->
+                if (i > 0) append(',')
+                append("{\"latitude\":")
+                append(safe(c.latitude).toString())
+                append(",\"longitude\":")
+                append(safe(c.longitude).toString())
+                append('}')
             }
-            return jsonArray.toString()
+            append(']')
         }
+
+        /** NaN/Infinity 가 JSON 표준에 없어 0.0 으로 안전화. */
+        private fun safe(value: Double): Double =
+            if (value.isFinite()) value else 0.0
 
         /**
          * 네이버 Maps SDK LatLng으로부터 Coordinate 생성

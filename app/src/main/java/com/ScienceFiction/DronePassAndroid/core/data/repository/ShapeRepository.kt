@@ -5,6 +5,8 @@ import com.ScienceFiction.DronePassAndroid.core.data.local.room.dao.ShapeDao
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.mapper.toDomain
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.mapper.toEntity
 import com.ScienceFiction.DronePassAndroid.core.data.remote.firebase.ShapeFirebaseStore
+import com.ScienceFiction.DronePassAndroid.core.data.sync.filterServerNewer
+import com.ScienceFiction.DronePassAndroid.core.data.sync.mergeLWW
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.Flow
@@ -117,7 +119,8 @@ class ShapeRepository @Inject constructor(
                 updatedAt = now
             )
         }
-        updatedShapes.forEach { shapeDao.updateShape(it) }
+        // REPLACE 충돌 정책으로 update == insert (단일 트랜잭션 1회).
+        shapeDao.insertShapes(updatedShapes)
         syncShapesToFirebase(updatedShapes.map { it.toDomain() })
     }
 
@@ -134,7 +137,7 @@ class ShapeRepository @Inject constructor(
                 updatedAt = now
             )
         }
-        deletedShapes.forEach { shapeDao.updateShape(it) }
+        shapeDao.insertShapes(deletedShapes)
         syncShapesToFirebase(deletedShapes.map { it.toDomain() })
     }
 
@@ -194,9 +197,8 @@ class ShapeRepository @Inject constructor(
     }
 
     /**
-     * Firebase 데이터를 Room 로컬 DB로 다운로드
-     * LWW(Last Write Wins) 전략 적용 — 서버의 updatedAt 이 로컬 이상일 때만 덮어쓴다.
-     * 이전: forEach 단순 덮어쓰기 → 로컬에 더 최신 변경이 있어도 서버 값으로 강제 덮어씀.
+     * Firebase 데이터를 Room 로컬 DB로 다운로드 (LWW 적용).
+     * 서버 값이 로컬 이상으로 새로운 것만 [filterServerNewer] 로 추려 배치 insert.
      */
     suspend fun syncFromFirebase() {
         val userId = auth.currentUser?.uid ?: run {
@@ -206,16 +208,17 @@ class ShapeRepository @Inject constructor(
 
         try {
             val serverShapes = shapeFirebaseStore.loadAllShapesIncludingDeleted(userId).getOrThrow()
-            val localShapesById = shapeDao.getAllShapesOnce().associateBy { it.id }
-            var applied = 0
-            serverShapes.forEach { serverShape ->
-                val local = localShapesById[serverShape.id]?.toDomain()
-                if (local == null || serverShape.updatedAt >= local.updatedAt) {
-                    shapeDao.insertShape(serverShape.toEntity())
-                    applied++
-                }
+            val localShapes = shapeDao.getAllShapesOnce().map { it.toDomain() }
+            val toApply = filterServerNewer(
+                local = localShapes,
+                server = serverShapes,
+                idOf = { it.id },
+                updatedAtOf = { it.updatedAt },
+            )
+            if (toApply.isNotEmpty()) {
+                shapeDao.insertShapes(toApply.map { it.toEntity() })
             }
-            Log.d(TAG, "syncFromFirebase: 서버=${serverShapes.size}, LWW 통과=$applied")
+            Log.d(TAG, "syncFromFirebase: 서버=${serverShapes.size}, LWW 통과=${toApply.size}")
         } catch (e: Exception) {
             Log.e(TAG, "syncFromFirebase 실패", e)
             throw e
@@ -223,14 +226,7 @@ class ShapeRepository @Inject constructor(
     }
 
     /**
-     * 양방향 동기화 (LWW 충돌 해결)
-     *
-     * 1. 로컬 전체 로드
-     * 2. 서버 전체 로드 (삭제된 것 포함)
-     * 3. LWW 머지 (updatedAt이 더 큰 쪽 우선)
-     * 4. Room에 머지 결과 저장
-     * 5. Firebase에 로컬 전용 데이터 업로드
-     * 6. 서버 메타데이터 업데이트
+     * 양방향 동기화 (LWW 충돌 해결). [mergeLWW] 헬퍼 사용.
      */
     suspend fun performFullSync() {
         val userId = auth.currentUser?.uid ?: run {
@@ -239,47 +235,29 @@ class ShapeRepository @Inject constructor(
         }
 
         try {
-            // 1. 로컬 전체 로드
             val localShapes = shapeDao.getAllShapesOnce().map { it.toDomain() }
-
-            // 2. 서버 전체 로드 (Result → 실패 시 throw 로 재시도 큐에 위임)
             val serverShapes = shapeFirebaseStore.loadAllShapesIncludingDeleted(userId).getOrThrow()
 
-            // 3. LWW 머지
-            val serverById = serverShapes.associateBy { it.id }
-            val localById = localShapes.associateBy { it.id }
-            val allIds = (serverById.keys + localById.keys)
+            val result = mergeLWW(
+                local = localShapes,
+                server = serverShapes,
+                idOf = { it.id },
+                updatedAtOf = { it.updatedAt },
+            )
 
-            val merged = allIds.map { id ->
-                val local = localById[id]
-                val server = serverById[id]
-                when {
-                    local == null -> server!!
-                    server == null -> local
-                    server.updatedAt >= local.updatedAt -> server  // LWW: 서버 우선
-                    else -> local
-                }
+            // Room: 머지 결과 배치 저장
+            if (result.merged.isNotEmpty()) {
+                shapeDao.insertShapes(result.merged.map { it.toEntity() })
             }
 
-            // 4. Room에 머지 결과 저장
-            merged.forEach { shape ->
-                shapeDao.insertShape(shape.toEntity())
+            // Firebase: 로컬이 LWW 에서 이긴 항목 업로드
+            if (result.toUpload.isNotEmpty()) {
+                shapeFirebaseStore.saveShapes(userId, result.toUpload)
             }
 
-            // 5. Firebase에 업로드: 서버에 없는 로컬 데이터 + 로컬이 LWW 에서 이긴 데이터.
-            //    이전: localOnly = !in serverById 만 처리 → local-newer 가 다른 기기에 전파 안 됨.
-            val toUpload = merged.filter { mergedShape ->
-                val server = serverById[mergedShape.id]
-                server == null || mergedShape.updatedAt > server.updatedAt
-            }
-            if (toUpload.isNotEmpty()) {
-                shapeFirebaseStore.saveShapes(userId, toUpload)
-            }
-
-            // 6. 서버 메타데이터 업데이트
             shapeFirebaseStore.updateServerMetadata(userId)
 
-            Log.d(TAG, "performFullSync 완료: 로컬=${localShapes.size}, 서버=${serverShapes.size}, 머지=${merged.size}, 업로드=${toUpload.size}")
+            Log.d(TAG, "performFullSync 완료: 로컬=${localShapes.size}, 서버=${serverShapes.size}, 머지=${result.merged.size}, 업로드=${result.toUpload.size}")
         } catch (e: Exception) {
             Log.e(TAG, "performFullSync 실패", e)
             throw e

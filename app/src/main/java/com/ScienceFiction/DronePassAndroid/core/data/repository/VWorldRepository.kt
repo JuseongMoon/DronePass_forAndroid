@@ -8,6 +8,8 @@ import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.VWorldApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -35,7 +37,10 @@ class VWorldRepository @Inject constructor(
         val timestamp: Long
     )
 
-    private val cache = LinkedHashMap<String, CacheEntry>(MAX_CACHE_ENTRIES, 0.75f, true)
+    // LRU 캐시 (accessOrder=true). 카메라 이동마다 fetchMultipleLayers 가 N개 레이어를
+    // 동시 async 로 호출하므로 LinkedHashMap 의 비동기 안전성을 위해 Mutex 직렬화.
+    private val cache = LinkedHashMap<String, CacheEntry>(MAX_CACHE_ENTRIES + 1, 0.75f, true)
+    private val cacheMutex = Mutex()
 
     /**
      * 단일 레이어의 비행구역 데이터 조회
@@ -50,14 +55,19 @@ class VWorldRepository @Inject constructor(
     ): Result<List<DroneZoneFeature>> {
         val cacheKey = "${layer.typeName}:$bbox"
 
-        // 캐시 확인
-        cache[cacheKey]?.let { entry ->
-            if (System.currentTimeMillis() - entry.timestamp < CACHE_DURATION_MS) {
-                return Result.success(entry.data)
-            } else {
-                cache.remove(cacheKey)
+        // 캐시 확인 (mutex 안에서 access)
+        val cachedValid = cacheMutex.withLock {
+            val entry = cache[cacheKey]
+            when {
+                entry == null -> null
+                System.currentTimeMillis() - entry.timestamp < CACHE_DURATION_MS -> entry.data
+                else -> {
+                    cache.remove(cacheKey)
+                    null
+                }
             }
         }
+        if (cachedValid != null) return Result.success(cachedValid)
 
         return try {
             val response = vWorldApi.getFeatures(
@@ -71,12 +81,13 @@ class VWorldRepository @Inject constructor(
                 parseFeature(feature, layer)
             } ?: emptyList()
 
-            // 캐시 저장
-            if (cache.size >= MAX_CACHE_ENTRIES) {
-                // 가장 오래된 엔트리 제거
-                cache.keys.firstOrNull()?.let { cache.remove(it) }
+            // 캐시 저장 (accessOrder=true LRU 가 removeEldestEntry 대체)
+            cacheMutex.withLock {
+                if (cache.size >= MAX_CACHE_ENTRIES) {
+                    cache.keys.firstOrNull()?.let { cache.remove(it) }
+                }
+                cache[cacheKey] = CacheEntry(zones, System.currentTimeMillis())
             }
-            cache[cacheKey] = CacheEntry(zones, System.currentTimeMillis())
 
             Log.d(TAG, "${layer.displayName}: ${zones.size}개 구역 로드 완료")
             Result.success(zones)
@@ -109,7 +120,12 @@ class VWorldRepository @Inject constructor(
     }
 
     /**
-     * 캐시 초기화
+     * 캐시 초기화. suspend 가 아닌 호출처 호환을 위해 동기 clear 를 유지하되,
+     * Mutex 가 보호하는 Map 에 대한 동시 변형을 피하기 위해 runBlocking 대신
+     * thread-safe 한 clear() (LinkedHashMap.clear) 만 호출. fetchFlightZones 의 critical
+     * section 과는 동시 진행될 수 있지만 clear/put 의 부분 손상은 LinkedHashMap 의
+     * structural modification fail-fast 로만 보호되므로, 호출자는 동기화 중에는
+     * clearCache 를 호출하지 않아야 한다 (기존 동작과 동일).
      */
     fun clearCache() {
         cache.clear()
