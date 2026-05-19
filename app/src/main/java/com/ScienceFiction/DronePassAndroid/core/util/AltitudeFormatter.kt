@@ -62,6 +62,15 @@ object AltitudeFormatter {
     /** 1피트 = 0.3048미터 */
     private const val FEET_TO_METERS = 0.3048
 
+    /** "FL100", "FL 100" 등의 Flight Level 패턴 — 매 호출 컴파일 회피용 캐시 */
+    private val FL_PATTERN = Regex("^FL\\s*(\\d+)$")
+
+    /** "3 000 AGL", "1500 AMSL" 등 숫자 + 단위 패턴 — 매 호출 컴파일 회피용 캐시 */
+    private val NUMERIC_UNIT_PATTERN = Regex("^([\\d\\s]+)\\s+(AGL|AMSL|MSL|FT|ALT)$")
+
+    /** 공백 제거 패턴 — 매 호출 컴파일 회피용 캐시 */
+    private val WHITESPACE_PATTERN = Regex("\\s")
+
     /**
      * 고도 문자열을 파싱하여 ParsedAltitude를 반환합니다.
      *
@@ -100,8 +109,7 @@ object AltitudeFormatter {
         }
 
         // FL (Flight Level) 처리: "FL100", "FL 100" 등
-        val flPattern = Regex("^FL\\s*(\\d+)$")
-        flPattern.find(trimmed)?.let { match ->
+        FL_PATTERN.find(trimmed)?.let { match ->
             val flValue = match.groupValues[1].toDoubleOrNull() ?: return@let
             val feet = flValue * 100.0
             val meters = feet * FEET_TO_METERS
@@ -115,9 +123,8 @@ object AltitudeFormatter {
 
         // 숫자 + 단위 형식 처리: "3 000 AGL", "1500 AMSL", "500 MSL" 등
         // 숫자 부분에서 공백 제거 (항공 표기법에서 "3 000" = 3000)
-        val numericUnitPattern = Regex("^([\\d\\s]+)\\s+(AGL|AMSL|MSL|FT|ALT)$")
-        numericUnitPattern.find(trimmed)?.let { match ->
-            val numStr = match.groupValues[1].replace("\\s".toRegex(), "")
+        NUMERIC_UNIT_PATTERN.find(trimmed)?.let { match ->
+            val numStr = match.groupValues[1].replace(WHITESPACE_PATTERN, "")
             val unitStr = match.groupValues[2]
             val numericValue = numStr.toDoubleOrNull() ?: return@let
 
@@ -140,7 +147,7 @@ object AltitudeFormatter {
         }
 
         // 숫자만 있는 경우 (단위 없음) - 피트로 간주
-        val numOnly = trimmed.replace("\\s".toRegex(), "")
+        val numOnly = trimmed.replace(WHITESPACE_PATTERN, "")
         numOnly.toDoubleOrNull()?.let { numericValue ->
             val meters = numericValue * FEET_TO_METERS
             return ParsedAltitude(

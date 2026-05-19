@@ -21,6 +21,8 @@ object WeatherCodeMapper {
         1 -> "대체로 맑음"
         2 -> "구름 조금"
         3 -> "흐림"
+        4, 5 -> "연무" // WMO 04: smoke / 05: haze (Open-Meteo 외 표준 코드 호환)
+        10 -> "옅은 안개" // WMO 10: mist
         45, 48 -> "안개"
         51, 53, 55 -> "이슬비"
         56, 57 -> "어는 이슬비"
@@ -39,6 +41,7 @@ object WeatherCodeMapper {
         0 -> Icons.Default.WbSunny
         1, 2 -> Icons.Default.WbCloudy
         3 -> Icons.Default.Cloud
+        4, 5, 10 -> Icons.Default.Cloud
         45, 48 -> Icons.Default.Cloud
         51, 53, 55, 56, 57 -> Icons.Default.Grain
         61, 63, 65, 66, 67 -> Icons.Default.Umbrella

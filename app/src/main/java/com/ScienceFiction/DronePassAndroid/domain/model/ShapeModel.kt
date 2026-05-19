@@ -38,12 +38,6 @@ data class ShapeModel(
         get() = deletedAt != null
 
     /**
-     * 유효한 색상 반환
-     */
-    val effectiveColor: String
-        get() = color
-
-    /**
      * 드론에 연결되었는지 여부
      */
     val isConnectedToDrone: Boolean

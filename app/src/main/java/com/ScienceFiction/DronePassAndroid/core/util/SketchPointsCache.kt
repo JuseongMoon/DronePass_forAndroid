@@ -21,7 +21,13 @@ object SketchPointsCache {
     /** 최대 캐시 항목 수 */
     private const val MAX_CACHE_SIZE = 100
 
-    /** LRU 캐시 (LinkedHashMap의 accessOrder=true 활용) */
+    /**
+     * LRU 캐시.
+     *
+     * LinkedHashMap 의 세 번째 인자 `accessOrder=true` 를 사용하면 get/put 호출 시
+     * 해당 엔트리가 tail 로 이동(MRU)되고, [removeEldestEntry] 가 head(LRU)를 자동 축출한다.
+     * 초기 용량 `MAX_CACHE_SIZE + 1` 은 add 후 즉시 축출 직전 1회 rehash 를 피하기 위함.
+     */
     private val cache = object : LinkedHashMap<String, List<Coordinate>>(
         MAX_CACHE_SIZE + 1, 0.75f, true
     ) {

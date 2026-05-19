@@ -31,11 +31,12 @@ object SketchSmoothingAlgorithm {
         segmentsPerOriginal: Int? = null
     ): List<Coordinate> {
         if (points.size <= 1) return points
-        if (points.size == 2) return linearInterpolation(points[0], points[1])
 
         val segments = segmentsPerOriginal ?: dynamicSegmentCount(points.size)
         // segments == 0/음수 가드 (iOS: guard segments > 0). 보간 불가하면 원본 반환.
         if (segments <= 0) return points
+
+        if (points.size == 2) return linearInterpolation(points[0], points[1], segments)
 
         // 가상 끝점 생성 (자연스러운 시작/끝을 위해)
         val extendedPoints = buildList {
@@ -129,15 +130,17 @@ object SketchSmoothingAlgorithm {
 
     /**
      * 두 포인트 사이의 선형 보간.
-     * 10개의 중간점을 생성한다.
+     *
+     * @param segments 중간 세그먼트 수 (>=1). 결과 길이는 segments+1.
      */
     private fun linearInterpolation(
         start: Coordinate,
-        end: Coordinate
+        end: Coordinate,
+        segments: Int
     ): List<Coordinate> {
-        val segments = 10
-        return (0..segments).map { i ->
-            val t = i.toDouble() / segments
+        val s = segments.coerceAtLeast(1)
+        return (0..s).map { i ->
+            val t = i.toDouble() / s
             Coordinate(
                 latitude = start.latitude + (end.latitude - start.latitude) * t,
                 longitude = start.longitude + (end.longitude - start.longitude) * t

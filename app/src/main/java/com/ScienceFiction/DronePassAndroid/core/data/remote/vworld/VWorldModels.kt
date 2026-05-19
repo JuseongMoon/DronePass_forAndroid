@@ -61,6 +61,11 @@ data class GeoJSONGeometry(
 
 /**
  * 파싱된 비행구역 모델 (UI에서 사용)
+ *
+ * [properties] 는 VWorld WFS 응답에서 레이어별로 다른 키 집합을 가지므로
+ * [Map<String, Any?>] 로 유지한다. 안전한 접근은 [stringProp] / [doubleProp] /
+ * [intProp] helper 를 사용한다 (모든 접근이 nullable-string-toString 패턴이라 누락된 키와
+ * 잘못된 타입을 동일하게 null 로 정규화).
  */
 data class DroneZoneFeature(
     val id: String,
@@ -72,6 +77,24 @@ data class DroneZoneFeature(
     val zoneName: String?,
     val properties: Map<String, Any?> = emptyMap()
 )
+
+/** properties Map 에서 String 값을 안전하게 꺼낸다 (Any? → trimmed String? 또는 null). */
+internal fun Map<String, Any?>.stringProp(key: String): String? =
+    this[key]?.toString()?.takeIf { it.isNotBlank() }
+
+/** properties Map 에서 Double 값을 안전하게 꺼낸다. */
+internal fun Map<String, Any?>.doubleProp(key: String): Double? = when (val v = this[key]) {
+    is Number -> v.toDouble()
+    is String -> v.toDoubleOrNull()
+    else -> null
+}
+
+/** properties Map 에서 Int 값을 안전하게 꺼낸다. */
+internal fun Map<String, Any?>.intProp(key: String): Int? = when (val v = this[key]) {
+    is Number -> v.toInt()
+    is String -> v.toIntOrNull()
+    else -> null
+}
 
 // ============================================================
 // NotamStatus enum
@@ -98,7 +121,7 @@ enum class NotamStatus(val displayName: String, val emoji: String) {
 val DroneZoneFeature.notam: String?
     get() {
         if (layer != FlightZoneLayer.TEMPORARY_PROHIBITED) return null
-        return properties["notam"]?.toString()
+        return properties.stringProp("notam")
     }
 
 /**
@@ -194,28 +217,28 @@ private fun parseNotamDate(notam: String, field: String): Date? {
 val DroneZoneFeature.authorityNameKor: String?
     get() {
         if (layer != FlightZoneLayer.PRIOR_CONSULTATION) return null
-        return properties["nm_kor"]?.toString()
+        return properties.stringProp("nm_kor")
     }
 
 /** 관리기관 영문명 */
 val DroneZoneFeature.authorityNameEng: String?
     get() {
         if (layer != FlightZoneLayer.PRIOR_CONSULTATION) return null
-        return properties["nm_eng"]?.toString()
+        return properties.stringProp("nm_eng")
     }
 
 /** 운영기관 */
 val DroneZoneFeature.operatingInstitution: String?
     get() {
         if (layer != FlightZoneLayer.PRIOR_CONSULTATION) return null
-        return properties["oper_inst"]?.toString()
+        return properties.stringProp("oper_inst")
     }
 
 /** 연락처 */
 val DroneZoneFeature.phoneNumber: String?
     get() {
         if (layer != FlightZoneLayer.PRIOR_CONSULTATION) return null
-        return properties["telno"]?.toString()
+        return properties.stringProp("telno")
     }
 
 // ============================================================
@@ -226,42 +249,42 @@ val DroneZoneFeature.phoneNumber: String?
 val DroneZoneFeature.heritageName: String?
     get() {
         if (layer != FlightZoneLayer.CULTURAL_HERITAGE) return null
-        return properties["alias"]?.toString() ?: properties["remark"]?.toString()
+        return properties.stringProp("alias") ?: properties.stringProp("remark")
     }
 
 /** 시도명 */
 val DroneZoneFeature.sidoName: String?
     get() {
         if (layer != FlightZoneLayer.CULTURAL_HERITAGE) return null
-        return properties["sido_name"]?.toString()
+        return properties.stringProp("sido_name")
     }
 
 /** 시군구명 */
 val DroneZoneFeature.sigunguName: String?
     get() {
         if (layer != FlightZoneLayer.CULTURAL_HERITAGE) return null
-        return properties["sigg_name"]?.toString()
+        return properties.stringProp("sigg_name")
     }
 
 /** 문화재구역명 */
 val DroneZoneFeature.heritageZoneName: String?
     get() {
         if (layer != FlightZoneLayer.CULTURAL_HERITAGE) return null
-        return properties["uname"]?.toString()
+        return properties.stringProp("uname")
     }
 
 /** 지정연도 */
 val DroneZoneFeature.designationYear: String?
     get() {
         if (layer != FlightZoneLayer.CULTURAL_HERITAGE) return null
-        return properties["dyear"]?.toString()
+        return properties.stringProp("dyear")
     }
 
 /** 지정번호 */
 val DroneZoneFeature.designationNumber: String?
     get() {
         if (layer != FlightZoneLayer.CULTURAL_HERITAGE) return null
-        return properties["dnum"]?.toString()
+        return properties.stringProp("dnum")
     }
 
 /** 전체 주소 (시도 + 시군구) */
@@ -286,11 +309,11 @@ val DroneZoneFeature.formattedUpperAltitude: String?
     get() {
         val altStr = when (layer) {
             FlightZoneLayer.PROHIBITED, FlightZoneLayer.TEMPORARY_PROHIBITED ->
-                properties["prh_lbl_2"]?.toString()
-            FlightZoneLayer.RESTRICTED -> properties["res_lbl_2"]?.toString()
-            FlightZoneLayer.DANGER -> properties["dng_lbl_2"]?.toString()
-            FlightZoneLayer.ALERT -> properties["alt_lbl_2"]?.toString()
-            FlightZoneLayer.ULTRALIGHT -> properties["uac_lbl_2"]?.toString()
+                properties.stringProp("prh_lbl_2")
+            FlightZoneLayer.RESTRICTED -> properties.stringProp("res_lbl_2")
+            FlightZoneLayer.DANGER -> properties.stringProp("dng_lbl_2")
+            FlightZoneLayer.ALERT -> properties.stringProp("alt_lbl_2")
+            FlightZoneLayer.ULTRALIGHT -> properties.stringProp("uac_lbl_2")
             else -> null
         }
         return AltitudeFormatter.format(altStr)
@@ -306,11 +329,11 @@ val DroneZoneFeature.formattedLowerAltitude: String?
     get() {
         val altStr = when (layer) {
             FlightZoneLayer.PROHIBITED, FlightZoneLayer.TEMPORARY_PROHIBITED ->
-                properties["prh_lbl_3"]?.toString()
-            FlightZoneLayer.RESTRICTED -> properties["res_lbl_3"]?.toString()
-            FlightZoneLayer.DANGER -> properties["dng_lbl_3"]?.toString()
-            FlightZoneLayer.ALERT -> properties["alt_lbl_3"]?.toString()
-            FlightZoneLayer.ULTRALIGHT -> properties["uac_lbl_3"]?.toString()
+                properties.stringProp("prh_lbl_3")
+            FlightZoneLayer.RESTRICTED -> properties.stringProp("res_lbl_3")
+            FlightZoneLayer.DANGER -> properties.stringProp("dng_lbl_3")
+            FlightZoneLayer.ALERT -> properties.stringProp("alt_lbl_3")
+            FlightZoneLayer.ULTRALIGHT -> properties.stringProp("uac_lbl_3")
             else -> null
         }
         return AltitudeFormatter.format(altStr)

@@ -48,7 +48,7 @@ class ShapeOverlayManager {
             lat = baseCoordinate.latitude,
             lon = baseCoordinate.longitude,
             radius = r,
-            color = effectiveColor,
+            color = color,
             isExpired = isExpired,
             isNotStarted = isNotStarted,
             updatedAt = updatedAt
@@ -179,7 +179,7 @@ class ShapeOverlayManager {
      * - 활성: 알파 30%
      */
     private fun calculateFillColor(shape: ShapeModel): Int {
-        val baseColor = parseColorSafe(shape.effectiveColor)
+        val baseColor = parseColorSafe(shape.color)
 
         val alpha = when {
             shape.isExpired -> 0x33       // 20%
@@ -203,7 +203,7 @@ class ShapeOverlayManager {
         return if (shape.isExpired) {
             Color.GRAY
         } else {
-            parseColorSafe(shape.effectiveColor)
+            parseColorSafe(shape.color)
         }
     }
 

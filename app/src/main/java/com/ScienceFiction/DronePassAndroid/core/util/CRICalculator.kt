@@ -49,7 +49,8 @@ object CRICalculator {
         // 합성: 둘 중 큰 값
         val criCombined = maxOf(criDeltaT, criRH)
 
-        // 풍속 보정
+        // 풍속 보정 (>=5m/s 강풍 -20%, >=2m/s 중풍 -10%, 미풍은 무보정).
+        // 미풍(<2m/s) 구간에서 windFactor=1.0 은 의도된 동작으로 결로 위험을 깎지 않는다.
         val windFactor = when {
             safeWindSpeed >= 5.0 -> 0.8
             safeWindSpeed >= 2.0 -> 0.9

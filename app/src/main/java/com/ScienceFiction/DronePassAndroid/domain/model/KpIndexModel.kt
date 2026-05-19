@@ -42,15 +42,28 @@ enum class KpLevel(val label: String, val color: Long) {
 
     companion object {
         /**
-         * Kp 값에 따른 수준 판정
+         * Kp 값에 따른 수준 판정.
+         *
+         * NOAA 분류 표:
+         *   Kp [0, 5)  → NORMAL
+         *   Kp [5, 6)  → G1 (Minor)
+         *   Kp [6, 7)  → G2 (Moderate)
+         *   Kp [7, 8)  → G3 (Strong)
+         *   Kp [8, 9)  → G4 (Severe)        — 8+ (=8.67) 포함
+         *   Kp [9, ..) → G5 (Extreme)       — Kp=9.0 도 G5 로 분류
+         *
+         * NaN/음수 등 비정상 입력은 NORMAL 로 폴백한다 (UI 위험 등급 미표시).
          */
-        fun fromKp(kp: Double): KpLevel = when {
-            kp < 5.0 -> NORMAL
-            kp < 6.0 -> G1
-            kp < 7.0 -> G2
-            kp < 8.0 -> G3
-            kp < 9.0 -> G4
-            else -> G5
+        fun fromKp(kp: Double): KpLevel {
+            if (!kp.isFinite() || kp < 0.0) return NORMAL
+            return when {
+                kp < 5.0 -> NORMAL
+                kp < 6.0 -> G1
+                kp < 7.0 -> G2
+                kp < 8.0 -> G3
+                kp < 9.0 -> G4
+                else -> G5
+            }
         }
     }
 }
