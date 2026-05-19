@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.auth
 
+import android.app.Activity
 import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -22,9 +23,13 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * 인증 화면의 ViewModel
- * Google Sign-In 및 로그인 상태 관리
- * 로그인 성공 시 Firebase 양방향 동기화 자동 실행 및 실시간 동기화 리스너 시작
+ * 인증 화면의 ViewModel.
+ *
+ * 지원 로그인:
+ *  - Google Sign-In (Credential Manager)
+ *  - Apple Sign-In (Firebase OAuthProvider — iOS Apple Sign-In 사용자 데이터 자동 호환)
+ *
+ * 로그인 성공 시 Firebase 양방향 동기화 자동 실행 및 실시간 동기화 리스너 시작.
  */
 @HiltViewModel
 class AuthViewModel @Inject constructor(
@@ -110,6 +115,35 @@ class AuthViewModel @Inject constructor(
                 onFailure = { exception ->
                     _authState.value = AuthState.Error(
                         exception.localizedMessage ?: "Google 로그인 중 오류가 발생했습니다."
+                    )
+                }
+            )
+        }
+    }
+
+    /**
+     * Sign in with Apple 실행.
+     *
+     * Firebase OAuthProvider("apple.com") 가 Chrome Custom Tabs 를 띄워 Apple OAuth flow 처리.
+     * 별도 SDK 불필요. 결과 UID 는 iOS native Apple Sign-In 의 UID 와 동일 (같은 Apple ID).
+     *
+     * @param activity Activity (Custom Tabs intent launch 에 필요 — Context 불가)
+     */
+    fun signInWithApple(activity: Activity) {
+        viewModelScope.launch {
+            _authState.value = AuthState.Loading
+
+            authRepository.signInWithApple(activity).fold(
+                onSuccess = { user ->
+                    _authState.value = AuthState.LoggedIn(user)
+                    analyticsLogger.logLogin("apple")
+                    // Google 흐름과 동일: 로그인 후 양방향 동기화 + 실시간 리스너 시작
+                    performFullSync()
+                    startRealtimeSync()
+                },
+                onFailure = { exception ->
+                    _authState.value = AuthState.Error(
+                        exception.localizedMessage ?: "Apple 로그인 중 오류가 발생했습니다."
                     )
                 }
             )

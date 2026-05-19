@@ -28,6 +28,8 @@
     <string name="login_subtitle">드론 비행 허가지 시각화</string>
     <string name="login_loading">로그인 중…</string>
     <string name="login_google">Google로 로그인</string>
+    <string name="login_apple">Apple로 로그인</string>
+    <string name="login_apple_logo_description">Apple 로고</string>
     <string name="login_skip">로그인 없이 시작</string>
 
     <!-- MapScreen -->

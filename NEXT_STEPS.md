@@ -1,6 +1,6 @@
 # 작업 이어가기 핸드오프 노트
 
-> 마지막 업데이트: 2026-05-19 (Phase 3 완료 + B-M6 후속 분리)
+> 마지막 업데이트: 2026-05-19 (Cross-Platform 로그인 Phase A 완료)
 > 다음 세션에서 이 문서 + `REFACTORING_PLAN.md` 를 함께 읽으면 즉시 이어서 진행할 수 있다.
 
 ---
@@ -10,9 +10,9 @@
 | 항목 | 값 |
 |---|---|
 | **브랜치** | `fix/critical-pri0-fixes` |
-| **마지막 커밋** | `887c6fe` (sealed error / sealed SubScreen / Compose BOM 2025.06.01) |
+| **마지막 커밋** | `<TBD>` (feat: Cross-Platform 로그인 Phase A — Android Apple Sign-In) |
 | **워킹 트리** | clean (변경 없음 — REFACTORING_PLAN/NEXT_STEPS 갱신 후) |
-| **원격 동기화** | `origin/fix/critical-pri0-fixes` 보다 15 커밋 ahead (push 미수행) |
+| **원격 동기화** | `origin/fix/critical-pri0-fixes` 보다 17 커밋 ahead (push 미수행) |
 | **누적 처리** | **124건 중 124건 완료 (100%)** ✅ |
 | **잔여** | 없음 — Phase 1/2/3 모두 종료 |
 
@@ -106,18 +106,33 @@ export PATH="$JAVA_HOME/bin:$PATH"
 
 ---
 
-## 3. Phase 3 + 후속 PR 4건 종료 — 다음 단계 옵션
+## 3. 후속 작업 진행 상황
 
-Phase 1/2/3 (124건) + 후속 PR 4건 (B-M6/D-M9/D-M14/E-M9) 모두 완료.
-다음 세션에서 진행할 수 있는 작업:
+Phase 1/2/3 (124건) + 후속 PR 4건 + Cross-Platform 로그인 Phase A 완료.
 
-1. **운영 작업 (5.1)**: gh CLI 설치 → push → PR 생성 → 머지
-2. **회귀 테스트 사이클**: 실기기에서 핵심 시나리오(지도/도형 CRUD/스케치/로그인/설정) 5가지 검증
-3. **2단계 업그레이드 후보**:
-   - Compose BOM 2026.05.00 (Material3 1.4.x) — expressive 토큰 도입 시 별도 PR
-   - 통합 테스트(Espresso/Compose UI Test) 추가
-   - LeakCanary 도입 (Phase 1 누수 해소 후 권장 단계)
-   - Play Store 등록 준비 (서명 키 생성, Play App Signing, Release 빌드 검증)
+### 3.1 완료된 후속 작업
+
+| 작업 | 상태 | 메모 |
+|---|---|---|
+| Phase A: Android Apple Sign-In | ✅ 완료 | Firebase OAuthProvider("apple.com"). iOS 와 동일 Apple ID → 동일 UID 자동 호환. Firebase Console 설정은 사용자 작업. |
+
+### 3.2 Phase B (iOS Google Sign-In) — 사용자 결정 시 진행
+
+iOS 측 변경 (다른 저장소): `/Users/david/Development/Swift/myProjects/DronePass`
+- GoogleSignIn SPM 추가
+- GoogleLoginManager.swift 신규
+- LoginView 에 Google 버튼
+
+### 3.3 추가 후보 (필요 시 진행)
+
+1. **운영 작업**: gh CLI 설치 → push → PR 생성 → 머지
+2. **회귀 테스트 사이클**: 실기기 핵심 시나리오 5가지 검증 (지도/도형 CRUD/스케치/로그인/설정)
+3. **2단계 업그레이드**:
+   - Compose BOM 2026.05.00 (Material3 1.4.x)
+   - 통합 테스트(Espresso/Compose UI Test)
+   - LeakCanary 도입
+   - Play Store 등록 준비 (서명 키, Play App Signing, Release 빌드)
+   - Account Linking UI (한 계정에 Apple + Google 연결)
 
 > `REFACTORING_PLAN.md` 의 `## 4. Phase 3 — Medium (55건)` 섹션 참조 (모두 [x] 처리됨).
 

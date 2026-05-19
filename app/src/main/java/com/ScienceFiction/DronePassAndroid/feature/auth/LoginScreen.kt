@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.auth
 
+import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.clickable
@@ -12,9 +13,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Flight
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -30,7 +33,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -121,6 +126,39 @@ fun LoginScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             } else {
+                // Apple Sign-In 버튼 — Apple HIG: 검정 배경 + 흰 텍스트/로고, Google 위에 배치.
+                // iOS DronePass 와 같은 Apple ID 로 로그인 시 동일 Firebase UID → 데이터 자동 호환.
+                Button(
+                    onClick = {
+                        val activity = context as? Activity
+                        if (activity != null) {
+                            viewModel.signInWithApple(activity)
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.Black,
+                        contentColor = Color.White,
+                    ),
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_apple_logo),
+                        contentDescription = stringResource(R.string.login_apple_logo_description),
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp),
+                    )
+                    Spacer(modifier = Modifier.size(8.dp))
+                    Text(
+                        text = stringResource(R.string.login_apple),
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
                 // Google로 로그인 버튼
                 Button(
                     onClick = { viewModel.signInWithGoogle(context) },
