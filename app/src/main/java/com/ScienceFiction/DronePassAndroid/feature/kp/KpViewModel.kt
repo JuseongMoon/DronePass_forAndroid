@@ -1,7 +1,9 @@
 package com.ScienceFiction.DronePassAndroid.feature.kp
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.core.util.AnalyticsLogger
 import com.ScienceFiction.DronePassAndroid.core.data.repository.KpIndexRepository
 import com.ScienceFiction.DronePassAndroid.domain.model.Kp27DayForecast
@@ -54,8 +56,11 @@ class KpViewModel @Inject constructor(
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
-    private val _errorMessage = MutableStateFlow<String?>(null)
-    val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
+    /**
+     * 에러 상태. UI 에서 `stringResource(error.messageRes)` 로 다국어 변환한다 (D-M9).
+     */
+    private val _errorMessage = MutableStateFlow<KpError?>(null)
+    val errorMessage: StateFlow<KpError?> = _errorMessage.asStateFlow()
 
     /**
      * 자동 갱신 Job. Composable 의 ON_START/ON_STOP 라이프사이클에 맞춰 시작/중단된다.
@@ -83,8 +88,8 @@ class KpViewModel @Inject constructor(
                     _currentKp.value = data
                     _kpLevel.value = KpLevel.fromKp(data.kp)
                 },
-                onFailure = { error ->
-                    _errorMessage.value = error.message
+                onFailure = { _ ->
+                    _errorMessage.value = KpError.LoadFailed
                 }
             )
 
@@ -130,4 +135,20 @@ class KpViewModel @Inject constructor(
         autoRefreshJob?.cancel()
         autoRefreshJob = null
     }
+}
+
+/**
+ * Kp 화면에서 발생할 수 있는 에러 종류.
+ *
+ * UI 는 [messageRes] 를 `stringResource()` 로 변환해 다국어 표시한다 (D-M9).
+ */
+sealed class KpError(@StringRes val messageRes: Int) {
+    /** NOAA SWPC / GFZ Potsdam 모두 실패 — 현재 Kp 조회 불가 */
+    data object LoadFailed : KpError(R.string.kp_error_load_failed)
+
+    /** 예보 데이터 로드 실패 (현재 Kp 만 있음) */
+    data object ForecastFailed : KpError(R.string.kp_error_forecast_failed)
+
+    /** 분류 불가 — 마지막 폴백 */
+    data object Unknown : KpError(R.string.kp_error_unknown)
 }

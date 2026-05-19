@@ -137,11 +137,11 @@ fun KpForecastContent(
             )
         }
 
-        // 에러 메시지
-        if (errorMessage != null) {
+        // 에러 메시지 (sealed KpError → stringResource 다국어 변환)
+        errorMessage?.let { err ->
             item {
                 Text(
-                    text = errorMessage ?: "",
+                    text = stringResource(err.messageRes),
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(vertical = 8.dp)

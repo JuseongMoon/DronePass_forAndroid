@@ -70,20 +70,21 @@ import com.ScienceFiction.DronePassAndroid.feature.auth.AuthState
 import com.ScienceFiction.DronePassAndroid.feature.drone.DroneListScreen
 
 /**
- * 설정 화면의 서브 스크린 상태.
+ * 설정 화면의 서브 스크린 상태 (D-M14).
  *
- * 향후 정비 (D-M14, 별도 PR): Terms/Privacy/LocationTerms 는 WebDocumentScreen 으로
- * URL 만 다른 동일 분기이므로 `sealed class` + `WebDoc(titleRes, url)` 로 통합 가능.
- * 현재는 호출처 분기가 명시적이고 코드 가독성이 충분히 좋아 enum 유지.
+ * Terms/Privacy/LocationTerms 는 WebDocumentScreen 의 (titleRes, url) 만 다른 동일 분기라
+ * [WebDoc] 데이터 객체 1종으로 통합한다. 신규 약관/문서가 늘어나도 enum case 추가 없이
+ * `SettingsSubScreen.WebDoc(R.string.xxx, "https://...")` 만 전달하면 된다.
  */
-private enum class SettingsSubScreen {
-    Main,
-    DroneList,
-    AppInfo,
-    PatchNotes,
-    Terms,
-    Privacy,
-    LocationTerms
+private sealed class SettingsSubScreen {
+    data object Main : SettingsSubScreen()
+    data object DroneList : SettingsSubScreen()
+    data object AppInfo : SettingsSubScreen()
+    data object PatchNotes : SettingsSubScreen()
+    data class WebDoc(
+        @androidx.annotation.StringRes val titleRes: Int,
+        val url: String,
+    ) : SettingsSubScreen()
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -91,12 +92,12 @@ private enum class SettingsSubScreen {
 fun SettingsScreen(
     settingsViewModel: SettingsViewModel = hiltViewModel()
 ) {
-    var currentScreen by remember { mutableStateOf(SettingsSubScreen.Main) }
+    var currentScreen: SettingsSubScreen by remember { mutableStateOf(SettingsSubScreen.Main) }
 
     AnimatedContent(
         targetState = currentScreen,
         transitionSpec = {
-            if (targetState != SettingsSubScreen.Main) {
+            if (targetState !is SettingsSubScreen.Main) {
                 // 서브 화면으로 진입: 오른쪽에서 슬라이드인
                 (slideInHorizontally { it } + fadeIn())
                     .togetherWith(slideOutHorizontally { -it } + fadeOut())
@@ -109,51 +110,52 @@ fun SettingsScreen(
         label = "settings_screen_transition"
     ) { screen ->
         when (screen) {
-            SettingsSubScreen.Main -> {
+            is SettingsSubScreen.Main -> {
                 SettingsMainContent(
                     settingsViewModel = settingsViewModel,
                     onNavigateToDroneList = { currentScreen = SettingsSubScreen.DroneList },
                     onNavigateToAppInfo = { currentScreen = SettingsSubScreen.AppInfo },
                     onNavigateToPatchNotes = { currentScreen = SettingsSubScreen.PatchNotes },
-                    onNavigateToTerms = { currentScreen = SettingsSubScreen.Terms },
-                    onNavigateToPrivacy = { currentScreen = SettingsSubScreen.Privacy },
-                    onNavigateToLocationTerms = { currentScreen = SettingsSubScreen.LocationTerms }
+                    onNavigateToTerms = {
+                        currentScreen = SettingsSubScreen.WebDoc(
+                            R.string.settings_terms,
+                            "https://dronepass.notion.site/terms",
+                        )
+                    },
+                    onNavigateToPrivacy = {
+                        currentScreen = SettingsSubScreen.WebDoc(
+                            R.string.settings_privacy,
+                            "https://dronepass.notion.site/privacy",
+                        )
+                    },
+                    onNavigateToLocationTerms = {
+                        currentScreen = SettingsSubScreen.WebDoc(
+                            R.string.settings_location_terms,
+                            "https://dronepass.notion.site/location-terms",
+                        )
+                    },
                 )
             }
-            SettingsSubScreen.DroneList -> {
+            is SettingsSubScreen.DroneList -> {
                 DroneListScreen(
                     onBack = { currentScreen = SettingsSubScreen.Main }
                 )
             }
-            SettingsSubScreen.AppInfo -> {
+            is SettingsSubScreen.AppInfo -> {
                 AppInfoScreen(
                     onBack = { currentScreen = SettingsSubScreen.Main }
                 )
             }
-            SettingsSubScreen.PatchNotes -> {
+            is SettingsSubScreen.PatchNotes -> {
                 PatchNotesScreen(
                     onBack = { currentScreen = SettingsSubScreen.Main }
                 )
             }
-            SettingsSubScreen.Terms -> {
+            is SettingsSubScreen.WebDoc -> {
                 WebDocumentScreen(
-                    title = stringResource(R.string.settings_terms),
-                    url = "https://dronepass.notion.site/terms",
-                    onBack = { currentScreen = SettingsSubScreen.Main }
-                )
-            }
-            SettingsSubScreen.Privacy -> {
-                WebDocumentScreen(
-                    title = stringResource(R.string.settings_privacy),
-                    url = "https://dronepass.notion.site/privacy",
-                    onBack = { currentScreen = SettingsSubScreen.Main }
-                )
-            }
-            SettingsSubScreen.LocationTerms -> {
-                WebDocumentScreen(
-                    title = stringResource(R.string.settings_location_terms),
-                    url = "https://dronepass.notion.site/location-terms",
-                    onBack = { currentScreen = SettingsSubScreen.Main }
+                    title = stringResource(screen.titleRes),
+                    url = screen.url,
+                    onBack = { currentScreen = SettingsSubScreen.Main },
                 )
             }
         }

@@ -112,7 +112,7 @@ fun WeatherForecastContent(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = error ?: stringResource(R.string.common_unknown_error),
+                        text = stringResource(error!!.messageRes),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.error
                     )

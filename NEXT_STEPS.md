@@ -106,31 +106,31 @@ export PATH="$JAVA_HOME/bin:$PATH"
 
 ---
 
-## 3. Phase 3 종료 — 다음 단계 옵션
+## 3. Phase 3 + 후속 PR 4건 종료 — 다음 단계 옵션
 
-Phase 1/2/3 모두 완료. 다음 세션에서 진행할 수 있는 작업:
+Phase 1/2/3 (124건) + 후속 PR 4건 (B-M6/D-M9/D-M14/E-M9) 모두 완료.
+다음 세션에서 진행할 수 있는 작업:
 
 1. **운영 작업 (5.1)**: gh CLI 설치 → push → PR 생성 → 머지
 2. **회귀 테스트 사이클**: 실기기에서 핵심 시나리오(지도/도형 CRUD/스케치/로그인/설정) 5가지 검증
-3. **별도 PR 후보**: NEXT_STEPS 2.4 의 향후 작업 코멘트로 표시된 항목들
-   - MapScreen 자식 Composable 4종 분리 (B-M6 향후 작업)
-   - SettingsSubScreen sealed class 통합 (D-M14)
-   - WeatherViewModel error sealed class + @StringRes (D-M9)
-   - Compose BOM 2025.x 업그레이드 (E-M9)
-   - 통합 테스트(Espresso) 추가
+3. **2단계 업그레이드 후보**:
+   - Compose BOM 2026.05.00 (Material3 1.4.x) — expressive 토큰 도입 시 별도 PR
+   - 통합 테스트(Espresso/Compose UI Test) 추가
+   - LeakCanary 도입 (Phase 1 누수 해소 후 권장 단계)
+   - Play Store 등록 준비 (서명 키 생성, Play App Signing, Release 빌드 검증)
 
 > `REFACTORING_PLAN.md` 의 `## 4. Phase 3 — Medium (55건)` 섹션 참조 (모두 [x] 처리됨).
 
 ---
 
-## 4. 부분 처리 / 미완 항목 (향후 별도 PR)
+## 4. 후속 PR (모두 완료)
 
 | 항목 | 상태 | 메모 |
 |---|---|---|
 | **B-M6** MapScreen 25+ collect → 4종 자식 Composable 분리 | ✅ 완료 | `MapScreenLayers.kt` 신규 (MapOverlayEffects/MapFloatingControls/MapSketchInput/MapBottomSheets). 본체 728→392줄. 자식별 recomposition 범위 격리 |
-| **D-M9** WeatherViewModel/KpViewModel error sealed class + @StringRes | 향후 작업 | strings.xml 키는 이미 추가됨 (weather_error_*). ViewModel 모델 변경은 별도 PR |
-| **D-M14** SettingsSubScreen sealed class 통합 | 향후 작업 | Terms/Privacy/LocationTerms 통합 가능, 현재 enum 가독성 충분 |
-| **E-M9** Compose BOM 2024.09 → 2025.x | 검토 코멘트 | libs.versions.toml 에 검증 항목 명시 |
+| **D-M9** WeatherViewModel/KpViewModel error sealed class + @StringRes | ✅ 완료 | `sealed class WeatherError`, `sealed class KpError` 도입. UI 가 `stringResource(error.messageRes)` 변환 |
+| **D-M14** SettingsSubScreen sealed class 통합 | ✅ 완료 | Terms/Privacy/LocationTerms 3개 분기 → `WebDoc(titleRes, url)` 1개로 통합 |
+| **E-M9** Compose BOM 2024.09.00 → 2025.06.01 | ✅ 완료 | Material3 1.3.x 유지 + Kotlin 2.0.21 호환. 2026.05.00 (Material3 1.4.x) 업그레이드는 별도 PR |
 | Phase 2.3 deprecated 경고 (해결됨) | ✅ | `NotificationPermissionRequest.kt:61` LocalLifecycleOwner — Phase 3.3 에서 lifecycle.compose 패키지로 이전 완료 |
 
 ---

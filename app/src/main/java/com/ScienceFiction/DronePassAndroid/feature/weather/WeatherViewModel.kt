@@ -2,6 +2,8 @@ package com.ScienceFiction.DronePassAndroid.feature.weather
 
 import android.annotation.SuppressLint
 import android.content.Context
+import androidx.annotation.StringRes
+import com.ScienceFiction.DronePassAndroid.R
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
@@ -52,13 +54,10 @@ class WeatherViewModel @Inject constructor(
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
     /**
-     * 에러 메시지. 현재는 한국어 하드코딩이지만 다국어 지원을 위해 향후
-     * `sealed class WeatherError { ... val messageRes: Int }` 형태로 변경하고
-     * 호출처(WeatherForecastContent)에서 `stringResource()` 로 변환하는 것을 권장.
-     * strings.xml 에 weather_error_load_failed/weather_error_unknown 키는 이미 추가됨 (D-M9).
+     * 에러 상태. UI 에서 `stringResource(error.messageRes)` 로 다국어 변환한다 (D-M9).
      */
-    private val _error = MutableStateFlow<String?>(null)
-    val error: StateFlow<String?> = _error.asStateFlow()
+    private val _error = MutableStateFlow<WeatherError?>(null)
+    val error: StateFlow<WeatherError?> = _error.asStateFlow()
 
     val selectedCategory: StateFlow<DroneCategory> = dataStore.data
         .map { preferences ->
@@ -167,13 +166,13 @@ class WeatherViewModel @Inject constructor(
                 }
             }
         } catch (e: SecurityException) {
-            _error.value = "위치 권한이 필요합니다"
+            _error.value = WeatherError.LocationPermission
             // 기본 위치로 시도
             currentLatitude = DEFAULT_LATITUDE
             currentLongitude = DEFAULT_LONGITUDE
             fetchWeatherInternal(DEFAULT_LATITUDE, DEFAULT_LONGITUDE, selectedCategory.value)
         } catch (e: Exception) {
-            _error.value = "위치를 가져올 수 없습니다: ${e.localizedMessage}"
+            _error.value = WeatherError.LocationUnavailable
             _isLoading.value = false
         }
     }
@@ -191,9 +190,28 @@ class WeatherViewModel @Inject constructor(
                 _weatherData.value = data
                 _error.value = null
             }
-            .onFailure { exception ->
-                _error.value = "날씨 데이터를 불러올 수 없습니다: ${exception.localizedMessage}"
+            .onFailure { _ ->
+                _error.value = WeatherError.LoadFailed
             }
         _isLoading.value = false
     }
+}
+
+/**
+ * 날씨 화면에서 발생할 수 있는 에러 종류.
+ *
+ * UI 는 [messageRes] 를 `stringResource()` 로 변환해 다국어 표시한다 (D-M9).
+ */
+sealed class WeatherError(@StringRes val messageRes: Int) {
+    /** 위치 권한 거부됨 (Android 6.0+ runtime permission) */
+    data object LocationPermission : WeatherError(R.string.weather_error_location_permission)
+
+    /** 위치 서비스 비활성 / 마지막 위치도 없음 */
+    data object LocationUnavailable : WeatherError(R.string.weather_error_location_unavailable)
+
+    /** Open-Meteo API 호출 실패 (네트워크/서버 오류) */
+    data object LoadFailed : WeatherError(R.string.weather_error_load_failed)
+
+    /** 분류 불가 — 마지막 폴백 */
+    data object Unknown : WeatherError(R.string.weather_error_unknown)
 }
