@@ -10,6 +10,10 @@ local.properties
 /.idea/workspace.xml
 /.idea/navEditor.xml
 /.idea/assetWizardSettings.xml
+# 아래 3개는 사용자 환경별로 변동되는 IDE 상태 (디바이스 시리얼/JDK 경로/VCS 매핑).
+/.idea/deploymentTargetSelector.xml
+/.idea/misc.xml
+/.idea/vcs.xml
 
 # Build
 /build
