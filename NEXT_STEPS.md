@@ -10,7 +10,7 @@
 | 항목 | 값 |
 |---|---|
 | **브랜치** | `fix/critical-pri0-fixes` |
-| **마지막 커밋** | `<TBD>` (feat: Cross-Platform 로그인 Phase A — Android Apple Sign-In) |
+| **마지막 커밋** | `3d44d09` (feat: Cross-Platform 로그인 Phase A — Android Apple Sign-In) |
 | **워킹 트리** | clean (변경 없음 — REFACTORING_PLAN/NEXT_STEPS 갱신 후) |
 | **원격 동기화** | `origin/fix/critical-pri0-fixes` 보다 17 커밋 ahead (push 미수행) |
 | **누적 처리** | **124건 중 124건 완료 (100%)** ✅ |
