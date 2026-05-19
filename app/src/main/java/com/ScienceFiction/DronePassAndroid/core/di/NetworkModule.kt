@@ -85,6 +85,9 @@ object NetworkModule {
      * Naver Maps APIGW 전용 Retrofit. @Named("NaverOkHttp") OkHttpClient 만 사용한다.
      * 기본 Retrofit 으로 사용되면 다른 API 호출에도 Naver 헤더가 부착되어 키가 의도치 않게
      * 노출될 위험이 있으므로 @Named 한정자로 명시 분리.
+     *
+     * timeout 은 [provideNaverOkHttpClient] 의 connect/read 30s 가 적용된다 (Retrofit 자체엔
+     * 별도 timeout 이 없고 OkHttpClient 에 위임).
      */
     @Provides
     @Singleton
@@ -110,16 +113,22 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideVWorldApi(
+    @Named("vWorldRetrofit")
+    fun provideVWorldRetrofit(
         @Named("GenericOkHttp") okHttpClient: OkHttpClient,
         moshi: Moshi
-    ): VWorldApi {
+    ): Retrofit {
         return Retrofit.Builder()
             .baseUrl("https://api.vworld.kr/")
             .client(okHttpClient)
             .addConverterFactory(MoshiConverterFactory.create(moshi))
             .build()
-            .create(VWorldApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideVWorldApi(@Named("vWorldRetrofit") retrofit: Retrofit): VWorldApi {
+        return retrofit.create(VWorldApi::class.java)
     }
 
     @Provides
@@ -130,41 +139,61 @@ object NetworkModule {
     }
 
     // ===== Kp Index API =====
+    // NOAA SWPC 의 nowcast/예보/27일outlook 은 baseUrl 이 같지만 Retrofit 인스턴스를
+    // 명시 분리하여 API 별로 timeout/Converter 정책을 독립 조정할 수 있게 한다.
 
     @Provides
     @Singleton
-    fun provideKpNoaaApi(
+    @Named("kpNoaaRetrofit")
+    fun provideKpNoaaRetrofit(
         @Named("GenericOkHttp") okHttpClient: OkHttpClient
-    ): KpNoaaApi {
+    ): Retrofit {
         return Retrofit.Builder()
             .baseUrl("https://services.swpc.noaa.gov/")
             .client(okHttpClient)
             .build()
-            .create(KpNoaaApi::class.java)
     }
 
     @Provides
     @Singleton
-    fun provideKpNoaa27DayApi(
+    fun provideKpNoaaApi(@Named("kpNoaaRetrofit") retrofit: Retrofit): KpNoaaApi {
+        return retrofit.create(KpNoaaApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    @Named("kpNoaa27DayRetrofit")
+    fun provideKpNoaa27DayRetrofit(
         @Named("GenericOkHttp") okHttpClient: OkHttpClient
-    ): KpNoaa27DayApi {
+    ): Retrofit {
         return Retrofit.Builder()
             .baseUrl("https://services.swpc.noaa.gov/")
             .client(okHttpClient)
             .build()
-            .create(KpNoaa27DayApi::class.java)
     }
 
     @Provides
     @Singleton
-    fun provideKpGfzApi(
+    fun provideKpNoaa27DayApi(@Named("kpNoaa27DayRetrofit") retrofit: Retrofit): KpNoaa27DayApi {
+        return retrofit.create(KpNoaa27DayApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    @Named("kpGfzRetrofit")
+    fun provideKpGfzRetrofit(
         @Named("GenericOkHttp") okHttpClient: OkHttpClient
-    ): KpGfzApi {
+    ): Retrofit {
         return Retrofit.Builder()
             .baseUrl("https://kp.gfz.de/")
             .client(okHttpClient)
             .build()
-            .create(KpGfzApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideKpGfzApi(@Named("kpGfzRetrofit") retrofit: Retrofit): KpGfzApi {
+        return retrofit.create(KpGfzApi::class.java)
     }
 
     // ===== Weather API (Open-Meteo) =====

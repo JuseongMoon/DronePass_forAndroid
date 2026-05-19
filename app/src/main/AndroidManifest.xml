@@ -91,6 +91,9 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <!-- 일부 OEM (특히 중국계) 이 explicit category.DEFAULT 가 없는 receiver 를
+                     필터링하는 경우가 있어 명시 추가. AOSP 동작에는 영향 없음. -->
+                <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </receiver>
     </application>

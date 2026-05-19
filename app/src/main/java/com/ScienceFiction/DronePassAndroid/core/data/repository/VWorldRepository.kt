@@ -21,7 +21,7 @@ import javax.inject.Singleton
 @Singleton
 class VWorldRepository @Inject constructor(
     private val vWorldApi: VWorldApi,
-    private val apiKey: String
+    @javax.inject.Named("VWorldApiKey") private val apiKey: String
 ) {
     companion object {
         private const val TAG = "VWorldRepository"

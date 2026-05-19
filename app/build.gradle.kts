@@ -108,7 +108,9 @@ ksp {
 }
 
 dependencies {
-    implementation("androidx.appcompat:appcompat:1.7.0")
+    // appcompat 는 Compose-only 전환으로 직접 사용처가 없다. 일부 transitive 의존(예:
+    // security-crypto 1.1.0-alpha06)이 1.x 일부 클래스를 참조할 수 있어 transitive 로만
+    // 들어오게 둔다. 직접 implementation 은 제거.
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)
