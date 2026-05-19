@@ -19,8 +19,8 @@ import com.ScienceFiction.DronePassAndroid.domain.model.Coordinate
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,8 +30,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -411,8 +414,34 @@ class MapViewModel @Inject constructor(
     private val _showZoneDetail = MutableStateFlow(false)
     val showZoneDetail: StateFlow<Boolean> = _showZoneDetail.asStateFlow()
 
-    /** Debounce용 Job */
-    private var loadFlightZonesJob: Job? = null
+    /**
+     * 지도 bbox 변경을 debounce 적용해 collect 하기 위한 SharedFlow.
+     * init 블록에서 debounce + distinctUntilChanged 로 자연화한다.
+     */
+    private val _mapBoundsFlow = MutableSharedFlow<MapBounds>(
+        replay = 0,
+        extraBufferCapacity = 16,
+    )
+
+    private data class MapBounds(
+        val sw: Pair<Double, Double>,
+        val ne: Pair<Double, Double>,
+    )
+
+    @OptIn(FlowPreview::class)
+    private val mapBoundsCollector: Job = viewModelScope.launch {
+        _mapBoundsFlow
+            .distinctUntilChanged()
+            .debounce(DEBOUNCE_MS)
+            .collect { bounds ->
+                loadFlightZones(
+                    southWestLat = bounds.sw.first,
+                    southWestLon = bounds.sw.second,
+                    northEastLat = bounds.ne.first,
+                    northEastLon = bounds.ne.second,
+                )
+            }
+    }
 
     /**
      * 레이어 토글
@@ -469,12 +498,8 @@ class MapViewModel @Inject constructor(
     }
 
     /**
-     * 지도 이동 시 Debounce 500ms로 비행구역 로드
-     *
-     * @param southWestLat 남서쪽 위도
-     * @param southWestLon 남서쪽 경도
-     * @param northEastLat 북동쪽 위도
-     * @param northEastLon 북동쪽 경도
+     * 지도 이동 시 bbox 를 Flow 에 emit 한다.
+     * 실제 비행구역 로드는 [mapBoundsCollector] 가 distinctUntilChanged + debounce 후 호출.
      */
     fun onMapBoundsChanged(
         southWestLat: Double,
@@ -482,11 +507,12 @@ class MapViewModel @Inject constructor(
         northEastLat: Double,
         northEastLon: Double
     ) {
-        loadFlightZonesJob?.cancel()
-        loadFlightZonesJob = viewModelScope.launch {
-            delay(DEBOUNCE_MS)
-            loadFlightZones(southWestLat, southWestLon, northEastLat, northEastLon)
-        }
+        _mapBoundsFlow.tryEmit(
+            MapBounds(
+                sw = southWestLat to southWestLon,
+                ne = northEastLat to northEastLon,
+            )
+        )
     }
 
     /**

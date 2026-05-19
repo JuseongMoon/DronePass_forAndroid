@@ -22,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -68,6 +69,18 @@ import com.naver.maps.map.NaverMap
 import com.naver.maps.map.NaverMapSdk
 import com.naver.maps.map.util.FusedLocationSource
 
+/**
+ * 지도 메인 화면.
+ *
+ * NOTE(향후 분리): 현 함수는 25+ collectAsStateWithLifecycle 호출로 인해 ViewModel 의 모든
+ * Flow 변경에 대해 전체 함수가 재컴포지션된다. 성능 측면에서 다음 자식 Composable 분리를
+ * 권장한다 (별도 PR):
+ *  - `MapOverlayLayer(naverMap, shapes, sketches, zones, density, overlayManagers...)`
+ *  - `MapFloatingControlsLayer(activeDrones, currentKp, currentWeather, ...)`
+ *  - `MapBottomSheetsLayer(showShapeDetail, showShapeEdit, showLayerSelector, ...)`
+ *  - `MapSketchModeLayer(isSketchMode, currentDrawingPoints, ...)`
+ *  현재는 D-H2/D-H11(Phase 2)로 핵심 부담은 해소되어 우선순위가 낮다.
+ */
 @OptIn(ExperimentalPermissionsApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun MapScreen(
@@ -88,9 +101,18 @@ fun MapScreen(
     }
     var naverMap by remember { mutableStateOf<NaverMap?>(null) }
     var mapReady by remember { mutableStateOf(false) }
+    // OverlayManager 3종은 NaverMap lifecycle 에 묶이므로 Composable 의 remember 로 유지한다.
+    // ViewModel 로 이전하면 MapView/NaverMap 생명주기보다 길어져 setMap 호출 시점 추적이
+    // 복잡해지고 onDispose 시 detach 가 누락될 위험. 현 구조가 안전한 trade-off.
     val overlayManager = remember { ShapeOverlayManager() }
     val sketchOverlayManager = remember { SketchOverlayManager() }
     val flightZoneOverlayManager = remember { FlightZoneOverlayManager() }
+
+    // 디바이스 density 를 SketchOverlayManager 에 주입 (dp→px 정확도 향상)
+    val displayDensity = LocalDensity.current.density
+    LaunchedEffect(sketchOverlayManager, displayDensity) {
+        sketchOverlayManager.setDensity(displayDensity)
+    }
 
     // factory 에서 등록한 NaverMap 리스너 참조 — onDispose 에서 해제할 수 있도록 보관.
     var cameraIdleListener by remember { mutableStateOf<NaverMap.OnCameraIdleListener?>(null) }
@@ -159,12 +181,11 @@ fun MapScreen(
     // 권한이 허용되었는지 확인
     val allPermissionsGranted = locationPermissionsState.permissions.all { it.status.isGranted }
 
-    // 화면 항상 켜기 설정 적용
+    // 화면 항상 켜기 설정 적용. true/false 양쪽 모두 명시 적용 (이전: true 만 설정 후
+    // 토글 시 false 가 반영되지 않음 — onDispose 의존이라 토글에 즉시 반응 못함).
     val view = LocalView.current
     DisposableEffect(keepScreenOn) {
-        if (keepScreenOn) {
-            view.keepScreenOn = true
-        }
+        view.keepScreenOn = keepScreenOn
         onDispose {
             view.keepScreenOn = false
         }
@@ -188,15 +209,14 @@ fun MapScreen(
         }
     }
 
-    // 오버레이 매니저 콜백 설정
-    LaunchedEffect(overlayManager) {
+    // 오버레이 매니저 콜백 설정. SideEffect 로 매 successful recomposition 후 최신
+    // ViewModel 참조의 람다를 할당 → ViewModel 변경(예: 테스트 환경 교체)에도 즉시 반영.
+    // 이전 LaunchedEffect(overlayManager) 는 key 불변이라 첫 컴포지션 1회만 실행되어
+    // ViewModel 재바인딩 시 stale 콜백이 잔존할 가능성이 있었음.
+    SideEffect {
         overlayManager.onShapeTapped = { shapeId ->
             viewModel.onShapeSelected(shapeId)
         }
-    }
-
-    // 비행구역 오버레이 매니저 콜백 설정
-    LaunchedEffect(flightZoneOverlayManager) {
         flightZoneOverlayManager.onZoneTapped = { zone ->
             viewModel.onZoneSelected(zone)
         }

@@ -22,12 +22,14 @@ import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import java.util.Locale
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.domain.model.CurrentWeatherData
 import com.ScienceFiction.DronePassAndroid.feature.weather.WeatherOverlayCard
@@ -76,13 +78,19 @@ fun MapFloatingButtons(
             color = MaterialTheme.colorScheme.surface,
             shadowElevation = 4.dp
         ) {
+            // Kp 값 포맷 메모이즈: 동일 currentKpValue 에서는 String.format 재계산 회피.
+            // Locale.ROOT 명시로 일부 로케일의 소수점 콤마 변환 차단.
+            val kpDisplay = remember(currentKpValue) {
+                if (currentKpValue != null) "Kp ${String.format(Locale.ROOT, "%.1f", currentKpValue)}"
+                else "Kp --"
+            }
             Row(
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Text(
-                    text = if (currentKpValue != null) "Kp ${String.format("%.1f", currentKpValue)}" else "Kp --",
+                    text = kpDisplay,
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold
                 )

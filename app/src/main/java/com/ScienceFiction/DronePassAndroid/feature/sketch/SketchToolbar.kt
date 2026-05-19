@@ -446,9 +446,11 @@ private fun ColorSelector(
     currentColor: String,
     onColorChanged: (String) -> Unit
 ) {
-    // 현재 색상의 Hue 값 계산
-    val currentHue = remember(currentColor) { hexToHue(currentColor) }
-    var sliderPosition by remember(currentColor) { mutableStateOf(currentHue) }
+    // 현재 색상의 Hue 값으로 초기화하되, 이후 슬라이더 자체가 SSOT.
+    // currentColor 가 외부에서 변경되어도 sliderPosition 을 강제 동기화하지 않는다.
+    // 이전 `remember(currentColor)` 방식은 onColorChanged → currentColor 갱신 →
+    // hexToHue 재계산 round-trip 으로 부동소수점 오차가 누적되어 thumb 가 미세하게 점프했다.
+    var sliderPosition by remember { mutableStateOf(hexToHue(currentColor)) }
 
     Column {
         // 레인보우 그라데이션 슬라이더

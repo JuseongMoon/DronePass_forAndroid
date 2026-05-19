@@ -18,7 +18,12 @@ class FlightZoneOverlayManager {
 
     companion object {
         private const val TAG = "FlightZoneOverlay"
-        private const val BASE_Z_INDEX = 100
+        // FlightZone 폴리곤은 ShapeOverlay(50) / SketchOverlay(100,110) 보다 아래에 배경처럼
+        // 그려져야 사용자가 추가한 도형/스케치가 위에 보인다. 이전 BASE_Z_INDEX=100 은
+        // Shape(50)보다 위로 올라가 도형이 가려지는 문제가 있었음.
+        // 결과 zIndex: layer.priority(4=PROHIBITED..1=ADVISORY 정도)에 따라
+        // BASE - priority = 6..10 범위로 충돌 시 위험도 높은 것이 위에 오도록.
+        private const val BASE_Z_INDEX = 10
     }
 
     private var naverMap: NaverMap? = null

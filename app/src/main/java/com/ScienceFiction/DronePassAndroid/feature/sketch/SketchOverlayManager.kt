@@ -8,6 +8,9 @@ import com.ScienceFiction.DronePassAndroid.domain.model.SketchModel
 import com.naver.maps.map.NaverMap
 import com.naver.maps.map.overlay.PolylineOverlay
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 
 /**
@@ -19,6 +22,13 @@ import kotlinx.coroutines.withContext
 class SketchOverlayManager {
 
     private var naverMap: NaverMap? = null
+
+    /**
+     * Polyline 두께 변환에 사용하는 display density (1dp = `density` px).
+     * setMap 시 NaverMap 의 Context resources 로부터 정확한 값으로 갱신된다.
+     * 폴백 2.5 는 xxhdpi 근사 (이전 하드코딩과 호환).
+     */
+    private var density: Float = 2.5f
 
     /** 저장된 스케치 오버레이들 (sketchId → PolylineOverlay) */
     private val overlays = mutableMapOf<String, PolylineOverlay>()
@@ -34,10 +44,20 @@ class SketchOverlayManager {
     }
 
     /**
-     * NaverMap 인스턴스를 설정한다.
+     * NaverMap 인스턴스를 설정한다. density 는 [setDensity] 로 주입하지 않으면
+     * Resources.getSystem 의 시스템 기본 displayMetrics 를 사용한다.
      */
     fun setMap(map: NaverMap) {
         this.naverMap = map
+        density = android.content.res.Resources.getSystem().displayMetrics.density
+    }
+
+    /**
+     * 정확한 dpToPx 변환을 위해 호출자(MapScreen)에서 LocalDensity 값을 주입한다.
+     * 호출하지 않아도 [setMap] 의 시스템 density 폴백으로 동작.
+     */
+    fun setDensity(density: Float) {
+        this.density = density.coerceAtLeast(0.5f)
     }
 
     // ──────────────────────────────────────────────
@@ -64,20 +84,24 @@ class SketchOverlayManager {
             overlays.remove(id)?.map = null
         }
 
-        // 새로 추가되거나 업데이트가 필요한 스케치 처리
-        for (sketch in sketches) {
-            if (sketch.points.size < MIN_POINTS_FOR_POLYLINE) continue
+        val candidates = sketches.filter { it.points.size >= MIN_POINTS_FOR_POLYLINE }
+        if (candidates.isEmpty()) return
 
-            // 스무딩된 포인트 가져오기 (캐시 활용)
-            val smoothedPoints = withContext(Dispatchers.Default) {
-                SketchPointsCache.getSmoothedPoints(sketch)
+        // Catmull-Rom 스무딩을 sketch 별 병렬 (Dispatchers.Default) 로 수행.
+        // 단일 sketch 의 캐시 미스는 무겁고, 다중 sketch 가 있는 경우 순차 처리는 N배 지연.
+        // SketchPointsCache 가 in-flight 추적으로 중복 계산을 막아주므로 안전.
+        val smoothed = coroutineScope {
+            withContext(Dispatchers.Default) {
+                candidates.map { sketch ->
+                    async { sketch to SketchPointsCache.getSmoothedPoints(sketch) }
+                }.awaitAll()
             }
+        }
 
-            if (smoothedPoints.size < MIN_POINTS_FOR_POLYLINE) continue
-
+        smoothed.forEach { (sketch, smoothedPoints) ->
+            if (smoothedPoints.size < MIN_POINTS_FOR_POLYLINE) return@forEach
             val latLngs = smoothedPoints.map { it.toLatLng() }
 
-            // 기존 오버레이가 있으면 업데이트, 없으면 새로 생성
             val existing = overlays[sketch.id]
             if (existing != null) {
                 existing.coords = latLngs
@@ -189,13 +213,10 @@ class SketchOverlayManager {
     }
 
     /**
-     * dp 값을 픽셀 단위로 변환한다.
-     * NaverMap PolylineOverlay의 width는 픽셀 단위이다.
+     * dp 값을 픽셀 단위로 변환한다. NaverMap PolylineOverlay 의 width 는 px 단위.
+     * [density] 는 setMap/setDensity 로 주입된 displayMetrics 기반 값.
      */
     private fun dpToPx(dp: Double): Int {
-        // 일반적인 Android 디바이스 밀도 기준
-        // 실제 런타임에서는 Resources를 통해 정확한 밀도를 구할 수 있지만,
-        // 오버레이 매니저는 Context를 가지지 않으므로 2.5 배율 사용 (xxhdpi 근사)
-        return (dp * 2.5).toInt().coerceAtLeast(1)
+        return (dp * density).toInt().coerceAtLeast(1)
     }
 }
