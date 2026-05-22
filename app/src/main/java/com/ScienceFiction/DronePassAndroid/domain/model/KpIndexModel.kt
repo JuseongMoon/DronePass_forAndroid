@@ -33,12 +33,19 @@ data class Kp27DayForecast(
 )
 
 enum class KpLevel(val label: String, val color: Long) {
-    NORMAL("Normal", 0xFF008B8B),
-    G1("G1 Minor", 0xFF2E8B57),
-    G2("G2 Moderate", 0xFFDAA520),
-    G3("G3 Strong", 0xFFFF8C00),
-    G4("G4 Severe", 0xFFFF4500),
-    G5("G5 Extreme", 0xFFDC143C);
+    // iOS KPIndexModel.swift `KPLevel.color` 와 1:1 매칭.
+    //   normal: Color(red: 0.0,  green: 0.8,  blue: 0.7 )
+    //   g1   : Color(red: 0.0,  green: 0.9,  blue: 0.5 )
+    //   g2   : Color(red: 0.75, green: 0.95, blue: 0.06)
+    //   g3   : Color(red: 1.0,  green: 0.75, blue: 0.0 )
+    //   g4   : Color(red: 1.0,  green: 0.4,  blue: 0.0 )
+    //   g5   : Color(red: 0.86, green: 0.08, blue: 0.24)
+    NORMAL("Normal", 0xFF00CCB3),
+    G1("G1 Minor", 0xFF00E680),
+    G2("G2 Moderate", 0xFFBFF20F),
+    G3("G3 Strong", 0xFFFFBF00),
+    G4("G4 Severe", 0xFFFF6600),
+    G5("G5 Extreme", 0xFFDB143D);
 
     companion object {
         /**

@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -180,6 +181,9 @@ internal fun MapFloatingControls(
 
     Box(modifier = modifier.fillMaxSize()) {
         // 드론 선택 드롭다운 (상단 우측)
+        // iOS `droneDropdownView`: .padding(.top, safeAreaInsets.top + dropdownTopPadding)
+        // dropdownTopPadding 은 화면 크기별 40~60dp. 안드로이드는 statusBarsPadding 으로
+        // 상태바 영역을 보호한 뒤, iOS iPhone 12/13/14/15 기준값(40dp) 을 추가 오프셋으로 사용한다.
         if (!isSketchMode && mapReady) {
             DroneSelectionDropdown(
                 activeDrones = activeDrones,
@@ -189,7 +193,8 @@ internal fun MapFloatingControls(
                 onToggleHighlight = { viewModel.toggleDroneHighlight(it) },
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .padding(top = 16.dp, end = 16.dp),
+                    .statusBarsPadding()
+                    .padding(top = 8.dp, end = 16.dp),
             )
         }
 

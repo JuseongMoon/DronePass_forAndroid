@@ -1,6 +1,5 @@
 package com.ScienceFiction.DronePassAndroid.feature.map.component
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -104,32 +103,36 @@ fun MapFloatingButtons(
             Spacer(modifier = Modifier.height(8.dp))
 
             // KP 지수 버튼
+            // iOS `kpIndexButton` 정합: "KP" 라벨 + 값(or "-"), 둘 다 동일한 레벨 색상으로 표시.
+            //   - 라벨은 "KP" (대문자) — iOS Text("KP")
+            //   - 값 표시는 데이터 있으면 "5.0", 없으면 "-" — iOS `currentKPString`
+            //   - 인디케이터 원 제거: 색상은 두 텍스트 자체에 직접 적용
             Surface(
                 onClick = onShowKpForecast,
-                shape = RoundedCornerShape(20.dp),
+                shape = RoundedCornerShape(12.dp),
                 color = MaterialTheme.colorScheme.surface,
                 shadowElevation = 4.dp
             ) {
-                // Kp 값 포맷 메모이즈: 동일 currentKpValue 에서는 String.format 재계산 회피.
-                // Locale.ROOT 명시로 일부 로케일의 소수점 콤마 변환 차단.
-                val kpDisplay = remember(currentKpValue) {
-                    if (currentKpValue != null) "Kp ${String.format(Locale.ROOT, "%.1f", currentKpValue)}"
-                    else "Kp --"
+                val kpValueText = remember(currentKpValue) {
+                    if (currentKpValue != null) String.format(Locale.ROOT, "%.1f", currentKpValue)
+                    else "-"
                 }
                 Row(
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text(
-                        text = kpDisplay,
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Bold
+                        text = "KP",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = kpLevelColor
                     )
-                    Box(
-                        modifier = Modifier
-                            .size(10.dp)
-                            .background(kpLevelColor, CircleShape)
+                    Text(
+                        text = kpValueText,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = kpLevelColor
                     )
                 }
             }

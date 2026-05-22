@@ -20,7 +20,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -162,12 +162,16 @@ fun DroneSelectionDropdown(
                     ) + fadeOut(animationSpec = tween(150))
                 ) {
                     Surface(
+                        // iOS `.fixedSize(horizontal: true, vertical: false)` 정합:
+                        // 드롭다운 폭은 가장 긴 드론 이름 + 패딩에 맞게 wrap 한다.
+                        // 별도 최소폭 강제 없음 → 짧은 이름이면 좁게, 긴 이름이면 그만큼만 길어진다.
+                        modifier = Modifier.wrapContentWidth(),
                         shape = RoundedCornerShape(12.dp),
                         color = MaterialTheme.colorScheme.surface,
                         shadowElevation = 4.dp
                     ) {
                         Column(
-                            modifier = Modifier.widthIn(min = 160.dp)
+                            modifier = Modifier.wrapContentWidth()
                         ) {
                             activeDrones.forEachIndexed { index, drone ->
                                 val isSelected = drone.id in selectedDroneIds
