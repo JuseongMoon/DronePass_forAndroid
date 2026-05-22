@@ -32,264 +32,83 @@ import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.domain.model.Kp27DayForecast
 import com.ScienceFiction.DronePassAndroid.domain.model.KpIndexData
 import com.ScienceFiction.DronePassAndroid.domain.model.KpLevel
+import com.ScienceFiction.DronePassAndroid.feature.weather.BackgroundZone
+import com.ScienceFiction.DronePassAndroid.feature.weather.ChartCard
+import com.ScienceFiction.DronePassAndroid.feature.weather.WeatherLineChart
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
 // ─── 색상 상수 ─────────────────────────────────────────────
 private val WarningYellow = Color(0xFFDAA520)
-private val DangerRed = Color(0xFFFF4500)
 private val ZoneGreen = Color(0xFF4CAF50)
 private val ZoneYellow = Color(0xFFFFC107)
 private val ZoneRed = Color(0xFFF44336)
-private val CurrentTimeLine = Color(0xFFFF0000)
 
 // ─── 48시간 예보 라인 차트 ──────────────────────────────────
 
 /**
- * 48시간 Kp 지수 예보 라인 차트
+ * 48시간 Kp 지수 예보 라인 차트.
  *
- * - observed/estimated: 실선, predicted: 점선
- * - 배경 색상 영역 (초록/노랑/빨강)
- * - Kp=5 주의선, Kp=7 위험선
- * - 현재 시간 수직선
- * - 각 데이터 포인트에 원 표시
+ * 날씨 화면의 공통 차트 컴포넌트 [WeatherLineChart] 를 재사용한다. KP 고유 시각화는
+ * 옵션 인자로 전달:
+ * - Y축 0..9 강제 + 3 step 라벨 (0/3/6/9)
+ * - X축 6시간 간격, 자정엔 MM/dd
+ * - Kp=5 주의선(노랑) / Kp=7 위험선(빨강)
+ * - Kp 0-5/5-7/7-9 배경 색상 zone
+ * - observed/predicted segment 별 실선/점선
+ * - 각 포인트 KpLevel 색상 원
+ * - 현재 시간 빨강 수직선
  */
 @Composable
-fun Kp48HourChart(
+fun KpForecastLineChart(
     forecastData: List<KpIndexData>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     if (forecastData.isEmpty()) return
 
-    val onSurfaceColor = MaterialTheme.colorScheme.onSurface
-    val primaryColor = MaterialTheme.colorScheme.primary
-    val surfaceVariantColor = MaterialTheme.colorScheme.surfaceVariant
-
-    // 시간 파싱 (한 번만)
-    val sdf = remember { SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()) }
-    val parsedData = remember(forecastData) {
+    // NOAA forecast 의 time_tag 는 ISO 8601 (`"2026-05-13T00:00:00"`, T 구분자).
+    // iOS 도 동일 패턴으로 디코딩 (`KPIndexModel.swift` line 40).
+    // 옛 응답이나 다른 소스 호환 위해 공백 구분자 패턴도 fallback 으로 시도.
+    val isoSdf = remember { SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()) }
+    val spaceSdf = remember { SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()) }
+    // (item, epochMs, isPredicted) 튜플로 한 번에 파싱.
+    val parsed = remember(forecastData) {
         forecastData.mapNotNull { item ->
-            try {
-                val time = sdf.parse(item.timeTag)
-                if (time != null) item to time.time else null
-            } catch (_: Exception) {
-                null
-            }
+            val ms = runCatching { isoSdf.parse(item.timeTag)?.time }.getOrNull()
+                ?: runCatching { spaceSdf.parse(item.timeTag)?.time }.getOrNull()
+            ms?.let { Triple(item, it, item.observed == "predicted") }
         }
     }
+    if (parsed.isEmpty()) return
 
-    if (parsedData.isEmpty()) return
+    val dataPoints = parsed.map { (item, ms, _) -> ms to item.kp }
+    val predicted = parsed.map { it.third }
+    val pointColors = parsed.map { Color(KpLevel.fromKp(it.first.kp).color.toInt()) }
+    val primaryColor = MaterialTheme.colorScheme.primary
 
-    val minTime = parsedData.minOf { it.second }
-    val maxTime = parsedData.maxOf { it.second }
-    val timeRange = (maxTime - minTime).toFloat().coerceAtLeast(1f)
-    val nowMillis = System.currentTimeMillis()
-
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = surfaceVariantColor.copy(alpha = 0.3f)
-        )
+    ChartCard(
+        title = stringResource(R.string.kp_48hour_chart_title),
+        modifier = modifier,
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = stringResource(R.string.kp_48hour_chart_title),
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Canvas 차트
-            Canvas(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp)
-            ) {
-                val canvasWidth = size.width
-                val canvasHeight = size.height
-
-                // 여백
-                val leftPadding = 36.dp.toPx()
-                val rightPadding = 12.dp.toPx()
-                val topPadding = 8.dp.toPx()
-                val bottomPadding = 24.dp.toPx()
-
-                val chartLeft = leftPadding
-                val chartRight = canvasWidth - rightPadding
-                val chartTop = topPadding
-                val chartBottom = canvasHeight - bottomPadding
-                val chartWidth = chartRight - chartLeft
-                val chartHeight = chartBottom - chartTop
-
-                val maxKp = 9f
-
-                // ── 텍스트 Paint ──
-                val textPaint = Paint().apply {
-                    color = onSurfaceColor.toArgb()
-                    textSize = 10.sp.toPx()
-                    isAntiAlias = true
-                    typeface = Typeface.DEFAULT
-                }
-
-                val smallTextPaint = Paint().apply {
-                    color = onSurfaceColor.copy(alpha = 0.6f).toArgb()
-                    textSize = 9.sp.toPx()
-                    isAntiAlias = true
-                    typeface = Typeface.DEFAULT
-                }
-
-                // ── 배경 색상 영역 ──
-                // 0~5: 초록 톤
-                val y5 = chartTop + chartHeight * (1f - 5f / maxKp)
-                val y7 = chartTop + chartHeight * (1f - 7f / maxKp)
-
-                drawRect(
-                    color = ZoneGreen.copy(alpha = 0.08f),
-                    topLeft = Offset(chartLeft, y5),
-                    size = androidx.compose.ui.geometry.Size(chartWidth, chartBottom - y5)
-                )
-                // 5~7: 노란 톤
-                drawRect(
-                    color = ZoneYellow.copy(alpha = 0.08f),
-                    topLeft = Offset(chartLeft, y7),
-                    size = androidx.compose.ui.geometry.Size(chartWidth, y5 - y7)
-                )
-                // 7~9: 빨간 톤
-                drawRect(
-                    color = ZoneRed.copy(alpha = 0.08f),
-                    topLeft = Offset(chartLeft, chartTop),
-                    size = androidx.compose.ui.geometry.Size(chartWidth, y7 - chartTop)
-                )
-
-                // ── 수평 기준선 ──
-                val dashEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 6f), 0f)
-
-                // Kp=5 주의선
-                drawLine(
-                    color = WarningYellow,
-                    start = Offset(chartLeft, y5),
-                    end = Offset(chartRight, y5),
-                    strokeWidth = 1.dp.toPx(),
-                    pathEffect = dashEffect
-                )
-
-                // Kp=7 위험선
-                drawLine(
-                    color = DangerRed,
-                    start = Offset(chartLeft, y7),
-                    end = Offset(chartRight, y7),
-                    strokeWidth = 1.dp.toPx(),
-                    pathEffect = dashEffect
-                )
-
-                // ── Y축 라벨 ──
-                for (kpVal in 0..9 step 3) {
-                    val yPos = chartTop + chartHeight * (1f - kpVal.toFloat() / maxKp)
-                    drawContext.canvas.nativeCanvas.drawText(
-                        "$kpVal",
-                        4.dp.toPx(),
-                        yPos + textPaint.textSize / 3f,
-                        textPaint
-                    )
-                    // 그리드 가로선
-                    drawLine(
-                        color = onSurfaceColor.copy(alpha = 0.1f),
-                        start = Offset(chartLeft, yPos),
-                        end = Offset(chartRight, yPos),
-                        strokeWidth = 0.5.dp.toPx()
-                    )
-                }
-
-                // ── X축 라벨 (6시간 간격) ──
-                val xLabelSdf = SimpleDateFormat("HH", Locale.getDefault())
-                val dateLabelSdf = SimpleDateFormat("MM/dd", Locale.getDefault())
-
-                // 주요 시간 라벨 표시
-                val labelIntervalMs = 6 * 3600 * 1000L // 6시간
-                var labelTime = minTime - (minTime % labelIntervalMs) + labelIntervalMs
-                while (labelTime <= maxTime) {
-                    val xPos = chartLeft + chartWidth * ((labelTime - minTime).toFloat() / timeRange)
-                    if (xPos in chartLeft..chartRight) {
-                        val hourStr = xLabelSdf.format(Date(labelTime))
-                        val dateStr = dateLabelSdf.format(Date(labelTime))
-
-                        // 자정이면 날짜도 표시
-                        val label = if (hourStr == "00") dateStr else hourStr
-                        val textWidth = smallTextPaint.measureText(label)
-                        drawContext.canvas.nativeCanvas.drawText(
-                            label,
-                            xPos - textWidth / 2f,
-                            canvasHeight - 2.dp.toPx(),
-                            smallTextPaint
-                        )
-
-                        // 세로 눈금선
-                        drawLine(
-                            color = onSurfaceColor.copy(alpha = 0.08f),
-                            start = Offset(xPos, chartTop),
-                            end = Offset(xPos, chartBottom),
-                            strokeWidth = 0.5.dp.toPx()
-                        )
-                    }
-                    labelTime += labelIntervalMs
-                }
-
-                // ── 현재 시간 수직선 ──
-                if (nowMillis in minTime..maxTime) {
-                    val nowX = chartLeft + chartWidth * ((nowMillis - minTime).toFloat() / timeRange)
-                    drawLine(
-                        color = CurrentTimeLine,
-                        start = Offset(nowX, chartTop),
-                        end = Offset(nowX, chartBottom),
-                        strokeWidth = 1.5.dp.toPx()
-                    )
-                }
-
-                // ── 데이터 라인 & 포인트 ──
-                val pointRadius = 3.dp.toPx()
-                val lineStrokeWidth = 2.dp.toPx()
-                val predictedDash = PathEffect.dashPathEffect(floatArrayOf(10f, 6f), 0f)
-
-                for (i in 0 until parsedData.size - 1) {
-                    val (itemA, timeA) = parsedData[i]
-                    val (itemB, timeB) = parsedData[i + 1]
-
-                    val xA = chartLeft + chartWidth * ((timeA - minTime).toFloat() / timeRange)
-                    val yA = chartTop + chartHeight * (1f - itemA.kp.toFloat() / maxKp)
-                    val xB = chartLeft + chartWidth * ((timeB - minTime).toFloat() / timeRange)
-                    val yB = chartTop + chartHeight * (1f - itemB.kp.toFloat() / maxKp)
-
-                    // 선분의 타입 결정: 양쪽 모두 predicted이면 점선
-                    val isPredicted = itemA.observed == "predicted" && itemB.observed == "predicted"
-                    val lineColor = if (isPredicted) primaryColor.copy(alpha = 0.6f) else primaryColor
-                    val effect = if (isPredicted) predictedDash else null
-
-                    drawLine(
-                        color = lineColor,
-                        start = Offset(xA, yA),
-                        end = Offset(xB, yB),
-                        strokeWidth = lineStrokeWidth,
-                        pathEffect = effect
-                    )
-                }
-
-                // 포인트 그리기
-                for ((item, time) in parsedData) {
-                    val x = chartLeft + chartWidth * ((time - minTime).toFloat() / timeRange)
-                    val y = chartTop + chartHeight * (1f - item.kp.toFloat() / maxKp)
-                    val level = KpLevel.fromKp(item.kp)
-
-                    drawCircle(
-                        color = Color(level.color.toInt()),
-                        radius = pointRadius,
-                        center = Offset(x, y)
-                    )
-                }
-            }
-        }
+        WeatherLineChart(
+            dataPoints = dataPoints,
+            lineColor = primaryColor,
+            warningThreshold = 5.0,
+            dangerThreshold = 7.0,
+            yAxisRange = 0.0..9.0,
+            yLabelStep = 3.0,
+            xLabelIntervalMs = 6 * 60 * 60 * 1000L,
+            currentTimeMs = System.currentTimeMillis(),
+            predicted = predicted,
+            pointColors = pointColors,
+            backgroundZones = listOf(
+                BackgroundZone(0.0..5.0, ZoneGreen),
+                BackgroundZone(5.0..7.0, ZoneYellow),
+                BackgroundZone(7.0..9.0, ZoneRed),
+            ),
+            formatValue = { it.toInt().toString() },
+        )
     }
 }
 

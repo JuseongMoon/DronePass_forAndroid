@@ -38,8 +38,32 @@ import java.util.Locale
 
 // ─── 공통 Line Chart ────────────────────────────────────────────
 
+/**
+ * Y축 배경 색상 영역. WeatherLineChart 의 [backgroundZones] 에 전달.
+ *
+ * 예: KP 차트의 0-5 초록 / 5-7 노랑 / 7-9 빨강 영역.
+ */
+internal data class BackgroundZone(
+    val range: ClosedFloatingPointRange<Double>,
+    val color: Color,
+    val alpha: Float = 0.08f,
+)
+
+/**
+ * 공통 라인 차트. Weather/KP 등 시계열 데이터 표시에 재사용.
+ *
+ * 기본 사용 (Weather): 데이터 범위에 따라 자동 Y축, fill area + smooth cubic line.
+ *
+ * KP 등 고급 사용 시 옵션:
+ * - [yAxisRange] / [yLabelStep]: Y축 0..9 같은 강제 범위
+ * - [xLabelIntervalMs]: X축 라벨 간격 (기본 3시간)
+ * - [currentTimeMs]: 현재 시간 빨강 수직선
+ * - [predicted]: dataPoints 와 같은 size 의 Boolean 리스트. 양쪽이 모두 true 인 segment 는 점선
+ * - [pointColors]: 각 데이터 포인트에 표시할 원의 색 (예: KpLevel 별 색상)
+ * - [backgroundZones]: Y축 값 범위별 배경 색상 (KP 의 zone 표시)
+ */
 @Composable
-private fun WeatherLineChart(
+internal fun WeatherLineChart(
     dataPoints: List<Pair<Long, Double>>,
     modifier: Modifier = Modifier,
     lineColor: Color = MaterialTheme.colorScheme.primary,
@@ -48,7 +72,14 @@ private fun WeatherLineChart(
     dangerThreshold: Double? = null,
     invertWarning: Boolean = false,
     yAxisLabel: String = "",
-    formatValue: (Double) -> String = { String.format(Locale.ROOT, "%.1f", it) }
+    formatValue: (Double) -> String = { String.format(Locale.ROOT, "%.1f", it) },
+    yAxisRange: ClosedFloatingPointRange<Double>? = null,
+    yLabelStep: Double? = null,
+    xLabelIntervalMs: Long? = null,
+    currentTimeMs: Long? = null,
+    predicted: List<Boolean> = emptyList(),
+    pointColors: List<Color>? = null,
+    backgroundZones: List<BackgroundZone> = emptyList(),
 ) {
     if (dataPoints.isEmpty()) return
 
@@ -73,13 +104,16 @@ private fun WeatherLineChart(
 
         if (chartWidth <= 0 || chartHeight <= 0 || dataPoints.size < 2) return@Canvas
 
-        // Y축 범위 계산
-        val rawMin = dataPoints.minOf { it.second }
-        val rawMax = dataPoints.maxOf { it.second }
-        val range = if (rawMax - rawMin < 0.001) 1.0 else rawMax - rawMin
-        val padding10 = range * 0.1
-        val yMin = rawMin - padding10
-        val yMax = rawMax + padding10
+        // Y축 범위 계산 — yAxisRange 가 명시되면 그대로 사용, 아니면 데이터 기반 자동 + 10% 패딩.
+        val (yMin, yMax) = if (yAxisRange != null) {
+            yAxisRange.start to yAxisRange.endInclusive
+        } else {
+            val rawMin = dataPoints.minOf { it.second }
+            val rawMax = dataPoints.maxOf { it.second }
+            val range = if (rawMax - rawMin < 0.001) 1.0 else rawMax - rawMin
+            val padding10 = range * 0.1
+            (rawMin - padding10) to (rawMax + padding10)
+        }
 
         // X축 범위
         val xMin = dataPoints.first().first.toDouble()
@@ -93,12 +127,21 @@ private fun WeatherLineChart(
         fun toScreenY(value: Double): Float =
             topPadding + ((yMax - value) / (yMax - yMin) * chartHeight).toFloat()
 
-        // 격자선 (수평, 3개)
-        val gridPaint = Paint().apply {
-            color = onSurfaceVariant.copy(alpha = 0.1f).toArgb()
-            strokeWidth = 1f
-            isAntiAlias = true
+        // ── 배경 색상 영역 (옵션) ──
+        // 예: KP 의 0-5 초록 / 5-7 노랑 / 7-9 빨강 zone
+        backgroundZones.forEach { zone ->
+            val zoneTop = toScreenY(zone.range.endInclusive.coerceAtMost(yMax))
+            val zoneBottom = toScreenY(zone.range.start.coerceAtLeast(yMin))
+            if (zoneBottom > zoneTop) {
+                drawRect(
+                    color = zone.color.copy(alpha = zone.alpha),
+                    topLeft = Offset(leftPadding, zoneTop),
+                    size = Size(chartWidth, zoneBottom - zoneTop),
+                )
+            }
         }
+
+        // 격자선 (수평, 3개)
         val gridCount = 3
         for (i in 0..gridCount) {
             val y = topPadding + chartHeight * i / gridCount
@@ -110,41 +153,58 @@ private fun WeatherLineChart(
             )
         }
 
-        // Y축 라벨 (3개: 상, 중, 하)
+        // Y축 라벨 — yLabelStep 명시 시 그 간격으로 0..yMax 표시. 기본은 3개(상/중/하).
         val yLabelPaint = Paint().apply {
             color = onSurfaceVariant.copy(alpha = 0.7f).toArgb()
             textSize = axisLabelPx
             textAlign = Paint.Align.RIGHT
             isAntiAlias = true
         }
-        for (i in 0..2) {
-            val value = yMax - (yMax - yMin) * i / 2
-            val y = topPadding + chartHeight * i / 2
-            drawContext.canvas.nativeCanvas.drawText(
-                formatValue(value),
-                leftPadding - 6f,
-                y + 6f,
-                yLabelPaint
-            )
+        if (yLabelStep != null && yLabelStep > 0.0) {
+            var v = yMin
+            while (v <= yMax + 0.0001) {
+                val y = toScreenY(v)
+                drawContext.canvas.nativeCanvas.drawText(
+                    formatValue(v),
+                    leftPadding - 6f,
+                    y + 6f,
+                    yLabelPaint
+                )
+                v += yLabelStep
+            }
+        } else {
+            for (i in 0..2) {
+                val value = yMax - (yMax - yMin) * i / 2
+                val y = topPadding + chartHeight * i / 2
+                drawContext.canvas.nativeCanvas.drawText(
+                    formatValue(value),
+                    leftPadding - 6f,
+                    y + 6f,
+                    yLabelPaint
+                )
+            }
         }
 
-        // X축 시간 라벨 (3시간 간격)
+        // X축 시간 라벨 — xLabelIntervalMs 명시 시 그 간격, 기본 3시간.
         val xLabelPaint = Paint().apply {
             color = onSurfaceVariant.copy(alpha = 0.7f).toArgb()
             textSize = axisLabelPx
             textAlign = Paint.Align.CENTER
             isAntiAlias = true
         }
+        val intervalMs = xLabelIntervalMs ?: (3 * 60 * 60 * 1000L)
         val timeFormat = SimpleDateFormat("HH", Locale.getDefault())
-        val threeHoursMs = 3 * 60 * 60 * 1000L
-        // 첫 데이터 시간을 3시간 단위로 올림
+        val dateFormat = SimpleDateFormat("MM/dd", Locale.getDefault())
         val firstTime = dataPoints.first().first
-        val startLabel = ((firstTime / threeHoursMs) + 1) * threeHoursMs
+        // 첫 데이터 시간을 interval 단위로 올림
+        val startLabel = ((firstTime / intervalMs) + 1) * intervalMs
         var labelTime = startLabel
         while (labelTime <= dataPoints.last().first) {
             val x = toScreenX(labelTime)
             if (x >= leftPadding && x <= size.width - rightPadding) {
-                val label = timeFormat.format(Date(labelTime))
+                // 자정(00시)이면 날짜 라벨로 대체 — KP 처럼 다일에 걸친 차트 가독성 향상.
+                val hour = timeFormat.format(Date(labelTime))
+                val label = if (hour == "00") dateFormat.format(Date(labelTime)) else hour
                 drawContext.canvas.nativeCanvas.drawText(
                     label,
                     x,
@@ -159,7 +219,7 @@ private fun WeatherLineChart(
                     strokeWidth = 1f
                 )
             }
-            labelTime += threeHoursMs
+            labelTime += intervalMs
         }
 
         // Warning threshold (노란 점선)
@@ -190,53 +250,91 @@ private fun WeatherLineChart(
             }
         }
 
+        // 현재 시간 빨강 수직선 (옵션)
+        currentTimeMs?.let { now ->
+            if (now in dataPoints.first().first..dataPoints.last().first) {
+                val nowX = toScreenX(now)
+                drawLine(
+                    color = Color(0xFFFF0000),
+                    start = Offset(nowX, topPadding),
+                    end = Offset(nowX, topPadding + chartHeight),
+                    strokeWidth = 2f,
+                )
+            }
+        }
+
         // 데이터 포인트를 화면 좌표로 변환
         val screenPoints = dataPoints.map { (time, value) ->
             Offset(toScreenX(time), toScreenY(value))
         }
 
-        // 부드러운 곡선 Path (cubicTo)
-        val linePath = Path()
-        linePath.moveTo(screenPoints.first().x, screenPoints.first().y)
-        for (i in 1 until screenPoints.size) {
-            val prev = screenPoints[i - 1]
-            val curr = screenPoints[i]
-            val cpx = (prev.x + curr.x) / 2
-            linePath.cubicTo(cpx, prev.y, cpx, curr.y, curr.x, curr.y)
-        }
+        // predicted 가 비어있으면 단일 부드러운 곡선 (기존 동작).
+        // 명시되면 segment 별로 실선/점선 분기하여 직선으로 그린다 (cubic + dashed 조합은 어색).
+        if (predicted.size != dataPoints.size || predicted.all { !it }) {
+            // 부드러운 곡선 Path (cubicTo) — 기존 동작
+            val linePath = Path()
+            linePath.moveTo(screenPoints.first().x, screenPoints.first().y)
+            for (i in 1 until screenPoints.size) {
+                val prev = screenPoints[i - 1]
+                val curr = screenPoints[i]
+                val cpx = (prev.x + curr.x) / 2
+                linePath.cubicTo(cpx, prev.y, cpx, curr.y, curr.x, curr.y)
+            }
 
-        // 영역 채우기 (라인 아래)
-        val fillPath = Path()
-        fillPath.addPath(linePath)
-        fillPath.lineTo(screenPoints.last().x, topPadding + chartHeight)
-        fillPath.lineTo(screenPoints.first().x, topPadding + chartHeight)
-        fillPath.close()
+            // 영역 채우기 (라인 아래)
+            val fillPath = Path()
+            fillPath.addPath(linePath)
+            fillPath.lineTo(screenPoints.last().x, topPadding + chartHeight)
+            fillPath.lineTo(screenPoints.first().x, topPadding + chartHeight)
+            fillPath.close()
 
-        clipRect(
-            left = leftPadding,
-            top = topPadding,
-            right = size.width - rightPadding,
-            bottom = topPadding + chartHeight
-        ) {
-            drawPath(
-                path = fillPath,
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        lineColor.copy(alpha = fillAlpha),
-                        lineColor.copy(alpha = 0.01f)
-                    ),
-                    startY = topPadding,
-                    endY = topPadding + chartHeight
+            clipRect(
+                left = leftPadding,
+                top = topPadding,
+                right = size.width - rightPadding,
+                bottom = topPadding + chartHeight
+            ) {
+                drawPath(
+                    path = fillPath,
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            lineColor.copy(alpha = fillAlpha),
+                            lineColor.copy(alpha = 0.01f)
+                        ),
+                        startY = topPadding,
+                        endY = topPadding + chartHeight
+                    )
                 )
+            }
+
+            // 라인 그리기
+            drawPath(
+                path = linePath,
+                color = lineColor,
+                style = Stroke(width = 3f)
             )
+        } else {
+            // segment 별 실선/점선 — KP 의 observed/predicted 표현
+            val predictedDash = PathEffect.dashPathEffect(floatArrayOf(10f, 6f), 0f)
+            for (i in 0 until screenPoints.size - 1) {
+                val isPredictedSegment = predicted[i] && predicted[i + 1]
+                drawLine(
+                    color = if (isPredictedSegment) lineColor.copy(alpha = 0.6f) else lineColor,
+                    start = screenPoints[i],
+                    end = screenPoints[i + 1],
+                    strokeWidth = 3f,
+                    pathEffect = if (isPredictedSegment) predictedDash else null,
+                )
+            }
         }
 
-        // 라인 그리기
-        drawPath(
-            path = linePath,
-            color = lineColor,
-            style = Stroke(width = 3f)
-        )
+        // 데이터 포인트 원 (옵션) — pointColors 가 명시되면 그 색상으로 표시
+        pointColors?.let { colors ->
+            screenPoints.forEachIndexed { idx, point ->
+                val color = colors.getOrNull(idx) ?: lineColor
+                drawCircle(color = color, radius = 4f, center = point)
+            }
+        }
     }
 }
 
@@ -518,7 +616,7 @@ fun CriChart(
 // ─── 차트 Card 래퍼 ────────────────────────────────────────────
 
 @Composable
-private fun ChartCard(
+internal fun ChartCard(
     title: String,
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit

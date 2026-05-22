@@ -8,7 +8,6 @@ import com.ScienceFiction.DronePassAndroid.domain.model.Kp27DayForecast
 import com.ScienceFiction.DronePassAndroid.domain.model.KpIndexData
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import org.json.JSONArray
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -269,38 +268,21 @@ class KpIndexRepository @Inject constructor(
     }
 
     /**
-     * NOAA SWPC JSON 데이터 파싱
+     * NOAA SWPC JSON 예보 데이터 로드.
      *
-     * JSON 배열 형식:
-     * [["time_tag","kp","observed","noaa_scale"], ["2026-02-24 00:00:00","2.33","observed","0"], ...]
+     * 응답은 객체 배열 `[{"time_tag":"...","kp":1.0,"observed":"observed","noaa_scale":"0"}, ...]`.
+     * Retrofit + Moshi 가 [KpForecastItemDto] 로 자동 디코딩하므로 수동 파싱이 불필요.
+     *
+     * 옛 응답은 2D 배열(`[["time_tag","kp",...],["2026-02-24...","2.33",...]]`) 형식이었으나
+     * NOAA 가 객체 배열로 전환했다. iOS 의 [ForecastAPIResponse] 와 동일한 스키마.
      */
     private suspend fun fetchForecastFromNoaa(): List<KpIndexData> {
-        val response = noaaApi.getKpForecast()
-        val text = response.string()
-        val jsonArray = JSONArray(text)
-
-        val results = mutableListOf<KpIndexData>()
-
-        // 첫 번째 행은 헤더이므로 건너뛰기
-        for (i in 1 until jsonArray.length()) {
-            try {
-                val row = jsonArray.getJSONArray(i)
-                val timeTag = row.getString(0)
-                val kp = row.getString(1).toDoubleOrNull() ?: continue
-                val observed = row.optString(2, null)
-
-                results.add(
-                    KpIndexData(
-                        timeTag = timeTag,
-                        kp = kp,
-                        observed = observed
-                    )
-                )
-            } catch (e: Exception) {
-                continue
-            }
+        return noaaApi.getKpForecast().map { item ->
+            KpIndexData(
+                timeTag = item.timeTag,
+                kp = item.kp,
+                observed = item.observed,
+            )
         }
-
-        return results
     }
 }

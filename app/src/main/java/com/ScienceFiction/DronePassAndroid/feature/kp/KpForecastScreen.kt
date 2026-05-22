@@ -149,72 +149,27 @@ fun KpForecastContent(
             }
         }
 
-        // 드론 비행 영향도 카드
-        item {
-            DroneFlightImpactCard(kpValue = currentKp?.kp)
-        }
-
-        // Kp 레벨 설명
-        item {
-            KpLevelLegend()
-        }
-
-        // 48시간 예보 차트
+        // 48시간 예보 차트 (iOS 와 동일하게 그래프만 표시 — 24h 텍스트 리스트는 제거됨)
         if (forecastData.isNotEmpty()) {
             item {
-                Kp48HourChart(
+                KpForecastLineChart(
                     forecastData = forecastData,
                     modifier = Modifier.padding(top = 4.dp)
                 )
             }
         }
 
-        // 24시간 예보 헤더
-        if (forecastData.isNotEmpty()) {
-            item {
-                Text(
-                    text = stringResource(R.string.kp_forecast_data),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
-            }
-
-            // 예보 리스트
-            items(forecastData) { data ->
-                ForecastItem(data = data)
-            }
-
-            item {
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-        }
-
-        // 27일 장기예보 섹션
+        // 27일 장기예보 차트 (iOS 와 동일하게 그래프만 표시 — 27일 텍스트 리스트는 제거됨)
         if (longTermForecast.isNotEmpty()) {
             item {
                 HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
             }
 
-            // 27일 차트
             item {
                 Kp27DayChart(
                     longTermForecast = longTermForecast,
                     modifier = Modifier.padding(top = 4.dp)
                 )
-            }
-
-            item {
-                Text(
-                    text = stringResource(R.string.kp_27day_forecast),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
-            }
-
-            items(longTermForecast) { data ->
-                LongTermForecastItem(data = data)
             }
 
             item {
