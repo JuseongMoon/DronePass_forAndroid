@@ -83,7 +83,7 @@ fun MapFloatingButtons(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .navigationBarsPadding()
-                .padding(end = 16.dp, bottom = 170.dp),
+                .padding(end = 16.dp, bottom = 130.dp),
             horizontalAlignment = Alignment.End
         ) {
             // 스케치 모드 진입 FAB
@@ -155,7 +155,7 @@ fun MapFloatingButtons(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .navigationBarsPadding()
-                .padding(end = 16.dp, bottom = 90.dp),
+                .padding(end = 16.dp, bottom = 50.dp),
             shape = CircleShape,
             containerColor = Color.White,
             contentColor = Color.Black,

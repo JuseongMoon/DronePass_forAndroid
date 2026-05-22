@@ -21,8 +21,7 @@ import javax.inject.Inject
 
 /**
  * 저장 도형 목록의 섹션 분류 결과.
- * 4개의 StateFlow 를 단일 객체로 묶어 검색어 1글자 변경 시에도 1번만 정렬/분류된다.
- * (이전: filteredAndSortedShapes + notStarted/active/expired/total 의 4번 stateIn 파이프라인.)
+ * 4개의 StateFlow 를 단일 객체로 묶어 정렬 옵션 변경 시에도 1번만 정렬/분류된다.
  */
 data class SavedShapeSections(
     val activeFiltered: List<ShapeModel>,
@@ -56,9 +55,6 @@ class SavedListViewModel @Inject constructor(
         .map { drones -> drones.associate { it.id to it.name } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
-    private val _searchQuery = MutableStateFlow("")
-    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
-
     private val _sortOption = MutableStateFlow(SortOption.FLIGHT_START)
     val sortOption: StateFlow<SortOption> = _sortOption.asStateFlow()
 
@@ -71,34 +67,15 @@ class SavedListViewModel @Inject constructor(
     private val _showShapeDetail = MutableStateFlow(false)
     val showShapeDetail: StateFlow<Boolean> = _showShapeDetail.asStateFlow()
 
-    /** 드론 필터: null = 전체, 빈 문자열 = 미연결, 그 외 = 드론 ID */
-    private val _selectedDroneFilter = MutableStateFlow<String?>(null)
-    val selectedDroneFilter: StateFlow<String?> = _selectedDroneFilter.asStateFlow()
-
     /**
-     * 단일 파이프라인: 검색/드론필터/정렬을 Dispatchers.Default 로 옮긴 뒤
+     * 단일 파이프라인: 정렬을 Dispatchers.Default 로 옮긴 뒤
      * 한 번에 active/notStarted/expired/total 로 분류한다.
-     *
-     * 이전: filteredAndSortedShapes(stateIn) + notStarted/active/expired/total 4개
-     *   stateIn 으로 검색 1글자에 500개 도형 정렬이 메인 스레드에서 5번 수행됨.
-     * 수정: flowOn(Default) 로 백그라운드 처리 + 단일 [SavedShapeSections] 객체 emit.
+     * 검색/드론필터는 iOS SavedTableListView 동등으로 제거됨 (글로벌 드론 매니저 연동은 별도).
      */
     val sections: StateFlow<SavedShapeSections> = combine(
-        activeShapes, _searchQuery, _sortOption, _sortDirection, _selectedDroneFilter
-    ) { shapes, query, sort, direction, droneFilter ->
-        // 검색 필터
-        val searchFiltered = if (query.isBlank()) shapes else shapes.filter { shape ->
-            shape.title.contains(query, ignoreCase = true) ||
-                shape.address?.contains(query, ignoreCase = true) == true ||
-                shape.memo?.contains(query, ignoreCase = true) == true
-        }
-        // 드론 필터
-        val droneFiltered = when (droneFilter) {
-            null -> searchFiltered
-            "" -> searchFiltered.filter { it.droneId == null }
-            else -> searchFiltered.filter { it.droneId == droneFilter }
-        }
-        val sorted = sortShapes(droneFiltered, sort, direction)
+        activeShapes, _sortOption, _sortDirection
+    ) { shapes, sort, direction ->
+        val sorted = sortShapes(shapes, sort, direction)
         SavedShapeSections(
             activeFiltered = sorted.filter { !it.isNotStarted && !it.isExpired },
             notStarted = sorted.filter { it.isNotStarted },
@@ -129,10 +106,6 @@ class SavedListViewModel @Inject constructor(
         shapeId?.let { id -> shapes.find { it.id == id } }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
-    fun updateSearchQuery(query: String) {
-        _searchQuery.value = query
-    }
-
     fun updateSortOption(option: SortOption) {
         _sortOption.value = option
     }
@@ -140,14 +113,6 @@ class SavedListViewModel @Inject constructor(
     fun toggleSortDirection() {
         _sortDirection.value = if (_sortDirection.value == SortDirection.ASCENDING)
             SortDirection.DESCENDING else SortDirection.ASCENDING
-    }
-
-    /**
-     * 드론 필터 변경
-     * @param droneId null = 전체, "" = 미연결, 그 외 = 특정 드론 ID
-     */
-    fun updateDroneFilter(droneId: String?) {
-        _selectedDroneFilter.value = droneId
     }
 
     fun onShapeSelected(shapeId: String) {
