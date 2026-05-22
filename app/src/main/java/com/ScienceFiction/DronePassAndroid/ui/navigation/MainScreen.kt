@@ -229,10 +229,14 @@ private fun FloatingTabBar(
         color = OverlayBackgroundColor,
         shadowElevation = TabBarShadowElevation,
     ) {
+        // iOS HStack 은 자식 너비 합(180pt) 만큼만 차지하고, 그걸 감싸는
+        // .frame(width: 210) 의 기본 alignment(.center) 로 가운데 정렬됨 → 좌우 15pt 여유.
+        // Android Row 는 fillMaxSize + 기본 Arrangement.Start 라서 좌측에 몰리므로
+        // 동일 효과를 위해 spacedBy(0, CenterHorizontally) 로 가운데 정렬 강제.
         Row(
             modifier = Modifier.fillMaxSize(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(0.dp),
+            horizontalArrangement = Arrangement.spacedBy(0.dp, Alignment.CenterHorizontally),
         ) {
             tabs.forEach { screen ->
                 FloatingTabButton(
@@ -281,24 +285,38 @@ private fun FloatingTabButton(
             ),
         contentAlignment = Alignment.Center,
     ) {
+        // iOS CustomTabButton 와 동일하게 아이콘·텍스트의 frame 을 명시적으로 고정 →
+        // 폰트 측정 높이에 따라 베이스라인이 흔들리지 않아 셋 다 균일 정렬.
         Column(
             modifier = Modifier.scale(scale),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
+            verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically),
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = labelText,
-                tint = color,
-                modifier = Modifier.size(TabIconSize),
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = labelText,
-                color = color,
-                fontSize = 11.sp,
-                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
-            )
+            // iOS .frame(height: 24)
+            Box(
+                modifier = Modifier.height(24.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = labelText,
+                    tint = color,
+                    modifier = Modifier.size(TabIconSize),
+                )
+            }
+            // iOS .frame(height: 16)
+            Box(
+                modifier = Modifier.height(16.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = labelText,
+                    color = color,
+                    fontSize = 11.sp,
+                    lineHeight = 11.sp,
+                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
+                )
+            }
         }
     }
 }
