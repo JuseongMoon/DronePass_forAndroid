@@ -122,14 +122,6 @@ fun ShapeDetailSheet(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // 도형 타입
-            DetailRow(
-                label = stringResource(R.string.shape_detail_type),
-                value = shape.shapeType.koreanName
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
             // 좌표 (DMS 형식 + 복사 버튼)
             Row(
                 modifier = Modifier.fillMaxWidth(),
