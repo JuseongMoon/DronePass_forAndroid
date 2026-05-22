@@ -75,7 +75,6 @@ internal fun MapOverlayEffects(
     val selectedShapeId by viewModel.selectedShapeId.collectAsStateWithLifecycle()
     val flightZones by viewModel.flightZones.collectAsStateWithLifecycle()
     val visibleLayers by viewModel.visibleLayers.collectAsStateWithLifecycle()
-    val showFlightZoneLayersSetting by viewModel.showFlightZoneLayersSetting.collectAsStateWithLifecycle()
 
     val isSketchMode by sketchViewModel.isSketchMode.collectAsStateWithLifecycle()
     val activeSketches by sketchViewModel.activeSketches.collectAsStateWithLifecycle()
@@ -84,30 +83,18 @@ internal fun MapOverlayEffects(
     val currentStrokeWidth by sketchViewModel.currentStrokeWidth.collectAsStateWithLifecycle()
     val currentOpacity by sketchViewModel.currentOpacity.collectAsStateWithLifecycle()
 
-    // 비행구역 오버레이 갱신
-    LaunchedEffect(flightZones, mapReady, showFlightZoneLayersSetting) {
-        if (mapReady) {
-            if (!showFlightZoneLayersSetting) {
-                flightZoneOverlayManager.clearAllOverlays()
-            } else {
-                flightZones.forEach { (layer, zones) ->
-                    flightZoneOverlayManager.setZones(layer, zones)
-                }
-            }
+    // 비행구역 오버레이 갱신.
+    // visibleLayers 변경에 따른 fetch 는 MapViewModel.flightZoneLoadCollector 가
+    // (visibleLayers, currentMapBounds) combine 으로 처리한다. 여기서는 fetch 결과인
+    // flightZones 의 변경만 오버레이에 반영한다.
+    LaunchedEffect(flightZones, mapReady, visibleLayers) {
+        if (!mapReady) return@LaunchedEffect
+        if (visibleLayers.isEmpty()) {
+            flightZoneOverlayManager.clearAllOverlays()
+            return@LaunchedEffect
         }
-    }
-
-    // visibleLayers 변경 시 비행구역 로드 트리거
-    LaunchedEffect(visibleLayers, mapReady) {
-        if (mapReady) {
-            val map = naverMap ?: return@LaunchedEffect
-            val bounds = map.contentBounds
-            viewModel.onMapBoundsChanged(
-                southWestLat = bounds.southWest.latitude,
-                southWestLon = bounds.southWest.longitude,
-                northEastLat = bounds.northEast.latitude,
-                northEastLon = bounds.northEast.longitude,
-            )
+        flightZones.forEach { (layer, zones) ->
+            flightZoneOverlayManager.setZones(layer, zones)
         }
     }
 
@@ -186,8 +173,7 @@ internal fun MapFloatingControls(
     val activeDrones by viewModel.activeDrones.collectAsStateWithLifecycle()
     val selectedDroneIds by viewModel.selectedDroneIds.collectAsStateWithLifecycle()
     val highlightedDroneId by viewModel.highlightedDroneId.collectAsStateWithLifecycle()
-    val visibleLayers by viewModel.visibleLayers.collectAsStateWithLifecycle()
-    val showFlightZoneLayersSetting by viewModel.showFlightZoneLayersSetting.collectAsStateWithLifecycle()
+    val visibleLayerCount by viewModel.visibleLayerCount.collectAsStateWithLifecycle()
     val currentKp by kpViewModel.currentKp.collectAsStateWithLifecycle()
     val kpLevel by kpViewModel.kpLevel.collectAsStateWithLifecycle()
     val weatherData by weatherViewModel.weatherData.collectAsStateWithLifecycle()
@@ -207,7 +193,7 @@ internal fun MapFloatingControls(
             )
         }
 
-        // 플로팅 버튼 (도형 추가 + 스케치 + KP + 날씨 + 레이어)
+        // 플로팅 버튼 (좌측 비행구역 FAB + 우측 도형/스케치/KP/날씨)
         if (!isSketchMode) {
             MapFloatingButtons(
                 onCreateShape = {
@@ -218,8 +204,7 @@ internal fun MapFloatingControls(
                 },
                 onEnterSketchMode = { sketchViewModel.enterSketchMode() },
                 onShowFlightZoneLayers = { viewModel.toggleLayerSelector() },
-                flightZoneLayersActive = visibleLayers.isNotEmpty(),
-                showFlightZoneLayerButton = showFlightZoneLayersSetting,
+                flightZoneVisibleLayerCount = visibleLayerCount,
                 currentKpValue = currentKp?.kp,
                 kpLevelColor = Color(kpLevel.color.toInt()),
                 onShowKpForecast = onShowKpForecast,
@@ -227,9 +212,7 @@ internal fun MapFloatingControls(
                 sunrise = weatherData?.sunrise,
                 sunset = weatherData?.sunset,
                 onWeatherClick = onShowWeather,
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(end = 16.dp, bottom = 16.dp),
+                modifier = Modifier.fillMaxSize(),
             )
         }
     }
@@ -350,6 +333,7 @@ internal fun MapBottomSheets(
     val activeDrones by viewModel.activeDrones.collectAsStateWithLifecycle()
     val reverseGeocodedAddress by viewModel.reverseGeocodedAddress.collectAsStateWithLifecycle()
     val visibleLayers by viewModel.visibleLayers.collectAsStateWithLifecycle()
+    val flightZones by viewModel.flightZones.collectAsStateWithLifecycle()
     val showLayerSelector by viewModel.showLayerSelector.collectAsStateWithLifecycle()
     val showZoneDetail by viewModel.showZoneDetail.collectAsStateWithLifecycle()
     val selectedZone by viewModel.selectedZone.collectAsStateWithLifecycle()
@@ -362,6 +346,7 @@ internal fun MapBottomSheets(
                 onEdit = { viewModel.onEditShapeRequested(shape) },
                 onDelete = { viewModel.deleteShape(shape) },
                 onDismiss = { viewModel.dismissShapeDetail() },
+                droneName = viewModel.getDroneName(shape.droneId),
             )
         }
     }
@@ -383,6 +368,7 @@ internal fun MapBottomSheets(
     if (showLayerSelector) {
         FlightZoneLayerSelector(
             visibleLayers = visibleLayers,
+            displayedZoneCount = flightZones.values.sumOf { it.size },
             onToggleLayer = { viewModel.toggleLayer(it) },
             onShowAll = { viewModel.showAllLayers() },
             onHideAll = { viewModel.hideAllLayers() },
@@ -395,6 +381,7 @@ internal fun MapBottomSheets(
         selectedZone?.let { zone ->
             VWorldZoneDetailSheet(
                 zone = zone,
+                findContact = { name -> viewModel.findContact(name) },
                 onDismiss = { viewModel.dismissZoneDetail() },
             )
         }

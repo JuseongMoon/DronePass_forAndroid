@@ -13,7 +13,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.Card
@@ -44,10 +44,14 @@ import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.FlightZoneLay
  * 각 레이어를 토글(체크박스 + 색상 표시 + 레이어명)할 수 있으며,
  * 전체 선택/해제 버튼을 제공한다.
  */
+private val InfoBannerBackground = Color(0xFFE3F2FD) // iOS systemBlue.opacity(0.1) 매핑
+private val InfoBannerAccent = Color(0xFF007AFF)     // iOS systemBlue
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FlightZoneLayerSelector(
     visibleLayers: Set<FlightZoneLayer>,
+    displayedZoneCount: Int,
     onToggleLayer: (FlightZoneLayer) -> Unit,
     onShowAll: () -> Unit,
     onHideAll: () -> Unit,
@@ -73,14 +77,12 @@ fun FlightZoneLayerSelector(
                 modifier = Modifier.padding(bottom = 8.dp)
             )
 
-            // 법적 면책 배너
+            // 법적 면책 배너 (iOS LayerSelectionSheet 의 blue.opacity(0.1) 박스 매핑)
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 8.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFFFFF3E0)
-                )
+                colors = CardDefaults.cardColors(containerColor = InfoBannerBackground),
             ) {
                 Row(
                     modifier = Modifier.padding(12.dp),
@@ -89,29 +91,44 @@ fun FlightZoneLayerSelector(
                     Icon(
                         imageVector = Icons.Default.Info,
                         contentDescription = null,
-                        tint = Color(0xFFFF6F00),
+                        tint = InfoBannerAccent,
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = stringResource(R.string.flight_zone_legal_disclaimer),
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color(0xFFE65100)
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                 }
             }
 
-            // 레이어 통계
-            Text(
-                text = stringResource(
-                    R.string.flight_zone_layer_count,
-                    visibleLayers.size,
-                    FlightZoneLayer.entries.size
-                ),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(bottom = 4.dp)
-            )
+            // 레이어 통계 + 표시 중인 구역 수 (iOS LayerSelectionSheet:97-118 매핑)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = stringResource(
+                        R.string.flight_zone_layer_count,
+                        visibleLayers.size,
+                        FlightZoneLayer.entries.size,
+                    ),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f),
+                )
+                if (displayedZoneCount > 0) {
+                    Text(
+                        text = "$displayedZoneCount",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = InfoBannerAccent,
+                    )
+                }
+            }
 
             // 전체 선택/해제 버튼
             Row(
@@ -164,11 +181,11 @@ private fun LayerItem(
 
         Spacer(modifier = Modifier.width(8.dp))
 
-        // 레이어 색상 표시
+        // 레이어 색상 표시 (iOS RoundedRectangle(4) 24x24 매핑)
         Box(
             modifier = Modifier
-                .size(16.dp)
-                .clip(CircleShape)
+                .size(24.dp)
+                .clip(RoundedCornerShape(4.dp))
                 .background(Color(layer.borderColor.toInt()))
         )
 

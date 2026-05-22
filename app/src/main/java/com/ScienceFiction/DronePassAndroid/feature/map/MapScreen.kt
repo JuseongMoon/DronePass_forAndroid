@@ -51,6 +51,7 @@ import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.accompanist.permissions.shouldShowRationale
 import com.google.android.gms.location.LocationServices
 import com.naver.maps.geometry.LatLng
+import com.naver.maps.geometry.LatLngBounds
 import com.naver.maps.map.CameraAnimation
 import com.naver.maps.map.CameraPosition
 import com.naver.maps.map.CameraUpdate
@@ -260,6 +261,10 @@ fun MapScreen(
                                 northEastLat = bounds.northEast.latitude,
                                 northEastLon = bounds.northEast.longitude,
                             )
+                            // iOS removeOverlaysOutsideViewport(buffer=0.2) 매핑:
+                            // viewport 밖 폴리곤 가시성만 토글해 그리기 비용을 줄인다.
+                            // 인스턴스는 캐시에 유지하므로 카메라 재진입 시 즉시 복원된다.
+                            flightZoneOverlayManager.setOutOfBoundsVisibility(bounds.expand(0.2))
                         }
                         map.addOnCameraIdleListener(cameraListener)
                         cameraIdleListener = cameraListener
@@ -390,3 +395,20 @@ private fun setupLocationTracking(map: NaverMap, context: android.content.Contex
 }
 
 private const val LOCATION_PERMISSION_REQUEST_CODE = 1000
+
+/**
+ * 사각형 [LatLngBounds] 를 양 방향으로 [ratio] 만큼 확장한다 (iOS 의 20% 버퍼 매핑).
+ * 카메라 viewport 가장자리 근처 폴리곤이 카메라 idle 직후 잠시 사라지는 깜빡임을 막는다.
+ */
+private fun LatLngBounds.expand(ratio: Double): LatLngBounds {
+    val south = southWest.latitude
+    val west = southWest.longitude
+    val north = northEast.latitude
+    val east = northEast.longitude
+    val latSpan = (north - south) * ratio
+    val lonSpan = (east - west) * ratio
+    return LatLngBounds(
+        LatLng(south - latSpan, west - lonSpan),
+        LatLng(north + latSpan, east + lonSpan),
+    )
+}

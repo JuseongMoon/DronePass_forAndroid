@@ -75,5 +75,9 @@ enum class FlightZoneLayer(
     CULTURAL_HERITAGE(
         "lt_c_uo301", "문화재보호도",
         0x4D00FF00, 0xFF00FF00, 4, FlightRestrictionLevel.ADVISORY
+    ),
+    NATIONAL_PARK(
+        "lt_c_wgisnpgug", "국립자연공원",
+        0x4D00FF00, 0xFF00FF00, 4, FlightRestrictionLevel.ADVISORY
     );
 }

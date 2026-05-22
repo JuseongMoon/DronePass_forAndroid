@@ -31,6 +31,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.ScienceFiction.DronePassAndroid.R
+import com.ScienceFiction.DronePassAndroid.core.data.local.PublicContactInfo
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.DroneZoneFeature
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.FlightRestrictionLevel
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.FlightZoneLayer
@@ -67,6 +68,7 @@ import java.util.TimeZone
 @Composable
 fun VWorldZoneDetailSheet(
     zone: DroneZoneFeature,
+    findContact: (String?) -> PublicContactInfo? = { null },
     onDismiss: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState()
@@ -233,10 +235,29 @@ fun VWorldZoneDetailSheet(
                         value = it
                     )
                 }
-                zone.phoneNumber?.let { phone ->
+                // properties 의 telno 가 우선, 없으면 S3 공공기관 연락처에서 lookup (iOS 와 동일).
+                val phone = zone.phoneNumber
+                    ?: findContact(zone.authorityNameKor ?: zone.zoneName)?.phoneNumber
+                phone?.let {
                     PhoneNumberRow(
                         label = stringResource(R.string.zone_detail_authority_contact),
-                        phone = phone
+                        phone = it
+                    )
+                }
+            }
+
+            // 국립자연공원 전용 - S3 공공기관 연락처 lookup
+            if (zone.layer == FlightZoneLayer.NATIONAL_PARK) {
+                val contact = findContact(zone.zoneName)
+                if (contact != null) {
+                    SectionHeader(title = stringResource(R.string.zone_detail_authority_title))
+                    DetailRow(
+                        label = stringResource(R.string.zone_detail_authority_name),
+                        value = contact.organizationName,
+                    )
+                    PhoneNumberRow(
+                        label = stringResource(R.string.zone_detail_authority_contact),
+                        phone = contact.phoneNumber,
                     )
                 }
             }

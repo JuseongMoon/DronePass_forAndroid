@@ -4,7 +4,10 @@ import android.util.Log
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.DroneZoneFeature
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.FlightZoneLayer
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.GeoJSONFeature
+import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.GeoJSONFeatureCollection
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.VWorldApi
+import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.VWorldServiceException
+import com.squareup.moshi.Moshi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -21,8 +24,13 @@ import javax.inject.Singleton
 @Singleton
 class VWorldRepository @Inject constructor(
     private val vWorldApi: VWorldApi,
+    moshi: Moshi,
     @javax.inject.Named("VWorldApiKey") private val apiKey: String
 ) {
+    // VWorld WFS 의 outputFormat=application/json 응답은 wrapper 없는 표준 GeoJSON
+     // FeatureCollection 이다 (iOS 와 동일). 이전 `VWorldWfsResponse` (response.result.
+     // featureCollection.features 3단 wrapper) 는 잘못된 가정이라 항상 0개로 파싱됐다.
+    private val collectionAdapter = moshi.adapter(GeoJSONFeatureCollection::class.java)
     companion object {
         private const val TAG = "VWorldRepository"
         private const val CACHE_DURATION_MS = 15 * 60 * 1000L // 15분
@@ -70,13 +78,28 @@ class VWorldRepository @Inject constructor(
         if (cachedValid != null) return Result.success(cachedValid)
 
         return try {
-            val response = vWorldApi.getFeatures(
+            val body = vWorldApi.getFeatures(
                 typeName = layer.typeName,
                 bbox = bbox,
                 key = apiKey
             )
+            val text = body.string()
 
-            val features = response.response?.result?.featureCollection?.features
+            // VWorld 는 인증/서비스 오류 시 JSON 이 아닌 XML <ServiceException> 을 반환한다.
+            // Moshi 로 디코딩하면 의미 없는 JsonEncodingException 만 나오므로 본문을 먼저 검사한다.
+            val trimmed = text.trimStart()
+            if (trimmed.startsWith("<") || trimmed.startsWith("<?xml")) {
+                throw if (text.contains("INVALID_KEY", ignoreCase = true) ||
+                    text.contains("등록되지 않은 인증키")
+                ) {
+                    VWorldServiceException.InvalidKey(text.extractServiceExceptionDetail())
+                } else {
+                    VWorldServiceException.Other(text.extractServiceExceptionDetail())
+                }
+            }
+
+            val collection = collectionAdapter.fromJson(text)
+            val features = collection?.features
             val zones = features?.mapNotNull { feature ->
                 parseFeature(feature, layer)
             } ?: emptyList()
@@ -91,6 +114,13 @@ class VWorldRepository @Inject constructor(
 
             Log.d(TAG, "${layer.displayName}: ${zones.size}개 구역 로드 완료")
             Result.success(zones)
+        } catch (e: VWorldServiceException.InvalidKey) {
+            // 사용자 액션 가능한 에러: BuildConfig.VWORLD_API_KEY (local.properties) 점검 필요.
+            Log.e(TAG, "${layer.displayName} - VWorld INVALID_KEY: local.properties 의 VWORLD_API_KEY 가 VWorld 측에 등록되지 않았거나 만료되었습니다. (${e.message})")
+            Result.failure(e)
+        } catch (e: VWorldServiceException.Other) {
+            Log.e(TAG, "${layer.displayName} - VWorld 서비스 오류: ${e.message}")
+            Result.failure(e)
         } catch (e: Exception) {
             Log.e(TAG, "${layer.displayName} 로드 실패: ${e.message}", e)
             Result.failure(e)
@@ -98,25 +128,46 @@ class VWorldRepository @Inject constructor(
     }
 
     /**
-     * 여러 레이어의 비행구역 데이터를 동시 로드
+     * `<ServiceException code="..."><detail/></ServiceException>` 또는 일반 XML 본문에서
+     * 200자 이내의 디버그 가능한 요약을 추출한다. 정규식 실패 시 본문 앞 200자를 사용.
+     */
+    private fun String.extractServiceExceptionDetail(): String {
+        val match = Regex("<ServiceException[^>]*>(.*?)</ServiceException>", RegexOption.DOT_MATCHES_ALL)
+            .find(this)
+        val raw = match?.groupValues?.getOrNull(1)?.trim() ?: this
+        return raw.take(200)
+    }
+
+    /**
+     * 여러 레이어의 비행구역 데이터를 priority 순으로 동시 로드한다.
+     *
+     * iOS `VWorldAPIManager.fetchMultipleLayers` 매핑: 우선순위가 높은 레이어(PROHIBITED=1)부터
+     * 먼저 fetch 를 시작하고, 각 레이어가 도착하는 즉시 [onLayerLoaded] 콜백으로 알린다.
+     * 호출자는 누적 [Map] 을 즉시 UI 에 반영해 사용자에게 점진적 표시를 제공할 수 있다.
      *
      * @param layers 로드할 레이어 목록
      * @param bbox 바운딩 박스 문자열
-     * @return 레이어별 DroneZoneFeature 맵
+     * @param onLayerLoaded 각 레이어가 도착하는 즉시 호출되는 콜백 (선택)
+     * @return 레이어별 DroneZoneFeature 맵 (모두 완료된 최종 결과)
      */
     suspend fun fetchMultipleLayers(
         layers: Set<FlightZoneLayer>,
-        bbox: String
+        bbox: String,
+        onLayerLoaded: (FlightZoneLayer, List<DroneZoneFeature>) -> Unit = { _, _ -> },
     ): Map<FlightZoneLayer, List<DroneZoneFeature>> = coroutineScope {
-        val results = layers.map { layer ->
+        layers.sortedBy { it.priority }.map { layer ->
             async {
-                layer to fetchFlightZones(layer, bbox)
+                val result = fetchFlightZones(layer, bbox)
+                // 인증키 오류는 모든 레이어 공통 원인이므로 첫 발견 시 throw 하여
+                // 호출자(MapViewModel) 가 사용자에게 명확히 안내하게 한다.
+                result.exceptionOrNull()?.let { ex ->
+                    if (ex is VWorldServiceException.InvalidKey) throw ex
+                }
+                val features = result.getOrNull() ?: emptyList()
+                onLayerLoaded(layer, features)
+                layer to features
             }
-        }.awaitAll()
-
-        results.associate { (layer, result) ->
-            layer to (result.getOrNull() ?: emptyList())
-        }
+        }.awaitAll().toMap()
     }
 
     /**

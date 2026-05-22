@@ -6,9 +6,12 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ScienceFiction.DronePassAndroid.core.data.local.PublicContactInfo
+import com.ScienceFiction.DronePassAndroid.core.data.local.VWorldContactManager
 import com.ScienceFiction.DronePassAndroid.core.data.remote.NaverGeocodingApi
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.DroneZoneFeature
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.FlightZoneLayer
+import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.VWorldServiceException
 import com.ScienceFiction.DronePassAndroid.core.data.repository.DroneRepository
 import com.ScienceFiction.DronePassAndroid.core.data.repository.GeocodingRepository
 import com.ScienceFiction.DronePassAndroid.core.data.repository.ShapeRepository
@@ -36,6 +39,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -43,12 +47,27 @@ import javax.inject.Inject
 class MapViewModel @Inject constructor(
     private val shapeRepository: ShapeRepository,
     private val vWorldRepository: VWorldRepository,
+    private val vWorldContactManager: VWorldContactManager,
     private val droneRepository: DroneRepository,
     private val geocodingRepository: GeocodingRepository,
     val naverGeocodingApi: NaverGeocodingApi,
     private val dataStore: DataStore<Preferences>,
     private val analyticsLogger: AnalyticsLogger
 ) : ViewModel() {
+
+    init {
+        // 공공기관 연락처 사전로딩 (5일 캐시, 실패해도 무시 — 오프라인 fallback 내장).
+        // 사전협의/국립공원 상세 시트에서 기관명으로 lookup 한다.
+        viewModelScope.launch { vWorldContactManager.ensureLoaded() }
+    }
+
+    /**
+     * 공공기관 연락처. VWorldZoneDetailSheet 의 `findContact(zoneName)` 에 사용.
+     */
+    val vWorldContacts: StateFlow<Map<String, PublicContactInfo>> = vWorldContactManager.contacts
+
+    /** 구역명으로 공공기관 연락처 검색 (정확 → 부분 일치). */
+    fun findContact(name: String?): PublicContactInfo? = vWorldContactManager.findContact(name)
 
     /**
      * 지도에 표시할 활성(삭제되지 않은) 도형 목록
@@ -85,6 +104,27 @@ class MapViewModel @Inject constructor(
      */
     val activeDrones: StateFlow<List<DroneModel>> = droneRepository.getActiveDrones()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    /**
+     * droneId → droneName Map. ShapeDetailSheet 의 O(1) 조회용.
+     *
+     * SharingStarted.Eagerly + droneRepository 직접 구독: MapScreen 은 이 StateFlow 를
+     * 화면에서 collectAsStateWithLifecycle 로 구독하지 않고 [getDroneName] 으로 `.value` 만
+     * 즉시 읽기 때문에, activeDrones(WhileSubscribed) 를 거치면 collector 부재로 빈 맵이 반환되어
+     * ShapeDetailSheet 에서 항상 "연결된 드론 없음"이 표시된다. ViewModel 생성 즉시 활성화한다.
+     */
+    val droneNameById: StateFlow<Map<String, String>> = droneRepository.getActiveDrones()
+        .map { drones -> drones.associate { it.id to it.name } }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
+
+    /**
+     * 드론 ID 로 이름 조회. droneId 가 null 이거나 매칭이 없으면 null 반환.
+     * 호출자(예: MapScreenLayers 의 ShapeDetailSheet) 가 null 일 때 fallback 텍스트 표시.
+     */
+    fun getDroneName(droneId: String?): String? {
+        if (droneId == null) return null
+        return droneNameById.value[droneId]
+    }
 
     /**
      * 지도에서 선택된 드론 ID Set (드론 선택 드롭다운용)
@@ -305,19 +345,10 @@ class MapViewModel @Inject constructor(
     companion object {
         private const val TAG = "MapViewModel"
         private const val DEBOUNCE_MS = 500L
-        private val KEY_SHOW_FLIGHT_ZONE_LAYERS = booleanPreferencesKey("show_flight_zone_layers")
         private val KEY_KEEP_SCREEN_AWAKE = booleanPreferencesKey("keep_screen_awake")
         private val KEY_HIDE_EXPIRED_SHAPES = booleanPreferencesKey("hide_expired_shapes")
         private val KEY_HIDE_NOT_STARTED_SHAPES = booleanPreferencesKey("hide_not_started_shapes")
     }
-
-    /**
-     * 비행구역 레이어 표시 설정 (DataStore)
-     * 설정에서 OFF 시 비행구역 FAB 및 오버레이를 숨김
-     */
-    val showFlightZoneLayersSetting: StateFlow<Boolean> = dataStore.data
-        .map { preferences -> preferences[KEY_SHOW_FLIGHT_ZONE_LAYERS] ?: false }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     /**
      * 화면 항상 켜기 설정 (DataStore)
@@ -379,6 +410,14 @@ class MapViewModel @Inject constructor(
     val visibleLayers: StateFlow<Set<FlightZoneLayer>> = _visibleLayers.asStateFlow()
 
     /**
+     * 비행구역 FAB 배지(선택된 레이어 수)용 derive.
+     * iOS `FlightZoneOverlayManager.visibleLayerCount` 매핑.
+     */
+    val visibleLayerCount: StateFlow<Int> = _visibleLayers
+        .map { it.size }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
+    /**
      * 비행구역 로딩 중 여부
      */
     private val _flightZonesLoading = MutableStateFlow(false)
@@ -415,13 +454,14 @@ class MapViewModel @Inject constructor(
     val showZoneDetail: StateFlow<Boolean> = _showZoneDetail.asStateFlow()
 
     /**
-     * 지도 bbox 변경을 debounce 적용해 collect 하기 위한 SharedFlow.
-     * init 블록에서 debounce + distinctUntilChanged 로 자연화한다.
+     * 현재 지도 bbox 캐시.
+     *
+     * 이전 구조(`_mapBoundsFlow` + `distinctUntilChanged`)에서는 진입 직후 빈 `visibleLayers`
+     * 로 한 번 emit → `loadFlightZones` 가 early-return → 사용자가 레이어 토글해 visibleLayers
+     * 가 채워져도 카메라 미이동 시 동일 bbox 가 `distinctUntilChanged` 에 차단돼 영원히
+     * 재호출되지 않는 버그가 있었음. visibleLayers 와 bbox 를 함께 감시하도록 일원화한다.
      */
-    private val _mapBoundsFlow = MutableSharedFlow<MapBounds>(
-        replay = 0,
-        extraBufferCapacity = 16,
-    )
+    private val _currentMapBounds = MutableStateFlow<MapBounds?>(null)
 
     private data class MapBounds(
         val sw: Pair<Double, Double>,
@@ -429,11 +469,12 @@ class MapViewModel @Inject constructor(
     )
 
     @OptIn(FlowPreview::class)
-    private val mapBoundsCollector: Job = viewModelScope.launch {
-        _mapBoundsFlow
-            .distinctUntilChanged()
+    private val flightZoneLoadCollector: Job = viewModelScope.launch {
+        combine(_visibleLayers, _currentMapBounds) { layers, bounds -> layers to bounds }
             .debounce(DEBOUNCE_MS)
-            .collect { bounds ->
+            .distinctUntilChanged()
+            .collect { (layers, bounds) ->
+                if (bounds == null || layers.isEmpty()) return@collect
                 loadFlightZones(
                     southWestLat = bounds.sw.first,
                     southWestLon = bounds.sw.second,
@@ -498,8 +539,9 @@ class MapViewModel @Inject constructor(
     }
 
     /**
-     * 지도 이동 시 bbox 를 Flow 에 emit 한다.
-     * 실제 비행구역 로드는 [mapBoundsCollector] 가 distinctUntilChanged + debounce 후 호출.
+     * 지도 이동 시 현재 bbox 를 캐시한다.
+     * 실제 비행구역 로드는 [flightZoneLoadCollector] 가 visibleLayers 와 함께 감시하여
+     * 둘 중 하나만 바뀌어도 debounce 후 fetch 한다.
      */
     fun onMapBoundsChanged(
         southWestLat: Double,
@@ -507,16 +549,17 @@ class MapViewModel @Inject constructor(
         northEastLat: Double,
         northEastLon: Double
     ) {
-        _mapBoundsFlow.tryEmit(
-            MapBounds(
-                sw = southWestLat to southWestLon,
-                ne = northEastLat to northEastLon,
-            )
+        _currentMapBounds.value = MapBounds(
+            sw = southWestLat to southWestLon,
+            ne = northEastLat to northEastLon,
         )
     }
 
     /**
-     * 비행구역 데이터 로드
+     * 비행구역 데이터 로드.
+     *
+     * iOS `fetchMultipleLayers(onLayerLoaded:)` 매핑: priority 1(비행금지) 부터 도착하는 즉시
+     * `_flightZones` 에 부분 반영(StateFlow.update 로 atomic 누적)하여 사용자에게 점진적 표시.
      */
     private suspend fun loadFlightZones(
         southWestLat: Double,
@@ -534,9 +577,19 @@ class MapViewModel @Inject constructor(
         )
 
         try {
-            val results = vWorldRepository.fetchMultipleLayers(layers, bbox)
-            _flightZones.value = results
+            // 새 fetch 라운드 시작 시 이전 결과는 클리어 (요청한 레이어 셋만 정확히 반영되도록).
+            _flightZones.value = emptyMap()
+            val results = vWorldRepository.fetchMultipleLayers(layers, bbox) { layer, features ->
+                _flightZones.update { current -> current + (layer to features) }
+            }
             Log.d(TAG, "비행구역 로드 완료: ${results.values.sumOf { it.size }}개 구역")
+        } catch (e: VWorldServiceException.InvalidKey) {
+            // 사용자가 즉시 조치 가능한 에러. local.properties 의 VWORLD_API_KEY 점검 필요.
+            Log.e(TAG, "비행구역 로드 실패 - VWorld 인증키 미등록 (${e.message})")
+            _flightZonesError.emit("VWorld 인증키가 등록되지 않았습니다. local.properties 의 VWORLD_API_KEY 를 확인해주세요.")
+        } catch (e: VWorldServiceException) {
+            Log.e(TAG, "비행구역 로드 실패 - VWorld 서비스 오류: ${e.message}")
+            _flightZonesError.emit("VWorld 서비스 일시 오류")
         } catch (e: Exception) {
             Log.e(TAG, "비행구역 로드 실패: ${e.message}", e)
             _flightZonesError.emit("비행구역 데이터를 불러올 수 없습니다")

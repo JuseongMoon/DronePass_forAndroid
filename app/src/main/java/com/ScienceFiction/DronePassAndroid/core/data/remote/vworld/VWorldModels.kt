@@ -9,26 +9,12 @@ import java.util.TimeZone
 import java.util.concurrent.TimeUnit
 
 /**
- * VWorld WFS GeoJSON 응답 최상위 모델
- */
-@JsonClass(generateAdapter = true)
-data class VWorldWfsResponse(
-    @Json(name = "response") val response: VWorldResponseBody?
-)
-
-@JsonClass(generateAdapter = true)
-data class VWorldResponseBody(
-    @Json(name = "status") val status: String?,
-    @Json(name = "result") val result: VWorldResult?
-)
-
-@JsonClass(generateAdapter = true)
-data class VWorldResult(
-    @Json(name = "featureCollection") val featureCollection: GeoJSONFeatureCollection?
-)
-
-/**
- * GeoJSON FeatureCollection
+ * GeoJSON FeatureCollection.
+ *
+ * VWorld WFS `outputFormat=application/json` 응답은 wrapper 없는 표준 GeoJSON
+ * FeatureCollection 으로 직접 도착한다 (iOS 와 동일). 이전 버전의 `VWorldWfsResponse`
+ * (`response.result.featureCollection.features` 3단 wrapper) 는 잘못된 가정이라
+ * 모든 layer 가 0개 features 로 파싱되는 버그가 있었음.
  */
 @JsonClass(generateAdapter = true)
 data class GeoJSONFeatureCollection(

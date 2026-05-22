@@ -179,8 +179,6 @@
     <string name="settings_hide_not_started_subtitle">Hide shapes before their flight start date from the map</string>
     <string name="settings_keep_screen_awake">Keep screen on</string>
     <string name="settings_keep_screen_awake_subtitle">Screen stays on while using the map</string>
-    <string name="settings_flight_zone_layers">Show flight zone layers</string>
-    <string name="settings_flight_zone_layers_subtitle">Display no-fly zones, control areas, etc. on the map</string>
     <string name="settings_section_app_info">App info</string>
     <string name="settings_app_version">App version</string>
     <string name="settings_section_account">Account</string>

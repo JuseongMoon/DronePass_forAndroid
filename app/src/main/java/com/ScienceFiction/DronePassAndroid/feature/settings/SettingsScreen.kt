@@ -178,7 +178,6 @@ private fun SettingsMainContent(
     val hideExpiredShapes by settingsViewModel.hideExpiredShapes.collectAsStateWithLifecycle()
     val hideNotStartedShapes by settingsViewModel.hideNotStartedShapes.collectAsStateWithLifecycle()
     val keepScreenAwake by settingsViewModel.keepScreenAwake.collectAsStateWithLifecycle()
-    val showFlightZoneLayers by settingsViewModel.showFlightZoneLayers.collectAsStateWithLifecycle()
     val sunriseAlarmEnabled by settingsViewModel.sunriseAlarmEnabled.collectAsStateWithLifecycle()
     val sunsetAlarmEnabled by settingsViewModel.sunsetAlarmEnabled.collectAsStateWithLifecycle()
     val endDateAlarmEnabled by settingsViewModel.endDateAlarmEnabled.collectAsStateWithLifecycle()
@@ -323,17 +322,6 @@ private fun SettingsMainContent(
                 subtitle = stringResource(R.string.settings_keep_screen_awake_subtitle),
                 checked = keepScreenAwake,
                 onCheckedChange = { settingsViewModel.toggleKeepScreenAwake(it) }
-            )
-
-            HorizontalDivider(modifier = Modifier.padding(start = 56.dp))
-
-            // 비행구역 레이어 표시
-            SettingsToggleItem(
-                icon = Icons.Default.Map,
-                title = stringResource(R.string.settings_flight_zone_layers),
-                subtitle = stringResource(R.string.settings_flight_zone_layers_subtitle),
-                checked = showFlightZoneLayers,
-                onCheckedChange = { settingsViewModel.toggleShowFlightZoneLayers(it) }
             )
 
             Spacer(modifier = Modifier.height(24.dp))

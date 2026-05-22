@@ -2,6 +2,7 @@ package com.ScienceFiction.DronePassAndroid.core.di
 
 import com.ScienceFiction.DronePassAndroid.BuildConfig
 import com.ScienceFiction.DronePassAndroid.core.data.remote.NaverGeocodingApi
+import com.ScienceFiction.DronePassAndroid.core.data.remote.VWorldContactsApi
 import com.ScienceFiction.DronePassAndroid.core.data.remote.kp.KpGfzApi
 import com.ScienceFiction.DronePassAndroid.core.data.remote.kp.KpNoaa27DayApi
 import com.ScienceFiction.DronePassAndroid.core.data.remote.kp.KpNoaaApi
@@ -138,6 +139,27 @@ object NetworkModule {
         return BuildConfig.VWORLD_API_KEY
     }
 
+    // ===== VWorld 공공기관 연락처 (S3 텍스트 파일) =====
+    // iOS VWorldContactManager 와 동일한 endpoint. JSON 변환 없이 ResponseBody 만 받는다.
+
+    @Provides
+    @Singleton
+    @Named("vWorldContactsRetrofit")
+    fun provideVWorldContactsRetrofit(
+        @Named("GenericOkHttp") okHttpClient: OkHttpClient,
+    ): Retrofit {
+        return Retrofit.Builder()
+            .baseUrl("https://sciencefiction.co.kr/")
+            .client(okHttpClient)
+            .build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideVWorldContactsApi(
+        @Named("vWorldContactsRetrofit") retrofit: Retrofit,
+    ): VWorldContactsApi = retrofit.create(VWorldContactsApi::class.java)
+
     // ===== Kp Index API =====
     // NOAA SWPC 의 nowcast/예보/27일outlook 은 baseUrl 이 같지만 Retrofit 인스턴스를
     // 명시 분리하여 API 별로 timeout/Converter 정책을 독립 조정할 수 있게 한다.
@@ -146,11 +168,13 @@ object NetworkModule {
     @Singleton
     @Named("kpNoaaRetrofit")
     fun provideKpNoaaRetrofit(
-        @Named("GenericOkHttp") okHttpClient: OkHttpClient
+        @Named("GenericOkHttp") okHttpClient: OkHttpClient,
+        moshi: Moshi
     ): Retrofit {
         return Retrofit.Builder()
             .baseUrl("https://services.swpc.noaa.gov/")
             .client(okHttpClient)
+            .addConverterFactory(MoshiConverterFactory.create(moshi))
             .build()
     }
 

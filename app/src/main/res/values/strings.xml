@@ -187,8 +187,6 @@
     <string name="settings_hide_not_started_subtitle">비행 시작일이 되지 않은 도형을 지도에서 숨깁니다</string>
     <string name="settings_keep_screen_awake">화면 항상 켜기</string>
     <string name="settings_keep_screen_awake_subtitle">지도 사용 중 화면이 꺼지지 않습니다</string>
-    <string name="settings_flight_zone_layers">비행구역 레이어 표시</string>
-    <string name="settings_flight_zone_layers_subtitle">지도에 비행금지구역, 관제권 등을 표시합니다</string>
     <string name="settings_section_app_info">앱</string>
     <string name="settings_app_version">앱 버전</string>
     <string name="settings_section_account">계정</string>

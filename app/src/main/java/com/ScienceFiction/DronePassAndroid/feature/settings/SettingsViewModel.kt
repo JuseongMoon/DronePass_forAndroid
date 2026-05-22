@@ -63,7 +63,6 @@ class SettingsViewModel @Inject constructor(
         private val KEY_HIDE_EXPIRED_SHAPES = booleanPreferencesKey("hide_expired_shapes")
         private val KEY_HIDE_NOT_STARTED_SHAPES = booleanPreferencesKey("hide_not_started_shapes")
         private val KEY_KEEP_SCREEN_AWAKE = booleanPreferencesKey("keep_screen_awake")
-        private val KEY_SHOW_FLIGHT_ZONE_LAYERS = booleanPreferencesKey("show_flight_zone_layers")
         private val KEY_SUNRISE_ALARM_ENABLED = booleanPreferencesKey("sunrise_alarm_enabled")
         private val KEY_SUNSET_ALARM_ENABLED = booleanPreferencesKey("sunset_alarm_enabled")
         private val KEY_END_DATE_ALARM_ENABLED = booleanPreferencesKey("end_date_alarm_enabled")
@@ -86,11 +85,6 @@ class SettingsViewModel @Inject constructor(
     /** 화면 항상 켜기 */
     val keepScreenAwake: StateFlow<Boolean> = dataStore.data
         .map { preferences -> preferences[KEY_KEEP_SCREEN_AWAKE] ?: false }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
-
-    /** 비행구역 레이어 표시 */
-    val showFlightZoneLayers: StateFlow<Boolean> = dataStore.data
-        .map { preferences -> preferences[KEY_SHOW_FLIGHT_ZONE_LAYERS] ?: false }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     /** 일출 알림 활성화 */
@@ -157,17 +151,6 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             dataStore.edit { preferences ->
                 preferences[KEY_KEEP_SCREEN_AWAKE] = value
-            }
-        }
-    }
-
-    /**
-     * 비행구역 레이어 표시 토글
-     */
-    fun toggleShowFlightZoneLayers(value: Boolean) {
-        viewModelScope.launch {
-            dataStore.edit { preferences ->
-                preferences[KEY_SHOW_FLIGHT_ZONE_LAYERS] = value
             }
         }
     }
