@@ -3,8 +3,10 @@ package com.ScienceFiction.DronePassAndroid.feature.map
 import android.graphics.PointF
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -21,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ScienceFiction.DronePassAndroid.domain.model.Coordinate
 import com.ScienceFiction.DronePassAndroid.feature.kp.KpForecastContent
+import com.ScienceFiction.DronePassAndroid.feature.kp.KpSheetHeader
 import com.ScienceFiction.DronePassAndroid.feature.kp.KpViewModel
 import com.ScienceFiction.DronePassAndroid.feature.map.component.DroneSelectionDropdown
 import com.ScienceFiction.DronePassAndroid.feature.map.component.MapFloatingButtons
@@ -34,6 +37,7 @@ import com.ScienceFiction.DronePassAndroid.feature.vworld.FlightZoneLayerSelecto
 import com.ScienceFiction.DronePassAndroid.feature.vworld.FlightZoneOverlayManager
 import com.ScienceFiction.DronePassAndroid.feature.vworld.VWorldZoneDetailSheet
 import com.ScienceFiction.DronePassAndroid.feature.weather.WeatherForecastContent
+import com.ScienceFiction.DronePassAndroid.feature.weather.WeatherSheetHeader
 import com.ScienceFiction.DronePassAndroid.feature.weather.WeatherViewModel
 import com.naver.maps.map.NaverMap
 
@@ -392,29 +396,45 @@ internal fun MapBottomSheets(
         }
     }
 
-    // KP 지수
+    // KP 지수 — iOS KPForecastView 정합 (헤더 + 본문)
     if (showKpSheet) {
+        val kpIsLoading by kpViewModel.isLoading.collectAsStateWithLifecycle()
         ModalBottomSheet(
             onDismissRequest = onDismissKpSheet,
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         ) {
-            KpForecastContent(
-                viewModel = kpViewModel,
-                modifier = Modifier.padding(bottom = 16.dp),
-            )
+            Column(modifier = Modifier.fillMaxWidth()) {
+                KpSheetHeader(
+                    isLoading = kpIsLoading,
+                    onRefresh = { kpViewModel.loadKpData() },
+                    onInfo = null,
+                )
+                KpForecastContent(
+                    viewModel = kpViewModel,
+                    modifier = Modifier.padding(bottom = 16.dp),
+                )
+            }
         }
     }
 
-    // 날씨
+    // 날씨 — iOS WeatherForecastView 정합 (헤더 + 본문)
     if (showWeatherSheet) {
+        val weatherIsLoading by weatherViewModel.isLoading.collectAsStateWithLifecycle()
         ModalBottomSheet(
             onDismissRequest = onDismissWeatherSheet,
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         ) {
-            WeatherForecastContent(
-                viewModel = weatherViewModel,
-                modifier = Modifier.padding(bottom = 16.dp),
-            )
+            Column(modifier = Modifier.fillMaxWidth()) {
+                WeatherSheetHeader(
+                    isLoading = weatherIsLoading,
+                    onRefresh = { weatherViewModel.refreshWeather() },
+                    onInfo = null,
+                )
+                WeatherForecastContent(
+                    viewModel = weatherViewModel,
+                    modifier = Modifier.padding(bottom = 16.dp),
+                )
+            }
         }
     }
 }

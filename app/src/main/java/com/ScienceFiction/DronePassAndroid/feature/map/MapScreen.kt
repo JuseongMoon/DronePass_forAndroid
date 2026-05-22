@@ -104,6 +104,10 @@ fun MapScreen(
         sketchOverlayManager.setDensity(displayDensity)
     }
 
+    // 좌측 하단 컨트롤(내 위치 버튼/로고/축척)이 floating tab bar 위로 떠 보이도록 bottom 패딩 적용.
+    // iOS NaverMapView.contentInset(bottom: -33) 대응 — Android 는 floating tab bar(60+15dp) 만큼 추가로 비워야 한다.
+    val mapBottomPaddingPx = with(LocalDensity.current) { MapBottomContentPadding.roundToPx() }
+
     // factory 에서 등록한 NaverMap 리스너 참조 — onDispose 에서 해제할 수 있도록 보관.
     var cameraIdleListener by remember { mutableStateOf<NaverMap.OnCameraIdleListener?>(null) }
     var mapLongClickListener by remember { mutableStateOf<NaverMap.OnMapLongClickListener?>(null) }
@@ -252,6 +256,7 @@ fun MapScreen(
                             isZoomControlEnabled = true
                             isCompassEnabled = true
                         }
+                        map.setContentPadding(0, 0, 0, mapBottomPaddingPx)
 
                         val cameraListener = NaverMap.OnCameraIdleListener {
                             val bounds = map.contentBounds
@@ -395,6 +400,8 @@ private fun setupLocationTracking(map: NaverMap, context: android.content.Contex
 }
 
 private const val LOCATION_PERMISSION_REQUEST_CODE = 1000
+
+private val MapBottomContentPadding = 45.dp
 
 /**
  * 사각형 [LatLngBounds] 를 양 방향으로 [ratio] 만큼 확장한다 (iOS 의 20% 버퍼 매핑).

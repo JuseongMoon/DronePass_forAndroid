@@ -376,6 +376,25 @@
     <string name="weather_chart_cri">응결 위험 지수 (CRI)</string>
     <string name="weather_sun_timeline">일출/일몰</string>
 
+    <!-- Weather Sheet (iOS WeatherForecastView 정합) -->
+    <string name="weather_navigation_title">위치기반 정보</string>
+    <string name="weather_section_sunrise_sunset">일출/일몰</string>
+    <string name="weather_section_current">현재 날씨</string>
+    <string name="weather_drone_weight_label">드론 무게:</string>
+    <string name="weather_temperature_high_prefix">최고:</string>
+    <string name="weather_temperature_low_prefix">최저:</string>
+    <string name="weather_until_sunset">일몰까지</string>
+    <string name="weather_until_sunrise">일출까지</string>
+    <string name="weather_remaining">남음</string>
+    <string name="weather_disclaimer">표시된 주의/경고 아이콘은 비행 적합도 참고용입니다</string>
+    <string name="weather_last_update">최종 업데이트: %1$s</string>
+    <string name="weather_data_source">날씨 데이터: Open-Meteo</string>
+    <string name="weather_info_button">날씨 정보 가이드</string>
+    <string name="weather_visibility">가시거리</string>
+    <string name="weather_refresh">새로고침</string>
+    <string name="weather_noon">정오</string>
+    <string name="weather_midnight">자정</string>
+
     <!-- SortOption / SortDirection (D-M1 다국어화) -->
     <string name="saved_sort_title">제목순</string>
     <string name="saved_sort_date_created">생성일순</string>
@@ -394,6 +413,29 @@
     <string name="weather_error_unknown">알 수 없는 오류가 발생했습니다</string>
     <string name="weather_error_location_permission">위치 권한이 필요합니다</string>
     <string name="weather_error_location_unavailable">위치를 가져올 수 없습니다</string>
+    <!-- KP Sheet (iOS KPForecastView 정합) -->
+    <string name="kp_navigation_title">Kp 지수 예보</string>
+    <string name="kp_section_current">현재 Kp 지수</string>
+    <string name="kp_section_forecast48">48시간 예보</string>
+    <string name="kp_section_long_term">27일 장기 예보</string>
+    <string name="kp_forecast_note">현재 시간 기준</string>
+    <string name="kp_data_source_gfz">데이터 출처: GFZ Potsdam</string>
+    <string name="kp_data_source_noaa">데이터 출처: NOAA SWPC</string>
+    <string name="kp_info_button">Kp 정보 가이드</string>
+    <string name="kp_refresh">새로고침</string>
+    <string name="kp_legend_normal">Normal (0–5)</string>
+    <string name="kp_legend_g1">G1 (5–6)</string>
+    <string name="kp_legend_g2">G2 (6–7)</string>
+    <string name="kp_legend_g3">G3 (7–8)</string>
+    <string name="kp_legend_g4">G4 (8–9)</string>
+    <string name="kp_legend_g5">G5 (≥9)</string>
+    <string name="kp_level_normal_desc">활동 낮음</string>
+    <string name="kp_level_g1_desc">미약한 폭풍</string>
+    <string name="kp_level_g2_desc">중간 폭풍</string>
+    <string name="kp_level_g3_desc">강한 폭풍</string>
+    <string name="kp_level_g4_desc">심한 폭풍</string>
+    <string name="kp_level_g5_desc">극심한 폭풍</string>
+
     <string name="kp_error_load_failed">Kp 지수를 불러올 수 없습니다</string>
     <string name="kp_error_forecast_failed">Kp 예보를 불러올 수 없습니다</string>
     <string name="kp_error_unknown">Kp 지수 처리 중 오류가 발생했습니다</string>

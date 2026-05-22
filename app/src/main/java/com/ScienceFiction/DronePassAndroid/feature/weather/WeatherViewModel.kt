@@ -59,6 +59,9 @@ class WeatherViewModel @Inject constructor(
     private val _error = MutableStateFlow<WeatherError?>(null)
     val error: StateFlow<WeatherError?> = _error.asStateFlow()
 
+    private val _lastUpdateTime = MutableStateFlow<Long?>(null)
+    val lastUpdateTime: StateFlow<Long?> = _lastUpdateTime.asStateFlow()
+
     val selectedCategory: StateFlow<DroneCategory> = dataStore.data
         .map { preferences ->
             val name = preferences[KEY_DRONE_CATEGORY] ?: DroneCategory.TOY.name
@@ -189,6 +192,7 @@ class WeatherViewModel @Inject constructor(
             .onSuccess { data ->
                 _weatherData.value = data
                 _error.value = null
+                _lastUpdateTime.value = System.currentTimeMillis()
             }
             .onFailure { _ ->
                 _error.value = WeatherError.LoadFailed
