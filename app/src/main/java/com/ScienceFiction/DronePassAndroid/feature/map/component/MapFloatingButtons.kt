@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -65,20 +66,25 @@ fun MapFloatingButtons(
     modifier: Modifier = Modifier
 ) {
     Box(modifier = modifier.fillMaxSize()) {
-        // 좌측 하단: 비행구역 레이어 FAB (iOS leftBottomButtonsView, 항상 표시)
+        // 좌측 하단: 비행구역 레이어 FAB
+        // iOS leftBottomButtonsView: .padding(.bottom, safeArea + 100)
         FlightZoneLayerFab(
             count = flightZoneVisibleLayerCount,
             onClick = onShowFlightZoneLayers,
             modifier = Modifier
                 .align(Alignment.BottomStart)
+                .navigationBarsPadding()
                 .padding(start = 12.dp, bottom = 100.dp)
         )
 
-        // 우측 하단: 스케치 / KP / 날씨 / 도형 추가 (iOS rightBottomButtonsView)
+        // 우측 하단 상단부: 스케치 / KP / 날씨
+        // iOS rightBottomButtonsView: .padding(.bottom, safeArea + 170)
+        // floating tab bar(75dp) 위로 충분한 간격 확보
         Column(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(end = 16.dp, bottom = 16.dp),
+                .navigationBarsPadding()
+                .padding(end = 16.dp, bottom = 170.dp),
             horizontalAlignment = Alignment.End
         ) {
             // 스케치 모드 진입 FAB
@@ -137,21 +143,24 @@ fun MapFloatingButtons(
                 sunset = sunset,
                 onClick = onWeatherClick
             )
+        }
 
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // 도형 추가 FAB
-            FloatingActionButton(
-                onClick = onCreateShape,
-                shape = CircleShape,
-                containerColor = Color.White,
-                contentColor = Color.Black
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = stringResource(R.string.map_fab_add_shape)
-                )
-            }
+        // 도형 추가 FAB — iOS plusButtonView: .padding(.bottom, safeArea + 90)
+        // floating tab bar(75dp) 바로 위 ~15dp 갭으로 떠 있도록 분리 배치
+        FloatingActionButton(
+            onClick = onCreateShape,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .navigationBarsPadding()
+                .padding(end = 16.dp, bottom = 90.dp),
+            shape = CircleShape,
+            containerColor = Color.White,
+            contentColor = Color.Black,
+        ) {
+            Icon(
+                imageVector = Icons.Default.Add,
+                contentDescription = stringResource(R.string.map_fab_add_shape)
+            )
         }
     }
 }

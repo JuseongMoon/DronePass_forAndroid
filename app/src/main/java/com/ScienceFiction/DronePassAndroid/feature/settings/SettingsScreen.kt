@@ -90,7 +90,10 @@ private sealed class SettingsSubScreen {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
-    settingsViewModel: SettingsViewModel = hiltViewModel()
+    settingsViewModel: SettingsViewModel = hiltViewModel(),
+    // iOS 동등 오버레이로 호스팅할 때 자체 TopAppBar 를 숨김.
+    // 오버레이가 자체 큰 "설정" 헤더(.title .bold) 를 그리므로 이중 헤더 방지.
+    showTopAppBar: Boolean = true,
 ) {
     var currentScreen: SettingsSubScreen by remember { mutableStateOf(SettingsSubScreen.Main) }
 
@@ -113,6 +116,7 @@ fun SettingsScreen(
             is SettingsSubScreen.Main -> {
                 SettingsMainContent(
                     settingsViewModel = settingsViewModel,
+                    showTopAppBar = showTopAppBar,
                     onNavigateToDroneList = { currentScreen = SettingsSubScreen.DroneList },
                     onNavigateToAppInfo = { currentScreen = SettingsSubScreen.AppInfo },
                     onNavigateToPatchNotes = { currentScreen = SettingsSubScreen.PatchNotes },
@@ -166,6 +170,7 @@ fun SettingsScreen(
 @Composable
 private fun SettingsMainContent(
     settingsViewModel: SettingsViewModel,
+    showTopAppBar: Boolean,
     onNavigateToDroneList: () -> Unit,
     onNavigateToAppInfo: () -> Unit,
     onNavigateToPatchNotes: () -> Unit,
@@ -187,14 +192,16 @@ private fun SettingsMainContent(
     var showDeleteExpiredDialog by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        TopAppBar(
-            title = {
-                Text(
-                    text = stringResource(R.string.screen_settings),
-                    fontWeight = FontWeight.Bold
-                )
-            }
-        )
+        if (showTopAppBar) {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = stringResource(R.string.screen_settings),
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            )
+        }
 
         Column(
             modifier = Modifier

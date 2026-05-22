@@ -93,14 +93,7 @@ fun SavedListScreen(
             onFilterChange = viewModel::updateDroneFilter
         )
 
-        // 정렬 컨트롤
-        SortControls(
-            sortOption = sortOption,
-            sortDirection = sortDirection,
-            totalCount = totalCount,
-            onSortOptionChange = viewModel::updateSortOption,
-            onToggleDirection = viewModel::toggleSortDirection
-        )
+        // 정렬 컨트롤은 SavedListOverlay 헤더의 정렬 칩(파랑/주황)으로 이동 — iOS 동등.
 
         // 도형 리스트
         if (totalCount == 0) {

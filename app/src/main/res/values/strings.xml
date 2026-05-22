@@ -23,6 +23,11 @@
     <string name="screen_weather">날씨</string>
     <string name="screen_settings">설정</string>
 
+    <!-- Floating tab bar labels (iOS main.tab.* 동등) -->
+    <string name="tab_label_map">지도</string>
+    <string name="tab_label_saved">저장</string>
+    <string name="tab_label_settings">설정</string>
+
     <!-- LoginScreen -->
     <string name="login_logo_description">DronePass 로고</string>
     <string name="login_subtitle">드론 비행 허가지 시각화</string>

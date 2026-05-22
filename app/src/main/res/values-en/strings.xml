@@ -21,6 +21,11 @@
     <string name="screen_saved_list">Saved List</string>
     <string name="screen_settings">Settings</string>
 
+    <!-- Floating tab bar labels (iOS main.tab.* equivalent) -->
+    <string name="tab_label_map">Map</string>
+    <string name="tab_label_saved">Saved</string>
+    <string name="tab_label_settings">Settings</string>
+
     <!-- LoginScreen -->
     <string name="login_logo_description">DronePass logo</string>
     <string name="login_subtitle">Drone flight zone visualization</string>
