@@ -30,54 +30,54 @@ enum class FlightZoneLayer(
 ) {
     PROHIBITED(
         "lt_c_aisprhc", "비행금지구역",
-        0x4DFF0000, 0xFFFF0000, 1, FlightRestrictionLevel.PROHIBITED
+        0x4DFF3B30, 0xFFFF3B30, 1, FlightRestrictionLevel.PROHIBITED
     ),
     TEMPORARY_PROHIBITED(
         "lt_c_aistemp", "임시비행금지",
-        0x4DFF0000, 0xFFFF0000, 1, FlightRestrictionLevel.PROHIBITED
+        0x4DFF3B30, 0xFFFF3B30, 1, FlightRestrictionLevel.PROHIBITED
     ),
     CONTROL_ZONE(
         "lt_c_aisctrc", "관제권",
-        0x4DFF8C00, 0xFFFF8C00, 2, FlightRestrictionLevel.RESTRICTED
+        0x4DFF9500, 0xFFFF9500, 2, FlightRestrictionLevel.RESTRICTED
     ),
     RESTRICTED(
         "lt_c_aisresc", "비행제한구역",
-        0x4DFF8C00, 0xFFFF8C00, 2, FlightRestrictionLevel.RESTRICTED
+        0x4DFF9500, 0xFFFF9500, 2, FlightRestrictionLevel.RESTRICTED
     ),
     DANGER(
         "lt_c_aisdngc", "위험지역",
-        0x4DFF8C00, 0xFFFF8C00, 2, FlightRestrictionLevel.RESTRICTED
+        0x4DFF9500, 0xFFFF9500, 2, FlightRestrictionLevel.RESTRICTED
     ),
     ALERT(
         "lt_c_aisaltc", "경계구역",
-        0x4DFFFF00, 0xFFFFFF00, 3, FlightRestrictionLevel.ADVISORY
+        0x4DFFCC00, 0xFFFFCC00, 3, FlightRestrictionLevel.ADVISORY
     ),
     ATZ(
         "lt_c_aisatzc", "비행장교통구역",
-        0x4DFFFF00, 0xFFFFFF00, 3, FlightRestrictionLevel.ADVISORY
+        0x4DFFCC00, 0xFFFFCC00, 3, FlightRestrictionLevel.ADVISORY
     ),
     ULTRALIGHT(
         "lt_c_aisuac", "초경량비행장치공역",
-        0x4D0000FF, 0xFF0000FF, 3, FlightRestrictionLevel.CONSULTATION
+        0x4D007AFF, 0xFF007AFF, 3, FlightRestrictionLevel.CONSULTATION
     ),
     LANDING_FIELD(
         "lt_c_aisfldc", "경량항공기이착륙장",
-        0x4D0000FF, 0xFF0000FF, 3, FlightRestrictionLevel.CONSULTATION
+        0x4D007AFF, 0xFF007AFF, 3, FlightRestrictionLevel.CONSULTATION
     ),
     OBSTACLE(
         "lt_c_aisobls", "장애물공역",
-        0x4DFFFF00, 0xFFFFFF00, 3, FlightRestrictionLevel.ADVISORY
+        0x4DFFCC00, 0xFFFFCC00, 3, FlightRestrictionLevel.ADVISORY
     ),
     PRIOR_CONSULTATION(
         "lt_c_aispca", "사전협의구역",
-        0x4D0000FF, 0xFF0000FF, 3, FlightRestrictionLevel.CONSULTATION
+        0x4D007AFF, 0xFF007AFF, 3, FlightRestrictionLevel.CONSULTATION
     ),
     CULTURAL_HERITAGE(
         "lt_c_uo301", "문화재보호도",
-        0x4D00FF00, 0xFF00FF00, 4, FlightRestrictionLevel.ADVISORY
+        0x4D34C759, 0xFF34C759, 4, FlightRestrictionLevel.ADVISORY
     ),
     NATIONAL_PARK(
         "lt_c_wgisnpgug", "국립자연공원",
-        0x4D00FF00, 0xFF00FF00, 4, FlightRestrictionLevel.ADVISORY
+        0x4D34C759, 0xFF34C759, 4, FlightRestrictionLevel.ADVISORY
     );
 }

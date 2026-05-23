@@ -235,6 +235,17 @@
     <string name="flight_zone_deselect_all">전체 해제</string>
     <string name="flight_zone_legal_disclaimer">본 비행구역 데이터는 참고용이며, 실제 비행 전 반드시 관할 기관에 확인하시기 바랍니다.</string>
     <string name="flight_zone_layer_count">선택: %1$d / %2$d개 레이어</string>
+    <!-- FlightZoneLayerSelector - iOS 정합 신규 키 -->
+    <string name="flight_zone_navigation_title">드론 비행 구역</string>
+    <string name="flight_zone_navigation_done">완료</string>
+    <string name="flight_zone_stats_selected">선택된 레이어</string>
+    <string name="flight_zone_stats_displayed">표시된 구역</string>
+    <string name="flight_zone_stats_count_format">%1$d / %2$d</string>
+    <!-- VWorldZoneDetailSheet - iOS 정합 신규 키 -->
+    <string name="zone_detail_navigation_title">구역 상세</string>
+    <string name="zone_detail_zone_type">구역 유형</string>
+    <string name="zone_detail_coordinates">좌표</string>
+    <string name="zone_detail_altitude_limit">고도 제한</string>
 
     <!-- Notification -->
     <string name="notification_sunrise_title">일출 알림</string>

@@ -324,3 +324,38 @@ val DroneZoneFeature.formattedLowerAltitude: String?
         }
         return AltitudeFormatter.format(altStr)
     }
+
+// ============================================================
+// DroneZoneFeature Extension Properties - 중심 좌표 (iOS 정합)
+// ============================================================
+
+/**
+ * 비행구역의 중심 좌표를 (lat, lon) Pair 로 반환.
+ *
+ * iOS [GeoJSONGeometry.centerCoordinate] 와 동일하게 첫 polygon 의 첫 ring 의
+ * 좌표 평균을 사용한다. polygons 가 비어있으면 (0.0, 0.0) fallback.
+ */
+val DroneZoneFeature.centerCoordinate: Pair<Double, Double>
+    get() {
+        val firstRing = polygons.firstOrNull()
+        if (firstRing.isNullOrEmpty()) return 0.0 to 0.0
+        val avgLat = firstRing.sumOf { it.first } / firstRing.size
+        val avgLon = firstRing.sumOf { it.second } / firstRing.size
+        return avgLat to avgLon
+    }
+
+/**
+ * 좌표를 iOS 의 [CLLocationCoordinate2D.formattedCoordinate] 와 동일한 포맷으로 변환.
+ *
+ * 형식: `37.5000° N, 126.5000° E`
+ */
+fun formatCoordinate(lat: Double, lon: Double): String {
+    val latDir = if (lat >= 0) "N" else "S"
+    val lonDir = if (lon >= 0) "E" else "W"
+    return String.format(
+        java.util.Locale.US,
+        "%.4f° %s, %.4f° %s",
+        kotlin.math.abs(lat), latDir,
+        kotlin.math.abs(lon), lonDir
+    )
+}
