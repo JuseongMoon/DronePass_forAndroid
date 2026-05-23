@@ -1,8 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.auth
 
 import android.app.Activity
-import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -19,18 +17,23 @@ import androidx.compose.material.icons.filled.Flight
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -43,6 +46,8 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ScienceFiction.DronePassAndroid.R
+import com.ScienceFiction.DronePassAndroid.feature.document.PrivacyPolicyScreen
+import com.ScienceFiction.DronePassAndroid.feature.document.TermsOfServiceScreen
 
 /**
  * 로그인 화면 Composable
@@ -52,6 +57,7 @@ import com.ScienceFiction.DronePassAndroid.R
  * @param onLoginSuccess 로그인 성공 시 콜백
  * @param onSkipLogin 비로그인으로 계속하기 콜백
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
     viewModel: AuthViewModel = hiltViewModel(),
@@ -61,6 +67,7 @@ fun LoginScreen(
     val authState by viewModel.authState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
+    var docTarget by remember { mutableStateOf<LoginDocTarget?>(null) }
 
     // authState 전이 처리는 단일 LaunchedEffect 로 통합한다.
     // 이전: 두 개의 LaunchedEffect(authState) 가 동시 등록되어 LoggedIn → Error 빠른 전이 시
@@ -201,13 +208,7 @@ fun LoginScreen(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textDecoration = TextDecoration.Underline,
-                    modifier = Modifier.clickable {
-                        val intent = Intent(
-                            Intent.ACTION_VIEW,
-                            Uri.parse("https://dronepass.notion.site/terms")
-                        )
-                        context.startActivity(intent)
-                    }
+                    modifier = Modifier.clickable { docTarget = LoginDocTarget.Terms },
                 )
 
                 Text(
@@ -221,15 +222,27 @@ fun LoginScreen(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textDecoration = TextDecoration.Underline,
-                    modifier = Modifier.clickable {
-                        val intent = Intent(
-                            Intent.ACTION_VIEW,
-                            Uri.parse("https://dronepass.notion.site/privacy")
-                        )
-                        context.startActivity(intent)
-                    }
+                    modifier = Modifier.clickable { docTarget = LoginDocTarget.Privacy },
                 )
             }
         }
     }
+
+    // 약관/개인정보 ModalBottomSheet (자체 서버 마크다운 렌더링)
+    docTarget?.let { target ->
+        ModalBottomSheet(
+            onDismissRequest = { docTarget = null },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        ) {
+            when (target) {
+                LoginDocTarget.Terms -> TermsOfServiceScreen(onDismiss = { docTarget = null })
+                LoginDocTarget.Privacy -> PrivacyPolicyScreen(onDismiss = { docTarget = null })
+            }
+        }
+    }
+}
+
+private sealed class LoginDocTarget {
+    data object Terms : LoginDocTarget()
+    data object Privacy : LoginDocTarget()
 }

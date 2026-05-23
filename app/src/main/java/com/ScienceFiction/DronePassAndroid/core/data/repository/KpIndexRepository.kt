@@ -6,6 +6,9 @@ import com.ScienceFiction.DronePassAndroid.core.data.remote.kp.KpNoaa27DayApi
 import com.ScienceFiction.DronePassAndroid.core.data.remote.kp.KpNoaaApi
 import com.ScienceFiction.DronePassAndroid.domain.model.Kp27DayForecast
 import com.ScienceFiction.DronePassAndroid.domain.model.KpIndexData
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
@@ -37,6 +40,14 @@ class KpIndexRepository @Inject constructor(
     private val cacheMutex = Mutex()
 
     /**
+     * 현재 Kp 지수의 StateFlow 노출 (여러 ViewModel 가 collect 하기 위한 단일 진실 원천).
+     * iOS `KPIndexManager.currentKP` @Published 와 동등. KpViewModel·SettingsViewModel 공유.
+     * 갱신은 getCurrentKp() 호출 시 자동으로 emit.
+     */
+    private val _currentKpFlow = MutableStateFlow<KpIndexData?>(null)
+    val currentKpFlow: StateFlow<KpIndexData?> = _currentKpFlow.asStateFlow()
+
+    /**
      * 현재 Kp 지수 조회
      *
      * Fallback 순서: GFZ Potsdam -> NOAA SWPC -> 캐시
@@ -59,6 +70,7 @@ class KpIndexRepository @Inject constructor(
                 val gfzResult = fetchFromGfz()
                 if (gfzResult != null) {
                     cachedCurrentKp = gfzResult
+                    _currentKpFlow.value = gfzResult
                     lastFetchTime = System.currentTimeMillis()
                     return@withLock Result.success(gfzResult)
                 }
@@ -74,6 +86,7 @@ class KpIndexRepository @Inject constructor(
                         ?: noaaResult.lastOrNull { it.observed == "estimated" }
                         ?: noaaResult.first()
                     cachedCurrentKp = current
+                    _currentKpFlow.value = current
                     cachedForecast = noaaResult
                     lastFetchTime = System.currentTimeMillis()
                     return@withLock Result.success(current)

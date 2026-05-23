@@ -108,9 +108,9 @@ ksp {
 }
 
 dependencies {
-    // appcompat 는 Compose-only 전환으로 직접 사용처가 없다. 일부 transitive 의존(예:
-    // security-crypto 1.1.0-alpha06)이 1.x 일부 클래스를 참조할 수 있어 transitive 로만
-    // 들어오게 둔다. 직접 implementation 은 제거.
+    // appcompat 1.7.0 — AppCompatDelegate.setApplicationLocales / LocaleListCompat 사용 (Phase 3 언어 변경).
+    // iOS UserDefaults `AppleLanguages` 대응. minSdk 28 호환.
+    implementation("androidx.appcompat:appcompat:1.7.0")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)

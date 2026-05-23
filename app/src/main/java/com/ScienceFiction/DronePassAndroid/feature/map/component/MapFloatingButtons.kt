@@ -42,10 +42,9 @@ import com.ScienceFiction.DronePassAndroid.feature.weather.WeatherOverlayCard
  *  - **좌측 하단**: 비행구역 레이어 선택 FAB (iOS `leftBottomButtonsView`).
  *    50dp 흰색 rounded(12) + `map` 아이콘 + 활성 시 파란색 + 선택수 배지.
  *    `flightZoneVisibleLayerCount > 0` 일 때 활성 색상/배지를 표시한다.
+ *    iOS 정합 — `koreaFeaturesEnabled` 가 false 면 FAB 자체를 숨김.
  *  - **우측 하단**: 스케치 / KP / 날씨 / 도형 추가 (iOS `rightBottomButtonsView`).
  *    기존 Column 레이아웃 유지.
- *
- * iOS 와 달리 Android 에는 "한국 기능" 토글이 없으므로 비행구역 FAB는 항상 표시한다.
  */
 private val FlightZoneActiveColor = Color(0xFF007AFF) // iOS systemBlue
 
@@ -55,6 +54,7 @@ fun MapFloatingButtons(
     onEnterSketchMode: () -> Unit,
     onShowFlightZoneLayers: () -> Unit = {},
     flightZoneVisibleLayerCount: Int = 0,
+    koreaFeaturesEnabled: Boolean = true,
     currentKpValue: Double? = null,
     kpLevelColor: Color = Color.Gray,
     onShowKpForecast: () -> Unit = {},
@@ -67,14 +67,17 @@ fun MapFloatingButtons(
     Box(modifier = modifier.fillMaxSize()) {
         // 좌측 하단: 비행구역 레이어 FAB
         // iOS leftBottomButtonsView: .padding(.bottom, safeArea + 100)
-        FlightZoneLayerFab(
-            count = flightZoneVisibleLayerCount,
-            onClick = onShowFlightZoneLayers,
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-                .navigationBarsPadding()
-                .padding(start = 12.dp, bottom = 100.dp)
-        )
+        // 한국 특화 기능 OFF 시 FAB 숨김 (iOS isKoreaFeaturesEnabled 정합).
+        if (koreaFeaturesEnabled) {
+            FlightZoneLayerFab(
+                count = flightZoneVisibleLayerCount,
+                onClick = onShowFlightZoneLayers,
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .navigationBarsPadding()
+                    .padding(start = 12.dp, bottom = 100.dp)
+            )
+        }
 
         // 우측 하단 상단부: 스케치 / KP / 날씨
         // iOS rightBottomButtonsView: .padding(.bottom, safeArea + 170)

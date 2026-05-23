@@ -10,6 +10,7 @@
     <string name="common_delete">Delete</string>
     <string name="common_edit">Edit</string>
     <string name="common_retry">Retry</string>
+    <string name="common_close">Close</string>
     <string name="common_unknown_error">Unknown error</string>
     <string name="common_no_title">No title</string>
     <string name="common_not_set">Not set</string>
@@ -275,4 +276,61 @@
     <string name="settings_delete_expired_success">%d expired shapes deleted</string>
     <string name="settings_delete_expired_none">No expired shapes to delete</string>
     <string name="settings_section_data_management">Data management</string>
+
+    <!-- Phase 2: KP/Weather sheet entry rows -->
+    <string name="settings_kp_index_current">Current KP Index: %1$s</string>
+    <string name="settings_weather_current">Current Weather</string>
+
+    <!-- Phase 3: Language picker + Korea features toggle -->
+    <string name="settings_language">Language</string>
+    <string name="settings_language_korean">Korean</string>
+    <string name="settings_language_english">English</string>
+    <string name="settings_language_restart_title">Language Changed</string>
+    <string name="settings_language_restart_message">The app will restart to apply the change.</string>
+    <string name="settings_korea_features">Korea-specific Features</string>
+    <string name="settings_korea_features_subtitle">Show flight-zone overlay (VWorld) and Korea-only features</string>
+    <string name="settings_korea_features_on_title">Korea Features Enabled</string>
+    <string name="settings_korea_features_on_message">Korean flight-zone information is now available.</string>
+    <string name="settings_korea_features_off_title">Korea Features Disabled</string>
+    <string name="settings_korea_features_off_message">Korean flight-zone information has been hidden.</string>
+
+    <!-- Phase 4: ProfileView (iOS ProfileView 정합) -->
+    <string name="profile_title">My Profile</string>
+    <string name="profile_section_sync">Synchronization</string>
+    <string name="profile_section_terms">Terms &amp; Policies</string>
+    <string name="profile_section_account">Account Management</string>
+
+    <string name="profile_sync_cloud">Real-time Cloud Sync</string>
+    <string name="profile_sync_in_progress">Syncing…</string>
+    <string name="profile_sync_login_required">Login required</string>
+    <string name="profile_sync_disabled">Disabled</string>
+    <string name="profile_sync_active">Active - Real-time syncing</string>
+    <string name="profile_sync_waiting">Active - Waiting for sync</string>
+    <string name="profile_sync_last_sync">Last sync: %1$s</string>
+    <string name="profile_sync_no_history">No sync history</string>
+    <string name="profile_sync_footer_login_required">Please sign in to use real-time cloud sync.</string>
+    <string name="profile_sync_footer_enable_info">When enabled, shape data syncs in real-time across all devices with the same account.</string>
+    <string name="profile_backup_manual">Manual Backup</string>
+    <string name="profile_backup_last_backup">Last backup: %1$s</string>
+    <string name="profile_sync_success">Sync completed for %1$d shapes</string>
+    <string name="profile_sync_failed">Sync failed: %1$s</string>
+
+    <string name="profile_terms_service">Terms of Service</string>
+    <string name="profile_terms_privacy">Privacy Policy</string>
+    <string name="profile_terms_location">Location-based Service Terms</string>
+
+    <string name="profile_account_logout">Sign Out</string>
+    <string name="profile_account_delete">Delete Account</string>
+    <string name="profile_account_delete_desc">Only the account will be deleted. Local data will remain.</string>
+    <string name="profile_logout_message">Are you sure you want to sign out?</string>
+    <string name="profile_delete_account_message">Your account will be deleted and cloud sync will stop.\n\nShapes and drones saved on this device will remain.\n\nAre you sure?</string>
+    <string name="profile_delete_account_final_title">Final Confirmation</string>
+    <string name="profile_delete_account_final_message">This action cannot be undone.</string>
+    <string name="profile_delete_account_final_button">Permanently Delete</string>
+
+    <!-- Document / PatchNotes -->
+    <string name="document_loading">Loading…</string>
+    <string name="document_error_title">Unable to load document</string>
+    <string name="document_error_message">Please try again later.</string>
+    <string name="patch_notes_empty">No patch notes</string>
 </resources>

@@ -160,6 +160,30 @@ object NetworkModule {
         @Named("vWorldContactsRetrofit") retrofit: Retrofit,
     ): VWorldContactsApi = retrofit.create(VWorldContactsApi::class.java)
 
+    // ===== Document API (자체 서버 plain-text 문서) =====
+    // iOS FetchWebDocuments 와 동일 endpoint (`https://sciencefiction.co.kr/dronepass/...`).
+    // VWorldContacts 와 같은 도메인이지만 Retrofit 인스턴스를 분리하여 timeout/캐시 정책을
+    // 독립 조정할 수 있게 한다 (Kp NOAA 패턴과 동일).
+
+    @Provides
+    @Singleton
+    @Named("documentRetrofit")
+    fun provideDocumentRetrofit(
+        @Named("GenericOkHttp") okHttpClient: OkHttpClient,
+    ): Retrofit {
+        return Retrofit.Builder()
+            .baseUrl("https://sciencefiction.co.kr/")
+            .client(okHttpClient)
+            .build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideDocumentApi(
+        @Named("documentRetrofit") retrofit: Retrofit,
+    ): com.ScienceFiction.DronePassAndroid.core.data.remote.document.DocumentApi =
+        retrofit.create(com.ScienceFiction.DronePassAndroid.core.data.remote.document.DocumentApi::class.java)
+
     // ===== Kp Index API =====
     // NOAA SWPC 의 nowcast/예보/27일outlook 은 baseUrl 이 같지만 Retrofit 인스턴스를
     // 명시 분리하여 API 별로 timeout/Converter 정책을 독립 조정할 수 있게 한다.

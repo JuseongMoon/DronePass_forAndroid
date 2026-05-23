@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Per-app language 설정 노출 (Android 13+ 시스템 설정).
+    iOS AppleLanguages 와 동등한 사용자 언어 선택 UX 제공.
+-->
+<locale-config xmlns:android="http://schemas.android.com/apk/res/android">
+    <locale android:name="ko" />
+    <locale android:name="en" />
+</locale-config>

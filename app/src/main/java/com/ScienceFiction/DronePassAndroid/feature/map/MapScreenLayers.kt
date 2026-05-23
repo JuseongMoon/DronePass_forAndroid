@@ -179,6 +179,7 @@ internal fun MapFloatingControls(
     val selectedDroneIds by viewModel.selectedDroneIds.collectAsStateWithLifecycle()
     val highlightedDroneId by viewModel.highlightedDroneId.collectAsStateWithLifecycle()
     val visibleLayerCount by viewModel.visibleLayerCount.collectAsStateWithLifecycle()
+    val koreaFeaturesEnabled by viewModel.koreaFeaturesEnabled.collectAsStateWithLifecycle()
     val currentKp by kpViewModel.currentKp.collectAsStateWithLifecycle()
     val kpLevel by kpViewModel.kpLevel.collectAsStateWithLifecycle()
     val weatherData by weatherViewModel.weatherData.collectAsStateWithLifecycle()
@@ -214,6 +215,7 @@ internal fun MapFloatingControls(
                 onEnterSketchMode = { sketchViewModel.enterSketchMode() },
                 onShowFlightZoneLayers = { viewModel.toggleLayerSelector() },
                 flightZoneVisibleLayerCount = visibleLayerCount,
+                koreaFeaturesEnabled = koreaFeaturesEnabled,
                 currentKpValue = currentKp?.kp,
                 kpLevelColor = Color(kpLevel.color.toInt()),
                 onShowKpForecast = onShowKpForecast,

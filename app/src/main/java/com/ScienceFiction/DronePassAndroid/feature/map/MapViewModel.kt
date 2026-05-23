@@ -35,6 +35,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
@@ -59,6 +60,8 @@ class MapViewModel @Inject constructor(
         // 공공기관 연락처 사전로딩 (5일 캐시, 실패해도 무시 — 오프라인 fallback 내장).
         // 사전협의/국립공원 상세 시트에서 기관명으로 lookup 한다.
         viewModelScope.launch { vWorldContactManager.ensureLoaded() }
+        // 한국 특화 기능 OFF 전이 시 레이어 해제는 koreaFeaturesEnabled 선언 후의
+        // 두 번째 init 블록에서 처리한다 (참조 순서 NPE 방지).
     }
 
     /**
@@ -348,6 +351,7 @@ class MapViewModel @Inject constructor(
         private val KEY_KEEP_SCREEN_AWAKE = booleanPreferencesKey("keep_screen_awake")
         private val KEY_HIDE_EXPIRED_SHAPES = booleanPreferencesKey("hide_expired_shapes")
         private val KEY_HIDE_NOT_STARTED_SHAPES = booleanPreferencesKey("hide_not_started_shapes")
+        private val KEY_KOREA_FEATURES_ENABLED = booleanPreferencesKey("korea_features_enabled")
     }
 
     /**
@@ -370,6 +374,29 @@ class MapViewModel @Inject constructor(
     private val hideNotStartedShapes: StateFlow<Boolean> = dataStore.data
         .map { preferences -> preferences[KEY_HIDE_NOT_STARTED_SHAPES] ?: false }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    /**
+     * 한국 특화 기능 활성화 — iOS `settingManager.isKoreaFeaturesEnabled` 정합.
+     * 기본값: 미설정 시 true (한국 환경 우선). OFF 전이 시 아래 두 번째 init 블록이
+     * 모든 FlightZone 레이어를 해제한다 (iOS HideAllFlightZones notification 매핑).
+     */
+    val koreaFeaturesEnabled: StateFlow<Boolean> = dataStore.data
+        .map { preferences -> preferences[KEY_KOREA_FEATURES_ENABLED] ?: true }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    // koreaFeaturesEnabled 선언 직후에 위치해야 한다. 첫 번째 init 블록은 클래스 상단에 있어
+    // 그 시점엔 koreaFeaturesEnabled 가 아직 초기화되지 않아 NullPointerException 이 발생한다.
+    // 두 번째 init 으로 분리하여 property 초기화 순서를 보장.
+    init {
+        viewModelScope.launch {
+            koreaFeaturesEnabled
+                .drop(1)
+                .distinctUntilChanged()
+                .collect { enabled ->
+                    if (!enabled) hideAllLayers()
+                }
+        }
+    }
 
     /**
      * 60초 간격 tick. 시간이 흘러 isExpired/isNotStarted 가 바뀌어도 filteredShapes 가

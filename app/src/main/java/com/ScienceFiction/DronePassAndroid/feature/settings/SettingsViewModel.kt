@@ -3,6 +3,8 @@ package com.ScienceFiction.DronePassAndroid.feature.settings
 import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.LocaleListCompat
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
@@ -12,6 +14,7 @@ import androidx.lifecycle.viewModelScope
 import com.ScienceFiction.DronePassAndroid.BuildConfig
 import com.ScienceFiction.DronePassAndroid.core.data.UserLocationKeys
 import com.ScienceFiction.DronePassAndroid.core.data.repository.DroneRepository
+import com.ScienceFiction.DronePassAndroid.core.data.repository.KpIndexRepository
 import com.ScienceFiction.DronePassAndroid.core.data.repository.ShapeRepository
 import com.ScienceFiction.DronePassAndroid.core.data.repository.SketchRepository
 import com.ScienceFiction.DronePassAndroid.core.data.repository.WeatherRepository
@@ -55,6 +58,7 @@ class SettingsViewModel @Inject constructor(
     private val firestore: FirebaseFirestore,
     private val fusedLocationClient: FusedLocationProviderClient,
     private val realtimeSyncManager: RealtimeSyncManager,
+    private val kpIndexRepository: KpIndexRepository,
     @ApplicationContext private val appContext: Context
 ) : ViewModel() {
 
@@ -66,11 +70,22 @@ class SettingsViewModel @Inject constructor(
         private val KEY_SUNRISE_ALARM_ENABLED = booleanPreferencesKey("sunrise_alarm_enabled")
         private val KEY_SUNSET_ALARM_ENABLED = booleanPreferencesKey("sunset_alarm_enabled")
         private val KEY_END_DATE_ALARM_ENABLED = booleanPreferencesKey("end_date_alarm_enabled")
+        private val KEY_KOREA_FEATURES_ENABLED = booleanPreferencesKey("korea_features_enabled")
     }
 
     /** 인증 상태 */
     private val _authState = MutableStateFlow<AuthState>(AuthState.Loading)
     val authState: StateFlow<AuthState> = _authState.asStateFlow()
+
+    /**
+     * 현재 Kp 지수 문자열 (iOS `viewModel.currentKPString` 정합 — "%.1f" 형식).
+     * KpIndexRepository.currentKpFlow 를 구독하여 자동 갱신. 데이터 없으면 "-".
+     */
+    val currentKpString: StateFlow<String> = kpIndexRepository.currentKpFlow
+        .map { kpData ->
+            kpData?.kp?.let { String.format(java.util.Locale.ROOT, "%.1f", it) } ?: "-"
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "-")
 
     /** 만료된 도형 숨기기 */
     val hideExpiredShapes: StateFlow<Boolean> = dataStore.data
@@ -106,8 +121,60 @@ class SettingsViewModel @Inject constructor(
     val isLoggedIn: Boolean
         get() = firebaseAuth.currentUser != null
 
+    /**
+     * 현재 앱 언어 (iOS UserDefaults `AppleLanguages` 정합).
+     * AppCompatDelegate.getApplicationLocales 기반.
+     */
+    private val _currentLanguage = MutableStateFlow(readCurrentAppLanguage())
+    val currentLanguage: StateFlow<AppLanguage> = _currentLanguage.asStateFlow()
+
+    /**
+     * 한국 특화 기능 활성화 (iOS `isKoreaFeaturesEnabled` 정합).
+     * 기본값: 시스템 언어 ko 면 true, 그 외 false.
+     * OFF 전이 시 MapViewModel 이 collect 하여 모든 FlightZone 레이어를 해제한다.
+     */
+    val koreaFeaturesEnabled: StateFlow<Boolean> = dataStore.data
+        .map { preferences ->
+            preferences[KEY_KOREA_FEATURES_ENABLED]
+                ?: (readCurrentAppLanguage() == AppLanguage.Korean)
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
     init {
         checkAuthState()
+        // iOS settings.kp.current 정합 — 화면 진입 시 즉시 최신 Kp 값 표시.
+        // KpViewModel 가 떠있지 않은 경우(설정만 단독 진입) 에도 currentKpFlow 가 채워지도록 1회 호출.
+        viewModelScope.launch {
+            runCatching { kpIndexRepository.getCurrentKp() }
+        }
+    }
+
+    /**
+     * 앱 언어 변경 — iOS `UserDefaults.set(...)` + `AppleLanguages` 정합.
+     * AppCompatDelegate API 호출 → Activity 자동 재생성 → 전체 UI 언어 전환.
+     * 호출자(UI)는 다이얼로그 안내 후 약간의 delay 를 두고 호출하여 dismiss animation 보장.
+     */
+    fun setLanguage(language: AppLanguage) {
+        AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(language.tag))
+        _currentLanguage.value = language
+    }
+
+    /**
+     * 한국 특화 기능 토글 (iOS `settingManager.isKoreaFeaturesEnabled = newValue` 정합).
+     * OFF 전이 시 MapViewModel 이 visibleLayers 를 모두 해제한다.
+     */
+    fun toggleKoreaFeatures(value: Boolean) {
+        viewModelScope.launch {
+            dataStore.edit { preferences ->
+                preferences[KEY_KOREA_FEATURES_ENABLED] = value
+            }
+        }
+    }
+
+    private fun readCurrentAppLanguage(): AppLanguage {
+        val locales = AppCompatDelegate.getApplicationLocales()
+        val tag = if (!locales.isEmpty) locales.get(0)?.language else null
+        return AppLanguage.fromTag(tag)
     }
 
     /**
@@ -307,141 +374,6 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    /**
-     * 로그아웃
-     *
-     * 단일 책임 원칙을 위해 AuthViewModel.signOut() 과 동일한 정리 순서를 따른다:
-     * 1) FCM 토큰 비활성화 (userId 가 살아있는 동안)
-     * 2) 실시간 동기화 리스너 중단
-     * 3) Firebase Auth 로그아웃
-     */
-    fun signOut() {
-        runCatching {
-            FcmService.deactivateToken(appContext)
-        }.onFailure { Log.w(TAG, "FCM 토큰 비활성화 실패", it) }
-
-        runCatching {
-            realtimeSyncManager.stopListening()
-        }.onFailure { Log.w(TAG, "실시간 동기화 리스너 중단 실패", it) }
-
-        authRepository.signOut()
-        _authState.value = AuthState.LoggedOut
-    }
-
-    /**
-     * 계정 삭제
-     *
-     * 1. 익명화된 사용 통계를 Firestore에 저장
-     * 2. Firestore의 사용자 데이터 전체 삭제 (shapes, drones, sketches, metadata)
-     * 3. 로컬 Room DB 전체 삭제
-     * 4. Firebase Auth 계정 삭제
-     */
-    fun deleteAccount(onResult: (Boolean, String) -> Unit) {
-        viewModelScope.launch {
-            val userId = firebaseAuth.currentUser?.uid
-
-            // 1. 익명화 통계 (분석용, 실패해도 진행)
-            runCatching { saveAnonymizedStats() }
-                .onFailure { Log.e(TAG, "익명화 통계 저장 실패", it) }
-
-            // 2. Firestore 사용자 데이터 전체 삭제 — CRITICAL.
-            //    여기서 실패하면 Auth 계정만 삭제되고 서버에 데이터가 남는 좀비 상태가 되므로
-            //    fail-fast 로 Auth 삭제를 보류하고 사용자에게 재시도 요청.
-            if (userId != null) {
-                val firestoreResult = runCatching { deleteFirestoreUserData(userId) }
-                if (firestoreResult.isFailure) {
-                    val err = firestoreResult.exceptionOrNull()
-                    Log.e(TAG, "Firestore 데이터 삭제 실패 — 계정 삭제 보류", err)
-                    onResult(
-                        false,
-                        err?.localizedMessage ?: "데이터 삭제에 실패했습니다. 네트워크 확인 후 다시 시도해 주세요."
-                    )
-                    return@launch
-                }
-                Log.d(TAG, "Firestore 사용자 데이터 삭제 완료: userId=$userId")
-            }
-
-            // 3. 로컬 Room DB 전체 삭제 — 실패해도 진행 (앱 재설치/캐시 클리어로 복구 가능).
-            runCatching {
-                shapeRepository.deleteAllShapes()
-                droneRepository.deleteAllDrones()
-                sketchRepository.deleteAllSketches()
-                Log.d(TAG, "로컬 DB 전체 삭제 완료")
-            }.onFailure { Log.e(TAG, "로컬 DB 삭제 실패", it) }
-
-            // 4. FCM 토큰 비활성화 + 실시간 동기화 리스너 중단 (Auth 삭제 전 정리)
-            runCatching {
-                FcmService.deactivateToken(appContext)
-            }.onFailure { Log.w(TAG, "FCM 토큰 비활성화 실패 (계정 삭제 흐름)", it) }
-            runCatching {
-                realtimeSyncManager.stopListening()
-            }.onFailure { Log.w(TAG, "실시간 동기화 리스너 중단 실패 (계정 삭제 흐름)", it) }
-
-            // 5. Firebase Auth 계정 삭제
-            authRepository.deleteAccount().fold(
-                onSuccess = {
-                    _authState.value = AuthState.LoggedOut
-                    onResult(true, "계정이 삭제되었습니다.")
-                },
-                onFailure = { exception ->
-                    onResult(false, exception.localizedMessage ?: "계정 삭제 중 오류가 발생했습니다.")
-                }
-            )
-        }
-    }
-
-    /**
-     * Firestore에서 사용자의 모든 데이터를 삭제
-     * users/{userId} 하위의 shapes, drones, sketches, metadata 컬렉션을 삭제
-     */
-    private suspend fun deleteFirestoreUserData(userId: String) {
-        val userDoc = firestore.collection("users").document(userId)
-        val collections = listOf("shapes", "drones", "sketches", "metadata")
-
-        for (collectionName in collections) {
-            val snapshot = userDoc.collection(collectionName).get().await()
-            for (doc in snapshot.documents) {
-                doc.reference.delete().await()
-            }
-        }
-    }
-
-    /**
-     * 계정 삭제 전 익명화된 사용 통계를 Firestore에 저장
-     *
-     * analytics/deleted_users/{timestamp} 경로에 저장하며,
-     * 개인 식별 정보 없이 사용 패턴 통계만 기록한다.
-     */
-    private suspend fun saveAnonymizedStats() {
-        val user = firebaseAuth.currentUser ?: return
-
-        // 데이터 카운트 수집
-        val shapes = shapeRepository.getActiveShapes().first()
-        val drones = droneRepository.getActiveDrones().first()
-        val sketches = sketchRepository.getActiveSketches().first()
-
-        // 사용 일수 계산 (계정 생성일 ~ 현재)
-        val creationTimestamp = user.metadata?.creationTimestamp ?: System.currentTimeMillis()
-        val usageDays = (System.currentTimeMillis() - creationTimestamp) / (24 * 60 * 60 * 1000L)
-
-        val stats = hashMapOf(
-            "deletedAt" to FieldValue.serverTimestamp(),
-            "shapeCount" to shapes.size,
-            "droneCount" to drones.size,
-            "sketchCount" to sketches.size,
-            "usageDays" to usageDays,
-            "platform" to "android",
-            "appVersion" to BuildConfig.VERSION_NAME
-        )
-
-        val timestamp = System.currentTimeMillis().toString()
-        firestore.collection("analytics")
-            .document("deleted_users")
-            .collection("records")
-            .document(timestamp)
-            .set(stats)
-            .await()
-
-        Log.d(TAG, "익명화 통계 저장 완료: shapes=${shapes.size}, drones=${drones.size}, sketches=${sketches.size}, usageDays=$usageDays")
-    }
+    // signOut / deleteAccount / saveAnonymizedStats / deleteFirestoreUserData 함수는
+    // ProfileViewModel 로 이전되어 ProfileView 시트(약관/계정 관리 섹션)에서 호출된다.
 }

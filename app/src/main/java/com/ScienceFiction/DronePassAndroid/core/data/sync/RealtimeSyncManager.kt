@@ -61,6 +61,21 @@ class RealtimeSyncManager @Inject constructor(
     private val _syncState = MutableStateFlow<SyncState>(SyncState.Idle)
     val syncState: StateFlow<SyncState> = _syncState.asStateFlow()
 
+    /**
+     * 실시간 동기화 리스닝 활성 여부 (iOS `RealtimeSyncManager.isRealtimeSyncListening` 정합).
+     * startListening 성공 시 true, stopListening 호출 시 false.
+     * ProfileViewModel 이 "Active - Real-time syncing" 상태 라벨 계산에 사용.
+     */
+    private val _isRealtimeSyncEnabled = MutableStateFlow(false)
+    val isRealtimeSyncEnabled: StateFlow<Boolean> = _isRealtimeSyncEnabled.asStateFlow()
+
+    /**
+     * 마지막 동기화 시각 (iOS `lastSyncDate` 정합). 성공 시 갱신.
+     * ProfileViewModel 이 "Last sync: HH:mm" 표시에 사용.
+     */
+    private val _lastSyncTime = MutableStateFlow<Long?>(null)
+    val lastSyncTime: StateFlow<Long?> = _lastSyncTime.asStateFlow()
+
     // 데이터 변경 콜백은 Room Flow 가 UI 까지 직접 흐르므로 별도 신호가 불필요.
     // 이전에는 onShapesUpdated/onDronesUpdated/onSketchesUpdated 가 선언만 되어 있고
     // 어디에서도 설정되지 않아 데드 코드였음. 제거하여 향후 디버깅 혼란을 차단한다.
@@ -114,6 +129,7 @@ class RealtimeSyncManager @Inject constructor(
         // 2. Sketch 메타데이터 리스너 설정
         setupSketchMetadataListener(userId)
 
+        _isRealtimeSyncEnabled.value = true
         Log.d(TAG, "SnapshotListener 설정 완료 (Shape/Drone + Sketch)")
     }
 
@@ -226,6 +242,7 @@ class RealtimeSyncManager @Inject constructor(
 
             // 동기화 시각 업데이트
             lastShapeSyncTime = System.currentTimeMillis()
+            _lastSyncTime.value = lastShapeSyncTime
 
             // 재시도 카운터 초기화
             shapeRetryCount = 0
@@ -348,7 +365,29 @@ class RealtimeSyncManager @Inject constructor(
         shapeRetryCount = 0
         sketchRetryCount = 0
         _syncState.value = SyncState.Idle
+        _isRealtimeSyncEnabled.value = false
 
         Log.d(TAG, "SnapshotListener 중단 (Shape/Drone + Sketch)")
+    }
+
+    /**
+     * iOS `RealtimeSyncManager.forceSyncNow()` 정합 — 디바운싱 우회 즉시 동기화.
+     * ProfileViewModel 의 수동 백업 / 토글 ON 시 동기화 chain 의 진입점.
+     * 외부 호출은 rate-limit (UI 디바운스) 으로 보호할 것 — Repository 자체는 가드 안 함.
+     */
+    suspend fun forceSyncNow() {
+        performShapeAndDroneSync()
+    }
+
+    /**
+     * iOS `resetAndRestartRealtimeSync()` 정합 — 현재 리스닝 중인 userId 로
+     * stopListening → 100ms 후 startListening 재시작.
+     * 동기화 토글 ON 시 fresh listener 보장.
+     */
+    suspend fun resetAndRestartRealtimeSync() {
+        val userId = currentListeningUserId ?: return
+        stopListening()
+        delay(100L)
+        startListening(userId)
     }
 }
