@@ -190,23 +190,4 @@ fun PrivacyPolicyScreen(
     )
 }
 
-/**
- * 위치기반서비스 이용약관 화면 (iOS 자체 서버 시스템 정합 — locationservice.txt fetch).
- */
-@Composable
-fun LocationServiceTermsScreen(
-    onDismiss: () -> Unit,
-    viewModel: DocumentViewModel = hiltViewModel(),
-) {
-    val state by viewModel.locationTermsState.collectAsStateWithLifecycle()
-    LaunchedEffect(Unit) {
-        if (state is ParsedDocumentUiState.Loading) viewModel.loadLocationTerms()
-    }
-    DocumentScreen(
-        title = stringResource(R.string.profile_terms_location),
-        state = state,
-        onRetry = { viewModel.loadLocationTerms() },
-        onDismiss = onDismiss,
-    )
-}
 

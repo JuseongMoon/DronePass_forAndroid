@@ -14,7 +14,6 @@ import retrofit2.http.Path
  * 경로 예:
  *  - `dronepass/terms/termsofservice.txt`
  *  - `dronepass/terms/privacypolicy.txt`
- *  - `dronepass/terms/locationservice.txt`
  *  - `dronepass/version-patches.txt`
  */
 interface DocumentApi {

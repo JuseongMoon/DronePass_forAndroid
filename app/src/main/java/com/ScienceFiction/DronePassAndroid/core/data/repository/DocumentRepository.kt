@@ -16,7 +16,7 @@ import javax.inject.Singleton
  *
  * iOS `FetchWebDocuments` 정합:
  *  - 언어별 파일명 (`{base}.txt` 한 / `{base}_en.txt` 영)
- *  - Terms/Privacy/LocationTerms: 30분 메모리 캐시
+ *  - Terms/Privacy: 30분 메모리 캐시
  *  - PatchNotes: `Cache-Control: no-cache` 헤더 + 캐시 우회 (iOS `.reloadIgnoringLocalCacheData`)
  *
  * 사용자가 언어 변경 시 [invalidateCache] 호출 권장.
@@ -31,13 +31,11 @@ class DocumentRepository @Inject constructor(
 
         private const val PATH_TERMS = "dronepass/terms/termsofservice"
         private const val PATH_PRIVACY = "dronepass/terms/privacypolicy"
-        private const val PATH_LOCATION = "dronepass/terms/locationservice"
         private const val PATH_PATCH_NOTES = "dronepass/version-patches"
     }
 
     @Volatile private var cachedTerms: CacheEntry<ParsedDocument>? = null
     @Volatile private var cachedPrivacy: CacheEntry<ParsedDocument>? = null
-    @Volatile private var cachedLocation: CacheEntry<ParsedDocument>? = null
     private val mutex = Mutex()
 
     /** 현재 앱 언어 기준 파일명 suffix 결정. `en` → `_en.txt`, 그 외 → `.txt`. */
@@ -59,13 +57,6 @@ class DocumentRepository @Inject constructor(
         cacheSet = { cachedPrivacy = it },
         path = localizedPath(PATH_PRIVACY),
         label = "PrivacyPolicy",
-    )
-
-    suspend fun fetchLocationTerms(): Result<ParsedDocument> = fetchCachedDocument(
-        cacheGet = { cachedLocation },
-        cacheSet = { cachedLocation = it },
-        path = localizedPath(PATH_LOCATION),
-        label = "LocationTerms",
     )
 
     /**
@@ -91,7 +82,6 @@ class DocumentRepository @Inject constructor(
     fun invalidateCache() {
         cachedTerms = null
         cachedPrivacy = null
-        cachedLocation = null
     }
 
     private suspend fun fetchCachedDocument(

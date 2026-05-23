@@ -327,7 +327,6 @@
     <string name="settings_patch_notes">패치노트</string>
     <string name="settings_terms">이용약관</string>
     <string name="settings_privacy">개인정보 처리방침</string>
-    <string name="settings_location_terms">위치기반서비스 이용약관</string>
     <string name="app_info_title">앱 정보</string>
     <string name="app_info_description">드론 비행 허가지 시각화 앱</string>
     <string name="app_info_feature_drone">멀티 드론 관리</string>
@@ -481,7 +480,6 @@
 
     <string name="profile_terms_service">이용약관</string>
     <string name="profile_terms_privacy">개인정보 처리방침</string>
-    <string name="profile_terms_location">위치기반서비스 이용약관</string>
 
     <string name="profile_account_logout">로그아웃</string>
     <string name="profile_account_delete">계정 삭제</string>

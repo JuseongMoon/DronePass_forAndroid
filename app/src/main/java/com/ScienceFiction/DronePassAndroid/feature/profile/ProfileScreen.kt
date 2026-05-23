@@ -37,7 +37,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ScienceFiction.DronePassAndroid.R
-import com.ScienceFiction.DronePassAndroid.feature.document.LocationServiceTermsScreen
 import com.ScienceFiction.DronePassAndroid.feature.document.PrivacyPolicyScreen
 import com.ScienceFiction.DronePassAndroid.feature.document.TermsOfServiceScreen
 import com.ScienceFiction.DronePassAndroid.feature.settings.SectionHeader
@@ -181,12 +180,6 @@ fun ProfileScreen(
             onClick = { webDocTarget = WebDocTarget.Privacy },
             showArrow = true,
         )
-        HorizontalDivider(modifier = Modifier.padding(start = 16.dp))
-        SettingsItem(
-            title = stringResource(R.string.profile_terms_location),
-            onClick = { webDocTarget = WebDocTarget.LocationTerms },
-            showArrow = true,
-        )
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -305,7 +298,6 @@ fun ProfileScreen(
             when (target) {
                 WebDocTarget.Terms -> TermsOfServiceScreen(onDismiss = { webDocTarget = null })
                 WebDocTarget.Privacy -> PrivacyPolicyScreen(onDismiss = { webDocTarget = null })
-                WebDocTarget.LocationTerms -> LocationServiceTermsScreen(onDismiss = { webDocTarget = null })
             }
         }
     }
@@ -314,7 +306,6 @@ fun ProfileScreen(
 private sealed class WebDocTarget {
     data object Terms : WebDocTarget()
     data object Privacy : WebDocTarget()
-    data object LocationTerms : WebDocTarget()
 }
 
 private fun formatLastSync(timestamp: Long?, fallback: String): String {

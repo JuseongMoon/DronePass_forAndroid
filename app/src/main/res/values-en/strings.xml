@@ -317,7 +317,6 @@
 
     <string name="profile_terms_service">Terms of Service</string>
     <string name="profile_terms_privacy">Privacy Policy</string>
-    <string name="profile_terms_location">Location-based Service Terms</string>
 
     <string name="profile_account_logout">Sign Out</string>
     <string name="profile_account_delete">Delete Account</string>
