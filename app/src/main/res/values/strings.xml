@@ -141,6 +141,20 @@
     <string name="shape_edit_label_memo">메모</string>
     <string name="shape_edit_placeholder_memo">메모를 입력하세요</string>
     <string name="shape_edit_default_title">신규 도형</string>
+    <string name="shape_edit_navigation_cancel">취소</string>
+    <string name="shape_edit_navigation_save">저장</string>
+    <string name="shape_edit_alert_unsaved_title">변경사항 폐기</string>
+    <string name="shape_edit_alert_unsaved_message">저장하지 않은 변경사항이 있습니다. 폐기하시겠습니까?</string>
+    <string name="shape_edit_alert_unsaved_discard">폐기</string>
+    <string name="shape_edit_title_label">제목</string>
+    <string name="shape_edit_title_placeholder">제목 입력</string>
+    <string name="shape_edit_coordinate_label">좌표</string>
+    <string name="shape_edit_coordinate_placeholder">좌표 입력</string>
+    <string name="shape_edit_address_search_placeholder">주소 검색</string>
+    <string name="shape_edit_radius_label">반경 (m)</string>
+    <string name="shape_edit_altitude_label">고도 (m)</string>
+    <string name="shape_edit_drone_label">드론 선택</string>
+    <string name="shape_edit_drone_placeholder">드론 선택</string>
 
     <!-- DroneListScreen -->
     <string name="drone_list_title">내 드론</string>
@@ -313,6 +327,12 @@
 
     <!-- Phase 9-B/C: Detail & List enhancements -->
     <string name="shape_detail_open_external_map">외부 지도 앱 열기</string>
+    <string name="shape_detail_title_label">제목</string>
+    <string name="shape_detail_navigation_title">도형 상세</string>
+    <string name="shape_detail_more_menu">더보기</string>
+    <string name="shape_detail_drone_deleted">삭제된 드론</string>
+    <string name="shape_detail_drone_unassigned">드론 미연결</string>
+    <string name="shape_detail_navigation_message">%s 으로 길찾기를 시작합니다.</string>
     <string name="shape_detail_open_naver_map">네이버 지도</string>
     <string name="shape_detail_open_kakao_map">카카오맵</string>
     <string name="shape_detail_open_tmap">TMAP</string>

@@ -5,7 +5,11 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.text.method.LinkMovementMethod
+import android.text.util.Linkify
+import android.widget.TextView
 import android.widget.Toast
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -21,20 +25,19 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.CopyAll
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -50,13 +53,25 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.filled.HelpOutline
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.text.font.FontStyle
 import com.ScienceFiction.DronePassAndroid.R
+import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
+import com.ScienceFiction.DronePassAndroid.domain.model.PaletteColor
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun ShapeDetailSheet(
     shape: ShapeModel,
@@ -64,7 +79,8 @@ fun ShapeDetailSheet(
     onDelete: () -> Unit,
     onDismiss: () -> Unit,
     onDuplicate: () -> Unit = {},
-    droneName: String? = null
+    drone: DroneModel? = null,
+    koreaFeaturesEnabled: Boolean = true,
 ) {
     val context = LocalContext.current
     val configuration = LocalConfiguration.current
@@ -78,6 +94,10 @@ fun ShapeDetailSheet(
     val coroutineScope = rememberCoroutineScope()
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     var showExternalMapDialog by remember { mutableStateOf(false) }
+    var showMoreMenu by remember { mutableStateOf(false) }
+    // Phase 5 에서 사용할 중첩 시트 state — 현재(Phase 1) Menu 의 편집/복제는 기존 콜백 호출 유지.
+    // var showEditSheet by remember { mutableStateOf(false) }
+    // var showDuplicateSheet by remember { mutableStateOf(false) }
 
     val dateFormat = remember { SimpleDateFormat("yyyy년 MM월 dd일 HH:mm", Locale.KOREA) }
 
@@ -101,202 +121,180 @@ fun ShapeDetailSheet(
                 .fillMaxWidth()
                 .heightIn(max = maxSheetHeight)
                 .navigationBarsPadding()
-                .padding(horizontal = 20.dp)
-                .verticalScroll(rememberScrollState())
         ) {
-            // 헤더: 제목 + 상태
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = shape.title.ifBlank { stringResource(R.string.common_no_title) },
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.weight(1f)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                StatusBadge(shape = shape)
-            }
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            // 좌표 (DMS 형식 + 복사 버튼)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
+            // iOS NavigationView 정합 — 고정 헤더 TopAppBar.
+            // title: inline 제목, actions: ellipsis(MoreVert) → DropdownMenu(편집/복제/삭제).
+            TopAppBar(
+                title = {
                     Text(
-                        text = stringResource(R.string.shape_detail_coordinate),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = stringResource(R.string.shape_detail_navigation_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
                     )
+                },
+                actions = {
+                    IconButton(onClick = { showMoreMenu = true }) {
+                        Icon(
+                            imageVector = Icons.Default.MoreVert,
+                            contentDescription = stringResource(R.string.shape_detail_more_menu),
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = showMoreMenu,
+                        onDismissRequest = { showMoreMenu = false },
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.common_edit)) },
+                            onClick = {
+                                showMoreMenu = false
+                                hideAndThen(onEdit)
+                            },
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.shape_detail_duplicate)) },
+                            onClick = {
+                                showMoreMenu = false
+                                onDuplicate()
+                            },
+                        )
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    text = stringResource(R.string.common_delete),
+                                    color = MaterialTheme.colorScheme.error,
+                                )
+                            },
+                            onClick = {
+                                showMoreMenu = false
+                                showDeleteConfirmDialog = true
+                            },
+                        )
+                    }
+                },
+            )
+
+            Column(
+                modifier = Modifier
+                    .padding(horizontal = 20.dp)
+                    .padding(top = 4.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                // iOS Section 1 — 행 순서: 드론 → 제목 → 좌표 → 주소 → 반경 → 고도 → 시작일 → 종료일.
+                // 좌측 라벨(bold primary), 우측 값(secondary). StatusBadge 제거.
+
+                // 드론 — iOS connectedDrone 3 상태 분기 (정상/삭제됨/미할당)
+                ShapeDetailRow(label = stringResource(R.string.shape_detail_drone_connected)) {
+                    DroneStatusValue(drone = drone, droneId = shape.droneId)
+                }
+
+                // 제목
+                ShapeDetailRow(label = stringResource(R.string.shape_detail_title_label)) {
+                    Text(
+                        text = shape.title.ifBlank { stringResource(R.string.common_no_title) },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+
+                // 좌표 — DMS 표시 + 길게 누름으로 십진수 복사 (iOS copyableText 정합)
+                ShapeDetailRow(
+                    label = stringResource(R.string.shape_detail_coordinate),
+                    modifier = Modifier.combinedClickable(
+                        onClick = {},
+                        onLongClick = {
+                            copyToClipboard(context, shape.baseCoordinate.decimalCoordinate)
+                        },
+                    ),
+                ) {
                     Text(
                         text = shape.baseCoordinate.formattedCoordinate,
-                        style = MaterialTheme.typography.bodyMedium
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                IconButton(
-                    onClick = {
-                        copyToClipboard(
-                            context,
-                            shape.baseCoordinate.decimalCoordinate
+
+                // 주소 (조건부) — iOS .blue 링크 + 탭 시 외부 지도 다이얼로그, 길게 누름 시 복사
+                if (!shape.address.isNullOrBlank()) {
+                    ShapeDetailRow(
+                        label = stringResource(R.string.shape_detail_address),
+                        modifier = Modifier.combinedClickable(
+                            onClick = { showExternalMapDialog = true },
+                            onLongClick = {
+                                copyToClipboard(context, shape.address)
+                            },
+                        ),
+                    ) {
+                        Text(
+                            text = shape.address,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color(0xFF007AFF), // iOS .blue 정합
                         )
-                    },
-                    modifier = Modifier.size(36.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.ContentCopy,
-                        contentDescription = stringResource(R.string.shape_detail_copy_coordinate),
-                        modifier = Modifier.size(18.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    }
                 }
-            }
 
-            Spacer(modifier = Modifier.height(12.dp))
+                // 반경 (조건부)
+                if (shape.radius != null) {
+                    ShapeDetailRow(label = stringResource(R.string.shape_detail_radius)) {
+                        Text(
+                            text = "${shape.radius}m",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
 
-            // 주소 (있으면)
-            if (!shape.address.isNullOrBlank()) {
-                DetailRow(
-                    label = stringResource(R.string.shape_detail_address),
-                    value = shape.address
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-            }
+                // 고도 (조건부)
+                if (shape.height != null) {
+                    ShapeDetailRow(label = stringResource(R.string.shape_detail_altitude)) {
+                        Text(
+                            text = "${shape.height}m",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
 
-            // 반경
-            if (shape.radius != null) {
-                DetailRow(
-                    label = stringResource(R.string.shape_detail_radius),
-                    value = "${shape.radius}m"
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-            }
-
-            // 고도 (있으면)
-            if (shape.height != null) {
-                DetailRow(
-                    label = stringResource(R.string.shape_detail_altitude),
-                    value = "${shape.height}m"
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-            }
-
-            // 연결된 드론 정보
-            DetailRow(
-                label = stringResource(R.string.shape_detail_drone_connected),
-                value = droneName ?: stringResource(R.string.shape_detail_no_drone)
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            HorizontalDivider()
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // 비행 기간
-            DetailRow(
-                label = stringResource(R.string.shape_detail_flight_start),
-                value = dateFormat.format(Date(shape.flightStartDate))
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-
-            DetailRow(
-                label = stringResource(R.string.shape_detail_flight_end),
-                value = shape.flightEndDate?.let { dateFormat.format(Date(it)) } ?: stringResource(R.string.common_not_set)
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // 메모 (있으면)
-            if (!shape.memo.isNullOrBlank()) {
-                HorizontalDivider()
-                Spacer(modifier = Modifier.height(12.dp))
-                DetailRow(
-                    label = stringResource(R.string.common_memo),
-                    value = shape.memo
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-            }
-
-            HorizontalDivider()
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // 액션 버튼 행 1: 삭제 / 편집
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                OutlinedButton(
-                    onClick = { showDeleteConfirmDialog = true },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = stringResource(R.string.common_delete),
-                        modifier = Modifier.size(18.dp),
-                        tint = MaterialTheme.colorScheme.error
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
+                // 비행 시작일
+                ShapeDetailRow(label = stringResource(R.string.shape_detail_flight_start)) {
                     Text(
-                        text = stringResource(R.string.common_delete),
-                        color = MaterialTheme.colorScheme.error
+                        text = dateFormat.format(Date(shape.flightStartDate)),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                OutlinedButton(
-                    // 시트가 매끄럽게 닫힌 뒤 편집 화면으로 전환 (애니메이션 끊김 방지)
-                    onClick = { hideAndThen(onEdit) },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Edit,
-                        contentDescription = stringResource(R.string.common_edit),
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(stringResource(R.string.common_edit))
+
+                // 비행 종료일 (조건부)
+                if (shape.flightEndDate != null) {
+                    ShapeDetailRow(label = stringResource(R.string.shape_detail_flight_end)) {
+                        Text(
+                            text = dateFormat.format(Date(shape.flightEndDate)),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
+
+                // iOS Section 2 — 메모 (조건부, HyperlinkTextView 정합)
+                // AndroidView(TextView) + Linkify 로 URL/전화/이메일 자동 감지 및 시스템 처리.
+                if (!shape.memo.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    HorizontalDivider()
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = stringResource(R.string.common_memo),
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    MemoLinkifyView(
+                        text = shape.memo,
+                        textColor = MaterialTheme.colorScheme.onSurfaceVariant.toArgb(),
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
             }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // 액션 버튼 행 2: 복제 / 외부 지도 앱 열기
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                OutlinedButton(
-                    onClick = onDuplicate,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.CopyAll,
-                        contentDescription = stringResource(R.string.shape_detail_duplicate),
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(stringResource(R.string.shape_detail_duplicate))
-                }
-                OutlinedButton(
-                    onClick = { showExternalMapDialog = true },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Map,
-                        contentDescription = stringResource(R.string.shape_detail_open_external_map),
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(stringResource(R.string.shape_detail_open_external_map))
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 
@@ -329,94 +327,110 @@ fun ShapeDetailSheet(
         )
     }
 
-    // 외부 지도 앱 선택 다이얼로그
+    // 외부 지도 앱 선택 다이얼로그 (주소 행 탭 트리거)
     if (showExternalMapDialog) {
         ExternalMapDialog(
             latitude = shape.baseCoordinate.latitude,
             longitude = shape.baseCoordinate.longitude,
+            destinationName = shape.title.ifBlank { stringResource(R.string.common_no_title) },
+            koreaFeaturesEnabled = koreaFeaturesEnabled,
             onDismiss = { showExternalMapDialog = false }
         )
     }
 }
 
 /**
- * 외부 지도 앱 선택 다이얼로그
+ * 외부 지도 앱 선택 다이얼로그 — iOS mapButtons 정합.
+ *
+ * @param koreaFeaturesEnabled ON: Naver/Kakao/TMAP/Google 4개 / OFF: Google 만
+ * @param destinationName 도형 제목 — URL 의 goalname/dname 으로 사용
+ *
+ * 모든 URL 은 **길찾기(route)** 형식 — iOS mapButtons 정합.
+ * Google 은 Android 표준 `https://www.google.com/maps/dir/?api=1` 사용 (iOS comgooglemaps:// scheme 미적용).
  */
 @Composable
 private fun ExternalMapDialog(
     latitude: Double,
     longitude: Double,
-    onDismiss: () -> Unit
+    destinationName: String,
+    koreaFeaturesEnabled: Boolean,
+    onDismiss: () -> Unit,
 ) {
     val context = LocalContext.current
+    val encodedName = remember(destinationName) {
+        java.net.URLEncoder.encode(destinationName, "UTF-8")
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.shape_detail_open_external_map)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                TextButton(
-                    onClick = {
-                        onDismiss()
-                        openExternalMap(
-                            context = context,
-                            appUri = "nmap://map?lat=$latitude&lng=$longitude&zoom=15",
-                            webFallback = "https://map.naver.com/v5/?c=$longitude,$latitude,15,0,0,0,dh"
+                if (koreaFeaturesEnabled) {
+                    TextButton(
+                        onClick = {
+                            onDismiss()
+                            openExternalMap(
+                                context = context,
+                                appUri = "nmap://route/public?dlat=$latitude&dlng=$longitude&dname=$encodedName",
+                                webFallback = "https://map.naver.com/v5/?c=$longitude,$latitude,15,0,0,0,dh",
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(
+                            text = stringResource(R.string.shape_detail_open_naver_map),
+                            style = MaterialTheme.typography.bodyLarge,
                         )
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        text = stringResource(R.string.shape_detail_open_naver_map),
-                        style = MaterialTheme.typography.bodyLarge
-                    )
+                    }
+                    TextButton(
+                        onClick = {
+                            onDismiss()
+                            openExternalMap(
+                                context = context,
+                                appUri = "kakaomap://route?ep=$latitude,$longitude&by=CAR",
+                                webFallback = "https://map.kakao.com/link/map/$latitude,$longitude",
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(
+                            text = stringResource(R.string.shape_detail_open_kakao_map),
+                            style = MaterialTheme.typography.bodyLarge,
+                        )
+                    }
+                    TextButton(
+                        onClick = {
+                            onDismiss()
+                            openExternalMap(
+                                context = context,
+                                appUri = "tmap://route?goalname=$encodedName&goalx=$longitude&goaly=$latitude",
+                                webFallback = null, // TMAP 은 웹 폴백 없음
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(
+                            text = stringResource(R.string.shape_detail_open_tmap),
+                            style = MaterialTheme.typography.bodyLarge,
+                        )
+                    }
                 }
+                // Google 은 한국특화 토글과 무관하게 항상 표시 — iOS 정합.
                 TextButton(
                     onClick = {
                         onDismiss()
                         openExternalMap(
                             context = context,
-                            appUri = "kakaomap://look?p=$latitude,$longitude",
-                            webFallback = "https://map.kakao.com/link/map/$latitude,$longitude"
+                            appUri = "https://www.google.com/maps/dir/?api=1&destination=$latitude,$longitude",
+                            webFallback = null, // 이미 web URL
                         )
                     },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        text = stringResource(R.string.shape_detail_open_kakao_map),
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                }
-                TextButton(
-                    onClick = {
-                        onDismiss()
-                        openExternalMap(
-                            context = context,
-                            appUri = "tmap://route?goalx=$longitude&goaly=$latitude",
-                            webFallback = null // TMAP은 웹 폴백 없음
-                        )
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        text = stringResource(R.string.shape_detail_open_tmap),
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                }
-                TextButton(
-                    onClick = {
-                        onDismiss()
-                        openExternalMap(
-                            context = context,
-                            appUri = "geo:$latitude,$longitude?z=15",
-                            webFallback = "https://www.google.com/maps/@$latitude,$longitude,15z"
-                        )
-                    },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text(
                         text = stringResource(R.string.shape_detail_open_google_map),
-                        style = MaterialTheme.typography.bodyLarge
+                        style = MaterialTheme.typography.bodyLarge,
                     )
                 }
             }
@@ -425,7 +439,7 @@ private fun ExternalMapDialog(
             TextButton(onClick = onDismiss) {
                 Text(stringResource(R.string.common_cancel))
             }
-        }
+        },
     )
 }
 
@@ -447,42 +461,123 @@ private fun openExternalMap(
     }
 }
 
+/**
+ * iOS HyperlinkTextView (UITextView dataDetectorTypes = [.link, .phoneNumber]) 정합.
+ *
+ * AndroidView 로 TextView 호스팅 + autoLinkMask = Linkify.ALL 로 시스템이 URL/전화/이메일 자동 감지.
+ * 클릭 시 LinkMovementMethod 가 적절한 Intent 실행 (브라우저/Dialer/메일 앱).
+ * 180dp 고정 높이 (iOS minHeight: 180 / maxHeight: 180 정합) + 내부 스크롤.
+ */
 @Composable
-private fun DetailRow(
+private fun MemoLinkifyView(text: String, textColor: Int) {
+    AndroidView(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(180.dp),
+        factory = { ctx ->
+            TextView(ctx).apply {
+                textSize = 14f
+                setTextColor(textColor)
+                autoLinkMask = Linkify.WEB_URLS or Linkify.PHONE_NUMBERS or Linkify.EMAIL_ADDRESSES
+                linksClickable = true
+                movementMethod = LinkMovementMethod.getInstance()
+                setPadding(0, 8, 0, 8)
+            }
+        },
+        update = { it.text = text },
+    )
+}
+
+/**
+ * iOS ShapeDetailView Section 1 의 HStack { Label.bold + Spacer + Value(.secondary) } 정합.
+ *
+ * @param label 좌측 라벨 (bold primary)
+ * @param modifier 행 전체 Modifier (combinedClickable 등 적용)
+ * @param value 우측 슬롯 — Text 또는 DroneStatusValue 등 커스텀 콘텐츠
+ */
+@Composable
+private fun ShapeDetailRow(
     label: String,
-    value: String
+    modifier: Modifier = Modifier,
+    value: @Composable () -> Unit,
 ) {
-    Column {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         Text(
             text = label,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface,
         )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyMedium
-        )
+        Spacer(modifier = Modifier.weight(1f))
+        value()
     }
 }
 
+/**
+ * iOS connectedDrone 3 상태 분기 (정상 / 삭제됨 / 미할당) 정합.
+ *  - 정상: 색상 원(12dp) + 이름(secondary)
+ *  - 삭제됨 (droneId != null, drone == null): 경고 아이콘(orange) + "삭제된 드론" italic
+ *  - 미할당 (droneId == null): 물음표 아이콘(gray) + "드론 미연결" italic
+ */
 @Composable
-private fun StatusBadge(shape: ShapeModel) {
-    val (statusText, statusColor) = when {
-        shape.isExpired -> stringResource(R.string.shape_detail_status_expired) to MaterialTheme.colorScheme.error
-        shape.isNotStarted -> stringResource(R.string.shape_detail_status_not_started) to MaterialTheme.colorScheme.tertiary
-        else -> stringResource(R.string.shape_detail_status_active) to MaterialTheme.colorScheme.primary
-    }
-
-    androidx.compose.material3.SuggestionChip(
-        onClick = {},
-        label = {
-            Text(
-                text = statusText,
-                style = MaterialTheme.typography.labelSmall,
-                color = statusColor
-            )
+private fun DroneStatusValue(drone: DroneModel?, droneId: String?) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        when {
+            drone != null -> {
+                val colorHex = drone.paletteColor?.hex ?: drone.color
+                val droneColor = runCatching {
+                    Color(android.graphics.Color.parseColor(colorHex))
+                }.getOrDefault(MaterialTheme.colorScheme.primary)
+                androidx.compose.foundation.layout.Box(
+                    modifier = Modifier
+                        .size(12.dp)
+                        .clip(CircleShape)
+                        .background(droneColor),
+                )
+                Text(
+                    text = drone.name,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            droneId != null -> {
+                Icon(
+                    imageVector = Icons.Default.Warning,
+                    contentDescription = null,
+                    tint = Color(0xFFFF9500), // iOS .orange
+                    modifier = Modifier.size(12.dp),
+                )
+                Text(
+                    text = stringResource(R.string.shape_detail_drone_deleted),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color(0xFFFF9500),
+                    fontStyle = FontStyle.Italic,
+                )
+            }
+            else -> {
+                Icon(
+                    imageVector = Icons.Default.HelpOutline,
+                    contentDescription = null,
+                    tint = Color.Gray,
+                    modifier = Modifier.size(12.dp),
+                )
+                Text(
+                    text = stringResource(R.string.shape_detail_drone_unassigned),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Gray,
+                    fontStyle = FontStyle.Italic,
+                )
+            }
         }
-    )
+    }
 }
 
 private fun copyToClipboard(context: Context, text: String) {

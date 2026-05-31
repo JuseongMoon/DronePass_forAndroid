@@ -47,6 +47,7 @@ import com.ScienceFiction.DronePassAndroid.feature.shape.ShapeDetailSheet
 @Composable
 fun SavedListScreen(
     onNavigateToMapWithShape: (String) -> Unit = {},
+    onNavigateToMapForEdit: (String) -> Unit = {},
     viewModel: SavedListViewModel = hiltViewModel()
 ) {
     val notStartedShapes by viewModel.notStartedShapes.collectAsStateWithLifecycle()
@@ -56,6 +57,7 @@ fun SavedListScreen(
     val selectedShape by viewModel.selectedShape.collectAsStateWithLifecycle()
     val showShapeDetail by viewModel.showShapeDetail.collectAsStateWithLifecycle()
     val totalCount by viewModel.totalCount.collectAsStateWithLifecycle()
+    val koreaFeaturesEnabled by viewModel.koreaFeaturesEnabled.collectAsStateWithLifecycle()
 
     Column(modifier = Modifier.fillMaxSize()) {
         // iOS SavedTableListView 동등 — 검색바/드론 필터/정렬 컨트롤은 화면에 없다.
@@ -159,11 +161,13 @@ fun SavedListScreen(
     // 도형 상세 BottomSheet
     if (showShapeDetail) {
         selectedShape?.let { shape ->
+            val copySuffix = stringResource(R.string.shape_detail_copy_suffix)
             ShapeDetailSheet(
                 shape = shape,
                 onEdit = {
                     viewModel.dismissShapeDetail()
-                    onNavigateToMapWithShape(shape.id)
+                    // 편집 의도 — 상세 시트 건너뛰고 바로 편집 시트로 진입.
+                    onNavigateToMapForEdit(shape.id)
                 },
                 onDelete = {
                     viewModel.deleteShape(shape)
@@ -171,7 +175,11 @@ fun SavedListScreen(
                 onDismiss = {
                     viewModel.dismissShapeDetail()
                 },
-                droneName = viewModel.getDroneName(shape.droneId)
+                onDuplicate = {
+                    viewModel.duplicateShape(shape, copySuffix)
+                },
+                drone = viewModel.getDroneById(shape.droneId),
+                koreaFeaturesEnabled = koreaFeaturesEnabled,
             )
         }
     }

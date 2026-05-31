@@ -15,7 +15,9 @@ fun DronePassNavGraph(
     startDestination: String = Screen.Map.route,
     onNavigateToMapWithShape: (String) -> Unit = {},
     pendingFocusShapeId: String? = null,
-    onPendingShapeConsumed: () -> Unit = {}
+    onPendingShapeConsumed: () -> Unit = {},
+    pendingEditShapeId: String? = null,
+    onPendingEditShapeConsumed: () -> Unit = {},
 ) {
     NavHost(navController = navController, startDestination = startDestination) {
         composable(Screen.Login.route) {
@@ -36,6 +38,8 @@ fun DronePassNavGraph(
             MapScreen(
                 focusShapeId = pendingFocusShapeId,
                 onFocusConsumed = onPendingShapeConsumed,
+                editShapeId = pendingEditShapeId,
+                onEditShapeConsumed = onPendingEditShapeConsumed,
                 onNavigateToWeather = {
                     navController.navigate(Screen.Weather.route)
                 }

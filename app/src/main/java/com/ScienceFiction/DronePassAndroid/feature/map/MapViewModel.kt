@@ -97,6 +97,14 @@ class MapViewModel @Inject constructor(
     val showShapeEdit: StateFlow<Boolean> = _showShapeEdit.asStateFlow()
 
     /**
+     * 복제 모드 플래그 — ShapeDetailSheet 의 "복제" 메뉴 → ShapeEditScreen 진입 시 true.
+     * ShapeEditScreen 은 이 값을 받아 신규 UUID + " (복사)" suffix + 신규 createdAt 로 저장한다.
+     * 저장/취소 후 자동 리셋 (false).
+     */
+    private val _isDuplicateMode = MutableStateFlow(false)
+    val isDuplicateMode: StateFlow<Boolean> = _isDuplicateMode.asStateFlow()
+
+    /**
      * 새 도형 생성 좌표 (FAB 클릭 시 지도 중심 좌표)
      */
     private val _newShapeCoordinate = MutableStateFlow<Coordinate?>(null)
@@ -121,12 +129,29 @@ class MapViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
 
     /**
+     * droneId → DroneModel Map. ShapeDetailSheet 가 색상 원 + 이름 + 삭제됨/미할당 상태 분기에 사용.
+     * iOS `connectedDrone` 정합.
+     */
+    val droneById: StateFlow<Map<String, DroneModel>> = droneRepository.getActiveDrones()
+        .map { drones -> drones.associateBy { it.id } }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
+
+    /**
      * 드론 ID 로 이름 조회. droneId 가 null 이거나 매칭이 없으면 null 반환.
      * 호출자(예: MapScreenLayers 의 ShapeDetailSheet) 가 null 일 때 fallback 텍스트 표시.
      */
     fun getDroneName(droneId: String?): String? {
         if (droneId == null) return null
         return droneNameById.value[droneId]
+    }
+
+    /**
+     * 드론 ID 로 DroneModel 조회. ShapeDetailSheet 의 드론 3상태(정상/삭제됨/미할당) 분기에 사용.
+     * iOS `connectedDrone` 정합 — droneId != null 이지만 결과가 null 이면 "삭제된 드론" 상태.
+     */
+    fun getDroneById(droneId: String?): DroneModel? {
+        if (droneId == null) return null
+        return droneById.value[droneId]
     }
 
     /**
@@ -263,6 +288,18 @@ class MapViewModel @Inject constructor(
      */
     fun onEditShapeRequested(shape: ShapeModel) {
         _selectedShapeId.value = shape.id
+        _isDuplicateMode.value = false
+        _showShapeDetail.value = false
+        _showShapeEdit.value = true
+    }
+
+    /**
+     * 도형 복제 요청 — 편집과 동일하지만 isDuplicateMode=true 로 진입.
+     * ShapeEditScreen 은 신규 UUID + " (복사)" suffix 적용.
+     */
+    fun onDuplicateRequested(shape: ShapeModel) {
+        _selectedShapeId.value = shape.id
+        _isDuplicateMode.value = true
         _showShapeDetail.value = false
         _showShapeEdit.value = true
     }
@@ -281,6 +318,7 @@ class MapViewModel @Inject constructor(
                 analyticsLogger.logShapeCreated(shape.shapeType.name)
             }
             _showShapeEdit.value = false
+            _isDuplicateMode.value = false
             _newShapeCoordinate.value = null
         }
     }
@@ -322,6 +360,7 @@ class MapViewModel @Inject constructor(
      */
     fun dismissShapeEdit() {
         _showShapeEdit.value = false
+        _isDuplicateMode.value = false
         _newShapeCoordinate.value = null
         _reverseGeocodedAddress.value = null
     }

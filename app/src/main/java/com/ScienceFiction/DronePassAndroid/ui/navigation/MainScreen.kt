@@ -127,6 +127,8 @@ fun MainScreen(authViewModel: AuthViewModel = hiltViewModel()) {
     }
 
     var pendingFocusShapeId by remember { mutableStateOf<String?>(null) }
+    // 저장 탭 → 편집 시 ShapeDetailSheet 자동 표시 우회용 — focus 와 별도 채널
+    var pendingEditShapeId by remember { mutableStateOf<String?>(null) }
     var showSavedListOverlay by remember { mutableStateOf(false) }
     var showSettingsOverlay by remember { mutableStateOf(false) }
 
@@ -155,7 +157,9 @@ fun MainScreen(authViewModel: AuthViewModel = hiltViewModel()) {
                 }
             },
             pendingFocusShapeId = pendingFocusShapeId,
-            onPendingShapeConsumed = { pendingFocusShapeId = null }
+            onPendingShapeConsumed = { pendingFocusShapeId = null },
+            pendingEditShapeId = pendingEditShapeId,
+            onPendingEditShapeConsumed = { pendingEditShapeId = null },
         )
 
         // Floating tab bar — 오버레이가 떠 있으면 시각적으로 가려지지만 클릭 영역은 살아 있음.
@@ -192,6 +196,10 @@ fun MainScreen(authViewModel: AuthViewModel = hiltViewModel()) {
                 onDismiss = { showSavedListOverlay = false },
                 onNavigateToMapWithShape = { shapeId ->
                     pendingFocusShapeId = shapeId
+                    showSavedListOverlay = false
+                },
+                onNavigateToMapForEdit = { shapeId ->
+                    pendingEditShapeId = shapeId
                     showSavedListOverlay = false
                 },
             )
@@ -398,6 +406,7 @@ private fun handleTabSelection(
 private fun SavedListOverlay(
     onDismiss: () -> Unit,
     onNavigateToMapWithShape: (String) -> Unit,
+    onNavigateToMapForEdit: (String) -> Unit = {},
 ) {
     val configuration = LocalConfiguration.current
     val density = LocalDensity.current
@@ -493,6 +502,7 @@ private fun SavedListOverlay(
                 }
                 SavedListScreen(
                     onNavigateToMapWithShape = onNavigateToMapWithShape,
+                    onNavigateToMapForEdit = onNavigateToMapForEdit,
                     viewModel = savedListViewModel,
                 )
             }

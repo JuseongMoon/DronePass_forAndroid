@@ -340,6 +340,7 @@ internal fun MapBottomSheets(
     val selectedShape by viewModel.selectedShape.collectAsStateWithLifecycle()
     val showShapeDetail by viewModel.showShapeDetail.collectAsStateWithLifecycle()
     val showShapeEdit by viewModel.showShapeEdit.collectAsStateWithLifecycle()
+    val isDuplicateMode by viewModel.isDuplicateMode.collectAsStateWithLifecycle()
     val newShapeCoordinate by viewModel.newShapeCoordinate.collectAsStateWithLifecycle()
     val activeDrones by viewModel.activeDrones.collectAsStateWithLifecycle()
     val reverseGeocodedAddress by viewModel.reverseGeocodedAddress.collectAsStateWithLifecycle()
@@ -347,6 +348,7 @@ internal fun MapBottomSheets(
     val flightZones by viewModel.flightZones.collectAsStateWithLifecycle()
     val showLayerSelector by viewModel.showLayerSelector.collectAsStateWithLifecycle()
     val showZoneDetail by viewModel.showZoneDetail.collectAsStateWithLifecycle()
+    val koreaFeaturesEnabled by viewModel.koreaFeaturesEnabled.collectAsStateWithLifecycle()
     val selectedZone by viewModel.selectedZone.collectAsStateWithLifecycle()
 
     // 도형 상세
@@ -357,7 +359,9 @@ internal fun MapBottomSheets(
                 onEdit = { viewModel.onEditShapeRequested(shape) },
                 onDelete = { viewModel.deleteShape(shape) },
                 onDismiss = { viewModel.dismissShapeDetail() },
-                droneName = viewModel.getDroneName(shape.droneId),
+                onDuplicate = { viewModel.onDuplicateRequested(shape) },
+                drone = viewModel.getDroneById(shape.droneId),
+                koreaFeaturesEnabled = koreaFeaturesEnabled,
             )
         }
     }
@@ -370,7 +374,8 @@ internal fun MapBottomSheets(
             drones = activeDrones,
             reverseGeocodedAddress = reverseGeocodedAddress,
             geocodingApi = viewModel.naverGeocodingApi,
-            onSave = { viewModel.saveShape(it) },
+            isDuplicateMode = isDuplicateMode,
+            onSave = { viewModel.saveShape(it, isDuplicate = isDuplicateMode) },
             onDismiss = { viewModel.dismissShapeEdit() },
         )
     }

@@ -1,5 +1,8 @@
 package com.ScienceFiction.DronePassAndroid.feature.saved
 
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ScienceFiction.DronePassAndroid.core.data.repository.DroneRepository
@@ -37,8 +40,21 @@ data class SavedShapeSections(
 @HiltViewModel
 class SavedListViewModel @Inject constructor(
     private val shapeRepository: ShapeRepository,
-    private val droneRepository: DroneRepository
+    private val droneRepository: DroneRepository,
+    dataStore: DataStore<Preferences>,
 ) : ViewModel() {
+
+    companion object {
+        private val KEY_KOREA_FEATURES_ENABLED = booleanPreferencesKey("korea_features_enabled")
+    }
+
+    /**
+     * 한국 특화 기능 토글 — Settings 정합화 commit 에서 추가된 DataStore key 공유.
+     * ShapeDetailSheet 의 외부 지도 다이얼로그 옵션 분기에 사용 (ON: 4개 / OFF: Google 만).
+     */
+    val koreaFeaturesEnabled: StateFlow<Boolean> = dataStore.data
+        .map { preferences -> preferences[KEY_KOREA_FEATURES_ENABLED] ?: true }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
     private val activeShapes: StateFlow<List<ShapeModel>> = shapeRepository.getActiveShapes()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -53,6 +69,13 @@ class SavedListViewModel @Inject constructor(
      */
     val droneNameById: StateFlow<Map<String, String>> = activeDrones
         .map { drones -> drones.associate { it.id to it.name } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
+
+    /**
+     * droneId → DroneModel Map. ShapeDetailSheet 의 드론 3상태(정상/삭제됨/미할당) 분기에 사용.
+     */
+    val droneById: StateFlow<Map<String, DroneModel>> = activeDrones
+        .map { drones -> drones.associateBy { it.id } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
     private val _sortOption = MutableStateFlow(SortOption.FLIGHT_START)
@@ -137,11 +160,38 @@ class SavedListViewModel @Inject constructor(
     }
 
     /**
+     * 도형 복제 — 신규 UUID + " (복사)" suffix + 신규 createdAt 으로 Repository 에 insert.
+     * iOS ShapeEditView(isDuplicateMode=true) 정합 — 저장 목록 시트에선 즉시 복제 (편집 UI 생략).
+     * 지도 화면 진입 후 ShapeDetailSheet 의 메뉴에서 복제하면 ShapeEditScreen(isDuplicateMode=true) 진입.
+     */
+    fun duplicateShape(shape: ShapeModel, copySuffix: String) {
+        viewModelScope.launch {
+            val now = System.currentTimeMillis()
+            val duplicated = shape.copy(
+                id = java.util.UUID.randomUUID().toString(),
+                title = "${shape.title} $copySuffix",
+                createdAt = now,
+                updatedAt = now,
+            )
+            shapeRepository.insertShape(duplicated)
+            dismissShapeDetail()
+        }
+    }
+
+    /**
      * 드론 ID로 드론 이름 조회. [droneNameById] 캐시를 사용하여 O(1) 조회.
      */
     fun getDroneName(droneId: String?): String? {
         if (droneId == null) return null
         return droneNameById.value[droneId]
+    }
+
+    /**
+     * 드론 ID 로 DroneModel 조회. ShapeDetailSheet 의 드론 3상태(정상/삭제됨/미할당) 분기에 사용.
+     */
+    fun getDroneById(droneId: String?): DroneModel? {
+        if (droneId == null) return null
+        return droneById.value[droneId]
     }
 
     private fun sortShapes(

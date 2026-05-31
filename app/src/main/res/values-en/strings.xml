@@ -133,6 +133,20 @@
     <string name="shape_edit_label_memo">Memo</string>
     <string name="shape_edit_placeholder_memo">Enter memo</string>
     <string name="shape_edit_default_title">New shape</string>
+    <string name="shape_edit_navigation_cancel">Cancel</string>
+    <string name="shape_edit_navigation_save">Save</string>
+    <string name="shape_edit_alert_unsaved_title">Discard changes</string>
+    <string name="shape_edit_alert_unsaved_message">You have unsaved changes. Discard them?</string>
+    <string name="shape_edit_alert_unsaved_discard">Discard</string>
+    <string name="shape_edit_title_label">Title</string>
+    <string name="shape_edit_title_placeholder">Enter title</string>
+    <string name="shape_edit_coordinate_label">Coordinates</string>
+    <string name="shape_edit_coordinate_placeholder">Enter coordinates</string>
+    <string name="shape_edit_address_search_placeholder">Search address</string>
+    <string name="shape_edit_radius_label">Radius (m)</string>
+    <string name="shape_edit_altitude_label">Altitude (m)</string>
+    <string name="shape_edit_drone_label">Select drone</string>
+    <string name="shape_edit_drone_placeholder">Select drone</string>
 
     <!-- DroneListScreen -->
     <string name="drone_list_title">My drones</string>
@@ -257,6 +271,12 @@
 
     <!-- Phase 9-B/C: Detail & List enhancements -->
     <string name="shape_detail_open_external_map">Open in external map app</string>
+    <string name="shape_detail_title_label">Title</string>
+    <string name="shape_detail_navigation_title">Shape Details</string>
+    <string name="shape_detail_more_menu">More</string>
+    <string name="shape_detail_drone_deleted">Deleted drone</string>
+    <string name="shape_detail_drone_unassigned">No drone assigned</string>
+    <string name="shape_detail_navigation_message">Start navigation to %s.</string>
     <string name="shape_detail_open_naver_map">Naver Map</string>
     <string name="shape_detail_open_kakao_map">KakaoMap</string>
     <string name="shape_detail_open_tmap">TMAP</string>

@@ -75,6 +75,8 @@ import com.naver.maps.map.util.FusedLocationSource
 fun MapScreen(
     focusShapeId: String? = null,
     onFocusConsumed: () -> Unit = {},
+    editShapeId: String? = null,
+    onEditShapeConsumed: () -> Unit = {},
     onNavigateToWeather: () -> Unit = {},
     viewModel: MapViewModel = hiltViewModel(),
     sketchViewModel: SketchViewModel = hiltViewModel(),
@@ -169,6 +171,20 @@ fun MapScreen(
                 viewModel.moveCameraToShape(shape)
             }
             onFocusConsumed()
+        }
+    }
+
+    // 탭 간 연동: 저장 목록에서 편집 진입 시 상세 시트 건너뛰고 바로 편집 시트.
+    // (focusShapeId 경로는 onShapeSelected → ShapeDetailSheet 자동 표시되므로 별도 채널 필요)
+    LaunchedEffect(editShapeId, mapReady) {
+        if (editShapeId != null && mapReady) {
+            val activeShapes = viewModel.activeShapes.value
+            val shape = activeShapes.find { it.id == editShapeId }
+            if (shape != null) {
+                viewModel.onEditShapeRequested(shape)
+                viewModel.moveCameraToShape(shape)
+            }
+            onEditShapeConsumed()
         }
     }
 
