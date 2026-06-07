@@ -329,7 +329,7 @@ class ProfileViewModel @Inject constructor(
     }
 
     private suspend fun saveAnonymizedStats() {
-        val shapes = runCatching { shapeRepository.getActiveShapes().first() }.getOrDefault(emptyList())
+        val shapes = runCatching { shapeRepository.getAllShapes().first() }.getOrDefault(emptyList())
         val drones = runCatching { droneRepository.getAllDrones().first() }.getOrDefault(emptyList())
         val cloudSyncEnabled = storedCloudBackupEnabled(dataStore.data.first())
         val now = System.currentTimeMillis()

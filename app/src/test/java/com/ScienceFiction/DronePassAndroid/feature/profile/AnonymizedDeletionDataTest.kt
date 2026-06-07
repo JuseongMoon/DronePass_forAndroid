@@ -18,6 +18,7 @@ class AnonymizedDeletionDataTest {
             shape(id = "shape-1", shapeType = ShapeType.CIRCLE),
             shape(id = "shape-2", shapeType = ShapeType.POLYGON),
             shape(id = "shape-3", shapeType = ShapeType.POLYGON),
+            shape(id = "shape-deleted", shapeType = ShapeType.CIRCLE, deletedAt = 1_700_000_020_000L),
         )
         val drones = listOf(
             drone(id = "drone-active", deletedAt = null),
@@ -32,11 +33,11 @@ class AnonymizedDeletionDataTest {
             accountCreatedAtMillis = 1_600_000_000_000L,
         )
 
-        assertEquals(3, data["totalShapesCreated"])
+        assertEquals(4, data["totalShapesCreated"])
         assertEquals(1, data["totalDronesUsed"])
         assertEquals(true, data["cloudSyncEnabled"])
         assertEquals("Android", data["devicePlatform"])
-        assertEquals(mapOf("circle" to 1, "polygon" to 2), data["shapeTypeDistribution"])
+        assertEquals(mapOf("circle" to 2, "polygon" to 2), data["shapeTypeDistribution"])
         assertEquals(1_700_000_000_000L, (data["deletedAt"] as Timestamp).toDate().time)
         assertEquals(1_600_000_000_000L, (data["accountCreatedAt"] as Timestamp).toDate().time)
     }
