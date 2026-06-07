@@ -18,6 +18,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
@@ -44,6 +45,17 @@ internal fun resolveRealtimeSyncRestartUserId(
     currentAuthUserId: String?,
 ): String? {
     return currentListeningUserId ?: currentAuthUserId
+}
+
+internal fun shouldScheduleRealtimeSync(
+    serverLastModified: Long,
+    lastSyncTime: Long?,
+    lastLocalModificationTime: Long?,
+): Boolean {
+    if (lastLocalModificationTime != null && serverLastModified <= lastLocalModificationTime) {
+        return false
+    }
+    return serverLastModified > (lastSyncTime ?: Long.MIN_VALUE)
 }
 
 /**
@@ -186,17 +198,24 @@ class RealtimeSyncManager @Inject constructor(
                     ?: return@addSnapshotListener
                 Log.d(TAG, "Shape/Drone 서버 메타데이터 변경 감지: lastModified=$lastModified")
 
-                // 자신의 변경에 의한 트리거 스킵
-                if (lastModified <= lastShapeSyncTime) {
-                    Log.d(TAG, "자신의 변경(또는 과거 시각)으로 판단되어 Shape/Drone 동기화를 건너뜁니다.")
-                    return@addSnapshotListener
-                }
+                scope.launch {
+                    val preferences = dataStore.data.first()
+                    val shouldSchedule = shouldScheduleRealtimeSync(
+                        serverLastModified = lastModified,
+                        lastSyncTime = preferences[SyncPreferenceKeys.LAST_SYNC_TIME] ?: lastShapeSyncTime,
+                        lastLocalModificationTime = preferences[SyncPreferenceKeys.LAST_LOCAL_MODIFICATION_TIME],
+                    )
+                    if (!shouldSchedule) {
+                        Log.d(TAG, "자신의 변경(또는 이미 반영된 시각)으로 판단되어 Shape/Drone 동기화를 건너뜁니다.")
+                        return@launch
+                    }
 
-                // 디바운싱: 이전 Job 취소 후 2초 대기
-                debounceJob?.cancel()
-                debounceJob = scope.launch {
-                    delay(DEBOUNCE_DELAY_MS)
-                    performShapeAndDroneSync()
+                    // 디바운싱: 이전 Job 취소 후 2초 대기
+                    debounceJob?.cancel()
+                    debounceJob = scope.launch {
+                        delay(DEBOUNCE_DELAY_MS)
+                        performShapeAndDroneSync()
+                    }
                 }
             }
         }
@@ -227,17 +246,24 @@ class RealtimeSyncManager @Inject constructor(
                     ?: return@addSnapshotListener
                 Log.d(TAG, "Sketch 서버 메타데이터 변경 감지: lastModified=$lastModified")
 
-                // 자신의 변경에 의한 트리거 스킵
-                if (lastModified <= lastSketchSyncTime) {
-                    Log.d(TAG, "자신의 변경(또는 과거 시각)으로 판단되어 Sketch 동기화를 건너뜁니다.")
-                    return@addSnapshotListener
-                }
+                scope.launch {
+                    val preferences = dataStore.data.first()
+                    val shouldSchedule = shouldScheduleRealtimeSync(
+                        serverLastModified = lastModified,
+                        lastSyncTime = preferences[SyncPreferenceKeys.LAST_SKETCH_SYNC_TIME] ?: lastSketchSyncTime,
+                        lastLocalModificationTime = preferences[SyncPreferenceKeys.LAST_LOCAL_SKETCH_MODIFICATION_TIME],
+                    )
+                    if (!shouldSchedule) {
+                        Log.d(TAG, "자신의 변경(또는 이미 반영된 시각)으로 판단되어 Sketch 동기화를 건너뜁니다.")
+                        return@launch
+                    }
 
-                // 디바운싱: 이전 Job 취소 후 2초 대기
-                sketchDebounceJob?.cancel()
-                sketchDebounceJob = scope.launch {
-                    delay(DEBOUNCE_DELAY_MS)
-                    performSketchSync()
+                    // 디바운싱: 이전 Job 취소 후 2초 대기
+                    sketchDebounceJob?.cancel()
+                    sketchDebounceJob = scope.launch {
+                        delay(DEBOUNCE_DELAY_MS)
+                        performSketchSync()
+                    }
                 }
             }
         }

@@ -23,6 +23,46 @@ class RealtimeSyncManagerTest {
     }
 
     @Test
+    fun `realtime listener schedules only server changes newer than last sync like iOS`() {
+        assertEquals(
+            true,
+            shouldScheduleRealtimeSync(
+                serverLastModified = 300L,
+                lastSyncTime = 200L,
+                lastLocalModificationTime = null,
+            ),
+        )
+        assertEquals(
+            false,
+            shouldScheduleRealtimeSync(
+                serverLastModified = 200L,
+                lastSyncTime = 200L,
+                lastLocalModificationTime = null,
+            ),
+        )
+    }
+
+    @Test
+    fun `realtime listener skips server timestamps covered by local modification like iOS`() {
+        assertEquals(
+            false,
+            shouldScheduleRealtimeSync(
+                serverLastModified = 200L,
+                lastSyncTime = 100L,
+                lastLocalModificationTime = 200L,
+            ),
+        )
+        assertEquals(
+            true,
+            shouldScheduleRealtimeSync(
+                serverLastModified = 300L,
+                lastSyncTime = 100L,
+                lastLocalModificationTime = 200L,
+            ),
+        )
+    }
+
+    @Test
     fun `realtime sync restart keeps active listener user first`() {
         assertEquals(
             "listening-user",
