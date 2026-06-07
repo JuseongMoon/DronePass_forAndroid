@@ -2,7 +2,11 @@ package com.ScienceFiction.DronePassAndroid.feature.map
 
 import androidx.compose.ui.unit.dp
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.FlightZoneLayer
+import com.ScienceFiction.DronePassAndroid.domain.model.Coordinate
+import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class MapScreenLayersTest {
@@ -44,6 +48,61 @@ class MapScreenLayersTest {
         assertEquals(false, shouldRenderFlightZoneOverlays(mapReady = true, isSketchMode = true))
         assertEquals(true, shouldRenderFlightZoneOverlays(mapReady = true, isSketchMode = false))
         assertEquals(false, shouldRenderFlightZoneOverlays(mapReady = false, isSketchMode = false))
+    }
+
+    @Test
+    fun `새 도형 편집 시트는 기존 선택 도형이 있어도 iOS처럼 신규 좌표로 진입한다`() {
+        val selectedShape = ShapeModel(
+            id = "selected-shape",
+            title = "Selected",
+            baseCoordinate = Coordinate(37.0, 127.0),
+        )
+
+        val editingShape = resolveShapeEditSheetShape(
+            selectedShape = selectedShape,
+            newShapeCoordinate = Coordinate(37.5, 127.5),
+            isDuplicateMode = false,
+        )
+
+        assertNull(editingShape)
+        assertTrue(
+            shouldFocusShapeAfterMapEditSave(
+                editingShape = editingShape,
+                isDuplicateMode = false,
+            )
+        )
+    }
+
+    @Test
+    fun `기존 도형 편집과 복제 시트는 선택 도형을 유지한다`() {
+        val selectedShape = ShapeModel(
+            id = "selected-shape",
+            title = "Selected",
+            baseCoordinate = Coordinate(37.0, 127.0),
+        )
+
+        assertEquals(
+            selectedShape,
+            resolveShapeEditSheetShape(
+                selectedShape = selectedShape,
+                newShapeCoordinate = null,
+                isDuplicateMode = false,
+            ),
+        )
+        assertEquals(
+            selectedShape,
+            resolveShapeEditSheetShape(
+                selectedShape = selectedShape,
+                newShapeCoordinate = Coordinate(37.5, 127.5),
+                isDuplicateMode = true,
+            ),
+        )
+        assertTrue(
+            shouldFocusShapeAfterMapEditSave(
+                editingShape = selectedShape,
+                isDuplicateMode = true,
+            )
+        )
     }
 
     @Test

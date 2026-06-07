@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.FlightZoneLayer
 import com.ScienceFiction.DronePassAndroid.domain.model.Coordinate
+import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 import com.ScienceFiction.DronePassAndroid.feature.kp.KpForecastContent
 import com.ScienceFiction.DronePassAndroid.feature.kp.KpSheetHeader
 import com.ScienceFiction.DronePassAndroid.feature.kp.KpViewModel
@@ -285,6 +286,20 @@ internal fun resolveCreateShapeCoordinateFromMapCenter(
         Coordinate(MapCreateShapeFallbackLatitude, MapCreateShapeFallbackLongitude)
     }
 }
+
+internal fun resolveShapeEditSheetShape(
+    selectedShape: ShapeModel?,
+    newShapeCoordinate: Coordinate?,
+    isDuplicateMode: Boolean,
+): ShapeModel? {
+    if (!isDuplicateMode && newShapeCoordinate != null) return null
+    return selectedShape
+}
+
+internal fun shouldFocusShapeAfterMapEditSave(
+    editingShape: ShapeModel?,
+    isDuplicateMode: Boolean,
+): Boolean = editingShape == null || isDuplicateMode
 
 internal fun shouldRenderShapeOverlays(
     mapReady: Boolean,
@@ -607,8 +622,13 @@ internal fun MapBottomSheets(
 
     // 도형 생성/편집
     if (showShapeEdit) {
+        val editingShape = resolveShapeEditSheetShape(
+            selectedShape = selectedShape,
+            newShapeCoordinate = newShapeCoordinate,
+            isDuplicateMode = isDuplicateMode,
+        )
         ShapeEditScreen(
-            shape = selectedShape,
+            shape = editingShape,
             initialCoordinate = newShapeCoordinate,
             drones = activeDrones,
             editDefaults = shapeEditDefaults,
@@ -623,7 +643,10 @@ internal fun MapBottomSheets(
                 viewModel.saveShape(
                     shape = updatedShape,
                     isDuplicate = isDuplicateMode,
-                    focusAfterSave = selectedShape == null || isDuplicateMode,
+                    focusAfterSave = shouldFocusShapeAfterMapEditSave(
+                        editingShape = editingShape,
+                        isDuplicateMode = isDuplicateMode,
+                    ),
                     originalShapeAtEditStart = originalShapeAtEditStart,
                 )
             },

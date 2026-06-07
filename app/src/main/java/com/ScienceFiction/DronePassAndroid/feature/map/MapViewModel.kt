@@ -509,6 +509,7 @@ class MapViewModel @Inject constructor(
      * iOS plusButtonView 와 동일하게 지도 중심 좌표만 넘기고 주소는 비워둔다.
      */
     fun onCreateShapeRequested(coordinate: Coordinate) {
+        resetShapeSelectionForNewShapeEdit()
         pendingNewShapeRequestGeneration++
         _pendingNewShapeRequest.value = null
         _newShapeCoordinate.value = coordinate
@@ -521,6 +522,7 @@ class MapViewModel @Inject constructor(
      * iOS MainView.handleLongPress 처럼 역지오코딩 후 확인창을 거쳐 편집 시트를 연다.
      */
     fun onCreateShapeAtCoordinate(coordinate: Coordinate) {
+        resetShapeSelectionForNewShapeEdit()
         val requestGeneration = ++pendingNewShapeRequestGeneration
         _pendingNewShapeRequest.value = null
         _newShapeCoordinate.value = coordinate
@@ -557,6 +559,7 @@ class MapViewModel @Inject constructor(
 
     fun confirmPendingNewShapeRequest(addressNotFoundFallback: String) {
         val request = _pendingNewShapeRequest.value ?: return
+        resetShapeSelectionForNewShapeEdit()
         pendingNewShapeRequestGeneration++
         _newShapeCoordinate.value = request.coordinate
         _reverseGeocodedAddress.value = resolvePendingNewShapeAddress(
@@ -565,6 +568,14 @@ class MapViewModel @Inject constructor(
         )
         _pendingNewShapeRequest.value = null
         _showShapeEdit.value = true
+    }
+
+    private fun resetShapeSelectionForNewShapeEdit() {
+        _selectedShapeId.value = null
+        _showShapeDetail.value = false
+        _isDuplicateMode.value = false
+        returnToShapeDetailAfterEditSave = false
+        returnToShapeDetailAfterEditDismiss = false
     }
 
     fun cancelPendingNewShapeRequest() {
