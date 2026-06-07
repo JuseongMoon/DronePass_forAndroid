@@ -266,6 +266,11 @@ internal fun resolveShapeEditSelectedColor(
     return selectedDrone?.color ?: defaultColor
 }
 
+internal fun resolveShapeEditDefaultColor(activeShapes: List<ShapeModel>): String {
+    val firstActiveShape = activeShapes.firstOrNull() ?: return PaletteColor.BLUE.hex
+    return PaletteColor.fromHex(firstActiveShape.color)?.hex ?: PaletteColor.BLUE.hex
+}
+
 internal fun buildShapeEditSavedShape(
     originalShape: ShapeModel?,
     isDuplicateMode: Boolean,

@@ -78,6 +78,7 @@ fun SavedListScreen(
     val isDuplicateMode by viewModel.isDuplicateMode.collectAsStateWithLifecycle()
     val shapeEditDefaults by viewModel.shapeEditDefaults.collectAsStateWithLifecycle()
     val primarySelectedDroneId by viewModel.primarySelectedDroneId.collectAsStateWithLifecycle()
+    val defaultShapeColor by viewModel.defaultShapeColor.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
     var internalFocusShapeId by remember { mutableStateOf<String?>(null) }
 
@@ -284,6 +285,7 @@ fun SavedListScreen(
                 drones = activeDrones,
                 editDefaults = shapeEditDefaults,
                 fallbackSelectedDroneId = primarySelectedDroneId,
+                defaultShapeColor = defaultShapeColor,
                 reverseGeocodedAddress = null,
                 geocodingApi = viewModel.naverGeocodingApi,
                 isDuplicateMode = isDuplicateMode,

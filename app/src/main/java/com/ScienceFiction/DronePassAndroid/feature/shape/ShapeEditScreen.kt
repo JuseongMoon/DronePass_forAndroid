@@ -80,6 +80,7 @@ import com.ScienceFiction.DronePassAndroid.core.data.repository.reverseGeocoding
 import com.ScienceFiction.DronePassAndroid.core.util.CoordinateParser
 import com.ScienceFiction.DronePassAndroid.domain.model.Coordinate
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
+import com.ScienceFiction.DronePassAndroid.domain.model.PaletteColor
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 
 import java.text.DateFormat
@@ -121,6 +122,7 @@ fun ShapeEditScreen(
     drones: List<DroneModel> = emptyList(),
     editDefaults: ShapeEditDefaults = ShapeEditDefaults(),
     fallbackSelectedDroneId: String? = null,
+    defaultShapeColor: String = PaletteColor.BLUE.hex,
     reverseGeocodedAddress: String? = null,
     geocodingApi: NaverGeocodingApi? = null,
     isDuplicateMode: Boolean = false,
@@ -300,7 +302,10 @@ fun ShapeEditScreen(
 
         val now = System.currentTimeMillis()
         // 색상은 선택된 드론의 color 문자열을 그대로 적용 (iOS ShapeEditViewModel selectedColor 정합)
-        val selectedColor = resolveShapeEditSelectedColor(selectedDrone)
+        val selectedColor = resolveShapeEditSelectedColor(
+            selectedDrone = selectedDrone,
+            defaultColor = defaultShapeColor,
+        )
         onPersistEditDefaults(
             ShapeEditDefaults(
                 selectedDroneId = selectedDroneId,

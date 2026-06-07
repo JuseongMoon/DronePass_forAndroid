@@ -496,8 +496,35 @@ class ShapeEditDefaultsTest {
     }
 
     @Test
-    fun `선택된 드론이 없으면 iOS 기본 도형 색상인 파랑을 저장한다`() {
+    fun `선택된 드론이 없으면 iOS처럼 전달된 기본 도형 색상을 저장한다`() {
+        assertEquals(PaletteColor.GREEN.hex, resolveShapeEditSelectedColor(null, PaletteColor.GREEN.hex))
+    }
+
+    @Test
+    fun `기본 도형 색상이 없으면 iOS 기본값인 파랑을 저장한다`() {
         assertEquals(PaletteColor.BLUE.hex, resolveShapeEditSelectedColor(null))
+    }
+
+    @Test
+    fun `기본 도형 색상은 iOS ColorManager처럼 첫 활성 도형 팔레트 색상을 사용한다`() {
+        val shapes = listOf(
+            ShapeModel(id = "shape-green", color = "#34c759"),
+            ShapeModel(id = "shape-red", color = PaletteColor.RED.hex),
+        )
+
+        assertEquals(PaletteColor.GREEN.hex, resolveShapeEditDefaultColor(shapes))
+    }
+
+    @Test
+    fun `첫 활성 도형 색상이 팔레트 밖이면 기본 도형 색상은 iOS처럼 파랑이다`() {
+        val shapes = listOf(ShapeModel(id = "shape-custom", color = "#123456"))
+
+        assertEquals(PaletteColor.BLUE.hex, resolveShapeEditDefaultColor(shapes))
+    }
+
+    @Test
+    fun `활성 도형이 없으면 기본 도형 색상은 iOS 기본값인 파랑이다`() {
+        assertEquals(PaletteColor.BLUE.hex, resolveShapeEditDefaultColor(emptyList()))
     }
 
     @Test
