@@ -2,7 +2,9 @@ package com.ScienceFiction.DronePassAndroid.feature.map
 
 import androidx.compose.ui.unit.dp
 import com.ScienceFiction.DronePassAndroid.domain.model.Coordinate
+import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
+import com.ScienceFiction.DronePassAndroid.feature.drone.filterShapesForSelectedDrones
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -285,6 +287,27 @@ class MapCameraFocusTest {
     }
 
     @Test
+    fun `지도 포커스 요청은 iOS처럼 선택된 드론의 표시 도형만 대상으로 삼는다`() {
+        val visibleShapes = filterShapesForSelectedDrones(
+            shapes = listOf(
+                shape(id = "selected-drone-shape", start = 1_000, end = 3_000, droneId = "drone-a"),
+                shape(id = "hidden-drone-shape", start = 1_000, end = 3_000, droneId = "drone-b"),
+            ),
+            activeDrones = listOf(
+                DroneModel(id = "drone-a", name = "A"),
+                DroneModel(id = "drone-b", name = "B"),
+            ),
+            selectedDroneIds = setOf("drone-a"),
+        )
+
+        assertEquals(
+            "selected-drone-shape",
+            resolvePendingMapShapeRequestTarget("selected-drone-shape", visibleShapes)?.id,
+        )
+        assertNull(resolvePendingMapShapeRequestTarget("hidden-drone-shape", visibleShapes))
+    }
+
+    @Test
     fun `상세에서 편집한 도형은 iOS처럼 저장 후 상세 화면으로 돌아간다`() {
         assertEquals(
             ShapeEditPostSaveAction.RETURN_TO_DETAIL,
@@ -448,6 +471,7 @@ class MapCameraFocusTest {
         start: Long,
         end: Long,
         coordinate: Coordinate = Coordinate(37.0, 127.0),
+        droneId: String = "drone-a",
     ): ShapeModel {
         return ShapeModel(
             id = id,
@@ -455,7 +479,7 @@ class MapCameraFocusTest {
             baseCoordinate = coordinate,
             flightStartDate = start,
             flightEndDate = end,
-            droneId = "drone-a",
+            droneId = droneId,
         )
     }
 }

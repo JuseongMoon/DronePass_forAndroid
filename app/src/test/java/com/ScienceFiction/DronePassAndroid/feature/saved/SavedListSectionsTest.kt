@@ -67,6 +67,35 @@ class SavedListSectionsTest {
     }
 
     @Test
+    fun `저장 목록 포커스 후보는 iOS처럼 선택된 드론 도형만 포함한다`() {
+        val sections = buildSavedShapeSections(
+            shapes = listOf(
+                shape(id = "selected-drone-shape", start = 1_000, end = 3_000, droneId = "drone-a"),
+                shape(id = "hidden-drone-shape", start = 1_000, end = 3_000, droneId = "drone-b"),
+            ),
+            activeDrones = listOf(
+                DroneModel(id = "drone-a", name = "A"),
+                DroneModel(id = "drone-b", name = "B"),
+            ),
+            selectedDroneIds = setOf("drone-a"),
+            sortOption = SortOption.FLIGHT_START,
+            sortDirection = SortDirection.ASCENDING,
+            visibilitySettings = SavedShapeVisibilitySettings(),
+            now = 2_000,
+        )
+
+        assertEquals(listOf("selected-drone-shape"), sections.activeFiltered.map { it.id })
+        assertNull(
+            findLazyListIndex(
+                shapeId = "hidden-drone-shape",
+                activeShapes = sections.activeFiltered,
+                notStartedShapes = sections.notStarted,
+                expiredShapes = sections.expired,
+            ),
+        )
+    }
+
+    @Test
     fun `저장 목록은 iOS처럼 종료 시각과 현재가 같으면 만료 섹션으로 분류한다`() {
         val now = 10_000L
         val sections = buildSavedShapeSections(
@@ -396,13 +425,19 @@ class SavedListSectionsTest {
         assertEquals(100L, SavedListFocusScrollDelayMs)
     }
 
-    private fun shape(id: String, start: Long, end: Long?): ShapeModel {
+    private fun shape(
+        id: String,
+        start: Long,
+        end: Long?,
+        droneId: String = "drone-a",
+    ): ShapeModel {
         return shape(
             id = id,
             title = id,
             address = null,
             start = start,
             end = end,
+            droneId = droneId,
         )
     }
 
@@ -412,6 +447,7 @@ class SavedListSectionsTest {
         address: String?,
         start: Long,
         end: Long?,
+        droneId: String = "drone-a",
     ): ShapeModel {
         return ShapeModel(
             id = id,
@@ -420,7 +456,7 @@ class SavedListSectionsTest {
             baseCoordinate = Coordinate(37.0, 127.0),
             flightStartDate = start,
             flightEndDate = end,
-            droneId = "drone-a",
+            droneId = droneId,
         )
     }
 }
