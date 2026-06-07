@@ -1,6 +1,7 @@
 package com.ScienceFiction.DronePassAndroid.core.util
 
 import kotlin.math.exp
+import kotlin.math.roundToInt
 
 /**
  * CRI (Condensation Risk Index) 결로위험지수 계산기
@@ -9,7 +10,7 @@ import kotlin.math.exp
  * 채널2: CRI_RH = 상대습도 (Magnus 공식)
  * 합성: max(CRI_DeltaT, CRI_RH)
  * 풍속보정: >= 5m/s -> x0.8, >= 2m/s -> x0.9, 하한=CRI_RH
- * 최종: clamp(1, 100)
+ * 최종: clamp(1, 100), iOS WeatherManager처럼 정수 반올림
  */
 object CRICalculator {
 
@@ -23,7 +24,7 @@ object CRICalculator {
      * @param temperature 온도 (Celsius)
      * @param dewPoint 이슬점 (Celsius)
      * @param windSpeed 풍속 (m/s)
-     * @return CRI 값 (1-100) 또는 비정상 입력 시 NaN
+     * @return iOS WeatherManager처럼 반올림된 CRI 값 (1-100) 또는 비정상 입력 시 NaN
      */
     fun calculate(temperature: Double, dewPoint: Double, windSpeed: Double): Double {
         // 입력 유효성 검증 (NaN/Infinity)
@@ -61,8 +62,8 @@ object CRICalculator {
         // 하한: CRI_RH 이하로 내려가지 않음
         val criFinal = maxOf(criWindAdjusted, criRH)
 
-        // 최종: 1-100 범위로 클램핑
-        return criFinal.coerceIn(1.0, 100.0)
+        // 최종: 1-100 범위로 클램핑 후 iOS WeatherManager.finalCRI처럼 반올림
+        return criFinal.coerceIn(1.0, 100.0).roundToInt().toDouble()
     }
 
     /**

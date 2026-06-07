@@ -37,6 +37,13 @@ class CRICalculatorTest {
         assertEquals(100.0, cri, 0.01)
     }
 
+    @Test
+    fun `최종 CRI는 iOS WeatherManager처럼 정수로 반올림된다`() {
+        val cri = CRICalculator.calculate(temperature = 20.0, dewPoint = 15.0, windSpeed = 10.0)
+
+        assertEquals(73.0, cri, 0.0)
+    }
+
     // endregion
 
     // region 비정상 입력 가드
