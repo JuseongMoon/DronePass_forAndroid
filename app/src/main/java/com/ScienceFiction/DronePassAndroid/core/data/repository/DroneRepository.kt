@@ -9,6 +9,7 @@ import com.ScienceFiction.DronePassAndroid.core.data.local.room.mapper.toEntity
 import com.ScienceFiction.DronePassAndroid.core.data.remote.firebase.DroneFirebaseStore
 import com.ScienceFiction.DronePassAndroid.core.data.sync.filterServerNewer
 import com.ScienceFiction.DronePassAndroid.core.data.sync.mergeLWW
+import com.ScienceFiction.DronePassAndroid.core.data.sync.shouldUpdateServerMetadataAfterFullSync
 import com.ScienceFiction.DronePassAndroid.core.util.compareIosLocalizedStandardStrings
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.google.firebase.auth.FirebaseAuth
@@ -214,7 +215,9 @@ class DroneRepository @Inject constructor(
                 droneFirebaseStore.saveDrones(userId, result.toUpload)
             }
 
-            droneFirebaseStore.updateServerMetadata(userId)
+            if (shouldUpdateServerMetadataAfterFullSync(result.toUpload.size)) {
+                droneFirebaseStore.updateServerMetadata(userId)
+            }
 
             Log.d(TAG, "performFullSync 완료: 로컬=${localDrones.size}, 서버=${serverDrones.size}, 머지=${result.merged.size}, 업로드=${result.toUpload.size}")
         } catch (e: Exception) {

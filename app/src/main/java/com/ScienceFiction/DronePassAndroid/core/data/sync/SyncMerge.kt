@@ -12,6 +12,17 @@ data class SyncMergeResult<T>(
 )
 
 /**
+ * performFullSync 후 서버 metadata 문서를 다시 갱신해야 하는지 판단한다.
+ *
+ * iOS 실시간 동기화는 서버 변경을 내려받아 로컬에 적용하는 것만으로는 metadata/server 를
+ * 다시 쓰지 않는다. Android도 실제 업로드가 있을 때만 metadata 를 갱신해야 다른 기기의
+ * 리스너가 다운로드 전용 동기화에 다시 반응하는 루프를 만들지 않는다.
+ */
+fun shouldUpdateServerMetadataAfterFullSync(uploadedItemCount: Int): Boolean {
+    return uploadedItemCount > 0
+}
+
+/**
  * 로컬·서버 양쪽 데이터를 LWW 전략으로 머지한다.
  *
  * - 한쪽에만 있으면 그쪽 값 채택

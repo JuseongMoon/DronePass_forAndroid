@@ -1,6 +1,8 @@
 package com.ScienceFiction.DronePassAndroid.core.data.sync
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class SyncMergeTest {
@@ -147,6 +149,12 @@ class SyncMergeTest {
         )
 
         assertEquals(emptyList<SyncItem>(), toApply)
+    }
+
+    @Test
+    fun `full sync metadata is updated only when local winners are uploaded`() {
+        assertTrue(shouldUpdateServerMetadataAfterFullSync(uploadedItemCount = 1))
+        assertFalse(shouldUpdateServerMetadataAfterFullSync(uploadedItemCount = 0))
     }
 
     private fun merge(

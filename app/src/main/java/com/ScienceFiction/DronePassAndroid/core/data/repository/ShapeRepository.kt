@@ -10,6 +10,7 @@ import com.ScienceFiction.DronePassAndroid.core.data.local.room.mapper.toEntity
 import com.ScienceFiction.DronePassAndroid.core.data.remote.firebase.ShapeFirebaseStore
 import com.ScienceFiction.DronePassAndroid.core.data.sync.filterServerNewer
 import com.ScienceFiction.DronePassAndroid.core.data.sync.mergeLWW
+import com.ScienceFiction.DronePassAndroid.core.data.sync.shouldUpdateServerMetadataAfterFullSync
 import com.ScienceFiction.DronePassAndroid.core.data.storedEndDateAlarmEnabled
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 import com.ScienceFiction.DronePassAndroid.domain.model.validateForFirebasePersistence
@@ -361,7 +362,9 @@ class ShapeRepository @Inject constructor(
                 shapeFirebaseStore.saveShapes(userId, toUpload)
             }
 
-            shapeFirebaseStore.updateServerMetadata(userId)
+            if (shouldUpdateServerMetadataAfterFullSync(toUpload.size)) {
+                shapeFirebaseStore.updateServerMetadata(userId)
+            }
 
             Log.d(TAG, "performFullSync 완료: 로컬=${localShapes.size}, 서버=${serverShapes.size}, 머지=${result.merged.size}, 업로드=${result.toUpload.size}")
         } catch (e: Exception) {

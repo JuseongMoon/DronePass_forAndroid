@@ -7,6 +7,7 @@ import com.ScienceFiction.DronePassAndroid.core.data.local.room.mapper.toEntity
 import com.ScienceFiction.DronePassAndroid.core.data.remote.firebase.SketchFirebaseStore
 import com.ScienceFiction.DronePassAndroid.core.data.sync.filterServerNewer
 import com.ScienceFiction.DronePassAndroid.core.data.sync.mergeLWW
+import com.ScienceFiction.DronePassAndroid.core.data.sync.shouldUpdateServerMetadataAfterFullSync
 import com.ScienceFiction.DronePassAndroid.domain.model.SketchModel
 import com.ScienceFiction.DronePassAndroid.domain.model.validateForFirebasePersistence
 import com.google.firebase.auth.FirebaseAuth
@@ -317,7 +318,9 @@ class SketchRepository @Inject constructor(
                 sketchFirebaseStore.saveSketches(userId, toUpload)
             }
 
-            sketchFirebaseStore.updateServerMetadata(userId)
+            if (shouldUpdateServerMetadataAfterFullSync(toUpload.size)) {
+                sketchFirebaseStore.updateServerMetadata(userId)
+            }
 
             Log.d(TAG, "performFullSync 완료: 로컬=${localSketches.size}, 서버=${serverSketches.size}, 머지=${result.merged.size}, 업로드=${result.toUpload.size}")
         } catch (e: Exception) {
