@@ -7,6 +7,16 @@ import com.google.firebase.ktx.Firebase
 import javax.inject.Inject
 import javax.inject.Singleton
 
+internal const val AnalyticsEventSketchModeEnter = "sketch_mode_enter"
+internal const val AnalyticsEventSketchModeExit = "sketch_mode_exit"
+internal const val AnalyticsEventSketchCreated = "sketch_created"
+internal const val AnalyticsEventSketchDeleted = "sketch_deleted"
+internal const val AnalyticsEventSketchAllCleared = "sketch_all_cleared"
+internal const val AnalyticsParamDurationSeconds = "duration_seconds"
+internal const val AnalyticsParamTotalCount = "total_count"
+internal const val AnalyticsParamActiveCount = "active_count"
+internal const val AnalyticsParamDeletedCount = "deleted_count"
+
 /**
  * Firebase Analytics 이벤트 로깅 헬퍼
  *
@@ -37,12 +47,36 @@ class AnalyticsLogger @Inject constructor() {
 
     /** 스케치 모드 진입 이벤트 */
     fun logSketchModeEntered() {
-        analytics.logEvent("sketch_mode_entered", null)
+        analytics.logEvent(AnalyticsEventSketchModeEnter, null)
+    }
+
+    /** 스케치 모드 종료 이벤트 */
+    fun logSketchModeExited(durationSeconds: Int) {
+        analytics.logEvent(AnalyticsEventSketchModeExit) {
+            param(AnalyticsParamDurationSeconds, durationSeconds.toLong())
+        }
     }
 
     /** 스케치 저장 이벤트 */
-    fun logSketchSaved() {
-        analytics.logEvent("sketch_saved", null)
+    fun logSketchSaved(totalCount: Int, activeCount: Int) {
+        analytics.logEvent(AnalyticsEventSketchCreated) {
+            param(AnalyticsParamTotalCount, totalCount.toLong())
+            param(AnalyticsParamActiveCount, activeCount.toLong())
+        }
+    }
+
+    /** 스케치 삭제 이벤트 */
+    fun logSketchDeleted(activeCount: Int) {
+        analytics.logEvent(AnalyticsEventSketchDeleted) {
+            param(AnalyticsParamActiveCount, activeCount.toLong())
+        }
+    }
+
+    /** 전체 스케치 삭제 이벤트 */
+    fun logSketchAllCleared(deletedCount: Int) {
+        analytics.logEvent(AnalyticsEventSketchAllCleared) {
+            param(AnalyticsParamDeletedCount, deletedCount.toLong())
+        }
     }
 
     /** 드론 생성 이벤트 */

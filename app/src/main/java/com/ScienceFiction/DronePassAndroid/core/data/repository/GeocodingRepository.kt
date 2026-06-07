@@ -2,8 +2,71 @@ package com.ScienceFiction.DronePassAndroid.core.data.repository
 
 import com.ScienceFiction.DronePassAndroid.core.data.remote.NaverGeocodingApi
 import com.ScienceFiction.DronePassAndroid.core.data.remote.model.GeocodingAddress
+import com.ScienceFiction.DronePassAndroid.core.data.remote.model.ReverseGeocodingResult
 import javax.inject.Inject
 import javax.inject.Singleton
+
+internal fun reverseGeocodingResultsToAddress(results: List<ReverseGeocodingResult>): String {
+    val roadAddress = results
+        .firstOrNull { it.name == "roadaddr" }
+        ?.let(::buildRoadAddress)
+        ?.takeIf { it.isNotBlank() }
+    if (roadAddress != null) return roadAddress
+
+    return results
+        .firstOrNull { it.name == "addr" }
+        ?.let(::buildJibunAddress)
+        ?.takeIf { it.isNotBlank() }
+        ?: ""
+}
+
+private fun buildRoadAddress(result: ReverseGeocodingResult): String {
+    val parts = mutableListOf<String>()
+
+    result.region.area1?.name?.takeIf { it.isNotBlank() }?.let { parts.add(it) }
+    result.region.area2?.name?.takeIf { it.isNotBlank() }?.let { parts.add(it) }
+    result.region.area3?.name?.takeIf { it.isNotBlank() }?.let { parts.add(it) }
+
+    result.land?.let { land ->
+        land.name?.takeIf { it.isNotBlank() }?.let { parts.add(it) }
+        land.number1?.takeIf { it.isNotBlank() }?.let { number1 ->
+            val number = if (!land.number2.isNullOrBlank()) {
+                "$number1-${land.number2}"
+            } else {
+                number1
+            }
+            parts.add(number)
+        }
+        land.addition0
+            ?.takeIf { it.type == "building" }
+            ?.value
+            ?.takeIf { it.isNotBlank() }
+            ?.let { parts.add("($it)") }
+    }
+
+    return parts.joinToString(" ")
+}
+
+private fun buildJibunAddress(result: ReverseGeocodingResult): String {
+    val parts = mutableListOf<String>()
+
+    result.region.area1?.name?.takeIf { it.isNotBlank() }?.let { parts.add(it) }
+    result.region.area2?.name?.takeIf { it.isNotBlank() }?.let { parts.add(it) }
+    result.region.area3?.name?.takeIf { it.isNotBlank() }?.let { parts.add(it) }
+
+    result.land?.let { land ->
+        land.number1?.takeIf { it.isNotBlank() }?.let { number1 ->
+            val number = if (!land.number2.isNullOrBlank()) {
+                "$number1-${land.number2}"
+            } else {
+                number1
+            }
+            parts.add(number)
+        }
+    }
+
+    return parts.joinToString(" ")
+}
 
 @Singleton
 class GeocodingRepository @Inject constructor(
@@ -53,82 +116,9 @@ class GeocodingRepository @Inject constructor(
             }
 
             // 1. "roadaddr" 결과 찾기
-            val roadResult = response.results.find { it.name == "roadaddr" }
-            if (roadResult != null) {
-                val address = buildRoadAddress(roadResult)
-                if (address.isNotBlank()) {
-                    return Result.success(address)
-                }
-            }
-
-            // 2. "addr" 결과에서 region 정보 조합
-            val addrResult = response.results.find { it.name == "addr" }
-            if (addrResult != null) {
-                val address = buildJibunAddress(addrResult)
-                if (address.isNotBlank()) {
-                    return Result.success(address)
-                }
-            }
-
-            // 3. 둘 다 없으면 빈 문자열 반환 (UI에서 처리)
-            Result.success("")
+            Result.success(reverseGeocodingResultsToAddress(response.results))
         } catch (e: Exception) {
             Result.failure(e)
         }
-    }
-
-    /**
-     * 도로명 주소 조합
-     * region.area1.name + region.area2.name + region.area3.name + land.name + land.number1
-     */
-    private fun buildRoadAddress(
-        result: com.ScienceFiction.DronePassAndroid.core.data.remote.model.ReverseGeocodingResult
-    ): String {
-        val parts = mutableListOf<String>()
-
-        result.region.area1?.name?.takeIf { it.isNotBlank() }?.let { parts.add(it) }
-        result.region.area2?.name?.takeIf { it.isNotBlank() }?.let { parts.add(it) }
-        result.region.area3?.name?.takeIf { it.isNotBlank() }?.let { parts.add(it) }
-
-        result.land?.let { land ->
-            land.name?.takeIf { it.isNotBlank() }?.let { parts.add(it) }
-            land.number1?.takeIf { it.isNotBlank() }?.let { number1 ->
-                val number = if (!land.number2.isNullOrBlank()) {
-                    "$number1-${land.number2}"
-                } else {
-                    number1
-                }
-                parts.add(number)
-            }
-        }
-
-        return parts.joinToString(" ")
-    }
-
-    /**
-     * 지번 주소 조합
-     * region.area1.name + region.area2.name + region.area3.name + land.number1
-     */
-    private fun buildJibunAddress(
-        result: com.ScienceFiction.DronePassAndroid.core.data.remote.model.ReverseGeocodingResult
-    ): String {
-        val parts = mutableListOf<String>()
-
-        result.region.area1?.name?.takeIf { it.isNotBlank() }?.let { parts.add(it) }
-        result.region.area2?.name?.takeIf { it.isNotBlank() }?.let { parts.add(it) }
-        result.region.area3?.name?.takeIf { it.isNotBlank() }?.let { parts.add(it) }
-
-        result.land?.let { land ->
-            land.number1?.takeIf { it.isNotBlank() }?.let { number1 ->
-                val number = if (!land.number2.isNullOrBlank()) {
-                    "$number1-${land.number2}"
-                } else {
-                    number1
-                }
-                parts.add(number)
-            }
-        }
-
-        return parts.joinToString(" ")
     }
 }

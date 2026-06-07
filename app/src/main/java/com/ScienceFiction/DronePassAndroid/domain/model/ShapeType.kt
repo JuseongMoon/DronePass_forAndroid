@@ -3,11 +3,33 @@ package com.ScienceFiction.DronePassAndroid.domain.model
 /**
  * 도형 종류.
  *
- * 현재는 [CIRCLE] 만 사용한다. iOS 원본은 RECTANGLE/POLYGON 도 지원하지만
- * Android 포팅 1단계에서는 비행구역 시각화 핵심인 원형만 우선 지원하며,
- * 추후 확장 시 [com.ScienceFiction.DronePassAndroid.core.data.local.room.mapper.EntityMapper]
- * 의 fromDomain/toDomain 매핑과 ShapeOverlayManager 의 렌더링 분기를 함께 갱신해야 한다.
+ * iOS `ShapeType.rawValue` 는 소문자(`circle`, `rectangle`, ...)로 저장된다.
+ * Android 초기 버전은 Kotlin enum [name](`CIRCLE`)을 저장했으므로 읽기 경로는 둘 다
+ * 허용하고, 쓰기 경로는 iOS와 같은 [rawValue]를 사용한다.
+ *
+ * 현재 Android UI/지도 렌더링은 iOS의 실제 생성 흐름과 같은 [CIRCLE]만 노출한다.
+ * 나머지 타입은 기존/향후 iOS 데이터가 들어와도 enum 파싱 단계에서 유실되지 않도록
+ * 모델에만 보존한다.
  */
-enum class ShapeType(val koreanName: String) {
-    CIRCLE("원형")
+enum class ShapeType(val rawValue: String, val koreanName: String) {
+    CIRCLE("circle", "원"),
+    RECTANGLE("rectangle", "사각형"),
+    POLYGON("polygon", "다각형"),
+    POLYLINE("polyline", "선");
+
+    companion object {
+        fun parseWireValue(value: String?): ShapeType? {
+            if (value.isNullOrBlank()) return null
+
+            val normalized = value.trim()
+            return entries.firstOrNull { type ->
+                type.rawValue.equals(normalized, ignoreCase = true) ||
+                    type.name.equals(normalized, ignoreCase = true)
+            }
+        }
+
+        fun fromWireValue(value: String?): ShapeType {
+            return parseWireValue(value) ?: CIRCLE
+        }
+    }
 }

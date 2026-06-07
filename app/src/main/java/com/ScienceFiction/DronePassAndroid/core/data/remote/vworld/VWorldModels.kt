@@ -68,6 +68,76 @@ data class DroneZoneFeature(
 internal fun Map<String, Any?>.stringProp(key: String): String? =
     this[key]?.toString()?.takeIf { it.isNotBlank() }
 
+/**
+ * iOS `DroneZoneFeature.zoneCode` 와 동일한 레이어별 대표 코드/이름 매핑.
+ *
+ * VWorld WFS 는 레이어마다 필드명이 달라서 `code` 같은 공통 키만 보면 대부분의
+ * 실제 구역명이 비어 버린다. 상세 시트의 "구역 코드" 행과 연락처 fallback 이
+ * iOS 와 같은 값을 쓰도록 여기서 단일 매핑으로 관리한다.
+ */
+internal fun FlightZoneLayer.resolveZoneCode(
+    featureId: String?,
+    properties: Map<String, Any?>
+): String? = when (this) {
+    FlightZoneLayer.PROHIBITED -> properties.stringProp("prh_lbl_1")
+    FlightZoneLayer.TEMPORARY_PROHIBITED -> properties.stringProp("prh_lbl_1")
+    FlightZoneLayer.CONTROL_ZONE -> properties.stringProp("ctr_lbl_1")
+    FlightZoneLayer.RESTRICTED -> properties.stringProp("res_lbl_1")
+    FlightZoneLayer.DANGER -> properties.stringProp("dng_lbl_1")
+    FlightZoneLayer.ALERT -> properties.stringProp("alt_lbl_1")
+    FlightZoneLayer.ULTRALIGHT ->
+        properties.stringProp("uac_lbl_1") ?: properties.stringProp("name_txt")
+    FlightZoneLayer.PRIOR_CONSULTATION -> properties.stringProp("nm_kor")
+    FlightZoneLayer.CULTURAL_HERITAGE ->
+        properties.stringProp("alias") ?: properties.stringProp("remark")
+    FlightZoneLayer.NATIONAL_PARK -> mapNationalParkName(featureId)
+    FlightZoneLayer.ATZ,
+    FlightZoneLayer.LANDING_FIELD,
+    FlightZoneLayer.OBSTACLE -> null
+}
+
+/**
+ * iOS `mapNationalParkName(from:)` 과 같은 Feature ID 기반 국립공원명 매핑.
+ *
+ * `lt_c_wgisnpgug` 는 properties 가 비어 내려오는 케이스가 있어 Feature ID 의
+ * 일련번호를 공원 사무소명으로 변환한다.
+ */
+internal fun mapNationalParkName(featureId: String?): String? {
+    val number = featureId
+        ?.substringAfterLast('.', missingDelimiterValue = "")
+        ?.toIntOrNull()
+        ?: return null
+
+    return when (number) {
+        29, 42, 77, 80 -> "지리산국립공원사무소"
+        63 -> "설악산국립공원사무소"
+        30 -> "북한산국립공원사무소"
+        103 -> "한라산국립공원사무소"
+        67, 68 -> "덕유산국립공원사무소"
+        105, 106 -> "오대산국립공원사무소"
+        20, 22, 28, 69 -> "주왕산국립공원사무소"
+        17, 18, 19, 21, 23, 24, 25, 26, 27 -> "경주국립공원사무소"
+        94, 96 -> "팔공산국립공원사무소"
+        64 -> "속리산국립공원사무소"
+        65, 66 -> "내장산국립공원사무소"
+        5, 95 -> "가야산국립공원사무소"
+        32 -> "계룡산국립공원사무소"
+        33, 34, 36, 37, 40, 41, 45, 47, 48, 49, 50, 51, 52, 53, 55, 56, 57,
+        58, 59, 60, 61, 62, 75 -> "다도해해상국립공원사무소"
+        43, 44, 97 -> "무등산국립공원사무소"
+        6, 7, 8, 9, 10, 11, 12, 13, 14, 15 -> "변산반도국립공원사무소"
+        98, 99, 100, 101, 102 -> "월악산국립공원사무소"
+        1, 35, 38, 46, 54 -> "월출산국립공원사무소"
+        16 -> "치악산국립공원사무소"
+        31 -> "태백산국립공원사무소"
+        104 -> "소백산국립공원사무소"
+        2, 3, 4 -> "태안해안국립공원사무소"
+        39, 70, 71, 72, 73, 74, 76, 78, 79, 81, 82, 83, 84, 85, 86, 87, 88,
+        89, 90, 91, 92, 93 -> "한려해상국립공원사무소"
+        else -> null
+    }
+}
+
 /** properties Map 에서 Double 값을 안전하게 꺼낸다. */
 internal fun Map<String, Any?>.doubleProp(key: String): Double? = when (val v = this[key]) {
     is Number -> v.toDouble()
@@ -92,7 +162,7 @@ internal fun Map<String, Any?>.intProp(key: String): Int? = when (val v = this[k
 enum class NotamStatus(val displayName: String, val emoji: String) {
     SCHEDULED("예정됨", "\uD83D\uDD35"),   // 🔵
     ACTIVE("활성", "\uD83D\uDD34"),         // 🔴
-    EXPIRED("만료됨", "\u26AB"),             // ⚫
+    EXPIRED("만료됨", "\u26AB\uFE0F"),       // ⚫️
     UNKNOWN("알 수 없음", "\u2753")          // ❓
 }
 
@@ -172,17 +242,7 @@ private fun parseNotamDate(notam: String, field: String): Date? {
     val hour = dateString.substring(6, 8).toIntOrNull() ?: return null
     val minute = dateString.substring(8, 10).toIntOrNull() ?: return null
 
-    // 2-digit year 를 4-digit 으로 변환 (sliding window: 현재 연도 ± 50 범위).
-    // NOTAM 은 표준상 YY 형식을 사용하므로 단순 +2000 만 적용하면 2099 년 이후는
-    // 잘못된 연도로 파싱됨. 항공 분야는 늘 현재/근미래 NOTAM 이므로 현재 시점 기준
-    // 가까운 세기를 선택한다.
-    val currentYear = Calendar.getInstance(TimeZone.getTimeZone("UTC")).get(Calendar.YEAR)
-    val century = (currentYear / 100) * 100
-    val candidateThis = century + twoDigitYear
-    val candidatePrev = century - 100 + twoDigitYear
-    val year = if (kotlin.math.abs(candidateThis - currentYear) <=
-        kotlin.math.abs(candidatePrev - currentYear)
-    ) candidateThis else candidatePrev
+    val year = 2000 + twoDigitYear
 
     val cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
     cal.isLenient = false // 비정상 값(예: month=12, day=31, hour=24) 자동 보정 차단 → 명시적 실패

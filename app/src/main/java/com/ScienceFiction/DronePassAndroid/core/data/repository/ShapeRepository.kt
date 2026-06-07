@@ -1,24 +1,72 @@
 package com.ScienceFiction.DronePassAndroid.core.data.repository
 
 import android.util.Log
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.dao.ShapeDao
+import com.ScienceFiction.DronePassAndroid.core.data.local.room.entity.ShapeEntity
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.mapper.toDomain
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.mapper.toEntity
 import com.ScienceFiction.DronePassAndroid.core.data.remote.firebase.ShapeFirebaseStore
 import com.ScienceFiction.DronePassAndroid.core.data.sync.filterServerNewer
 import com.ScienceFiction.DronePassAndroid.core.data.sync.mergeLWW
+import com.ScienceFiction.DronePassAndroid.core.data.storedEndDateAlarmEnabled
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
+import com.ScienceFiction.DronePassAndroid.domain.model.validateForFirebasePersistence
+import com.ScienceFiction.DronePassAndroid.domain.model.validateForLocalPersistence
+import com.ScienceFiction.DronePassAndroid.service.NotificationScheduler
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
+
+internal fun reassignShapeEntityToDrone(
+    shape: ShapeEntity,
+    toDroneId: String,
+    updatedAt: Long,
+): ShapeEntity {
+    return shape.copy(
+        droneId = toDroneId,
+        updatedAt = updatedAt,
+    )
+}
+
+internal fun connectLegacyShapeEntityToDrone(
+    shape: ShapeEntity,
+    firstDroneId: String,
+    updatedAt: Long,
+): ShapeEntity {
+    return shape.copy(
+        droneId = firstDroneId,
+        updatedAt = updatedAt,
+    )
+}
+
+internal fun softDeleteExpiredShapeEntities(
+    shapes: List<ShapeEntity>,
+    now: Long,
+): List<ShapeEntity> {
+    return shapes
+        .filter { shape ->
+            shape.deletedAt == null && shape.flightEndDate?.let { endDate -> endDate < now } == true
+        }
+        .map { shape ->
+            shape.copy(
+                deletedAt = now,
+                updatedAt = now,
+            )
+        }
+}
 
 @Singleton
 class ShapeRepository @Inject constructor(
     private val shapeDao: ShapeDao,
     private val shapeFirebaseStore: ShapeFirebaseStore,
-    private val auth: FirebaseAuth
+    private val auth: FirebaseAuth,
+    private val dataStore: DataStore<Preferences>,
+    private val notificationScheduler: NotificationScheduler,
 ) {
 
     companion object {
@@ -56,7 +104,10 @@ class ShapeRepository @Inject constructor(
      * 로그인 상태이면 Firestore에도 즉시 푸시한다.
      */
     suspend fun insertShape(shape: ShapeModel) {
+        if (!shape.isValidForLocalWrite("insertShape")) return
+
         shapeDao.insertShape(shape.toEntity())
+        updateEndDateAlarmForShape(shape)
         syncShapeToFirebase(shape)
     }
 
@@ -65,7 +116,10 @@ class ShapeRepository @Inject constructor(
      * 로그인 상태이면 Firestore에도 즉시 푸시한다.
      */
     suspend fun updateShape(shape: ShapeModel) {
+        if (!shape.isValidForLocalWrite("updateShape")) return
+
         shapeDao.updateShape(shape.toEntity())
+        updateEndDateAlarmForShape(shape)
         syncShapeToFirebase(shape)
     }
 
@@ -77,6 +131,7 @@ class ShapeRepository @Inject constructor(
     suspend fun softDeleteShape(shape: ShapeModel) {
         val deletedShape = shape.softDelete()
         shapeDao.updateShape(deletedShape.toEntity())
+        notificationScheduler.cancelEndDateAlarm(shape.id)
         syncShapeToFirebase(deletedShape)
     }
 
@@ -87,6 +142,7 @@ class ShapeRepository @Inject constructor(
     suspend fun restoreShape(shape: ShapeModel) {
         val restoredShape = shape.restore()
         shapeDao.updateShape(restoredShape.toEntity())
+        updateEndDateAlarmForShape(restoredShape)
         syncShapeToFirebase(restoredShape)
     }
 
@@ -95,7 +151,27 @@ class ShapeRepository @Inject constructor(
      * Firestore는 사용자 의도에 따라 별도 처리해야 하므로 자동 푸시하지 않는다.
      */
     suspend fun deleteAllShapes() {
+        val shapes = shapeDao.getAllShapesOnce()
         shapeDao.deleteAllShapes()
+        shapes.forEach { shape -> notificationScheduler.cancelEndDateAlarm(shape.id) }
+    }
+
+    /**
+     * 만료된 활성 도형들을 모두 소프트 삭제
+     * 로그인 상태이면 Firestore에도 즉시 batch 푸시한다.
+     */
+    suspend fun deleteExpiredShapes(): Int {
+        val now = System.currentTimeMillis()
+        val deletedShapes = softDeleteExpiredShapeEntities(
+            shapes = shapeDao.getActiveExpiredShapes(now),
+            now = now,
+        )
+        if (deletedShapes.isEmpty()) return 0
+
+        shapeDao.insertShapes(deletedShapes)
+        deletedShapes.forEach { shape -> notificationScheduler.cancelEndDateAlarm(shape.id) }
+        syncShapesToFirebase(deletedShapes.map { it.toDomain() })
+        return deletedShapes.size
     }
 
     /**
@@ -109,19 +185,32 @@ class ShapeRepository @Inject constructor(
      * 특정 드론에 연결된 활성 도형들을 다른 드론으로 재할당
      * 로그인 상태이면 Firestore에도 즉시 batch 푸시한다.
      */
-    suspend fun reassignShapes(fromDroneId: String, toDroneId: String, toDroneColor: String) {
+    suspend fun reassignShapes(fromDroneId: String, toDroneId: String) {
         val shapes = shapeDao.getActiveShapesByDroneId(fromDroneId)
         val now = System.currentTimeMillis()
         val updatedShapes = shapes.map { shapeEntity ->
-            shapeEntity.copy(
-                droneId = toDroneId,
-                color = toDroneColor,
-                updatedAt = now
-            )
+            reassignShapeEntityToDrone(shapeEntity, toDroneId, now)
         }
         // REPLACE 충돌 정책으로 update == insert (단일 트랜잭션 1회).
         shapeDao.insertShapes(updatedShapes)
         syncShapesToFirebase(updatedShapes.map { it.toDomain() })
+    }
+
+    /**
+     * iOS DroneManager.migrateLegacyShapes 정합.
+     * droneId 가 없는 활성 레거시 도형을 첫 번째 활성 드론에 실제로 연결한다.
+     */
+    suspend fun migrateLegacyShapesToDrone(firstDroneId: String) {
+        val shapes = shapeDao.getActiveLegacyShapesWithoutDrone()
+        if (shapes.isEmpty()) return
+
+        val now = System.currentTimeMillis()
+        val updatedShapes = shapes.map { shapeEntity ->
+            connectLegacyShapeEntityToDrone(shapeEntity, firstDroneId, now)
+        }
+        shapeDao.insertShapes(updatedShapes)
+        syncShapesToFirebase(updatedShapes.map { it.toDomain() })
+        Log.d(TAG, "레거시 도형 드론 연결 완료: count=${updatedShapes.size}, droneId=$firstDroneId")
     }
 
     /**
@@ -138,6 +227,7 @@ class ShapeRepository @Inject constructor(
             )
         }
         shapeDao.insertShapes(deletedShapes)
+        deletedShapes.forEach { shape -> notificationScheduler.cancelEndDateAlarm(shape.id) }
         syncShapesToFirebase(deletedShapes.map { it.toDomain() })
     }
 
@@ -149,6 +239,8 @@ class ShapeRepository @Inject constructor(
      */
     private suspend fun syncShapeToFirebase(shape: ShapeModel) {
         val userId = auth.currentUser?.uid ?: return
+        if (!shape.isValidForFirebaseWrite("syncShapeToFirebase")) return
+
         try {
             shapeFirebaseStore.saveShape(userId, shape)
             shapeFirebaseStore.updateServerMetadata(userId)
@@ -163,11 +255,14 @@ class ShapeRepository @Inject constructor(
     private suspend fun syncShapesToFirebase(shapes: List<ShapeModel>) {
         if (shapes.isEmpty()) return
         val userId = auth.currentUser?.uid ?: return
+        val validShapes = shapes.filterValidForFirebaseWrite("syncShapesToFirebase")
+        if (validShapes.isEmpty()) return
+
         try {
-            shapeFirebaseStore.saveShapes(userId, shapes)
+            shapeFirebaseStore.saveShapes(userId, validShapes)
             shapeFirebaseStore.updateServerMetadata(userId)
         } catch (e: Exception) {
-            Log.w(TAG, "Firebase batch 즉시 푸시 실패: count=${shapes.size}", e)
+            Log.w(TAG, "Firebase batch 즉시 푸시 실패: count=${validShapes.size}", e)
         }
     }
 
@@ -184,7 +279,9 @@ class ShapeRepository @Inject constructor(
         }
 
         try {
-            val localShapes = shapeDao.getAllShapesOnce().map { it.toDomain() }
+            val localShapes = shapeDao.getAllShapesOnce()
+                .map { it.toDomain() }
+                .filterValidForFirebaseWrite("syncToFirebase")
             if (localShapes.isNotEmpty()) {
                 shapeFirebaseStore.saveShapes(userId, localShapes)
                 shapeFirebaseStore.updateServerMetadata(userId)
@@ -207,7 +304,9 @@ class ShapeRepository @Inject constructor(
         }
 
         try {
-            val serverShapes = shapeFirebaseStore.loadAllShapesIncludingDeleted(userId).getOrThrow()
+            val serverShapes = shapeFirebaseStore.loadAllShapesIncludingDeleted(userId)
+                .getOrThrow()
+                .filterValidForFirebaseWrite("syncFromFirebase/server")
             val localShapes = shapeDao.getAllShapesOnce().map { it.toDomain() }
             val toApply = filterServerNewer(
                 local = localShapes,
@@ -217,6 +316,7 @@ class ShapeRepository @Inject constructor(
             )
             if (toApply.isNotEmpty()) {
                 shapeDao.insertShapes(toApply.map { it.toEntity() })
+                reconcileEndDateAlarmsWithLocalShapes()
             }
             Log.d(TAG, "syncFromFirebase: 서버=${serverShapes.size}, LWW 통과=${toApply.size}")
         } catch (e: Exception) {
@@ -235,8 +335,12 @@ class ShapeRepository @Inject constructor(
         }
 
         try {
-            val localShapes = shapeDao.getAllShapesOnce().map { it.toDomain() }
-            val serverShapes = shapeFirebaseStore.loadAllShapesIncludingDeleted(userId).getOrThrow()
+            val localShapes = shapeDao.getAllShapesOnce()
+                .map { it.toDomain() }
+                .filterValidForFirebaseWrite("performFullSync/local")
+            val serverShapes = shapeFirebaseStore.loadAllShapesIncludingDeleted(userId)
+                .getOrThrow()
+                .filterValidForFirebaseWrite("performFullSync/server")
 
             val result = mergeLWW(
                 local = localShapes,
@@ -248,11 +352,13 @@ class ShapeRepository @Inject constructor(
             // Room: 머지 결과 배치 저장
             if (result.merged.isNotEmpty()) {
                 shapeDao.insertShapes(result.merged.map { it.toEntity() })
+                reconcileEndDateAlarmsWithLocalShapes()
             }
 
             // Firebase: 로컬이 LWW 에서 이긴 항목 업로드
-            if (result.toUpload.isNotEmpty()) {
-                shapeFirebaseStore.saveShapes(userId, result.toUpload)
+            val toUpload = result.toUpload.filterValidForFirebaseWrite("performFullSync/upload")
+            if (toUpload.isNotEmpty()) {
+                shapeFirebaseStore.saveShapes(userId, toUpload)
             }
 
             shapeFirebaseStore.updateServerMetadata(userId)
@@ -261,6 +367,60 @@ class ShapeRepository @Inject constructor(
         } catch (e: Exception) {
             Log.e(TAG, "performFullSync 실패", e)
             throw e
+        }
+    }
+
+    private fun ShapeModel.isValidForLocalWrite(operation: String): Boolean {
+        val validation = validateForLocalPersistence()
+        if (!validation.isValid) {
+            Log.w(TAG, "$operation: 유효하지 않은 도형 로컬 저장 스킵: shapeId=$id, reason=${validation.reason}")
+        }
+        return validation.isValid
+    }
+
+    private suspend fun updateEndDateAlarmForShape(shape: ShapeModel) {
+        val preferences = dataStore.data.first()
+        val flightEndDate = shape.flightEndDate
+        if (!storedEndDateAlarmEnabled(preferences) || shape.isDeleted || flightEndDate == null) {
+            notificationScheduler.cancelEndDateAlarm(shape.id)
+            return
+        }
+
+        notificationScheduler.scheduleEndDateAlarm(
+            shapeId = shape.id,
+            flightEndDate = flightEndDate,
+            shapeTitle = shape.title,
+        )
+    }
+
+    private suspend fun reconcileEndDateAlarmsWithLocalShapes() {
+        val preferences = dataStore.data.first()
+        if (!storedEndDateAlarmEnabled(preferences)) return
+
+        shapeDao.getAllShapesOnce()
+            .map { it.toDomain() }
+            .forEach { shape -> updateEndDateAlarmForShape(shape) }
+    }
+
+    private fun ShapeModel.isValidForFirebaseWrite(operation: String): Boolean {
+        val validation = validateForFirebasePersistence()
+        if (!validation.isValid) {
+            Log.w(TAG, "$operation: 유효하지 않은 도형 Firebase 저장 스킵: shapeId=$id, reason=${validation.reason}")
+        }
+        return validation.isValid
+    }
+
+    private fun List<ShapeModel>.filterValidForFirebaseWrite(operation: String): List<ShapeModel> {
+        val seenIds = mutableSetOf<String>()
+        return filter { shape ->
+            when {
+                !shape.isValidForFirebaseWrite(operation) -> false
+                !seenIds.add(shape.id) -> {
+                    Log.w(TAG, "$operation: 중복 도형 ID 스킵: shapeId=${shape.id}")
+                    false
+                }
+                else -> true
+            }
         }
     }
 }

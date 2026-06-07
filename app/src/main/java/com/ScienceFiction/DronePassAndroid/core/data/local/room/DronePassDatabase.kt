@@ -17,6 +17,7 @@ import com.ScienceFiction.DronePassAndroid.core.data.local.room.entity.SketchEnt
  * 버전 이력:
  * - v1: 초기 버전 (shapes 테이블)
  * - v2: drones, sketches 테이블 추가
+ * - v3: iOS ShapeModel geometry 필드 보존용 컬럼 복원
  *
  * 마이그레이션 정책:
  * - 각 버전 업그레이드에 대해 Migration 객체를 정의한다.
@@ -25,7 +26,7 @@ import com.ScienceFiction.DronePassAndroid.core.data.local.room.entity.SketchEnt
  */
 @Database(
     entities = [ShapeEntity::class, DroneEntity::class, SketchEntity::class],
-    version = 2,
+    version = 3,
     exportSchema = true
 )
 abstract class DronePassDatabase : RoomDatabase() {
@@ -125,8 +126,24 @@ abstract class DronePassDatabase : RoomDatabase() {
          * 모든 마이그레이션 목록
          * DatabaseModule에서 .addMigrations(*allMigrations) 으로 사용한다.
          *
-         * v3 도입 시 별도 Migration(2,3)을 정의하고 이 배열에 추가한다.
          */
-        val allMigrations = arrayOf(MIGRATION_1_2)
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `shapes` ADD COLUMN `secondLatitude` REAL")
+                db.execSQL("ALTER TABLE `shapes` ADD COLUMN `secondLongitude` REAL")
+                db.execSQL("ALTER TABLE `shapes` ADD COLUMN `polygonCoordinates` TEXT")
+                db.execSQL("ALTER TABLE `shapes` ADD COLUMN `polylineCoordinates` TEXT")
+            }
+        }
+
+        /**
+         * v1 schema already contained the iOS geometry columns. Prefer the direct path so users
+         * upgrading from v1 to v3 do not pass through v2 and lose those nullable columns.
+         */
+        val MIGRATION_1_3 = object : Migration(1, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) = Unit
+        }
+
+        val allMigrations = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_1_3)
     }
 }

@@ -23,6 +23,14 @@ class CoordinateParserTest {
     }
 
     @Test
+    fun `iOS 안내 예시처럼 도 기호가 붙은 십진도도 파싱된다`() {
+        val c = CoordinateParser.parse("37.648611°, 126.686667°")
+        assertNotNull(c)
+        assertEquals(37.648611, c!!.latitude, 0.0001)
+        assertEquals(126.686667, c.longitude, 0.0001)
+    }
+
+    @Test
     fun `공백 구분자도 파싱된다`() {
         val c = CoordinateParser.parse("37.5665 126.9780")
         assertNotNull(c)
@@ -52,6 +60,14 @@ class CoordinateParserTest {
         assertNotNull(c)
         // 37 + 33/60 + 58/3600 ≈ 37.566
         assertEquals(37.566, c!!.latitude, 0.001)
+    }
+
+    @Test
+    fun `iOS 안내 예시의 도분초도 파싱된다`() {
+        val c = CoordinateParser.parse("37° 38′ 55″ N 126° 41′ 12″ E")
+        assertNotNull(c)
+        assertEquals(37.648, c!!.latitude, 0.001)
+        assertEquals(126.686, c.longitude, 0.001)
     }
 
     @Test

@@ -7,6 +7,9 @@ import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.GeoJSONFeatur
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.GeoJSONFeatureCollection
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.VWorldApi
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.VWorldServiceException
+import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.resolveZoneCode
+import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.sortedByLoadingPriority
+import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.stringProp
 import com.squareup.moshi.Moshi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -139,9 +142,9 @@ class VWorldRepository @Inject constructor(
     }
 
     /**
-     * 여러 레이어의 비행구역 데이터를 priority 순으로 동시 로드한다.
+     * 여러 레이어의 비행구역 데이터를 loadingPriority 순으로 동시 로드한다.
      *
-     * iOS `VWorldAPIManager.fetchMultipleLayers` 매핑: 우선순위가 높은 레이어(PROHIBITED=1)부터
+     * iOS `VWorldAPIManager.fetchMultipleLayers` 매핑: loadingPriority 가 낮은 레이어부터
      * 먼저 fetch 를 시작하고, 각 레이어가 도착하는 즉시 [onLayerLoaded] 콜백으로 알린다.
      * 호출자는 누적 [Map] 을 즉시 UI 에 반영해 사용자에게 점진적 표시를 제공할 수 있다.
      *
@@ -155,7 +158,7 @@ class VWorldRepository @Inject constructor(
         bbox: String,
         onLayerLoaded: (FlightZoneLayer, List<DroneZoneFeature>) -> Unit = { _, _ -> },
     ): Map<FlightZoneLayer, List<DroneZoneFeature>> = coroutineScope {
-        layers.sortedBy { it.priority }.map { layer ->
+        layers.sortedByLoadingPriority().map { layer ->
             async {
                 val result = fetchFlightZones(layer, bbox)
                 // 인증키 오류는 모든 레이어 공통 원인이므로 첫 발견 시 throw 하여
@@ -193,14 +196,23 @@ class VWorldRepository @Inject constructor(
 
         val props = feature.properties ?: emptyMap()
 
+        val zoneCode = layer.resolveZoneCode(feature.id, props)
+            ?: props.stringProp("code")
+            ?: props.stringProp("zoneCode")
+        val zoneName = props.stringProp("name")
+            ?: props.stringProp("zoneName")
+            ?: props.stringProp("kor_nm")
+            ?: zoneCode
+            ?: layer.displayName
+
         return DroneZoneFeature(
             id = feature.id ?: "${layer.typeName}_${System.nanoTime()}",
             layer = layer,
             polygons = polygons,
-            zoneCode = props["code"]?.toString() ?: props["zoneCode"]?.toString(),
+            zoneCode = zoneCode,
             upperAltitude = parseDoubleProperty(props, "up_alt", "upper_alt", "upperAlt"),
             lowerAltitude = parseDoubleProperty(props, "low_alt", "lower_alt", "lowerAlt"),
-            zoneName = props["name"]?.toString() ?: props["zoneName"]?.toString() ?: props["kor_nm"]?.toString(),
+            zoneName = zoneName,
             properties = props
         )
     }

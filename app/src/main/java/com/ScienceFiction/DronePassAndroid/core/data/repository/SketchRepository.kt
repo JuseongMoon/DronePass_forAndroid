@@ -8,6 +8,7 @@ import com.ScienceFiction.DronePassAndroid.core.data.remote.firebase.SketchFireb
 import com.ScienceFiction.DronePassAndroid.core.data.sync.filterServerNewer
 import com.ScienceFiction.DronePassAndroid.core.data.sync.mergeLWW
 import com.ScienceFiction.DronePassAndroid.domain.model.SketchModel
+import com.ScienceFiction.DronePassAndroid.domain.model.validateForFirebasePersistence
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -22,6 +23,13 @@ import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
 import javax.inject.Singleton
 
+private const val SKETCH_REPOSITORY_VALIDATION_TAG = "SketchRepository"
+
+data class SketchCounts(
+    val totalCount: Int,
+    val activeCount: Int,
+)
+
 @Singleton
 class SketchRepository @Inject constructor(
     private val sketchDao: SketchDao,
@@ -35,7 +43,7 @@ class SketchRepository @Inject constructor(
      * 부담이 큼. 동일 sketchId 의 변경을 500ms 윈도우로 묶어 마지막 한 번만 push.
      */
     private val debounceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    private val pendingSyncs = mutableMapOf<String, Job>()
+    private val pendingSyncs = mutableMapOf<String, PendingSketchSync>()
     private val pendingSyncsMutex = Mutex()
 
     companion object {
@@ -66,6 +74,14 @@ class SketchRepository @Inject constructor(
      */
     suspend fun getSketchById(id: String): SketchModel? {
         return sketchDao.getSketchById(id)?.toDomain()
+    }
+
+    suspend fun getSketchCounts(): SketchCounts {
+        val sketches = sketchDao.getAllSketchesOnce().map { it.toDomain() }
+        return SketchCounts(
+            totalCount = sketches.size,
+            activeCount = sketches.count { !it.isDeleted },
+        )
     }
 
     /**
@@ -107,11 +123,25 @@ class SketchRepository @Inject constructor(
     }
 
     /**
-     * 모든 스케치 삭제 (하드 삭제, 로컬만)
-     * Firestore는 사용자 의도에 따라 별도 처리해야 하므로 자동 푸시하지 않는다.
+     * 모든 활성 스케치 삭제.
+     *
+     * iOS와 동일하게 하드 삭제가 아니라 deletedAt을 남기는 soft delete로 처리한다.
+     * 그래야 undo/redo가 가능하고 Firebase LWW 동기화에서도 삭제 의도가 보존된다.
+     *
+     * @return 삭제 처리된 스케치 목록. ViewModel은 이 목록을 Undo 액션으로 저장한다.
      */
-    suspend fun deleteAllSketches() {
-        sketchDao.deleteAllSketches()
+    suspend fun deleteAllSketches(): List<SketchModel> {
+        val now = System.currentTimeMillis()
+        val activeSketches = sketchDao.getAllSketchesOnce()
+            .map { it.toDomain() }
+            .filter { !it.isDeleted }
+        val deletedSketches = softDeleteActiveSketchModels(activeSketches, now)
+        if (deletedSketches.isEmpty()) return emptyList()
+
+        sketchDao.insertSketches(deletedSketches.map { it.toEntity() })
+        cancelPendingSyncs(deletedSketches.map { it.id }.toSet())
+        syncSketchesToFirebase(deletedSketches)
+        return deletedSketches
     }
 
     /**
@@ -123,9 +153,12 @@ class SketchRepository @Inject constructor(
      * 이전 작업을 취소하여 최신 변경만 살아남는다.
      */
     private suspend fun syncSketchToFirebase(sketch: SketchModel) {
+        if (!sketch.isValidForFirebaseWrite("syncSketchToFirebase")) return
+
         pendingSyncsMutex.withLock {
-            pendingSyncs[sketch.id]?.cancel()
-            pendingSyncs[sketch.id] = debounceScope.launch {
+            pendingSyncs[sketch.id]?.job?.cancel()
+            lateinit var syncJob: Job
+            syncJob = debounceScope.launch {
                 delay(SYNC_DEBOUNCE_MS)
                 val userId = auth.currentUser?.uid ?: return@launch
                 try {
@@ -134,13 +167,58 @@ class SketchRepository @Inject constructor(
                 } catch (e: Exception) {
                     Log.w(TAG, "Firebase 디바운스 푸시 실패: sketchId=${sketch.id}", e)
                 } finally {
-                    pendingSyncsMutex.withLock { pendingSyncs.remove(sketch.id) }
+                    pendingSyncsMutex.withLock {
+                        if (isCompletedSketchSyncStillPending(pendingSyncs[sketch.id]?.job, syncJob)) {
+                            pendingSyncs.remove(sketch.id)
+                        }
+                    }
                 }
+            }
+            pendingSyncs[sketch.id] = PendingSketchSync(sketch = sketch, job = syncJob)
+        }
+    }
+
+    private suspend fun syncSketchesToFirebase(sketches: List<SketchModel>) {
+        val userId = auth.currentUser?.uid ?: return
+        val validSketches = sketches.filterValidForFirebaseWrite("syncSketchesToFirebase")
+        if (validSketches.isEmpty()) return
+
+        try {
+            sketchFirebaseStore.saveSketches(userId, validSketches)
+            sketchFirebaseStore.updateServerMetadata(userId)
+        } catch (e: Exception) {
+            Log.w(TAG, "Firebase 배치 푸시 실패: count=${validSketches.size}", e)
+        }
+    }
+
+    private suspend fun cancelPendingSyncs(sketchIds: Set<String>) {
+        pendingSyncsMutex.withLock {
+            sketchIds.forEach { id ->
+                pendingSyncs.remove(id)?.job?.cancel()
             }
         }
     }
 
     // ===== Firebase 동기화 메서드 =====
+
+    /**
+     * iOS `syncToFirebaseOnComplete()` 정합.
+     *
+     * Android는 스케치 변경을 500ms 디바운스로 Firebase에 푸시하지만,
+     * 스케치 모드 종료 시에는 대기 중인 최신 변경을 즉시 업로드해 iOS의 완료 시점
+     * 동기화와 같은 보장을 제공한다.
+     */
+    suspend fun syncToFirebaseOnComplete() {
+        val pendingSketches = pendingSyncsMutex.withLock {
+            val sketches = pendingSyncs.values.map { it.sketch }
+            pendingSyncs.values.forEach { it.job.cancel() }
+            pendingSyncs.clear()
+            sketches
+        }
+        if (pendingSketches.isEmpty()) return
+
+        syncSketchesToFirebase(pendingSketches)
+    }
 
     /**
      * Room 로컬 데이터를 Firebase에 업로드
@@ -152,7 +230,9 @@ class SketchRepository @Inject constructor(
         }
 
         try {
-            val localSketches = sketchDao.getAllSketchesOnce().map { it.toDomain() }
+            val localSketches = sketchDao.getAllSketchesOnce()
+                .map { it.toDomain() }
+                .filterValidForFirebaseWrite("syncToFirebase")
             if (localSketches.isNotEmpty()) {
                 sketchFirebaseStore.saveSketches(userId, localSketches)
                 sketchFirebaseStore.updateServerMetadata(userId)
@@ -174,7 +254,9 @@ class SketchRepository @Inject constructor(
         }
 
         try {
-            val serverSketches = sketchFirebaseStore.loadAllSketchesIncludingDeleted(userId).getOrThrow()
+            val serverSketches = sketchFirebaseStore.loadAllSketchesIncludingDeleted(userId)
+                .getOrThrow()
+                .filterValidForFirebaseWrite("syncFromFirebase/server")
             val localSketches = sketchDao.getAllSketchesOnce().map { it.toDomain() }
             val toApply = filterServerNewer(
                 local = localSketches,
@@ -202,8 +284,12 @@ class SketchRepository @Inject constructor(
         }
 
         try {
-            val localSketches = sketchDao.getAllSketchesOnce().map { it.toDomain() }
-            val serverSketches = sketchFirebaseStore.loadAllSketchesIncludingDeleted(userId).getOrThrow()
+            val localSketches = sketchDao.getAllSketchesOnce()
+                .map { it.toDomain() }
+                .filterValidForFirebaseWrite("performFullSync/local")
+            val serverSketches = sketchFirebaseStore.loadAllSketchesIncludingDeleted(userId)
+                .getOrThrow()
+                .filterValidForFirebaseWrite("performFullSync/server")
 
             val result = mergeLWW(
                 local = localSketches,
@@ -216,8 +302,9 @@ class SketchRepository @Inject constructor(
                 sketchDao.insertSketches(result.merged.map { it.toEntity() })
             }
 
-            if (result.toUpload.isNotEmpty()) {
-                sketchFirebaseStore.saveSketches(userId, result.toUpload)
+            val toUpload = result.toUpload.filterValidForFirebaseWrite("performFullSync/upload")
+            if (toUpload.isNotEmpty()) {
+                sketchFirebaseStore.saveSketches(userId, toUpload)
             }
 
             sketchFirebaseStore.updateServerMetadata(userId)
@@ -226,6 +313,54 @@ class SketchRepository @Inject constructor(
         } catch (e: Exception) {
             Log.e(TAG, "performFullSync 실패", e)
             throw e
+        }
+    }
+}
+
+private data class PendingSketchSync(
+    val sketch: SketchModel,
+    val job: Job,
+)
+
+internal fun isCompletedSketchSyncStillPending(
+    pendingJob: Job?,
+    completedJob: Job,
+): Boolean {
+    return pendingJob === completedJob
+}
+
+internal fun softDeleteActiveSketchModels(
+    sketches: List<SketchModel>,
+    now: Long,
+): List<SketchModel> {
+    return sketches
+        .filter { !it.isDeleted }
+        .map { sketch ->
+            sketch.copy(
+                deletedAt = now,
+                updatedAt = now,
+            )
+        }
+}
+
+private fun SketchModel.isValidForFirebaseWrite(operation: String): Boolean {
+    val validation = validateForFirebasePersistence()
+    if (!validation.isValid) {
+        Log.w(SKETCH_REPOSITORY_VALIDATION_TAG, "$operation: 유효하지 않은 스케치 Firebase 저장 스킵: sketchId=$id, reason=${validation.reason}")
+    }
+    return validation.isValid
+}
+
+private fun List<SketchModel>.filterValidForFirebaseWrite(operation: String): List<SketchModel> {
+    val seenIds = mutableSetOf<String>()
+    return filter { sketch ->
+        when {
+            !sketch.isValidForFirebaseWrite(operation) -> false
+            !seenIds.add(sketch.id) -> {
+                Log.w(SKETCH_REPOSITORY_VALIDATION_TAG, "$operation: 중복 스케치 ID 스킵: sketchId=${sketch.id}")
+                false
+            }
+            else -> true
         }
     }
 }

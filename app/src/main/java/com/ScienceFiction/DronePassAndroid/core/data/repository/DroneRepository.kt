@@ -1,14 +1,19 @@
 package com.ScienceFiction.DronePassAndroid.core.data.repository
 
+import android.content.Context
 import android.util.Log
+import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.dao.DroneDao
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.mapper.toDomain
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.mapper.toEntity
 import com.ScienceFiction.DronePassAndroid.core.data.remote.firebase.DroneFirebaseStore
 import com.ScienceFiction.DronePassAndroid.core.data.sync.filterServerNewer
 import com.ScienceFiction.DronePassAndroid.core.data.sync.mergeLWW
+import com.ScienceFiction.DronePassAndroid.core.util.compareIosLocalizedStandardStrings
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.google.firebase.auth.FirebaseAuth
+import dagger.hilt.android.qualifiers.ApplicationContext
+import java.util.Locale
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -18,7 +23,8 @@ import javax.inject.Singleton
 class DroneRepository @Inject constructor(
     private val droneDao: DroneDao,
     private val droneFirebaseStore: DroneFirebaseStore,
-    private val auth: FirebaseAuth
+    private val auth: FirebaseAuth,
+    @ApplicationContext private val context: Context,
 ) {
 
     companion object {
@@ -29,8 +35,10 @@ class DroneRepository @Inject constructor(
      * 활성(삭제되지 않은) 드론 목록을 Flow로 반환
      */
     fun getActiveDrones(): Flow<List<DroneModel>> {
+        val locale = Locale.getDefault()
         return droneDao.getActiveDrones().map { entities ->
             entities.map { it.toDomain() }
+                .sortedWith { a, b -> compareIosLocalizedStandardStrings(a.name, b.name, locale) }
         }
     }
 
@@ -48,6 +56,22 @@ class DroneRepository @Inject constructor(
      */
     suspend fun getDroneById(id: String): DroneModel? {
         return droneDao.getDroneById(id)?.toDomain()
+    }
+
+    /**
+     * iOS DroneManager.setupInitialDroneIfNeeded 정합.
+     * 활성 드론이 하나도 없으면 기본 드론을 생성하고 즉시 저장한다.
+     */
+    suspend fun ensureDefaultDroneIfNeeded(): DroneModel? {
+        if (droneDao.getActiveDroneCount() > 0) return null
+
+        val defaultDrone = DroneModel.createDefault(
+            defaultName = context.getString(R.string.drone_edit_default_name_first),
+        )
+        droneDao.insertDrone(defaultDrone.toEntity())
+        syncDroneToFirebase(defaultDrone)
+        Log.d(TAG, "기본 드론 자동 생성: droneId=${defaultDrone.id}")
+        return defaultDrone
     }
 
     /**

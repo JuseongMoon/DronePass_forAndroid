@@ -22,7 +22,7 @@ interface VWorldApi {
      * @param service WFS 고정
      * @param version WFS 버전 (1.1.0)
      * @param request GetFeature 고정
-     * @param typeName 레이어 typename (예: lt_c_aisprhc)
+     * @param typeName 레이어 typename 파라미터 값 (예: lt_c_aisprhc)
      * @param outputFormat 응답 형식 (application/json)
      * @param srsName 좌표 체계 (EPSG:4326)
      * @param bbox 바운딩 박스 (minLon,minLat,maxLon,maxLat)
@@ -35,7 +35,7 @@ interface VWorldApi {
         @Query("service") service: String = "WFS",
         @Query("version") version: String = "1.1.0",
         @Query("request") request: String = "GetFeature",
-        @Query("typeName") typeName: String,
+        @Query("typename") typeName: String,
         @Query("outputFormat") outputFormat: String = "application/json",
         @Query("srsName") srsName: String = "EPSG:4326",
         @Query("bbox") bbox: String,

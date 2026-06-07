@@ -157,9 +157,8 @@ object MarkdownParser {
         val blocks = content.split("\nv")
             .map { it.trim() }
             .filter { it.isNotEmpty() }
-            .mapIndexed { index, block ->
-                if (index == 0 && block.startsWith("v")) block
-                else "v$block"
+            .map { block ->
+                if (block.startsWith("v")) block else "v$block"
             }
 
         for (block in blocks) {

@@ -3,14 +3,65 @@ package com.ScienceFiction.DronePassAndroid.core.data.remote.firebase
 import android.util.Log
 import com.ScienceFiction.DronePassAndroid.domain.model.Coordinate
 import com.ScienceFiction.DronePassAndroid.domain.model.SketchModel
+import com.ScienceFiction.DronePassAndroid.domain.model.validateFirebaseSketchBatch
+import com.ScienceFiction.DronePassAndroid.domain.model.validateForFirebasePersistence
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.tasks.await
 import java.util.Date
+import java.util.UUID
+import kotlin.math.round
 import javax.inject.Inject
 import javax.inject.Singleton
+
+internal fun roundSketchCoordinateForFirestore(value: Double): Double {
+    return round(value * 1_000_000.0) / 1_000_000.0
+}
+
+internal fun roundSketchOpacityForFirestore(opacity: Double): Double {
+    return round(opacity * 100.0) / 100.0
+}
+
+private fun sketchTimestampMillis(value: Any?): Long? {
+    return (value as? Timestamp)?.toDate()?.time
+}
+
+private fun isValidSketchId(id: String): Boolean {
+    return runCatching { UUID.fromString(id) }.isSuccess
+}
+
+internal class SketchFirebaseInvalidDataException(reason: String?) :
+    IllegalStateException("Invalid sketch data: ${reason ?: "unknown"}")
+
+internal fun sketchFromFirestoreData(data: Map<String, Any?>): SketchModel? {
+    val id = data["id"] as? String ?: return null
+    if (!isValidSketchId(id)) return null
+
+    val createdAt = sketchTimestampMillis(data["createdAt"]) ?: System.currentTimeMillis()
+    val updatedAt = sketchTimestampMillis(data["updatedAt"]) ?: createdAt
+    val deletedAt = sketchTimestampMillis(data["deletedAt"])
+
+    val rawPoints = data["points"] as? List<*> ?: emptyList<Any?>()
+    val points = rawPoints.mapNotNull { entry ->
+        val pointMap = entry as? Map<*, *> ?: return@mapNotNull null
+        val latitude = (pointMap["latitude"] as? Number)?.toDouble() ?: return@mapNotNull null
+        val longitude = (pointMap["longitude"] as? Number)?.toDouble() ?: return@mapNotNull null
+        Coordinate(latitude = latitude, longitude = longitude)
+    }
+
+    return SketchModel(
+        id = id,
+        points = points,
+        color = data["color"] as? String ?: "#FF0000",
+        strokeWidth = (data["strokeWidth"] as? Number)?.toDouble() ?: 3.0,
+        opacity = (data["opacity"] as? Number)?.toDouble() ?: 1.0,
+        createdAt = createdAt,
+        updatedAt = updatedAt,
+        deletedAt = deletedAt
+    )
+}
 
 /**
  * Firestore의 sketches 컬렉션과 통신하는 Store 클래스.
@@ -48,7 +99,7 @@ class SketchFirebaseStore @Inject constructor(
             val snapshot = sketchesCollection(userId).get().await()
             val sketches = snapshot.documents.mapNotNull { doc ->
                 val data = doc.data ?: return@mapNotNull null
-                firestoreDataToSketch(data)
+                sketchFromFirestoreData(data)
             }.filter { it.deletedAt == null }
             Result.success(sketches)
         } catch (e: Exception) {
@@ -65,7 +116,7 @@ class SketchFirebaseStore @Inject constructor(
             val snapshot = sketchesCollection(userId).get().await()
             val sketches = snapshot.documents.mapNotNull { doc ->
                 val data = doc.data ?: return@mapNotNull null
-                firestoreDataToSketch(data)
+                sketchFromFirestoreData(data)
             }
             Result.success(sketches)
         } catch (e: Exception) {
@@ -83,6 +134,11 @@ class SketchFirebaseStore @Inject constructor(
      */
     suspend fun saveSketch(userId: String, sketch: SketchModel) {
         try {
+            val validation = sketch.validateForFirebasePersistence()
+            if (!validation.isValid) {
+                throw SketchFirebaseInvalidDataException(validation.reason)
+            }
+
             val data = sketchToFirestoreData(sketch)
             sketchesCollection(userId)
                 .document(sketch.id)
@@ -99,6 +155,11 @@ class SketchFirebaseStore @Inject constructor(
      */
     suspend fun saveSketches(userId: String, sketches: List<SketchModel>) {
         try {
+            val validation = validateFirebaseSketchBatch(sketches)
+            if (!validation.isValid) {
+                throw SketchFirebaseInvalidDataException(validation.reason)
+            }
+
             sketches.chunked(500).forEach { chunk ->
                 val batch = firestore.batch()
                 chunk.forEach { sketch ->
@@ -157,13 +218,13 @@ class SketchFirebaseStore @Inject constructor(
             "id" to sketch.id,
             "points" to sketch.points.map { point ->
                 mapOf(
-                    "latitude" to point.latitude,
-                    "longitude" to point.longitude
+                    "latitude" to roundSketchCoordinateForFirestore(point.latitude),
+                    "longitude" to roundSketchCoordinateForFirestore(point.longitude)
                 )
             },
             "color" to sketch.color,
             "strokeWidth" to sketch.strokeWidth,
-            "opacity" to sketch.opacity,
+            "opacity" to roundSketchOpacityForFirestore(sketch.opacity),
             "createdAt" to Timestamp(Date(sketch.createdAt)),
             "updatedAt" to Timestamp(Date(sketch.updatedAt)),
             "deletedAt" to sketch.deletedAt?.let { Timestamp(Date(it)) }
@@ -180,33 +241,7 @@ class SketchFirebaseStore @Inject constructor(
      */
     fun firestoreDataToSketch(data: Map<String, Any?>): SketchModel? {
         return try {
-            val id = data["id"] as? String ?: return null
-
-            val createdAt = (data["createdAt"] as? Timestamp)?.toDate()?.time
-                ?: System.currentTimeMillis()
-            val updatedAt = (data["updatedAt"] as? Timestamp)?.toDate()?.time
-                ?: System.currentTimeMillis()
-            val deletedAt = (data["deletedAt"] as? Timestamp)?.toDate()?.time
-
-            // points 파싱: List<*> 로 받은 뒤 각 원소를 Map<*, *> 단계 검사.
-            val rawPoints = data["points"] as? List<*> ?: emptyList<Any?>()
-            val points = rawPoints.mapNotNull { entry ->
-                val pointMap = entry as? Map<*, *> ?: return@mapNotNull null
-                val latitude = (pointMap["latitude"] as? Number)?.toDouble() ?: return@mapNotNull null
-                val longitude = (pointMap["longitude"] as? Number)?.toDouble() ?: return@mapNotNull null
-                Coordinate(latitude = latitude, longitude = longitude)
-            }
-
-            SketchModel(
-                id = id,
-                points = points,
-                color = data["color"] as? String ?: "#FF0000",
-                strokeWidth = (data["strokeWidth"] as? Number)?.toDouble() ?: 3.0,
-                opacity = (data["opacity"] as? Number)?.toDouble() ?: 1.0,
-                createdAt = createdAt,
-                updatedAt = updatedAt,
-                deletedAt = deletedAt
-            )
+            sketchFromFirestoreData(data)
         } catch (e: Exception) {
             Log.e(TAG, "Firestore 데이터 -> SketchModel 변환 실패", e)
             null

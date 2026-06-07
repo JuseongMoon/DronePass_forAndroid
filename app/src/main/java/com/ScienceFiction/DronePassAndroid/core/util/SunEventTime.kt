@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.core.util
 
+import java.time.Duration
 import java.time.LocalDateTime
 import java.time.LocalTime
 
@@ -30,6 +31,16 @@ fun nextSunEvent(
     sunsetIso: String?,
     now: LocalDateTime = LocalDateTime.now(),
 ): NextSunEvent {
+    val eventFromDatedValues = nextSunEvent(
+        sunriseIsoList = sunriseIso?.let(::listOf),
+        sunsetIsoList = sunsetIso?.let(::listOf),
+        now = now,
+        useSameDayFallback = false,
+    )
+    if (eventFromDatedValues.timeUntilFormatted != "--:--") {
+        return eventFromDatedValues
+    }
+
     val sunrise = parseIsoLocalTime(sunriseIso)
     val sunset = parseIsoLocalTime(sunsetIso)
     if (sunrise == null || sunset == null) {
@@ -49,6 +60,74 @@ fun nextSunEvent(
     }
 }
 
+/**
+ * 여러 날짜의 ISO 일출/일몰 문자열에서 현재 이후의 가장 가까운 이벤트를 고른다.
+ *
+ * iOS 는 WeatherManager 가 오늘 일출/일몰과 내일 일출을 함께 보관하고, 일몰 이후에는
+ * `tomorrowSunriseTime` 까지의 남은 시간을 표시한다. Open-Meteo daily 배열도 같은 정보를
+ * 주므로 리스트 기반 계산을 우선 사용한다.
+ */
+fun nextSunEvent(
+    sunriseIsoList: List<String>?,
+    sunsetIsoList: List<String>?,
+    now: LocalDateTime = LocalDateTime.now(),
+): NextSunEvent {
+    return nextSunEvent(
+        sunriseIsoList = sunriseIsoList,
+        sunsetIsoList = sunsetIsoList,
+        now = now,
+        useSameDayFallback = true,
+    )
+}
+
+private fun nextSunEvent(
+    sunriseIsoList: List<String>?,
+    sunsetIsoList: List<String>?,
+    now: LocalDateTime,
+    useSameDayFallback: Boolean,
+): NextSunEvent {
+    val datedEvents = buildList {
+        sunriseIsoList.orEmpty().forEach { iso ->
+            parseIsoLocalDateTime(iso, now)?.let { add(false to it) }
+        }
+        sunsetIsoList.orEmpty().forEach { iso ->
+            parseIsoLocalDateTime(iso, now)?.let { add(true to it) }
+        }
+    }
+
+    val nextEvent = datedEvents
+        .filter { (_, dateTime) -> dateTime.isAfter(now) }
+        .minByOrNull { (_, dateTime) -> dateTime }
+
+    if (nextEvent != null) {
+        return NextSunEvent(
+            isNextSunset = nextEvent.first,
+            timeUntilFormatted = formatDuration(now, nextEvent.second),
+        )
+    }
+
+    if (!useSameDayFallback) {
+        return NextSunEvent(isNextSunset = true, timeUntilFormatted = "--:--")
+    }
+
+    return nextSunEvent(
+        sunriseIso = sunriseIsoList.orEmpty().firstOrNull(),
+        sunsetIso = sunsetIsoList.orEmpty().firstOrNull(),
+        now = now,
+    )
+}
+
+private fun parseIsoLocalDateTime(iso: String?, now: LocalDateTime): LocalDateTime? {
+    if (iso.isNullOrBlank()) return null
+    return try {
+        LocalDateTime.parse(iso)
+    } catch (_: Exception) {
+        parseIsoLocalTime(iso)?.let { time ->
+            now.toLocalDate().atTime(time)
+        }
+    }
+}
+
 private fun parseIsoLocalTime(iso: String?): LocalTime? {
     if (iso.isNullOrBlank()) return null
     val timePart = iso.substringAfter('T', missingDelimiterValue = iso)
@@ -57,6 +136,11 @@ private fun parseIsoLocalTime(iso: String?): LocalTime? {
     } catch (e: Exception) {
         null
     }
+}
+
+private fun formatDuration(from: LocalDateTime, to: LocalDateTime): String {
+    val totalMinutes = Duration.between(from, to).toMinutes().coerceAtLeast(0).toInt()
+    return formatMinutes(totalMinutes)
 }
 
 private fun formatDuration(from: LocalTime, to: LocalTime): String {

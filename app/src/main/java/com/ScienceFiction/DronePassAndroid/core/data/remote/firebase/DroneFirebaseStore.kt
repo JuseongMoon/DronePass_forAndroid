@@ -11,6 +11,32 @@ import java.util.Date
 import javax.inject.Inject
 import javax.inject.Singleton
 
+private fun droneTimestampMillis(value: Any?): Long? {
+    return (value as? Timestamp)?.toDate()?.time
+}
+
+internal fun droneFromFirestoreData(data: Map<String, Any?>): DroneModel? {
+    val id = data["id"] as? String ?: return null
+    val name = data["name"] as? String ?: return null
+    val color = data["color"] as? String ?: return null
+    val createdAt = droneTimestampMillis(data["createdAt"]) ?: return null
+    val updatedAt = droneTimestampMillis(data["updatedAt"]) ?: return null
+    val deletedAt = droneTimestampMillis(data["deletedAt"])
+
+    return DroneModel(
+        id = id,
+        name = name,
+        color = color,
+        serialNumber = data["serialNumber"] as? String,
+        takeoffWeight = data["takeoffWeight"] as? String,
+        size = data["size"] as? String,
+        memo = data["memo"] as? String,
+        createdAt = createdAt,
+        updatedAt = updatedAt,
+        deletedAt = deletedAt
+    )
+}
+
 /**
  * Firestore의 drones 컬렉션과 통신하는 Store 클래스.
  * 경로: users/{userId}/drones/{droneId}
@@ -45,7 +71,7 @@ class DroneFirebaseStore @Inject constructor(
             val snapshot = dronesCollection(userId).get().await()
             val drones = snapshot.documents.mapNotNull { doc ->
                 val data = doc.data ?: return@mapNotNull null
-                firestoreDataToDrone(data)
+                droneFromFirestoreData(data)
             }.filter { it.deletedAt == null }
             Result.success(drones)
         } catch (e: Exception) {
@@ -62,7 +88,7 @@ class DroneFirebaseStore @Inject constructor(
             val snapshot = dronesCollection(userId).get().await()
             val drones = snapshot.documents.mapNotNull { doc ->
                 val data = doc.data ?: return@mapNotNull null
-                firestoreDataToDrone(data)
+                droneFromFirestoreData(data)
             }
             Result.success(drones)
         } catch (e: Exception) {
@@ -168,26 +194,7 @@ class DroneFirebaseStore @Inject constructor(
      */
     fun firestoreDataToDrone(data: Map<String, Any?>): DroneModel? {
         return try {
-            val id = data["id"] as? String ?: return null
-
-            val createdAt = (data["createdAt"] as? Timestamp)?.toDate()?.time
-                ?: System.currentTimeMillis()
-            val updatedAt = (data["updatedAt"] as? Timestamp)?.toDate()?.time
-                ?: System.currentTimeMillis()
-            val deletedAt = (data["deletedAt"] as? Timestamp)?.toDate()?.time
-
-            DroneModel(
-                id = id,
-                name = data["name"] as? String ?: "",
-                color = data["color"] as? String ?: "#007AFF",
-                serialNumber = data["serialNumber"] as? String,
-                takeoffWeight = data["takeoffWeight"] as? String,
-                size = data["size"] as? String,
-                memo = data["memo"] as? String,
-                createdAt = createdAt,
-                updatedAt = updatedAt,
-                deletedAt = deletedAt
-            )
+            droneFromFirestoreData(data)
         } catch (e: Exception) {
             Log.e(TAG, "Firestore 데이터 -> DroneModel 변환 실패", e)
             null

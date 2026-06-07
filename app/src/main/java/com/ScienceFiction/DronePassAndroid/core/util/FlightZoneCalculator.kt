@@ -87,7 +87,8 @@ object FlightZoneCalculator {
     /**
      * 특정 좌표에서의 비행 가능 여부 판정
      *
-     * 비행금지(PROHIBITED) 또는 비행제한(RESTRICTED) 구역 내부이면 비행 불가.
+     * 비행금지(PROHIBITED), 비행제한(RESTRICTED), 사전협의(CONSULTATION) 구역
+     * 내부이면 iOS 처럼 비행 불가/승인 필요로 판정한다.
      * 안전 최우선: 비행금지 -> 비행가능 오판 0건을 보장한다.
      *
      * @param lat 검사할 위도
@@ -100,47 +101,50 @@ object FlightZoneCalculator {
         lon: Double,
         zones: List<DroneZoneFeature>
     ): FlightPermissionResult {
-        val containingZones = mutableListOf<DroneZoneFeature>()
+        val prohibitedZones = mutableListOf<DroneZoneFeature>()
+        val restrictedZones = mutableListOf<DroneZoneFeature>()
+        val advisoryZones = mutableListOf<DroneZoneFeature>()
 
         for (zone in zones) {
             for (polygon in zone.polygons) {
                 if (isPointInPolygon(lat, lon, polygon)) {
-                    containingZones.add(zone)
+                    when (zone.layer.restrictionLevel) {
+                        FlightRestrictionLevel.PROHIBITED -> prohibitedZones.add(zone)
+                        FlightRestrictionLevel.RESTRICTED,
+                        FlightRestrictionLevel.CONSULTATION -> restrictedZones.add(zone)
+                        FlightRestrictionLevel.ADVISORY -> advisoryZones.add(zone)
+                    }
                     break // 하나의 폴리곤에서 포함되면 다음 구역으로
                 }
             }
         }
 
-        if (containingZones.isEmpty()) {
-            return FlightPermissionResult(
+        return when {
+            prohibitedZones.isNotEmpty() -> FlightPermissionResult(
+                canFly = false,
+                level = FlightRestrictionLevel.PROHIBITED,
+                zones = prohibitedZones,
+                message = "${prohibitedZones.layerNames()} 구역입니다. 비행이 금지되어 있습니다."
+            )
+            restrictedZones.isNotEmpty() -> FlightPermissionResult(
+                canFly = false,
+                level = FlightRestrictionLevel.RESTRICTED,
+                zones = restrictedZones,
+                message = "${restrictedZones.layerNames()} 구역입니다. 비행 승인이 필요합니다."
+            )
+            advisoryZones.isNotEmpty() -> FlightPermissionResult(
                 canFly = true,
-                level = null,
+                level = FlightRestrictionLevel.ADVISORY,
+                zones = advisoryZones,
+                message = "비행 가능하나 주의가 필요한 지역입니다."
+            )
+            else -> FlightPermissionResult(
+                canFly = true,
+                level = FlightRestrictionLevel.ADVISORY,
                 zones = emptyList(),
-                message = "비행 가능 구역입니다."
+                message = "해당 지역은 비행 가능합니다."
             )
         }
-
-        // 가장 높은 제한 수준 찾기 (PROHIBITED > RESTRICTED > CONSULTATION > ADVISORY)
-        val highestRestriction = containingZones.minByOrNull { it.layer.priority }
-        val level = highestRestriction?.layer?.restrictionLevel
-
-        val canFly = level != FlightRestrictionLevel.PROHIBITED &&
-                level != FlightRestrictionLevel.RESTRICTED
-
-        val message = when (level) {
-            FlightRestrictionLevel.PROHIBITED -> "비행금지구역입니다. 비행이 불가합니다."
-            FlightRestrictionLevel.RESTRICTED -> "비행제한구역입니다. 허가 없이 비행할 수 없습니다."
-            FlightRestrictionLevel.CONSULTATION -> "사전협의가 필요한 구역입니다."
-            FlightRestrictionLevel.ADVISORY -> "주의가 필요한 구역입니다."
-            null -> "비행 가능 구역입니다."
-        }
-
-        return FlightPermissionResult(
-            canFly = canFly,
-            level = level,
-            zones = containingZones,
-            message = message
-        )
     }
 
     /**
@@ -186,6 +190,9 @@ object FlightZoneCalculator {
         return "$southWestLon,$southWestLat,$northEastLon,$northEastLat"
     }
 }
+
+private fun List<DroneZoneFeature>.layerNames(): String =
+    joinToString(separator = ", ") { it.layer.displayName }
 
 /**
  * 비행 가능 여부 판정 결과

@@ -34,6 +34,13 @@ enum class PaletteColor(val hex: String, val koreanName: String) {
         private val DEFAULT_FALLBACK = Color(0xFF007AFF)
 
         /**
+         * 드론 편집/추천에서 선택 가능한 색상 목록.
+         * iOS ColorPickerGrid 와 DroneManager.suggestedNextColor 는 회색을 제외한 allCases 순서를 사용한다.
+         */
+        val droneSelectableEntries: List<PaletteColor>
+            get() = entries.filter { it != GRAY }
+
+        /**
          * HEX 문자열로부터 PaletteColor 검색
          */
         fun fromHex(hex: String): PaletteColor? =
@@ -44,5 +51,11 @@ enum class PaletteColor(val hex: String, val koreanName: String) {
          */
         fun colorAtIndex(index: Int): PaletteColor =
             entries[index % entries.size]
+
+        /**
+         * 드론 생성용 인덱스 색상. iOS 신규 드론 색상 추천과 동일하게 회색은 제외한다.
+         */
+        fun droneColorAtIndex(index: Int): PaletteColor =
+            droneSelectableEntries[index % droneSelectableEntries.size]
     }
 }

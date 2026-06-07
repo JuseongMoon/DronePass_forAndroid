@@ -46,8 +46,8 @@ data class DroneModel(
         /**
          * 기본 드론 생성
          */
-        fun createDefault(): DroneModel = DroneModel(
-            name = "기본 드론",
+        fun createDefault(defaultName: String = "내 드론"): DroneModel = DroneModel(
+            name = defaultName,
             color = PaletteColor.BLUE.hex
         )
 
@@ -56,7 +56,7 @@ data class DroneModel(
          */
         fun createNew(index: Int): DroneModel = DroneModel(
             name = "드론 ${index + 1}",
-            color = PaletteColor.colorAtIndex(index).hex
+            color = PaletteColor.droneColorAtIndex(index).hex
         )
     }
 }

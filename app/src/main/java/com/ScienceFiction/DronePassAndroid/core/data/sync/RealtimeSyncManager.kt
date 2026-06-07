@@ -20,6 +20,25 @@ import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 import javax.inject.Singleton
 
+internal enum class RealtimeForceSyncDomain {
+    ShapeDrone,
+    Sketch,
+}
+
+internal fun realtimeForceSyncDomains(): List<RealtimeForceSyncDomain> {
+    return listOf(
+        RealtimeForceSyncDomain.ShapeDrone,
+        RealtimeForceSyncDomain.Sketch,
+    )
+}
+
+internal fun resolveRealtimeSyncRestartUserId(
+    currentListeningUserId: String?,
+    currentAuthUserId: String?,
+): String? {
+    return currentListeningUserId ?: currentAuthUserId
+}
+
 /**
  * Firestore 실시간 동기화 매니저
  *
@@ -373,19 +392,28 @@ class RealtimeSyncManager @Inject constructor(
     /**
      * iOS `RealtimeSyncManager.forceSyncNow()` 정합 — 디바운싱 우회 즉시 동기화.
      * ProfileViewModel 의 수동 백업 / 토글 ON 시 동기화 chain 의 진입점.
+     * Shape/Drone 과 Sketch 는 서로 다른 metadata 문서를 쓰지만 수동 백업은 전체 데이터를 대상으로 한다.
      * 외부 호출은 rate-limit (UI 디바운스) 으로 보호할 것 — Repository 자체는 가드 안 함.
      */
     suspend fun forceSyncNow() {
-        performShapeAndDroneSync()
+        realtimeForceSyncDomains().forEach { domain ->
+            when (domain) {
+                RealtimeForceSyncDomain.ShapeDrone -> performShapeAndDroneSync()
+                RealtimeForceSyncDomain.Sketch -> performSketchSync()
+            }
+        }
     }
 
     /**
-     * iOS `resetAndRestartRealtimeSync()` 정합 — 현재 리스닝 중인 userId 로
-     * stopListening → 100ms 후 startListening 재시작.
+     * iOS `resetAndRestartRealtimeSync()` 정합 — 현재 리스닝 중인 userId 또는
+     * 로그인 userId 로 stopListening → 100ms 후 startListening 재시작.
      * 동기화 토글 ON 시 fresh listener 보장.
      */
     suspend fun resetAndRestartRealtimeSync() {
-        val userId = currentListeningUserId ?: return
+        val userId = resolveRealtimeSyncRestartUserId(
+            currentListeningUserId = currentListeningUserId,
+            currentAuthUserId = auth.currentUser?.uid,
+        ) ?: return
         stopListening()
         delay(100L)
         startListening(userId)

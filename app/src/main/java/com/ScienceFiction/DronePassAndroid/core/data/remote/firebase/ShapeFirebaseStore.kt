@@ -4,6 +4,8 @@ import android.util.Log
 import com.ScienceFiction.DronePassAndroid.domain.model.Coordinate
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeType
+import com.ScienceFiction.DronePassAndroid.domain.model.validateFirebaseShapeBatch
+import com.ScienceFiction.DronePassAndroid.domain.model.validateForFirebasePersistence
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
@@ -12,6 +14,101 @@ import kotlinx.coroutines.tasks.await
 import java.util.Date
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.math.round
+
+private const val COORDINATE_SCALE = 1_000_000.0
+
+internal fun roundCoordinateComponent(value: Double): Double {
+    return round(value * COORDINATE_SCALE) / COORDINATE_SCALE
+}
+
+internal fun coordinateToFirestoreMap(coordinate: Coordinate): Map<String, Double> {
+    return mapOf(
+        "latitude" to roundCoordinateComponent(coordinate.latitude),
+        "longitude" to roundCoordinateComponent(coordinate.longitude)
+    )
+}
+
+private fun firestoreMapToCoordinate(value: Any?): Coordinate? {
+    val map = value as? Map<*, *> ?: return null
+    val latitude = (map["latitude"] as? Number)?.toDouble() ?: return null
+    val longitude = (map["longitude"] as? Number)?.toDouble() ?: return null
+    return Coordinate(latitude = latitude, longitude = longitude)
+}
+
+private fun coordinatesToFirestoreList(coordinates: List<Coordinate>): List<Map<String, Double>> {
+    return coordinates.map(::coordinateToFirestoreMap)
+}
+
+private fun firestoreListToCoordinates(value: Any?): List<Coordinate>? {
+    val list = value as? List<*> ?: return null
+    return list.mapNotNull(::firestoreMapToCoordinate)
+}
+
+private fun timestampMillis(value: Any?): Long? {
+    return (value as? Timestamp)?.toDate()?.time
+}
+
+internal class ShapeFirebaseInvalidDataException(reason: String?) :
+    IllegalStateException("Invalid shape data: ${reason ?: "unknown"}")
+
+internal fun shapeFromFirestoreData(data: Map<String, Any?>): ShapeModel? {
+    val id = data["id"] as? String ?: return null
+    val title = data["title"] as? String ?: return null
+    val color = data["color"] as? String ?: return null
+    val shapeType = ShapeType.parseWireValue(data["shapeType"] as? String) ?: return null
+
+    val flightStartDate = timestampMillis(data["flightStartDate"])
+        ?: timestampMillis(data["startedAt"])
+        ?: return null
+    val flightEndDate = timestampMillis(data["flightEndDate"])
+        ?: timestampMillis(data["expireDate"])
+    val createdAt = timestampMillis(data["createdAt"]) ?: flightStartDate
+    val updatedAt = timestampMillis(data["updatedAt"]) ?: createdAt
+    val deletedAt = timestampMillis(data["deletedAt"])
+    val baseCoordinate = firestoreMapToCoordinate(data["baseCoordinate"]) ?: return null
+    val radius = if (shapeType == ShapeType.CIRCLE) {
+        (data["radius"] as? Number)?.toDouble()
+    } else {
+        null
+    }
+    val secondCoordinate = if (shapeType == ShapeType.RECTANGLE) {
+        firestoreMapToCoordinate(data["secondCoordinate"])
+    } else {
+        null
+    }
+    val polygonCoordinates = if (shapeType == ShapeType.POLYGON) {
+        firestoreListToCoordinates(data["polygonCoordinates"])
+    } else {
+        null
+    }
+    val polylineCoordinates = if (shapeType == ShapeType.POLYLINE) {
+        firestoreListToCoordinates(data["polylineCoordinates"])
+    } else {
+        null
+    }
+
+    return ShapeModel(
+        id = id,
+        title = title,
+        shapeType = shapeType,
+        baseCoordinate = baseCoordinate,
+        address = data["address"] as? String,
+        radius = radius,
+        secondCoordinate = secondCoordinate,
+        polygonCoordinates = polygonCoordinates,
+        polylineCoordinates = polylineCoordinates,
+        height = (data["height"] as? Number)?.toDouble(),
+        memo = data["memo"] as? String,
+        color = color,
+        droneId = data["droneId"] as? String,
+        createdAt = createdAt,
+        updatedAt = updatedAt,
+        flightStartDate = flightStartDate,
+        flightEndDate = flightEndDate,
+        deletedAt = deletedAt
+    )
+}
 
 /**
  * Firestore의 shapes 컬렉션과 통신하는 Store 클래스.
@@ -53,6 +150,12 @@ class ShapeFirebaseStore @Inject constructor(
                 val data = doc.data ?: return@mapNotNull null
                 firestoreDataToShape(data)
             }.filter { it.deletedAt == null }
+
+            val validation = validateFirebaseShapeBatch(shapes)
+            if (!validation.isValid) {
+                return Result.failure(ShapeFirebaseInvalidDataException(validation.reason))
+            }
+
             Result.success(shapes)
         } catch (e: Exception) {
             Log.e(TAG, "도형 로드 실패: userId=$userId", e)
@@ -86,6 +189,11 @@ class ShapeFirebaseStore @Inject constructor(
      */
     suspend fun saveShape(userId: String, shape: ShapeModel) {
         try {
+            val validation = shape.validateForFirebasePersistence()
+            if (!validation.isValid) {
+                throw ShapeFirebaseInvalidDataException(validation.reason)
+            }
+
             val data = shapeToFirestoreData(shape)
             shapesCollection(userId)
                 .document(shape.id)
@@ -102,6 +210,11 @@ class ShapeFirebaseStore @Inject constructor(
      */
     suspend fun saveShapes(userId: String, shapes: List<ShapeModel>) {
         try {
+            val validation = validateFirebaseShapeBatch(shapes)
+            if (!validation.isValid) {
+                throw ShapeFirebaseInvalidDataException(validation.reason)
+            }
+
             shapes.chunked(500).forEach { chunk ->
                 val batch = firestore.batch()
                 chunk.forEach { shape ->
@@ -158,12 +271,12 @@ class ShapeFirebaseStore @Inject constructor(
         return mapOf(
             "id" to shape.id,
             "title" to shape.title,
-            "shapeType" to shape.shapeType.name, // "CIRCLE"
-            "baseCoordinate" to mapOf(
-                "latitude" to shape.baseCoordinate.latitude,
-                "longitude" to shape.baseCoordinate.longitude
-            ),
+            "shapeType" to shape.shapeType.rawValue,
+            "baseCoordinate" to coordinateToFirestoreMap(shape.baseCoordinate),
             "radius" to shape.radius,
+            "secondCoordinate" to shape.secondCoordinate?.let(::coordinateToFirestoreMap),
+            "polygonCoordinates" to shape.polygonCoordinates?.let(::coordinatesToFirestoreList),
+            "polylineCoordinates" to shape.polylineCoordinates?.let(::coordinatesToFirestoreList),
             "height" to shape.height,
             "memo" to shape.memo,
             "address" to shape.address,
@@ -184,63 +297,11 @@ class ShapeFirebaseStore @Inject constructor(
     @Suppress("UNCHECKED_CAST")
     fun firestoreDataToShape(data: Map<String, Any?>): ShapeModel? {
         return try {
-            val id = data["id"] as? String ?: return null
-
-            // 레거시 필드 폴백: flightStartDate
-            val flightStartDate = (data["flightStartDate"] as? Timestamp)?.toDate()?.time
-                ?: (data["startedAt"] as? Timestamp)?.toDate()?.time
-                ?: System.currentTimeMillis()
-
-            // 레거시 필드 폴백: flightEndDate
-            val flightEndDate = (data["flightEndDate"] as? Timestamp)?.toDate()?.time
-                ?: (data["expireDate"] as? Timestamp)?.toDate()?.time
-
-            // createdAt이 없으면 flightStartDate 사용
-            val createdAt = (data["createdAt"] as? Timestamp)?.toDate()?.time
-                ?: flightStartDate
-
-            val updatedAt = (data["updatedAt"] as? Timestamp)?.toDate()?.time
-                ?: System.currentTimeMillis()
-
-            val deletedAt = (data["deletedAt"] as? Timestamp)?.toDate()?.time
-
-            // baseCoordinate 파싱. 좌표가 없거나 숫자 변환 실패 시 데이터 손상으로 간주하고
-            // null 반환 → 호출자가 mapNotNull 로 스킵. 이전: 서울 시청(37.5665, 126.978)
-            // 으로 fallback 하여 손상을 침묵 처리하던 문제 제거.
-            val coordMap = data["baseCoordinate"] as? Map<*, *>
-            val lat = (coordMap?.get("latitude") as? Number)?.toDouble()
-            val lon = (coordMap?.get("longitude") as? Number)?.toDouble()
-            if (lat == null || lon == null) {
-                Log.w(TAG, "baseCoordinate 누락/손상으로 도형 스킵: id=$id")
-                return null
+            val shape = shapeFromFirestoreData(data)
+            if (shape == null) {
+                Log.w(TAG, "필수 필드 누락/손상으로 도형 스킵: id=${data["id"]}")
             }
-            val baseCoordinate = Coordinate(latitude = lat, longitude = lon)
-
-            // shapeType 파싱
-            val shapeTypeString = data["shapeType"] as? String ?: "CIRCLE"
-            val shapeType = try {
-                ShapeType.valueOf(shapeTypeString)
-            } catch (e: IllegalArgumentException) {
-                ShapeType.CIRCLE
-            }
-
-            ShapeModel(
-                id = id,
-                title = data["title"] as? String ?: "",
-                shapeType = shapeType,
-                baseCoordinate = baseCoordinate,
-                address = data["address"] as? String,
-                radius = (data["radius"] as? Number)?.toDouble(),
-                height = (data["height"] as? Number)?.toDouble(),
-                memo = data["memo"] as? String,
-                color = data["color"] as? String ?: "#007AFF",
-                droneId = data["droneId"] as? String,
-                createdAt = createdAt,
-                updatedAt = updatedAt,
-                flightStartDate = flightStartDate,
-                flightEndDate = flightEndDate,
-                deletedAt = deletedAt
-            )
+            shape
         } catch (e: Exception) {
             Log.e(TAG, "Firestore 데이터 -> ShapeModel 변환 실패", e)
             null

@@ -6,6 +6,7 @@ import com.ScienceFiction.DronePassAndroid.core.data.remote.document.DocumentApi
 import com.ScienceFiction.DronePassAndroid.core.util.MarkdownParser
 import com.ScienceFiction.DronePassAndroid.domain.model.ParsedDocument
 import com.ScienceFiction.DronePassAndroid.domain.model.PatchNote
+import java.util.Locale
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
@@ -38,11 +39,15 @@ class DocumentRepository @Inject constructor(
     @Volatile private var cachedPrivacy: CacheEntry<ParsedDocument>? = null
     private val mutex = Mutex()
 
-    /** 현재 앱 언어 기준 파일명 suffix 결정. `en` → `_en.txt`, 그 외 → `.txt`. */
+    /** 현재 앱 언어 기준 파일명 suffix 결정. `ko` → `.txt`, 그 외 → `_en.txt`. */
     private fun localizedPath(base: String): String {
         val locales = AppCompatDelegate.getApplicationLocales()
-        val lang = if (!locales.isEmpty) locales.get(0)?.language else null
-        return if (lang == "en") "${base}_en.txt" else "$base.txt"
+        val lang = if (!locales.isEmpty) {
+            locales.get(0)?.language
+        } else {
+            Locale.getDefault().language
+        }
+        return localizedDocumentPath(base = base, languageTag = lang)
     }
 
     suspend fun fetchTerms(): Result<ParsedDocument> = fetchCachedDocument(
@@ -124,4 +129,11 @@ class DocumentRepository @Inject constructor(
         val path: String, // 언어 변경 감지용 (path 가 바뀌면 캐시 miss)
         val fetchedAt: Long,
     )
+}
+
+internal fun localizedDocumentPath(base: String, languageTag: String?): String {
+    val primaryLanguage = languageTag
+        ?.substringBefore('-')
+        ?.lowercase(Locale.ROOT)
+    return if (primaryLanguage == "ko") "$base.txt" else "${base}_en.txt"
 }

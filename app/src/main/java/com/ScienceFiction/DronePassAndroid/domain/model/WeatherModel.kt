@@ -6,7 +6,9 @@ data class WeatherData(
     val current: CurrentWeatherData?,
     val hourlyForecast: List<HourlyWeatherData>,
     val sunrise: String?,
-    val sunset: String?
+    val sunset: String?,
+    val sunriseTimes: List<String> = sunrise?.let(::listOf) ?: emptyList(),
+    val sunsetTimes: List<String> = sunset?.let(::listOf) ?: emptyList()
 )
 
 data class CurrentWeatherData(

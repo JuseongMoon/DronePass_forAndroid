@@ -30,7 +30,16 @@ data class GeocodingAddress(
     val roadAddress: String?,
     val jibunAddress: String?,
     val englishAddress: String?,
+    val addressElements: List<GeocodingAddressElement>? = null,
     val x: String?,  // 경도 (longitude) - 에러 응답 시 누락 가능
     val y: String?,  // 위도 (latitude) - 에러 응답 시 누락 가능
     val distance: Double?
+)
+
+@JsonClass(generateAdapter = true)
+data class GeocodingAddressElement(
+    val types: List<String>?,
+    val longName: String?,
+    val shortName: String?,
+    val code: String?
 )

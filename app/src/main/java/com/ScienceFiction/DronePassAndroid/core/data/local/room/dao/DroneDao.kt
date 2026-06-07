@@ -24,6 +24,9 @@ interface DroneDao {
     @Query("SELECT * FROM drones WHERE id = :id")
     suspend fun getDroneById(id: String): DroneEntity?
 
+    @Query("SELECT COUNT(*) FROM drones WHERE deletedAt IS NULL")
+    suspend fun getActiveDroneCount(): Int
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertDrone(drone: DroneEntity)
 

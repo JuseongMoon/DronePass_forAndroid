@@ -1,5 +1,8 @@
 package com.ScienceFiction.DronePassAndroid.core.util
 
+import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.DroneZoneFeature
+import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.FlightRestrictionLevel
+import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.FlightZoneLayer
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -242,6 +245,63 @@ class FlightZoneCalculatorTest {
             polygon = jamsilProhibitedZone
         )
         assertFalse("비행금지 구역 외부가 내부로 판정되면 false positive", outside)
+    }
+
+    // endregion
+
+    // region iOS 비행 제한 수준 정합
+
+    @Test
+    fun `경계 교통 장애물 구역은 iOS처럼 비행제한으로 분류된다`() {
+        assertEquals(FlightRestrictionLevel.RESTRICTED, FlightZoneLayer.ALERT.restrictionLevel)
+        assertEquals(FlightRestrictionLevel.RESTRICTED, FlightZoneLayer.ATZ.restrictionLevel)
+        assertEquals(FlightRestrictionLevel.RESTRICTED, FlightZoneLayer.OBSTACLE.restrictionLevel)
+    }
+
+    @Test
+    fun `경계구역 내부는 허가 없는 비행 불가로 판정된다`() {
+        val zone = DroneZoneFeature(
+            id = "alert-zone",
+            layer = FlightZoneLayer.ALERT,
+            polygons = listOf(unitSquare),
+            zoneCode = "A1",
+            upperAltitude = null,
+            lowerAltitude = null,
+            zoneName = "경계구역"
+        )
+
+        val result = FlightZoneCalculator.checkFlightPermission(
+            lat = 37.5,
+            lon = 126.5,
+            zones = listOf(zone)
+        )
+
+        assertFalse(result.canFly)
+        assertEquals(FlightRestrictionLevel.RESTRICTED, result.level)
+        assertEquals("경계구역 구역입니다. 비행 승인이 필요합니다.", result.message)
+    }
+
+    @Test
+    fun `사전협의구역 내부는 iOS처럼 비행 승인이 필요한 비행불가로 판정된다`() {
+        val zone = DroneZoneFeature(
+            id = "consultation-zone",
+            layer = FlightZoneLayer.PRIOR_CONSULTATION,
+            polygons = listOf(unitSquare),
+            zoneCode = "서울지방항공청",
+            upperAltitude = null,
+            lowerAltitude = null,
+            zoneName = "사전협의구역"
+        )
+
+        val result = FlightZoneCalculator.checkFlightPermission(
+            lat = 37.5,
+            lon = 126.5,
+            zones = listOf(zone)
+        )
+
+        assertFalse(result.canFly)
+        assertEquals(FlightRestrictionLevel.RESTRICTED, result.level)
+        assertEquals("사전협의구역 구역입니다. 비행 승인이 필요합니다.", result.message)
     }
 
     // endregion

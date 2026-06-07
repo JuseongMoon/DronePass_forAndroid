@@ -25,7 +25,7 @@ class WeatherRepository @Inject constructor(
     @Volatile private var cachedLatitude: Double = 0.0
     @Volatile private var cachedLongitude: Double = 0.0
     @Volatile private var cacheTimestamp: Long = 0L
-    @Volatile private var cachedCategory: DroneCategory = DroneCategory.TOY
+    @Volatile private var cachedCategory: DroneCategory = DroneCategory.IosDefault
     private val cacheMutex = Mutex()
 
     companion object {
@@ -39,7 +39,7 @@ class WeatherRepository @Inject constructor(
     suspend fun fetchWeather(
         latitude: Double,
         longitude: Double,
-        category: DroneCategory = DroneCategory.TOY
+        category: DroneCategory = DroneCategory.IosDefault
     ): Result<WeatherData> {
         // 캐시 hit-path: 락 없이 빠르게 검사 (@Volatile 가시성 보장)
         if (isCacheHit(latitude, longitude, category)) {
@@ -109,15 +109,18 @@ class WeatherRepository @Inject constructor(
 
         val hourlyData = mapHourlyData(response.hourly)
 
-        // 오늘 일출/일몰
-        val sunrise = response.daily?.sunrise?.firstOrNull()
-        val sunset = response.daily?.sunset?.firstOrNull()
+        val sunriseTimes = response.daily?.sunrise.orEmpty()
+        val sunsetTimes = response.daily?.sunset.orEmpty()
+        val sunrise = sunriseTimes.firstOrNull()
+        val sunset = sunsetTimes.firstOrNull()
 
         return WeatherData(
             current = currentData,
             hourlyForecast = hourlyData,
             sunrise = sunrise,
-            sunset = sunset
+            sunset = sunset,
+            sunriseTimes = sunriseTimes,
+            sunsetTimes = sunsetTimes
         )
     }
 
