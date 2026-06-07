@@ -39,6 +39,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.core.util.nextSunEvent
+import java.time.Duration
+import java.time.LocalDateTime
 import java.time.LocalTime
 
 private val SunEventColor = Color(0xFFFF9500) // iOS .orange
@@ -63,15 +65,18 @@ private val NighttimeGradientColors = listOf(
 fun SunTimeline(
     sunrise: String?,
     sunset: String?,
+    sunriseTimes: List<String> = sunrise?.let(::listOf) ?: emptyList(),
+    sunsetTimes: List<String> = sunset?.let(::listOf) ?: emptyList(),
     modifier: Modifier = Modifier,
 ) {
-    val sunriseTime = remember(sunrise) { parseTime(sunrise) }
-    val sunsetTime = remember(sunset) { parseTime(sunset) }
-    if (sunriseTime == null || sunsetTime == null) return
-
-    val now = remember { LocalTime.now() }
-    val isDaytime = !now.isBefore(sunriseTime) && now.isBefore(sunsetTime)
-    val nextEvent = nextSunEvent(sunrise, sunset)
+    val nowDateTime = rememberSunEventNow()
+    val timelineState = remember(sunrise, sunset, sunriseTimes, sunsetTimes, nowDateTime) {
+        resolveSunTimelineState(
+            sunriseIsoList = sunriseTimes.ifEmpty { sunrise?.let(::listOf).orEmpty() },
+            sunsetIsoList = sunsetTimes.ifEmpty { sunset?.let(::listOf).orEmpty() },
+            now = nowDateTime,
+        )
+    } ?: return
 
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -96,10 +101,8 @@ fun SunTimeline(
 
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 TimelineProgressBar(
-                    isDaytime = isDaytime,
-                    sunriseTime = sunriseTime,
-                    sunsetTime = sunsetTime,
-                    now = now,
+                    timelineState = timelineState,
+                    now = nowDateTime,
                 )
 
                 // 남은 시간 (HStack)
@@ -115,14 +118,14 @@ fun SunTimeline(
                     )
                     Text(
                         text = stringResource(
-                            if (isDaytime) R.string.weather_until_sunset
+                            if (timelineState.nextEvent.isNextSunset) R.string.weather_until_sunset
                             else R.string.weather_until_sunrise,
                         ),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface,
                     )
                     Text(
-                        text = nextEvent.timeUntilFormatted,
+                        text = timelineState.nextEvent.timeUntilFormatted,
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = SunEventColor,
@@ -140,11 +143,10 @@ fun SunTimeline(
 
 @Composable
 private fun TimelineProgressBar(
-    isDaytime: Boolean,
-    sunriseTime: LocalTime,
-    sunsetTime: LocalTime,
-    now: LocalTime,
+    timelineState: SunTimelineState,
+    now: LocalDateTime,
 ) {
+    val isDaytime = timelineState.isDaytime
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -155,7 +157,7 @@ private fun TimelineProgressBar(
         // 시작 측 (낮: 일출 / 밤: 일몰)
         SideIconTime(
             iconDaytime = isDaytime,  // 낮이면 sunrise(WbSunny), 밤이면 sunset(Bedtime)
-            time = if (isDaytime) sunriseTime else sunsetTime,
+            time = timelineState.startDateTime.toLocalTime(),
         )
 
         // 가운데 프로그레스 바
@@ -166,8 +168,8 @@ private fun TimelineProgressBar(
             contentAlignment = Alignment.Center,
         ) {
             val totalWidth = maxWidth
-            val progress = calculateProgress(isDaytime, sunriseTime, sunsetTime, now)
-            val marker = calculateNoonMidnightMarker(isDaytime, sunriseTime, sunsetTime)
+            val progress = calculateSunTimelineProgress(timelineState, now)
+            val marker = resolveSunTimelineMarker(timelineState)
 
             // 배경 라인 (gray.opacity(0.3), 2dp)
             Box(
@@ -240,7 +242,7 @@ private fun TimelineProgressBar(
         // 끝 측 (낮: 일몰 / 밤: 일출(내일))
         SideIconTime(
             iconDaytime = !isDaytime,  // 낮이면 sunset(Bedtime), 밤이면 sunrise(WbSunny)
-            time = if (isDaytime) sunsetTime else sunriseTime,
+            time = timelineState.endDateTime.toLocalTime(),
         )
     }
 }
@@ -269,64 +271,136 @@ private fun SideIconTime(
     }
 }
 
-private data class NoonMidnightMarker(
+internal data class NoonMidnightMarker(
     val progress: Float,
     val labelRes: Int,
 )
+
+internal data class SunTimelineState(
+    val isDaytime: Boolean,
+    val startDateTime: LocalDateTime,
+    val endDateTime: LocalDateTime,
+    val nextEvent: com.ScienceFiction.DronePassAndroid.core.util.NextSunEvent,
+)
+
+internal fun resolveSunTimelineState(
+    sunriseIsoList: List<String>,
+    sunsetIsoList: List<String>,
+    now: LocalDateTime,
+): SunTimelineState? {
+    val sunrises = sunriseIsoList.mapNotNull(::parseDateTime)
+    val sunsets = sunsetIsoList.mapNotNull(::parseDateTime)
+    val todaySunrise = sunrises.firstOrNull { it.toLocalDate() == now.toLocalDate() }
+    val todaySunset = sunsets.firstOrNull { it.toLocalDate() == now.toLocalDate() }
+
+    if (todaySunrise != null && todaySunset != null &&
+        !now.isBefore(todaySunrise) && now.isBefore(todaySunset)
+    ) {
+        return SunTimelineState(
+            isDaytime = true,
+            startDateTime = todaySunrise,
+            endDateTime = todaySunset,
+            nextEvent = nextSunEvent(sunriseIsoList, sunsetIsoList, now),
+        )
+    }
+
+    val nextSunrise = sunrises
+        .filter { it.isAfter(now) }
+        .minByOrNull { it }
+    if (nextSunrise != null) {
+        val previousSunset = sunsets
+            .filter { !it.isAfter(now) }
+            .maxByOrNull { it }
+            ?: sunsets.firstOrNull { it.toLocalDate() == nextSunrise.toLocalDate() }?.minusDays(1)
+            ?: return null
+
+        return SunTimelineState(
+            isDaytime = false,
+            startDateTime = previousSunset,
+            endDateTime = nextSunrise,
+            nextEvent = nextSunEvent(sunriseIsoList, sunsetIsoList, now),
+        )
+    }
+
+    return resolveSunTimelineStateFromTimes(
+        sunriseIso = sunriseIsoList.firstOrNull(),
+        sunsetIso = sunsetIsoList.firstOrNull(),
+        now = now,
+    )
+}
 
 /**
  * iOS `calculateNoonMidnightMarker`:
  *  - 낮이면 정오(12:00) 위치, 밤이면 자정(00:00) 위치를 반환.
  *  - progressBar 의 0.0~1.0 범위로 정규화. 범위 밖이면 null.
  */
-private fun calculateNoonMidnightMarker(
-    isDaytime: Boolean,
-    sunriseTime: LocalTime,
-    sunsetTime: LocalTime,
-): NoonMidnightMarker? {
-    if (isDaytime) {
-        val sunriseSec = sunriseTime.toSecondOfDay()
-        val sunsetSec = sunsetTime.toSecondOfDay()
-        val noonSec = 12 * 3600
-        val span = sunsetSec - sunriseSec
-        if (span <= 0) return null
-        val progress = (noonSec - sunriseSec).toFloat() / span
-        if (progress !in 0f..1f) return null
-        return NoonMidnightMarker(progress, R.string.weather_noon)
+internal fun resolveSunTimelineMarker(state: SunTimelineState): NoonMidnightMarker? {
+    val target = if (state.isDaytime) {
+        state.startDateTime.toLocalDate().atTime(12, 0)
     } else {
-        // 밤: 일몰 ~ 다음날 일출 (24h 보정)
-        val sunsetSec = sunsetTime.toSecondOfDay()
-        val sunriseSec = sunriseTime.toSecondOfDay() + 24 * 3600
-        val midnightSec = 24 * 3600
-        val span = sunriseSec - sunsetSec
-        if (span <= 0) return null
-        val progress = (midnightSec - sunsetSec).toFloat() / span
-        if (progress !in 0f..1f) return null
-        return NoonMidnightMarker(progress, R.string.weather_midnight)
+        state.endDateTime.toLocalDate().atStartOfDay()
     }
+    if (target.isBefore(state.startDateTime) || target.isAfter(state.endDateTime)) return null
+
+    val spanMinutes = Duration.between(state.startDateTime, state.endDateTime).toMinutes()
+    if (spanMinutes <= 0) return null
+    val targetMinutes = Duration.between(state.startDateTime, target).toMinutes()
+    val progress = targetMinutes.toFloat() / spanMinutes
+    if (progress !in 0f..1f) return null
+    return NoonMidnightMarker(
+        progress = progress,
+        labelRes = if (state.isDaytime) R.string.weather_noon else R.string.weather_midnight,
+    )
 }
 
 /**
  * 현재 시간이 일출~일몰(낮) 또는 일몰~다음일출(밤) 구간에서 차지하는 위치 (0.0~1.0).
  */
-private fun calculateProgress(
-    isDaytime: Boolean,
-    sunriseTime: LocalTime,
-    sunsetTime: LocalTime,
-    now: LocalTime,
-): Float {
-    val nowSec = now.toSecondOfDay()
-    return if (isDaytime) {
-        val span = sunsetTime.toSecondOfDay() - sunriseTime.toSecondOfDay()
-        if (span <= 0) 0.5f
-        else ((nowSec - sunriseTime.toSecondOfDay()).toFloat() / span).coerceIn(0f, 1f)
-    } else {
-        val sunsetSec = sunsetTime.toSecondOfDay()
-        val sunriseSecNext = sunriseTime.toSecondOfDay() + 24 * 3600
-        val span = sunriseSecNext - sunsetSec
-        if (span <= 0) 0.5f
-        val nowAdjusted = if (nowSec < sunsetSec) nowSec + 24 * 3600 else nowSec
-        ((nowAdjusted - sunsetSec).toFloat() / span).coerceIn(0f, 1f)
+internal fun calculateSunTimelineProgress(state: SunTimelineState, now: LocalDateTime): Float {
+    val spanMillis = Duration.between(state.startDateTime, state.endDateTime).toMillis()
+    if (spanMillis <= 0L) return 0.5f
+    val currentMillis = Duration.between(state.startDateTime, now).toMillis()
+    return (currentMillis.toFloat() / spanMillis).coerceIn(0f, 1f)
+}
+
+private fun resolveSunTimelineStateFromTimes(
+    sunriseIso: String?,
+    sunsetIso: String?,
+    now: LocalDateTime,
+): SunTimelineState? {
+    val sunriseTime = parseTime(sunriseIso) ?: return null
+    val sunsetTime = parseTime(sunsetIso) ?: return null
+    val todaySunrise = now.toLocalDate().atTime(sunriseTime)
+    val todaySunset = now.toLocalDate().atTime(sunsetTime)
+
+    return when {
+        !now.isBefore(todaySunrise) && now.isBefore(todaySunset) -> SunTimelineState(
+            isDaytime = true,
+            startDateTime = todaySunrise,
+            endDateTime = todaySunset,
+            nextEvent = nextSunEvent(sunriseIso, sunsetIso, now),
+        )
+        now.isBefore(todaySunrise) -> SunTimelineState(
+            isDaytime = false,
+            startDateTime = todaySunset.minusDays(1),
+            endDateTime = todaySunrise,
+            nextEvent = nextSunEvent(sunriseIso, sunsetIso, now),
+        )
+        else -> SunTimelineState(
+            isDaytime = false,
+            startDateTime = todaySunset,
+            endDateTime = todaySunrise.plusDays(1),
+            nextEvent = nextSunEvent(sunriseIso, sunsetIso, now),
+        )
+    }
+}
+
+private fun parseDateTime(iso: String?): LocalDateTime? {
+    if (iso.isNullOrBlank()) return null
+    return try {
+        LocalDateTime.parse(iso)
+    } catch (_: Exception) {
+        null
     }
 }
 

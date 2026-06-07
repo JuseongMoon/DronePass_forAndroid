@@ -1,0 +1,32 @@
+package com.ScienceFiction.DronePassAndroid.feature.settings
+
+import androidx.compose.ui.unit.dp
+import org.junit.Assert.assertEquals
+import org.junit.Test
+
+class AppInfoScreenTest {
+
+    @Test
+    fun `앱 버전 행은 iOS처럼 버전명과 빌드 번호를 함께 표시한다`() {
+        val value = appInfoVersionValue("1.2.3", 45)
+
+        assertEquals("1.2.3 (45)", value)
+    }
+
+    @Test
+    fun `빌드 번호 행은 iOS처럼 빌드 번호만 표시한다`() {
+        assertEquals("45", appInfoBuildNumberValue(45))
+    }
+
+    @Test
+    fun `앱 정보 feature row 치수는 iOS AppInfoView 를 따른다`() {
+        assertEquals(60.dp, AppInfoIntroIconSize)
+        assertEquals(36.dp, AppInfoIntroSymbolSize)
+        assertEquals(12.dp, AppInfoIntroSpacing)
+        assertEquals(32.dp, AppInfoFeatureIconSize)
+        assertEquals(12.dp, AppInfoFeatureHorizontalSpacing)
+        assertEquals(4.dp, AppInfoFeatureTitleDescriptionSpacing)
+        assertEquals(4.dp, AppInfoFeatureVerticalPadding)
+        assertEquals(16.dp, AppInfoFeatureHorizontalPadding)
+    }
+}

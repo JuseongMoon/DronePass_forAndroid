@@ -1,9 +1,7 @@
 package com.ScienceFiction.DronePassAndroid.feature.kp
 
-import android.graphics.Paint
-import android.graphics.Typeface
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,19 +15,20 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.PathEffect
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -40,57 +39,200 @@ import com.ScienceFiction.DronePassAndroid.domain.model.KpIndexData
 import com.ScienceFiction.DronePassAndroid.domain.model.KpLevel
 import com.ScienceFiction.DronePassAndroid.feature.weather.BackgroundZone
 import com.ScienceFiction.DronePassAndroid.feature.weather.WeatherLineChart
+import java.text.ParsePosition
 import java.text.SimpleDateFormat
-import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
 
 // ─── 색상 상수 ─────────────────────────────────────────────
 private val WarningYellow = Color(0xFFDAA520)
 private val ZoneGreen = Color(0xFF4CAF50)
 private val ZoneYellow = Color(0xFFFFC107)
 private val ZoneRed = Color(0xFFF44336)
+private val Kp27DayLineChartWidth = 900.dp
+private const val KpForecastPastWindowMs = 6L * 60 * 60 * 1000
+private const val KpForecastFutureWindowMs = 48L * 60 * 60 * 1000
+private const val Kp27DayLabelIntervalMs = 5L * 24 * 60 * 60 * 1000
+
+internal enum class KpDataSource {
+    GFZ_CURRENT,
+    NOAA_48_HOUR,
+    NOAA_27_DAY,
+}
+
+internal fun kpDataSourceUrl(source: KpDataSource): String = when (source) {
+    KpDataSource.GFZ_CURRENT -> "https://kp.gfz.de/"
+    KpDataSource.NOAA_48_HOUR ->
+        "https://www.swpc.noaa.gov/products/noaa-planetary-k-index-forecast"
+    KpDataSource.NOAA_27_DAY ->
+        "https://www.swpc.noaa.gov/products/27-day-outlook-107-cm-radio-flux-and-geomagnetic-indices"
+}
 
 // ─── 48시간 예보 라인 차트 (iOS forecastChart 정합) ──────────
 
 @Composable
 fun KpForecastLineChart(
     forecastData: List<KpIndexData>,
+    isLoading: Boolean = false,
+    errorMessage: String? = null,
     modifier: Modifier = Modifier,
 ) {
-    if (forecastData.isEmpty()) return
+    val parsed = remember(forecastData) { filterKpNext48HoursForecast(forecastData) }
 
-    val isoSdf = remember { SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()) }
-    val spaceSdf = remember { SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()) }
-    val parsed = remember(forecastData) {
-        forecastData.mapNotNull { item ->
-            val ms = runCatching { isoSdf.parse(item.timeTag)?.time }.getOrNull()
-                ?: runCatching { spaceSdf.parse(item.timeTag)?.time }.getOrNull()
-            ms?.let { Triple(item, it, item.observed == "predicted") }
-        }
-    }
-    if (parsed.isEmpty()) return
-
-    val dataPoints = parsed.map { (item, ms, _) -> ms to item.kp }
-    val predicted = parsed.map { it.third }
-    val pointColors = parsed.map { Color(KpLevel.fromKp(it.first.kp).color.toInt()) }
+    val dataPoints = parsed.map { it.timeMillis to it.item.kp }
+    val predicted = parsed.map { it.isPredicted }
+    val pointColors = parsed.map { Color(KpLevel.fromKp(it.item.kp).color.toInt()) }
     val primaryColor = MaterialTheme.colorScheme.primary
 
     KpChartCard(
         sectionTitle = stringResource(R.string.kp_section_forecast48),
         noteBadge = stringResource(R.string.kp_forecast_note),
         dataSource = stringResource(R.string.kp_data_source_noaa),
+        dataSourceType = KpDataSource.NOAA_48_HOUR,
         modifier = modifier,
+    ) {
+        when (resolveKpChartState(isLoading, errorMessage != null, parsed.isNotEmpty())) {
+            KpChartState.Loading -> KpChartLoadingPlaceholder()
+            KpChartState.Error -> KpChartErrorPlaceholder(errorMessage.orEmpty())
+            KpChartState.Empty -> KpChartNoDataPlaceholder()
+            KpChartState.Data -> WeatherLineChart(
+                dataPoints = dataPoints,
+                lineColor = primaryColor,
+                warningThreshold = 5.0,
+                dangerThreshold = 7.0,
+                yAxisRange = 0.0..9.0,
+                yLabelStep = 3.0,
+                xLabelIntervalMs = 6 * 60 * 60 * 1000L,
+                currentTimeMs = System.currentTimeMillis(),
+                predicted = predicted,
+                pointColors = pointColors,
+                backgroundZones = listOf(
+                    BackgroundZone(0.0..5.0, ZoneGreen),
+                    BackgroundZone(5.0..7.0, ZoneYellow),
+                    BackgroundZone(7.0..9.0, ZoneRed),
+                ),
+                formatValue = { it.toInt().toString() },
+            )
+        }
+    }
+}
+
+internal data class KpForecastChartPoint(
+    val item: KpIndexData,
+    val timeMillis: Long,
+    val isPredicted: Boolean,
+)
+
+internal fun filterKpNext48HoursForecast(
+    forecastData: List<KpIndexData>,
+    nowMillis: Long = System.currentTimeMillis(),
+): List<KpForecastChartPoint> {
+    val pastThreshold = nowMillis - KpForecastPastWindowMs
+    val futureThreshold = nowMillis + KpForecastFutureWindowMs
+    return forecastData.mapNotNull { item ->
+        val timeMillis = parseKpForecastUtcMillis(item.timeTag) ?: return@mapNotNull null
+        if (timeMillis in pastThreshold..futureThreshold) {
+            KpForecastChartPoint(
+                item = item,
+                timeMillis = timeMillis,
+                isPredicted = item.observed == "predicted",
+            )
+        } else {
+            null
+        }
+    }
+}
+
+internal fun parseKpForecastUtcMillis(timeTag: String): Long? {
+    val patterns = listOf(
+        "yyyy-MM-dd HH:mm:ss",
+        "yyyy-MM-dd HH:mm:ss.SSS",
+        "yyyy-MM-dd'T'HH:mm:ss",
+    )
+    return patterns.firstNotNullOfOrNull { pattern ->
+        runCatching {
+            val formatter = SimpleDateFormat(pattern, Locale.US).apply {
+                timeZone = TimeZone.getTimeZone("UTC")
+                isLenient = false
+            }
+            val position = ParsePosition(0)
+            val date = formatter.parse(timeTag, position)
+            if (date != null && position.index == timeTag.length) date.time else null
+        }.getOrNull()
+    }
+}
+
+// ─── 27일 장기예보 라인 차트 (iOS longTermForecastChart 정합) ──
+
+@Composable
+fun Kp27DayChart(
+    longTermForecast: List<Kp27DayForecast>,
+    isLoading: Boolean = false,
+    modifier: Modifier = Modifier,
+) {
+    KpChartCard(
+        sectionTitle = stringResource(R.string.kp_section_long_term),
+        noteBadge = stringResource(R.string.kp_forecast27_note),
+        dataSource = stringResource(R.string.kp_data_source_noaa),
+        dataSourceType = KpDataSource.NOAA_27_DAY,
+        modifier = modifier,
+    ) {
+        when (resolveKpChartState(isLoading, hasError = false, hasData = longTermForecast.isNotEmpty())) {
+            KpChartState.Loading -> KpChartLoadingPlaceholder()
+            KpChartState.Error -> KpChartErrorPlaceholder("")
+            KpChartState.Empty -> KpChartNoDataPlaceholder()
+            KpChartState.Data -> Kp27DayLineChart(longTermForecast = longTermForecast)
+        }
+    }
+}
+
+internal enum class KpChartState {
+    Loading,
+    Error,
+    Empty,
+    Data,
+}
+
+internal fun resolveKpChartState(
+    isLoading: Boolean,
+    hasError: Boolean,
+    hasData: Boolean,
+): KpChartState = when {
+    isLoading -> KpChartState.Loading
+    hasError -> KpChartState.Error
+    !hasData -> KpChartState.Empty
+    else -> KpChartState.Data
+}
+
+@Composable
+private fun Kp27DayLineChart(longTermForecast: List<Kp27DayForecast>) {
+    val parsedForecast = remember(longTermForecast) {
+        longTermForecast.mapNotNull { forecast ->
+            parseKp27DayForecastNoonUtcMillis(forecast.date)?.let { timeMs ->
+                timeMs to forecast
+            }
+        }
+    }
+    val dataPoints = parsedForecast.map { (timeMs, forecast) -> timeMs to forecast.kp }
+    val pointColors = parsedForecast.map { (_, forecast) -> Color(KpLevel.fromKp(forecast.kp).color.toInt()) }
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val scrollState = rememberScrollState()
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(scrollState),
     ) {
         WeatherLineChart(
             dataPoints = dataPoints,
+            modifier = Modifier.width(Kp27DayLineChartWidth),
             lineColor = primaryColor,
             warningThreshold = 5.0,
             dangerThreshold = 7.0,
             yAxisRange = 0.0..9.0,
             yLabelStep = 3.0,
-            xLabelIntervalMs = 6 * 60 * 60 * 1000L,
-            currentTimeMs = System.currentTimeMillis(),
-            predicted = predicted,
+            xLabelIntervalMs = Kp27DayLabelIntervalMs,
+            currentTimeMs = kp27DayCurrentMarkerMillis(),
             pointColors = pointColors,
             backgroundZones = listOf(
                 BackgroundZone(0.0..5.0, ZoneGreen),
@@ -102,131 +244,24 @@ fun KpForecastLineChart(
     }
 }
 
-// ─── 27일 장기예보 바 차트 (iOS longTermForecastChart 정합) ──
-
-@Composable
-fun Kp27DayChart(
-    longTermForecast: List<Kp27DayForecast>,
-    modifier: Modifier = Modifier,
-) {
-    if (longTermForecast.isEmpty()) return
-
-    KpChartCard(
-        sectionTitle = stringResource(R.string.kp_section_long_term),
-        noteBadge = null,
-        dataSource = stringResource(R.string.kp_data_source_noaa),
-        modifier = modifier,
-    ) {
-        Kp27DayBarCanvas(longTermForecast = longTermForecast)
+internal fun kp27DayLineChartPoints(longTermForecast: List<Kp27DayForecast>): List<Pair<Long, Double>> {
+    return longTermForecast.mapNotNull { forecast ->
+        parseKp27DayForecastNoonUtcMillis(forecast.date)?.let { it to forecast.kp }
     }
 }
 
-@Composable
-private fun Kp27DayBarCanvas(longTermForecast: List<Kp27DayForecast>) {
-    val onSurfaceColor = MaterialTheme.colorScheme.onSurface
+internal fun kp27DayCurrentMarkerMillis(nowMillis: Long = System.currentTimeMillis()): Long {
+    return nowMillis + 12L * 60 * 60 * 1000
+}
 
-    val barWidthDp = 20.dp
-    val barSpacingDp = 6.dp
-    val leftPaddingDp = 36.dp
-    val rightPaddingDp = 16.dp
-
-    val totalWidthDp = leftPaddingDp + rightPaddingDp +
-        (barWidthDp + barSpacingDp) * longTermForecast.size
-
-    val scrollState = rememberScrollState()
-
-    Canvas(
-        modifier = Modifier
-            .horizontalScroll(scrollState)
-            .width(totalWidthDp)
-            .height(160.dp),
-    ) {
-        val canvasWidth = size.width
-        val canvasHeight = size.height
-
-        val leftPadding = leftPaddingDp.toPx()
-        val topPadding = 8.dp.toPx()
-        val bottomPadding = 28.dp.toPx()
-
-        val chartTop = topPadding
-        val chartBottom = canvasHeight - bottomPadding
-        val chartHeight = chartBottom - chartTop
-
-        val maxKp = 9f
-
-        val barWidth = barWidthDp.toPx()
-        val barSpacing = barSpacingDp.toPx()
-
-        val textPaint = Paint().apply {
-            color = onSurfaceColor.toArgb()
-            textSize = 10.sp.toPx()
-            isAntiAlias = true
-            typeface = Typeface.DEFAULT
+internal fun parseKp27DayForecastNoonUtcMillis(dateStr: String): Long? {
+    return runCatching {
+        val sdf = SimpleDateFormat("yyyy MMM d", Locale.US).apply {
+            timeZone = TimeZone.getTimeZone("UTC")
+            isLenient = false
         }
-        val smallTextPaint = Paint().apply {
-            color = onSurfaceColor.copy(alpha = 0.6f).toArgb()
-            textSize = 8.sp.toPx()
-            isAntiAlias = true
-            typeface = Typeface.DEFAULT
-        }
-
-        // Y축 라벨 & 그리드 (0/3/6/9)
-        for (kpVal in 0..9 step 3) {
-            val yPos = chartTop + chartHeight * (1f - kpVal.toFloat() / maxKp)
-            drawContext.canvas.nativeCanvas.drawText(
-                "$kpVal",
-                4.dp.toPx(),
-                yPos + textPaint.textSize / 3f,
-                textPaint,
-            )
-            drawLine(
-                color = onSurfaceColor.copy(alpha = 0.1f),
-                start = Offset(leftPadding, yPos),
-                end = Offset(canvasWidth, yPos),
-                strokeWidth = 0.5.dp.toPx(),
-            )
-        }
-
-        // Kp=5 주의선
-        val y5 = chartTop + chartHeight * (1f - 5f / maxKp)
-        val dashEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 6f), 0f)
-        drawLine(
-            color = WarningYellow,
-            start = Offset(leftPadding, y5),
-            end = Offset(canvasWidth, y5),
-            strokeWidth = 1.dp.toPx(),
-            pathEffect = dashEffect,
-        )
-
-        // 바 그리기
-        longTermForecast.forEachIndexed { index, data ->
-            val barLeft = leftPadding + index * (barWidth + barSpacing)
-            val barHeight = (data.kp.toFloat() / maxKp).coerceIn(0f, 1f) * chartHeight
-            val barTop = chartBottom - barHeight
-
-            val level = KpLevel.fromKp(data.kp)
-            val barColor = Color(level.color.toInt())
-
-            drawRect(
-                color = barColor.copy(alpha = 0.85f),
-                topLeft = Offset(barLeft, barTop),
-                size = androidx.compose.ui.geometry.Size(barWidth, barHeight),
-            )
-
-            // X축 라벨 (5일 간격)
-            if (index % 5 == 0 || index == longTermForecast.size - 1) {
-                val label = formatShortDate(data.date)
-                val textWidth = smallTextPaint.measureText(label)
-                val textX = barLeft + barWidth / 2f - textWidth / 2f
-                drawContext.canvas.nativeCanvas.drawText(
-                    label,
-                    textX,
-                    canvasHeight - 4.dp.toPx(),
-                    smallTextPaint,
-                )
-            }
-        }
-    }
+        sdf.parse(dateStr)?.time?.plus(12L * 60 * 60 * 1000)
+    }.getOrNull()
 }
 
 // ─── 공용: KP 차트 카드 (헤더 + 차트 + 범례 + 출처) ──────────
@@ -240,6 +275,7 @@ private fun KpChartCard(
     sectionTitle: String,
     noteBadge: String?,
     dataSource: String,
+    dataSourceType: KpDataSource,
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
@@ -290,18 +326,79 @@ private fun KpChartCard(
             // Legend (6 KpLevel)
             KpLegend()
 
-            // Data source (iOS Link, Android Text only)
+            // Data source (iOS Link 정합)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End,
             ) {
-                Text(
-                    text = dataSource,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                KpDataSourceLink(label = dataSource, source = dataSourceType)
             }
         }
+    }
+}
+
+@Composable
+internal fun KpDataSourceLink(label: String, source: KpDataSource) {
+    val uriHandler = LocalUriHandler.current
+    Text(
+        text = label,
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.clickable {
+            uriHandler.openUri(kpDataSourceUrl(source))
+        },
+    )
+}
+
+@Composable
+private fun KpChartLoadingPlaceholder() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(200.dp),
+        contentAlignment = androidx.compose.ui.Alignment.Center,
+    ) {
+        CircularProgressIndicator()
+    }
+}
+
+@Composable
+private fun KpChartErrorPlaceholder(message: String) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(200.dp),
+        horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Icon(
+            imageVector = Icons.Default.Warning,
+            contentDescription = null,
+            tint = WarningYellow,
+            modifier = Modifier.size(40.dp),
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = message,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+private fun KpChartNoDataPlaceholder() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(200.dp),
+        contentAlignment = androidx.compose.ui.Alignment.Center,
+    ) {
+        Text(
+            text = stringResource(R.string.kp_no_data),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 
@@ -338,22 +435,5 @@ private fun LegendItem(level: KpLevel, label: String) {
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-    }
-}
-
-/**
- * "2026 Feb 25" 형태의 날짜를 "02/25"로 간결하게 변환
- */
-private fun formatShortDate(dateStr: String): String {
-    return try {
-        val sdf = SimpleDateFormat("yyyy MMM dd", Locale.US)
-        val date = sdf.parse(dateStr)
-        if (date != null) {
-            SimpleDateFormat("MM/dd", Locale.getDefault()).format(date)
-        } else {
-            dateStr.takeLast(5)
-        }
-    } catch (_: Exception) {
-        dateStr.takeLast(5)
     }
 }

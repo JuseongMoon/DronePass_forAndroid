@@ -13,16 +13,23 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -45,7 +52,7 @@ import com.ScienceFiction.DronePassAndroid.domain.model.TableData
  *  - 표 (헤더 + 데이터 행 + 0.5dp separator + 8dp 모서리)
  *  - 리스트 (• 불릿)
  *  - 구분선
- *  - 인라인 `**bold**` / `*italic*` / `[text](url)` — link 는 시각 강조만, 클릭은 호스팅 화면에서 처리
+ *  - 인라인 `**bold**` / `*italic*` / `[text](url)` — link 는 iOS AttributedString 처럼 탭 가능
  */
 @Composable
 fun MarkdownView(
@@ -81,8 +88,8 @@ private fun HeaderView(text: String, level: Int) {
         modifier = Modifier.padding(vertical = headerPadding(level)),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Text(
-            text = parseInlineMarkdown(text),
+        InlineMarkdownText(
+            text = text,
             style = when (level) {
                 1 -> MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Bold)
                 2 -> MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold)
@@ -112,8 +119,8 @@ private fun headerPadding(level: Int) = when (level) {
 
 @Composable
 private fun ParagraphView(text: String) {
-    Text(
-        text = parseInlineMarkdown(text),
+    InlineMarkdownText(
+        text = text,
         style = MaterialTheme.typography.bodyLarge.copy(lineHeight = 22.sp),
         color = MaterialTheme.colorScheme.onSurface,
     )
@@ -132,8 +139,8 @@ private fun ListItemView(text: String) {
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.padding(top = 2.dp),
         )
-        Text(
-            text = parseInlineMarkdown(text),
+        InlineMarkdownText(
+            text = text,
             style = MaterialTheme.typography.bodyLarge.copy(lineHeight = 21.sp),
             color = MaterialTheme.colorScheme.onSurface,
         )
@@ -230,8 +237,8 @@ private fun TableCell(
     isHeader: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    Text(
-        text = parseInlineMarkdown(text),
+    InlineMarkdownText(
+        text = text,
         style = if (isHeader) {
             MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
         } else {
@@ -259,15 +266,44 @@ private fun VerticalDivider(color: Color) {
  * 인라인 마크다운 파서 — `**bold**` / `*italic*` / `[text](url)` 3종 지원.
  * iOS `AttributedString(markdown:)` 와 동일한 syntax 만 처리하므로 결과 거의 동일.
  *
- * link 는 시각만 강조 (primary 색 + underline). 실제 탭 클릭은 호스팅 화면이 처리하지 않으면
- * non-clickable. iOS 도 ScrollView 안에서 link 가 동작하는 건 SwiftUI 의 Link 자동 처리 덕분이라
- * Android 에서 동일 UX 위해서는 ClickableText 사용해야 함 — 현재는 시각 강조만.
+ * link 는 URL annotation 을 포함하고 [InlineMarkdownText] 가 탭 위치의 annotation 을 열어준다.
  */
+internal const val MarkdownUrlAnnotationTag = "URL"
+
 @Composable
-private fun parseInlineMarkdown(text: String): AnnotatedString {
+private fun InlineMarkdownText(
+    text: String,
+    style: TextStyle,
+    color: Color,
+    modifier: Modifier = Modifier,
+) {
+    val uriHandler = LocalUriHandler.current
+    val textLayoutResult = remember { mutableStateOf<TextLayoutResult?>(null) }
+    val annotatedText = parseInlineMarkdown(
+        text = text,
+        linkColor = MaterialTheme.colorScheme.primary,
+    )
+
+    Text(
+        text = annotatedText,
+        style = style.copy(color = color),
+        modifier = modifier.pointerInput(annotatedText) {
+            detectTapGestures { position ->
+                val offset = textLayoutResult.value?.getOffsetForPosition(position)
+                    ?: return@detectTapGestures
+                annotatedText
+                    .getStringAnnotations(MarkdownUrlAnnotationTag, offset, offset)
+                    .firstOrNull()
+                    ?.let { uriHandler.openUri(it.item) }
+            }
+        },
+        onTextLayout = { textLayoutResult.value = it },
+    )
+}
+
+internal fun parseInlineMarkdown(text: String, linkColor: Color): AnnotatedString {
     if (text.isEmpty()) return AnnotatedString("")
 
-    val linkColor = MaterialTheme.colorScheme.primary
     val boldPattern = Regex("""\*\*(.+?)\*\*""")
     val italicPattern = Regex("""(?<!\*)\*([^*\n]+?)\*(?!\*)""")
     val linkPattern = Regex("""\[([^]]+)]\(([^)]+)\)""")
@@ -307,7 +343,7 @@ private fun parseInlineMarkdown(text: String): AnnotatedString {
                 linkMatch -> {
                     val linkText = nearest.groupValues[1]
                     val url = nearest.groupValues[2]
-                    pushStringAnnotation(tag = "URL", annotation = url)
+                    pushStringAnnotation(tag = MarkdownUrlAnnotationTag, annotation = url)
                     pushStyle(
                         SpanStyle(
                             color = linkColor,

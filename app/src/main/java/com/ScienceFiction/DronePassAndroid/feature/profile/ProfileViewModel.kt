@@ -4,19 +4,18 @@ import android.content.Context
 import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ScienceFiction.DronePassAndroid.BuildConfig
+import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.core.data.repository.DroneRepository
 import com.ScienceFiction.DronePassAndroid.core.data.repository.ShapeRepository
-import com.ScienceFiction.DronePassAndroid.core.data.repository.SketchRepository
 import com.ScienceFiction.DronePassAndroid.core.data.sync.RealtimeSyncManager
+import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncState
 import com.ScienceFiction.DronePassAndroid.feature.auth.AuthRepository
 import com.ScienceFiction.DronePassAndroid.service.FcmService
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FirebaseFirestore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -31,9 +30,40 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import java.util.UUID
 import javax.inject.Inject
+
+internal val FIRESTORE_USER_SUBCOLLECTIONS_TO_DELETE = listOf(
+    "shapes",
+    "drones",
+    "sketches",
+    "metadata",
+    "devices",
+)
+
+private const val FIRESTORE_BATCH_LIMIT = 500
+internal const val FIRESTORE_USER_DELETE_MAX_ATTEMPTS = 3
+private const val FIRESTORE_USER_DELETE_RETRY_DELAY_MS = 1_000L
+
+internal fun chunkFirestoreDocumentIdsForBatchDelete(documentIds: List<String>): List<List<String>> {
+    return documentIds.chunked(FIRESTORE_BATCH_LIMIT)
+}
+
+internal fun shouldRetryFirestoreUserDelete(completedAttempts: Int): Boolean {
+    return completedAttempts < FIRESTORE_USER_DELETE_MAX_ATTEMPTS
+}
+
+internal fun shouldContinueAccountDeletionAfterFirestoreDeleteFailure(): Boolean = true
+
+internal fun shouldNotifyProfileSyncResultForCloudToggle(
+    enabled: Boolean,
+    isLoggedIn: Boolean,
+): Boolean {
+    return enabled && isLoggedIn
+}
 
 /**
  * iOS `ProfileView` 정합 ViewModel.
@@ -46,7 +76,6 @@ class ProfileViewModel @Inject constructor(
     private val firebaseAuth: FirebaseAuth,
     private val shapeRepository: ShapeRepository,
     private val droneRepository: DroneRepository,
-    private val sketchRepository: SketchRepository,
     private val firestore: FirebaseFirestore,
     private val realtimeSyncManager: RealtimeSyncManager,
     @ApplicationContext private val appContext: Context,
@@ -54,18 +83,16 @@ class ProfileViewModel @Inject constructor(
 
     companion object {
         private const val TAG = "ProfileViewModel"
-        private val KEY_CLOUD_BACKUP_ENABLED = booleanPreferencesKey("cloud_backup_enabled")
-        private val KEY_LAST_BACKUP_TIME = longPreferencesKey("last_backup_time")
     }
 
     /** 실시간 클라우드 동기화 활성화 (iOS `isCloudBackupEnabled` 정합). */
     val isCloudBackupEnabled: StateFlow<Boolean> = dataStore.data
-        .map { preferences -> preferences[KEY_CLOUD_BACKUP_ENABLED] ?: false }
+        .map(::storedCloudBackupEnabled)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     /** 마지막 백업/동기화 시각 (UI 표시용 — DataStore 영속). */
     val lastBackupTime: StateFlow<Long?> = dataStore.data
-        .map { preferences -> preferences[KEY_LAST_BACKUP_TIME] }
+        .map(::storedLastBackupTime)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     /** RealtimeSyncManager 의 마지막 실시간 동기화 시각 (메모리 상태 — UI 표시용). */
@@ -77,13 +104,18 @@ class ProfileViewModel @Inject constructor(
 
     /** 진행 중 동기화 (수동 백업·토글 ON 시 활성). */
     private val _isSyncing = MutableStateFlow(false)
-    val isSyncing: StateFlow<Boolean> = _isSyncing.asStateFlow()
+    val isSyncing: StateFlow<Boolean> = combine(
+        _isSyncing,
+        realtimeSyncManager.syncState,
+    ) { manualSyncing, syncState ->
+        manualSyncing || syncState is SyncState.Syncing
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     /** 로그아웃·탈퇴 진행 중 (UI 버튼 비활성화용). */
     private val _isAccountActionInProgress = MutableStateFlow(false)
     val isAccountActionInProgress: StateFlow<Boolean> = _isAccountActionInProgress.asStateFlow()
 
-    /** 1회성 동기화 결과 알림 (Toast/SnackBar 용). */
+    /** 1회성 동기화 결과 알림 (iOS alert 정합). */
     private val _syncResultMessage = MutableSharedFlow<SyncResult>()
     val syncResultMessage: SharedFlow<SyncResult> = _syncResultMessage.asSharedFlow()
 
@@ -96,7 +128,7 @@ class ProfileViewModel @Inject constructor(
      * else → Waiting
      */
     val syncStatus: StateFlow<ProfileSyncStatus> = combine(
-        _isSyncing,
+        isSyncing,
         isLoggedIn,
         isCloudBackupEnabled,
         realtimeSyncManager.isRealtimeSyncEnabled,
@@ -122,9 +154,17 @@ class ProfileViewModel @Inject constructor(
      */
     fun setCloudBackupEnabled(enabled: Boolean) {
         viewModelScope.launch {
-            dataStore.edit { it[KEY_CLOUD_BACKUP_ENABLED] = enabled }
+            dataStore.edit {
+                it[ProfilePreferenceKeys.CLOUD_BACKUP_ENABLED] = enabled
+                it.remove(ProfilePreferenceKeys.LEGACY_CLOUD_BACKUP_ENABLED)
+            }
             if (enabled && firebaseAuth.currentUser != null) {
-                syncToCloudInternal(notifyResult = false)
+                syncToCloudInternal(
+                    notifyResult = shouldNotifyProfileSyncResultForCloudToggle(
+                        enabled = enabled,
+                        isLoggedIn = true,
+                    ),
+                )
                 realtimeSyncManager.resetAndRestartRealtimeSync()
             } else if (!enabled) {
                 runCatching { realtimeSyncManager.stopListening() }
@@ -147,7 +187,10 @@ class ProfileViewModel @Inject constructor(
         try {
             realtimeSyncManager.forceSyncNow()
             val now = System.currentTimeMillis()
-            dataStore.edit { it[KEY_LAST_BACKUP_TIME] = now }
+            dataStore.edit {
+                it[ProfilePreferenceKeys.LAST_BACKUP_TIME] = now
+                it.remove(ProfilePreferenceKeys.LEGACY_LAST_BACKUP_TIME)
+            }
             if (notifyResult) {
                 val shapeCount = shapeRepository.getActiveShapes().first().size
                 _syncResultMessage.emit(SyncResult.Success(shapeCount))
@@ -169,13 +212,18 @@ class ProfileViewModel @Inject constructor(
         if (_isAccountActionInProgress.value) return
         _isAccountActionInProgress.value = true
         viewModelScope.launch {
-            // 1) FCM 토큰 비활성화 (userId 살아있는 동안)
+            // 1) 로그아웃 직전 로컬 데이터를 Firebase 로 동기화 (iOS ProfileView.logout 정합).
+            if (firebaseAuth.currentUser != null) {
+                runCatching { realtimeSyncManager.forceSyncNow() }
+                    .onFailure { Log.w(TAG, "로그아웃 전 동기화 실패", it) }
+            }
+            // 2) FCM 토큰 비활성화 (userId 살아있는 동안)
             runCatching { FcmService.deactivateToken(appContext) }
                 .onFailure { Log.w(TAG, "FCM 토큰 비활성화 실패", it) }
-            // 2) 실시간 동기화 리스너 중단
+            // 3) 실시간 동기화 리스너 중단
             runCatching { realtimeSyncManager.stopListening() }
                 .onFailure { Log.w(TAG, "리스너 중단 실패", it) }
-            // 3) Firebase Auth 로그아웃
+            // 4) Firebase Auth 로그아웃
             authRepository.signOut()
             _isAccountActionInProgress.value = false
             onComplete()
@@ -194,72 +242,139 @@ class ProfileViewModel @Inject constructor(
             runCatching { saveAnonymizedStats() }
                 .onFailure { Log.e(TAG, "익명화 통계 저장 실패", it) }
 
+            runCatching { FcmService.deactivateToken(appContext) }
+                .onFailure { Log.w(TAG, "FCM 토큰 비활성화 실패", it) }
+
             if (userId != null) {
                 val firestoreResult = runCatching { deleteFirestoreUserData(userId) }
                 if (firestoreResult.isFailure) {
                     val err = firestoreResult.exceptionOrNull()
-                    Log.e(TAG, "Firestore 데이터 삭제 실패 — 계정 삭제 보류", err)
-                    _isAccountActionInProgress.value = false
-                    onResult(
-                        false,
-                        err?.localizedMessage
-                            ?: "데이터 삭제에 실패했습니다. 네트워크 확인 후 다시 시도해 주세요.",
-                    )
-                    return@launch
+                    Log.w(TAG, "Firestore 데이터 삭제 실패 — iOS처럼 Auth 계정 삭제는 계속 진행", err)
+                    if (!shouldContinueAccountDeletionAfterFirestoreDeleteFailure()) {
+                        _isAccountActionInProgress.value = false
+                        onResult(
+                            false,
+                            err?.localizedMessage
+                                ?: appContext.getString(R.string.profile_delete_data_error),
+                        )
+                        return@launch
+                    }
                 }
             }
 
-            runCatching {
-                shapeRepository.deleteAllShapes()
-                droneRepository.deleteAllDrones()
-                sketchRepository.deleteAllSketches()
-            }.onFailure { Log.e(TAG, "로컬 DB 삭제 실패", it) }
+            dataStore.edit {
+                it[ProfilePreferenceKeys.CLOUD_BACKUP_ENABLED] = false
+                it.remove(ProfilePreferenceKeys.LAST_BACKUP_TIME)
+                it.remove(ProfilePreferenceKeys.LEGACY_CLOUD_BACKUP_ENABLED)
+                it.remove(ProfilePreferenceKeys.LEGACY_LAST_BACKUP_TIME)
+            }
 
-            runCatching { FcmService.deactivateToken(appContext) }
             runCatching { realtimeSyncManager.stopListening() }
 
             authRepository.deleteAccount().fold(
                 onSuccess = {
                     _isAccountActionInProgress.value = false
-                    onResult(true, "계정이 삭제되었습니다.")
+                    onResult(true, appContext.getString(R.string.profile_delete_account_success))
                 },
                 onFailure = { exception ->
                     _isAccountActionInProgress.value = false
-                    onResult(false, exception.localizedMessage ?: "계정 삭제 중 오류가 발생했습니다.")
+                    onResult(false, exception.localizedMessage ?: appContext.getString(R.string.profile_delete_account_error))
                 },
             )
         }
     }
 
     private suspend fun deleteFirestoreUserData(userId: String) {
-        val userDoc = firestore.collection("users").document(userId)
-        val collections = listOf("shapes", "drones", "sketches", "metadata")
-        for (collectionName in collections) {
-            val snapshot = userDoc.collection(collectionName).get().await()
-            for (doc in snapshot.documents) {
-                doc.reference.delete().await()
+        var completedAttempts = 0
+        var lastError: Throwable? = null
+
+        while (shouldRetryFirestoreUserDelete(completedAttempts)) {
+            completedAttempts += 1
+            try {
+                deleteFirestoreUserDataOnce(userId)
+                return
+            } catch (error: Throwable) {
+                lastError = error
+                if (shouldRetryFirestoreUserDelete(completedAttempts)) {
+                    Log.w(TAG, "Firestore 데이터 삭제 실패, 재시도 ${completedAttempts}/$FIRESTORE_USER_DELETE_MAX_ATTEMPTS", error)
+                    delay(FIRESTORE_USER_DELETE_RETRY_DELAY_MS)
+                }
             }
+        }
+
+        throw lastError ?: IllegalStateException()
+    }
+
+    private suspend fun deleteFirestoreUserDataOnce(userId: String) {
+        val userDoc = firestore.collection("users").document(userId)
+        for (collectionName in FIRESTORE_USER_SUBCOLLECTIONS_TO_DELETE) {
+            deleteFirestoreUserSubcollection(userDoc, collectionName)
+        }
+        userDoc.delete().await()
+    }
+
+    private suspend fun deleteFirestoreUserSubcollection(
+        userDoc: DocumentReference,
+        collectionName: String,
+    ) {
+        val snapshot = userDoc.collection(collectionName).get().await()
+        val batches = chunkFirestoreDocumentIdsForBatchDelete(snapshot.documents.map { it.id })
+        batches.forEach { documentIds ->
+            val batch = firestore.batch()
+            documentIds.forEach { documentId ->
+                batch.delete(userDoc.collection(collectionName).document(documentId))
+            }
+            batch.commit().await()
         }
     }
 
     private suspend fun saveAnonymizedStats() {
-        val shapeCount = runCatching { shapeRepository.getActiveShapes().first().size }.getOrDefault(0)
-        val droneCount = runCatching { droneRepository.getActiveDrones().first().size }.getOrDefault(0)
-        val timestamp = System.currentTimeMillis()
-        firestore.collection("analytics")
+        val shapes = runCatching { shapeRepository.getActiveShapes().first() }.getOrDefault(emptyList())
+        val drones = runCatching { droneRepository.getAllDrones().first() }.getOrDefault(emptyList())
+        val cloudSyncEnabled = storedCloudBackupEnabled(dataStore.data.first())
+        val now = System.currentTimeMillis()
+        val accountCreatedAt = firebaseAuth.currentUser
+            ?.metadata
+            ?.creationTimestamp
+            ?.takeIf { it > 0L }
+        val anonymousUserRef = firestore.collection("analytics")
             .document("deleted_users")
-            .collection("entries")
-            .document(timestamp.toString())
-            .set(
-                mapOf(
-                    "timestamp" to timestamp,
-                    "shapeCount" to shapeCount,
-                    "droneCount" to droneCount,
-                    "platform" to "android",
-                    "appVersion" to BuildConfig.VERSION_NAME,
-                ),
-            )
-            .await()
+            .collection("users")
+            .document(UUID.randomUUID().toString())
+
+        anonymousUserRef.set(
+            buildAnonymizedUserData(
+                shapes = shapes,
+                drones = drones,
+                cloudSyncEnabled = cloudSyncEnabled,
+                deletedAtMillis = now,
+                accountCreatedAtMillis = accountCreatedAt,
+            ),
+        ).await()
+
+        shapes
+            .map(::shapeToAnonymizedData)
+            .chunked(FIRESTORE_BATCH_LIMIT)
+            .forEach { batchData ->
+                val batch = firestore.batch()
+                batchData.forEach { shapeData ->
+                    val shapeId = shapeData["id"] as? String ?: return@forEach
+                    batch.set(anonymousUserRef.collection("shapes").document(shapeId), shapeData)
+                }
+                batch.commit().await()
+            }
+
+        drones
+            .map(::droneToAnonymizedData)
+            .chunked(FIRESTORE_BATCH_LIMIT)
+            .forEach { batchData ->
+                val batch = firestore.batch()
+                batchData.forEach { droneData ->
+                    val droneId = droneData["id"] as? String ?: return@forEach
+                    batch.set(anonymousUserRef.collection("drones").document(droneId), droneData)
+                }
+                batch.commit().await()
+            }
     }
 
     /** 동기화 결과 — Toast/SnackBar 용 1회성 메시지. */

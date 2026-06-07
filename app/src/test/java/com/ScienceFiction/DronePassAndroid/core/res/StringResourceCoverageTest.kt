@@ -1,0 +1,923 @@
+package com.ScienceFiction.DronePassAndroid.core.res
+
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Test
+import java.io.File
+import javax.xml.parsers.DocumentBuilderFactory
+
+class StringResourceCoverageTest {
+
+    @Test
+    fun `English string resources cover the default string keys`() {
+        val defaultNames = stringResourceNames("values/strings.xml")
+        val englishNames = stringResourceNames("values-en/strings.xml")
+        val missingNames = defaultNames - englishNames
+
+        assertTrue(
+            "values-en/strings.xml is missing: ${missingNames.sorted().joinToString()}",
+            missingNames.isEmpty(),
+        )
+    }
+
+    @Test
+    fun `login strings match iOS localizations`() {
+        assertEquals("로그인 / 회원가입", stringResourceValue("values/strings.xml", "login_title"))
+        assertEquals("Apple로 계속하기", stringResourceValue("values/strings.xml", "login_apple"))
+        assertEquals(
+            "\\u0020and",
+            stringResourceValue("values-en/strings.xml", "login_terms_middle"),
+        )
+        assertEquals("\\u0020동의하게 됩니다.", stringResourceValue("values/strings.xml", "login_terms_agree"))
+        assertEquals("로그인 오류", stringResourceValue("values/strings.xml", "login_error_title"))
+        assertEquals("알 수 없는 오류", stringResourceValue("values/strings.xml", "login_error_unknown"))
+        assertEquals("Google 로그인 중 오류가 발생했습니다.", stringResourceValue("values/strings.xml", "login_google_error"))
+        assertEquals("Apple 로그인 중 오류가 발생했습니다.", stringResourceValue("values/strings.xml", "login_apple_error"))
+        assertEquals(
+            "데이터 동기화에 실패했습니다. 네트워크 상태를 확인해주세요.",
+            stringResourceValue("values/strings.xml", "login_sync_failed"),
+        )
+        assertEquals("Google 로고", stringResourceValue("values/strings.xml", "login_google_logo_description"))
+        assertEquals("Sign In / Sign Up", stringResourceValue("values-en/strings.xml", "login_title"))
+        assertEquals("Continue with Apple", stringResourceValue("values-en/strings.xml", "login_apple"))
+        assertEquals("Google logo", stringResourceValue("values-en/strings.xml", "login_google_logo_description"))
+        assertEquals("Login Error", stringResourceValue("values-en/strings.xml", "login_error_title"))
+        assertEquals("Unknown error", stringResourceValue("values-en/strings.xml", "login_error_unknown"))
+        assertEquals(
+            "An error occurred while signing in with Google.",
+            stringResourceValue("values-en/strings.xml", "login_google_error"),
+        )
+        assertEquals(
+            "An error occurred while signing in with Apple.",
+            stringResourceValue("values-en/strings.xml", "login_apple_error"),
+        )
+        assertEquals(
+            "Data sync failed. Please check your network connection.",
+            stringResourceValue("values-en/strings.xml", "login_sync_failed"),
+        )
+    }
+
+    @Test
+    fun `saved list section and sort labels match iOS localizations`() {
+        assertEquals("저장 목록", stringResourceValue("values/strings.xml", "screen_saved_list"))
+        assertEquals("활성화", stringResourceValue("values/strings.xml", "saved_section_active"))
+        assertEquals("시작 전", stringResourceValue("values/strings.xml", "saved_section_not_started"))
+        assertEquals("만료됨", stringResourceValue("values/strings.xml", "saved_section_expired"))
+        assertEquals("오름차순", stringResourceValue("values/strings.xml", "saved_sort_ascending"))
+        assertEquals("내림차순", stringResourceValue("values/strings.xml", "saved_sort_descending"))
+        assertEquals("Saved List", stringResourceValue("values-en/strings.xml", "screen_saved_list"))
+        assertEquals("By Title", stringResourceValue("values-en/strings.xml", "saved_sort_title"))
+        assertEquals("By Date Created", stringResourceValue("values-en/strings.xml", "saved_sort_date_created"))
+        assertEquals("By Flight Start", stringResourceValue("values-en/strings.xml", "saved_sort_flight_start"))
+        assertEquals("By Flight End", stringResourceValue("values-en/strings.xml", "saved_sort_flight_end"))
+        assertEquals("Ascending", stringResourceValue("values-en/strings.xml", "saved_sort_ascending"))
+        assertEquals("Descending", stringResourceValue("values-en/strings.xml", "saved_sort_descending"))
+        assertEquals("Not Started", stringResourceValue("values-en/strings.xml", "saved_section_not_started"))
+    }
+
+    @Test
+    fun `saved list empty state strings match iOS localizations`() {
+        assertEquals("저장된 도형이 없습니다.", stringResourceValue("values/strings.xml", "saved_empty_no_search"))
+        assertEquals(
+            "지도에서 + 버튼을 누르거나 지도를 길게 눌러서 새로운 도형을 추가해보세요.",
+            stringResourceValue("values/strings.xml", "saved_empty_hint"),
+        )
+        assertEquals(
+            "드론을 선택하면 도형이 표시됩니다.",
+            stringResourceValue("values/strings.xml", "saved_empty_no_drone_selected"),
+        )
+        assertEquals(
+            "우측 상단의 드론 선택 메뉴에서 드론을 선택해주세요.",
+            stringResourceValue("values/strings.xml", "saved_empty_no_drone_selected_hint"),
+        )
+        assertEquals(
+            "선택한 드론에 해당하는 도형이 없습니다.",
+            stringResourceValue("values/strings.xml", "saved_empty_no_matching_shapes"),
+        )
+        assertEquals(
+            "다른 드론을 선택하거나 새로운 도형을 추가해보세요.",
+            stringResourceValue("values/strings.xml", "saved_empty_no_matching_shapes_hint"),
+        )
+
+        assertEquals("No saved shapes", stringResourceValue("values-en/strings.xml", "saved_empty_no_search"))
+        assertEquals(
+            "Tap + button or long press on map to add shapes",
+            stringResourceValue("values-en/strings.xml", "saved_empty_hint"),
+        )
+        assertEquals(
+            "Select a drone to view shapes",
+            stringResourceValue("values-en/strings.xml", "saved_empty_no_drone_selected"),
+        )
+        assertEquals(
+            "Select a drone from the menu",
+            stringResourceValue("values-en/strings.xml", "saved_empty_no_drone_selected_hint"),
+        )
+        assertEquals(
+            "No shapes for selected drone",
+            stringResourceValue("values-en/strings.xml", "saved_empty_no_matching_shapes"),
+        )
+        assertEquals(
+            "Select another drone or add new shapes",
+            stringResourceValue("values-en/strings.xml", "saved_empty_no_matching_shapes_hint"),
+        )
+    }
+
+    @Test
+    fun `map new shape alert strings match iOS localizations`() {
+        assertEquals("예", stringResourceValue("values/strings.xml", "common_yes"))
+        assertEquals("아니요", stringResourceValue("values/strings.xml", "common_no"))
+        assertEquals("새 도형 만들기", stringResourceValue("values/strings.xml", "map_new_shape_alert_title"))
+        assertEquals(
+            "해당 위치에 새 도형을 만드시겠습니까?",
+            stringResourceValue("values/strings.xml", "map_new_shape_alert_message"),
+        )
+        assertEquals("주소 검색 실패", stringResourceValue("values/strings.xml", "map_address_search_failed_title"))
+        assertEquals(
+            "선택한 위치의 주소를 가져올 수 없습니다. 좌표로만 도형을 만드시겠습니까?",
+            stringResourceValue("values/strings.xml", "map_address_search_failed_message"),
+        )
+        assertEquals("해당 위치의 주소가 존재하지 않습니다", stringResourceValue("values/strings.xml", "map_address_not_found"))
+
+        assertEquals("Yes", stringResourceValue("values-en/strings.xml", "common_yes"))
+        assertEquals("No", stringResourceValue("values-en/strings.xml", "common_no"))
+        assertEquals("Create New Shape", stringResourceValue("values-en/strings.xml", "map_new_shape_alert_title"))
+        assertEquals(
+            "Would you like to create a new shape at this location?",
+            stringResourceValue("values-en/strings.xml", "map_new_shape_alert_message"),
+        )
+        assertEquals("Address Search Failed", stringResourceValue("values-en/strings.xml", "map_address_search_failed_title"))
+        assertEquals(
+            "Unable to retrieve address for the selected location. Would you like to create the shape with coordinates only?",
+            stringResourceValue("values-en/strings.xml", "map_address_search_failed_message"),
+        )
+        assertEquals(
+            "Address not found for this location",
+            stringResourceValue("values-en/strings.xml", "map_address_not_found"),
+        )
+    }
+
+    @Test
+    fun `shape detail labels match iOS localizations`() {
+        assertEquals("상세 정보", stringResourceValue("values/strings.xml", "shape_detail_navigation_title"))
+        assertEquals("고도(m)", stringResourceValue("values/strings.xml", "shape_detail_altitude"))
+        assertEquals("길찾기 앱 선택", stringResourceValue("values/strings.xml", "shape_detail_open_external_map"))
+        assertEquals("네이버지도", stringResourceValue("values/strings.xml", "shape_detail_open_naver_map"))
+        assertEquals("티맵", stringResourceValue("values/strings.xml", "shape_detail_open_tmap"))
+        assertEquals("구글맵", stringResourceValue("values/strings.xml", "shape_detail_open_google_map"))
+        assertEquals("수정하기", stringResourceValue("values/strings.xml", "shape_detail_edit"))
+        assertEquals("복제하기", stringResourceValue("values/strings.xml", "shape_detail_duplicate"))
+        assertEquals("삭제된 드론", stringResourceValue("values/strings.xml", "shape_detail_drone_deleted"))
+        assertEquals("드론 미지정", stringResourceValue("values/strings.xml", "shape_detail_drone_unassigned"))
+        assertEquals("아래 앱으로 길찾기를 시작합니다.", stringResourceValue("values/strings.xml", "shape_detail_navigation_message"))
+        assertEquals("'%s' 도형을 삭제하시겠습니까?", androidDisplayStringResourceValue("values/strings.xml", "shape_detail_delete_message"))
+        assertEquals("Coordinates", stringResourceValue("values-en/strings.xml", "shape_detail_coordinate"))
+        assertEquals("Delete Shape", stringResourceValue("values-en/strings.xml", "shape_detail_delete_title"))
+        assertEquals("Are you sure you want to delete '%s'?", androidDisplayStringResourceValue("values-en/strings.xml", "shape_detail_delete_message"))
+        assertEquals("Kakao Map", stringResourceValue("values-en/strings.xml", "shape_detail_open_kakao_map"))
+    }
+
+    @Test
+    fun `shape edit labels match iOS localizations`() {
+        assertEquals("반경(m)", stringResourceValue("values/strings.xml", "shape_edit_radius_label"))
+        assertEquals("고도(m)", stringResourceValue("values/strings.xml", "shape_edit_altitude_label"))
+        assertEquals("주소를 검색하세요", stringResourceValue("values/strings.xml", "shape_edit_address_search_placeholder"))
+        assertEquals("주소를 검색하세요", stringResourceValue("values/strings.xml", "shape_edit_placeholder_address"))
+        assertEquals("제목을 입력하세요", stringResourceValue("values/strings.xml", "shape_edit_title_placeholder"))
+        assertEquals("좌표를 입력하세요", stringResourceValue("values/strings.xml", "shape_edit_coordinate_placeholder"))
+        assertEquals("반경을 입력하세요", stringResourceValue("values/strings.xml", "shape_edit_radius_placeholder"))
+        assertEquals("비행 고도를 입력해주세요", stringResourceValue("values/strings.xml", "shape_edit_altitude_placeholder"))
+        assertEquals("메모", stringResourceValue("values/strings.xml", "shape_edit_label_memo"))
+        assertEquals("메모를 입력하세요", stringResourceValue("values/strings.xml", "shape_edit_placeholder_memo"))
+        assertEquals("시작일 선택", stringResourceValue("values/strings.xml", "shape_edit_start_date_select"))
+        assertEquals("종료일 선택", stringResourceValue("values/strings.xml", "shape_edit_end_date_select"))
+        assertEquals(
+            "드론원스탑에서 승인받은 좌표를 복사&붙여넣기 하세요",
+            androidDisplayStringResourceValue("values/strings.xml", "coordinate_guide"),
+        )
+        assertEquals("지원하는 좌표 형식:", stringResourceValue("values/strings.xml", "coordinate_format_title"))
+        assertEquals("일단위 입력", stringResourceValue("values/strings.xml", "shape_edit_date_only_mode"))
+        assertEquals("완료", stringResourceValue("values/strings.xml", "date_time_done"))
+        assertEquals("좌표를 입력해주세요", stringResourceValue("values/strings.xml", "coordinate_placeholder"))
+        assertEquals("잘못된 좌표 형식입니다", stringResourceValue("values/strings.xml", "coordinate_validation_invalid"))
+        assertEquals("주소 검색", stringResourceValue("values/strings.xml", "search_address_title"))
+        assertEquals("도로명 또는 지번 주소로 검색", stringResourceValue("values/strings.xml", "search_address_placeholder"))
+        assertEquals("도로명 주소와 지번 주소 모두 검색 가능합니다", stringResourceValue("values/strings.xml", "search_address_guide"))
+        assertEquals("검색 중 오류가 발생했습니다", stringResourceValue("values/strings.xml", "search_address_error_prefix"))
+        assertEquals("수정 중인 정보가 있습니다", stringResourceValue("values/strings.xml", "shape_edit_alert_unsaved_title"))
+        assertEquals("수정 중인 내용이 모두 사라집니다. 닫으시겠습니까?", stringResourceValue("values/strings.xml", "shape_edit_alert_unsaved_message"))
+        assertEquals("닫기", stringResourceValue("values/strings.xml", "shape_edit_alert_unsaved_discard"))
+        assertEquals("Coordinates", stringResourceValue("values-en/strings.xml", "shape_edit_label_coordinate"))
+        assertEquals("Search address", stringResourceValue("values-en/strings.xml", "shape_edit_placeholder_address"))
+        assertEquals("Altitude", stringResourceValue("values-en/strings.xml", "shape_edit_altitude_label"))
+        assertEquals("Memo", stringResourceValue("values-en/strings.xml", "shape_edit_label_memo"))
+        assertEquals("Select Start Date", stringResourceValue("values-en/strings.xml", "shape_edit_start_date_select"))
+        assertEquals("Select End Date", stringResourceValue("values-en/strings.xml", "shape_edit_end_date_select"))
+        assertEquals("Done", stringResourceValue("values-en/strings.xml", "date_time_done"))
+        assertEquals("Enter coordinates", stringResourceValue("values-en/strings.xml", "coordinate_placeholder"))
+        assertEquals("Invalid coordinate format", stringResourceValue("values-en/strings.xml", "coordinate_validation_invalid"))
+        assertEquals("Search Address", stringResourceValue("values-en/strings.xml", "search_address_title"))
+        assertEquals("Search by road or lot address", stringResourceValue("values-en/strings.xml", "search_address_placeholder"))
+        assertEquals("Both road and lot addresses are searchable", stringResourceValue("values-en/strings.xml", "search_address_guide"))
+        assertEquals("Error searching address", stringResourceValue("values-en/strings.xml", "search_address_error_prefix"))
+        assertEquals("Unsaved Changes", stringResourceValue("values-en/strings.xml", "shape_edit_alert_unsaved_title"))
+        assertEquals("All changes will be lost. Close anyway?", stringResourceValue("values-en/strings.xml", "shape_edit_alert_unsaved_message"))
+        assertEquals("Close", stringResourceValue("values-en/strings.xml", "shape_edit_alert_unsaved_discard"))
+    }
+
+    @Test
+    fun `settings Korea local feature strings match iOS localizations`() {
+        assertEquals("언어 변경", stringResourceValue("values/strings.xml", "settings_language_restart_title"))
+        assertEquals(
+            "언어 변경을 완전히 적용하려면 앱을 다시 시작해주세요.",
+            stringResourceValue("values/strings.xml", "settings_language_restart_message"),
+        )
+
+        assertEquals("한국 현지 기능", stringResourceValue("values/strings.xml", "settings_korea_features"))
+        assertEquals("한국 현지 기능 활성화", stringResourceValue("values/strings.xml", "settings_korea_features_on_title"))
+        assertEquals(
+            "한국 현지 기능이 활성화됩니다. (비행구역 정보 등)",
+            stringResourceValue("values/strings.xml", "settings_korea_features_on_message"),
+        )
+        assertEquals("한국 현지 기능 비활성화", stringResourceValue("values/strings.xml", "settings_korea_features_off_title"))
+        assertEquals(
+            "한국 현지 기능이 비활성화됩니다.",
+            stringResourceValue("values/strings.xml", "settings_korea_features_off_message"),
+        )
+
+        assertEquals("Language Changed", stringResourceValue("values-en/strings.xml", "settings_language_restart_title"))
+        assertEquals(
+            "Please restart the app to fully apply the language change.",
+            stringResourceValue("values-en/strings.xml", "settings_language_restart_message"),
+        )
+
+        assertEquals("Local Features (Korea)", stringResourceValue("values-en/strings.xml", "settings_korea_features"))
+        assertEquals("Korea Local Features Enabled", stringResourceValue("values-en/strings.xml", "settings_korea_features_on_title"))
+        assertEquals(
+            "Local features for Korea enabled. (Flight zones, etc.)",
+            stringResourceValue("values-en/strings.xml", "settings_korea_features_on_message"),
+        )
+        assertEquals("Korea Local Features Disabled", stringResourceValue("values-en/strings.xml", "settings_korea_features_off_title"))
+        assertEquals(
+            "Local features for Korea disabled.",
+            stringResourceValue("values-en/strings.xml", "settings_korea_features_off_message"),
+        )
+    }
+
+    @Test
+    fun `settings expired shape deletion strings match iOS localizations`() {
+        assertEquals("만료된 도형 전부 삭제", stringResourceValue("values/strings.xml", "settings_delete_expired_shapes"))
+        assertEquals(
+            "만료된 도형을 모두 삭제할까요?",
+            stringResourceValue("values/strings.xml", "settings_delete_expired_alert_title"),
+        )
+        assertEquals(
+            "종료일이 지난 도형을 모두 삭제합니다. 이 작업은 되돌릴 수 없습니다.",
+            stringResourceValue("values/strings.xml", "settings_delete_expired_alert_message"),
+        )
+
+        assertEquals(
+            "Delete all expired shapes",
+            stringResourceValue("values-en/strings.xml", "settings_delete_expired_shapes"),
+        )
+        assertEquals(
+            "Delete all expired shapes?",
+            stringResourceValue("values-en/strings.xml", "settings_delete_expired_alert_title"),
+        )
+        assertEquals(
+            "All shapes past their end date will be deleted. This action cannot be undone.",
+            stringResourceValue("values-en/strings.xml", "settings_delete_expired_alert_message"),
+        )
+    }
+
+    @Test
+    fun `app info strings match iOS localizations`() {
+        assertEquals("앱 정보", stringResourceValue("values/strings.xml", "app_info_title"))
+        assertEquals("앱 소개", stringResourceValue("values/strings.xml", "app_info_section_intro"))
+        assertEquals("드론 관리", stringResourceValue("values/strings.xml", "app_info_section_drone_management"))
+        assertEquals("환경 정보", stringResourceValue("values/strings.xml", "app_info_section_environmental_info"))
+        assertEquals("도형 및 지도", stringResourceValue("values/strings.xml", "app_info_section_shapes_and_map"))
+        assertEquals("클라우드 및 데이터", stringResourceValue("values/strings.xml", "app_info_section_cloud_and_data"))
+        assertEquals("버전 정보", stringResourceValue("values/strings.xml", "app_info_section_version"))
+        assertEquals("연락처", stringResourceValue("values/strings.xml", "app_info_section_contact"))
+        assertEquals("드론 원스톱 연계 최적화", stringResourceValue("values/strings.xml", "app_info_feature_drone_onestop_title"))
+        assertEquals(
+            "드론 원스톱 서비스 연계를 위한 데이터 구조",
+            stringResourceValue("values/strings.xml", "app_info_feature_drone_onestop_desc"),
+        )
+        assertEquals("문의사항이 있으시면 언제든지 연락해주세요.", stringResourceValue("values/strings.xml", "app_info_contact_message"))
+
+        assertEquals("App Info", stringResourceValue("values-en/strings.xml", "app_info_title"))
+        assertEquals("About the App", stringResourceValue("values-en/strings.xml", "app_info_section_intro"))
+        assertEquals("Drone Management", stringResourceValue("values-en/strings.xml", "app_info_section_drone_management"))
+        assertEquals("Environmental Information", stringResourceValue("values-en/strings.xml", "app_info_section_environmental_info"))
+        assertEquals("Shapes and Map", stringResourceValue("values-en/strings.xml", "app_info_section_shapes_and_map"))
+        assertEquals("Cloud and Data", stringResourceValue("values-en/strings.xml", "app_info_section_cloud_and_data"))
+        assertEquals("Version Info", stringResourceValue("values-en/strings.xml", "app_info_section_version"))
+        assertEquals("Contact", stringResourceValue("values-en/strings.xml", "app_info_section_contact"))
+        assertEquals("Flight Permit Data Structure", stringResourceValue("values-en/strings.xml", "app_info_feature_drone_onestop_title"))
+        assertEquals(
+            "Data structure optimized for flight permit applications",
+            stringResourceValue("values-en/strings.xml", "app_info_feature_drone_onestop_desc"),
+        )
+        assertEquals("Please feel free to contact us with any questions.", stringResourceValue("values-en/strings.xml", "app_info_contact_message"))
+    }
+
+    @Test
+    fun `KP info guide strings match iOS localizations`() {
+        assertEquals("KP 지수 정보", stringResourceValue("values/strings.xml", "kp_info_title"))
+        assertEquals("KP 지수란?", stringResourceValue("values/strings.xml", "kp_info_what_title"))
+        assertEquals("KP 지수는 지구 자기장 교란 정도를 나타냅니다.", stringResourceValue("values/strings.xml", "kp_info_what_body"))
+        assertEquals("범위: 0-9 (0: 매우 조용함, 9: 극도로 활발함)", stringResourceValue("values/strings.xml", "kp_info_what_bullet_range"))
+        assertEquals("지자기 활동은 GPS 신호의 정확도에 직접적인 영향을 미칩니다.", stringResourceValue("values/strings.xml", "kp_info_drone_body"))
+        assertEquals("KP 5 이상: 드론 비행 시 특히 주의 필요", stringResourceValue("values/strings.xml", "kp_info_relation_bullet_kp5"))
+        assertEquals("GFZ (독일): 전 세계 13개 관측소 실시간 측정치 (3시간 단위)", stringResourceValue("values/strings.xml", "kp_info_source_gfz"))
+        assertEquals("NOAA (미국): 8개 관측소 실시간 추정 + 예보치 (분 단위)", stringResourceValue("values/strings.xml", "kp_info_source_noaa"))
+        assertEquals("지자기 경보 등급", stringResourceValue("values/strings.xml", "kp_info_levels_title"))
+        assertEquals("낮음", stringResourceValue("values/strings.xml", "kp_info_level_normal_name"))
+        assertEquals("G3 (강함)", stringResourceValue("values/strings.xml", "kp_info_level_g3_name"))
+        assertEquals("현재 시간대 기준", stringResourceValue("values/strings.xml", "kp_forecast_note"))
+        assertEquals("지자기 활동이 낮은 상태입니다", stringResourceValue("values/strings.xml", "kp_level_normal_desc"))
+        assertEquals("심각한 지자기 폭풍", stringResourceValue("values/strings.xml", "kp_level_g4_desc"))
+        assertEquals("비행 자제 권장, GPS 사용 불가능", stringResourceValue("values/strings.xml", "kp_info_level_g5_advice"))
+
+        assertEquals("KP Index Information", stringResourceValue("values-en/strings.xml", "kp_info_title"))
+        assertEquals("What is KP Index?", stringResourceValue("values-en/strings.xml", "kp_info_what_title"))
+        assertEquals(
+            "KP Index represents the level of disturbance in Earth's magnetic field.",
+            androidDisplayStringResourceValue("values-en/strings.xml", "kp_info_what_body"),
+        )
+        assertEquals(
+            "DronePass uses data from two organizations.",
+            stringResourceValue("values-en/strings.xml", "kp_info_sources_body"),
+        )
+        assertEquals("Geomagnetic Storm Scale", stringResourceValue("values-en/strings.xml", "kp_info_levels_title"))
+        assertEquals("G1 (Minor)", stringResourceValue("values-en/strings.xml", "kp_info_level_g1_name"))
+        assertEquals("G5 (Extreme)", stringResourceValue("values-en/strings.xml", "kp_info_level_g5_name"))
+        assertEquals("Minor geomagnetic storm", stringResourceValue("values-en/strings.xml", "kp_level_g1_desc"))
+        assertEquals("Extreme geomagnetic storm", stringResourceValue("values-en/strings.xml", "kp_level_g5_desc"))
+        assertEquals("Avoid flight recommended, GPS unusable", stringResourceValue("values-en/strings.xml", "kp_info_level_g5_advice"))
+    }
+
+    @Test
+    fun `weather info guide strings match iOS localizations`() {
+        assertEquals("날씨 정보", stringResourceValue("values/strings.xml", "weather_info_title"))
+        assertEquals("날씨와 드론 비행", stringResourceValue("values/strings.xml", "weather_info_importance_title"))
+        assertEquals(
+            "날씨는 드론 비행 안전에 가장 직접적인 영향을 미치는 요소입니다.",
+            stringResourceValue("values/strings.xml", "weather_info_importance_body"),
+        )
+        assertEquals("안전한 비행을 위한 조언", stringResourceValue("values/strings.xml", "weather_info_safety_title"))
+        assertEquals("악천후 예상 시 비행 연기", stringResourceValue("values/strings.xml", "weather_info_safety_bullet_postpone"))
+        assertEquals("위치 정확도 안내", stringResourceValue("values/strings.xml", "weather_info_location_title"))
+        assertEquals("현재 Wi-Fi 기반 위치 사용 중 (정확도: ±%1\$dm)", stringResourceValue("values/strings.xml", "weather_info_location_wifi"))
+        assertEquals(
+            "GPS가 없는 기기에서는 날씨 정보가 실제와 다를 수 있습니다",
+            stringResourceValue("values/strings.xml", "weather_info_location_bullet_weather_difference"),
+        )
+        assertEquals("풍속", stringResourceValue("values/strings.xml", "weather_info_wind_title"))
+        assertEquals("0-%1$.1f m/s (안전)", stringResourceValue("values/strings.xml", "weather_info_wind_safe_range"))
+        assertEquals("순간 풍속 증가량", stringResourceValue("values/strings.xml", "weather_info_gust_title"))
+        assertEquals("국지 돌풍 위험", stringResourceValue("values/strings.xml", "weather_gust_warning"))
+        assertEquals("방수 드론 외 비행 자제", stringResourceValue("values/strings.xml", "weather_info_precipitation_caution_advice"))
+        assertEquals("%1\$d km 미만", stringResourceValue("values/strings.xml", "weather_info_visibility_range_danger"))
+        assertEquals("%1\$d°C 미만, 40°C 이상", stringResourceValue("values/strings.xml", "weather_info_temperature_range_danger"))
+        assertEquals("결로위험지수", stringResourceValue("values/strings.xml", "weather_info_cri_title"))
+
+        assertEquals("Weather Information", stringResourceValue("values-en/strings.xml", "weather_info_title"))
+        assertEquals("Weather & Drone Flight", stringResourceValue("values-en/strings.xml", "weather_info_importance_title"))
+        assertEquals(
+            "Weather is the most direct factor affecting drone flight safety.",
+            stringResourceValue("values-en/strings.xml", "weather_info_importance_body"),
+        )
+        assertEquals("Tips for Safe Flight", stringResourceValue("values-en/strings.xml", "weather_info_safety_title"))
+        assertEquals("Location Accuracy Notice", stringResourceValue("values-en/strings.xml", "weather_info_location_title"))
+        assertEquals(
+            "Currently using Wi-Fi-based location (accuracy: ±%1\$dm)",
+            stringResourceValue("values-en/strings.xml", "weather_info_location_wifi"),
+        )
+        assertEquals("Wind Speed", stringResourceValue("values-en/strings.xml", "weather_info_wind_title"))
+        assertEquals("0-%1$.1f m/s (Safe)", stringResourceValue("values-en/strings.xml", "weather_info_wind_safe_range"))
+        assertEquals("Gust Difference", stringResourceValue("values-en/strings.xml", "weather_info_gust_title"))
+        assertEquals("Local gust risk", stringResourceValue("values-en/strings.xml", "weather_gust_warning"))
+        assertEquals("1.0 mm or more", stringResourceValue("values-en/strings.xml", "weather_info_precipitation_range_danger"))
+        assertEquals("Less than %1\$d km", stringResourceValue("values-en/strings.xml", "weather_info_visibility_range_danger"))
+        assertEquals("Below %1\$d°C, above 40°C", stringResourceValue("values-en/strings.xml", "weather_info_temperature_range_danger"))
+        assertEquals("CRI (Condensation Risk Index)", stringResourceValue("values-en/strings.xml", "weather_info_cri_title"))
+    }
+
+    @Test
+    fun `flight zone layer selector strings match iOS localizations`() {
+        assertEquals(
+            "본 서비스는 국토교통부 디지털트윈국토 정보를 기반으로 제공하며, 실제 비행 허가 및 안전에 대한 책임은 사용자에게 있습니다.",
+            stringResourceValue("values/strings.xml", "flight_zone_legal_disclaimer"),
+        )
+        assertEquals("문화재보호구역", stringResourceValue("values/strings.xml", "flight_zone_layer_cultural_heritage"))
+        assertEquals("비행금지구역", stringResourceValue("values/strings.xml", "flight_zone_layer_prohibited_zone"))
+        assertEquals("사전협의구역", stringResourceValue("values/strings.xml", "flight_zone_layer_consultation_zone"))
+        assertEquals("초경량비행장치공역", stringResourceValue("values/strings.xml", "flight_zone_layer_ultra_light_zone"))
+        assertEquals(
+            "비행구역 데이터를 불러올 수 없습니다",
+            stringResourceValue("values/strings.xml", "map_flight_zones_error_load_failed"),
+        )
+
+        assertEquals(
+            "This service provides information based on the Korean government's Digital Twin National Land data. Users are responsible for actual flight permits and safety.",
+            androidDisplayStringResourceValue("values-en/strings.xml", "flight_zone_legal_disclaimer"),
+        )
+        assertEquals("Boundary Zone", stringResourceValue("values-en/strings.xml", "flight_zone_layer_boundary_zone"))
+        assertEquals(
+            "Cultural Heritage Protection Zone",
+            stringResourceValue("values-en/strings.xml", "flight_zone_layer_cultural_heritage"),
+        )
+        assertEquals("Light Aircraft Airfield", stringResourceValue("values-en/strings.xml", "flight_zone_layer_light_aircraft_zone"))
+        assertEquals("Temporary Prohibited Zone", stringResourceValue("values-en/strings.xml", "flight_zone_layer_temporary_prohibited"))
+        assertEquals(
+            "Unable to load flight zone data",
+            stringResourceValue("values-en/strings.xml", "map_flight_zones_error_load_failed"),
+        )
+    }
+
+    @Test
+    fun `vworld zone detail strings match iOS localizations`() {
+        assertEquals("구역 상세 정보", stringResourceValue("values/strings.xml", "zone_detail_navigation_title"))
+        assertEquals("관리 기관", stringResourceValue("values/strings.xml", "zone_detail_authority_title"))
+        assertEquals("남은 기간", stringResourceValue("values/strings.xml", "zone_detail_notam_remaining"))
+        assertEquals("활성", stringResourceValue("values/strings.xml", "zone_detail_notam_status_active"))
+        assertEquals("만료됨", stringResourceValue("values/strings.xml", "zone_detail_notam_status_expired"))
+
+        assertEquals("Zone Details", stringResourceValue("values-en/strings.xml", "zone_detail_navigation_title"))
+        assertEquals("Zone Type", stringResourceValue("values-en/strings.xml", "zone_detail_zone_type"))
+        assertEquals("Zone Code", stringResourceValue("values-en/strings.xml", "zone_detail_code"))
+        assertEquals("Remaining Period", stringResourceValue("values-en/strings.xml", "zone_detail_notam_remaining"))
+        assertEquals("%ddays", stringResourceValue("values-en/strings.xml", "zone_detail_notam_days"))
+        assertEquals("Managing Authority", stringResourceValue("values-en/strings.xml", "zone_detail_authority_title"))
+        assertEquals("Organization Name", stringResourceValue("values-en/strings.xml", "zone_detail_authority_name"))
+        assertEquals("Administrative District", stringResourceValue("values-en/strings.xml", "zone_detail_heritage_address"))
+        assertEquals("Designation", stringResourceValue("values-en/strings.xml", "zone_detail_heritage_designation"))
+        assertEquals("%1\$sYear%2\$sNo.", stringResourceValue("values-en/strings.xml", "zone_detail_heritage_designation_format"))
+    }
+
+    @Test
+    fun `profile sync and account strings match iOS localizations`() {
+        assertEquals("실시간 클라우드 동기화", stringResourceValue("values/strings.xml", "profile_sync_cloud"))
+        assertEquals("동기화 중...", stringResourceValue("values/strings.xml", "profile_sync_in_progress"))
+        assertEquals("로그인이 필요합니다", stringResourceValue("values/strings.xml", "profile_sync_login_required"))
+        assertEquals("활성화 - 실시간 동기화중", stringResourceValue("values/strings.xml", "profile_sync_active"))
+        assertEquals("활성화 - 실시간 동기화 대기중", stringResourceValue("values/strings.xml", "profile_sync_waiting"))
+        assertEquals("동기화 기록이 없습니다.", stringResourceValue("values/strings.xml", "profile_sync_no_history"))
+        assertEquals("수동 백업하기", stringResourceValue("values/strings.xml", "profile_backup_manual"))
+        assertEquals("%1\$d개 도형의 동기화가 완료되었습니다.", stringResourceValue("values/strings.xml", "profile_sync_success"))
+        assertEquals("실시간 클라우드 동기화에 실패했습니다: %1\$s", stringResourceValue("values/strings.xml", "profile_sync_failed"))
+        assertEquals(
+            "실시간 클라우드 동기화를 사용하려면 먼저 로그인해주세요.",
+            stringResourceValue("values/strings.xml", "profile_sync_footer_login_required"),
+        )
+        assertEquals(
+            "활성화하면 같은 계정으로 로그인한 모든 기기에서 도형 데이터가 실시간으로 동기화 및 백업됩니다.",
+            stringResourceValue("values/strings.xml", "profile_sync_footer_enable_info"),
+        )
+        assertEquals("회원 탈퇴", stringResourceValue("values/strings.xml", "profile_account_delete"))
+        assertEquals(
+            "탈퇴 시 계정만 삭제되며, 로컬 데이터는 계속 사용할 수 있습니다.",
+            stringResourceValue("values/strings.xml", "profile_account_delete_desc"),
+        )
+        assertEquals(
+            "계정이 삭제되고\\n클라우드 동기화가 중단됩니다.\\n\\n기기에 저장된 도형과 드론은\\n계속 사용할 수 있습니다.\\n\\n정말 탈퇴하시겠습니까?",
+            stringResourceValue("values/strings.xml", "profile_delete_account_message"),
+        )
+        assertEquals("영구 탈퇴", stringResourceValue("values/strings.xml", "profile_delete_account_final_button"))
+        assertEquals("탈퇴 실패", stringResourceValue("values/strings.xml", "profile_delete_account_error_title"))
+        assertEquals("회원 탈퇴가 완료되었습니다.", stringResourceValue("values/strings.xml", "profile_delete_account_success"))
+        assertEquals(
+            "회원 탈퇴에 실패했습니다.",
+            stringResourceValue("values/strings.xml", "profile_delete_account_error"),
+        )
+        assertEquals("로그아웃하시겠습니까?", stringResourceValue("values/strings.xml", "profile_logout_message"))
+
+        assertEquals("Real-time cloud sync", stringResourceValue("values-en/strings.xml", "profile_sync_cloud"))
+        assertEquals("Syncing...", stringResourceValue("values-en/strings.xml", "profile_sync_in_progress"))
+        assertEquals("Login required", stringResourceValue("values-en/strings.xml", "profile_sync_login_required"))
+        assertEquals("No sync history", stringResourceValue("values-en/strings.xml", "profile_sync_no_history"))
+        assertEquals("Manual backup", stringResourceValue("values-en/strings.xml", "profile_backup_manual"))
+        assertEquals("Sync completed for %1\$d shapes.", stringResourceValue("values-en/strings.xml", "profile_sync_success"))
+        assertEquals(
+            "Please log in to use real-time cloud sync.",
+            stringResourceValue("values-en/strings.xml", "profile_sync_footer_login_required"),
+        )
+        assertEquals(
+            "When enabled, shape data will be synced and backed up in real-time across all devices with the same account.",
+            stringResourceValue("values-en/strings.xml", "profile_sync_footer_enable_info"),
+        )
+        assertEquals(
+            "Only the account will be deleted. Local data will remain available.",
+            stringResourceValue("values-en/strings.xml", "profile_account_delete_desc"),
+        )
+        assertEquals(
+            "Your account will be deleted and cloud sync will stop.\\n\\nShapes and drones saved on this device will remain available.\\n\\nAre you sure you want to delete your account?",
+            stringResourceValue("values-en/strings.xml", "profile_delete_account_message"),
+        )
+        assertEquals("Permanently Delete", stringResourceValue("values-en/strings.xml", "profile_delete_account_final_button"))
+        assertEquals("Deletion Failed", stringResourceValue("values-en/strings.xml", "profile_delete_account_error_title"))
+        assertEquals("Account deleted successfully.", stringResourceValue("values-en/strings.xml", "profile_delete_account_success"))
+        assertEquals(
+            "Failed to delete account.",
+            stringResourceValue("values-en/strings.xml", "profile_delete_account_error"),
+        )
+    }
+
+    @Test
+    fun `settings main row strings match iOS localizations`() {
+        assertEquals("내 정보", stringResourceValue("values/strings.xml", "settings_section_my_info"))
+        assertEquals("지도 표시", stringResourceValue("values/strings.xml", "settings_section_map_display"))
+        assertEquals("언어", stringResourceValue("values/strings.xml", "settings_language"))
+        assertEquals("한국어", stringResourceValue("values/strings.xml", "settings_language_korean"))
+        assertEquals("English", stringResourceValue("values/strings.xml", "settings_language_english"))
+        assertEquals("현재 KP 지수: %1\$s", stringResourceValue("values/strings.xml", "settings_kp_index_current"))
+        assertEquals("화면 항상 켜놓기", stringResourceValue("values/strings.xml", "settings_keep_screen_awake"))
+        assertEquals(
+            "앱 사용 중 화면이 자동으로 꺼지지 않습니다.",
+            stringResourceValue("values/strings.xml", "settings_keep_screen_awake_subtitle"),
+        )
+        assertEquals("도형 만료일 알림", stringResourceValue("values/strings.xml", "settings_end_date_alarm"))
+        assertEquals(
+            "도형 종료일 7일전 알림을 받습니다.",
+            stringResourceValue("values/strings.xml", "settings_end_date_alarm_subtitle"),
+        )
+        assertEquals(
+            "일출 30분전, 10분전 알림을 받습니다.",
+            stringResourceValue("values/strings.xml", "settings_sunrise_alarm_subtitle"),
+        )
+        assertEquals(
+            "일몰 30분전, 10분전 알림을 받습니다.",
+            stringResourceValue("values/strings.xml", "settings_sunset_alarm_subtitle"),
+        )
+        assertEquals(
+            "알림 권한이 필요합니다",
+            stringResourceValue("values/strings.xml", "notification_permission_title"),
+        )
+        assertEquals(
+            "정확한 알람 권한이 필요합니다",
+            stringResourceValue("values/strings.xml", "exact_alarm_permission_title"),
+        )
+        assertEquals(
+            "DronePass 알림",
+            stringResourceValue("values/strings.xml", "notification_channel_default_name"),
+        )
+        assertEquals(
+            "비행 시각 알림",
+            stringResourceValue("values/strings.xml", "notification_channel_time_sensitive_name"),
+        )
+        assertEquals("일출 30분 전", stringResourceValue("values/strings.xml", "notification_sunrise_30min_title"))
+        assertEquals("일출까지 30분 남았습니다.", stringResourceValue("values/strings.xml", "notification_sunrise_30min_body"))
+        assertEquals("일출 10분 전", stringResourceValue("values/strings.xml", "notification_sunrise_10min_title"))
+        assertEquals("일출까지 10분 남았습니다.", stringResourceValue("values/strings.xml", "notification_sunrise_10min_body"))
+        assertEquals("일몰 30분 전", stringResourceValue("values/strings.xml", "notification_sunset_30min_title"))
+        assertEquals("일몰까지 30분 남았습니다.", stringResourceValue("values/strings.xml", "notification_sunset_30min_body"))
+        assertEquals("일몰 10분 전", stringResourceValue("values/strings.xml", "notification_sunset_10min_title"))
+        assertEquals("일몰까지 10분 남았습니다.", stringResourceValue("values/strings.xml", "notification_sunset_10min_body"))
+        assertEquals("도형 종료일 알림", stringResourceValue("values/strings.xml", "notification_end_date_title"))
+        assertEquals(
+            "도형 '%1\$s'의 종료일이 7일 남았습니다.",
+            androidDisplayStringResourceValue("values/strings.xml", "notification_end_date_body_with_title"),
+        )
+
+        assertEquals("My Info", stringResourceValue("values-en/strings.xml", "settings_section_my_info"))
+        assertEquals("Map Display", stringResourceValue("values-en/strings.xml", "settings_section_map_display"))
+        assertEquals("Language", stringResourceValue("values-en/strings.xml", "settings_language"))
+        assertEquals("한국어", stringResourceValue("values-en/strings.xml", "settings_language_korean"))
+        assertEquals("English", stringResourceValue("values-en/strings.xml", "settings_language_english"))
+        assertEquals("Current KP Index: %1\$s", stringResourceValue("values-en/strings.xml", "settings_kp_index_current"))
+        assertEquals(
+            "Screen won't turn off automatically while using the app.",
+            androidDisplayStringResourceValue("values-en/strings.xml", "settings_keep_screen_awake_subtitle"),
+        )
+        assertEquals("Shape expiration notifications", stringResourceValue("values-en/strings.xml", "settings_end_date_alarm"))
+        assertEquals(
+            "Receive notifications 7 days before shape expiration.",
+            stringResourceValue("values-en/strings.xml", "settings_end_date_alarm_subtitle"),
+        )
+        assertEquals("Sunrise notifications", stringResourceValue("values-en/strings.xml", "settings_sunrise_alarm"))
+        assertEquals(
+            "Receive notifications 30 and 10 minutes before sunrise.",
+            stringResourceValue("values-en/strings.xml", "settings_sunrise_alarm_subtitle"),
+        )
+        assertEquals("Sunset notifications", stringResourceValue("values-en/strings.xml", "settings_sunset_alarm"))
+        assertEquals(
+            "Receive notifications 30 and 10 minutes before sunset.",
+            stringResourceValue("values-en/strings.xml", "settings_sunset_alarm_subtitle"),
+        )
+        assertEquals(
+            "Notification permission required",
+            stringResourceValue("values-en/strings.xml", "notification_permission_title"),
+        )
+        assertEquals(
+            "Exact alarm permission required",
+            stringResourceValue("values-en/strings.xml", "exact_alarm_permission_title"),
+        )
+        assertEquals(
+            "DronePass notifications",
+            stringResourceValue("values-en/strings.xml", "notification_channel_default_name"),
+        )
+        assertEquals(
+            "Flight time notifications",
+            stringResourceValue("values-en/strings.xml", "notification_channel_time_sensitive_name"),
+        )
+        assertEquals(
+            "30 minutes before sunrise",
+            stringResourceValue("values-en/strings.xml", "notification_sunrise_30min_title"),
+        )
+        assertEquals(
+            "30 minutes until sunrise.",
+            stringResourceValue("values-en/strings.xml", "notification_sunrise_30min_body"),
+        )
+        assertEquals(
+            "10 minutes before sunset",
+            stringResourceValue("values-en/strings.xml", "notification_sunset_10min_title"),
+        )
+        assertEquals(
+            "10 minutes until sunset.",
+            stringResourceValue("values-en/strings.xml", "notification_sunset_10min_body"),
+        )
+        assertEquals(
+            "10 minutes before sunrise",
+            stringResourceValue("values-en/strings.xml", "notification_sunrise_10min_title"),
+        )
+        assertEquals(
+            "30 minutes before sunset",
+            stringResourceValue("values-en/strings.xml", "notification_sunset_30min_title"),
+        )
+    }
+
+    @Test
+    fun `KP forecast sheet strings match iOS localizations`() {
+        assertEquals("KP 지수", stringResourceValue("values/strings.xml", "screen_kp_forecast"))
+        assertEquals("KP 지수", stringResourceValue("values/strings.xml", "kp_title"))
+        assertEquals("현재 KP 지수", stringResourceValue("values/strings.xml", "kp_current"))
+        assertEquals("데이터가 없습니다", stringResourceValue("values/strings.xml", "kp_no_data"))
+        assertEquals("KP 지수 예보", stringResourceValue("values/strings.xml", "kp_navigation_title"))
+        assertEquals("현재 KP 지수", stringResourceValue("values/strings.xml", "kp_section_current"))
+        assertEquals("향후 48시간 예보", stringResourceValue("values/strings.xml", "kp_section_forecast48"))
+        assertEquals("장기 예보 (27일)", stringResourceValue("values/strings.xml", "kp_section_long_term"))
+        assertEquals("현재 시간대 기준", stringResourceValue("values/strings.xml", "kp_forecast_note"))
+        assertEquals("UTC 기준", stringResourceValue("values/strings.xml", "kp_forecast27_note"))
+        assertEquals("Data: GFZ Potsdam", stringResourceValue("values/strings.xml", "kp_data_source_gfz"))
+        assertEquals("Data: NOAA SWPC", stringResourceValue("values/strings.xml", "kp_data_source_noaa"))
+        assertEquals("Normal (0-5)", stringResourceValue("values/strings.xml", "kp_legend_normal"))
+        assertEquals("G1 (5-6)", stringResourceValue("values/strings.xml", "kp_legend_g1"))
+        assertEquals("G2 (6-7)", stringResourceValue("values/strings.xml", "kp_legend_g2"))
+        assertEquals("G3 (7-8)", stringResourceValue("values/strings.xml", "kp_legend_g3"))
+        assertEquals("G4 (8-9)", stringResourceValue("values/strings.xml", "kp_legend_g4"))
+        assertEquals("G5 (≥9)", stringResourceValue("values/strings.xml", "kp_legend_g5"))
+
+        assertEquals("KP Index", stringResourceValue("values-en/strings.xml", "screen_kp_forecast"))
+        assertEquals("KP Index", stringResourceValue("values-en/strings.xml", "kp_title"))
+        assertEquals("Current KP Index", stringResourceValue("values-en/strings.xml", "kp_current"))
+        assertEquals("No data available", stringResourceValue("values-en/strings.xml", "kp_no_data"))
+        assertEquals("KP Index Forecast", stringResourceValue("values-en/strings.xml", "kp_navigation_title"))
+        assertEquals("Current KP Index", stringResourceValue("values-en/strings.xml", "kp_section_current"))
+        assertEquals("48-Hour Forecast", stringResourceValue("values-en/strings.xml", "kp_section_forecast48"))
+        assertEquals("Long-term Forecast (27 days)", stringResourceValue("values-en/strings.xml", "kp_section_long_term"))
+        assertEquals("Based on current time", stringResourceValue("values-en/strings.xml", "kp_forecast_note"))
+        assertEquals("UTC time", stringResourceValue("values-en/strings.xml", "kp_forecast27_note"))
+        assertEquals("Data: GFZ Potsdam", stringResourceValue("values-en/strings.xml", "kp_data_source_gfz"))
+        assertEquals("Data: NOAA SWPC", stringResourceValue("values-en/strings.xml", "kp_data_source_noaa"))
+        assertEquals("Normal (0-5)", stringResourceValue("values-en/strings.xml", "kp_legend_normal"))
+        assertEquals("G1 (5-6)", stringResourceValue("values-en/strings.xml", "kp_legend_g1"))
+        assertEquals("G2 (6-7)", stringResourceValue("values-en/strings.xml", "kp_legend_g2"))
+        assertEquals("G3 (7-8)", stringResourceValue("values-en/strings.xml", "kp_legend_g3"))
+        assertEquals("G4 (8-9)", stringResourceValue("values-en/strings.xml", "kp_legend_g4"))
+        assertEquals("G5 (≥9)", stringResourceValue("values-en/strings.xml", "kp_legend_g5"))
+    }
+
+    @Test
+    fun `weather forecast sheet strings match iOS localizations`() {
+        assertEquals("현위치 기반 정보", stringResourceValue("values/strings.xml", "weather_navigation_title"))
+        assertEquals("일출/일몰 정보", stringResourceValue("values/strings.xml", "weather_section_sunrise_sunset"))
+        assertEquals("현재 날씨", stringResourceValue("values/strings.xml", "weather_section_current"))
+        assertEquals("드론 무게:", stringResourceValue("values/strings.xml", "weather_drone_weight_label"))
+        assertEquals("일몰까지", stringResourceValue("values/strings.xml", "weather_until_sunset"))
+        assertEquals("일출까지", stringResourceValue("values/strings.xml", "weather_until_sunrise"))
+        assertEquals("남음", stringResourceValue("values/strings.xml", "weather_remaining"))
+        assertEquals(
+            "주의 및 경고 아이콘은 참고용입니다. 비행 전 현장 상황을 반드시 확인하세요.",
+            stringResourceValue("values/strings.xml", "weather_disclaimer"),
+        )
+        assertEquals("마지막 업데이트: %1\$s", stringResourceValue("values/strings.xml", "weather_last_update"))
+        assertEquals("새로고침되었습니다.", stringResourceValue("values/strings.xml", "weather_refresh"))
+        assertEquals("북", stringResourceValue("values/strings.xml", "weather_direction_n"))
+        assertEquals("북동", stringResourceValue("values/strings.xml", "weather_direction_ne"))
+        assertEquals("동", stringResourceValue("values/strings.xml", "weather_direction_e"))
+        assertEquals("남동", stringResourceValue("values/strings.xml", "weather_direction_se"))
+        assertEquals("남", stringResourceValue("values/strings.xml", "weather_direction_s"))
+        assertEquals("남서", stringResourceValue("values/strings.xml", "weather_direction_sw"))
+        assertEquals("서", stringResourceValue("values/strings.xml", "weather_direction_w"))
+        assertEquals("북서", stringResourceValue("values/strings.xml", "weather_direction_nw"))
+        assertEquals("온도 예보 (3일)", stringResourceValue("values/strings.xml", "weather_chart_temperature"))
+        assertEquals("풍속 예보 (3일)", stringResourceValue("values/strings.xml", "weather_chart_wind_speed"))
+        assertEquals("순간풍속증가량 예보 (3일)", stringResourceValue("values/strings.xml", "weather_chart_gust_difference"))
+        assertEquals("강수량 예보 (3일)", stringResourceValue("values/strings.xml", "weather_chart_precipitation"))
+        assertEquals("가시거리 예보 (3일)", stringResourceValue("values/strings.xml", "weather_chart_visibility"))
+        assertEquals("결로위험지수 예보 (3일)", stringResourceValue("values/strings.xml", "weather_chart_cri"))
+
+        assertEquals("Location-based Information", stringResourceValue("values-en/strings.xml", "weather_navigation_title"))
+        assertEquals("Sunrise/Sunset", stringResourceValue("values-en/strings.xml", "weather_section_sunrise_sunset"))
+        assertEquals("Current Weather", stringResourceValue("values-en/strings.xml", "weather_section_current"))
+        assertEquals("Drone Weight:", stringResourceValue("values-en/strings.xml", "weather_drone_weight_label"))
+        assertEquals("Until sunset", stringResourceValue("values-en/strings.xml", "weather_until_sunset"))
+        assertEquals("Until sunrise", stringResourceValue("values-en/strings.xml", "weather_until_sunrise"))
+        assertEquals("remaining", stringResourceValue("values-en/strings.xml", "weather_remaining"))
+        assertEquals(
+            "Caution and warning icons are for reference only. Always check on-site conditions before flight.",
+            stringResourceValue("values-en/strings.xml", "weather_disclaimer"),
+        )
+        assertEquals("Last updated: %1\$s", stringResourceValue("values-en/strings.xml", "weather_last_update"))
+        assertEquals("Refreshed", stringResourceValue("values-en/strings.xml", "weather_refresh"))
+        assertEquals("N", stringResourceValue("values-en/strings.xml", "weather_direction_n"))
+        assertEquals("NE", stringResourceValue("values-en/strings.xml", "weather_direction_ne"))
+        assertEquals("E", stringResourceValue("values-en/strings.xml", "weather_direction_e"))
+        assertEquals("SE", stringResourceValue("values-en/strings.xml", "weather_direction_se"))
+        assertEquals("S", stringResourceValue("values-en/strings.xml", "weather_direction_s"))
+        assertEquals("SW", stringResourceValue("values-en/strings.xml", "weather_direction_sw"))
+        assertEquals("W", stringResourceValue("values-en/strings.xml", "weather_direction_w"))
+        assertEquals("NW", stringResourceValue("values-en/strings.xml", "weather_direction_nw"))
+        assertEquals("Temperature Forecast (3 Days)", stringResourceValue("values-en/strings.xml", "weather_chart_temperature"))
+        assertEquals("Wind Speed Forecast (3 Days)", stringResourceValue("values-en/strings.xml", "weather_chart_wind_speed"))
+        assertEquals("Gust Difference Forecast (3 Days)", stringResourceValue("values-en/strings.xml", "weather_chart_gust_difference"))
+        assertEquals("Precipitation Forecast (3 Days)", stringResourceValue("values-en/strings.xml", "weather_chart_precipitation"))
+        assertEquals("Visibility Forecast (3 Days)", stringResourceValue("values-en/strings.xml", "weather_chart_visibility"))
+        assertEquals("CRI Forecast (3 Days)", stringResourceValue("values-en/strings.xml", "weather_chart_cri"))
+    }
+
+    @Test
+    fun `weather drone category strings match iOS localizations`() {
+        assertEquals("250g 이하", stringResourceValue("values/strings.xml", "weather_drone_category_toy"))
+        assertEquals(
+            "Mini 시리즈\\n자격증 불필요",
+            stringResourceValue("values/strings.xml", "weather_drone_category_toy_description"),
+        )
+        assertEquals("Mini 2, Mini 3 Pro, Mini 4 Pro", stringResourceValue("values/strings.xml", "weather_drone_category_toy_examples"))
+        assertEquals("250g ~ 2kg", stringResourceValue("values/strings.xml", "weather_drone_category_class4"))
+        assertEquals(
+            "Air 시리즈\\n4급 자격증 필요",
+            stringResourceValue("values/strings.xml", "weather_drone_category_class4_description"),
+        )
+        assertEquals("Air 2S, Air 3, Air 3S", stringResourceValue("values/strings.xml", "weather_drone_category_class4_examples"))
+        assertEquals("2kg ~ 7kg", stringResourceValue("values/strings.xml", "weather_drone_category_class3"))
+        assertEquals(
+            "Mavic, Inspire\\n3급 자격증 필요",
+            stringResourceValue("values/strings.xml", "weather_drone_category_class3_description"),
+        )
+        assertEquals("Mavic 3 Pro, Mavic 4 Pro, Inspire 3", stringResourceValue("values/strings.xml", "weather_drone_category_class3_examples"))
+        assertEquals("7kg ~ 25kg", stringResourceValue("values/strings.xml", "weather_drone_category_class2"))
+        assertEquals(
+            "산업용 드론\\n2급 자격증 필요",
+            stringResourceValue("values/strings.xml", "weather_drone_category_class2_description"),
+        )
+        assertEquals("농업용/산업용 드론", stringResourceValue("values/strings.xml", "weather_drone_category_class2_examples"))
+
+        assertEquals("≤250g", stringResourceValue("values-en/strings.xml", "weather_drone_category_toy"))
+        assertEquals(
+            "Mini Series\\nNo License Required",
+            stringResourceValue("values-en/strings.xml", "weather_drone_category_toy_description"),
+        )
+        assertEquals("Mini 2, Mini 3 Pro, Mini 4 Pro", stringResourceValue("values-en/strings.xml", "weather_drone_category_toy_examples"))
+        assertEquals("250g~2kg", stringResourceValue("values-en/strings.xml", "weather_drone_category_class4"))
+        assertEquals(
+            "Air Series\\nClass 4 License Required",
+            stringResourceValue("values-en/strings.xml", "weather_drone_category_class4_description"),
+        )
+        assertEquals("Air 2S, Air 3, Air 3S", stringResourceValue("values-en/strings.xml", "weather_drone_category_class4_examples"))
+        assertEquals("2kg~7kg", stringResourceValue("values-en/strings.xml", "weather_drone_category_class3"))
+        assertEquals(
+            "Mavic, Inspire\\nClass 3 License Required",
+            stringResourceValue("values-en/strings.xml", "weather_drone_category_class3_description"),
+        )
+        assertEquals("Mavic 3 Pro, Mavic 4 Pro, Inspire 3", stringResourceValue("values-en/strings.xml", "weather_drone_category_class3_examples"))
+        assertEquals("7kg~25kg", stringResourceValue("values-en/strings.xml", "weather_drone_category_class2"))
+        assertEquals(
+            "Industrial Drones\\nClass 2 License Required",
+            stringResourceValue("values-en/strings.xml", "weather_drone_category_class2_description"),
+        )
+        assertEquals("Agricultural/Industrial Drones", stringResourceValue("values-en/strings.xml", "weather_drone_category_class2_examples"))
+    }
+
+    @Test
+    fun `drone list and settings entry strings match iOS localizations`() {
+        assertEquals("내 드론 관리하기", stringResourceValue("values/strings.xml", "settings_drone_manage"))
+        assertEquals("Manage My Drones", stringResourceValue("values-en/strings.xml", "settings_drone_manage"))
+
+        assertEquals("내 드론 관리하기", stringResourceValue("values/strings.xml", "drone_list_title"))
+        assertEquals("Manage My Drones", stringResourceValue("values-en/strings.xml", "drone_list_title"))
+        assertEquals("내 드론", stringResourceValue("values/strings.xml", "drone_list_section_my"))
+        assertEquals("My Drones", stringResourceValue("values-en/strings.xml", "drone_list_section_my"))
+        assertEquals("새 드론 추가", stringResourceValue("values/strings.xml", "drone_list_add"))
+        assertEquals("Add New Drone", stringResourceValue("values-en/strings.xml", "drone_list_add"))
+    }
+
+    @Test
+    fun `drone detail and edit strings match iOS localizations`() {
+        assertEquals("시리얼 번호", stringResourceValue("values/strings.xml", "drone_detail_serial_number"))
+        assertEquals("이륙 중량", stringResourceValue("values/strings.xml", "drone_detail_takeoff_weight"))
+        assertEquals("메모 없음", stringResourceValue("values/strings.xml", "drone_detail_memo_empty"))
+        assertEquals(
+            "'%s'을(를) 삭제하시겠습니까?",
+            androidDisplayStringResourceValue("values/strings.xml", "drone_detail_delete_message"),
+        )
+        assertEquals(
+            "'%1\$s'에 연결된 %2\$d개의 도형을 어떻게 처리할까요?",
+            androidDisplayStringResourceValue("values/strings.xml", "drone_detail_delete_with_shapes_message"),
+        )
+
+        assertEquals("한 줄 이내로 입력해주세요", stringResourceValue("values/strings.xml", "drone_edit_section_basic_footer"))
+        assertEquals("시리얼 번호 입력 (선택)", stringResourceValue("values/strings.xml", "drone_edit_serial_placeholder"))
+        assertEquals("시리얼 번호", stringResourceValue("values/strings.xml", "drone_edit_section_serial"))
+        assertEquals(
+            "드론의 제조번호 또는 시리얼 번호를 입력하세요",
+            androidDisplayStringResourceValue("values/strings.xml", "drone_edit_section_serial_footer"),
+        )
+        assertEquals("드론의 이륙 중량과 크기를 입력하세요", stringResourceValue("values/strings.xml", "drone_edit_section_specs_footer"))
+        assertEquals("이미 사용 중인 드론 이름입니다.", stringResourceValue("values/strings.xml", "drone_edit_alert_name_duplicate"))
+        assertEquals("내 드론", stringResourceValue("values/strings.xml", "drone_edit_default_name_first"))
+
+        assertEquals("Serial Number", stringResourceValue("values-en/strings.xml", "drone_detail_serial_number"))
+        assertEquals("Takeoff Weight", stringResourceValue("values-en/strings.xml", "drone_detail_takeoff_weight"))
+        assertEquals("Not entered", stringResourceValue("values-en/strings.xml", "drone_detail_not_entered"))
+        assertEquals("My Drone", stringResourceValue("values-en/strings.xml", "drone_edit_default_name_first"))
+        assertEquals("Save Failed", stringResourceValue("values-en/strings.xml", "drone_edit_alert_save_failed"))
+        assertEquals("This drone name already exists.", stringResourceValue("values-en/strings.xml", "drone_edit_alert_name_duplicate"))
+    }
+
+    @Test
+    fun `document and terms strings match iOS localizations`() {
+        assertEquals("개인정보 취급방침", stringResourceValue("values/strings.xml", "login_terms_privacy"))
+        assertEquals("개인정보 취급방침", stringResourceValue("values/strings.xml", "profile_terms_privacy"))
+        assertEquals("불러오는 중...", stringResourceValue("values/strings.xml", "document_terms_loading"))
+        assertEquals("약관을 불러올 수 없습니다.", stringResourceValue("values/strings.xml", "document_terms_service_error_title"))
+        assertEquals("잠시 후 다시 시도해주세요.", stringResourceValue("values/strings.xml", "document_terms_service_error_message"))
+        assertEquals(
+            "개인정보 취급방침을 불러올 수 없습니다.",
+            stringResourceValue("values/strings.xml", "document_terms_privacy_error_title"),
+        )
+        assertEquals("잠시 후 다시 시도해주세요.", stringResourceValue("values/strings.xml", "document_terms_privacy_error_message"))
+
+        assertEquals("Privacy Policy", stringResourceValue("values-en/strings.xml", "login_terms_privacy"))
+        assertEquals("Privacy Policy", stringResourceValue("values-en/strings.xml", "profile_terms_privacy"))
+        assertEquals("Loading...", stringResourceValue("values-en/strings.xml", "document_terms_loading"))
+        assertEquals("Unable to load terms", stringResourceValue("values-en/strings.xml", "document_terms_service_error_title"))
+        assertEquals("Please try again later", stringResourceValue("values-en/strings.xml", "document_terms_service_error_message"))
+        assertEquals(
+            "Unable to load privacy policy",
+            stringResourceValue("values-en/strings.xml", "document_terms_privacy_error_title"),
+        )
+        assertEquals("Please try again later", stringResourceValue("values-en/strings.xml", "document_terms_privacy_error_message"))
+    }
+
+    private fun stringResourceNames(relativePath: String): Set<String> {
+        val document = parseXml(relativePath)
+        val nodes = document.getElementsByTagName("string")
+
+        return buildSet {
+            for (index in 0 until nodes.length) {
+                val node = nodes.item(index)
+                val attributes = node.attributes
+                val translatable = attributes.getNamedItem("translatable")?.nodeValue
+                val name = requireNotNull(attributes.getNamedItem("name")?.nodeValue)
+                if (translatable != "false") {
+                    add(name)
+                }
+            }
+        }
+    }
+
+    private fun stringResourceValue(relativePath: String, name: String): String {
+        val document = parseXml(relativePath)
+        val nodes = document.getElementsByTagName("string")
+
+        for (index in 0 until nodes.length) {
+            val node = nodes.item(index)
+            val nodeName = node.attributes.getNamedItem("name")?.nodeValue
+            if (nodeName == name) {
+                return node.textContent
+            }
+        }
+        error("String resource not found: $name")
+    }
+
+    private fun androidDisplayStringResourceValue(relativePath: String, name: String): String {
+        return stringResourceValue(relativePath, name)
+            .replace("\\'", "'")
+    }
+
+    private fun parseXml(relativePath: String) =
+        DocumentBuilderFactory.newInstance()
+            .newDocumentBuilder()
+            .parse(resolveResFile(relativePath))
+
+    private fun resolveResFile(relativePath: String): File {
+        val userDir = File(requireNotNull(System.getProperty("user.dir")))
+        return sequenceOf(
+            File(userDir, "src/main/res/$relativePath"),
+            File(userDir, "app/src/main/res/$relativePath"),
+        ).first { it.exists() }
+    }
+}

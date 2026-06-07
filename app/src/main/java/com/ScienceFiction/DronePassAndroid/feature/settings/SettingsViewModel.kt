@@ -7,11 +7,11 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ScienceFiction.DronePassAndroid.BuildConfig
+import com.ScienceFiction.DronePassAndroid.core.data.NotificationPreferenceKeys
 import com.ScienceFiction.DronePassAndroid.core.data.UserLocationKeys
 import com.ScienceFiction.DronePassAndroid.core.data.repository.DroneRepository
 import com.ScienceFiction.DronePassAndroid.core.data.repository.KpIndexRepository
@@ -19,6 +19,9 @@ import com.ScienceFiction.DronePassAndroid.core.data.repository.ShapeRepository
 import com.ScienceFiction.DronePassAndroid.core.data.repository.SketchRepository
 import com.ScienceFiction.DronePassAndroid.core.data.repository.WeatherRepository
 import com.ScienceFiction.DronePassAndroid.core.data.sync.RealtimeSyncManager
+import com.ScienceFiction.DronePassAndroid.core.data.storedEndDateAlarmEnabled
+import com.ScienceFiction.DronePassAndroid.core.data.storedSunriseAlarmEnabled
+import com.ScienceFiction.DronePassAndroid.core.data.storedSunsetAlarmEnabled
 import com.ScienceFiction.DronePassAndroid.feature.auth.AuthRepository
 import com.ScienceFiction.DronePassAndroid.feature.auth.AuthState
 import com.ScienceFiction.DronePassAndroid.service.FcmService
@@ -42,9 +45,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
-private const val DEFAULT_LATITUDE = 37.5665
-private const val DEFAULT_LONGITUDE = 126.9780
-
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val dataStore: DataStore<Preferences>,
@@ -64,13 +64,6 @@ class SettingsViewModel @Inject constructor(
 
     companion object {
         private const val TAG = "SettingsViewModel"
-        private val KEY_HIDE_EXPIRED_SHAPES = booleanPreferencesKey("hide_expired_shapes")
-        private val KEY_HIDE_NOT_STARTED_SHAPES = booleanPreferencesKey("hide_not_started_shapes")
-        private val KEY_KEEP_SCREEN_AWAKE = booleanPreferencesKey("keep_screen_awake")
-        private val KEY_SUNRISE_ALARM_ENABLED = booleanPreferencesKey("sunrise_alarm_enabled")
-        private val KEY_SUNSET_ALARM_ENABLED = booleanPreferencesKey("sunset_alarm_enabled")
-        private val KEY_END_DATE_ALARM_ENABLED = booleanPreferencesKey("end_date_alarm_enabled")
-        private val KEY_KOREA_FEATURES_ENABLED = booleanPreferencesKey("korea_features_enabled")
     }
 
     /** 인증 상태 */
@@ -89,32 +82,32 @@ class SettingsViewModel @Inject constructor(
 
     /** 만료된 도형 숨기기 */
     val hideExpiredShapes: StateFlow<Boolean> = dataStore.data
-        .map { preferences -> preferences[KEY_HIDE_EXPIRED_SHAPES] ?: false }
+        .map { preferences -> storedHideExpiredShapes(preferences) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     /** 시작 전 도형 숨기기 */
     val hideNotStartedShapes: StateFlow<Boolean> = dataStore.data
-        .map { preferences -> preferences[KEY_HIDE_NOT_STARTED_SHAPES] ?: false }
+        .map { preferences -> storedHideNotStartedShapes(preferences) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     /** 화면 항상 켜기 */
     val keepScreenAwake: StateFlow<Boolean> = dataStore.data
-        .map { preferences -> preferences[KEY_KEEP_SCREEN_AWAKE] ?: false }
+        .map { preferences -> storedKeepScreenAwake(preferences) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     /** 일출 알림 활성화 */
     val sunriseAlarmEnabled: StateFlow<Boolean> = dataStore.data
-        .map { preferences -> preferences[KEY_SUNRISE_ALARM_ENABLED] ?: false }
+        .map { preferences -> storedSunriseAlarmEnabled(preferences) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     /** 일몰 알림 활성화 */
     val sunsetAlarmEnabled: StateFlow<Boolean> = dataStore.data
-        .map { preferences -> preferences[KEY_SUNSET_ALARM_ENABLED] ?: false }
+        .map { preferences -> storedSunsetAlarmEnabled(preferences) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     /** 종료일 알림 활성화 */
     val endDateAlarmEnabled: StateFlow<Boolean> = dataStore.data
-        .map { preferences -> preferences[KEY_END_DATE_ALARM_ENABLED] ?: false }
+        .map { preferences -> storedEndDateAlarmEnabled(preferences) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     /** 로그인 여부 */
@@ -125,22 +118,29 @@ class SettingsViewModel @Inject constructor(
      * 현재 앱 언어 (iOS UserDefaults `AppleLanguages` 정합).
      * AppCompatDelegate.getApplicationLocales 기반.
      */
-    private val _currentLanguage = MutableStateFlow(readCurrentAppLanguage())
+    private val _currentLanguage = MutableStateFlow(resolveCurrentAppLanguage())
     val currentLanguage: StateFlow<AppLanguage> = _currentLanguage.asStateFlow()
 
     /**
      * 한국 특화 기능 활성화 (iOS `isKoreaFeaturesEnabled` 정합).
-     * 기본값: 시스템 언어 ko 면 true, 그 외 false.
-     * OFF 전이 시 MapViewModel 이 collect 하여 모든 FlightZone 레이어를 해제한다.
+     * 첫 실행 기본값: 앱 언어가 한국어면 true, 그 외 false. 이후에는 저장값을 우선한다.
+     * ON/OFF 전이 시 MapViewModel 이 collect 하여 모든 FlightZone 레이어를 해제한다.
      */
     val koreaFeaturesEnabled: StateFlow<Boolean> = dataStore.data
         .map { preferences ->
-            preferences[KEY_KOREA_FEATURES_ENABLED]
-                ?: (readCurrentAppLanguage() == AppLanguage.Korean)
+            resolveKoreaFeaturesEnabled(
+                storedValue = storedKoreaFeaturesEnabled(preferences),
+                language = resolveCurrentAppLanguage(),
+            )
         }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+        .stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5000),
+            defaultKoreaFeaturesEnabled(),
+        )
 
     init {
+        initializeKoreaFeaturesSetting()
         checkAuthState()
         // iOS settings.kp.current 정합 — 화면 진입 시 즉시 최신 Kp 값 표시.
         // KpViewModel 가 떠있지 않은 경우(설정만 단독 진입) 에도 currentKpFlow 가 채워지도록 1회 호출.
@@ -152,7 +152,6 @@ class SettingsViewModel @Inject constructor(
     /**
      * 앱 언어 변경 — iOS `UserDefaults.set(...)` + `AppleLanguages` 정합.
      * AppCompatDelegate API 호출 → Activity 자동 재생성 → 전체 UI 언어 전환.
-     * 호출자(UI)는 다이얼로그 안내 후 약간의 delay 를 두고 호출하여 dismiss animation 보장.
      */
     fun setLanguage(language: AppLanguage) {
         AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(language.tag))
@@ -161,20 +160,28 @@ class SettingsViewModel @Inject constructor(
 
     /**
      * 한국 특화 기능 토글 (iOS `settingManager.isKoreaFeaturesEnabled = newValue` 정합).
-     * OFF 전이 시 MapViewModel 이 visibleLayers 를 모두 해제한다.
+     * ON/OFF 전이 시 MapViewModel 이 visibleLayers 를 모두 해제한다.
      */
     fun toggleKoreaFeatures(value: Boolean) {
         viewModelScope.launch {
             dataStore.edit { preferences ->
-                preferences[KEY_KOREA_FEATURES_ENABLED] = value
+                preferences[SettingsPreferenceKeys.KOREA_FEATURES_ENABLED] = value
+                preferences.remove(SettingsPreferenceKeys.LEGACY_KOREA_FEATURES_ENABLED)
             }
         }
     }
 
-    private fun readCurrentAppLanguage(): AppLanguage {
-        val locales = AppCompatDelegate.getApplicationLocales()
-        val tag = if (!locales.isEmpty) locales.get(0)?.language else null
-        return AppLanguage.fromTag(tag)
+    private fun initializeKoreaFeaturesSetting() {
+        viewModelScope.launch {
+            dataStore.edit { preferences ->
+                if (preferences[SettingsPreferenceKeys.KOREA_FEATURES_ENABLED] == null) {
+                    val legacyValue = preferences[SettingsPreferenceKeys.LEGACY_KOREA_FEATURES_ENABLED]
+                    preferences[SettingsPreferenceKeys.KOREA_FEATURES_ENABLED] =
+                        legacyValue ?: defaultKoreaFeaturesEnabled()
+                    preferences.remove(SettingsPreferenceKeys.LEGACY_KOREA_FEATURES_ENABLED)
+                }
+            }
+        }
     }
 
     /**
@@ -195,7 +202,8 @@ class SettingsViewModel @Inject constructor(
     fun toggleHideExpiredShapes(value: Boolean) {
         viewModelScope.launch {
             dataStore.edit { preferences ->
-                preferences[KEY_HIDE_EXPIRED_SHAPES] = value
+                preferences[SettingsPreferenceKeys.HIDE_EXPIRED_SHAPES] = value
+                preferences.remove(SettingsPreferenceKeys.LEGACY_HIDE_EXPIRED_SHAPES)
             }
         }
     }
@@ -206,7 +214,8 @@ class SettingsViewModel @Inject constructor(
     fun toggleHideNotStartedShapes(value: Boolean) {
         viewModelScope.launch {
             dataStore.edit { preferences ->
-                preferences[KEY_HIDE_NOT_STARTED_SHAPES] = value
+                preferences[SettingsPreferenceKeys.HIDE_NOT_STARTED_SHAPES] = value
+                preferences.remove(SettingsPreferenceKeys.LEGACY_HIDE_NOT_STARTED_SHAPES)
             }
         }
     }
@@ -217,7 +226,8 @@ class SettingsViewModel @Inject constructor(
     fun toggleKeepScreenAwake(value: Boolean) {
         viewModelScope.launch {
             dataStore.edit { preferences ->
-                preferences[KEY_KEEP_SCREEN_AWAKE] = value
+                preferences[SettingsPreferenceKeys.KEEP_SCREEN_AWAKE] = value
+                preferences.remove(SettingsPreferenceKeys.LEGACY_KEEP_SCREEN_AWAKE)
             }
         }
     }
@@ -228,16 +238,20 @@ class SettingsViewModel @Inject constructor(
     fun toggleSunriseAlarm(value: Boolean) {
         viewModelScope.launch {
             dataStore.edit { preferences ->
-                preferences[KEY_SUNRISE_ALARM_ENABLED] = value
+                preferences[NotificationPreferenceKeys.SUNRISE_ALARM_ENABLED] = value
+                preferences.remove(NotificationPreferenceKeys.LEGACY_SUNRISE_ALARM_ENABLED)
             }
             if (value) {
-                val (lat, lon) = getUserLocation()
-                val weatherData = try {
-                    weatherRepository.fetchWeather(lat, lon).getOrNull()
-                } catch (e: Exception) {
-                    null
+                val location = getUserLocationOrNull()
+                if (location != null) {
+                    val (lat, lon) = location
+                    val weatherData = try {
+                        weatherRepository.fetchWeather(lat, lon).getOrNull()
+                    } catch (e: Exception) {
+                        null
+                    }
+                    notificationScheduler.scheduleSunriseAlarms(weatherData?.sunriseTimes)
                 }
-                notificationScheduler.scheduleSunriseAlarms(weatherData?.sunrise)
             } else {
                 notificationScheduler.cancelSunriseAlarms()
             }
@@ -250,16 +264,20 @@ class SettingsViewModel @Inject constructor(
     fun toggleSunsetAlarm(value: Boolean) {
         viewModelScope.launch {
             dataStore.edit { preferences ->
-                preferences[KEY_SUNSET_ALARM_ENABLED] = value
+                preferences[NotificationPreferenceKeys.SUNSET_ALARM_ENABLED] = value
+                preferences.remove(NotificationPreferenceKeys.LEGACY_SUNSET_ALARM_ENABLED)
             }
             if (value) {
-                val (lat, lon) = getUserLocation()
-                val weatherData = try {
-                    weatherRepository.fetchWeather(lat, lon).getOrNull()
-                } catch (e: Exception) {
-                    null
+                val location = getUserLocationOrNull()
+                if (location != null) {
+                    val (lat, lon) = location
+                    val weatherData = try {
+                        weatherRepository.fetchWeather(lat, lon).getOrNull()
+                    } catch (e: Exception) {
+                        null
+                    }
+                    notificationScheduler.scheduleSunsetAlarms(weatherData?.sunsetTimes)
                 }
-                notificationScheduler.scheduleSunsetAlarms(weatherData?.sunset)
             } else {
                 notificationScheduler.cancelSunsetAlarms()
             }
@@ -268,10 +286,10 @@ class SettingsViewModel @Inject constructor(
 
     /**
      * 사용자의 현재 위치를 가져온다.
-     * 위치를 가져올 수 없는 경우 기본 좌표(서울)를 반환한다.
+     * 위치를 가져올 수 없으면 iOS처럼 일출/일몰 알림 예약을 건너뛰도록 null을 반환한다.
      */
     @SuppressLint("MissingPermission")
-    private suspend fun getUserLocation(): Pair<Double, Double> {
+    private suspend fun getUserLocationOrNull(): Pair<Double, Double>? {
         val resolved = try {
             val location = fusedLocationClient.getCurrentLocation(
                 Priority.PRIORITY_BALANCED_POWER_ACCURACY,
@@ -284,17 +302,16 @@ class SettingsViewModel @Inject constructor(
                 if (lastLocation != null) {
                     Pair(lastLocation.latitude, lastLocation.longitude)
                 } else {
-                    Pair(DEFAULT_LATITUDE, DEFAULT_LONGITUDE)
+                    null
                 }
             }
         } catch (e: Exception) {
-            Log.w(TAG, "위치 조회 실패, 기본 좌표 사용: ${e.message}")
-            Pair(DEFAULT_LATITUDE, DEFAULT_LONGITUDE)
+            Log.w(TAG, "위치 조회 실패, 일출/일몰 알림 예약 건너뜀: ${e.message}")
+            null
         }
 
         // 위치 캐시 갱신 (BootCompletedReceiver 가 재부팅 후 사용).
-        // 폴백 좌표는 캐시하지 않아 다음 실행 때 재시도가 가능하게 한다.
-        if (resolved.first != DEFAULT_LATITUDE || resolved.second != DEFAULT_LONGITUDE) {
+        if (resolved != null) {
             runCatching {
                 dataStore.edit { prefs ->
                     prefs[UserLocationKeys.KEY_LAST_LATITUDE] = resolved.first
@@ -312,7 +329,8 @@ class SettingsViewModel @Inject constructor(
     fun toggleEndDateAlarm(value: Boolean) {
         viewModelScope.launch {
             dataStore.edit { preferences ->
-                preferences[KEY_END_DATE_ALARM_ENABLED] = value
+                preferences[NotificationPreferenceKeys.END_DATE_ALARM_ENABLED] = value
+                preferences.remove(NotificationPreferenceKeys.LEGACY_END_DATE_ALARM_ENABLED)
             }
             if (value) {
                 rescheduleAllEndDateAlarms()
@@ -324,21 +342,13 @@ class SettingsViewModel @Inject constructor(
 
     /**
      * 만료된 도형 전체 삭제
-     * 모든 활성 도형 중 isExpired == true인 도형을 소프트 삭제
-     *
-     * @param onResult 삭제 결과 콜백 (삭제된 도형 수)
      */
-    fun deleteAllExpiredShapes(onResult: (Int) -> Unit) {
+    fun deleteAllExpiredShapes() {
         viewModelScope.launch {
             try {
-                val shapes = shapeRepository.getActiveShapes().first()
-                val expiredShapes = shapes.filter { it.isExpired }
-                expiredShapes.forEach { shape ->
-                    shapeRepository.softDeleteShape(shape)
-                }
-                onResult(expiredShapes.size)
+                shapeRepository.deleteExpiredShapes()
             } catch (e: Exception) {
-                onResult(0)
+                Log.e(TAG, "만료된 도형 삭제 실패", e)
             }
         }
     }
@@ -352,7 +362,11 @@ class SettingsViewModel @Inject constructor(
             shapes.forEach { shape ->
                 val endDate = shape.flightEndDate
                 if (endDate != null && !shape.isExpired) {
-                    notificationScheduler.scheduleEndDateAlarm(shape.id, endDate)
+                    notificationScheduler.scheduleEndDateAlarm(
+                        shapeId = shape.id,
+                        flightEndDate = endDate,
+                        shapeTitle = shape.title,
+                    )
                 }
             }
         } catch (e: Exception) {
@@ -365,7 +379,7 @@ class SettingsViewModel @Inject constructor(
      */
     private suspend fun cancelAllEndDateAlarms() {
         try {
-            val shapes = shapeRepository.getActiveShapes().first()
+            val shapes = shapeRepository.getAllShapes().first()
             shapes.forEach { shape ->
                 notificationScheduler.cancelEndDateAlarm(shape.id)
             }

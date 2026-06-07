@@ -16,13 +16,13 @@ enum class AppLanguage(val tag: String, @StringRes val displayNameRes: Int) {
     companion object {
         /**
          * IETF BCP 47 형식의 언어 태그를 [AppLanguage] 로 변환.
-         * "ko-KR", "ko" → Korean / "en-US", "en" → English.
-         * 매치되지 않으면 Korean (기본값).
+         * iOS `SettingManager.initializeAppLanguage` 와 동일하게
+         * "ko-KR", "ko" → Korean / 그 외 시스템 언어 → English.
          */
         fun fromTag(tag: String?): AppLanguage {
-            if (tag.isNullOrBlank()) return Korean
+            if (tag.isNullOrBlank()) return English
             val primary = tag.substringBefore('-').lowercase()
-            return entries.firstOrNull { it.tag == primary } ?: Korean
+            return if (primary == Korean.tag) Korean else English
         }
     }
 }

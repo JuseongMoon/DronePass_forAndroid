@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.vworld
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -34,12 +35,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -55,12 +56,26 @@ import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.FlightZoneLay
  * iOS 의 NavigationView + (배너 / 통계 박스 / 액션 2버튼 / 레이어 목록) 구조를
  * Compose 의 ModalBottomSheet 위에 재현한다.
  */
-private val InfoBannerBackground = Color(0xFFE3F2FD) // iOS systemBlue.opacity(0.1)
 private val InfoBannerAccent = Color(0xFF007AFF)     // iOS systemBlue
 private val SelectAllButtonBackground = Color(0x1A007AFF) // iOS Color.blue.opacity(0.1)
 private val DeselectAllButtonBackground = Color(0x1AFF3B30) // iOS Color.red.opacity(0.1)
 private val DeselectAllButtonForeground = Color(0xFFFF3B30) // iOS .red
 private val SelectedRowBackground = Color(0x0D007AFF) // iOS .blue.opacity(0.05)
+internal val FlightZoneLayerSelectorLegalNoticeBackgroundColor = Color(0x1A007AFF) // iOS .blue.opacity(0.1)
+internal val FlightZoneLayerSelectorLegalNoticeTopPadding = 16.dp
+internal val FlightZoneLayerSelectorLegalNoticeBottomPadding = 8.dp
+internal val FlightZoneLayerSelectorLegalNoticeBorderWidth = 1.dp
+internal val FlightZoneLayerSelectorLegalNoticeBorderColor = Color(0x4D007AFF) // iOS .blue.opacity(0.3)
+internal val FlightZoneLayerSelectorDividerLeadingPadding = 60.dp
+
+internal fun sortedFlightZoneLayersForSelector(
+    displayNameOf: (FlightZoneLayer) -> String,
+): List<FlightZoneLayer> = FlightZoneLayer.entries.sortedBy(displayNameOf)
+
+internal fun shouldShowFlightZoneLayerDividerAfterItem(
+    index: Int,
+    lastIndex: Int,
+): Boolean = index in 0..lastIndex
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -74,11 +89,10 @@ fun FlightZoneLayerSelector(
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val haptic = LocalHapticFeedback.current
+    val context = LocalContext.current
 
-    // displayName 가나다순 정렬 (iOS sorted(by: $0.displayName < $1.displayName))
-    val sortedLayers = remember {
-        FlightZoneLayer.entries.sortedBy { it.displayName }
-    }
+    // Localized displayName 가나다순 정렬 (iOS sorted(by: $0.displayName < $1.displayName))
+    val sortedLayers = sortedFlightZoneLayersForSelector { context.getString(it.displayNameRes) }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -102,9 +116,16 @@ fun FlightZoneLayerSelector(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp)
-                    .padding(top = 8.dp, bottom = 8.dp),
-                colors = CardDefaults.cardColors(containerColor = InfoBannerBackground),
-                shape = RoundedCornerShape(8.dp)
+                    .padding(
+                        top = FlightZoneLayerSelectorLegalNoticeTopPadding,
+                        bottom = FlightZoneLayerSelectorLegalNoticeBottomPadding,
+                    ),
+                colors = CardDefaults.cardColors(containerColor = FlightZoneLayerSelectorLegalNoticeBackgroundColor),
+                shape = RoundedCornerShape(8.dp),
+                border = BorderStroke(
+                    width = FlightZoneLayerSelectorLegalNoticeBorderWidth,
+                    color = FlightZoneLayerSelectorLegalNoticeBorderColor,
+                ),
             ) {
                 Row(
                     modifier = Modifier.padding(12.dp),
@@ -176,8 +197,12 @@ fun FlightZoneLayerSelector(
                             onToggleLayer(layer)
                         }
                     )
-                    if (index < sortedLayers.lastIndex) {
-                        HorizontalDivider(modifier = Modifier.padding(start = 60.dp))
+                    if (shouldShowFlightZoneLayerDividerAfterItem(index, sortedLayers.lastIndex)) {
+                        HorizontalDivider(
+                            modifier = Modifier.padding(
+                                start = FlightZoneLayerSelectorDividerLeadingPadding,
+                            ),
+                        )
                     }
                 }
             }
@@ -380,7 +405,7 @@ private fun LayerItem(
             Spacer(modifier = Modifier.width(12.dp))
 
             Text(
-                text = layer.displayName,
+                text = stringResource(layer.displayNameRes),
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface,

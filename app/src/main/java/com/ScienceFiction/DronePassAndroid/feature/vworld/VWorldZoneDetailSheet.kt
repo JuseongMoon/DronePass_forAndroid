@@ -46,6 +46,7 @@ import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.core.data.local.PublicContactInfo
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.DroneZoneFeature
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.FlightZoneLayer
+import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.NotamStatus
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.authorityNameEng
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.authorityNameKor
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.centerCoordinate
@@ -70,8 +71,42 @@ private val SecondaryTextColor: Color
     @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
 
 private val InfoBannerAccent = Color(0xFF007AFF)
+private val NotamActiveColor = Color(0xFFFF3B30)
+private val NotamExpiredColor = Color.Gray
 private val NotamRemainingWarningColor = Color(0xFFFF9500)
 private val PhoneLinkColor = Color(0xFF007AFF)
+
+internal fun resolveNotamStatusValueColor(status: NotamStatus): Color? = when (status) {
+    NotamStatus.ACTIVE -> NotamActiveColor
+    NotamStatus.SCHEDULED -> InfoBannerAccent
+    NotamStatus.EXPIRED -> NotamExpiredColor
+    NotamStatus.UNKNOWN -> null
+}
+
+internal fun shouldShowAltitudeRow(upper: String?, lower: String?): Boolean =
+    upper != null && lower != null
+
+internal fun resolvePublicContactLookupName(zone: DroneZoneFeature): String? =
+    zone.zoneCode ?: zone.zoneName ?: zone.heritageName
+
+internal val VWorldZoneDetailRowMinHeight = 44.dp
+internal val VWorldZoneDetailRowDividerThickness = 0.5.dp
+
+internal fun resolveVWorldZoneDetailSheetMinHeight(layer: FlightZoneLayer): Dp = when (layer) {
+    FlightZoneLayer.CULTURAL_HERITAGE -> 680.dp
+    FlightZoneLayer.TEMPORARY_PROHIBITED -> 550.dp
+    FlightZoneLayer.PRIOR_CONSULTATION,
+    FlightZoneLayer.NATIONAL_PARK -> 480.dp
+    FlightZoneLayer.PROHIBITED,
+    FlightZoneLayer.RESTRICTED,
+    FlightZoneLayer.ALERT,
+    FlightZoneLayer.DANGER -> 340.dp
+    FlightZoneLayer.CONTROL_ZONE,
+    FlightZoneLayer.ULTRALIGHT -> 280.dp
+    FlightZoneLayer.LANDING_FIELD,
+    FlightZoneLayer.OBSTACLE,
+    FlightZoneLayer.ATZ -> 230.dp
+}
 
 /**
  * 비행구역 상세 정보 BottomSheet (iOS VWorldZoneDetailView 정합)
@@ -95,26 +130,13 @@ fun VWorldZoneDetailSheet(
     // 사전협의구역 외 모든 레이어에 대해 publicContact lookup (iOS 정합)
     val publicContact: PublicContactInfo? = remember(zone) {
         if (zone.layer == FlightZoneLayer.PRIOR_CONSULTATION) null
-        else findContact(zone.zoneName ?: zone.heritageName)
+        else findContact(resolvePublicContactLookupName(zone))
     }
+    val formattedUpperAltitude = zone.formattedUpperAltitude
+    val formattedLowerAltitude = zone.formattedLowerAltitude
 
-    // iOS dynamicDetents 흉내: 레이어 타입별 최소 시트 높이
     val estimatedHeight: Dp = remember(zone.layer) {
-        when (zone.layer) {
-            FlightZoneLayer.CULTURAL_HERITAGE -> 680.dp
-            FlightZoneLayer.TEMPORARY_PROHIBITED -> 550.dp
-            FlightZoneLayer.PRIOR_CONSULTATION,
-            FlightZoneLayer.NATIONAL_PARK -> 480.dp
-            FlightZoneLayer.PROHIBITED,
-            FlightZoneLayer.RESTRICTED,
-            FlightZoneLayer.ALERT,
-            FlightZoneLayer.DANGER -> 340.dp
-            FlightZoneLayer.CONTROL_ZONE,
-            FlightZoneLayer.ULTRALIGHT -> 280.dp
-            FlightZoneLayer.LANDING_FIELD,
-            FlightZoneLayer.OBSTACLE,
-            FlightZoneLayer.ATZ -> 230.dp
-        }
+        resolveVWorldZoneDetailSheetMinHeight(zone.layer)
     }
 
     ModalBottomSheet(
@@ -144,18 +166,21 @@ fun VWorldZoneDetailSheet(
                 ZoneTypeRow(layer = zone.layer)
 
                 if (zone.zoneCode != null) {
+                    VWorldZoneDetailRowDivider()
                     DetailRow(
                         label = stringResource(R.string.zone_detail_code),
                         value = zone.zoneCode
                     )
                 }
 
+                VWorldZoneDetailRowDivider()
                 CoordinateRow(zone = zone)
 
-                if (zone.formattedUpperAltitude != null || zone.formattedLowerAltitude != null) {
+                if (shouldShowAltitudeRow(formattedUpperAltitude, formattedLowerAltitude)) {
+                    VWorldZoneDetailRowDivider()
                     AltitudeRow(
-                        upper = zone.formattedUpperAltitude,
-                        lower = zone.formattedLowerAltitude
+                        upper = formattedUpperAltitude,
+                        lower = formattedLowerAltitude
                     )
                 }
 
@@ -165,21 +190,25 @@ fun VWorldZoneDetailSheet(
 
                     DetailRow(
                         label = stringResource(R.string.zone_detail_notam_status),
-                        value = "${zone.notamStatus.emoji} ${zone.notamStatus.displayName}"
+                        value = "${zone.notamStatus.emoji} ${stringResource(zone.notamStatus.displayNameRes)}",
+                        valueColor = resolveNotamStatusValueColor(zone.notamStatus)
                     )
                     zone.notamStartDate?.let {
+                        VWorldZoneDetailRowDivider()
                         DetailRow(
                             label = stringResource(R.string.zone_detail_notam_start),
                             value = notamDateFormat.format(it)
                         )
                     }
                     zone.notamEndDate?.let {
+                        VWorldZoneDetailRowDivider()
                         DetailRow(
                             label = stringResource(R.string.zone_detail_notam_end),
                             value = notamDateFormat.format(it)
                         )
                     }
                     zone.daysRemaining?.let { days ->
+                        VWorldZoneDetailRowDivider()
                         DetailRow(
                             label = stringResource(R.string.zone_detail_notam_remaining),
                             value = stringResource(R.string.zone_detail_notam_days, days),
@@ -192,27 +221,32 @@ fun VWorldZoneDetailSheet(
                 if (zone.layer == FlightZoneLayer.PRIOR_CONSULTATION) {
                     SectionHeader(title = stringResource(R.string.zone_detail_authority_title))
 
+                    var hasAuthorityRow = false
                     zone.authorityNameKor?.let {
                         DetailRow(
                             label = stringResource(R.string.zone_detail_authority_name),
                             value = it
                         )
+                        hasAuthorityRow = true
                     }
                     zone.authorityNameEng?.let {
+                        if (hasAuthorityRow) VWorldZoneDetailRowDivider()
                         DetailRow(
                             label = stringResource(R.string.zone_detail_authority_name_eng),
                             value = it
                         )
+                        hasAuthorityRow = true
                     }
                     zone.operatingInstitution?.let {
+                        if (hasAuthorityRow) VWorldZoneDetailRowDivider()
                         DetailRow(
                             label = stringResource(R.string.zone_detail_authority_department),
                             value = it
                         )
+                        hasAuthorityRow = true
                     }
-                    val phone = zone.phoneNumber
-                        ?: findContact(zone.authorityNameKor ?: zone.zoneName)?.phoneNumber
-                    phone?.let {
+                    zone.phoneNumber?.let {
+                        if (hasAuthorityRow) VWorldZoneDetailRowDivider()
                         PhoneNumberRow(
                             label = stringResource(R.string.zone_detail_authority_contact),
                             phone = it
@@ -224,25 +258,32 @@ fun VWorldZoneDetailSheet(
                 if (zone.layer == FlightZoneLayer.CULTURAL_HERITAGE) {
                     SectionHeader(title = stringResource(R.string.zone_detail_heritage_title))
 
+                    var hasHeritageRow = false
                     zone.heritageName?.let {
                         DetailRow(
                             label = stringResource(R.string.zone_detail_heritage_name),
                             value = it
                         )
+                        hasHeritageRow = true
                     }
                     zone.fullAddress?.let {
+                        if (hasHeritageRow) VWorldZoneDetailRowDivider()
                         DetailRow(
                             label = stringResource(R.string.zone_detail_heritage_address),
                             value = it
                         )
+                        hasHeritageRow = true
                     }
                     zone.heritageZoneName?.let {
+                        if (hasHeritageRow) VWorldZoneDetailRowDivider()
                         DetailRow(
                             label = stringResource(R.string.zone_detail_heritage_zone),
                             value = it
                         )
+                        hasHeritageRow = true
                     }
                     if (zone.designationYear != null && zone.designationNumber != null) {
+                        if (hasHeritageRow) VWorldZoneDetailRowDivider()
                         DetailRow(
                             label = stringResource(R.string.zone_detail_heritage_designation),
                             value = stringResource(
@@ -262,6 +303,7 @@ fun VWorldZoneDetailSheet(
                         label = stringResource(R.string.zone_detail_authority_name),
                         value = publicContact.organizationName
                     )
+                    VWorldZoneDetailRowDivider()
                     PhoneNumberRow(
                         label = stringResource(R.string.zone_detail_authority_contact),
                         phone = publicContact.phoneNumber
@@ -317,6 +359,7 @@ private fun ZoneTypeRow(layer: FlightZoneLayer) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .heightIn(min = VWorldZoneDetailRowMinHeight)
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -338,7 +381,7 @@ private fun ZoneTypeRow(layer: FlightZoneLayer) {
                     .border(width = 1.dp, color = Color(layer.borderColor.toInt()), shape = CircleShape)
             )
             Text(
-                text = layer.displayName,
+                text = stringResource(layer.displayNameRes),
                 style = MaterialTheme.typography.bodyMedium,
                 color = SecondaryTextColor
             )
@@ -366,6 +409,7 @@ private fun AltitudeRow(upper: String?, lower: String?) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .heightIn(min = VWorldZoneDetailRowMinHeight)
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -411,6 +455,14 @@ private fun SectionHeader(title: String) {
     )
 }
 
+@Composable
+private fun VWorldZoneDetailRowDivider() {
+    HorizontalDivider(
+        thickness = VWorldZoneDetailRowDividerThickness,
+        color = MaterialTheme.colorScheme.outlineVariant,
+    )
+}
+
 /**
  * 라벨-값 행 (iOS HStack with Spacer 정합 — width 고정 없음)
  */
@@ -419,6 +471,7 @@ private fun DetailRow(label: String, value: String, valueColor: Color? = null) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .heightIn(min = VWorldZoneDetailRowMinHeight)
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -446,6 +499,7 @@ private fun PhoneNumberRow(label: String, phone: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .heightIn(min = VWorldZoneDetailRowMinHeight)
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {

@@ -27,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.annotation.StringRes
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.runtime.LaunchedEffect
@@ -50,6 +51,9 @@ fun DocumentScreen(
     onRetry: () -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
+    @StringRes loadingTextResId: Int = R.string.document_loading,
+    @StringRes errorTitleResId: Int = R.string.document_error_title,
+    @StringRes errorMessageResId: Int = R.string.document_error_message,
 ) {
     Column(modifier = modifier.fillMaxSize()) {
         // 고정 헤더 (iOS VStack { HStack { title + Close } + Divider } 정합)
@@ -77,9 +81,10 @@ fun DocumentScreen(
         // 본문 — 상태별 분기
         Box(modifier = Modifier.fillMaxSize()) {
             when (state) {
-                is ParsedDocumentUiState.Loading -> LoadingContent()
+                is ParsedDocumentUiState.Loading -> LoadingContent(loadingTextResId = loadingTextResId)
                 is ParsedDocumentUiState.Error -> ErrorContent(
-                    message = state.message,
+                    titleResId = errorTitleResId,
+                    messageResId = errorMessageResId,
                     onRetry = onRetry,
                 )
                 is ParsedDocumentUiState.Content -> Column(
@@ -99,8 +104,12 @@ fun DocumentScreen(
     }
 }
 
+internal fun shouldAutoLoadParsedDocumentOnEnter(state: ParsedDocumentUiState): Boolean {
+    return state !is ParsedDocumentUiState.Content
+}
+
 @Composable
-private fun LoadingContent() {
+private fun LoadingContent(@StringRes loadingTextResId: Int) {
     Column(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
@@ -109,7 +118,7 @@ private fun LoadingContent() {
         CircularProgressIndicator()
         Spacer(modifier = Modifier.height(12.dp))
         Text(
-            text = stringResource(R.string.document_loading),
+            text = stringResource(loadingTextResId),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -117,7 +126,11 @@ private fun LoadingContent() {
 }
 
 @Composable
-private fun ErrorContent(message: String?, onRetry: () -> Unit) {
+private fun ErrorContent(
+    @StringRes titleResId: Int,
+    @StringRes messageResId: Int,
+    onRetry: () -> Unit,
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -133,13 +146,13 @@ private fun ErrorContent(message: String?, onRetry: () -> Unit) {
         )
         Spacer(modifier = Modifier.height(12.dp))
         Text(
-            text = stringResource(R.string.document_error_title),
+            text = stringResource(titleResId),
             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
             color = MaterialTheme.colorScheme.onSurface,
         )
         Spacer(modifier = Modifier.height(6.dp))
         Text(
-            text = message ?: stringResource(R.string.document_error_message),
+            text = stringResource(messageResId),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -160,13 +173,16 @@ fun TermsOfServiceScreen(
 ) {
     val state by viewModel.termsState.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) {
-        if (state is ParsedDocumentUiState.Loading) viewModel.loadTerms()
+        if (shouldAutoLoadParsedDocumentOnEnter(state)) viewModel.loadTerms()
     }
     DocumentScreen(
         title = stringResource(R.string.profile_terms_service),
         state = state,
         onRetry = { viewModel.loadTerms() },
         onDismiss = onDismiss,
+        loadingTextResId = R.string.document_terms_loading,
+        errorTitleResId = R.string.document_terms_service_error_title,
+        errorMessageResId = R.string.document_terms_service_error_message,
     )
 }
 
@@ -180,14 +196,15 @@ fun PrivacyPolicyScreen(
 ) {
     val state by viewModel.privacyState.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) {
-        if (state is ParsedDocumentUiState.Loading) viewModel.loadPrivacy()
+        if (shouldAutoLoadParsedDocumentOnEnter(state)) viewModel.loadPrivacy()
     }
     DocumentScreen(
         title = stringResource(R.string.profile_terms_privacy),
         state = state,
         onRetry = { viewModel.loadPrivacy() },
         onDismiss = onDismiss,
+        loadingTextResId = R.string.document_terms_loading,
+        errorTitleResId = R.string.document_terms_privacy_error_title,
+        errorMessageResId = R.string.document_terms_privacy_error_message,
     )
 }
-
-

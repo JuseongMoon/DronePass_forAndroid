@@ -21,8 +21,8 @@ class FlightZoneOverlayManager {
         // FlightZone 폴리곤은 ShapeOverlay(50) / SketchOverlay(100,110) 보다 아래에 배경처럼
         // 그려져야 사용자가 추가한 도형/스케치가 위에 보인다. 이전 BASE_Z_INDEX=100 은
         // Shape(50)보다 위로 올라가 도형이 가려지는 문제가 있었음.
-        // 결과 zIndex: layer.priority(4=PROHIBITED..1=ADVISORY 정도)에 따라
-        // BASE - priority = 6..10 범위로 충돌 시 위험도 높은 것이 위에 오도록.
+        // 결과 zIndex: BASE - layer.priority = 9(PROHIBITED) .. 6(ADVISORY)
+        // 범위로 충돌 시 위험도 높은 것이 위에 오도록.
         private const val BASE_Z_INDEX = 10
     }
 
@@ -36,6 +36,9 @@ class FlightZoneOverlayManager {
 
     /** 오버레이 → DroneZoneFeature 매핑 (터치 이벤트용) */
     private val overlayToZoneMap = mutableMapOf<PolygonOverlay, DroneZoneFeature>()
+
+    /** 현재 선택된 오버레이 (iOS 처럼 외곽선 두께로 강조) */
+    private var selectedOverlay: PolygonOverlay? = null
 
     /** 구역 탭 시 호출되는 콜백 */
     var onZoneTapped: ((DroneZoneFeature) -> Unit)? = null
@@ -68,6 +71,7 @@ class FlightZoneOverlayManager {
         val removedIds = currentIds - newZoneIds
         removedIds.forEach { id ->
             layerCache.remove(id)?.forEach { overlay ->
+                if (selectedOverlay == overlay) selectedOverlay = null
                 overlay.map = null
                 overlayToZoneMap.remove(overlay)
             }
@@ -91,6 +95,7 @@ class FlightZoneOverlayManager {
                         this.map = map
 
                         setOnClickListener {
+                            selectOverlay(overlay = this)
                             onZoneTapped?.invoke(zone)
                             true
                         }
@@ -124,6 +129,7 @@ class FlightZoneOverlayManager {
      */
     fun removeLayerOverlays(layer: FlightZoneLayer) {
         overlayMap[layer]?.values?.flatten()?.forEach { overlay ->
+            if (selectedOverlay == overlay) selectedOverlay = null
             overlay.map = null
             overlayToZoneMap.remove(overlay)
         }
@@ -155,8 +161,17 @@ class FlightZoneOverlayManager {
         overlayMap.values.flatMap { it.values }.flatten().forEach { overlay ->
             overlay.map = null
         }
+        selectedOverlay = null
         overlayMap.clear()
         overlayToZoneMap.clear()
+    }
+
+    /**
+     * 선택된 오버레이 해제. VWorld 상세 시트가 닫힐 때 iOS 와 동일하게 호출한다.
+     */
+    fun clearSelection() {
+        selectedOverlay?.outlineWidth = 2
+        selectedOverlay = null
     }
 
     /**
@@ -174,5 +189,11 @@ class FlightZoneOverlayManager {
      */
     fun getAllDisplayedZones(): List<DroneZoneFeature> {
         return overlayToZoneMap.values.toList()
+    }
+
+    private fun selectOverlay(overlay: PolygonOverlay) {
+        selectedOverlay?.outlineWidth = 2
+        selectedOverlay = overlay
+        selectedOverlay?.outlineWidth = 4
     }
 }

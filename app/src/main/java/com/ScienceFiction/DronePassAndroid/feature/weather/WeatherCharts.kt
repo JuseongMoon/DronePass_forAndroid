@@ -31,6 +31,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ScienceFiction.DronePassAndroid.R
+import com.ScienceFiction.DronePassAndroid.core.util.DroneCategory
 import com.ScienceFiction.DronePassAndroid.domain.model.HourlyWeatherData
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -494,12 +495,12 @@ private fun PrecipitationBarChart(
 @Composable
 fun TemperatureChart(
     hourlyData: List<HourlyWeatherData>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val dataPoints = hourlyData.map { it.time to it.temperature }
     ChartCard(
         title = stringResource(R.string.weather_chart_temperature),
-        modifier = modifier
+        modifier = modifier,
     ) {
         WeatherLineChart(
             dataPoints = dataPoints,
@@ -514,17 +515,21 @@ fun TemperatureChart(
 @Composable
 fun WindSpeedChart(
     hourlyData: List<HourlyWeatherData>,
-    modifier: Modifier = Modifier
+    category: DroneCategory,
+    modifier: Modifier = Modifier,
 ) {
     val dataPoints = hourlyData.map { it.time to it.windSpeed }
+    val (cautionThreshold, dangerThreshold) = iosWindSpeedThresholds(category)
     ChartCard(
         title = stringResource(R.string.weather_chart_wind_speed),
-        modifier = modifier
+        modifier = modifier,
     ) {
         WeatherLineChart(
             dataPoints = dataPoints,
             lineColor = Color(0xFF42A5F5),
             fillAlpha = 0.1f,
+            warningThreshold = cautionThreshold,
+            dangerThreshold = dangerThreshold,
             yAxisLabel = "m/s",
             formatValue = { String.format(Locale.ROOT, "%.1f", it) }
         )
@@ -534,19 +539,21 @@ fun WindSpeedChart(
 @Composable
 fun GustDifferenceChart(
     hourlyData: List<HourlyWeatherData>,
-    modifier: Modifier = Modifier
+    category: DroneCategory,
+    modifier: Modifier = Modifier,
 ) {
     val dataPoints = hourlyData.map { it.time to it.gustDifference }
+    val (cautionThreshold, dangerThreshold) = iosGustDifferenceThresholds(category)
     ChartCard(
         title = stringResource(R.string.weather_chart_gust_difference),
-        modifier = modifier
+        modifier = modifier,
     ) {
         WeatherLineChart(
             dataPoints = dataPoints,
             lineColor = Color(0xFFFF7043),
             fillAlpha = 0.1f,
-            warningThreshold = 5.0,
-            dangerThreshold = 8.0,
+            warningThreshold = cautionThreshold,
+            dangerThreshold = dangerThreshold,
             yAxisLabel = "m/s",
             formatValue = { String.format(Locale.ROOT, "%.1f", it) }
         )
@@ -556,12 +563,12 @@ fun GustDifferenceChart(
 @Composable
 fun PrecipitationChart(
     hourlyData: List<HourlyWeatherData>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val dataPoints = hourlyData.map { it.time to it.precipitation }
     ChartCard(
         title = stringResource(R.string.weather_chart_precipitation),
-        modifier = modifier
+        modifier = modifier,
     ) {
         PrecipitationBarChart(
             dataPoints = dataPoints
@@ -572,19 +579,19 @@ fun PrecipitationChart(
 @Composable
 fun VisibilityChart(
     hourlyData: List<HourlyWeatherData>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val dataPoints = hourlyData.map { it.time to it.visibility }
     ChartCard(
         title = stringResource(R.string.weather_chart_visibility),
-        modifier = modifier
+        modifier = modifier,
     ) {
         WeatherLineChart(
             dataPoints = dataPoints,
             lineColor = Color(0xFF78909C),
             fillAlpha = 0.1f,
-            warningThreshold = 5.0,
-            invertWarning = true,
+            warningThreshold = IosVisibilityGoodKm,
+            dangerThreshold = IosVisibilityPoorKm,
             yAxisLabel = "km",
             formatValue = { String.format(Locale.ROOT, "%.0f", it) }
         )
@@ -594,19 +601,19 @@ fun VisibilityChart(
 @Composable
 fun CriChart(
     hourlyData: List<HourlyWeatherData>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val dataPoints = hourlyData.map { it.time to it.cri }
     ChartCard(
         title = stringResource(R.string.weather_chart_cri),
-        modifier = modifier
+        modifier = modifier,
     ) {
         WeatherLineChart(
             dataPoints = dataPoints,
             lineColor = Color(0xFF26A69A),
             fillAlpha = 0.1f,
-            warningThreshold = 60.0,
-            dangerThreshold = 80.0,
+            warningThreshold = IosCriModerate,
+            dangerThreshold = IosCriHigh,
             yAxisLabel = "%",
             formatValue = { String.format(Locale.ROOT, "%.0f", it) }
         )
@@ -634,7 +641,7 @@ internal fun ChartCard(
                 text = title,
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 8.dp)
+                modifier = Modifier.padding(bottom = 8.dp),
             )
             content()
         }

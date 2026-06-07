@@ -1,5 +1,7 @@
 package com.ScienceFiction.DronePassAndroid.feature.weather
 
+import androidx.annotation.StringRes
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -55,6 +57,7 @@ import com.ScienceFiction.DronePassAndroid.core.util.GustDifferenceCalculator
 import com.ScienceFiction.DronePassAndroid.core.util.GustDifferenceLevel
 import com.ScienceFiction.DronePassAndroid.core.util.WeatherCodeMapper
 import com.ScienceFiction.DronePassAndroid.core.util.interpolateTemperatureColor
+import com.ScienceFiction.DronePassAndroid.domain.model.HourlyWeatherData
 import com.ScienceFiction.DronePassAndroid.domain.model.WeatherData
 import java.util.Locale
 
@@ -70,15 +73,55 @@ private val CautionYellow = Color(0xFFFFCC00)
 private val WarningRed = Color(0xFFFF3B30)
 private val InfoYellow = Color(0xFFFFCC00)
 
+internal const val IosTemperatureLowCautionC = -10.0
+internal const val IosTemperatureHighCautionC = 35.0
+internal const val IosPrecipitationDetectionMm = 0.0
+internal const val IosVisibilityGoodKm = 10.0
+internal const val IosVisibilityPoorKm = 2.0
+internal const val IosCriModerate = 40.0
+internal const val IosCriHigh = 70.0
+
 // iOS WeatherManager.DroneCategory.windSpeedThresholds 정합 (caution, danger)
-private fun windSpeedThresholds(category: DroneCategory): Pair<Double, Double> = when (category) {
+internal fun iosWindSpeedThresholds(category: DroneCategory): Pair<Double, Double> = when (category) {
     DroneCategory.TOY -> 7.0 to 9.0
     DroneCategory.CLASS4 -> 8.5 to 10.5
     DroneCategory.CLASS3 -> 10.0 to 12.0
     DroneCategory.CLASS2 -> 12.0 to 15.0
 }
 
+// iOS WeatherManager.DroneCategory.gustDifferenceThresholds 정합 (caution, danger)
+internal fun iosGustDifferenceThresholds(category: DroneCategory): Pair<Double, Double> = when (category) {
+    DroneCategory.TOY -> 5.0 to 7.0
+    DroneCategory.CLASS4 -> 6.0 to 8.5
+    DroneCategory.CLASS3 -> 7.0 to 9.5
+    DroneCategory.CLASS2 -> 9.0 to 12.0
+}
+
 enum class WarningIconType { None, Info, Caution, Warning }
+
+internal fun resolveTemperatureWarningIcon(temperatureC: Double): WarningIconType = when {
+    temperatureC < IosTemperatureLowCautionC -> WarningIconType.Caution
+    temperatureC > IosTemperatureHighCautionC -> WarningIconType.Caution
+    else -> WarningIconType.None
+}
+
+internal fun resolvePrecipitationWarningIcon(precipitationMm: Double): WarningIconType =
+    if (precipitationMm > IosPrecipitationDetectionMm) WarningIconType.Caution else WarningIconType.None
+
+internal fun resolveVisibilityWarningIcon(visibilityKm: Double): WarningIconType = when {
+    visibilityKm < IosVisibilityPoorKm -> WarningIconType.Warning
+    visibilityKm < IosVisibilityGoodKm -> WarningIconType.Caution
+    else -> WarningIconType.None
+}
+
+internal fun resolveCriWarningIcon(cri: Double): WarningIconType = when {
+    cri >= IosCriHigh -> WarningIconType.Warning
+    cri >= IosCriModerate -> WarningIconType.Caution
+    else -> WarningIconType.None
+}
+
+internal fun resolveGustDifferenceSubTextRes(level: GustDifferenceLevel): Int? =
+    if (level == GustDifferenceLevel.LOCALIZED_GUST) R.string.weather_gust_warning else null
 
 /**
  * iOS `WeatherForecastView.currentWeatherCard` 1:1 정합.
@@ -91,39 +134,33 @@ internal fun CurrentWeatherSection(
     onCategoryChanged: (DroneCategory) -> Unit,
     isLoading: Boolean,
     modifier: Modifier = Modifier,
+    onWeatherInfoRequested: (WeatherInfoTopic) -> Unit = {},
 ) {
     val current = data.current ?: return
 
-    val maxTemp = data.hourlyForecast.take(24).maxOfOrNull { it.temperature } ?: current.temperature
-    val minTemp = data.hourlyForecast.take(24).minOfOrNull { it.temperature } ?: current.temperature
+    val temperatureRange = resolveForecastTemperatureRange(data.hourlyForecast)
+    val maxTemp = temperatureRange?.first ?: current.temperature
+    val minTemp = temperatureRange?.second ?: current.temperature
     val visibility = data.hourlyForecast.firstOrNull()?.visibility ?: 0.0
     val gustDiff = GustDifferenceCalculator.calculateGustDifference(current.windSpeed, current.windGusts)
 
-    val (windCaution, windDanger) = windSpeedThresholds(category)
+    val (windCaution, windDanger) = iosWindSpeedThresholds(category)
     val windWarning = when {
         current.windSpeed >= windDanger -> WarningIconType.Warning
         current.windSpeed >= windCaution -> WarningIconType.Caution
         else -> WarningIconType.None
     }
-    val tempWarning = if (current.temperature < -5 || current.temperature > 30)
-        WarningIconType.Caution else WarningIconType.None
+    val tempWarning = resolveTemperatureWarningIcon(current.temperature)
     val gustWarning = when (current.gustDifferenceLevel) {
         GustDifferenceLevel.SAFE -> WarningIconType.None
         GustDifferenceLevel.LOCALIZED_GUST -> WarningIconType.Info
         GustDifferenceLevel.CAUTION -> WarningIconType.Caution
         GustDifferenceLevel.DANGER -> WarningIconType.Warning
     }
-    val precipWarning = if (current.precipitation > 0.5) WarningIconType.Caution else WarningIconType.None
-    val visibilityWarning = when {
-        visibility < 1 -> WarningIconType.Warning
-        visibility < 5 -> WarningIconType.Caution
-        else -> WarningIconType.None
-    }
-    val criWarning = when {
-        current.cri >= 80 -> WarningIconType.Warning
-        current.cri >= 60 -> WarningIconType.Caution
-        else -> WarningIconType.None
-    }
+    val gustSubText = resolveGustDifferenceSubTextRes(current.gustDifferenceLevel)
+    val precipWarning = resolvePrecipitationWarningIcon(current.precipitation)
+    val visibilityWarning = resolveVisibilityWarningIcon(visibility)
+    val criWarning = resolveCriWarningIcon(current.cri)
 
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -171,8 +208,9 @@ internal fun CurrentWeatherSection(
                                 icon = Icons.Default.Thermostat,
                                 iconColor = interpolateTemperatureColor(current.temperature),
                                 label = stringResource(R.string.weather_temperature),
-                                value = "%.1f°C".format(Locale.ROOT, current.temperature),
+                                value = formatIosTemperatureDegrees(current.temperature),
                                 warningIcon = tempWarning,
+                                onClick = { onWeatherInfoRequested(WeatherInfoTopic.Temperature) },
                             )
                             WeatherDataCell(
                                 modifier = Modifier.weight(1f),
@@ -181,6 +219,7 @@ internal fun CurrentWeatherSection(
                                 label = stringResource(R.string.weather_wind_speed),
                                 value = "%.1f m/s".format(Locale.ROOT, current.windSpeed),
                                 warningIcon = windWarning,
+                                onClick = { onWeatherInfoRequested(WeatherInfoTopic.WindSpeed) },
                             )
                         }
                         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -189,7 +228,7 @@ internal fun CurrentWeatherSection(
                                 icon = Icons.Default.Navigation,
                                 iconColor = WindArrowTeal,
                                 label = stringResource(R.string.weather_wind_direction),
-                                value = windDirectionToText(current.windDirection),
+                                value = stringResource(resolveWindDirectionLabelRes(current.windDirection)),
                                 rotation = current.windDirection.toFloat(),
                             )
                             WeatherDataCell(
@@ -199,6 +238,8 @@ internal fun CurrentWeatherSection(
                                 label = stringResource(R.string.weather_gust_difference),
                                 value = "%.1f m/s".format(Locale.ROOT, gustDiff),
                                 warningIcon = gustWarning,
+                                subText = gustSubText?.let { stringResource(it) },
+                                onClick = { onWeatherInfoRequested(WeatherInfoTopic.GustDifference) },
                             )
                         }
                         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -209,6 +250,7 @@ internal fun CurrentWeatherSection(
                                 label = stringResource(R.string.weather_precipitation),
                                 value = "%.1f mm".format(Locale.ROOT, current.precipitation),
                                 warningIcon = precipWarning,
+                                onClick = { onWeatherInfoRequested(WeatherInfoTopic.Precipitation) },
                             )
                             WeatherDataCell(
                                 modifier = Modifier.weight(1f),
@@ -217,6 +259,7 @@ internal fun CurrentWeatherSection(
                                 label = stringResource(R.string.weather_visibility),
                                 value = "%.0f km".format(Locale.ROOT, visibility),
                                 warningIcon = visibilityWarning,
+                                onClick = { onWeatherInfoRequested(WeatherInfoTopic.Visibility) },
                             )
                         }
                         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -227,6 +270,7 @@ internal fun CurrentWeatherSection(
                                 label = stringResource(R.string.weather_cri),
                                 value = "${current.cri.toInt()}",
                                 warningIcon = criWarning,
+                                onClick = { onWeatherInfoRequested(WeatherInfoTopic.Cri) },
                             )
                             Spacer(modifier = Modifier.weight(1f))
                         }
@@ -266,6 +310,13 @@ internal fun CurrentWeatherSection(
     }
 }
 
+internal fun resolveForecastTemperatureRange(
+    hourlyForecast: List<HourlyWeatherData>,
+): Pair<Double, Double>? {
+    if (hourlyForecast.isEmpty()) return null
+    return hourlyForecast.maxOf { it.temperature } to hourlyForecast.minOf { it.temperature }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DroneCategoryMenu(
@@ -291,7 +342,7 @@ private fun DroneCategoryMenu(
                     modifier = Modifier.size(12.dp),
                 )
                 Text(
-                    text = category.label,
+                    text = stringResource(category.labelRes),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Medium,
                     color = WeatherIconBlue,
@@ -314,7 +365,7 @@ private fun DroneCategoryMenu(
                         Column {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(
-                                    text = entry.label,
+                                    text = stringResource(entry.labelRes),
                                     fontWeight = FontWeight.Medium,
                                 )
                                 if (entry == category) {
@@ -328,7 +379,7 @@ private fun DroneCategoryMenu(
                                 }
                             }
                             Text(
-                                text = "${entry.minWeight} ~ ${entry.maxWeight}",
+                                text = stringResource(entry.examplesRes),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -378,7 +429,7 @@ private fun PreviewBlock(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Text(
-                        text = "%.1f°".format(Locale.ROOT, temperature),
+                        text = formatIosTemperatureDegrees(temperature),
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = interpolateTemperatureColor(temperature),
@@ -391,7 +442,8 @@ private fun PreviewBlock(
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
-                        text = "${stringResource(R.string.weather_temperature_high_prefix)}%.1f°".format(Locale.ROOT, maxTemperature),
+                        text = stringResource(R.string.weather_temperature_high_prefix) +
+                            formatIosTemperatureDegrees(maxTemperature),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -401,7 +453,8 @@ private fun PreviewBlock(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Text(
-                        text = "${stringResource(R.string.weather_temperature_low_prefix)}%.1f°".format(Locale.ROOT, minTemperature),
+                        text = stringResource(R.string.weather_temperature_low_prefix) +
+                            formatIosTemperatureDegrees(minTemperature),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -420,9 +473,18 @@ private fun WeatherDataCell(
     value: String,
     rotation: Float? = null,
     warningIcon: WarningIconType = WarningIconType.None,
+    subText: String? = null,
+    onClick: (() -> Unit)? = null,
 ) {
+    val hasSubText = !subText.isNullOrBlank()
     Card(
-        modifier = modifier,
+        modifier = modifier.then(
+            if (onClick != null) {
+                Modifier.clickable(onClick = onClick)
+            } else {
+                Modifier
+            }
+        ),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
     ) {
@@ -444,21 +506,29 @@ private fun WeatherDataCell(
             )
             Column(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(2.dp),
+                verticalArrangement = Arrangement.spacedBy(if (hasSubText) 1.dp else 2.dp),
             ) {
                 Text(
                     text = label,
-                    style = MaterialTheme.typography.bodySmall,
+                    style = if (hasSubText) MaterialTheme.typography.labelMedium else MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                 )
                 Text(
                     text = value,
-                    style = MaterialTheme.typography.titleSmall,
+                    style = if (hasSubText) MaterialTheme.typography.bodyMedium else MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                 )
+                if (hasSubText) {
+                    Text(
+                        text = subText.orEmpty(),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                    )
+                }
             }
             if (warningIcon != WarningIconType.None) {
                 Icon(
@@ -482,12 +552,22 @@ private fun WeatherDataCell(
     }
 }
 
-internal fun windDirectionToText(degrees: Double): String {
+internal fun formatIosTemperatureDegrees(temperatureC: Double): String =
+    "%.0f°".format(Locale.ROOT, temperatureC)
+
+@StringRes
+internal fun resolveWindDirectionLabelRes(degrees: Double): Int {
     val directions = listOf(
-        "N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE",
-        "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW",
+        R.string.weather_direction_n,
+        R.string.weather_direction_ne,
+        R.string.weather_direction_e,
+        R.string.weather_direction_se,
+        R.string.weather_direction_s,
+        R.string.weather_direction_sw,
+        R.string.weather_direction_w,
+        R.string.weather_direction_nw,
     )
     val normalized = ((degrees % 360.0) + 360.0) % 360.0
-    val index = ((normalized + 11.25) / 22.5).toInt() % 16
+    val index = ((normalized + 22.5) / 45.0).toInt() % directions.size
     return directions[index]
 }

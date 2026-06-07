@@ -1,7 +1,7 @@
 package com.ScienceFiction.DronePassAndroid.feature.weather
 
 import android.annotation.SuppressLint
-import android.content.Context
+import android.location.Location
 import androidx.annotation.StringRes
 import com.ScienceFiction.DronePassAndroid.R
 import androidx.datastore.core.DataStore
@@ -14,14 +14,16 @@ import com.ScienceFiction.DronePassAndroid.core.util.AnalyticsLogger
 import com.ScienceFiction.DronePassAndroid.core.data.repository.WeatherRepository
 import com.ScienceFiction.DronePassAndroid.core.util.DroneCategory
 import com.ScienceFiction.DronePassAndroid.domain.model.WeatherData
+import com.ScienceFiction.DronePassAndroid.service.NotificationScheduleRestorer
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -32,16 +34,27 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
+private const val WEATHER_GPS_ACCURACY_THRESHOLD_METERS = 50.0
+
+internal val WeatherDroneCategoryPreferenceKey = stringPreferencesKey("selectedDroneCategory")
+internal val LegacyWeatherDroneCategoryPreferenceKey = stringPreferencesKey("weather_drone_category")
+
+internal fun storedWeatherDroneCategory(preferences: Preferences): DroneCategory {
+    return DroneCategory.fromStoredValue(preferences[WeatherDroneCategoryPreferenceKey])
+        ?: DroneCategory.fromStoredValue(preferences[LegacyWeatherDroneCategoryPreferenceKey])
+        ?: DroneCategory.IosDefault
+}
+
 @HiltViewModel
 class WeatherViewModel @Inject constructor(
     private val weatherRepository: WeatherRepository,
     private val fusedLocationClient: FusedLocationProviderClient,
     private val dataStore: DataStore<Preferences>,
-    private val analyticsLogger: AnalyticsLogger
+    private val analyticsLogger: AnalyticsLogger,
+    private val notificationScheduleRestorer: NotificationScheduleRestorer,
 ) : ViewModel() {
 
     companion object {
-        private val KEY_DRONE_CATEGORY = stringPreferencesKey("weather_drone_category")
         private const val AUTO_REFRESH_INTERVAL_MS = 3 * 60 * 1000L // 3분
         private const val DEFAULT_LATITUDE = 37.5665
         private const val DEFAULT_LONGITUDE = 126.9780
@@ -62,16 +75,18 @@ class WeatherViewModel @Inject constructor(
     private val _lastUpdateTime = MutableStateFlow<Long?>(null)
     val lastUpdateTime: StateFlow<Long?> = _lastUpdateTime.asStateFlow()
 
+    private val _locationAccuracyMeters = MutableStateFlow<Double?>(null)
+    val locationAccuracyMeters: StateFlow<Double?> = _locationAccuracyMeters.asStateFlow()
+
+    private val _isUsingGps = MutableStateFlow(false)
+    val isUsingGps: StateFlow<Boolean> = _isUsingGps.asStateFlow()
+
+    private val _refreshCompleted = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val refreshCompleted: SharedFlow<Unit> = _refreshCompleted
+
     val selectedCategory: StateFlow<DroneCategory> = dataStore.data
-        .map { preferences ->
-            val name = preferences[KEY_DRONE_CATEGORY] ?: DroneCategory.TOY.name
-            try {
-                DroneCategory.valueOf(name)
-            } catch (e: IllegalArgumentException) {
-                DroneCategory.TOY
-            }
-        }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DroneCategory.TOY)
+        .map { preferences -> storedWeatherDroneCategory(preferences) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DroneCategory.IosDefault)
 
     private var currentLatitude: Double = 0.0
     private var currentLongitude: Double = 0.0
@@ -84,7 +99,7 @@ class WeatherViewModel @Inject constructor(
 
     init {
         // 초기 1회 로드만 init 에서. 자동 갱신은 화면이 START 될 때만 시작.
-        refreshWeather()
+        refreshWeather(showRefreshMessage = false)
     }
 
     /**
@@ -93,7 +108,8 @@ class WeatherViewModel @Inject constructor(
     fun setCategory(category: DroneCategory) {
         viewModelScope.launch {
             dataStore.edit { preferences ->
-                preferences[KEY_DRONE_CATEGORY] = category.name
+                preferences[WeatherDroneCategoryPreferenceKey] = category.iosRawValue
+                preferences.remove(LegacyWeatherDroneCategoryPreferenceKey)
             }
             // 카테고리 변경 시 날씨 데이터 재계산
             if (currentLatitude != 0.0 || currentLongitude != 0.0) {
@@ -105,11 +121,14 @@ class WeatherViewModel @Inject constructor(
     /**
      * 수동 갱신
      */
-    fun refreshWeather() {
+    fun refreshWeather(showRefreshMessage: Boolean = true) {
         analyticsLogger.logWeatherViewed()
         viewModelScope.launch {
             weatherRepository.invalidateCache()
             fetchCurrentLocationAndWeather()
+            if (showRefreshMessage) {
+                _refreshCompleted.tryEmit(Unit)
+            }
         }
     }
 
@@ -153,6 +172,7 @@ class WeatherViewModel @Inject constructor(
             if (location != null) {
                 currentLatitude = location.latitude
                 currentLongitude = location.longitude
+                updateLocationAccuracy(location)
                 fetchWeatherInternal(location.latitude, location.longitude, selectedCategory.value)
             } else {
                 // 마지막 알려진 위치 시도
@@ -160,11 +180,13 @@ class WeatherViewModel @Inject constructor(
                 if (lastLocation != null) {
                     currentLatitude = lastLocation.latitude
                     currentLongitude = lastLocation.longitude
+                    updateLocationAccuracy(lastLocation)
                     fetchWeatherInternal(lastLocation.latitude, lastLocation.longitude, selectedCategory.value)
                 } else {
                     // 기본 위치 (서울)
                     currentLatitude = DEFAULT_LATITUDE
                     currentLongitude = DEFAULT_LONGITUDE
+                    clearLocationAccuracy()
                     fetchWeatherInternal(DEFAULT_LATITUDE, DEFAULT_LONGITUDE, selectedCategory.value)
                 }
             }
@@ -173,11 +195,25 @@ class WeatherViewModel @Inject constructor(
             // 기본 위치로 시도
             currentLatitude = DEFAULT_LATITUDE
             currentLongitude = DEFAULT_LONGITUDE
+            clearLocationAccuracy()
             fetchWeatherInternal(DEFAULT_LATITUDE, DEFAULT_LONGITUDE, selectedCategory.value)
         } catch (e: Exception) {
             _error.value = WeatherError.LocationUnavailable
+            clearLocationAccuracy()
             _isLoading.value = false
         }
+    }
+
+    private fun updateLocationAccuracy(location: Location) {
+        val accuracy = if (location.hasAccuracy()) location.accuracy else null
+        val state = resolveWeatherLocationAccuracy(accuracy)
+        _locationAccuracyMeters.value = state.accuracyMeters
+        _isUsingGps.value = state.isUsingGps
+    }
+
+    private fun clearLocationAccuracy() {
+        _locationAccuracyMeters.value = null
+        _isUsingGps.value = false
     }
 
     /**
@@ -193,12 +229,31 @@ class WeatherViewModel @Inject constructor(
                 _weatherData.value = data
                 _error.value = null
                 _lastUpdateTime.value = System.currentTimeMillis()
+                runCatching {
+                    notificationScheduleRestorer.rescheduleSunAlarmsForWeatherData(data)
+                }
             }
             .onFailure { _ ->
                 _error.value = WeatherError.LoadFailed
             }
         _isLoading.value = false
     }
+}
+
+internal data class WeatherLocationAccuracyState(
+    val accuracyMeters: Double?,
+    val isUsingGps: Boolean,
+)
+
+internal fun resolveWeatherLocationAccuracy(accuracyMeters: Float?): WeatherLocationAccuracyState {
+    val normalizedAccuracy = accuracyMeters
+        ?.takeIf { it.isFinite() && it >= 0f }
+        ?.toDouble()
+
+    return WeatherLocationAccuracyState(
+        accuracyMeters = normalizedAccuracy,
+        isUsingGps = normalizedAccuracy != null && normalizedAccuracy <= WEATHER_GPS_ACCURACY_THRESHOLD_METERS,
+    )
 }
 
 /**

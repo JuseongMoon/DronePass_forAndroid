@@ -1,5 +1,7 @@
 package com.ScienceFiction.DronePassAndroid.feature.kp
 
+import android.widget.Toast
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,15 +33,22 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -52,7 +61,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.domain.model.KpIndexData
 import com.ScienceFiction.DronePassAndroid.domain.model.KpLevel
+import com.ScienceFiction.DronePassAndroid.feature.settings.KpInfoGuideSheet
 import java.util.Locale
+
+internal const val KpCurrentValueFontSizeSp = 60
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,6 +73,7 @@ fun KpForecastScreen(
     viewModel: KpViewModel = hiltViewModel(),
 ) {
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+    var showKpInfoSheet by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxSize()) {
         TopAppBar(
@@ -69,6 +82,14 @@ fun KpForecastScreen(
                     text = stringResource(R.string.kp_navigation_title),
                     fontWeight = FontWeight.SemiBold,
                 )
+            },
+            navigationIcon = {
+                IconButton(onClick = { showKpInfoSheet = true }) {
+                    Icon(
+                        imageVector = Icons.Default.Info,
+                        contentDescription = stringResource(R.string.kp_info_button),
+                    )
+                }
             },
             actions = {
                 if (isLoading) {
@@ -94,6 +115,15 @@ fun KpForecastScreen(
             viewModel = viewModel,
             modifier = Modifier.fillMaxSize(),
         )
+    }
+
+    if (showKpInfoSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showKpInfoSheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        ) {
+            KpInfoGuideSheet(onDismiss = { showKpInfoSheet = false })
+        }
     }
 }
 
@@ -160,8 +190,11 @@ fun KpForecastContent(
     val kpLevel by viewModel.kpLevel.collectAsStateWithLifecycle()
     val forecastData by viewModel.forecastData.collectAsStateWithLifecycle()
     val longTermForecast by viewModel.longTermForecast.collectAsStateWithLifecycle()
-    val lastUpdated by viewModel.lastUpdated.collectAsStateWithLifecycle()
+    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val errorMessage by viewModel.errorMessage.collectAsStateWithLifecycle()
+    val errorText = errorMessage?.let { stringResource(it.messageRes) }
+    val refreshMessage = stringResource(R.string.weather_refresh)
+    val context = LocalContext.current
 
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
@@ -176,6 +209,12 @@ fun KpForecastContent(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
+    LaunchedEffect(viewModel, refreshMessage) {
+        viewModel.refreshCompleted.collect {
+            Toast.makeText(context, refreshMessage, Toast.LENGTH_SHORT).show()
+        }
+    }
+
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 16.dp),
@@ -186,34 +225,24 @@ fun KpForecastContent(
             CurrentKpSection(
                 currentKp = currentKp,
                 kpLevel = kpLevel,
-                lastUpdated = lastUpdated,
             )
         }
 
-        // 에러 메시지
-        errorMessage?.let { err ->
-            item {
-                Text(
-                    text = stringResource(err.messageRes),
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                )
-            }
-        }
-
         // ② 48시간 예보 차트
-        if (forecastData.isNotEmpty()) {
-            item {
-                KpForecastLineChart(forecastData = forecastData)
-            }
+        item {
+            KpForecastLineChart(
+                forecastData = forecastData,
+                isLoading = isLoading,
+                errorMessage = errorText,
+            )
         }
 
         // ③ 27일 장기 예보 차트
-        if (longTermForecast.isNotEmpty()) {
-            item {
-                Kp27DayChart(longTermForecast = longTermForecast)
-            }
+        item {
+            Kp27DayChart(
+                longTermForecast = longTermForecast,
+                isLoading = isLoading,
+            )
         }
     }
 }
@@ -226,7 +255,6 @@ fun KpForecastContent(
 private fun CurrentKpSection(
     currentKp: KpIndexData?,
     kpLevel: KpLevel,
-    lastUpdated: String?,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         // Section header (카드 바깥)
@@ -268,12 +296,12 @@ private fun CurrentKpSection(
                     // 좌측: 큰 숫자 (iOS .system(size: 60, weight: .bold, design: .rounded))
                     Text(
                         text = "%.1f".format(Locale.ROOT, currentKp.kp),
-                        fontSize = 56.sp,
+                        fontSize = KpCurrentValueFontSizeSp.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(kpLevel.color.toInt()),
                     )
 
-                    // 우측: 아이콘+레벨명 → 설명 → 마지막 업데이트 → 출처
+                    // 우측: 아이콘+레벨명 → 설명 → 출처
                     Column(
                         modifier = Modifier
                             .weight(1f)
@@ -291,7 +319,7 @@ private fun CurrentKpSection(
                                 modifier = Modifier.size(20.dp),
                             )
                             Text(
-                                text = kpLevel.label,
+                                text = stringResource(kpLevelNameRes(kpLevel)),
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.SemiBold,
                                 color = Color(kpLevel.color.toInt()),
@@ -302,21 +330,13 @@ private fun CurrentKpSection(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
-                        if (lastUpdated != null) {
-                            Text(
-                                text = stringResource(R.string.kp_last_updated, lastUpdated),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.End,
                         ) {
-                            Text(
-                                text = stringResource(R.string.kp_data_source_gfz),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            KpDataSourceLink(
+                                label = stringResource(R.string.kp_data_source_gfz),
+                                source = KpDataSource.GFZ_CURRENT,
                             )
                         }
                     }
@@ -344,7 +364,18 @@ private fun kpLevelIcon(level: KpLevel): ImageVector = when (level) {
     KpLevel.G5 -> Icons.Default.Block
 }
 
-private fun kpLevelDescriptionRes(level: KpLevel): Int = when (level) {
+@StringRes
+internal fun kpLevelNameRes(level: KpLevel): Int = when (level) {
+    KpLevel.NORMAL -> R.string.kp_info_level_normal_name
+    KpLevel.G1 -> R.string.kp_info_level_g1_name
+    KpLevel.G2 -> R.string.kp_info_level_g2_name
+    KpLevel.G3 -> R.string.kp_info_level_g3_name
+    KpLevel.G4 -> R.string.kp_info_level_g4_name
+    KpLevel.G5 -> R.string.kp_info_level_g5_name
+}
+
+@StringRes
+internal fun kpLevelDescriptionRes(level: KpLevel): Int = when (level) {
     KpLevel.NORMAL -> R.string.kp_level_normal_desc
     KpLevel.G1 -> R.string.kp_level_g1_desc
     KpLevel.G2 -> R.string.kp_level_g2_desc

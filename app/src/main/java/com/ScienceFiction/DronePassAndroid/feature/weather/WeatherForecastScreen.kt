@@ -1,5 +1,7 @@
 package com.ScienceFiction.DronePassAndroid.feature.weather
 
+import android.widget.Toast
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,16 +23,23 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -41,10 +50,17 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.core.util.DroneCategory
+import com.ScienceFiction.DronePassAndroid.domain.model.HourlyWeatherData
 import com.ScienceFiction.DronePassAndroid.domain.model.WeatherData
+import com.ScienceFiction.DronePassAndroid.feature.settings.WeatherInfoGuideSheet
 import java.text.SimpleDateFormat
+import java.time.Instant
+import java.time.ZoneId
+import java.time.temporal.ChronoUnit
 import java.util.Date
 import java.util.Locale
+
+internal const val WeatherDataSourceUrl = "https://open-meteo.com/"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -53,6 +69,11 @@ fun WeatherForecastScreen(
     viewModel: WeatherViewModel = hiltViewModel(),
 ) {
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+    val selectedCategory by viewModel.selectedCategory.collectAsStateWithLifecycle()
+    val isUsingGps by viewModel.isUsingGps.collectAsStateWithLifecycle()
+    val locationAccuracyMeters by viewModel.locationAccuracyMeters.collectAsStateWithLifecycle()
+    var showWeatherInfoSheet by remember { mutableStateOf(false) }
+    var selectedWeatherInfoTopic by remember { mutableStateOf<WeatherInfoTopic?>(null) }
 
     Scaffold(
         topBar = {
@@ -73,6 +94,17 @@ fun WeatherForecastScreen(
                 },
                 actions = {
                     IconButton(
+                        onClick = {
+                            selectedWeatherInfoTopic = null
+                            showWeatherInfoSheet = true
+                        },
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Info,
+                            contentDescription = stringResource(R.string.weather_info_button),
+                        )
+                    }
+                    IconButton(
                         onClick = { viewModel.refreshWeather() },
                         enabled = !isLoading,
                     ) {
@@ -88,7 +120,27 @@ fun WeatherForecastScreen(
         WeatherForecastContent(
             viewModel = viewModel,
             modifier = Modifier.padding(innerPadding),
+            onWeatherInfoRequested = { topic ->
+                selectedWeatherInfoTopic = topic
+                showWeatherInfoSheet = true
+            },
         )
+    }
+
+    if (showWeatherInfoSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showWeatherInfoSheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        ) {
+            WeatherInfoGuideSheet(
+                onDismiss = { showWeatherInfoSheet = false },
+                initialTopic = selectedWeatherInfoTopic,
+                category = selectedCategory,
+                onCategoryChanged = { viewModel.setCategory(it) },
+                isUsingGps = isUsingGps,
+                locationAccuracyMeters = locationAccuracyMeters,
+            )
+        }
     }
 }
 
@@ -100,12 +152,15 @@ fun WeatherForecastScreen(
 fun WeatherForecastContent(
     viewModel: WeatherViewModel,
     modifier: Modifier = Modifier,
+    onWeatherInfoRequested: (WeatherInfoTopic) -> Unit = {},
 ) {
     val weatherData by viewModel.weatherData.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
     val selectedCategory by viewModel.selectedCategory.collectAsStateWithLifecycle()
     val lastUpdateTime by viewModel.lastUpdateTime.collectAsStateWithLifecycle()
+    val refreshMessage = stringResource(R.string.weather_refresh)
+    val context = LocalContext.current
 
     // 화면이 START 상태일 때만 3분 자동 갱신.
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -119,6 +174,12 @@ fun WeatherForecastContent(
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    LaunchedEffect(viewModel, refreshMessage) {
+        viewModel.refreshCompleted.collect {
+            Toast.makeText(context, refreshMessage, Toast.LENGTH_SHORT).show()
+        }
     }
 
     Box(modifier = modifier.fillMaxSize()) {
@@ -150,6 +211,7 @@ fun WeatherForecastContent(
                         onCategoryChanged = { viewModel.setCategory(it) },
                         isLoading = isLoading,
                         lastUpdateTime = lastUpdateTime,
+                        onWeatherInfoRequested = onWeatherInfoRequested,
                     )
                 }
             }
@@ -164,7 +226,9 @@ private fun WeatherForecastBody(
     onCategoryChanged: (DroneCategory) -> Unit,
     isLoading: Boolean,
     lastUpdateTime: Long?,
+    onWeatherInfoRequested: (WeatherInfoTopic) -> Unit,
 ) {
+    val uriHandler = LocalUriHandler.current
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 16.dp),
@@ -172,7 +236,12 @@ private fun WeatherForecastBody(
     ) {
         // ① 일출/일몰 카드
         item {
-            SunTimeline(sunrise = data.sunrise, sunset = data.sunset)
+            SunTimeline(
+                sunrise = data.sunrise,
+                sunset = data.sunset,
+                sunriseTimes = data.sunriseTimes,
+                sunsetTimes = data.sunsetTimes,
+            )
         }
 
         // ② 현재 날씨 카드 (통합)
@@ -182,16 +251,16 @@ private fun WeatherForecastBody(
                 category = category,
                 onCategoryChanged = onCategoryChanged,
                 isLoading = isLoading,
+                onWeatherInfoRequested = onWeatherInfoRequested,
             )
         }
 
-        // ③ 6개 예보 차트 (24시간)
-        val now = System.currentTimeMillis()
-        val chartHours = data.hourlyForecast.filter { it.time >= now }.take(24)
-        if (chartHours.size >= 2) {
+        // ③ 6개 예보 차트 (현재 정시부터 3일)
+        val chartHours = resolveWeatherForecastChartHours(data.hourlyForecast)
+        if (shouldShowWeatherForecastCharts(chartHours)) {
             item { TemperatureChart(hourlyData = chartHours) }
-            item { WindSpeedChart(hourlyData = chartHours) }
-            item { GustDifferenceChart(hourlyData = chartHours) }
+            item { WindSpeedChart(hourlyData = chartHours, category = category) }
+            item { GustDifferenceChart(hourlyData = chartHours, category = category) }
             item { PrecipitationChart(hourlyData = chartHours) }
             item { VisibilityChart(hourlyData = chartHours) }
             item { CriChart(hourlyData = chartHours) }
@@ -230,11 +299,43 @@ private fun WeatherForecastBody(
                     text = stringResource(R.string.weather_data_source),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.clickable {
+                        uriHandler.openUri(WeatherDataSourceUrl)
+                    },
                 )
             }
         }
     }
 }
+
+private const val WeatherForecastChartHours = 3 * 24
+
+internal fun resolveWeatherForecastChartHours(
+    hourlyForecast: List<HourlyWeatherData>,
+    nowMillis: Long = System.currentTimeMillis(),
+): List<HourlyWeatherData> {
+    val currentHourStart = resolveCurrentWeatherForecastHourStartMillis(nowMillis)
+    return hourlyForecast
+        .asSequence()
+        .filter { it.time >= currentHourStart }
+        .take(WeatherForecastChartHours)
+        .toList()
+}
+
+internal fun resolveCurrentWeatherForecastHourStartMillis(
+    nowMillis: Long,
+    zoneId: ZoneId = ZoneId.systemDefault(),
+): Long {
+    return Instant.ofEpochMilli(nowMillis)
+        .atZone(zoneId)
+        .truncatedTo(ChronoUnit.HOURS)
+        .toInstant()
+        .toEpochMilli()
+}
+
+internal fun shouldShowWeatherForecastCharts(
+    chartHours: List<HourlyWeatherData>,
+): Boolean = chartHours.isNotEmpty()
 
 /**
  * ModalBottomSheet 내부에서 표시할 시트 헤더 — iOS `WeatherForecastView` 의 NavigationView TopBar 정합.

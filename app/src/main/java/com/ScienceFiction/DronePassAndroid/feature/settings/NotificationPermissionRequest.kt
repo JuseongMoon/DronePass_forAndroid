@@ -35,11 +35,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.ScienceFiction.DronePassAndroid.R
 
 /**
  * 알림 관련 권한 요청 안내 카드.
@@ -95,9 +97,9 @@ fun NotificationPermissionRequest(
         if (!notificationPermissionGranted) {
             PermissionCard(
                 icon = Icons.Default.NotificationsActive,
-                title = "알림 권한이 필요합니다",
-                description = "일출/일몰 및 비행 종료일 알림을 받으려면 알림 권한을 허용해 주세요.",
-                buttonText = "권한 요청",
+                title = stringResource(R.string.notification_permission_title),
+                description = stringResource(R.string.notification_permission_description),
+                buttonText = stringResource(R.string.notification_permission_request),
                 onClick = {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                         notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
@@ -110,9 +112,9 @@ fun NotificationPermissionRequest(
         if (!exactAlarmGranted) {
             PermissionCard(
                 icon = Icons.Default.Schedule,
-                title = "정확한 알람 권한이 필요합니다",
-                description = "일출/일몰 및 비행 종료 알림을 정확한 시각에 받으려면 시스템 설정에서 권한을 허용해 주세요.",
-                buttonText = "설정 열기",
+                title = stringResource(R.string.exact_alarm_permission_title),
+                description = stringResource(R.string.exact_alarm_permission_description),
+                buttonText = stringResource(R.string.exact_alarm_permission_open_settings),
                 onClick = { openExactAlarmSettings(context) }
             )
             Spacer(modifier = Modifier.height(8.dp))

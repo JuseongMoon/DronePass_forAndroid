@@ -1,12 +1,4 @@
 package com.ScienceFiction.DronePassAndroid.feature.settings
-
-import android.widget.Toast
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,15 +13,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AirplanemodeActive
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Cloud
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Language
-import androidx.compose.material.icons.filled.NewReleases
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Sensors
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -47,40 +32,50 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import kotlinx.coroutines.launch
-import com.ScienceFiction.DronePassAndroid.BuildConfig
 import com.ScienceFiction.DronePassAndroid.R
+import com.ScienceFiction.DronePassAndroid.feature.auth.AuthState
+import com.ScienceFiction.DronePassAndroid.feature.auth.LoginScreen
 import com.ScienceFiction.DronePassAndroid.feature.drone.DroneListScreen
 import com.ScienceFiction.DronePassAndroid.feature.kp.KpForecastContent
 import com.ScienceFiction.DronePassAndroid.feature.profile.ProfileScreen
 import com.ScienceFiction.DronePassAndroid.feature.kp.KpSheetHeader
 import com.ScienceFiction.DronePassAndroid.feature.kp.KpViewModel
 import com.ScienceFiction.DronePassAndroid.feature.weather.WeatherForecastContent
+import com.ScienceFiction.DronePassAndroid.feature.weather.WeatherInfoTopic
 import com.ScienceFiction.DronePassAndroid.feature.weather.WeatherSheetHeader
 import com.ScienceFiction.DronePassAndroid.feature.weather.WeatherViewModel
 
-/**
- * 설정 화면의 서브 스크린 상태.
- *
- * 약관/개인정보/위치약관은 ProfileView 시트 안의 두 번째 ModalBottomSheet 로 이동했으므로
- * 여기에는 더 이상 WebDoc case 가 필요 없다. 패치노트는 자체 서버 마크다운 파일을 fetch 해
- * 네이티브 카드로 렌더링하는 PatchNotesScreen 으로 표시.
- */
-private sealed class SettingsSubScreen {
-    data object Main : SettingsSubScreen()
-    data object DroneList : SettingsSubScreen()
-    data object AppInfo : SettingsSubScreen()
-    data object PatchNotes : SettingsSubScreen()
+internal data class LanguageSelectionAction(
+    val languageToApply: AppLanguage?,
+    val showRestartAlert: Boolean,
+)
+
+internal fun resolveLanguageSelectionAction(
+    selectedLanguage: AppLanguage,
+    currentLanguage: AppLanguage,
+): LanguageSelectionAction {
+    return if (selectedLanguage == currentLanguage) {
+        LanguageSelectionAction(languageToApply = null, showRestartAlert = false)
+    } else {
+        LanguageSelectionAction(languageToApply = selectedLanguage, showRestartAlert = true)
+    }
 }
 
+/**
+ * 설정 화면.
+ *
+ * iOS `SettingView` 와 동일하게 드론 관리, 앱 정보, 패치노트는 설정 목록을 push 하지 않고
+ * 각각 sheet 로 표시한다. 약관/개인정보/위치약관은 ProfileView 시트 안의 두 번째
+ * ModalBottomSheet 에서 처리한다.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
@@ -89,48 +84,42 @@ fun SettingsScreen(
     // 오버레이가 자체 큰 "설정" 헤더(.title .bold) 를 그리므로 이중 헤더 방지.
     showTopAppBar: Boolean = true,
 ) {
-    var currentScreen: SettingsSubScreen by remember { mutableStateOf(SettingsSubScreen.Main) }
+    var showDroneListSheet by remember { mutableStateOf(false) }
+    var showAppInfoSheet by remember { mutableStateOf(false) }
+    var showPatchNotesSheet by remember { mutableStateOf(false) }
 
-    AnimatedContent(
-        targetState = currentScreen,
-        transitionSpec = {
-            if (targetState !is SettingsSubScreen.Main) {
-                // 서브 화면으로 진입: 오른쪽에서 슬라이드인
-                (slideInHorizontally { it } + fadeIn())
-                    .togetherWith(slideOutHorizontally { -it } + fadeOut())
-            } else {
-                // 설정으로 돌아옴: 왼쪽에서 슬라이드인
-                (slideInHorizontally { -it } + fadeIn())
-                    .togetherWith(slideOutHorizontally { it } + fadeOut())
-            }
-        },
-        label = "settings_screen_transition"
-    ) { screen ->
-        when (screen) {
-            is SettingsSubScreen.Main -> {
-                SettingsMainContent(
-                    settingsViewModel = settingsViewModel,
-                    showTopAppBar = showTopAppBar,
-                    onNavigateToDroneList = { currentScreen = SettingsSubScreen.DroneList },
-                    onNavigateToAppInfo = { currentScreen = SettingsSubScreen.AppInfo },
-                    onNavigateToPatchNotes = { currentScreen = SettingsSubScreen.PatchNotes },
-                )
-            }
-            is SettingsSubScreen.DroneList -> {
-                DroneListScreen(
-                    onBack = { currentScreen = SettingsSubScreen.Main }
-                )
-            }
-            is SettingsSubScreen.AppInfo -> {
-                AppInfoScreen(
-                    onBack = { currentScreen = SettingsSubScreen.Main }
-                )
-            }
-            is SettingsSubScreen.PatchNotes -> {
-                PatchNotesScreen(
-                    onBack = { currentScreen = SettingsSubScreen.Main }
-                )
-            }
+    SettingsMainContent(
+        settingsViewModel = settingsViewModel,
+        showTopAppBar = showTopAppBar,
+        onNavigateToDroneList = { showDroneListSheet = true },
+        onNavigateToAppInfo = { showAppInfoSheet = true },
+        onNavigateToPatchNotes = { showPatchNotesSheet = true },
+    )
+
+    if (showDroneListSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showDroneListSheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        ) {
+            DroneListScreen(onBack = { showDroneListSheet = false })
+        }
+    }
+
+    if (showAppInfoSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showAppInfoSheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        ) {
+            AppInfoScreen(onBack = { showAppInfoSheet = false })
+        }
+    }
+
+    if (showPatchNotesSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showPatchNotesSheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        ) {
+            PatchNotesScreen(onBack = { showPatchNotesSheet = false })
         }
     }
 }
@@ -144,7 +133,6 @@ private fun SettingsMainContent(
     onNavigateToAppInfo: () -> Unit,
     onNavigateToPatchNotes: () -> Unit,
 ) {
-    val context = LocalContext.current
     val hideExpiredShapes by settingsViewModel.hideExpiredShapes.collectAsStateWithLifecycle()
     val hideNotStartedShapes by settingsViewModel.hideNotStartedShapes.collectAsStateWithLifecycle()
     val keepScreenAwake by settingsViewModel.keepScreenAwake.collectAsStateWithLifecycle()
@@ -152,18 +140,23 @@ private fun SettingsMainContent(
     val sunsetAlarmEnabled by settingsViewModel.sunsetAlarmEnabled.collectAsStateWithLifecycle()
     val endDateAlarmEnabled by settingsViewModel.endDateAlarmEnabled.collectAsStateWithLifecycle()
     val currentKpString by settingsViewModel.currentKpString.collectAsStateWithLifecycle()
+    val authState by settingsViewModel.authState.collectAsStateWithLifecycle()
 
     val currentLanguage by settingsViewModel.currentLanguage.collectAsStateWithLifecycle()
     val koreaFeaturesEnabled by settingsViewModel.koreaFeaturesEnabled.collectAsStateWithLifecycle()
+    val isLoggedIn = authState is AuthState.LoggedIn
 
     var showDeleteExpiredDialog by remember { mutableStateOf(false) }
     var showProfileSheet by remember { mutableStateOf(false) }
+    var showLoginSheet by remember { mutableStateOf(false) }
     var showKpForecastSheet by remember { mutableStateOf(false) }
     var showWeatherSheet by remember { mutableStateOf(false) }
+    var showKpInfoSheet by remember { mutableStateOf(false) }
+    var showWeatherInfoSheet by remember { mutableStateOf(false) }
+    var selectedWeatherInfoTopic by remember { mutableStateOf<WeatherInfoTopic?>(null) }
     var showLanguageMenu by remember { mutableStateOf(false) }
-    var pendingLanguageChange by remember { mutableStateOf<AppLanguage?>(null) }
+    var showLanguageChangeAlert by rememberSaveable { mutableStateOf(false) }
     var koreaFeaturesAlertOn by remember { mutableStateOf<Boolean?>(null) }
-    val scope = androidx.compose.runtime.rememberCoroutineScope()
 
     Column(modifier = Modifier.fillMaxSize()) {
         if (showTopAppBar) {
@@ -187,21 +180,26 @@ private fun SettingsMainContent(
 
             // 프로필 (iOS: 로그인 시 "My Profile" → ProfileView 시트, 비로그인 시 "Sign In / Sign Up" → LoginView)
             SettingsItem(
-                icon = Icons.Default.Person,
-                title = stringResource(R.string.settings_profile),
-                onClick = { showProfileSheet = true },
-                showArrow = true,
+                title = if (isLoggedIn) {
+                    stringResource(R.string.profile_title)
+                } else {
+                    stringResource(R.string.login_title)
+                },
+                onClick = {
+                    if (isLoggedIn) {
+                        showProfileSheet = true
+                    } else {
+                        showLoginSheet = true
+                    }
+                },
             )
 
-            HorizontalDivider(modifier = Modifier.padding(start = 56.dp))
+            HorizontalDivider(modifier = Modifier.padding(start = 16.dp))
 
             // 드론 관리
             SettingsItem(
-                icon = Icons.Default.AirplanemodeActive,
                 title = stringResource(R.string.settings_drone_manage),
-                subtitle = stringResource(R.string.settings_drone_manage_subtitle),
                 onClick = onNavigateToDroneList,
-                showArrow = true
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -211,17 +209,15 @@ private fun SettingsMainContent(
 
             // KP 지수 (iOS settings.kp.current 정합 — "현재 Kp 지수: 4.5" + 클릭 시 시트)
             SettingsItem(
-                icon = Icons.Default.Sensors,
                 title = stringResource(R.string.settings_kp_index_current, currentKpString),
                 onClick = { showKpForecastSheet = true },
                 showArrow = true,
             )
 
-            HorizontalDivider(modifier = Modifier.padding(start = 56.dp))
+            HorizontalDivider(modifier = Modifier.padding(start = 16.dp))
 
             // 날씨 정보 (iOS settings.weather.current 정합 — 클릭 시 시트)
             SettingsItem(
-                icon = Icons.Default.Cloud,
                 title = stringResource(R.string.settings_weather_current),
                 onClick = { showWeatherSheet = true },
                 showArrow = true,
@@ -320,13 +316,6 @@ private fun SettingsMainContent(
                         .padding(horizontal = 16.dp, vertical = 14.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Language,
-                        contentDescription = null,
-                        modifier = Modifier.size(24.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Spacer(modifier = Modifier.width(16.dp))
                     Text(
                         text = stringResource(R.string.settings_language),
                         style = MaterialTheme.typography.bodyLarge,
@@ -363,8 +352,13 @@ private fun SettingsMainContent(
                             } else null,
                             onClick = {
                                 showLanguageMenu = false
-                                if (lang != currentLanguage) {
-                                    pendingLanguageChange = lang
+                                val action = resolveLanguageSelectionAction(
+                                    selectedLanguage = lang,
+                                    currentLanguage = currentLanguage,
+                                )
+                                action.languageToApply?.let { language ->
+                                    showLanguageChangeAlert = action.showRestartAlert
+                                    settingsViewModel.setLanguage(language)
                                 }
                             },
                         )
@@ -372,12 +366,11 @@ private fun SettingsMainContent(
                 }
             }
 
-            HorizontalDivider(modifier = Modifier.padding(start = 56.dp))
+            HorizontalDivider(modifier = Modifier.padding(start = 16.dp))
 
-            // 한국 특화 기능 (iOS settings.koreaFeatures.toggle 정합)
+            // 한국 현지 기능 (iOS settings.koreaFeatures.toggle 정합)
             SettingsToggleItem(
                 title = stringResource(R.string.settings_korea_features),
-                subtitle = stringResource(R.string.settings_korea_features_subtitle),
                 checked = koreaFeaturesEnabled,
                 onCheckedChange = { newValue ->
                     settingsViewModel.toggleKoreaFeatures(newValue)
@@ -385,32 +378,20 @@ private fun SettingsMainContent(
                 },
             )
 
-            HorizontalDivider(modifier = Modifier.padding(start = 56.dp))
-
-            SettingsItem(
-                icon = Icons.Default.Info,
-                title = stringResource(R.string.settings_app_version),
-                subtitle = "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})"
-            )
-
-            HorizontalDivider(modifier = Modifier.padding(start = 56.dp))
+            HorizontalDivider(modifier = Modifier.padding(start = 16.dp))
 
             // 앱 소개
             SettingsItem(
-                icon = Icons.Default.Info,
                 title = stringResource(R.string.settings_app_intro),
                 onClick = onNavigateToAppInfo,
-                showArrow = true
             )
 
-            HorizontalDivider(modifier = Modifier.padding(start = 56.dp))
+            HorizontalDivider(modifier = Modifier.padding(start = 16.dp))
 
             // 패치노트
             SettingsItem(
-                icon = Icons.Default.NewReleases,
                 title = stringResource(R.string.settings_patch_notes),
                 onClick = onNavigateToPatchNotes,
-                showArrow = true
             )
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -420,34 +401,54 @@ private fun SettingsMainContent(
     // 프로필 시트 (iOS ProfileView 정합)
     if (showProfileSheet) {
         ModalBottomSheet(
-            onDismissRequest = { showProfileSheet = false },
+            onDismissRequest = {
+                showProfileSheet = false
+                settingsViewModel.checkAuthState()
+            },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         ) {
-            ProfileScreen(onDismiss = { showProfileSheet = false })
+            ProfileScreen(
+                onDismiss = {
+                    showProfileSheet = false
+                    settingsViewModel.checkAuthState()
+                }
+            )
+        }
+    }
+
+    // 로그인 시트 (iOS SettingView: 비로그인 시 LoginView sheet)
+    if (showLoginSheet) {
+        ModalBottomSheet(
+            onDismissRequest = {
+                showLoginSheet = false
+                settingsViewModel.checkAuthState()
+            },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        ) {
+            LoginScreen(
+                onLoginSuccess = {
+                    showLoginSheet = false
+                    settingsViewModel.checkAuthState()
+                },
+                onSkipLogin = {
+                    showLoginSheet = false
+                    settingsViewModel.checkAuthState()
+                },
+            )
         }
     }
 
     // 언어 변경 안내 다이얼로그 (iOS settings.language onChange showLanguageChangeAlert 정합)
-    pendingLanguageChange?.let { lang ->
+    if (showLanguageChangeAlert) {
         AlertDialog(
-            onDismissRequest = { pendingLanguageChange = null },
+            onDismissRequest = { showLanguageChangeAlert = false },
             title = { Text(stringResource(R.string.settings_language_restart_title)) },
             text = { Text(stringResource(R.string.settings_language_restart_message)) },
             confirmButton = {
                 TextButton(onClick = {
-                    pendingLanguageChange = null
-                    // dialog dismiss animation 후 setLanguage 호출 (Activity recreate 직전 안정성)
-                    scope.launch {
-                        kotlinx.coroutines.delay(300)
-                        settingsViewModel.setLanguage(lang)
-                    }
+                    showLanguageChangeAlert = false
                 }) {
                     Text(stringResource(R.string.common_confirm))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { pendingLanguageChange = null }) {
-                    Text(stringResource(R.string.common_cancel))
                 }
             },
         )
@@ -493,7 +494,7 @@ private fun SettingsMainContent(
                 KpSheetHeader(
                     isLoading = kpIsLoading,
                     onRefresh = { kpViewModel.loadKpData() },
-                    onInfo = null,
+                    onInfo = { showKpInfoSheet = true },
                 )
                 KpForecastContent(
                     viewModel = kpViewModel,
@@ -515,13 +516,51 @@ private fun SettingsMainContent(
                 WeatherSheetHeader(
                     isLoading = weatherIsLoading,
                     onRefresh = { weatherViewModel.refreshWeather() },
-                    onInfo = null,
+                    onInfo = {
+                        selectedWeatherInfoTopic = null
+                        showWeatherInfoSheet = true
+                    },
                 )
                 WeatherForecastContent(
                     viewModel = weatherViewModel,
                     modifier = Modifier.padding(bottom = 16.dp),
+                    onWeatherInfoRequested = { topic ->
+                        selectedWeatherInfoTopic = topic
+                        showWeatherInfoSheet = true
+                    },
                 )
             }
+        }
+    }
+
+    // KP 정보 가이드 (iOS KPInfoView 정합)
+    if (showKpInfoSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showKpInfoSheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        ) {
+            KpInfoGuideSheet(onDismiss = { showKpInfoSheet = false })
+        }
+    }
+
+    // 날씨 정보 가이드 (iOS WeatherInfoView 정합)
+    if (showWeatherInfoSheet) {
+        val weatherViewModel: WeatherViewModel = hiltViewModel()
+        val selectedCategory by weatherViewModel.selectedCategory.collectAsStateWithLifecycle()
+        val isUsingGps by weatherViewModel.isUsingGps.collectAsStateWithLifecycle()
+        val locationAccuracyMeters by weatherViewModel.locationAccuracyMeters.collectAsStateWithLifecycle()
+        ModalBottomSheet(
+            onDismissRequest = { showWeatherInfoSheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        ) {
+            WeatherInfoGuideSheet(
+                onDismiss = { showWeatherInfoSheet = false },
+                initialTopic = selectedWeatherInfoTopic,
+                category = selectedCategory,
+                onCategoryChanged = { weatherViewModel.setCategory(it) },
+                isUsingGps = isUsingGps,
+                locationAccuracyMeters = locationAccuracyMeters,
+            )
         }
     }
 
@@ -529,22 +568,15 @@ private fun SettingsMainContent(
     if (showDeleteExpiredDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteExpiredDialog = false },
-            title = { Text(stringResource(R.string.settings_delete_expired_shapes)) },
+            title = { Text(stringResource(R.string.settings_delete_expired_alert_title)) },
             text = {
-                Text(stringResource(R.string.settings_delete_expired_confirm))
+                Text(stringResource(R.string.settings_delete_expired_alert_message))
             },
             confirmButton = {
                 TextButton(
                     onClick = {
                         showDeleteExpiredDialog = false
-                        settingsViewModel.deleteAllExpiredShapes { deletedCount ->
-                            val message = if (deletedCount > 0) {
-                                context.getString(R.string.settings_delete_expired_success, deletedCount)
-                            } else {
-                                context.getString(R.string.settings_delete_expired_none)
-                            }
-                            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-                        }
+                        settingsViewModel.deleteAllExpiredShapes()
                     }
                 ) {
                     Text(

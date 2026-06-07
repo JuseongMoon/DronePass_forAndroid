@@ -1,6 +1,7 @@
 package com.ScienceFiction.DronePassAndroid.feature.profile
 
-import android.widget.Toast
+import androidx.annotation.StringRes
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +20,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -41,10 +43,11 @@ import com.ScienceFiction.DronePassAndroid.feature.document.PrivacyPolicyScreen
 import com.ScienceFiction.DronePassAndroid.feature.document.TermsOfServiceScreen
 import com.ScienceFiction.DronePassAndroid.feature.settings.SectionHeader
 import com.ScienceFiction.DronePassAndroid.feature.settings.SettingsItem
-import com.ScienceFiction.DronePassAndroid.feature.settings.SettingsToggleItem
-import java.text.SimpleDateFormat
+import java.text.DateFormat
 import java.util.Date
 import java.util.Locale
+
+internal const val ProfileDocumentSheetSkipPartiallyExpanded = false
 
 /**
  * iOS `ProfileView` 1:1 정합 시트 콘텐츠.
@@ -70,8 +73,9 @@ fun ProfileScreen(
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showDeleteFinalDialog by remember { mutableStateOf(false) }
     var webDocTarget by remember { mutableStateOf<WebDocTarget?>(null) }
+    var resultDialog by remember { mutableStateOf<ProfileResultDialog?>(null) }
 
-    // 동기화 결과 토스트
+    // 동기화 결과 알림 — iOS ProfileView showSyncResult alert 정합.
     LaunchedEffect(viewModel) {
         viewModel.syncResultMessage.collect { result ->
             val message = when (result) {
@@ -80,7 +84,10 @@ fun ProfileScreen(
                 is ProfileViewModel.SyncResult.Failure ->
                     context.getString(R.string.profile_sync_failed, result.message)
             }
-            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+            resultDialog = ProfileResultDialog(
+                titleRes = R.string.profile_sync_alert_title,
+                message = message,
+            )
         }
     }
 
@@ -108,21 +115,27 @@ fun ProfileScreen(
         // ===== 1. 동기화 섹션 =====
         SectionHeader(title = stringResource(R.string.profile_section_sync))
 
-        SettingsToggleItem(
+        ProfileCloudSyncToggleItem(
             title = stringResource(R.string.profile_sync_cloud),
             subtitle = stringResource(syncStatus.labelRes),
+            subtitleColor = syncStatus.color,
             checked = isCloudBackupEnabled,
-            enabled = !isSyncing && isLoggedIn,
+            enabled = !isSyncing,
+            showProgress = shouldShowProfileSyncProgress(isSyncing),
             onCheckedChange = { viewModel.setCloudBackupEnabled(it) },
         )
 
-        // 마지막 동기화 시간
-        val lastSyncDisplay = formatLastSync(
-            lastRealtimeSyncTime ?: lastBackupTime,
-            context.getString(R.string.profile_sync_no_history),
-        )
+        // 마지막 동기화 시간 — iOS lastSyncTimeText 라벨 분기 정합.
+        val lastSyncDisplay = when {
+            lastRealtimeSyncTime.hasSyncTimestamp() ->
+                stringResource(R.string.profile_sync_last_sync, formatLastSync(lastRealtimeSyncTime))
+            lastBackupTime.hasSyncTimestamp() ->
+                stringResource(R.string.profile_backup_last_backup, formatLastSync(lastBackupTime))
+            else ->
+                stringResource(R.string.profile_sync_no_history)
+        }
         Text(
-            text = stringResource(R.string.profile_sync_last_sync, lastSyncDisplay),
+            text = lastSyncDisplay,
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
@@ -140,6 +153,7 @@ fun ProfileScreen(
                         title = stringResource(R.string.profile_backup_manual),
                         titleColor = MaterialTheme.colorScheme.primary,
                         onClick = { viewModel.syncToCloud() },
+                        enabled = shouldEnableProfileManualBackup(isSyncing),
                     )
                 }
                 if (isSyncing) {
@@ -153,16 +167,19 @@ fun ProfileScreen(
             }
         }
 
-        // Footer
-        Text(
-            text = stringResource(
-                if (!isLoggedIn) R.string.profile_sync_footer_login_required
-                else R.string.profile_sync_footer_enable_info
-            ),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-        )
+        val syncFooterTextRes = when {
+            !isLoggedIn -> R.string.profile_sync_footer_login_required
+            !isCloudBackupEnabled -> R.string.profile_sync_footer_enable_info
+            else -> null
+        }
+        syncFooterTextRes?.let { textRes ->
+            Text(
+                text = stringResource(textRes),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            )
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -191,12 +208,14 @@ fun ProfileScreen(
                 title = stringResource(R.string.profile_account_logout),
                 titleColor = MaterialTheme.colorScheme.error,
                 onClick = { if (!isAccountActionInProgress) showLogoutDialog = true },
+                enabled = shouldEnableProfileAccountAction(isAccountActionInProgress),
             )
             HorizontalDivider(modifier = Modifier.padding(start = 16.dp))
             SettingsItem(
                 title = stringResource(R.string.profile_account_delete),
                 titleColor = MaterialTheme.colorScheme.error,
                 onClick = { if (!isAccountActionInProgress) showDeleteDialog = true },
+                enabled = shouldEnableProfileAccountAction(isAccountActionInProgress),
             )
 
             Text(
@@ -270,8 +289,14 @@ fun ProfileScreen(
                 TextButton(onClick = {
                     showDeleteFinalDialog = false
                     viewModel.deleteAccount { success, message ->
-                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-                        if (success) onDismiss()
+                        if (success) {
+                            onDismiss()
+                        } else {
+                            resultDialog = ProfileResultDialog(
+                                titleRes = R.string.profile_delete_account_error_title,
+                                message = message,
+                            )
+                        }
                     }
                 }) {
                     Text(
@@ -288,12 +313,27 @@ fun ProfileScreen(
         )
     }
 
+    resultDialog?.let { dialog ->
+        AlertDialog(
+            onDismissRequest = { resultDialog = null },
+            title = { Text(stringResource(dialog.titleRes)) },
+            text = { Text(dialog.message) },
+            confirmButton = {
+                TextButton(onClick = { resultDialog = null }) {
+                    Text(stringResource(R.string.common_confirm))
+                }
+            },
+        )
+    }
+
     // 약관/개인정보/위치약관 두 번째 시트 (iOS `.sheet(showTerms)` 정합)
     // 자체 서버(sciencefiction.co.kr) 에서 마크다운 fetch → 자체 렌더링.
     webDocTarget?.let { target ->
         ModalBottomSheet(
             onDismissRequest = { webDocTarget = null },
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            sheetState = rememberModalBottomSheetState(
+                skipPartiallyExpanded = ProfileDocumentSheetSkipPartiallyExpanded,
+            ),
         ) {
             when (target) {
                 WebDocTarget.Terms -> TermsOfServiceScreen(onDismiss = { webDocTarget = null })
@@ -308,8 +348,68 @@ private sealed class WebDocTarget {
     data object Privacy : WebDocTarget()
 }
 
-private fun formatLastSync(timestamp: Long?, fallback: String): String {
-    if (timestamp == null || timestamp == 0L) return fallback
-    val formatter = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
-    return formatter.format(Date(timestamp))
+private data class ProfileResultDialog(
+    @StringRes val titleRes: Int,
+    val message: String,
+)
+
+@Composable
+private fun ProfileCloudSyncToggleItem(
+    title: String,
+    subtitle: String,
+    subtitleColor: androidx.compose.ui.graphics.Color,
+    checked: Boolean,
+    enabled: Boolean,
+    showProgress: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(
+                if (enabled) Modifier.clickable { onCheckedChange(!checked) }
+                else Modifier
+            )
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = subtitleColor,
+            )
+        }
+        if (showProgress) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(20.dp),
+                strokeWidth = 2.dp,
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+        }
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            enabled = enabled,
+        )
+    }
+}
+
+internal fun shouldShowProfileSyncProgress(isSyncing: Boolean): Boolean = isSyncing
+
+internal fun shouldEnableProfileManualBackup(isSyncing: Boolean): Boolean = !isSyncing
+
+internal fun shouldEnableProfileAccountAction(isAccountActionInProgress: Boolean): Boolean =
+    !isAccountActionInProgress
+
+private fun Long?.hasSyncTimestamp(): Boolean = this != null && this != 0L
+
+private fun formatLastSync(timestamp: Long?): String {
+    val formatter = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT, Locale.getDefault())
+    return formatter.format(Date(timestamp ?: 0L))
 }

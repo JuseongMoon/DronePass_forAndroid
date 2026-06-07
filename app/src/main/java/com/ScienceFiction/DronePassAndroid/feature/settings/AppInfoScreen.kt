@@ -1,6 +1,8 @@
 package com.ScienceFiction.DronePassAndroid.feature.settings
 
-import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -11,243 +13,349 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.AirplanemodeActive
-import androidx.compose.material.icons.filled.Brush
+import androidx.compose.material.icons.filled.Business
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Cloud
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.SolarPower
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Tag
 import androidx.compose.material.icons.filled.WbSunny
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ScienceFiction.DronePassAndroid.BuildConfig
 import com.ScienceFiction.DronePassAndroid.R
 
-/**
- * 앱 정보 화면
- *
- * 앱 소개, 주요 기능, 문의처 정보를 표시합니다.
- *
- * @param onBack 뒤로가기 콜백
- */
+internal val AppInfoIntroIconSize = 60.dp
+internal val AppInfoIntroSymbolSize = 36.dp
+internal val AppInfoIntroSpacing = 12.dp
+internal val AppInfoFeatureIconSize = 32.dp
+internal val AppInfoFeatureHorizontalSpacing = 12.dp
+internal val AppInfoFeatureTitleDescriptionSpacing = 4.dp
+internal val AppInfoFeatureVerticalPadding = 4.dp
+internal val AppInfoFeatureHorizontalPadding = 16.dp
+
+internal fun appInfoVersionValue(versionName: String, versionCode: Int): String {
+    return "$versionName ($versionCode)"
+}
+
+internal fun appInfoBuildNumberValue(versionCode: Int): String = versionCode.toString()
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppInfoScreen(
-    onBack: () -> Unit
+    onBack: () -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
-        TopAppBar(
+        LargeTopAppBar(
             title = {
                 Text(
                     text = stringResource(R.string.app_info_title),
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
                 )
             },
-            navigationIcon = {
-                IconButton(onClick = onBack) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = stringResource(R.string.common_back)
+            actions = {
+                TextButton(onClick = onBack) {
+                    Text(
+                        text = stringResource(R.string.common_close),
+                        fontWeight = FontWeight.SemiBold,
                     )
                 }
-            }
+            },
         )
 
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(bottom = 32.dp),
         ) {
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // 앱 아이콘
-            Image(
-                painter = painterResource(id = R.mipmap.ic_launcher),
-                contentDescription = stringResource(R.string.app_name),
+            SectionHeader(title = stringResource(R.string.app_info_section_intro))
+            Column(
                 modifier = Modifier
-                    .size(80.dp)
-                    .clip(RoundedCornerShape(16.dp))
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // 앱 이름
-            Text(
-                text = stringResource(R.string.app_name),
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
-            )
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            // 버전
-            Text(
-                text = BuildConfig.VERSION_NAME,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // 설명
-            Text(
-                text = stringResource(R.string.app_info_description),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // 기능 카드 목록
-            FeatureCard(
-                icon = Icons.Default.AirplanemodeActive,
-                title = stringResource(R.string.app_info_feature_drone),
-                description = stringResource(R.string.app_info_feature_drone_desc)
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            FeatureCard(
-                icon = Icons.Default.Map,
-                title = stringResource(R.string.app_info_feature_zone),
-                description = stringResource(R.string.app_info_feature_zone_desc)
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            FeatureCard(
-                icon = Icons.Default.WbSunny,
-                title = stringResource(R.string.app_info_feature_weather),
-                description = stringResource(R.string.app_info_feature_weather_desc)
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            FeatureCard(
-                icon = Icons.Default.SolarPower,
-                title = stringResource(R.string.app_info_feature_kp),
-                description = stringResource(R.string.app_info_feature_kp_desc)
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            FeatureCard(
-                icon = Icons.Default.Notifications,
-                title = stringResource(R.string.app_info_feature_alarm),
-                description = stringResource(R.string.app_info_feature_alarm_desc)
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            FeatureCard(
-                icon = Icons.Default.Cloud,
-                title = stringResource(R.string.app_info_feature_sync),
-                description = stringResource(R.string.app_info_feature_sync_desc)
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            FeatureCard(
-                icon = Icons.Default.Brush,
-                title = stringResource(R.string.app_info_feature_sketch),
-                description = stringResource(R.string.app_info_feature_sketch_desc)
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            HorizontalDivider()
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // 문의 섹션
-            Row(
-                verticalAlignment = Alignment.CenterVertically
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Icon(
-                    imageVector = Icons.Default.Email,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(modifier = Modifier.width(8.dp))
+                AppInfoIntroIcon()
+                Spacer(modifier = Modifier.height(AppInfoIntroSpacing))
                 Text(
-                    text = "${stringResource(R.string.app_info_contact)}: ${stringResource(R.string.app_info_contact_email)}",
+                    text = stringResource(R.string.app_info_description),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(16.dp))
+            SectionHeader(title = stringResource(R.string.app_info_section_drone_management))
+            FeatureRow(
+                icon = Icons.Default.AirplanemodeActive,
+                iconColor = Color(0xFF007AFF),
+                title = stringResource(R.string.app_info_feature_multi_drone_title),
+                description = stringResource(R.string.app_info_feature_multi_drone_desc),
+            )
+            HorizontalDivider(modifier = Modifier.padding(start = 64.dp))
+            FeatureRow(
+                icon = Icons.Default.Map,
+                iconColor = Color(0xFF34C759),
+                title = stringResource(R.string.app_info_feature_visualization_title),
+                description = stringResource(R.string.app_info_feature_visualization_desc),
+            )
+            HorizontalDivider(modifier = Modifier.padding(start = 64.dp))
+            FeatureRow(
+                icon = Icons.Default.Notifications,
+                iconColor = Color(0xFFFF9500),
+                title = stringResource(R.string.app_info_feature_expiration_alert_title),
+                description = stringResource(R.string.app_info_feature_expiration_alert_desc),
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+            SectionHeader(title = stringResource(R.string.app_info_section_environmental_info))
+            FeatureRow(
+                icon = Icons.Default.Cloud,
+                iconColor = Color(0xFF5AC8FA),
+                title = stringResource(R.string.app_info_feature_weather_title),
+                description = stringResource(R.string.app_info_feature_weather_desc),
+            )
+            HorizontalDivider(modifier = Modifier.padding(start = 64.dp))
+            FeatureRow(
+                icon = Icons.Default.AirplanemodeActive,
+                iconColor = Color(0xFFAF52DE),
+                title = stringResource(R.string.app_info_feature_kp_index_title),
+                description = stringResource(R.string.app_info_feature_kp_index_desc),
+            )
+            HorizontalDivider(modifier = Modifier.padding(start = 64.dp))
+            FeatureRow(
+                icon = Icons.Default.WbSunny,
+                iconColor = Color(0xFFFF2D55),
+                title = stringResource(R.string.app_info_feature_sunrise_sunset_title),
+                description = stringResource(R.string.app_info_feature_sunrise_sunset_desc),
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+            SectionHeader(title = stringResource(R.string.app_info_section_shapes_and_map))
+            FeatureRow(
+                icon = Icons.Default.CheckCircle,
+                iconColor = Color(0xFF5856D6),
+                title = stringResource(R.string.app_info_feature_shape_management_title),
+                description = stringResource(R.string.app_info_feature_shape_management_desc),
+            )
+            HorizontalDivider(modifier = Modifier.padding(start = 64.dp))
+            FeatureRow(
+                icon = Icons.Default.ContentCopy,
+                iconColor = Color(0xFF5AC8FA),
+                title = stringResource(R.string.app_info_feature_shape_duplicate_title),
+                description = stringResource(R.string.app_info_feature_shape_duplicate_desc),
+            )
+            HorizontalDivider(modifier = Modifier.padding(start = 64.dp))
+            FeatureRow(
+                icon = Icons.Default.Search,
+                iconColor = Color(0xFF34C759),
+                title = stringResource(R.string.app_info_feature_search_title),
+                description = stringResource(R.string.app_info_feature_search_desc),
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+            SectionHeader(title = stringResource(R.string.app_info_section_cloud_and_data))
+            FeatureRow(
+                icon = Icons.Default.Cloud,
+                iconColor = Color(0xFF007AFF),
+                title = stringResource(R.string.app_info_feature_cloud_sync_title),
+                description = stringResource(R.string.app_info_feature_cloud_sync_desc),
+            )
+            HorizontalDivider(modifier = Modifier.padding(start = 64.dp))
+            FeatureRow(
+                icon = Icons.Default.CheckCircle,
+                iconColor = Color(0xFF34C759),
+                title = stringResource(R.string.app_info_feature_drone_onestop_title),
+                description = stringResource(R.string.app_info_feature_drone_onestop_desc),
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+            SectionHeader(title = stringResource(R.string.app_info_section_version))
+            InfoRow(
+                icon = Icons.Default.Info,
+                title = stringResource(R.string.app_info_version_app),
+                value = appInfoVersionValue(BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE),
+            )
+            HorizontalDivider(modifier = Modifier.padding(start = 64.dp))
+            InfoRow(
+                icon = Icons.Default.Tag,
+                title = stringResource(R.string.app_info_version_build),
+                value = appInfoBuildNumberValue(BuildConfig.VERSION_CODE),
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+            SectionHeader(title = stringResource(R.string.app_info_section_contact))
+            InfoRow(
+                icon = Icons.Default.Business,
+                title = stringResource(R.string.app_info_contact_company),
+            )
+            HorizontalDivider(modifier = Modifier.padding(start = 64.dp))
+            ContactEmailRow(email = stringResource(R.string.app_info_contact_email))
+            Text(
+                text = stringResource(R.string.app_info_contact_message),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            )
         }
     }
 }
 
-/**
- * 기능 소개 카드 컴포넌트
- */
 @Composable
-private fun FeatureCard(
+private fun AppInfoIntroIcon() {
+    Box(
+        modifier = Modifier
+            .size(AppInfoIntroIconSize)
+            .clip(CircleShape)
+            .background(
+                Brush.linearGradient(
+                    colors = listOf(Color(0xFF007AFF), Color(0xFF5AC8FA)),
+                ),
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            imageVector = Icons.Default.AirplanemodeActive,
+            contentDescription = null,
+            tint = Color.White,
+            modifier = Modifier.size(AppInfoIntroSymbolSize),
+        )
+    }
+}
+
+@Composable
+private fun FeatureRow(
+    icon: ImageVector,
+    iconColor: Color,
+    title: String,
+    description: String,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(
+                horizontal = AppInfoFeatureHorizontalPadding,
+                vertical = AppInfoFeatureVerticalPadding,
+            ),
+        verticalAlignment = Alignment.Top,
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = iconColor,
+            modifier = Modifier.size(AppInfoFeatureIconSize),
+        )
+        Spacer(modifier = Modifier.width(AppInfoFeatureHorizontalSpacing))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Spacer(modifier = Modifier.height(AppInfoFeatureTitleDescriptionSpacing))
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun InfoRow(
     icon: ImageVector,
     title: String,
-    description: String
+    value: String? = null,
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-        )
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                modifier = Modifier.size(28.dp),
-                tint = MaterialTheme.colorScheme.primary
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.size(24.dp),
+        )
+        Spacer(modifier = Modifier.width(12.dp))
+        Text(
+            text = title,
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(1f),
+        )
+        if (value != null) {
+            Text(
+                text = value,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
         }
+    }
+}
+
+@Composable
+private fun ContactEmailRow(email: String) {
+    val uriHandler = LocalUriHandler.current
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { uriHandler.openUri("mailto:$email") }
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = Icons.Default.Email,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.size(24.dp),
+        )
+        Spacer(modifier = Modifier.width(12.dp))
+        Text(
+            text = email,
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(1f),
+        )
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.OpenInNew,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(16.dp),
+        )
     }
 }
