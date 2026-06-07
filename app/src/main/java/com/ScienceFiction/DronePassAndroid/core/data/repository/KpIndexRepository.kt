@@ -52,16 +52,16 @@ class KpIndexRepository @Inject constructor(
      *
      * Fallback 순서: GFZ Potsdam -> NOAA SWPC -> 캐시
      */
-    suspend fun getCurrentKp(): Result<KpIndexData> {
+    suspend fun getCurrentKp(forceRefresh: Boolean = false): Result<KpIndexData> {
         // 캐시 hit-path 는 락 없이 빠르게 통과 (@Volatile 가시성).
-        if (isCacheValid()) {
+        if (!forceRefresh && isCacheValid()) {
             cachedCurrentKp?.let { return Result.success(it) }
         }
 
         // miss-path 는 직렬화하여 동시 GFZ/NOAA 호출 중복 방지.
         return cacheMutex.withLock {
             // 락 획득 후 재확인 (다른 코루틴이 이미 갱신했을 수 있음)
-            if (isCacheValid()) {
+            if (!forceRefresh && isCacheValid()) {
                 cachedCurrentKp?.let { return@withLock Result.success(it) }
             }
 
@@ -105,13 +105,13 @@ class KpIndexRepository @Inject constructor(
     /**
      * Kp 지수 예보 데이터 조회
      */
-    suspend fun getForecast(): Result<List<KpIndexData>> {
-        if (isCacheValid()) {
+    suspend fun getForecast(forceRefresh: Boolean = false): Result<List<KpIndexData>> {
+        if (!forceRefresh && isCacheValid()) {
             cachedForecast?.let { return Result.success(it) }
         }
 
         return cacheMutex.withLock {
-            if (isCacheValid()) {
+            if (!forceRefresh && isCacheValid()) {
                 cachedForecast?.let { return@withLock Result.success(it) }
             }
             try {
@@ -135,13 +135,13 @@ class KpIndexRepository @Inject constructor(
      *
      * NOAA SWPC 27-day outlook 텍스트를 파싱하여 일별 Kp/Ap 예측값을 반환한다.
      */
-    suspend fun get27DayForecast(): Result<List<Kp27DayForecast>> {
-        if (System.currentTimeMillis() - last27DayFetchTime < CACHE_DURATION_MS) {
+    suspend fun get27DayForecast(forceRefresh: Boolean = false): Result<List<Kp27DayForecast>> {
+        if (!forceRefresh && System.currentTimeMillis() - last27DayFetchTime < CACHE_DURATION_MS) {
             cached27DayForecast?.let { return Result.success(it) }
         }
 
         return cacheMutex.withLock {
-            if (System.currentTimeMillis() - last27DayFetchTime < CACHE_DURATION_MS) {
+            if (!forceRefresh && System.currentTimeMillis() - last27DayFetchTime < CACHE_DURATION_MS) {
                 cached27DayForecast?.let { return@withLock Result.success(it) }
             }
             try {
@@ -258,7 +258,7 @@ class KpIndexRepository @Inject constructor(
                     val year = parts[0]
                     val month = parts[1]
                     val day = parts[2]
-                    val hour = parts[3]
+                    val hour = parts[3].toDoubleOrNull()?.toInt()?.toString()?.padStart(2, '0') ?: continue
 
                     val kpStr = parts[7]
                     val kp = kpStr.toDoubleOrNull() ?: continue

@@ -35,6 +35,7 @@ internal data class KpDataLoadPlan(
     val fetchCurrent: Boolean,
     val fetchForecast: Boolean,
     val fetchLongTermForecast: Boolean,
+    val forceRefresh: Boolean,
 )
 
 internal fun resolveKpDataLoadPlan(
@@ -42,9 +43,14 @@ internal fun resolveKpDataLoadPlan(
     hasCurrentKp: Boolean,
 ): KpDataLoadPlan {
     return KpDataLoadPlan(
-        fetchCurrent = trigger == KpDataLoadTrigger.Initial && !hasCurrentKp,
+        fetchCurrent = when (trigger) {
+            KpDataLoadTrigger.Initial -> !hasCurrentKp
+            KpDataLoadTrigger.UserRefresh -> false
+            KpDataLoadTrigger.AutoRefresh -> true
+        },
         fetchForecast = true,
         fetchLongTermForecast = true,
+        forceRefresh = true,
     )
 }
 
@@ -109,7 +115,8 @@ class KpViewModel @Inject constructor(
      *
      * iOS `KPForecastView` 의 refresh / auto refresh 는
      * `fetchKPData(forceRefresh: true, fetchGFZ: false, fetchNOAA: true)` 이므로
-     * 수동/자동 갱신에서는 현재 KP(GFZ)를 다시 요청하지 않는다.
+     * 수동 갱신에서는 현재 KP(GFZ)를 다시 요청하지 않는다.
+     * 앱 공통 자동 갱신은 iOS `KPIndexManager` 타이머와 합쳐진 동작이라 현재 KP 도 갱신한다.
      */
     fun loadKpData(showRefreshMessage: Boolean = true) {
         loadKpData(trigger = KpDataLoadTrigger.UserRefresh, showRefreshMessage = showRefreshMessage)
@@ -134,7 +141,7 @@ class KpViewModel @Inject constructor(
             var longTermFailed = false
 
             if (plan.fetchCurrent) {
-                kpRepository.getCurrentKp().fold(
+                kpRepository.getCurrentKp(forceRefresh = plan.forceRefresh).fold(
                     onSuccess = { data ->
                         updateCurrentKp(data)
                     },
@@ -146,7 +153,7 @@ class KpViewModel @Inject constructor(
 
             // 예보 데이터 조회
             if (plan.fetchForecast) {
-                kpRepository.getForecast().fold(
+                kpRepository.getForecast(forceRefresh = plan.forceRefresh).fold(
                     onSuccess = { forecast ->
                         _forecastData.value = forecast
                     },
@@ -158,7 +165,7 @@ class KpViewModel @Inject constructor(
 
             // 27일 장기 예보 조회
             if (plan.fetchLongTermForecast) {
-                kpRepository.get27DayForecast().fold(
+                kpRepository.get27DayForecast(forceRefresh = plan.forceRefresh).fold(
                     onSuccess = { forecast ->
                         _longTermForecast.value = forecast
                     },

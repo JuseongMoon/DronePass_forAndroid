@@ -65,6 +65,17 @@ class KpChartsTest {
     }
 
     @Test
+    fun `initial load uses iOS force refresh policy`() {
+        assertEquals(
+            true,
+            resolveKpDataLoadPlan(
+                trigger = KpDataLoadTrigger.Initial,
+                hasCurrentKp = false,
+            ).forceRefresh,
+        )
+    }
+
+    @Test
     fun `manual refresh matches iOS by refreshing NOAA forecast data only`() {
         listOf(false, true).forEach { hasCurrentKp ->
             val plan = resolveKpDataLoadPlan(
@@ -75,20 +86,22 @@ class KpChartsTest {
             assertEquals(false, plan.fetchCurrent)
             assertEquals(true, plan.fetchForecast)
             assertEquals(true, plan.fetchLongTermForecast)
+            assertEquals(true, plan.forceRefresh)
         }
     }
 
     @Test
-    fun `auto refresh matches iOS by refreshing NOAA forecast data only`() {
+    fun `auto refresh updates current KP and forecasts like iOS shared manager timer`() {
         listOf(false, true).forEach { hasCurrentKp ->
             val plan = resolveKpDataLoadPlan(
                 trigger = KpDataLoadTrigger.AutoRefresh,
                 hasCurrentKp = hasCurrentKp,
             )
 
-            assertEquals(false, plan.fetchCurrent)
+            assertEquals(true, plan.fetchCurrent)
             assertEquals(true, plan.fetchForecast)
             assertEquals(true, plan.fetchLongTermForecast)
+            assertEquals(true, plan.forceRefresh)
         }
     }
 

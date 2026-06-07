@@ -473,12 +473,21 @@ fun MapScreen(
 
     // 생명주기 관리 - LifecycleOwner 연동
     DisposableEffect(lifecycleOwner, mapView) {
+        if (lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) {
+            kpViewModel.startAutoRefresh()
+        }
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
-                Lifecycle.Event.ON_START -> mapView.onStart()
+                Lifecycle.Event.ON_START -> {
+                    mapView.onStart()
+                    kpViewModel.startAutoRefresh()
+                }
                 Lifecycle.Event.ON_RESUME -> mapView.onResume()
                 Lifecycle.Event.ON_PAUSE -> mapView.onPause()
-                Lifecycle.Event.ON_STOP -> mapView.onStop()
+                Lifecycle.Event.ON_STOP -> {
+                    mapView.onStop()
+                    kpViewModel.stopAutoRefresh()
+                }
                 Lifecycle.Event.ON_DESTROY -> mapView.onDestroy()
                 else -> {}
             }
@@ -500,6 +509,7 @@ fun MapScreen(
             flightZoneOverlayManager.detach()
 
             lifecycleOwner.lifecycle.removeObserver(observer)
+            kpViewModel.stopAutoRefresh()
         }
     }
 }
