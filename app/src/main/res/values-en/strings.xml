@@ -47,6 +47,9 @@
     <string name="login_google_error">An error occurred while signing in with Google.</string>
     <string name="login_apple_error">An error occurred while signing in with Apple.</string>
     <string name="login_sync_failed">Data sync failed. Please check your network connection.</string>
+    <string name="login_account_switch_title">Switch account</string>
+    <string name="login_account_switch_message">Continuing will clear %1$d local items on this device and replace them with data from the new account. Continue?</string>
+    <string name="login_account_switch_confirm">Continue</string>
     <string name="login_skip">Continue without login</string>
     <string name="login_terms_intro">By signing in/up, you agree to</string>
     <string name="login_terms_service">Terms of Service</string>

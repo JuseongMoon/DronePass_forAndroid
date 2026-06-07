@@ -33,7 +33,14 @@ internal enum class AuthAccountChangeAction {
 internal data class AuthSignInResult(
     val user: FirebaseUser,
     val accountChangeAction: AuthAccountChangeAction = AuthAccountChangeAction.KEEP_LOCAL_DATA,
+    val provider: AuthLoginProvider,
+    val providerUserId: String?,
 )
+
+internal enum class AuthLoginProvider {
+    APPLE,
+    GOOGLE,
+}
 
 internal enum class ProviderAccountResolution {
     KEEP_LOCAL_DATA,
@@ -249,15 +256,14 @@ class AuthRepository @Inject constructor(
                 providerDisplayName = "Google",
             )
 
-            // UID를 암호화된 저장소에 캐싱
-            encryptedPrefsHelper.saveFirebaseUid(user.uid)
-            googleUserId?.let { encryptedPrefsHelper.saveGoogleUserId(it) }
-            ensureUserDocumentSafely(
-                user = user,
-                googleUserId = googleUserId,
+            Result.success(
+                AuthSignInResult(
+                    user = user,
+                    accountChangeAction = accountChangeAction,
+                    provider = AuthLoginProvider.GOOGLE,
+                    providerUserId = googleUserId,
+                )
             )
-
-            Result.success(AuthSignInResult(user, accountChangeAction))
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -311,12 +317,14 @@ class AuthRepository @Inject constructor(
                 providerDisplayName = "Apple",
             )
 
-            // UID/Apple User ID 캐시 (iOS KeychainHelper 정합)
-            encryptedPrefsHelper.saveFirebaseUid(user.uid)
-            appleUserId?.let { encryptedPrefsHelper.saveAppleUserId(it) }
-            ensureUserDocumentSafely(user, appleUserId = appleUserId)
-
-            Result.success(AuthSignInResult(user, accountChangeAction))
+            Result.success(
+                AuthSignInResult(
+                    user = user,
+                    accountChangeAction = accountChangeAction,
+                    provider = AuthLoginProvider.APPLE,
+                    providerUserId = appleUserId,
+                )
+            )
         } catch (e: Exception) {
             Log.w(TAG, "Apple Sign-In 실패", e)
             Result.failure(e)
@@ -330,6 +338,27 @@ class AuthRepository @Inject constructor(
     fun signOut() {
         firebaseAuth.signOut()
         // iOS AuthManager.signout 과 동일하게 복구용 UID/Apple User ID 는 유지한다.
+    }
+
+    /**
+     * 로그인 후처리 확정 단계.
+     *
+     * 계정 전환 시에는 UI 확인 전까지 복구용 UID/provider ID 를 덮어쓰면 안 된다.
+     * iOS AuthManager 도 계정 전환 확인 이후 Keychain 을 갱신하므로 Android 도
+     * ViewModel 이 확인 절차를 마친 뒤 이 메서드로 저장소와 사용자 문서를 갱신한다.
+     */
+    internal suspend fun finalizeSuccessfulSignIn(result: AuthSignInResult) {
+        encryptedPrefsHelper.saveFirebaseUid(result.user.uid)
+        when (result.provider) {
+            AuthLoginProvider.APPLE -> {
+                result.providerUserId?.let { encryptedPrefsHelper.saveAppleUserId(it) }
+                ensureUserDocumentSafely(user = result.user, appleUserId = result.providerUserId)
+            }
+            AuthLoginProvider.GOOGLE -> {
+                result.providerUserId?.let { encryptedPrefsHelper.saveGoogleUserId(it) }
+                ensureUserDocumentSafely(user = result.user, googleUserId = result.providerUserId)
+            }
+        }
     }
 
     /**

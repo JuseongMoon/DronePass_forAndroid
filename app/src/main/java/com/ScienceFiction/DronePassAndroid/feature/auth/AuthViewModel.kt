@@ -41,6 +41,16 @@ internal enum class AuthProviderSignInAction {
     IGNORE,
 }
 
+data class AccountSwitchConfirmationRequest(
+    val localDataCount: Int,
+)
+
+private data class PendingAccountSwitchLogin(
+    val result: AuthSignInResult,
+    val providerName: String,
+    val selectAllDronesAfterSync: Boolean,
+)
+
 internal fun resolveAuthProviderSignInAction(authState: AuthState): AuthProviderSignInAction {
     return when (authState) {
         AuthState.LoggedOut,
@@ -56,6 +66,10 @@ internal fun shouldSuppressGoogleSignInFailure(exception: Throwable): Boolean {
 
 internal fun shouldResetLocalDataForAccountChange(action: AuthAccountChangeAction): Boolean {
     return action == AuthAccountChangeAction.RESET_LOCAL_DATA
+}
+
+internal fun shouldRequestAccountSwitchConfirmation(localDataCount: Int): Boolean {
+    return localDataCount > 0
 }
 
 internal fun resolveForegroundCloudSyncAction(
@@ -111,6 +125,12 @@ class AuthViewModel @Inject constructor(
         extraBufferCapacity = 1,
     )
     val syncMessage: SharedFlow<String> = _syncMessage.asSharedFlow()
+
+    private val _accountSwitchConfirmation = MutableStateFlow<AccountSwitchConfirmationRequest?>(null)
+    val accountSwitchConfirmation: StateFlow<AccountSwitchConfirmationRequest?> =
+        _accountSwitchConfirmation.asStateFlow()
+
+    private var pendingAccountSwitchLogin: PendingAccountSwitchLogin? = null
 
     init {
         // 1. 로그인 상태를 _authState 에 동기 반영 (Loading → LoggedIn/LoggedOut)
@@ -179,14 +199,11 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             authRepository.signInWithGoogle(context).fold(
                 onSuccess = { result ->
-                    val user = result.user
-                    _authState.value = AuthState.LoggedIn(user)
-                    analyticsLogger.logLogin("google")
-                    activateCloudSyncAfterLogin(
+                    handleSuccessfulProviderLogin(
+                        result = result,
+                        providerName = "google",
                         selectAllDronesAfterSync = true,
-                        accountChangeAction = result.accountChangeAction,
                     )
-                    requestFcmToken()
                 },
                 onFailure = { exception ->
                     _authState.value = if (shouldSuppressGoogleSignInFailure(exception)) {
@@ -218,14 +235,11 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             authRepository.signInWithApple(activity).fold(
                 onSuccess = { result ->
-                    val user = result.user
-                    _authState.value = AuthState.LoggedIn(user)
-                    analyticsLogger.logLogin("apple")
-                    activateCloudSyncAfterLogin(
+                    handleSuccessfulProviderLogin(
+                        result = result,
+                        providerName = "apple",
                         selectAllDronesAfterSync = true,
-                        accountChangeAction = result.accountChangeAction,
                     )
-                    requestFcmToken()
                 },
                 onFailure = { exception ->
                     _authState.value = AuthState.Error(
@@ -254,6 +268,29 @@ class AuthViewModel @Inject constructor(
         _authState.value = AuthState.LoggedOut
     }
 
+    fun confirmAccountSwitch() {
+        val pending = pendingAccountSwitchLogin ?: return
+        pendingAccountSwitchLogin = null
+        _accountSwitchConfirmation.value = null
+        _authState.value = AuthState.Loading
+
+        viewModelScope.launch {
+            completeSuccessfulProviderLogin(
+                result = pending.result,
+                providerName = pending.providerName,
+                selectAllDronesAfterSync = pending.selectAllDronesAfterSync,
+                prepareAccountSwitchBeforeNavigation = true,
+            )
+        }
+    }
+
+    fun cancelAccountSwitch() {
+        pendingAccountSwitchLogin = null
+        _accountSwitchConfirmation.value = null
+        authRepository.signOut()
+        _authState.value = AuthState.LoggedOut
+    }
+
     /**
      * iOS 로그인 성공 흐름 정합:
      * 클라우드 백업 설정을 켠 뒤 실시간 리스너와 Firebase 양방향 동기화를 시작한다.
@@ -263,13 +300,69 @@ class AuthViewModel @Inject constructor(
         accountChangeAction: AuthAccountChangeAction = AuthAccountChangeAction.KEEP_LOCAL_DATA,
     ) {
         viewModelScope.launch {
-            enableCloudBackupForLogin()
-            if (shouldResetLocalDataForAccountChange(accountChangeAction)) {
-                resetLocalDataForAccountSwitch()
-            }
-            startRealtimeSync()
+            prepareCloudSyncAfterLogin(accountChangeAction)
             performFullSync(selectAllDronesAfterSync)
         }
+    }
+
+    private suspend fun handleSuccessfulProviderLogin(
+        result: AuthSignInResult,
+        providerName: String,
+        selectAllDronesAfterSync: Boolean,
+    ) {
+        if (shouldResetLocalDataForAccountChange(result.accountChangeAction)) {
+            val localDataCount = countLocalDataForAccountSwitch()
+            if (shouldRequestAccountSwitchConfirmation(localDataCount)) {
+                pendingAccountSwitchLogin = PendingAccountSwitchLogin(
+                    result = result,
+                    providerName = providerName,
+                    selectAllDronesAfterSync = selectAllDronesAfterSync,
+                )
+                _accountSwitchConfirmation.value = AccountSwitchConfirmationRequest(
+                    localDataCount = localDataCount,
+                )
+                return
+            }
+        }
+
+        completeSuccessfulProviderLogin(
+            result = result,
+            providerName = providerName,
+            selectAllDronesAfterSync = selectAllDronesAfterSync,
+            prepareAccountSwitchBeforeNavigation = false,
+        )
+    }
+
+    private suspend fun completeSuccessfulProviderLogin(
+        result: AuthSignInResult,
+        providerName: String,
+        selectAllDronesAfterSync: Boolean,
+        prepareAccountSwitchBeforeNavigation: Boolean,
+    ) {
+        authRepository.finalizeSuccessfulSignIn(result)
+        if (prepareAccountSwitchBeforeNavigation) {
+            prepareCloudSyncAfterLogin(result.accountChangeAction)
+            _authState.value = AuthState.LoggedIn(result.user)
+            viewModelScope.launch {
+                performFullSync(selectAllDronesAfterSync)
+            }
+        } else {
+            _authState.value = AuthState.LoggedIn(result.user)
+            activateCloudSyncAfterLogin(
+                selectAllDronesAfterSync = selectAllDronesAfterSync,
+                accountChangeAction = result.accountChangeAction,
+            )
+        }
+        analyticsLogger.logLogin(providerName)
+        requestFcmToken()
+    }
+
+    private suspend fun prepareCloudSyncAfterLogin(accountChangeAction: AuthAccountChangeAction) {
+        enableCloudBackupForLogin()
+        if (shouldResetLocalDataForAccountChange(accountChangeAction)) {
+            resetLocalDataForAccountSwitch()
+        }
+        startRealtimeSync()
     }
 
     private suspend fun enableCloudBackupForLogin() {
@@ -296,6 +389,13 @@ class AuthViewModel @Inject constructor(
             preferences.remove(ProfilePreferenceKeys.LEGACY_LAST_BACKUP_TIME)
         }
         Log.d(TAG, "계정 전환 감지: 로컬 데이터 초기화 완료")
+    }
+
+    private suspend fun countLocalDataForAccountSwitch(): Int {
+        val shapes = shapeRepository.getAllShapes().first().size
+        val drones = droneRepository.getAllDrones().first().size
+        val sketches = sketchRepository.getAllSketches().first().size
+        return shapes + drones + sketches
     }
 
     /**

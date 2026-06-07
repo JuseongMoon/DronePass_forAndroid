@@ -96,6 +96,18 @@ class AuthViewModelForegroundSyncTest {
     }
 
     @Test
+    fun `account switch asks confirmation only when local data can be replaced`() {
+        assertEquals(
+            true,
+            shouldRequestAccountSwitchConfirmation(localDataCount = 1),
+        )
+        assertEquals(
+            false,
+            shouldRequestAccountSwitchConfirmation(localDataCount = 0),
+        )
+    }
+
+    @Test
     fun `login legal documents use iOS navigation push presentation`() {
         assertEquals(
             LoginDocumentPresentation.Hidden,

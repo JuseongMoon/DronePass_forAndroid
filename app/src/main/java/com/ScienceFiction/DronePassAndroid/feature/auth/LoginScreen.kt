@@ -85,6 +85,7 @@ fun LoginScreen(
     showSkipLogin: Boolean = false,
 ) {
     val authState by viewModel.authState.collectAsStateWithLifecycle()
+    val accountSwitchConfirmation by viewModel.accountSwitchConfirmation.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var docTarget by remember { mutableStateOf<LoginDocTarget?>(null) }
     var loginErrorMessage by remember { mutableStateOf<String?>(null) }
@@ -255,6 +256,33 @@ fun LoginScreen(
             confirmButton = {
                 TextButton(onClick = { loginErrorMessage = null }) {
                     Text(text = stringResource(R.string.common_confirm))
+                }
+            },
+        )
+    }
+
+    accountSwitchConfirmation?.let { request ->
+        AlertDialog(
+            onDismissRequest = { viewModel.cancelAccountSwitch() },
+            title = {
+                Text(text = stringResource(R.string.login_account_switch_title))
+            },
+            text = {
+                Text(
+                    text = stringResource(
+                        R.string.login_account_switch_message,
+                        request.localDataCount,
+                    )
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { viewModel.confirmAccountSwitch() }) {
+                    Text(text = stringResource(R.string.login_account_switch_confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.cancelAccountSwitch() }) {
+                    Text(text = stringResource(R.string.common_cancel))
                 }
             },
         )
