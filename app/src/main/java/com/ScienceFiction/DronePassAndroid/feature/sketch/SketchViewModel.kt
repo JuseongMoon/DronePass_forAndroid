@@ -149,6 +149,11 @@ class SketchViewModel @Inject constructor(
         updateUndoRedoState()
         _isSketchMode.value = transition.isSketchModeActive
         _isEraserMode.value = transition.isEraserModeActive
+        val previousJob = latestSketchMutationJob
+        latestSketchMutationJob = viewModelScope.launch {
+            previousJob?.join()
+            sketchRepository.beginSketchEditSession()
+        }
         sketchModeEnterTimeMillis = System.currentTimeMillis()
         analyticsLogger.logSketchModeEntered()
     }

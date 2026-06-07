@@ -35,6 +35,39 @@ data class SketchCounts(
     val activeCount: Int,
 )
 
+internal data class SketchEditSyncPlan(
+    val existingSketchIdsOnEnter: Set<String>,
+    val pendingUpserts: Map<String, SketchModel> = emptyMap(),
+    val pendingDeleteIds: Set<String> = emptySet(),
+)
+
+internal fun trackSketchUpsertForEditSession(
+    plan: SketchEditSyncPlan,
+    sketch: SketchModel,
+): SketchEditSyncPlan {
+    return plan.copy(
+        pendingUpserts = plan.pendingUpserts + (sketch.id to sketch),
+        pendingDeleteIds = plan.pendingDeleteIds - sketch.id,
+    )
+}
+
+internal fun trackSketchDeleteForEditSession(
+    plan: SketchEditSyncPlan,
+    sketchId: String,
+): SketchEditSyncPlan {
+    return if (sketchId in plan.existingSketchIdsOnEnter) {
+        plan.copy(
+            pendingUpserts = plan.pendingUpserts - sketchId,
+            pendingDeleteIds = plan.pendingDeleteIds + sketchId,
+        )
+    } else {
+        plan.copy(
+            pendingUpserts = plan.pendingUpserts - sketchId,
+            pendingDeleteIds = plan.pendingDeleteIds - sketchId,
+        )
+    }
+}
+
 @Singleton
 class SketchRepository @Inject constructor(
     private val sketchDao: SketchDao,
@@ -51,6 +84,7 @@ class SketchRepository @Inject constructor(
     private val debounceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val pendingSyncs = mutableMapOf<String, PendingSketchSync>()
     private val pendingSyncsMutex = Mutex()
+    private var editSyncPlan: SketchEditSyncPlan? = null
 
     companion object {
         private const val TAG = "SketchRepository"
@@ -91,45 +125,72 @@ class SketchRepository @Inject constructor(
     }
 
     /**
+     * iOS `SketchRepository.resetModifiedTracking()` 정합.
+     *
+     * 스케치 모드 중에는 로컬 Room만 즉시 변경하고, 원격 변경은 완료 버튼을 누를 때
+     * 한 번에 반영한다. 세션 시작 시 이미 있던 스케치 ID만 원격 삭제 대상으로 삼는다.
+     */
+    fun beginSketchEditSession(existingSketchIdsOnEnter: Set<String>) {
+        editSyncPlan = SketchEditSyncPlan(existingSketchIdsOnEnter = existingSketchIdsOnEnter)
+    }
+
+    suspend fun beginSketchEditSession() {
+        beginSketchEditSession(
+            existingSketchIdsOnEnter = sketchDao.getAllSketchesOnce()
+                .filter { it.deletedAt == null }
+                .map { it.id }
+                .toSet(),
+        )
+    }
+
+    /**
      * 새 스케치 삽입 (동일 ID 존재 시 교체)
-     * 로그인 상태이면 Firestore에도 즉시 푸시한다.
+     * 스케치 모드 세션 중이면 원격 푸시는 완료 시점까지 보류한다.
      */
     suspend fun insertSketch(sketch: SketchModel) {
         sketchDao.insertSketch(sketch.toEntity())
         markSketchLocalModification()
-        syncSketchToFirebase(sketch)
+        if (!trackSessionUpsertIfNeeded(sketch)) {
+            syncSketchToFirebase(sketch)
+        }
     }
 
     /**
      * 스케치 정보 업데이트
-     * 로그인 상태이면 Firestore에도 즉시 푸시한다.
+     * 스케치 모드 세션 중이면 원격 푸시는 완료 시점까지 보류한다.
      */
     suspend fun updateSketch(sketch: SketchModel) {
         sketchDao.updateSketch(sketch.toEntity())
         markSketchLocalModification()
-        syncSketchToFirebase(sketch)
+        if (!trackSessionUpsertIfNeeded(sketch)) {
+            syncSketchToFirebase(sketch)
+        }
     }
 
     /**
      * 스케치 소프트 삭제 (deletedAt 타임스탬프 설정)
-     * 로그인 상태이면 Firestore에도 즉시 푸시한다.
+     * 스케치 모드 세션 중이면 기존 스케치만 완료 시점 원격 삭제 대상으로 기록한다.
      */
     suspend fun softDeleteSketch(sketch: SketchModel) {
         val deletedSketch = sketch.softDelete()
         sketchDao.updateSketch(deletedSketch.toEntity())
         markSketchLocalModification()
-        syncSketchToFirebase(deletedSketch)
+        if (!trackSessionDeleteIfNeeded(deletedSketch.id)) {
+            syncSketchToFirebase(deletedSketch)
+        }
     }
 
     /**
      * 소프트 삭제된 스케치 복원
-     * 로그인 상태이면 Firestore에도 즉시 푸시한다.
+     * 스케치 모드 세션 중이면 완료 시점 업로드 대상으로 기록한다.
      */
     suspend fun restoreSketch(sketch: SketchModel) {
         val restoredSketch = sketch.restore()
         sketchDao.updateSketch(restoredSketch.toEntity())
         markSketchLocalModification()
-        syncSketchToFirebase(restoredSketch)
+        if (!trackSessionUpsertIfNeeded(restoredSketch)) {
+            syncSketchToFirebase(restoredSketch)
+        }
     }
 
     /**
@@ -150,8 +211,13 @@ class SketchRepository @Inject constructor(
 
         sketchDao.insertSketches(deletedSketches.map { it.toEntity() })
         markSketchLocalModification(now)
-        cancelPendingSyncs(deletedSketches.map { it.id }.toSet())
-        syncSketchesToFirebase(deletedSketches)
+        if (editSyncPlan != null) {
+            cancelPendingSyncs(deletedSketches.map { it.id }.toSet())
+            deletedSketches.forEach { trackSessionDeleteIfNeeded(it.id) }
+        } else {
+            cancelPendingSyncs(deletedSketches.map { it.id }.toSet())
+            syncSketchesToFirebase(deletedSketches)
+        }
         return deletedSketches
     }
 
@@ -220,6 +286,18 @@ class SketchRepository @Inject constructor(
         }
     }
 
+    private fun trackSessionUpsertIfNeeded(sketch: SketchModel): Boolean {
+        val plan = editSyncPlan ?: return false
+        editSyncPlan = trackSketchUpsertForEditSession(plan, sketch)
+        return true
+    }
+
+    private fun trackSessionDeleteIfNeeded(sketchId: String): Boolean {
+        val plan = editSyncPlan ?: return false
+        editSyncPlan = trackSketchDeleteForEditSession(plan, sketchId)
+        return true
+    }
+
     private suspend fun markSketchLocalModification(now: Long = System.currentTimeMillis()) {
         dataStore.edit { preferences ->
             preferences[SyncPreferenceKeys.LAST_LOCAL_SKETCH_MODIFICATION_TIME] = now
@@ -231,11 +309,17 @@ class SketchRepository @Inject constructor(
     /**
      * iOS `syncToFirebaseOnComplete()` 정합.
      *
-     * Android는 스케치 변경을 500ms 디바운스로 Firebase에 푸시하지만,
-     * 스케치 모드 종료 시에는 대기 중인 최신 변경을 즉시 업로드해 iOS의 완료 시점
-     * 동기화와 같은 보장을 제공한다.
+     * 스케치 모드 세션 중 변경은 완료 시점까지 보류한다. 세션 밖에서 발생한 변경은
+     * 기존 디바운스 대기분을 즉시 업로드한다.
      */
     suspend fun syncToFirebaseOnComplete() {
+        val sessionPlan = editSyncPlan
+        if (sessionPlan != null) {
+            editSyncPlan = null
+            syncSketchEditSessionToFirebase(sessionPlan)
+            return
+        }
+
         val pendingSketches = pendingSyncsMutex.withLock {
             val sketches = pendingSyncs.values.map { it.sketch }
             pendingSyncs.values.forEach { it.job.cancel() }
@@ -245,6 +329,30 @@ class SketchRepository @Inject constructor(
         if (pendingSketches.isEmpty()) return
 
         syncSketchesToFirebase(pendingSketches)
+    }
+
+    private suspend fun syncSketchEditSessionToFirebase(plan: SketchEditSyncPlan) {
+        val userId = auth.currentUser?.uid ?: return
+        val validUpserts = plan.pendingUpserts.values
+            .toList()
+            .filterValidForFirebaseWrite("syncSketchEditSessionToFirebase/upsert")
+        if (validUpserts.isEmpty() && plan.pendingDeleteIds.isEmpty()) return
+
+        try {
+            plan.pendingDeleteIds.forEach { sketchId ->
+                sketchFirebaseStore.softDeleteSketch(userId, sketchId)
+            }
+            if (validUpserts.isNotEmpty()) {
+                sketchFirebaseStore.saveSketches(userId, validUpserts)
+            }
+            sketchFirebaseStore.updateServerMetadata(userId)
+        } catch (e: Exception) {
+            Log.w(
+                TAG,
+                "스케치 완료 동기화 실패: upserts=${validUpserts.size}, deletes=${plan.pendingDeleteIds.size}",
+                e,
+            )
+        }
     }
 
     /**

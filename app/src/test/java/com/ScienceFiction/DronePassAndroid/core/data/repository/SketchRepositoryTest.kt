@@ -55,6 +55,57 @@ class SketchRepositoryTest {
         replacementJob.cancel()
     }
 
+    @Test
+    fun `스케치 세션은 새로 만든 뒤 삭제한 스케치를 iOS처럼 원격 삭제 대상으로 만들지 않는다`() {
+        val created = sketchModel(id = "created", deletedAt = null, updatedAt = 1L)
+
+        val afterCreate = trackSketchUpsertForEditSession(
+            plan = SketchEditSyncPlan(existingSketchIdsOnEnter = emptySet()),
+            sketch = created,
+        )
+        val afterDelete = trackSketchDeleteForEditSession(
+            plan = afterCreate,
+            sketchId = created.id,
+        )
+
+        assertTrue(afterDelete.pendingUpserts.isEmpty())
+        assertTrue(afterDelete.pendingDeleteIds.isEmpty())
+    }
+
+    @Test
+    fun `스케치 세션은 기존 스케치 삭제를 iOS처럼 원격 삭제 대상으로 기록한다`() {
+        val existing = sketchModel(id = "existing", deletedAt = null, updatedAt = 1L)
+
+        val afterEdit = trackSketchUpsertForEditSession(
+            plan = SketchEditSyncPlan(existingSketchIdsOnEnter = setOf(existing.id)),
+            sketch = existing.copy(updatedAt = 2L),
+        )
+        val afterDelete = trackSketchDeleteForEditSession(
+            plan = afterEdit,
+            sketchId = existing.id,
+        )
+
+        assertTrue(afterDelete.pendingUpserts.isEmpty())
+        assertEquals(setOf(existing.id), afterDelete.pendingDeleteIds)
+    }
+
+    @Test
+    fun `스케치 세션은 기존 스케치 삭제 취소를 iOS처럼 업로드 대상으로 되돌린다`() {
+        val existing = sketchModel(id = "existing", deletedAt = null, updatedAt = 1L)
+
+        val afterDelete = trackSketchDeleteForEditSession(
+            plan = SketchEditSyncPlan(existingSketchIdsOnEnter = setOf(existing.id)),
+            sketchId = existing.id,
+        )
+        val afterRestore = trackSketchUpsertForEditSession(
+            plan = afterDelete,
+            sketch = existing.copy(updatedAt = 3L),
+        )
+
+        assertEquals(existing.id, afterRestore.pendingUpserts.keys.single())
+        assertTrue(afterRestore.pendingDeleteIds.isEmpty())
+    }
+
     private fun sketchModel(
         id: String,
         deletedAt: Long?,
