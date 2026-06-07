@@ -3,11 +3,13 @@ package com.ScienceFiction.DronePassAndroid.core.data.repository
 import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.dao.ShapeDao
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.entity.ShapeEntity
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.mapper.toDomain
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.mapper.toEntity
 import com.ScienceFiction.DronePassAndroid.core.data.remote.firebase.ShapeFirebaseStore
+import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncPreferenceKeys
 import com.ScienceFiction.DronePassAndroid.core.data.sync.filterServerNewer
 import com.ScienceFiction.DronePassAndroid.core.data.sync.mergeLWW
 import com.ScienceFiction.DronePassAndroid.core.data.sync.shouldUpdateServerMetadataAfterFullSync
@@ -108,6 +110,7 @@ class ShapeRepository @Inject constructor(
         if (!shape.isValidForLocalWrite("insertShape")) return
 
         shapeDao.insertShape(shape.toEntity())
+        markShapeLocalModification()
         updateEndDateAlarmForShape(shape)
         syncShapeToFirebase(shape)
     }
@@ -120,6 +123,7 @@ class ShapeRepository @Inject constructor(
         if (!shape.isValidForLocalWrite("updateShape")) return
 
         shapeDao.updateShape(shape.toEntity())
+        markShapeLocalModification()
         updateEndDateAlarmForShape(shape)
         syncShapeToFirebase(shape)
     }
@@ -132,6 +136,7 @@ class ShapeRepository @Inject constructor(
     suspend fun softDeleteShape(shape: ShapeModel) {
         val deletedShape = shape.softDelete()
         shapeDao.updateShape(deletedShape.toEntity())
+        markShapeLocalModification()
         notificationScheduler.cancelEndDateAlarm(shape.id)
         syncShapeToFirebase(deletedShape)
     }
@@ -143,6 +148,7 @@ class ShapeRepository @Inject constructor(
     suspend fun restoreShape(shape: ShapeModel) {
         val restoredShape = shape.restore()
         shapeDao.updateShape(restoredShape.toEntity())
+        markShapeLocalModification()
         updateEndDateAlarmForShape(restoredShape)
         syncShapeToFirebase(restoredShape)
     }
@@ -170,6 +176,7 @@ class ShapeRepository @Inject constructor(
         if (deletedShapes.isEmpty()) return 0
 
         shapeDao.insertShapes(deletedShapes)
+        markShapeLocalModification(now)
         deletedShapes.forEach { shape -> notificationScheduler.cancelEndDateAlarm(shape.id) }
         syncShapesToFirebase(deletedShapes.map { it.toDomain() })
         return deletedShapes.size
@@ -194,6 +201,7 @@ class ShapeRepository @Inject constructor(
         }
         // REPLACE 충돌 정책으로 update == insert (단일 트랜잭션 1회).
         shapeDao.insertShapes(updatedShapes)
+        markShapeLocalModification(now)
         syncShapesToFirebase(updatedShapes.map { it.toDomain() })
     }
 
@@ -210,6 +218,7 @@ class ShapeRepository @Inject constructor(
             connectLegacyShapeEntityToDrone(shapeEntity, firstDroneId, now)
         }
         shapeDao.insertShapes(updatedShapes)
+        markShapeLocalModification(now)
         syncShapesToFirebase(updatedShapes.map { it.toDomain() })
         Log.d(TAG, "레거시 도형 드론 연결 완료: count=${updatedShapes.size}, droneId=$firstDroneId")
     }
@@ -228,8 +237,15 @@ class ShapeRepository @Inject constructor(
             )
         }
         shapeDao.insertShapes(deletedShapes)
+        markShapeLocalModification(now)
         deletedShapes.forEach { shape -> notificationScheduler.cancelEndDateAlarm(shape.id) }
         syncShapesToFirebase(deletedShapes.map { it.toDomain() })
+    }
+
+    private suspend fun markShapeLocalModification(now: Long = System.currentTimeMillis()) {
+        dataStore.edit { preferences ->
+            preferences[SyncPreferenceKeys.LAST_LOCAL_MODIFICATION_TIME] = now
+        }
     }
 
     /**

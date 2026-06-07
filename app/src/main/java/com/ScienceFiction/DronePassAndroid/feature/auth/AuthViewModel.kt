@@ -13,7 +13,10 @@ import com.ScienceFiction.DronePassAndroid.core.util.AnalyticsLogger
 import com.ScienceFiction.DronePassAndroid.core.data.repository.DroneRepository
 import com.ScienceFiction.DronePassAndroid.core.data.repository.ShapeRepository
 import com.ScienceFiction.DronePassAndroid.core.data.repository.SketchRepository
+import com.ScienceFiction.DronePassAndroid.core.data.sync.AccountSwitchLocalChangeState
 import com.ScienceFiction.DronePassAndroid.core.data.sync.RealtimeSyncManager
+import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncPreferenceKeys
+import com.ScienceFiction.DronePassAndroid.core.data.sync.buildAccountSwitchLocalChangeState
 import com.ScienceFiction.DronePassAndroid.feature.drone.DroneSelectionState
 import com.ScienceFiction.DronePassAndroid.feature.profile.ProfilePreferenceKeys
 import com.ScienceFiction.DronePassAndroid.feature.profile.storedCloudBackupEnabled
@@ -68,8 +71,8 @@ internal fun shouldResetLocalDataForAccountChange(action: AuthAccountChangeActio
     return action == AuthAccountChangeAction.RESET_LOCAL_DATA
 }
 
-internal fun shouldRequestAccountSwitchConfirmation(localDataCount: Int): Boolean {
-    return localDataCount > 0
+internal fun shouldRequestAccountSwitchConfirmation(hasUnsyncedLocalChanges: Boolean): Boolean {
+    return hasUnsyncedLocalChanges
 }
 
 internal fun resolveForegroundCloudSyncAction(
@@ -311,15 +314,15 @@ class AuthViewModel @Inject constructor(
         selectAllDronesAfterSync: Boolean,
     ) {
         if (shouldResetLocalDataForAccountChange(result.accountChangeAction)) {
-            val localDataCount = countLocalDataForAccountSwitch()
-            if (shouldRequestAccountSwitchConfirmation(localDataCount)) {
+            val localChangeState = buildLocalChangeStateForAccountSwitch()
+            if (shouldRequestAccountSwitchConfirmation(localChangeState.hasUnsyncedLocalChanges)) {
                 pendingAccountSwitchLogin = PendingAccountSwitchLogin(
                     result = result,
                     providerName = providerName,
                     selectAllDronesAfterSync = selectAllDronesAfterSync,
                 )
                 _accountSwitchConfirmation.value = AccountSwitchConfirmationRequest(
-                    localDataCount = localDataCount,
+                    localDataCount = localChangeState.atRiskCount,
                 )
                 return
             }
@@ -387,15 +390,24 @@ class AuthViewModel @Inject constructor(
         dataStore.edit { preferences ->
             preferences.remove(ProfilePreferenceKeys.LAST_BACKUP_TIME)
             preferences.remove(ProfilePreferenceKeys.LEGACY_LAST_BACKUP_TIME)
+            preferences.remove(SyncPreferenceKeys.LAST_SYNC_TIME)
+            preferences.remove(SyncPreferenceKeys.LAST_LOCAL_MODIFICATION_TIME)
+            preferences.remove(SyncPreferenceKeys.LAST_SKETCH_SYNC_TIME)
+            preferences.remove(SyncPreferenceKeys.LAST_LOCAL_SKETCH_MODIFICATION_TIME)
         }
         Log.d(TAG, "계정 전환 감지: 로컬 데이터 초기화 완료")
     }
 
-    private suspend fun countLocalDataForAccountSwitch(): Int {
-        val shapes = shapeRepository.getAllShapes().first().size
-        val drones = droneRepository.getAllDrones().first().size
-        val sketches = sketchRepository.getAllSketches().first().size
-        return shapes + drones + sketches
+    private suspend fun buildLocalChangeStateForAccountSwitch(): AccountSwitchLocalChangeState {
+        val preferences = dataStore.data.first()
+        return buildAccountSwitchLocalChangeState(
+            shapeCount = shapeRepository.getAllShapes().first().size,
+            sketchCount = sketchRepository.getAllSketches().first().size,
+            lastLocalModificationTime = preferences[SyncPreferenceKeys.LAST_LOCAL_MODIFICATION_TIME],
+            lastSyncTime = preferences[SyncPreferenceKeys.LAST_SYNC_TIME],
+            lastLocalSketchModificationTime = preferences[SyncPreferenceKeys.LAST_LOCAL_SKETCH_MODIFICATION_TIME],
+            lastSketchSyncTime = preferences[SyncPreferenceKeys.LAST_SKETCH_SYNC_TIME],
+        )
     }
 
     /**
@@ -407,10 +419,16 @@ class AuthViewModel @Inject constructor(
             Log.d(TAG, "Firebase 양방향 동기화 시작")
             shapeRepository.performFullSync()
             droneRepository.performFullSync()
+            dataStore.edit { preferences ->
+                preferences[SyncPreferenceKeys.LAST_SYNC_TIME] = System.currentTimeMillis()
+            }
             if (selectAllDronesAfterSync) {
                 selectAllActiveDrones()
             }
             sketchRepository.performFullSync()
+            dataStore.edit { preferences ->
+                preferences[SyncPreferenceKeys.LAST_SKETCH_SYNC_TIME] = System.currentTimeMillis()
+            }
             Log.d(TAG, "Firebase 양방향 동기화 완료")
         } catch (e: Exception) {
             Log.e(TAG, "Firebase 동기화 실패", e)

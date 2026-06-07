@@ -1,10 +1,14 @@
 package com.ScienceFiction.DronePassAndroid.core.data.repository
 
 import android.util.Log
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.dao.SketchDao
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.mapper.toDomain
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.mapper.toEntity
 import com.ScienceFiction.DronePassAndroid.core.data.remote.firebase.SketchFirebaseStore
+import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncPreferenceKeys
 import com.ScienceFiction.DronePassAndroid.core.data.sync.filterServerNewer
 import com.ScienceFiction.DronePassAndroid.core.data.sync.mergeLWW
 import com.ScienceFiction.DronePassAndroid.core.data.sync.shouldUpdateServerMetadataAfterFullSync
@@ -35,7 +39,8 @@ data class SketchCounts(
 class SketchRepository @Inject constructor(
     private val sketchDao: SketchDao,
     private val sketchFirebaseStore: SketchFirebaseStore,
-    private val auth: FirebaseAuth
+    private val auth: FirebaseAuth,
+    private val dataStore: DataStore<Preferences>,
 ) {
 
     /**
@@ -91,6 +96,7 @@ class SketchRepository @Inject constructor(
      */
     suspend fun insertSketch(sketch: SketchModel) {
         sketchDao.insertSketch(sketch.toEntity())
+        markSketchLocalModification()
         syncSketchToFirebase(sketch)
     }
 
@@ -100,6 +106,7 @@ class SketchRepository @Inject constructor(
      */
     suspend fun updateSketch(sketch: SketchModel) {
         sketchDao.updateSketch(sketch.toEntity())
+        markSketchLocalModification()
         syncSketchToFirebase(sketch)
     }
 
@@ -110,6 +117,7 @@ class SketchRepository @Inject constructor(
     suspend fun softDeleteSketch(sketch: SketchModel) {
         val deletedSketch = sketch.softDelete()
         sketchDao.updateSketch(deletedSketch.toEntity())
+        markSketchLocalModification()
         syncSketchToFirebase(deletedSketch)
     }
 
@@ -120,6 +128,7 @@ class SketchRepository @Inject constructor(
     suspend fun restoreSketch(sketch: SketchModel) {
         val restoredSketch = sketch.restore()
         sketchDao.updateSketch(restoredSketch.toEntity())
+        markSketchLocalModification()
         syncSketchToFirebase(restoredSketch)
     }
 
@@ -140,6 +149,7 @@ class SketchRepository @Inject constructor(
         if (deletedSketches.isEmpty()) return emptyList()
 
         sketchDao.insertSketches(deletedSketches.map { it.toEntity() })
+        markSketchLocalModification(now)
         cancelPendingSyncs(deletedSketches.map { it.id }.toSet())
         syncSketchesToFirebase(deletedSketches)
         return deletedSketches
@@ -207,6 +217,12 @@ class SketchRepository @Inject constructor(
             sketchIds.forEach { id ->
                 pendingSyncs.remove(id)?.job?.cancel()
             }
+        }
+    }
+
+    private suspend fun markSketchLocalModification(now: Long = System.currentTimeMillis()) {
+        dataStore.edit { preferences ->
+            preferences[SyncPreferenceKeys.LAST_LOCAL_SKETCH_MODIFICATION_TIME] = now
         }
     }
 

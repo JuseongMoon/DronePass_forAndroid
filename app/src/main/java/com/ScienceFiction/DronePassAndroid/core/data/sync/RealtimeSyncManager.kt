@@ -1,6 +1,9 @@
 package com.ScienceFiction.DronePassAndroid.core.data.sync
 
 import android.util.Log
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
 import com.ScienceFiction.DronePassAndroid.core.data.repository.DroneRepository
 import com.ScienceFiction.DronePassAndroid.core.data.repository.ShapeRepository
 import com.ScienceFiction.DronePassAndroid.core.data.repository.SketchRepository
@@ -61,7 +64,8 @@ class RealtimeSyncManager @Inject constructor(
     private val auth: FirebaseAuth,
     private val shapeRepository: ShapeRepository,
     private val droneRepository: DroneRepository,
-    private val sketchRepository: SketchRepository
+    private val sketchRepository: SketchRepository,
+    private val dataStore: DataStore<Preferences>,
 ) {
 
     companion object {
@@ -265,6 +269,9 @@ class RealtimeSyncManager @Inject constructor(
 
             // 동기화 시각 업데이트
             lastShapeSyncTime = System.currentTimeMillis()
+            dataStore.edit { preferences ->
+                preferences[SyncPreferenceKeys.LAST_SYNC_TIME] = lastShapeSyncTime
+            }
             _lastSyncTime.value = lastShapeSyncTime
 
             // 재시도 카운터 초기화
@@ -305,6 +312,9 @@ class RealtimeSyncManager @Inject constructor(
             Log.d(TAG, "Sketch 동기화 완료")
 
             lastSketchSyncTime = System.currentTimeMillis()
+            dataStore.edit { preferences ->
+                preferences[SyncPreferenceKeys.LAST_SKETCH_SYNC_TIME] = lastSketchSyncTime
+            }
             sketchRetryCount = 0
 
             Log.d(TAG, "Sketch 실시간 동기화 완료")

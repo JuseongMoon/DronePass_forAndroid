@@ -2,6 +2,9 @@ package com.ScienceFiction.DronePassAndroid.feature.auth
 
 import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.compose.ui.unit.dp
+import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncPreferenceKeys
+import com.ScienceFiction.DronePassAndroid.core.data.sync.buildAccountSwitchLocalChangeState
+import com.ScienceFiction.DronePassAndroid.core.data.sync.hasUnsyncedLocalChanges
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -96,14 +99,95 @@ class AuthViewModelForegroundSyncTest {
     }
 
     @Test
-    fun `account switch asks confirmation only when local data can be replaced`() {
+    fun `account switch asks confirmation only when local changes are unsynced like iOS`() {
         assertEquals(
             true,
-            shouldRequestAccountSwitchConfirmation(localDataCount = 1),
+            shouldRequestAccountSwitchConfirmation(hasUnsyncedLocalChanges = true),
         )
         assertEquals(
             false,
-            shouldRequestAccountSwitchConfirmation(localDataCount = 0),
+            shouldRequestAccountSwitchConfirmation(hasUnsyncedLocalChanges = false),
+        )
+    }
+
+    @Test
+    fun `account switch dirty check compares local modification time with last sync time`() {
+        assertEquals(
+            true,
+            hasUnsyncedLocalChanges(
+                lastLocalModificationTime = 200,
+                lastSyncTime = 100,
+                localItemCount = 1,
+            ),
+        )
+        assertEquals(
+            false,
+            hasUnsyncedLocalChanges(
+                lastLocalModificationTime = 100,
+                lastSyncTime = 200,
+                localItemCount = 1,
+            ),
+        )
+        assertEquals(
+            false,
+            hasUnsyncedLocalChanges(
+                lastLocalModificationTime = 200,
+                lastSyncTime = 100,
+                localItemCount = 0,
+            ),
+        )
+        assertEquals(
+            false,
+            hasUnsyncedLocalChanges(
+                lastLocalModificationTime = null,
+                lastSyncTime = null,
+                localItemCount = 1,
+            ),
+        )
+    }
+
+    @Test
+    fun `account switch warning counts shapes and sketches when either domain is dirty`() {
+        val state = buildAccountSwitchLocalChangeState(
+            shapeCount = 2,
+            sketchCount = 3,
+            lastLocalModificationTime = 200,
+            lastSyncTime = 100,
+            lastLocalSketchModificationTime = 50,
+            lastSketchSyncTime = 100,
+        )
+
+        assertEquals(true, state.hasUnsyncedLocalChanges)
+        assertEquals(5, state.atRiskCount)
+    }
+
+    @Test
+    fun `sync preference keys use iOS UserDefaults names`() {
+        assertEquals("lastSyncTime", SyncPreferenceKeys.LAST_SYNC_TIME.name)
+        assertEquals("lastLocalModificationTime", SyncPreferenceKeys.LAST_LOCAL_MODIFICATION_TIME.name)
+        assertEquals("lastSketchSyncTime", SyncPreferenceKeys.LAST_SKETCH_SYNC_TIME.name)
+        assertEquals(
+            "lastLocalSketchModificationTime",
+            SyncPreferenceKeys.LAST_LOCAL_SKETCH_MODIFICATION_TIME.name,
+        )
+    }
+
+    @Test
+    fun `clean local data does not ask account switch confirmation even when items exist`() {
+        val state = buildAccountSwitchLocalChangeState(
+            shapeCount = 2,
+            sketchCount = 3,
+            lastLocalModificationTime = 100,
+            lastSyncTime = 200,
+            lastLocalSketchModificationTime = 100,
+            lastSketchSyncTime = 200,
+        )
+
+        assertEquals(false, state.hasUnsyncedLocalChanges)
+        assertEquals(5, state.atRiskCount)
+        assertEquals(
+            false,
+            shouldRequestAccountSwitchConfirmation(state.hasUnsyncedLocalChanges),
         )
     }
 
