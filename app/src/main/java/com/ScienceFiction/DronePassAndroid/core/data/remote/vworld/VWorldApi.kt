@@ -37,7 +37,7 @@ interface VWorldApi {
         @Query("request") request: String = "GetFeature",
         @Query("typename") typeName: String,
         @Query("outputFormat") outputFormat: String = "application/json",
-        @Query("srsName") srsName: String = "EPSG:4326",
+        @Query("srsname") srsName: String = "EPSG:4326",
         @Query("bbox") bbox: String,
         @Query("key") key: String,
         @Query("domain") domain: String = "드론패스",

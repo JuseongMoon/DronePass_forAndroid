@@ -17,5 +17,7 @@ class VWorldApiTest {
 
         assertTrue(queryNames.contains("typename"))
         assertFalse(queryNames.contains("typeName"))
+        assertTrue(queryNames.contains("srsname"))
+        assertFalse(queryNames.contains("srsName"))
     }
 }
