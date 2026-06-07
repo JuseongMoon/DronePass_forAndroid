@@ -1,9 +1,15 @@
 package com.ScienceFiction.DronePassAndroid.core.util
 
 import org.junit.Assert.assertEquals
+import org.junit.Before
 import org.junit.Test
 
 class GustDifferenceCalculatorTest {
+
+    @Before
+    fun resetCalculatorState() {
+        GustDifferenceCalculator.resetForTesting()
+    }
 
     @Test
     fun `class3 low sustained wind uses iOS localized gust policy`() {
@@ -57,5 +63,35 @@ class GustDifferenceCalculatorTest {
         )
 
         assertEquals(0.0, difference, 0.0)
+    }
+
+    @Test
+    fun `caution level uses iOS hysteresis before returning to safe`() {
+        assertEquals(
+            GustDifferenceLevel.CAUTION,
+            GustDifferenceCalculator.evaluate(
+                sustainedWind = 10.0,
+                gustWind = 13.1,
+                category = DroneCategory.CLASS3,
+            ),
+        )
+
+        assertEquals(
+            GustDifferenceLevel.CAUTION,
+            GustDifferenceCalculator.evaluate(
+                sustainedWind = 10.0,
+                gustWind = 12.1,
+                category = DroneCategory.CLASS3,
+            ),
+        )
+
+        assertEquals(
+            GustDifferenceLevel.SAFE,
+            GustDifferenceCalculator.evaluate(
+                sustainedWind = 9.0,
+                gustWind = 10.0,
+                category = DroneCategory.CLASS3,
+            ),
+        )
     }
 }

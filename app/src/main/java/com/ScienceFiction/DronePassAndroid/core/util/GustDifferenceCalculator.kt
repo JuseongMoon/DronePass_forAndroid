@@ -30,7 +30,8 @@ object GustDifferenceCalculator {
         val gf: Double,
         val absGust: Double,
         val votesRequired: Int,
-        val minMeanForEval: Double = MIN_MEAN_FOR_GF
+        val minMeanForEval: Double = MIN_MEAN_FOR_GF,
+        val hysteresisMinVotes: Int
     )
 
     private val thresholdsMap = mapOf(
@@ -65,10 +66,34 @@ object GustDifferenceCalculator {
     )
 
     private val localizedPolicies = mapOf(
-        DroneCategory.TOY to LocalizedGustPolicy(diff = 3.0, gf = 1.50, absGust = 8.0, votesRequired = 1),
-        DroneCategory.CLASS4 to LocalizedGustPolicy(diff = 4.0, gf = 1.60, absGust = 9.5, votesRequired = 1),
-        DroneCategory.CLASS3 to LocalizedGustPolicy(diff = 5.0, gf = 1.60, absGust = 10.5, votesRequired = 2),
-        DroneCategory.CLASS2 to LocalizedGustPolicy(diff = 6.0, gf = 1.70, absGust = 12.0, votesRequired = 2)
+        DroneCategory.TOY to LocalizedGustPolicy(
+            diff = 3.0,
+            gf = 1.50,
+            absGust = 8.0,
+            votesRequired = 1,
+            hysteresisMinVotes = 0,
+        ),
+        DroneCategory.CLASS4 to LocalizedGustPolicy(
+            diff = 4.0,
+            gf = 1.60,
+            absGust = 9.5,
+            votesRequired = 1,
+            hysteresisMinVotes = 0,
+        ),
+        DroneCategory.CLASS3 to LocalizedGustPolicy(
+            diff = 5.0,
+            gf = 1.60,
+            absGust = 10.5,
+            votesRequired = 2,
+            hysteresisMinVotes = 1,
+        ),
+        DroneCategory.CLASS2 to LocalizedGustPolicy(
+            diff = 6.0,
+            gf = 1.70,
+            absGust = 12.0,
+            votesRequired = 2,
+            hysteresisMinVotes = 1,
+        )
     )
 
     private const val MIN_MEAN_FOR_GF = 1.0
@@ -78,6 +103,12 @@ object GustDifferenceCalculator {
     private const val LOCALIZED_LOW_MEAN_MIN = 0.8
     private const val LOCALIZED_LOW_MEAN_MAX = 1.0
     private const val LOCALIZED_LOW_MEAN_DIFF_BOOST = 1.0
+
+    private var previousLevel: GustDifferenceLevel = GustDifferenceLevel.SAFE
+
+    internal fun resetForTesting() {
+        previousLevel = GustDifferenceLevel.SAFE
+    }
 
     /**
      * 돌풍 위험도 평가
@@ -112,6 +143,7 @@ object GustDifferenceCalculator {
         if (effectiveGust >= thresholds.gustDanger + HARD_STOP_MARGIN ||
             safeSustained >= thresholds.sustainedDanger + HARD_STOP_MARGIN
         ) {
+            previousLevel = GustDifferenceLevel.DANGER
             return GustDifferenceLevel.DANGER
         }
 
@@ -130,11 +162,18 @@ object GustDifferenceCalculator {
                 safeSustained >= policy.minMeanForEval && gustFactor >= policy.gf,
                 effectiveGust >= policy.absGust
             ).count { it }
-            return if (votes >= policy.votesRequired) {
+            val triggered = if (previousLevel == GustDifferenceLevel.LOCALIZED_GUST) {
+                votes > policy.hysteresisMinVotes
+            } else {
+                votes >= policy.votesRequired
+            }
+            val level = if (triggered) {
                 GustDifferenceLevel.LOCALIZED_GUST
             } else {
                 GustDifferenceLevel.SAFE
             }
+            previousLevel = level
+            return level
         }
 
         // 3축 평가
@@ -161,12 +200,20 @@ object GustDifferenceCalculator {
             it == GustDifferenceLevel.DANGER || it == GustDifferenceLevel.CAUTION
         }
 
-        return when {
+        val proposedLevel = when {
             dangerCount >= 2 -> GustDifferenceLevel.DANGER
             dangerCount == 1 -> GustDifferenceLevel.CAUTION
             cautionOrAboveCount >= 2 -> GustDifferenceLevel.CAUTION
             else -> GustDifferenceLevel.SAFE
         }
+        val finalLevel = applyHysteresis(
+            proposed = proposedLevel,
+            previous = previousLevel,
+            dangerVotes = dangerCount,
+            cautionVotes = cautionOrAboveCount,
+        )
+        previousLevel = finalLevel
+        return finalLevel
     }
 
     /**
@@ -198,5 +245,22 @@ object GustDifferenceCalculator {
             value >= cautionThreshold -> GustDifferenceLevel.CAUTION
             else -> GustDifferenceLevel.SAFE
         }
+    }
+
+    private fun applyHysteresis(
+        proposed: GustDifferenceLevel,
+        previous: GustDifferenceLevel,
+        dangerVotes: Int,
+        cautionVotes: Int,
+    ): GustDifferenceLevel {
+        if (previous == GustDifferenceLevel.DANGER && proposed < GustDifferenceLevel.DANGER) {
+            return if (dangerVotes <= 1) proposed else GustDifferenceLevel.DANGER
+        }
+
+        if (previous == GustDifferenceLevel.CAUTION && proposed == GustDifferenceLevel.SAFE) {
+            return if (cautionVotes == 0) GustDifferenceLevel.SAFE else GustDifferenceLevel.CAUTION
+        }
+
+        return proposed
     }
 }
