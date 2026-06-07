@@ -111,6 +111,18 @@ class AuthViewModelForegroundSyncTest {
     }
 
     @Test
+    fun `clean account switch still resets local data before navigation like iOS`() {
+        assertEquals(
+            true,
+            shouldPrepareAccountSwitchBeforeNavigation(AuthAccountChangeAction.RESET_LOCAL_DATA),
+        )
+        assertEquals(
+            false,
+            shouldPrepareAccountSwitchBeforeNavigation(AuthAccountChangeAction.KEEP_LOCAL_DATA),
+        )
+    }
+
+    @Test
     fun `account switch dirty check compares local modification time with last sync time`() {
         assertEquals(
             true,

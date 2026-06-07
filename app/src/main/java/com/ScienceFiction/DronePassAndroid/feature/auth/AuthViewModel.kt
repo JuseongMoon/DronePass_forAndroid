@@ -75,6 +75,10 @@ internal fun shouldRequestAccountSwitchConfirmation(hasUnsyncedLocalChanges: Boo
     return hasUnsyncedLocalChanges
 }
 
+internal fun shouldPrepareAccountSwitchBeforeNavigation(action: AuthAccountChangeAction): Boolean {
+    return shouldResetLocalDataForAccountChange(action)
+}
+
 internal fun resolveForegroundCloudSyncAction(
     isLoggedIn: Boolean,
     cloudBackupEnabled: Boolean,
@@ -332,7 +336,9 @@ class AuthViewModel @Inject constructor(
             result = result,
             providerName = providerName,
             selectAllDronesAfterSync = selectAllDronesAfterSync,
-            prepareAccountSwitchBeforeNavigation = false,
+            prepareAccountSwitchBeforeNavigation = shouldPrepareAccountSwitchBeforeNavigation(
+                result.accountChangeAction,
+            ),
         )
     }
 
