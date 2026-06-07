@@ -37,6 +37,8 @@ class EncryptedPrefsHelper @Inject constructor(
         const val FALLBACK_PREFS_FILE_NAME = "dronepass_prefs_fallback"
 
         private const val KEY_FIREBASE_UID = "firebase_uid"
+        private const val KEY_APPLE_USER_ID = "apple_user_id"
+        private const val KEY_GOOGLE_USER_ID = "google_user_id"
 
         /**
          * 암호화된 SharedPreferences를 생성한다. KeyStore 손상 시 1회 재생성 시도 후
@@ -93,6 +95,14 @@ class EncryptedPrefsHelper @Inject constructor(
         sharedPreferences.edit().putString(KEY_FIREBASE_UID, uid).apply()
     }
 
+    fun saveAppleUserId(appleUserId: String) {
+        sharedPreferences.edit().putString(KEY_APPLE_USER_ID, appleUserId).apply()
+    }
+
+    fun saveGoogleUserId(googleUserId: String) {
+        sharedPreferences.edit().putString(KEY_GOOGLE_USER_ID, googleUserId).apply()
+    }
+
     /**
      * 저장된 Firebase UID를 불러오기
      * @return 저장된 UID 또는 null
@@ -101,9 +111,17 @@ class EncryptedPrefsHelper @Inject constructor(
         return sharedPreferences.getString(KEY_FIREBASE_UID, null)
     }
 
+    fun loadAppleUserId(): String? {
+        return sharedPreferences.getString(KEY_APPLE_USER_ID, null)
+    }
+
+    fun loadGoogleUserId(): String? {
+        return sharedPreferences.getString(KEY_GOOGLE_USER_ID, null)
+    }
+
     /**
      * 모든 암호화된 데이터 삭제
-     * 로그아웃 또는 계정 삭제 시 호출
+     * 계정 삭제 시 호출. 로그아웃 시에는 계정 복구용 UID/provider User ID를 유지한다.
      */
     fun clearAll() {
         sharedPreferences.edit().clear().apply()

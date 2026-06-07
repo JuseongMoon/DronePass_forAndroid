@@ -1,6 +1,7 @@
 package com.ScienceFiction.DronePassAndroid.feature.auth
 
 import android.app.Activity
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -11,22 +12,20 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Flight
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -36,7 +35,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -49,9 +50,27 @@ import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.feature.document.PrivacyPolicyScreen
 import com.ScienceFiction.DronePassAndroid.feature.document.TermsOfServiceScreen
 
+internal val LoginScreenHorizontalPadding = 32.dp
+internal val LoginLogoSize = 200.dp
+internal val LoginLogoCornerRadius = 24.dp
+internal val LoginLogoBottomSpacing = 32.dp
+internal val LoginTitleBottomSpacing = 24.dp
+internal val LoginDividerHorizontalPadding = 22.dp
+internal val LoginDividerBottomSpacing = 10.dp
+internal val LoginButtonMaxWidth = 350.dp
+internal val LoginButtonHeight = 50.dp
+internal val LoginButtonCornerRadius = 12.dp
+internal val LoginProviderIconSize = 20.dp
+internal val LoginProviderIconTextSpacing = 8.dp
+internal val LoginGoogleButtonTopSpacing = 12.dp
+internal val LoginTermsTopSpacing = 12.dp
+internal val LoginSkipButtonTopSpacing = 16.dp
+internal val LoginBottomSpacing = 32.dp
+internal val LoginTermsLineSpacing = 2.dp
+
 /**
- * 로그인 화면 Composable
- * Google Sign-In 및 비로그인 모드 진입을 제공
+ * 로그인 화면 Composable.
+ * iOS LoginView 의 로고/타이틀/약관 흐름을 기준으로 Apple, Google 로그인을 제공한다.
  *
  * @param viewModel 인증 ViewModel (Hilt로 주입)
  * @param onLoginSuccess 로그인 성공 시 콜백
@@ -62,12 +81,13 @@ import com.ScienceFiction.DronePassAndroid.feature.document.TermsOfServiceScreen
 fun LoginScreen(
     viewModel: AuthViewModel = hiltViewModel(),
     onLoginSuccess: () -> Unit,
-    onSkipLogin: () -> Unit
+    onSkipLogin: () -> Unit,
+    showSkipLogin: Boolean = false,
 ) {
     val authState by viewModel.authState.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    val snackbarHostState = remember { SnackbarHostState() }
     var docTarget by remember { mutableStateOf<LoginDocTarget?>(null) }
+    var loginErrorMessage by remember { mutableStateOf<String?>(null) }
 
     // authState 전이 처리는 단일 LaunchedEffect 로 통합한다.
     // 이전: 두 개의 LaunchedEffect(authState) 가 동시 등록되어 LoggedIn → Error 빠른 전이 시
@@ -75,174 +95,241 @@ fun LoginScreen(
     LaunchedEffect(authState) {
         when (val state = authState) {
             is AuthState.LoggedIn -> onLoginSuccess()
-            is AuthState.Error -> snackbarHostState.showSnackbar(message = state.message)
+            is AuthState.Error -> loginErrorMessage = state.message
             else -> Unit // Loading, LoggedOut 은 동작 없음 (UI 상태만 변경)
         }
     }
 
-    Scaffold(
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(horizontal = 32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            // 앱 로고 아이콘
-            Icon(
-                imageVector = Icons.Default.Flight,
-                contentDescription = stringResource(R.string.login_logo_description),
-                modifier = Modifier.size(80.dp),
-                tint = MaterialTheme.colorScheme.primary
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // 앱 이름
-            Text(
-                text = "DronePass",
-                style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // 앱 설명
-            Text(
-                text = stringResource(R.string.login_subtitle),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
-            )
-
-            Spacer(modifier = Modifier.height(48.dp))
-
-            // 로딩 상태
-            if (authState is AuthState.Loading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(48.dp)
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = stringResource(R.string.login_loading),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            } else {
-                // Apple Sign-In 버튼 — Apple HIG: 검정 배경 + 흰 텍스트/로고, Google 위에 배치.
-                // iOS DronePass 와 같은 Apple ID 로 로그인 시 동일 Firebase UID → 데이터 자동 호환.
-                Button(
-                    onClick = {
-                        val activity = context as? Activity
-                        if (activity != null) {
-                            viewModel.signInWithApple(activity)
-                        }
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(52.dp),
-                    shape = RoundedCornerShape(8.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.Black,
-                        contentColor = Color.White,
-                    ),
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_apple_logo),
-                        contentDescription = stringResource(R.string.login_apple_logo_description),
-                        tint = Color.White,
-                        modifier = Modifier.size(20.dp),
-                    )
-                    Spacer(modifier = Modifier.size(8.dp))
-                    Text(
-                        text = stringResource(R.string.login_apple),
-                        style = MaterialTheme.typography.titleMedium,
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // Google로 로그인 버튼
-                Button(
-                    onClick = { viewModel.signInWithGoogle(context) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(52.dp)
-                ) {
-                    Text(
-                        text = stringResource(R.string.login_google),
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // 비로그인으로 시작 버튼
-                OutlinedButton(
-                    onClick = onSkipLogin,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(52.dp)
-                ) {
-                    Text(
-                        text = stringResource(R.string.login_skip),
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                }
-            }
-
-            // 이용약관 / 개인정보 처리방침 링크
-            Spacer(modifier = Modifier.height(32.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = stringResource(R.string.login_terms),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textDecoration = TextDecoration.Underline,
-                    modifier = Modifier.clickable { docTarget = LoginDocTarget.Terms },
-                )
-
-                Text(
-                    text = " · ",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                Text(
-                    text = stringResource(R.string.login_privacy),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textDecoration = TextDecoration.Underline,
-                    modifier = Modifier.clickable { docTarget = LoginDocTarget.Privacy },
-                )
-            }
-        }
-    }
-
-    // 약관/개인정보 ModalBottomSheet (자체 서버 마크다운 렌더링)
-    docTarget?.let { target ->
-        ModalBottomSheet(
-            onDismissRequest = { docTarget = null },
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        ) {
+    when (resolveLoginDocumentPresentation(docTarget)) {
+        LoginDocumentPresentation.Pushed -> {
+            val target = docTarget ?: return
             when (target) {
                 LoginDocTarget.Terms -> TermsOfServiceScreen(onDismiss = { docTarget = null })
                 LoginDocTarget.Privacy -> PrivacyPolicyScreen(onDismiss = { docTarget = null })
             }
         }
+        LoginDocumentPresentation.Hidden -> {
+            Scaffold { innerPadding ->
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                        .padding(horizontal = LoginScreenHorizontalPadding),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Image(
+                        painter = painterResource(R.drawable.login_logo),
+                        contentDescription = stringResource(R.string.login_logo_description),
+                        modifier = Modifier
+                            .size(LoginLogoSize)
+                            .clip(RoundedCornerShape(LoginLogoCornerRadius)),
+                        contentScale = ContentScale.Crop,
+                    )
+
+                    Spacer(modifier = Modifier.height(LoginLogoBottomSpacing))
+
+                    Text(
+                        text = stringResource(R.string.login_title),
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center,
+                    )
+
+                    Spacer(modifier = Modifier.height(LoginTitleBottomSpacing))
+
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = LoginDividerHorizontalPadding))
+
+                    Spacer(modifier = Modifier.height(LoginDividerBottomSpacing))
+
+                    // 로딩 상태
+                    if (authState is AuthState.Loading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(48.dp)
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = stringResource(R.string.login_loading),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    } else {
+                        // Apple Sign-In 버튼 — Apple HIG: 검정 배경 + 흰 텍스트/로고, Google 위에 배치.
+                        // iOS DronePass 와 같은 Apple ID 로 로그인 시 동일 Firebase UID → 데이터 자동 호환.
+                        Button(
+                            onClick = {
+                                val activity = context as? Activity
+                                if (activity != null) {
+                                    viewModel.signInWithApple(activity)
+                                }
+                            },
+                            modifier = Modifier
+                                .widthIn(max = LoginButtonMaxWidth)
+                                .fillMaxWidth()
+                                .height(LoginButtonHeight),
+                            shape = RoundedCornerShape(LoginButtonCornerRadius),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color.Black,
+                                contentColor = Color.White,
+                            ),
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_apple_logo),
+                                contentDescription = stringResource(R.string.login_apple_logo_description),
+                                tint = Color.White,
+                                modifier = Modifier.size(LoginProviderIconSize),
+                            )
+                            Spacer(modifier = Modifier.size(LoginProviderIconTextSpacing))
+                            Text(
+                                text = stringResource(R.string.login_apple),
+                                style = MaterialTheme.typography.titleMedium,
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(LoginGoogleButtonTopSpacing))
+
+                        OutlinedButton(
+                            onClick = { viewModel.signInWithGoogle(context) },
+                            modifier = Modifier
+                                .widthIn(max = LoginButtonMaxWidth)
+                                .fillMaxWidth()
+                                .height(LoginButtonHeight),
+                            shape = RoundedCornerShape(LoginButtonCornerRadius),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                containerColor = MaterialTheme.colorScheme.surface,
+                                contentColor = MaterialTheme.colorScheme.onSurface,
+                            ),
+                        ) {
+                            Image(
+                                painter = painterResource(R.drawable.ic_google_logo),
+                                contentDescription = stringResource(R.string.login_google_logo_description),
+                                modifier = Modifier.size(LoginProviderIconSize),
+                            )
+                            Spacer(modifier = Modifier.size(LoginProviderIconTextSpacing))
+                            Text(
+                                text = stringResource(R.string.login_google),
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                        }
+
+                        LoginTermsNotice(
+                            onTermsClick = { docTarget = LoginDocTarget.Terms },
+                            onPrivacyClick = { docTarget = LoginDocTarget.Privacy },
+                            modifier = Modifier.padding(top = LoginTermsTopSpacing),
+                        )
+
+                        if (showSkipLogin) {
+                            Spacer(modifier = Modifier.height(LoginSkipButtonTopSpacing))
+
+                            OutlinedButton(
+                                onClick = onSkipLogin,
+                                modifier = Modifier
+                                    .widthIn(max = LoginButtonMaxWidth)
+                                    .fillMaxWidth()
+                                    .height(LoginButtonHeight),
+                                shape = RoundedCornerShape(LoginButtonCornerRadius),
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.login_skip),
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(LoginBottomSpacing))
+                }
+            }
+        }
+    }
+
+    loginErrorMessage?.let { message ->
+        AlertDialog(
+            onDismissRequest = { loginErrorMessage = null },
+            title = {
+                Text(text = stringResource(R.string.login_error_title))
+            },
+            text = {
+                Text(text = message.ifBlank { stringResource(R.string.login_error_unknown) })
+            },
+            confirmButton = {
+                TextButton(onClick = { loginErrorMessage = null }) {
+                    Text(text = stringResource(R.string.common_confirm))
+                }
+            },
+        )
     }
 }
 
-private sealed class LoginDocTarget {
+internal sealed class LoginDocTarget {
     data object Terms : LoginDocTarget()
     data object Privacy : LoginDocTarget()
+}
+
+internal enum class LoginDocumentPresentation {
+    Hidden,
+    Pushed,
+}
+
+internal fun resolveLoginDocumentPresentation(target: LoginDocTarget?): LoginDocumentPresentation {
+    return if (target == null) {
+        LoginDocumentPresentation.Hidden
+    } else {
+        LoginDocumentPresentation.Pushed
+    }
+}
+
+@Composable
+private fun LoginTermsNotice(
+    onTermsClick: () -> Unit,
+    onPrivacyClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(LoginTermsLineSpacing),
+    ) {
+        Text(
+            text = stringResource(R.string.login_terms_intro),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+        Row(
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(R.string.login_terms_service),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary,
+                textDecoration = TextDecoration.Underline,
+                modifier = Modifier.clickable(onClick = onTermsClick),
+            )
+            Text(
+                text = ", ",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = stringResource(R.string.login_terms_privacy),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary,
+                textDecoration = TextDecoration.Underline,
+                modifier = Modifier.clickable(onClick = onPrivacyClick),
+            )
+            Text(
+                text = stringResource(R.string.login_terms_middle),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Text(
+            text = stringResource(R.string.login_terms_agree),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+    }
 }
