@@ -190,9 +190,9 @@ class VWorldRepository @Inject constructor(
      */
     private fun parseFeature(feature: GeoJSONFeature, layer: FlightZoneLayer): DroneZoneFeature? {
         val geometry = feature.geometry ?: return null
-        val polygons = parseGeometry(geometry.type, geometry.coordinates) ?: return null
+        val parsedGeometry = parseFlightZoneGeometry(geometry.type, geometry.coordinates) ?: return null
 
-        if (polygons.isEmpty()) return null
+        if (parsedGeometry.polygons.isEmpty()) return null
 
         val props = feature.properties ?: emptyMap()
 
@@ -208,64 +208,14 @@ class VWorldRepository @Inject constructor(
         return DroneZoneFeature(
             id = feature.id ?: "${layer.typeName}_${System.nanoTime()}",
             layer = layer,
-            polygons = polygons,
+            polygons = parsedGeometry.polygons,
             zoneCode = zoneCode,
             upperAltitude = parseDoubleProperty(props, "up_alt", "upper_alt", "upperAlt"),
             lowerAltitude = parseDoubleProperty(props, "low_alt", "lower_alt", "lowerAlt"),
             zoneName = zoneName,
-            properties = props
+            properties = props,
+            polygonRings = parsedGeometry.polygonRings
         )
-    }
-
-    /**
-     * GeoJSON Geometry의 coordinates를 파싱하여 폴리곤 좌표 리스트로 변환
-     *
-     * GeoJSON 좌표는 [lon, lat] 순서이므로 Pair(lat, lon)으로 변환
-     */
-    @Suppress("UNCHECKED_CAST")
-    private fun parseGeometry(type: String?, coordinates: Any?): List<List<Pair<Double, Double>>>? {
-        if (coordinates == null || type == null) return null
-
-        return try {
-            when (type) {
-                "Polygon" -> {
-                    // Polygon: [[[lon, lat], ...]]
-                    val rings = coordinates as? List<*> ?: return null
-                    val outerRing = rings.firstOrNull() as? List<*> ?: return null
-                    val coords = parseCoordinateRing(outerRing)
-                    if (coords.isNotEmpty()) listOf(coords) else null
-                }
-                "MultiPolygon" -> {
-                    // MultiPolygon: [[[[lon, lat], ...]], ...]
-                    val polygons = coordinates as? List<*> ?: return null
-                    polygons.mapNotNull { polygon ->
-                        val rings = polygon as? List<*> ?: return@mapNotNull null
-                        val outerRing = rings.firstOrNull() as? List<*> ?: return@mapNotNull null
-                        val coords = parseCoordinateRing(outerRing)
-                        coords.ifEmpty { null }
-                    }
-                }
-                else -> null
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "좌표 파싱 실패: ${e.message}", e)
-            null
-        }
-    }
-
-    /**
-     * 좌표 배열(ring)을 파싱하여 Pair(lat, lon) 리스트로 변환
-     *
-     * GeoJSON: [lon, lat] -> Pair(lat, lon)
-     */
-    private fun parseCoordinateRing(ring: List<*>): List<Pair<Double, Double>> {
-        return ring.mapNotNull { point ->
-            val coords = point as? List<*> ?: return@mapNotNull null
-            if (coords.size < 2) return@mapNotNull null
-            val lon = (coords[0] as? Number)?.toDouble() ?: return@mapNotNull null
-            val lat = (coords[1] as? Number)?.toDouble() ?: return@mapNotNull null
-            Pair(lat, lon) // lat, lon 순서로 변환
-        }
     }
 
     /**
@@ -286,5 +236,70 @@ class VWorldRepository @Inject constructor(
             }
         }
         return null
+    }
+}
+
+internal data class ParsedFlightZoneGeometry(
+    val polygons: List<List<Pair<Double, Double>>>,
+    val polygonRings: List<List<List<Pair<Double, Double>>>>
+)
+
+/**
+ * GeoJSON Geometry의 coordinates를 파싱한다.
+ *
+ * [polygons] 는 기존 계산 로직과 iOS 비행 가능 판정처럼 외곽 ring 만 담고,
+ * [polygonRings] 는 iOS 오버레이의 interiorRings 와 맞추기 위해 모든 ring 을 보존한다.
+ * GeoJSON 좌표는 [lon, lat] 순서이므로 Pair(lat, lon)으로 변환한다.
+ */
+internal fun parseFlightZoneGeometry(
+    type: String?,
+    coordinates: Any?
+): ParsedFlightZoneGeometry? {
+    if (coordinates == null || type == null) return null
+
+    return runCatching {
+        when (type) {
+            "Polygon" -> {
+                val rings = parsePolygonRings(coordinates as? List<*> ?: return null)
+                    ?: return null
+                ParsedFlightZoneGeometry(
+                    polygons = listOf(rings.first()),
+                    polygonRings = listOf(rings)
+                )
+            }
+            "MultiPolygon" -> {
+                val polygons = coordinates as? List<*> ?: return null
+                val polygonRings = polygons.mapNotNull { polygon ->
+                    parsePolygonRings(polygon as? List<*> ?: return@mapNotNull null)
+                }
+                if (polygonRings.isEmpty()) {
+                    null
+                } else {
+                    ParsedFlightZoneGeometry(
+                        polygons = polygonRings.map { it.first() },
+                        polygonRings = polygonRings
+                    )
+                }
+            }
+            else -> null
+        }
+    }.getOrNull()
+}
+
+private fun parsePolygonRings(rings: List<*>): List<List<Pair<Double, Double>>>? {
+    val parsedRings = rings.mapNotNull { ring ->
+        parseCoordinateRing(ring as? List<*> ?: return@mapNotNull null)
+            .takeIf { it.isNotEmpty() }
+    }
+    return parsedRings.takeIf { it.isNotEmpty() }
+}
+
+private fun parseCoordinateRing(ring: List<*>): List<Pair<Double, Double>> {
+    return ring.mapNotNull { point ->
+        val coords = point as? List<*> ?: return@mapNotNull null
+        if (coords.size < 2) return@mapNotNull null
+        val lon = (coords[0] as? Number)?.toDouble() ?: return@mapNotNull null
+        val lat = (coords[1] as? Number)?.toDouble() ?: return@mapNotNull null
+        Pair(lat, lon)
     }
 }

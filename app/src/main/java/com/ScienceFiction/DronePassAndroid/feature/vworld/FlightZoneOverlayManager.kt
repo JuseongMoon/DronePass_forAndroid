@@ -82,12 +82,20 @@ class FlightZoneOverlayManager {
         for (zone in zones) {
             if (layerCache.containsKey(zone.id)) continue
             val zoneOverlays = mutableListOf<PolygonOverlay>()
-            for (polygon in zone.polygons) {
-                if (polygon.size < 3) continue
-                val coords = polygon.map { (lat, lon) -> LatLng(lat, lon) }
+            for (polygonRings in zone.polygonRings) {
+                val outerRing = polygonRings.firstOrNull()
+                if (outerRing == null || outerRing.size < 3) continue
+                val coords = outerRing.map { (lat, lon) -> LatLng(lat, lon) }
+                val holes = polygonRings
+                    .drop(1)
+                    .mapNotNull { ring ->
+                        ring.takeIf { it.size >= 3 }
+                            ?.map { (lat, lon) -> LatLng(lat, lon) }
+                    }
                 try {
                     val overlay = PolygonOverlay().apply {
                         this.coords = coords
+                        this.holes = holes
                         this.color = layer.fillColor.toInt()
                         this.outlineColor = layer.borderColor.toInt()
                         this.outlineWidth = 2

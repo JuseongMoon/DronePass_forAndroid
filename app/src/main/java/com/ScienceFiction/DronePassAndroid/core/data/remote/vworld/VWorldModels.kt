@@ -56,12 +56,21 @@ data class GeoJSONGeometry(
 data class DroneZoneFeature(
     val id: String,
     val layer: FlightZoneLayer,
+    /**
+     * Polygon/MultiPolygon 의 외곽 ring 목록. iOS 의 비행 가능 판정 로직도 외곽 ring 만
+     * 검사하므로 기존 계산 경로는 이 값을 유지한다.
+     */
     val polygons: List<List<Pair<Double, Double>>>,
     val zoneCode: String?,
     val upperAltitude: Double?,
     val lowerAltitude: Double?,
     val zoneName: String?,
-    val properties: Map<String, Any?> = emptyMap()
+    val properties: Map<String, Any?> = emptyMap(),
+    /**
+     * Polygon/MultiPolygon 의 전체 ring 목록. 각 polygon 의 첫 ring 은 외곽선이고,
+     * 이후 ring 은 iOS `NMGPolygon(interiorRings:)` 와 동일하게 지도 hole 로 렌더링한다.
+     */
+    val polygonRings: List<List<List<Pair<Double, Double>>>> = polygons.map { listOf(it) }
 )
 
 /** properties Map 에서 String 값을 안전하게 꺼낸다 (Any? → trimmed String? 또는 null). */

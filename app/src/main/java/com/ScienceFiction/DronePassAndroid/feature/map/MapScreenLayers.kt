@@ -28,6 +28,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.DroneZoneFeature
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.FlightZoneLayer
 import com.ScienceFiction.DronePassAndroid.domain.model.Coordinate
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
@@ -320,6 +321,16 @@ internal fun visibleFlightZoneLayersForRender(
         visibleLayers
     } else {
         emptySet()
+    }
+}
+
+internal fun displayedFlightZoneOverlayCount(
+    flightZones: Map<FlightZoneLayer, List<DroneZoneFeature>>
+): Int = flightZones.values.sumOf { zones ->
+    zones.sumOf { zone ->
+        zone.polygonRings.count { polygonRings ->
+            polygonRings.firstOrNull()?.size?.let { it >= 3 } == true
+        }
     }
 }
 
@@ -658,7 +669,7 @@ internal fun MapBottomSheets(
     if (showLayerSelector) {
         FlightZoneLayerSelector(
             visibleLayers = visibleLayers,
-            displayedZoneCount = flightZones.values.sumOf { it.size },
+            displayedZoneCount = displayedFlightZoneOverlayCount(flightZones),
             onToggleLayer = { viewModel.toggleLayer(it) },
             onShowAll = { viewModel.showAllLayers() },
             onHideAll = { viewModel.hideAllLayers() },

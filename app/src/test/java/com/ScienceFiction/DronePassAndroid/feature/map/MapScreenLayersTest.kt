@@ -1,6 +1,7 @@
 package com.ScienceFiction.DronePassAndroid.feature.map
 
 import androidx.compose.ui.unit.dp
+import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.DroneZoneFeature
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.FlightZoneLayer
 import com.ScienceFiction.DronePassAndroid.domain.model.Coordinate
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
@@ -192,6 +193,35 @@ class MapScreenLayersTest {
                 koreaFeaturesEnabled = true,
                 storedLayerIds = storedLayerIds,
             ),
+        )
+    }
+
+    @Test
+    fun `비행구역 표시 수는 iOS overlayCount처럼 렌더 가능한 폴리곤 오버레이 수를 센다`() {
+        val outerOne = listOf(37.0 to 126.0, 37.0 to 127.0, 38.0 to 127.0)
+        val outerTwo = listOf(35.0 to 128.0, 35.0 to 129.0, 36.0 to 129.0)
+        val hole = listOf(35.2 to 128.2, 35.2 to 128.4, 35.4 to 128.4)
+        val invalidOuter = listOf(34.0 to 127.0, 34.1 to 127.1)
+        val multiPolygonZone = DroneZoneFeature(
+            id = "multi-polygon-zone",
+            layer = FlightZoneLayer.PROHIBITED,
+            polygons = listOf(outerOne, outerTwo, invalidOuter),
+            zoneCode = "RK TEST",
+            upperAltitude = null,
+            lowerAltitude = null,
+            zoneName = "테스트 구역",
+            polygonRings = listOf(
+                listOf(outerOne),
+                listOf(outerTwo, hole),
+                listOf(invalidOuter),
+            )
+        )
+
+        assertEquals(
+            2,
+            displayedFlightZoneOverlayCount(
+                mapOf(FlightZoneLayer.PROHIBITED to listOf(multiPolygonZone))
+            )
         )
     }
 }
