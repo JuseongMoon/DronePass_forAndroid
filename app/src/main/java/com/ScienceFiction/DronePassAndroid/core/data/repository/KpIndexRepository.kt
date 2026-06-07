@@ -82,8 +82,7 @@ class KpIndexRepository @Inject constructor(
             try {
                 val noaaResult = fetchForecastFromNoaa()
                 if (noaaResult.isNotEmpty()) {
-                    val current = noaaResult.lastOrNull { it.observed == "observed" }
-                        ?: noaaResult.lastOrNull { it.observed == "estimated" }
+                    val current = selectCurrentKpFromNoaaForecastLikeIos(noaaResult)
                         ?: noaaResult.first()
                     cachedCurrentKp = current
                     _currentKpFlow.value = current
@@ -297,5 +296,18 @@ class KpIndexRepository @Inject constructor(
                 observed = item.observed,
             )
         }
+    }
+}
+
+internal fun selectCurrentKpFromNoaaForecastLikeIos(
+    forecast: List<KpIndexData>
+): KpIndexData? {
+    return forecast.lastOrNull { it.isObservedLikeIos() } ?: forecast.lastOrNull()
+}
+
+private fun KpIndexData.isObservedLikeIos(): Boolean {
+    return when (observed) {
+        "estimated", "predicted" -> false
+        else -> true
     }
 }

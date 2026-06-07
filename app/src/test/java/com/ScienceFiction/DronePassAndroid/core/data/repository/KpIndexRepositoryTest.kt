@@ -4,6 +4,7 @@ import com.ScienceFiction.DronePassAndroid.core.data.remote.kp.KpForecastItemDto
 import com.ScienceFiction.DronePassAndroid.core.data.remote.kp.KpGfzApi
 import com.ScienceFiction.DronePassAndroid.core.data.remote.kp.KpNoaa27DayApi
 import com.ScienceFiction.DronePassAndroid.core.data.remote.kp.KpNoaaApi
+import com.ScienceFiction.DronePassAndroid.domain.model.KpIndexData
 import kotlinx.coroutines.runBlocking
 import okhttp3.ResponseBody
 import okhttp3.ResponseBody.Companion.toResponseBody
@@ -56,6 +57,36 @@ class KpIndexRepositoryTest {
         assertEquals(4.0, refreshed.kp, 0.0)
         assertEquals(15, refreshed.ap)
         assertEquals(2, noaa27DayApi.calls)
+    }
+
+    @Test
+    fun `NOAA fallback current KP uses iOS last observed-like value`() {
+        val forecast = listOf(
+            KpIndexData(timeTag = "2026-02-24 00:00:00", kp = 1.0, observed = "observed"),
+            KpIndexData(timeTag = "2026-02-24 03:00:00", kp = 2.0, observed = "predicted"),
+            KpIndexData(timeTag = "2026-02-24 06:00:00", kp = 3.0, observed = null),
+            KpIndexData(timeTag = "2026-02-24 09:00:00", kp = 4.0, observed = "predicted"),
+        )
+
+        assertEquals(
+            3.0,
+            requireNotNull(selectCurrentKpFromNoaaForecastLikeIos(forecast)).kp,
+            0.0,
+        )
+    }
+
+    @Test
+    fun `NOAA fallback current KP uses iOS last data when no observed-like values exist`() {
+        val forecast = listOf(
+            KpIndexData(timeTag = "2026-02-24 00:00:00", kp = 1.0, observed = "estimated"),
+            KpIndexData(timeTag = "2026-02-24 03:00:00", kp = 2.0, observed = "predicted"),
+        )
+
+        assertEquals(
+            2.0,
+            requireNotNull(selectCurrentKpFromNoaaForecastLikeIos(forecast)).kp,
+            0.0,
+        )
     }
 
     private fun repository(
