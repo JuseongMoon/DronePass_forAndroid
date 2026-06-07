@@ -4,21 +4,59 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
-import android.content.Intent
+import android.content.SharedPreferences
+import android.content.pm.PackageInfo
 import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationCompat
-import com.ScienceFiction.DronePassAndroid.MainActivity
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.core.data.local.EncryptedPrefsHelper
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
+import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import dagger.hilt.android.AndroidEntryPoint
 import java.util.UUID
 import javax.inject.Inject
+
+internal const val FCM_DEVICE_ID_PREFERENCE_KEY = "DeviceUUID"
+internal const val LEGACY_FCM_DEVICE_ID_PREFERENCE_KEY = "fcm_device_id"
+
+internal fun buildFcmDeviceData(
+    token: String,
+    appVersion: String,
+    includeCreatedAt: Boolean,
+): HashMap<String, Any> = hashMapOf<String, Any>(
+    "fcmToken" to token,
+    "platform" to "android",
+    "appVersion" to appVersion,
+    "isActive" to true,
+    "updatedAt" to FieldValue.serverTimestamp(),
+).apply {
+    if (includeCreatedAt) {
+        put("createdAt", FieldValue.serverTimestamp())
+    }
+}
+
+internal fun buildFcmDeactivateData(): HashMap<String, Any> = hashMapOf(
+    "isActive" to false,
+    "updatedAt" to FieldValue.serverTimestamp(),
+)
+
+internal fun selectStoredFcmDeviceId(primary: String?, legacy: String?): String? =
+    primary?.takeIf { it.isNotBlank() } ?: legacy?.takeIf { it.isNotBlank() }
+
+internal fun shouldMigrateLegacyFcmDeviceId(primary: String?, legacy: String?): Boolean =
+    primary.isNullOrBlank() && !legacy.isNullOrBlank()
+
+internal fun formatFcmAppVersion(versionName: String?, versionCode: Long?): String {
+    val version = versionName?.trim()?.takeIf { it.isNotEmpty() } ?: "Unknown"
+    val build = versionCode?.toString() ?: "Unknown"
+    return "$version ($build)"
+}
 
 /**
  * FCM 푸시 알림 서비스
@@ -39,16 +77,9 @@ class FcmService : FirebaseMessagingService() {
 
         /** 일반 정보성 알림(FCM 푸시 등) */
         const val CHANNEL_ID = "dronepass_notifications"
-        private const val CHANNEL_NAME = "DronePass 알림"
-        private const val CHANNEL_DESCRIPTION = "DronePass 앱의 일반 알림을 수신합니다"
 
         /** 시간 민감 알림(일출/일몰/비행 종료 등 — 잠금화면+소리+진동) */
         const val CHANNEL_ID_TIME_SENSITIVE = "dronepass_time_sensitive"
-        private const val CHANNEL_NAME_TIME_SENSITIVE = "비행 시각 알림"
-        private const val CHANNEL_DESCRIPTION_TIME_SENSITIVE =
-            "일출/일몰 및 비행 종료 등 정해진 시각에 도착해야 하는 알림"
-
-        private const val KEY_DEVICE_ID = "fcm_device_id"
 
         /**
          * 알림 채널 생성 (Android 8.0+ 필수). 두 채널을 모두 등록한다:
@@ -63,16 +94,18 @@ class FcmService : FirebaseMessagingService() {
 
             val defaultChannel = NotificationChannel(
                 CHANNEL_ID,
-                CHANNEL_NAME,
+                context.getString(R.string.notification_channel_default_name),
                 NotificationManager.IMPORTANCE_DEFAULT
-            ).apply { description = CHANNEL_DESCRIPTION }
+            ).apply {
+                description = context.getString(R.string.notification_channel_default_description)
+            }
 
             val timeSensitiveChannel = NotificationChannel(
                 CHANNEL_ID_TIME_SENSITIVE,
-                CHANNEL_NAME_TIME_SENSITIVE,
+                context.getString(R.string.notification_channel_time_sensitive_name),
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = CHANNEL_DESCRIPTION_TIME_SENSITIVE
+                description = context.getString(R.string.notification_channel_time_sensitive_description)
                 enableVibration(true)
                 setShowBadge(true)
             }
@@ -84,7 +117,7 @@ class FcmService : FirebaseMessagingService() {
 
         /**
          * 로그아웃 시 FCM 토큰 비활성화
-         * Firestore에서 해당 디바이스의 fcmToken을 null로 설정
+         * Firestore에서 해당 디바이스를 비활성 상태로 표시한다.
          */
         fun deactivateToken(context: Context) {
             val userId = FirebaseAuth.getInstance().currentUser?.uid ?: run {
@@ -104,11 +137,7 @@ class FcmService : FirebaseMessagingService() {
                 .collection("devices")
                 .document(deviceId)
 
-            val deactivateData = hashMapOf<String, Any?>(
-                "fcmToken" to null,
-                "isActive" to false,
-                "lastUpdated" to FieldValue.serverTimestamp()
-            )
+            val deactivateData = buildFcmDeactivateData()
 
             deviceRef.update(deactivateData)
                 .addOnSuccessListener {
@@ -120,13 +149,111 @@ class FcmService : FirebaseMessagingService() {
         }
 
         /**
+         * 로그인 성공 직후 현재 FCM 토큰을 요청하여 Firestore에 저장한다.
+         * iOS PushNotificationManager.requestFCMToken 정합.
+         */
+        fun requestAndSaveToken(context: Context) {
+            FirebaseMessaging.getInstance().token
+                .addOnSuccessListener { token ->
+                    if (token.isNullOrBlank()) {
+                        Log.d(TAG, "FCM 토큰이 비어 있어 저장을 건너뜁니다.")
+                        return@addOnSuccessListener
+                    }
+                    saveTokenToFirestore(context.applicationContext, token)
+                }
+                .addOnFailureListener { e ->
+                    Log.e(TAG, "FCM 토큰 요청 실패", e)
+                }
+        }
+
+        /**
          * 저장된 디바이스 ID 조회 (없으면 null)
          *
          * EncryptedPrefs 생성/손상 복구 로직은 [EncryptedPrefsHelper.createEncryptedPrefs]가 담당.
          */
         private fun getDeviceId(context: Context): String? {
             val prefs = EncryptedPrefsHelper.createEncryptedPrefs(context)
-            return prefs.getString(KEY_DEVICE_ID, null)
+            return getStoredDeviceId(prefs)
+        }
+
+        private fun getOrCreateDeviceId(context: Context): String {
+            val prefs = EncryptedPrefsHelper.createEncryptedPrefs(context)
+            val existing = getStoredDeviceId(prefs)
+            if (existing != null) return existing
+
+            val deviceId = UUID.randomUUID().toString()
+            prefs.edit().putString(FCM_DEVICE_ID_PREFERENCE_KEY, deviceId).apply()
+            Log.d(TAG, "새 디바이스 ID 생성: $deviceId")
+            return deviceId
+        }
+
+        private fun getStoredDeviceId(prefs: SharedPreferences): String? {
+            val primary = prefs.getString(FCM_DEVICE_ID_PREFERENCE_KEY, null)
+            val legacy = prefs.getString(LEGACY_FCM_DEVICE_ID_PREFERENCE_KEY, null)
+            val selected = selectStoredFcmDeviceId(primary, legacy) ?: return null
+            if (shouldMigrateLegacyFcmDeviceId(primary, legacy)) {
+                prefs.edit()
+                    .putString(FCM_DEVICE_ID_PREFERENCE_KEY, selected)
+                    .remove(LEGACY_FCM_DEVICE_ID_PREFERENCE_KEY)
+                    .apply()
+            }
+            return selected
+        }
+
+        private fun saveTokenToFirestore(context: Context, token: String) {
+            val userId = FirebaseAuth.getInstance().currentUser?.uid ?: run {
+                Log.d(TAG, "로그인 상태가 아니므로 FCM 토큰 저장을 건너뜁니다.")
+                return
+            }
+
+            val deviceId = getOrCreateDeviceId(context)
+            val appVersion = getAppVersion(context)
+            val firestore = FirebaseFirestore.getInstance()
+            val deviceRef = firestore
+                .collection("users")
+                .document(userId)
+                .collection("devices")
+                .document(deviceId)
+
+            deviceRef.get()
+                .addOnSuccessListener { document ->
+                    val deviceData = buildFcmDeviceData(
+                        token = token,
+                        appVersion = appVersion,
+                        includeCreatedAt = !document.exists(),
+                    )
+                    deviceRef.set(deviceData, SetOptions.merge())
+                        .addOnSuccessListener {
+                            Log.d(TAG, "FCM 토큰 저장 성공: deviceId=$deviceId")
+                        }
+                        .addOnFailureListener { e ->
+                            Log.e(TAG, "FCM 토큰 저장 실패", e)
+                        }
+                }
+                .addOnFailureListener { e ->
+                    Log.e(TAG, "디바이스 문서 확인 실패", e)
+                }
+        }
+
+        private fun getAppVersion(context: Context): String {
+            val packageInfo = try {
+                context.packageManager.getPackageInfo(context.packageName, 0)
+            } catch (e: Exception) {
+                null
+            }
+            return formatFcmAppVersion(
+                versionName = packageInfo?.versionName,
+                versionCode = packageInfo?.let(::packageVersionCode),
+            )
+        }
+
+        @Suppress("DEPRECATION")
+        private fun packageVersionCode(packageInfo: PackageInfo): Long {
+            return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                packageInfo.longVersionCode
+            } else {
+                packageInfo.versionCode.toLong()
+            }
         }
     }
 
@@ -137,7 +264,7 @@ class FcmService : FirebaseMessagingService() {
     override fun onNewToken(token: String) {
         super.onNewToken(token)
         Log.d(TAG, "FCM 토큰 갱신: $token")
-        saveTokenToFirestore(token)
+        saveTokenToFirestore(applicationContext, token)
     }
 
     /**
@@ -151,11 +278,12 @@ class FcmService : FirebaseMessagingService() {
         createNotificationChannel(this)
 
         // 알림 페이로드가 있는 경우
+        val shapeId = extractNotificationShapeId(message.data)
         message.notification?.let { notification ->
-            showNotification(
-                title = notification.title ?: getString(R.string.app_name),
-                body = notification.body ?: ""
-            )
+            val title = notification.title ?: getString(R.string.app_name)
+            val body = notification.body ?: ""
+            publishForegroundNotification(title = title, body = body, shapeId = shapeId)
+            showNotification(title = title, body = body, shapeId = shapeId)
         }
 
         // 데이터 페이로드가 있는 경우
@@ -163,21 +291,38 @@ class FcmService : FirebaseMessagingService() {
             val title = message.data["title"] ?: getString(R.string.app_name)
             val body = message.data["body"] ?: ""
             if (message.notification == null) {
-                showNotification(title = title, body = body)
+                publishForegroundNotification(title = title, body = body, shapeId = shapeId)
+                showNotification(title = title, body = body, shapeId = shapeId)
             }
         }
+    }
+
+    private fun publishForegroundNotification(title: String, body: String, shapeId: String?) {
+        ForegroundNotificationBus.publish(
+            ForegroundNotification(
+                title = title,
+                body = body,
+                shapeId = shapeId,
+            )
+        )
     }
 
     /**
      * 알림 표시
      */
-    private fun showNotification(title: String, body: String) {
-        val intent = Intent(this, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        }
+    private fun showNotification(title: String, body: String, shapeId: String? = null) {
+        val notificationId = System.currentTimeMillis().toInt()
+        val intent = buildNotificationClickIntent(
+            context = this,
+            shapeId = shapeId,
+            title = title,
+            body = body,
+        )
         val pendingIntent = PendingIntent.getActivity(
-            this, 0, intent,
-            PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
+            this,
+            notificationId,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
@@ -191,75 +336,7 @@ class FcmService : FirebaseMessagingService() {
 
         val notificationManager =
             getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        val notificationId = System.currentTimeMillis().toInt()
         notificationManager.notify(notificationId, notification)
     }
 
-    /**
-     * FCM 토큰을 Firestore에 저장
-     * FieldValue.serverTimestamp()를 사용하여 서버 시간으로 lastUpdated 기록
-     */
-    private fun saveTokenToFirestore(token: String) {
-        val userId = firebaseAuth.currentUser?.uid ?: run {
-            Log.d(TAG, "로그인 상태가 아니므로 FCM 토큰 저장을 건너뜁니다.")
-            return
-        }
-
-        val deviceId = getOrCreateDeviceId()
-
-        val packageInfo = try {
-            packageManager.getPackageInfo(packageName, 0)
-        } catch (e: Exception) {
-            null
-        }
-        val appVersion = packageInfo?.versionName ?: "1.0"
-
-        val deviceData = hashMapOf<String, Any>(
-            "fcmToken" to token,
-            "platform" to "android",
-            "appVersion" to appVersion,
-            "isActive" to true,
-            "lastUpdated" to FieldValue.serverTimestamp()
-        )
-
-        val deviceRef = firestore
-            .collection("users")
-            .document(userId)
-            .collection("devices")
-            .document(deviceId)
-
-        // 먼저 문서가 존재하는지 확인 후 createdAt 설정
-        deviceRef.get()
-            .addOnSuccessListener { document ->
-                if (!document.exists()) {
-                    deviceData["createdAt"] = FieldValue.serverTimestamp()
-                }
-                deviceRef.set(deviceData, com.google.firebase.firestore.SetOptions.merge())
-                    .addOnSuccessListener {
-                        Log.d(TAG, "FCM 토큰 저장 성공: deviceId=$deviceId")
-                    }
-                    .addOnFailureListener { e ->
-                        Log.e(TAG, "FCM 토큰 저장 실패", e)
-                    }
-            }
-            .addOnFailureListener { e ->
-                Log.e(TAG, "디바이스 문서 확인 실패", e)
-            }
-    }
-
-    /**
-     * 고유 디바이스 ID를 EncryptedSharedPreferences에서 가져오거나 새로 생성
-     *
-     * EncryptedPrefs 생성/손상 복구 로직은 [EncryptedPrefsHelper.createEncryptedPrefs]가 담당.
-     */
-    private fun getOrCreateDeviceId(): String {
-        val prefs = EncryptedPrefsHelper.createEncryptedPrefs(this)
-        var deviceId = prefs.getString(KEY_DEVICE_ID, null)
-        if (deviceId == null) {
-            deviceId = UUID.randomUUID().toString()
-            prefs.edit().putString(KEY_DEVICE_ID, deviceId).apply()
-            Log.d(TAG, "새 디바이스 ID 생성: $deviceId")
-        }
-        return deviceId
-    }
 }

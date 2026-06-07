@@ -1,19 +1,30 @@
 package com.ScienceFiction.DronePassAndroid.ui.navigation
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -21,20 +32,27 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.SwapVert
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -50,10 +68,15 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -61,18 +84,25 @@ import androidx.navigation.compose.rememberNavController
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.feature.auth.AuthState
 import com.ScienceFiction.DronePassAndroid.feature.auth.AuthViewModel
+import com.ScienceFiction.DronePassAndroid.feature.map.MapViewModel
 import com.ScienceFiction.DronePassAndroid.feature.saved.SavedListScreen
 import com.ScienceFiction.DronePassAndroid.feature.saved.SavedListViewModel
 import com.ScienceFiction.DronePassAndroid.feature.saved.SortDirection
 import com.ScienceFiction.DronePassAndroid.feature.saved.SortOption
+import com.ScienceFiction.DronePassAndroid.feature.saved.nextSavedSortOption
 import com.ScienceFiction.DronePassAndroid.feature.settings.SettingsScreen
+import com.ScienceFiction.DronePassAndroid.feature.sketch.SketchViewModel
+import com.ScienceFiction.DronePassAndroid.service.ForegroundNotification
+import com.ScienceFiction.DronePassAndroid.service.ForegroundNotificationBus
+import kotlinx.coroutines.delay
 
 // MARK: - iOS MainTabView 와 동등한 시각/치수 토큰
-// iOS: width 210, height 60, cornerRadius 30, shadow radius 10, bottom padding 15
+// iOS: width 210, height 60, cornerRadius 30, shadow radius 10, bottom padding phone 15 / iPad 20
 private val TabBarWidth = 210.dp
 private val TabBarHeight = 60.dp
 private val TabBarCornerRadius = 30.dp
-private val TabBarBottomPadding = 15.dp
+internal val TabBarPhoneBottomPadding = 15.dp
+internal val TabBarTabletBottomPadding = 20.dp
 private val TabBarShadowElevation = 8.dp
 private val TabButtonWidth = 60.dp
 
@@ -86,8 +116,31 @@ private val TabUnselectedColor = Color(0xFF8E8E93)
 // iOS .ultraThinMaterial 라이트 모드 톤 — minSdk 28 이라 blur 불가, 동일 톤 색으로 흉내
 private val OverlayBackgroundColor = Color(0xFFF7F7F8)
 
+// iOS Color(UIColor.systemBackground) — 오버레이 상단 핸들/헤더 영역
+internal val OverlayHeaderBackgroundColor = Color.White
+
 // iOS systemGray3 (라이트 모드) — 드래그 핸들 색상
-private val OverlayHandleColor = Color(0xFFC7C7CC)
+internal val OverlayHandleColor = Color(0xFFC7C7CC)
+internal val OverlayDragHandleWidth = 40.dp
+internal val OverlayDragHandleHeight = 5.dp
+internal val OverlayDragHandleCornerRadius = 2.5.dp
+internal val OverlayDragHandleTopPadding = 12.dp
+internal val OverlayDragHandleBottomPadding = 8.dp
+internal val SavedOverlayHeaderHorizontalPadding = 16.dp
+internal val SavedOverlayHeaderBottomPaddingTablet = 4.dp
+internal val SavedOverlayHeaderBottomPaddingPhone = 16.dp
+internal val SavedOverlayListTopSpacing = 8.dp
+internal val SavedOverlaySortChipCornerRadius = 8.dp
+internal val SavedOverlaySortChipHorizontalPadding = 8.dp
+internal val SavedOverlaySortChipVerticalPadding = 4.dp
+internal val SavedOverlaySortChipContentSpacing = 4.dp
+internal const val SavedOverlaySortChipBackgroundAlpha = 0.1f
+internal val SavedOverlaySortChipPhoneTextSize = 12.sp
+internal val SavedOverlaySortChipTabletTextSize = 11.sp
+internal val SavedOverlaySortChipPhoneIconSize = 12.dp
+internal val SavedOverlaySortChipTabletIconSize = 11.dp
+internal val SettingsOverlayHeaderHorizontalPadding = 16.dp
+internal val SettingsOverlayHeaderBottomPadding = 4.dp
 
 // iOS SavedListOverlayView 정렬 칩 색상 — .blue / .orange (라이트 모드)
 private val SortOptionChipColor = Color(0xFF007AFF)
@@ -99,6 +152,24 @@ private val OverlayCornerRadius = 40.dp
 private val OverlaySideMargin = 16.dp
 private val OverlayBottomMargin = 16.dp
 private val OverlayShadowElevation = 12.dp
+private const val TabletBreakpointDp = 600
+private val TabletOverlayLeadingMargin = 20.dp
+private val TabletOverlayTopMargin = 40.dp
+private val TabletOverlayMaxWidth = 400.dp
+internal val PhoneNotificationPopupMaxWidth = 320.dp
+internal val TabletNotificationPopupMaxWidth = 400.dp
+internal val NotificationPopupContentPadding = 24.dp
+internal val NotificationPopupSpacing = 20.dp
+internal val NotificationPopupIconTopPadding = 8.dp
+internal val NotificationPopupButtonTopPadding = 4.dp
+internal val NotificationPopupButtonVerticalPadding = 14.dp
+internal val NotificationPopupCornerRadius = 20.dp
+internal val NotificationPopupButtonCornerRadius = 12.dp
+internal const val NotificationPopupAnimationDurationMs = 250
+internal const val NotificationPopupInitialScale = 0.9f
+private val TabletOverlayCornerRadius = 16.dp
+private const val TabletOverlayWidthFraction = 0.4f
+private const val TabletOverlayHeightFraction = 0.8f
 
 // iOS dismissThreshold = 100, expandThreshold = 50
 private val DismissDragThreshold = 100.dp
@@ -108,34 +179,301 @@ private val ExpandDragThreshold = 50.dp
 private const val SheetFractionDefault = 0.5f
 private const val SheetFractionExpanded = 0.9f
 private const val SheetFractionExpandTrigger = 0.7f
+private val SavedOverlayPhoneMaxHeight = 500.dp
+internal const val SavedOverlayInitialFocusDelayMs = 500L
+
+internal fun resolveMainStartDestination(authState: AuthState): String = Screen.Map.route
+
+internal fun resolveMainSelectedTabRoute(
+    currentRoute: String?,
+    showSavedListOverlay: Boolean,
+    showSettingsOverlay: Boolean,
+): String? {
+    return when {
+        showSavedListOverlay -> Screen.SavedList.route
+        showSettingsOverlay -> Screen.Settings.route
+        else -> currentRoute
+    }
+}
+
+internal fun shouldShowFloatingTabBar(
+    isLoginScreen: Boolean,
+    isSketchMode: Boolean,
+): Boolean = !isLoginScreen && !isSketchMode
+
+internal fun resolveTabBarBottomPadding(isTablet: Boolean): Dp {
+    return if (isTablet) TabBarTabletBottomPadding else TabBarPhoneBottomPadding
+}
+
+internal data class MainOverlayVisibility(
+    val showSavedListOverlay: Boolean,
+    val showSettingsOverlay: Boolean,
+)
+
+internal fun resolveMainOverlayVisibilityAfterSketchModeChange(
+    isSketchMode: Boolean,
+    showSavedListOverlay: Boolean,
+    showSettingsOverlay: Boolean,
+): MainOverlayVisibility {
+    return if (isSketchMode) {
+        MainOverlayVisibility(
+            showSavedListOverlay = false,
+            showSettingsOverlay = false,
+        )
+    } else {
+        MainOverlayVisibility(
+            showSavedListOverlay = showSavedListOverlay,
+            showSettingsOverlay = showSettingsOverlay,
+        )
+    }
+}
+
+internal fun shouldDelaySavedOverlayFocus(wasOverlayClosed: Boolean): Boolean = wasOverlayClosed
+
+internal data class SavedOverlayFocusTarget(
+    val selectionShapeId: String?,
+    val immediateShapeId: String?,
+    val delayedShapeId: String?,
+)
+
+internal fun resolveSavedOverlayFocusTarget(
+    shapeId: String,
+    wasOverlayClosed: Boolean,
+): SavedOverlayFocusTarget {
+    return if (shouldDelaySavedOverlayFocus(wasOverlayClosed)) {
+        SavedOverlayFocusTarget(
+            selectionShapeId = shapeId,
+            immediateShapeId = null,
+            delayedShapeId = shapeId,
+        )
+    } else {
+        SavedOverlayFocusTarget(
+            selectionShapeId = shapeId,
+            immediateShapeId = shapeId,
+            delayedShapeId = null,
+        )
+    }
+}
+
+internal fun shouldDismissSavedOverlayAfterShapeTapInOverlay(): Boolean = false
+
+internal fun shouldDismissMainOverlayOnOutsideTap(): Boolean = false
+
+internal fun resolveSavedOverlayPhoneBaseHeight(screenHeight: Dp): Dp {
+    return minOf(screenHeight * SheetFractionDefault, SavedOverlayPhoneMaxHeight)
+}
+
+internal fun notificationPopupEnterTransition(): EnterTransition {
+    return fadeIn(animationSpec = tween(durationMillis = NotificationPopupAnimationDurationMs)) +
+        scaleIn(
+            initialScale = NotificationPopupInitialScale,
+            animationSpec = tween(durationMillis = NotificationPopupAnimationDurationMs),
+        )
+}
+
+internal fun notificationPopupExitTransition(): ExitTransition {
+    return fadeOut(animationSpec = tween(durationMillis = NotificationPopupAnimationDurationMs)) +
+        scaleOut(
+            targetScale = NotificationPopupInitialScale,
+            animationSpec = tween(durationMillis = NotificationPopupAnimationDurationMs),
+        )
+}
+
+internal fun resolveSavedOverlayPhoneDragOffset(
+    dragOffset: Dp,
+    isDragging: Boolean,
+): Dp {
+    return if (isDragging && dragOffset > 0.dp) dragOffset else 0.dp
+}
+
+internal fun resolveSavedOverlayHeaderBottomPadding(isTablet: Boolean): Dp {
+    return if (isTablet) {
+        SavedOverlayHeaderBottomPaddingTablet
+    } else {
+        SavedOverlayHeaderBottomPaddingPhone
+    }
+}
+
+internal fun resolveSavedOverlaySortChipTextSize(isTablet: Boolean): TextUnit {
+    return if (isTablet) {
+        SavedOverlaySortChipTabletTextSize
+    } else {
+        SavedOverlaySortChipPhoneTextSize
+    }
+}
+
+internal fun resolveSavedOverlaySortChipIconSize(isTablet: Boolean): Dp {
+    return if (isTablet) {
+        SavedOverlaySortChipTabletIconSize
+    } else {
+        SavedOverlaySortChipPhoneIconSize
+    }
+}
+
+internal data class SettingsOverlayPhoneDragEnd(
+    val sheetHeightFraction: Float,
+    val shouldDismiss: Boolean,
+)
+
+internal fun resolveSettingsOverlayPhoneDragEnd(
+    translation: Float,
+    currentSheetHeightFraction: Float,
+    dismissThreshold: Float,
+    expandThreshold: Float,
+): SettingsOverlayPhoneDragEnd {
+    return when {
+        translation < -expandThreshold &&
+            currentSheetHeightFraction < SheetFractionExpandTrigger -> {
+            SettingsOverlayPhoneDragEnd(
+                sheetHeightFraction = SheetFractionExpanded,
+                shouldDismiss = false,
+            )
+        }
+        translation > dismissThreshold -> {
+            SettingsOverlayPhoneDragEnd(
+                sheetHeightFraction = SheetFractionDefault,
+                shouldDismiss = true,
+            )
+        }
+        translation > 0f &&
+            currentSheetHeightFraction > SheetFractionExpandTrigger -> {
+            SettingsOverlayPhoneDragEnd(
+                sheetHeightFraction = SheetFractionDefault,
+                shouldDismiss = false,
+            )
+        }
+        else -> {
+            SettingsOverlayPhoneDragEnd(
+                sheetHeightFraction = currentSheetHeightFraction,
+                shouldDismiss = false,
+            )
+        }
+    }
+}
 
 @Composable
-fun MainScreen(authViewModel: AuthViewModel = hiltViewModel()) {
+internal fun MainScreen(
+    authViewModel: AuthViewModel = hiltViewModel(),
+    sketchViewModel: SketchViewModel = hiltViewModel(),
+    mapViewModel: MapViewModel = hiltViewModel(),
+    initialFocusShapeId: String? = null,
+    initialForegroundNotification: ForegroundNotification? = null,
+    onInitialFocusShapeConsumed: () -> Unit = {},
+    onInitialForegroundNotificationConsumed: () -> Unit = {},
+) {
     val navController = rememberNavController()
     val authState by authViewModel.authState.collectAsStateWithLifecycle()
+    val isSketchMode by sketchViewModel.isSketchMode.collectAsStateWithLifecycle()
     val tabScreens = listOf(Screen.Map, Screen.SavedList, Screen.Settings)
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
+    val configuration = LocalConfiguration.current
+    val isTablet = configuration.screenWidthDp >= TabletBreakpointDp
+    val lifecycleOwner = LocalLifecycleOwner.current
 
     val isLoginScreen = currentRoute == Screen.Login.route
 
-    val startDestination = when (authState) {
-        is AuthState.Loading -> Screen.Login.route
-        is AuthState.LoggedIn -> Screen.Map.route
-        is AuthState.LoggedOut -> Screen.Login.route
-        is AuthState.Error -> Screen.Login.route
-    }
+    val startDestination = resolveMainStartDestination(authState)
 
     var pendingFocusShapeId by remember { mutableStateOf<String?>(null) }
     // 저장 탭 → 편집 시 ShapeDetailSheet 자동 표시 우회용 — focus 와 별도 채널
     var pendingEditShapeId by remember { mutableStateOf<String?>(null) }
+    var pendingDuplicateShapeId by remember { mutableStateOf<String?>(null) }
+    var savedOverlaySelectionShapeId by remember { mutableStateOf<String?>(null) }
+    var savedOverlayFocusShapeId by remember { mutableStateOf<String?>(null) }
+    var delayedSavedOverlayFocusShapeId by remember { mutableStateOf<String?>(null) }
     var showSavedListOverlay by remember { mutableStateOf(false) }
     var showSettingsOverlay by remember { mutableStateOf(false) }
+    var foregroundNotification by remember { mutableStateOf<ForegroundNotification?>(null) }
+    var displayedForegroundNotification by remember { mutableStateOf<ForegroundNotification?>(null) }
 
-    val selectedTabRoute = when {
-        showSavedListOverlay -> Screen.SavedList.route
-        showSettingsOverlay -> Screen.Settings.route
-        else -> currentRoute
+    fun dismissSavedListOverlay() {
+        showSavedListOverlay = false
+        savedOverlaySelectionShapeId = null
+        savedOverlayFocusShapeId = null
+        delayedSavedOverlayFocusShapeId = null
+        mapViewModel.clearSelection()
+    }
+
+    LaunchedEffect(delayedSavedOverlayFocusShapeId, showSavedListOverlay) {
+        val shapeId = delayedSavedOverlayFocusShapeId ?: return@LaunchedEffect
+        if (!showSavedListOverlay) return@LaunchedEffect
+
+        delay(SavedOverlayInitialFocusDelayMs)
+        if (showSavedListOverlay && delayedSavedOverlayFocusShapeId == shapeId) {
+            savedOverlayFocusShapeId = shapeId
+            delayedSavedOverlayFocusShapeId = null
+        }
+    }
+
+    LaunchedEffect(initialFocusShapeId) {
+        val shapeId = initialFocusShapeId ?: return@LaunchedEffect
+        pendingFocusShapeId = shapeId
+        dismissSavedListOverlay()
+        showSettingsOverlay = false
+        onInitialFocusShapeConsumed()
+
+        if (currentRoute != null &&
+            currentRoute != Screen.Map.route
+        ) {
+            navController.navigate(Screen.Map.route) {
+                popUpTo(navController.graph.findStartDestination().id) {
+                    saveState = true
+                }
+                launchSingleTop = true
+                restoreState = true
+            }
+        }
+    }
+
+    LaunchedEffect(initialForegroundNotification) {
+        val notification = initialForegroundNotification ?: return@LaunchedEffect
+        foregroundNotification = notification
+        onInitialForegroundNotificationConsumed()
+    }
+
+    val selectedTabRoute = resolveMainSelectedTabRoute(
+        currentRoute = currentRoute,
+        showSavedListOverlay = showSavedListOverlay,
+        showSettingsOverlay = showSettingsOverlay,
+    )
+
+    LaunchedEffect(isSketchMode) {
+        val overlayVisibility = resolveMainOverlayVisibilityAfterSketchModeChange(
+            isSketchMode = isSketchMode,
+            showSavedListOverlay = showSavedListOverlay,
+            showSettingsOverlay = showSettingsOverlay,
+        )
+        if (showSavedListOverlay != overlayVisibility.showSavedListOverlay) {
+            dismissSavedListOverlay()
+        }
+        if (showSettingsOverlay != overlayVisibility.showSettingsOverlay) {
+            showSettingsOverlay = overlayVisibility.showSettingsOverlay
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        ForegroundNotificationBus.events.collect { notification ->
+            foregroundNotification = notification
+        }
+    }
+
+    LaunchedEffect(foregroundNotification, isLoginScreen) {
+        foregroundNotification?.takeIf { !isLoginScreen }?.let { notification ->
+            displayedForegroundNotification = notification
+        }
+    }
+
+    DisposableEffect(lifecycleOwner, authViewModel) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                authViewModel.ensureCloudSyncActiveOnForeground()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
     }
 
     // iOS MainTabView 와 동일하게 ZStack(=Box) 구조. 자식 순서가 z-order:
@@ -144,9 +482,11 @@ fun MainScreen(authViewModel: AuthViewModel = hiltViewModel()) {
         DronePassNavGraph(
             navController = navController,
             startDestination = startDestination,
+            sketchViewModel = sketchViewModel,
+            mapViewModel = mapViewModel,
             onNavigateToMapWithShape = { shapeId ->
                 pendingFocusShapeId = shapeId
-                showSavedListOverlay = false
+                dismissSavedListOverlay()
                 showSettingsOverlay = false
                 navController.navigate(Screen.Map.route) {
                     popUpTo(navController.graph.findStartDestination().id) {
@@ -160,11 +500,25 @@ fun MainScreen(authViewModel: AuthViewModel = hiltViewModel()) {
             onPendingShapeConsumed = { pendingFocusShapeId = null },
             pendingEditShapeId = pendingEditShapeId,
             onPendingEditShapeConsumed = { pendingEditShapeId = null },
+            pendingDuplicateShapeId = pendingDuplicateShapeId,
+            onPendingDuplicateShapeConsumed = { pendingDuplicateShapeId = null },
+            onShapeListFocusRequested = { shapeId ->
+                val wasOverlayClosed = !showSavedListOverlay
+                val focusTarget = resolveSavedOverlayFocusTarget(
+                    shapeId = shapeId,
+                    wasOverlayClosed = wasOverlayClosed,
+                )
+                savedOverlaySelectionShapeId = focusTarget.selectionShapeId
+                savedOverlayFocusShapeId = focusTarget.immediateShapeId
+                delayedSavedOverlayFocusShapeId = focusTarget.delayedShapeId
+                showSettingsOverlay = false
+                showSavedListOverlay = true
+            },
         )
 
         // Floating tab bar — 오버레이가 떠 있으면 시각적으로 가려지지만 클릭 영역은 살아 있음.
         // (iOS 의 .overlay() 가 탭바를 덮는 구조와 동등)
-        if (!isLoginScreen) {
+        if (shouldShowFloatingTabBar(isLoginScreen = isLoginScreen, isSketchMode = isSketchMode)) {
             FloatingTabBar(
                 tabs = tabScreens,
                 selectedRoute = selectedTabRoute,
@@ -174,7 +528,13 @@ fun MainScreen(authViewModel: AuthViewModel = hiltViewModel()) {
                         currentRoute = currentRoute,
                         navController = navController,
                         showSavedListOverlay = showSavedListOverlay,
-                        onSavedListOverlayChange = { showSavedListOverlay = it },
+                        onSavedListOverlayChange = { isVisible ->
+                            if (isVisible) {
+                                showSavedListOverlay = true
+                            } else {
+                                dismissSavedListOverlay()
+                            }
+                        },
                         showSettingsOverlay = showSettingsOverlay,
                         onSettingsOverlayChange = { showSettingsOverlay = it },
                     )
@@ -182,38 +542,171 @@ fun MainScreen(authViewModel: AuthViewModel = hiltViewModel()) {
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .navigationBarsPadding()
-                    .padding(bottom = TabBarBottomPadding),
+                    .padding(bottom = resolveTabBarBottomPadding(isTablet)),
             )
         }
 
-        // SavedList 오버레이 — iOS SavedListOverlayView 와 동등 (카드형, 50% 고정)
+        // SavedList 오버레이 — iOS 와 동일하게 태블릿은 좌측 패널, 폰은 하단 시트
         AnimatedVisibility(
             visible = showSavedListOverlay,
-            enter = slideInVertically(initialOffsetY = { it }),
-            exit = slideOutVertically(targetOffsetY = { it }),
+            enter = if (isTablet) {
+                slideInHorizontally(initialOffsetX = { -it })
+            } else {
+                slideInVertically(initialOffsetY = { it })
+            },
+            exit = if (isTablet) {
+                slideOutHorizontally(targetOffsetX = { -it })
+            } else {
+                slideOutVertically(targetOffsetY = { it })
+            },
         ) {
             SavedListOverlay(
-                onDismiss = { showSavedListOverlay = false },
+                isTablet = isTablet,
+                onDismiss = ::dismissSavedListOverlay,
+                selectionShapeId = savedOverlaySelectionShapeId,
+                onSelectionConsumed = { savedOverlaySelectionShapeId = null },
+                focusShapeId = savedOverlayFocusShapeId,
+                onFocusConsumed = { savedOverlayFocusShapeId = null },
                 onNavigateToMapWithShape = { shapeId ->
                     pendingFocusShapeId = shapeId
-                    showSavedListOverlay = false
+                    showSettingsOverlay = false
+                    if (shouldDismissSavedOverlayAfterShapeTapInOverlay()) {
+                        dismissSavedListOverlay()
+                    }
                 },
                 onNavigateToMapForEdit = { shapeId ->
                     pendingEditShapeId = shapeId
-                    showSavedListOverlay = false
+                    showSettingsOverlay = false
+                    dismissSavedListOverlay()
+                },
+                onNavigateToMapForDuplicate = { shapeId ->
+                    pendingDuplicateShapeId = shapeId
+                    showSettingsOverlay = false
+                    dismissSavedListOverlay()
                 },
             )
         }
 
-        // Settings 오버레이 — iOS SettingsOverlayView 와 동등 (카드형, 50%/90% 드래그 확장)
+        // Settings 오버레이 — iOS 와 동일하게 태블릿은 좌측 패널, 폰은 50%/90% 하단 시트
         AnimatedVisibility(
             visible = showSettingsOverlay,
-            enter = slideInVertically(initialOffsetY = { it }),
-            exit = slideOutVertically(targetOffsetY = { it }),
+            enter = if (isTablet) {
+                slideInHorizontally(initialOffsetX = { -it })
+            } else {
+                slideInVertically(initialOffsetY = { it })
+            },
+            exit = if (isTablet) {
+                slideOutHorizontally(targetOffsetX = { -it })
+            } else {
+                slideOutVertically(targetOffsetY = { it })
+            },
         ) {
             SettingsOverlay(
+                isTablet = isTablet,
                 onDismiss = { showSettingsOverlay = false },
             )
+        }
+
+        AnimatedVisibility(
+            visible = foregroundNotification != null && !isLoginScreen,
+            enter = notificationPopupEnterTransition(),
+            exit = notificationPopupExitTransition(),
+        ) {
+            displayedForegroundNotification?.let { notification ->
+                PushNotificationOverlay(
+                    notification = notification,
+                    isTablet = isTablet,
+                    onDismiss = { foregroundNotification = null },
+                )
+            }
+        }
+    }
+}
+
+/**
+ * iOS PushNotificationPopupView 와 동등한 포그라운드 푸시 팝업.
+ */
+@Composable
+private fun PushNotificationOverlay(
+    notification: ForegroundNotification,
+    isTablet: Boolean,
+    onDismiss: () -> Unit,
+) {
+    val popupMaxWidth = if (isTablet) {
+        TabletNotificationPopupMaxWidth
+    } else {
+        PhoneNotificationPopupMaxWidth
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.4f))
+            .clickable(
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() },
+                onClick = onDismiss,
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
+        Surface(
+            modifier = Modifier
+                .padding(horizontal = 32.dp)
+                .widthIn(max = popupMaxWidth)
+                .fillMaxWidth()
+                .clickable(
+                    indication = null,
+                    interactionSource = remember { MutableInteractionSource() },
+                    onClick = {},
+                ),
+            shape = RoundedCornerShape(NotificationPopupCornerRadius),
+            color = MaterialTheme.colorScheme.surface,
+            shadowElevation = 20.dp,
+        ) {
+            Column(
+                modifier = Modifier.padding(NotificationPopupContentPadding),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(NotificationPopupSpacing),
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Notifications,
+                    contentDescription = null,
+                    tint = TabSelectedColor,
+                    modifier = Modifier
+                        .padding(top = NotificationPopupIconTopPadding)
+                        .size(40.dp),
+                )
+                Text(
+                    text = notification.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Text(
+                    text = notification.body,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Button(
+                    onClick = onDismiss,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = NotificationPopupButtonTopPadding),
+                    shape = RoundedCornerShape(NotificationPopupButtonCornerRadius),
+                    colors = ButtonDefaults.buttonColors(containerColor = TabSelectedColor),
+                    contentPadding = PaddingValues(
+                        vertical = NotificationPopupButtonVerticalPadding,
+                        horizontal = 16.dp,
+                    ),
+                ) {
+                    Text(
+                        text = stringResource(R.string.common_confirm),
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                }
+            }
         }
     }
 }
@@ -394,65 +887,105 @@ private fun handleTabSelection(
 }
 
 /**
- * iOS SavedListOverlayView (iPhone) 과 동등.
- * - 50% 고정 높이 카드 / 좌우·하단 16dp / 모서리 40dp
- * - 드래그 핸들 + "저장 목록" + 정렬 옵션/방향 칩(파랑/주황) 한 줄 헤더 (iOS IMG_0392 동등)
- * - 아래로 100dp 이상 드래그 시 닫힘 / 외부 영역 터치 시 닫힘
- *
- * SavedListViewModel 은 이 오버레이에서 호스팅해 SavedListScreen 과 동일 인스턴스 공유.
- * 헤더 정렬 칩 ↔ SavedListScreen 내부 리스트가 같은 sortOption/sortDirection 을 보도록 보장.
+ * iOS SavedListOverlayView 와 동등.
+ * - 태블릿: 좌측 패널, 화면 폭 40%/최대 400dp, 높이 80%, 오른쪽 드래그 닫기
+ * - 폰: 50% 하단 시트, 아래 드래그 닫기
  */
 @Composable
 private fun SavedListOverlay(
+    isTablet: Boolean,
     onDismiss: () -> Unit,
+    selectionShapeId: String? = null,
+    onSelectionConsumed: () -> Unit = {},
+    focusShapeId: String? = null,
+    onFocusConsumed: () -> Unit = {},
     onNavigateToMapWithShape: (String) -> Unit,
     onNavigateToMapForEdit: (String) -> Unit = {},
+    onNavigateToMapForDuplicate: (String) -> Unit = {},
 ) {
     val configuration = LocalConfiguration.current
     val density = LocalDensity.current
-    val baseHeight = (configuration.screenHeightDp * SheetFractionDefault).dp
+    val screenHeight = configuration.screenHeightDp.dp
+    val baseHeight = resolveSavedOverlayPhoneBaseHeight(screenHeight)
+    val tabletPanelWidth = (configuration.screenWidthDp * TabletOverlayWidthFraction)
+        .dp
+        .coerceAtMost(TabletOverlayMaxWidth)
+    val tabletPanelHeight = screenHeight * TabletOverlayHeightFraction
     val dismissThresholdPx = with(density) { DismissDragThreshold.toPx() }
 
     var dragOffsetPx by remember { mutableFloatStateOf(0f) }
     var isDragging by remember { mutableStateOf(false) }
 
-    val dragOffsetDp = with(density) { dragOffsetPx.toDp() }
-    val targetHeight = (baseHeight - dragOffsetDp).coerceAtLeast(0.dp)
-    val animatedHeight by animateDpAsState(
-        targetValue = if (isDragging) targetHeight else baseHeight,
+    val visibleDragDp = with(density) { dragOffsetPx.coerceAtLeast(0f).toDp() }
+    val phoneDragOffset = resolveSavedOverlayPhoneDragOffset(
+        dragOffset = visibleDragDp,
+        isDragging = isDragging,
+    )
+    val animatedVerticalOffset by animateDpAsState(
+        targetValue = if (!isTablet) phoneDragOffset else 0.dp,
         animationSpec = spring(dampingRatio = 0.8f, stiffness = Spring.StiffnessMedium),
-        label = "saved_overlay_height",
+        label = "saved_overlay_vertical_offset",
+    )
+    val animatedHorizontalOffset by animateDpAsState(
+        targetValue = if (isTablet && isDragging) visibleDragDp else 0.dp,
+        animationSpec = spring(dampingRatio = 0.8f, stiffness = Spring.StiffnessMedium),
+        label = "saved_overlay_horizontal_offset",
     )
 
     // 헤더 칩 ↔ 콘텐츠 리스트가 같은 상태를 보도록 ViewModel 을 오버레이에서 호스팅
     val savedListViewModel: SavedListViewModel = hiltViewModel()
     val sortOption by savedListViewModel.sortOption.collectAsStateWithLifecycle()
     val sortDirection by savedListViewModel.sortDirection.collectAsStateWithLifecycle()
+    val dismissOverlay = {
+        savedListViewModel.dismissShapeDetail()
+        onDismiss()
+    }
+    DisposableEffect(savedListViewModel) {
+        onDispose {
+            savedListViewModel.dismissShapeDetail()
+        }
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // 외부 영역 터치 시 닫힘 (iOS 동등 — 별도 시각 스크림 없음)
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .clickable(
-                    indication = null,
-                    interactionSource = remember { MutableInteractionSource() },
-                    onClick = onDismiss,
-                )
-        )
+        if (shouldDismissMainOverlayOnOutsideTap()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clickable(
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() },
+                        onClick = dismissOverlay,
+                    )
+            )
+        }
 
         Surface(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .navigationBarsPadding()
-                .padding(
-                    start = OverlaySideMargin,
-                    end = OverlaySideMargin,
-                    bottom = OverlayBottomMargin,
-                )
-                .fillMaxWidth()
-                .height(animatedHeight),
-            shape = RoundedCornerShape(OverlayCornerRadius),
+            modifier = if (isTablet) {
+                Modifier
+                    .align(Alignment.TopStart)
+                    .padding(
+                        start = TabletOverlayLeadingMargin,
+                        top = TabletOverlayTopMargin,
+                    )
+                    .offset(x = animatedHorizontalOffset)
+                    .width(tabletPanelWidth)
+                    .height(tabletPanelHeight)
+            } else {
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .navigationBarsPadding()
+                    .padding(
+                        start = OverlaySideMargin,
+                        end = OverlaySideMargin,
+                        bottom = OverlayBottomMargin,
+                    )
+                    .offset(y = animatedVerticalOffset)
+                    .fillMaxWidth()
+                    .height(baseHeight)
+            },
+            shape = RoundedCornerShape(
+                if (isTablet) TabletOverlayCornerRadius else OverlayCornerRadius
+            ),
             color = OverlayBackgroundColor,
             shadowElevation = OverlayShadowElevation,
         ) {
@@ -461,48 +994,79 @@ private fun SavedListOverlay(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .pointerInput(Unit) {
-                            detectVerticalDragGestures(
-                                onDragStart = {
-                                    isDragging = true
-                                    dragOffsetPx = 0f
-                                },
-                                onDragEnd = {
-                                    val translation = dragOffsetPx
-                                    if (translation > dismissThresholdPx) {
-                                        onDismiss()
-                                    }
-                                    dragOffsetPx = 0f
-                                    isDragging = false
-                                },
-                                onDragCancel = {
-                                    dragOffsetPx = 0f
-                                    isDragging = false
-                                },
-                                onVerticalDrag = { change, dragAmount ->
-                                    change.consume()
-                                    // iOS 와 동일하게 아래로만 시각 변화 (양수)
-                                    dragOffsetPx = (dragOffsetPx + dragAmount)
-                                        .coerceAtLeast(0f)
-                                },
-                            )
+                        .background(OverlayHeaderBackgroundColor)
+                        .pointerInput(isTablet) {
+                            if (isTablet) {
+                                detectHorizontalDragGestures(
+                                    onDragStart = {
+                                        isDragging = true
+                                        dragOffsetPx = 0f
+                                    },
+                                    onDragEnd = {
+                                        val translation = dragOffsetPx
+                                        if (translation > dismissThresholdPx) {
+                                            dismissOverlay()
+                                        }
+                                        dragOffsetPx = 0f
+                                        isDragging = false
+                                    },
+                                    onDragCancel = {
+                                        dragOffsetPx = 0f
+                                        isDragging = false
+                                    },
+                                    onHorizontalDrag = { change, dragAmount ->
+                                        change.consume()
+                                        dragOffsetPx = (dragOffsetPx + dragAmount)
+                                            .coerceAtLeast(0f)
+                                    },
+                                )
+                            } else {
+                                detectVerticalDragGestures(
+                                    onDragStart = {
+                                        isDragging = true
+                                        dragOffsetPx = 0f
+                                    },
+                                    onDragEnd = {
+                                        val translation = dragOffsetPx
+                                        if (translation > dismissThresholdPx) {
+                                            dismissOverlay()
+                                        }
+                                        dragOffsetPx = 0f
+                                        isDragging = false
+                                    },
+                                    onDragCancel = {
+                                        dragOffsetPx = 0f
+                                        isDragging = false
+                                    },
+                                    onVerticalDrag = { change, dragAmount ->
+                                        change.consume()
+                                        dragOffsetPx = (dragOffsetPx + dragAmount)
+                                            .coerceAtLeast(0f)
+                                    },
+                                )
+                            }
                         },
                 ) {
                     OverlayDragHandle()
-                    // 헤더 — iOS IMG_0392 동등: "저장 목록" + 정렬 옵션 칩(파랑) + 정렬 방향 칩(주황)
                     SavedListHeaderRow(
+                        isTablet = isTablet,
                         sortOption = sortOption,
                         sortDirection = sortDirection,
                         onCycleSortOption = {
-                            savedListViewModel.updateSortOption(sortOption.next())
+                            savedListViewModel.updateSortOption(nextSavedSortOption(sortOption))
                         },
                         onToggleSortDirection = savedListViewModel::toggleSortDirection,
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
                 }
+                Spacer(modifier = Modifier.height(SavedOverlayListTopSpacing))
                 SavedListScreen(
                     onNavigateToMapWithShape = onNavigateToMapWithShape,
                     onNavigateToMapForEdit = onNavigateToMapForEdit,
+                    onNavigateToMapForDuplicate = onNavigateToMapForDuplicate,
+                    selectionShapeId = selectionShapeId,
+                    onSelectionConsumed = onSelectionConsumed,
+                    focusShapeId = focusShapeId,
+                    onFocusConsumed = onFocusConsumed,
                     viewModel = savedListViewModel,
                 )
             }
@@ -511,19 +1075,22 @@ private fun SavedListOverlay(
 }
 
 /**
- * iOS SettingsOverlayView (iPhone) 과 동등.
- * - 50% 시작 / 위로 -50dp 이상 드래그시 90% 확장
- * - 아래로 100dp 이상 → 닫힘
- * - 90% 상태에서 아래로 드래그시 50% 축소
- * - 큰 "설정" 제목 (titleLarge bold)
+ * iOS SettingsOverlayView 와 동등.
+ * - 태블릿: 좌측 패널, 화면 폭 40%/최대 400dp, 높이 80%, 오른쪽 드래그 닫기
+ * - 폰: 50% 시작 / 위로 드래그시 90% 확장 / 아래 드래그 닫기 또는 축소
  */
 @Composable
 private fun SettingsOverlay(
+    isTablet: Boolean,
     onDismiss: () -> Unit,
 ) {
     val configuration = LocalConfiguration.current
     val density = LocalDensity.current
     val screenHeight = configuration.screenHeightDp.dp
+    val tabletPanelWidth = (configuration.screenWidthDp * TabletOverlayWidthFraction)
+        .dp
+        .coerceAtMost(TabletOverlayMaxWidth)
+    val tabletPanelHeight = screenHeight * TabletOverlayHeightFraction
     val dismissThresholdPx = with(density) { DismissDragThreshold.toPx() }
     val expandThresholdPx = with(density) { ExpandDragThreshold.toPx() }
 
@@ -540,30 +1107,51 @@ private fun SettingsOverlay(
         animationSpec = spring(dampingRatio = 0.8f, stiffness = Spring.StiffnessMedium),
         label = "settings_overlay_height",
     )
+    val animatedHorizontalOffset by animateDpAsState(
+        targetValue = if (isTablet && isDragging) visibleDragDp else 0.dp,
+        animationSpec = spring(dampingRatio = 0.8f, stiffness = Spring.StiffnessMedium),
+        label = "settings_overlay_horizontal_offset",
+    )
 
     Box(modifier = Modifier.fillMaxSize()) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .clickable(
-                    indication = null,
-                    interactionSource = remember { MutableInteractionSource() },
-                    onClick = onDismiss,
-                )
-        )
+        if (shouldDismissMainOverlayOnOutsideTap()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clickable(
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() },
+                        onClick = onDismiss,
+                    )
+            )
+        }
 
         Surface(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .navigationBarsPadding()
-                .padding(
-                    start = OverlaySideMargin,
-                    end = OverlaySideMargin,
-                    bottom = OverlayBottomMargin,
-                )
-                .fillMaxWidth()
-                .height(animatedHeight),
-            shape = RoundedCornerShape(OverlayCornerRadius),
+            modifier = if (isTablet) {
+                Modifier
+                    .align(Alignment.TopStart)
+                    .padding(
+                        start = TabletOverlayLeadingMargin,
+                        top = TabletOverlayTopMargin,
+                    )
+                    .offset(x = animatedHorizontalOffset)
+                    .width(tabletPanelWidth)
+                    .height(tabletPanelHeight)
+            } else {
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .navigationBarsPadding()
+                    .padding(
+                        start = OverlaySideMargin,
+                        end = OverlaySideMargin,
+                        bottom = OverlayBottomMargin,
+                    )
+                    .fillMaxWidth()
+                    .height(animatedHeight)
+            },
+            shape = RoundedCornerShape(
+                if (isTablet) TabletOverlayCornerRadius else OverlayCornerRadius
+            ),
             color = OverlayBackgroundColor,
             shadowElevation = OverlayShadowElevation,
         ) {
@@ -572,45 +1160,63 @@ private fun SettingsOverlay(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .pointerInput(Unit) {
-                            detectVerticalDragGestures(
-                                onDragStart = {
-                                    isDragging = true
-                                    dragOffsetPx = 0f
-                                },
-                                onDragEnd = {
-                                    val translation = dragOffsetPx
-                                    when {
-                                        // 경우 1: 위로 expandThreshold 이상 + 현재 < 70% → 90%로 확장
-                                        translation < -expandThresholdPx &&
-                                            sheetHeightFraction < SheetFractionExpandTrigger -> {
-                                            sheetHeightFraction = SheetFractionExpanded
-                                        }
-                                        // 경우 2: 아래로 dismissThreshold 이상 → 닫기
-                                        translation > dismissThresholdPx -> {
-                                            sheetHeightFraction = SheetFractionDefault
+                        .background(OverlayHeaderBackgroundColor)
+                        .pointerInput(isTablet, sheetHeightFraction) {
+                            if (isTablet) {
+                                detectHorizontalDragGestures(
+                                    onDragStart = {
+                                        isDragging = true
+                                        dragOffsetPx = 0f
+                                    },
+                                    onDragEnd = {
+                                        val translation = dragOffsetPx
+                                        if (translation > dismissThresholdPx) {
                                             onDismiss()
                                         }
-                                        // 경우 3: 아래로 + 현재 > 70% → 50%로 축소
-                                        translation > 0f &&
-                                            sheetHeightFraction > SheetFractionExpandTrigger -> {
-                                            sheetHeightFraction = SheetFractionDefault
+                                        dragOffsetPx = 0f
+                                        isDragging = false
+                                    },
+                                    onDragCancel = {
+                                        dragOffsetPx = 0f
+                                        isDragging = false
+                                    },
+                                    onHorizontalDrag = { change, dragAmount ->
+                                        change.consume()
+                                        dragOffsetPx = (dragOffsetPx + dragAmount)
+                                            .coerceAtLeast(0f)
+                                    },
+                                )
+                            } else {
+                                detectVerticalDragGestures(
+                                    onDragStart = {
+                                        isDragging = true
+                                        dragOffsetPx = 0f
+                                    },
+                                    onDragEnd = {
+                                        val dragEnd = resolveSettingsOverlayPhoneDragEnd(
+                                            translation = dragOffsetPx,
+                                            currentSheetHeightFraction = sheetHeightFraction,
+                                            dismissThreshold = dismissThresholdPx,
+                                            expandThreshold = expandThresholdPx,
+                                        )
+                                        sheetHeightFraction = dragEnd.sheetHeightFraction
+                                        if (dragEnd.shouldDismiss) {
+                                            onDismiss()
                                         }
-                                        // else: 원위치 (애니메이션이 자동 처리)
-                                    }
-                                    dragOffsetPx = 0f
-                                    isDragging = false
-                                },
-                                onDragCancel = {
-                                    dragOffsetPx = 0f
-                                    isDragging = false
-                                },
-                                onVerticalDrag = { change, dragAmount ->
-                                    change.consume()
-                                    // 위/아래 모두 누적 (방향 판단은 onDragEnd 에서)
-                                    dragOffsetPx += dragAmount
-                                },
-                            )
+                                        dragOffsetPx = 0f
+                                        isDragging = false
+                                    },
+                                    onDragCancel = {
+                                        dragOffsetPx = 0f
+                                        isDragging = false
+                                    },
+                                    onVerticalDrag = { change, dragAmount ->
+                                        change.consume()
+                                        // 위/아래 모두 누적 (방향 판단은 onDragEnd 에서)
+                                        dragOffsetPx += dragAmount
+                                    },
+                                )
+                            }
                         },
                 ) {
                     OverlayDragHandle()
@@ -618,7 +1224,8 @@ private fun SettingsOverlay(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 20.dp, vertical = 4.dp),
+                            .padding(horizontal = SettingsOverlayHeaderHorizontalPadding)
+                            .padding(bottom = SettingsOverlayHeaderBottomPadding),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
@@ -643,14 +1250,17 @@ private fun OverlayDragHandle() {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 12.dp, bottom = 8.dp),
+            .padding(
+                top = OverlayDragHandleTopPadding,
+                bottom = OverlayDragHandleBottomPadding,
+            ),
         contentAlignment = Alignment.Center,
     ) {
         Box(
             modifier = Modifier
-                .width(40.dp)
-                .height(5.dp)
-                .clip(RoundedCornerShape(2.5.dp))
+                .width(OverlayDragHandleWidth)
+                .height(OverlayDragHandleHeight)
+                .clip(RoundedCornerShape(OverlayDragHandleCornerRadius))
                 .background(OverlayHandleColor),
         )
     }
@@ -662,6 +1272,7 @@ private fun OverlayDragHandle() {
  */
 @Composable
 private fun SavedListHeaderRow(
+    isTablet: Boolean,
     sortOption: SortOption,
     sortDirection: SortDirection,
     onCycleSortOption: () -> Unit,
@@ -670,7 +1281,8 @@ private fun SavedListHeaderRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp),
+            .padding(horizontal = SavedOverlayHeaderHorizontalPadding)
+            .padding(bottom = resolveSavedOverlayHeaderBottomPadding(isTablet)),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
@@ -680,6 +1292,7 @@ private fun SavedListHeaderRow(
             modifier = Modifier.weight(1f),
         )
         SortChip(
+            isTablet = isTablet,
             text = stringResource(sortOption.labelRes),
             iconVector = Icons.Default.SwapVert,
             color = SortOptionChipColor,
@@ -687,11 +1300,12 @@ private fun SavedListHeaderRow(
         )
         Spacer(modifier = Modifier.width(8.dp))
         SortChip(
+            isTablet = isTablet,
             text = stringResource(sortDirection.labelRes),
             iconVector = if (sortDirection == SortDirection.ASCENDING) {
-                Icons.Default.ArrowUpward
-            } else {
                 Icons.Default.ArrowDownward
+            } else {
+                Icons.Default.ArrowUpward
             },
             color = SortDirectionChipColor,
             onClick = onToggleSortDirection,
@@ -704,6 +1318,7 @@ private fun SavedListHeaderRow(
  */
 @Composable
 private fun SortChip(
+    isTablet: Boolean,
     text: String,
     iconVector: ImageVector,
     color: Color,
@@ -711,30 +1326,28 @@ private fun SortChip(
 ) {
     Row(
         modifier = Modifier
-            .clip(RoundedCornerShape(8.dp))
-            .background(color.copy(alpha = 0.1f))
+            .clip(RoundedCornerShape(SavedOverlaySortChipCornerRadius))
+            .background(color.copy(alpha = SavedOverlaySortChipBackgroundAlpha))
             .clickable(onClick = onClick)
-            .padding(horizontal = 8.dp, vertical = 4.dp),
+            .padding(
+                horizontal = SavedOverlaySortChipHorizontalPadding,
+                vertical = SavedOverlaySortChipVerticalPadding,
+            ),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(SavedOverlaySortChipContentSpacing),
     ) {
         Icon(
             imageVector = iconVector,
             contentDescription = null,
             tint = color,
-            modifier = Modifier.size(12.dp),
+            modifier = Modifier.size(resolveSavedOverlaySortChipIconSize(isTablet)),
         )
         Text(
             text = text,
             color = color,
             style = MaterialTheme.typography.labelSmall,
+            fontSize = resolveSavedOverlaySortChipTextSize(isTablet),
             fontWeight = FontWeight.Medium,
         )
     }
-}
-
-/** iOS cycleSortOption 동등 — enum 다음 값으로 cycle. */
-private fun SortOption.next(): SortOption {
-    val values = SortOption.entries
-    return values[(ordinal + 1) % values.size]
 }

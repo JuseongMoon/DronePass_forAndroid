@@ -2,7 +2,9 @@ package com.ScienceFiction.DronePassAndroid.app
 
 import android.app.Application
 import com.ScienceFiction.DronePassAndroid.service.FcmService
+import com.ScienceFiction.DronePassAndroid.service.NotificationScheduleRestorer
 import dagger.hilt.android.HiltAndroidApp
+import javax.inject.Inject
 
 /**
  * DronePass 애플리케이션 클래스.
@@ -16,9 +18,12 @@ import dagger.hilt.android.HiltAndroidApp
 @HiltAndroidApp
 class DronePassApplication : Application() {
 
+    @Inject lateinit var notificationScheduleRestorer: NotificationScheduleRestorer
+
     override fun onCreate() {
         super.onCreate()
         // 알림 채널 생성 (Android 8.0+)
         FcmService.createNotificationChannel(this)
+        notificationScheduleRestorer.rescheduleEnabledAlarmsAsync("app_start")
     }
 }
