@@ -135,7 +135,11 @@ class SketchViewModel @Inject constructor(
      * 스케치 모드로 진입한다.
      */
     fun enterSketchMode() {
-        if (!shouldEnterSketchMode(_isSketchMode.value)) return
+        val transition = enterSketchModeTransition(
+            isSketchModeActive = _isSketchMode.value,
+            isEraserModeActive = _isEraserMode.value,
+        )
+        if (!transition.shouldTransition) return
 
         drawingBuffer.clear()
         _currentDrawingPoints.value = emptyList()
@@ -143,8 +147,8 @@ class SketchViewModel @Inject constructor(
         undoStack.clear()
         redoStack.clear()
         updateUndoRedoState()
-        _isSketchMode.value = true
-        _isEraserMode.value = false
+        _isSketchMode.value = transition.isSketchModeActive
+        _isEraserMode.value = transition.isEraserModeActive
         sketchModeEnterTimeMillis = System.currentTimeMillis()
         analyticsLogger.logSketchModeEntered()
     }
@@ -154,7 +158,11 @@ class SketchViewModel @Inject constructor(
      * 진행 중인 그리기가 있으면 iOS처럼 완료 처리한다.
      */
     fun exitSketchMode() {
-        if (!_isSketchMode.value) return
+        val transition = exitSketchModeTransition(
+            isSketchModeActive = _isSketchMode.value,
+            isEraserModeActive = _isEraserMode.value,
+        )
+        if (!transition.shouldTransition) return
 
         if (drawingBuffer.isNotEmpty()) {
             finishDrawing(recordUndo = false)
@@ -162,8 +170,8 @@ class SketchViewModel @Inject constructor(
             _currentDrawingPoints.value = emptyList()
         }
         lastSampledPoint = null
-        _isSketchMode.value = false
-        _isEraserMode.value = false
+        _isSketchMode.value = transition.isSketchModeActive
+        _isEraserMode.value = transition.isEraserModeActive
         syncSketchesOnModeComplete()
         sketchModeEnterTimeMillis?.let { enteredAt ->
             val durationSeconds = ((System.currentTimeMillis() - enteredAt) / 1000L).toInt()

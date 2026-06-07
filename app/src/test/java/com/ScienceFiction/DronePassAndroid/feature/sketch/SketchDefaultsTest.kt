@@ -36,6 +36,58 @@ class SketchDefaultsTest {
     }
 
     @Test
+    fun `스케치 모드 진입은 iOS처럼 기존 지우개 모드를 보존한다`() {
+        assertEquals(
+            SketchModeTransition(
+                shouldTransition = true,
+                isSketchModeActive = true,
+                isEraserModeActive = true,
+            ),
+            enterSketchModeTransition(
+                isSketchModeActive = false,
+                isEraserModeActive = true,
+            ),
+        )
+        assertEquals(
+            SketchModeTransition(
+                shouldTransition = false,
+                isSketchModeActive = true,
+                isEraserModeActive = true,
+            ),
+            enterSketchModeTransition(
+                isSketchModeActive = true,
+                isEraserModeActive = true,
+            ),
+        )
+    }
+
+    @Test
+    fun `스케치 모드 종료는 iOS처럼 기존 지우개 모드를 보존한다`() {
+        assertEquals(
+            SketchModeTransition(
+                shouldTransition = true,
+                isSketchModeActive = false,
+                isEraserModeActive = true,
+            ),
+            exitSketchModeTransition(
+                isSketchModeActive = true,
+                isEraserModeActive = true,
+            ),
+        )
+        assertEquals(
+            SketchModeTransition(
+                shouldTransition = false,
+                isSketchModeActive = false,
+                isEraserModeActive = true,
+            ),
+            exitSketchModeTransition(
+                isSketchModeActive = false,
+                isEraserModeActive = true,
+            ),
+        )
+    }
+
+    @Test
     fun `색상 슬라이더는 iOS처럼 작은 hue 차이는 동기화하지 않는다`() {
         assertEquals(false, shouldSyncSketchHueSlider(currentHue = 10f, newHue = 20f))
     }

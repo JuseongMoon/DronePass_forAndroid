@@ -27,6 +27,34 @@ internal fun shouldEnterSketchMode(isSketchModeActive: Boolean): Boolean {
     return !isSketchModeActive
 }
 
+internal data class SketchModeTransition(
+    val shouldTransition: Boolean,
+    val isSketchModeActive: Boolean,
+    val isEraserModeActive: Boolean,
+)
+
+internal fun enterSketchModeTransition(
+    isSketchModeActive: Boolean,
+    isEraserModeActive: Boolean,
+): SketchModeTransition {
+    return SketchModeTransition(
+        shouldTransition = !isSketchModeActive,
+        isSketchModeActive = true,
+        isEraserModeActive = isEraserModeActive,
+    )
+}
+
+internal fun exitSketchModeTransition(
+    isSketchModeActive: Boolean,
+    isEraserModeActive: Boolean,
+): SketchModeTransition {
+    return SketchModeTransition(
+        shouldTransition = isSketchModeActive,
+        isSketchModeActive = false,
+        isEraserModeActive = isEraserModeActive,
+    )
+}
+
 internal fun shouldSyncSketchHueSlider(
     currentHue: Float,
     newHue: Float,
