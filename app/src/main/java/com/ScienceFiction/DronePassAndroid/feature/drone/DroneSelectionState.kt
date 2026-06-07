@@ -88,7 +88,8 @@ class DroneSelectionState private constructor(
 
     /**
      * iOS setupInitialDroneIfNeeded 정합.
-     * 첫 활성 드론 목록 로드 시 전체 선택하고, 전체가 선택된 상태에서 새 드론이 추가되면
+     * 첫 활성 드론 목록 로드 시 저장된 다중 선택이 없으면 전체 선택하고, 저장된 선택이 있으면
+     * 활성 드론에 해당하는 ID 만 복원한다. 전체가 선택된 상태에서 새 드론이 추가되면
      * 새 드론도 선택 목록에 포함한다. 사용자가 직접 모두 해제한 런타임 상태는 유지한다.
      * 사용자가 추가한 새 드론은 [addDroneToSelection] 에서 iOS addDrone 처럼 명시 선택한다.
      */
@@ -117,7 +118,8 @@ class DroneSelectionState private constructor(
             current.containsAll(lastActiveDroneIds)
 
         val nextSelectedIds = when {
-            !hasCompletedInitialLoad -> activeIds
+            !hasCompletedInitialLoad && current.isEmpty() -> activeIds
+            !hasCompletedInitialLoad -> selectedExisting
             wasAllSelected -> activeIds
             else -> selectedExisting
         }

@@ -94,6 +94,39 @@ class DroneSelectionStateTest {
     }
 
     @Test
+    fun `저장된 부분 선택은 첫 활성 드론 로드 시 전체 선택으로 덮어쓰지 않는다`() {
+        val state = DroneSelectionState()
+        state.addDroneToSelection("drone-b")
+
+        state.syncActiveDrones(
+            listOf(
+                DroneModel(id = "drone-a", name = "A"),
+                DroneModel(id = "drone-b", name = "B"),
+                DroneModel(id = "drone-c", name = "C"),
+            )
+        )
+
+        assertEquals(setOf("drone-b"), state.selectedDroneIds.value)
+        assertEquals("drone-a", state.selectedDroneId.value)
+    }
+
+    @Test
+    fun `저장된 선택에 사라진 드론만 있으면 iOS처럼 선택된 활성 드론이 없다`() {
+        val state = DroneSelectionState()
+        state.addDroneToSelection("deleted-drone")
+
+        state.syncActiveDrones(
+            listOf(
+                DroneModel(id = "drone-a", name = "A"),
+                DroneModel(id = "drone-b", name = "B"),
+            )
+        )
+
+        assertTrue(state.selectedDroneIds.value.isEmpty())
+        assertEquals("drone-a", state.selectedDroneId.value)
+    }
+
+    @Test
     fun `전체 선택 상태에서 새 드론이 추가되면 새 드론도 선택된다`() {
         val state = DroneSelectionState()
         state.syncActiveDrones(listOf(DroneModel(id = "drone-a", name = "A")))
