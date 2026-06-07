@@ -157,7 +157,7 @@
     <string name="shape_detail_copy_coordinate">좌표 복사</string>
     <string name="shape_detail_address">주소</string>
     <string name="shape_detail_radius">반경</string>
-    <string name="shape_detail_altitude">고도(m)</string>
+    <string name="shape_detail_altitude">고도</string>
     <string name="shape_detail_flight_start">시작일</string>
     <string name="shape_detail_flight_end">종료일</string>
     <string name="shape_detail_status_expired">만료됨</string>
@@ -480,7 +480,7 @@
     <!-- Phase 9-B/C: Detail & List enhancements -->
     <string name="shape_detail_open_external_map">길찾기 앱 선택</string>
     <string name="shape_detail_title_label">제목</string>
-    <string name="shape_detail_navigation_title">상세 정보</string>
+    <string name="shape_detail_navigation_title">상세정보</string>
     <string name="shape_detail_more_menu">더보기</string>
     <string name="shape_detail_drone_deleted">삭제된 드론</string>
     <string name="shape_detail_drone_unassigned">드론 미지정</string>
@@ -489,8 +489,8 @@
     <string name="shape_detail_open_kakao_map">카카오맵</string>
     <string name="shape_detail_open_tmap">티맵</string>
     <string name="shape_detail_open_google_map">구글맵</string>
-    <string name="shape_detail_edit">수정하기</string>
-    <string name="shape_detail_duplicate">복제하기</string>
+    <string name="shape_detail_edit">편집</string>
+    <string name="shape_detail_duplicate">복제</string>
     <string name="shape_detail_duplicated">도형이 복제되었습니다</string>
     <string name="shape_detail_drone_connected">드론</string>
     <string name="shape_detail_no_drone">없음</string>
