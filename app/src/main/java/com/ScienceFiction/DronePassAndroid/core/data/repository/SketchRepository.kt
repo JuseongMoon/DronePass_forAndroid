@@ -145,6 +145,16 @@ class SketchRepository @Inject constructor(
     }
 
     /**
+     * 계정 전환 시 이전 계정의 로컬 스케치가 새 계정으로 업로드되지 않도록
+     * Firebase 푸시 없이 로컬 Room 데이터와 대기 중인 디바운스 작업만 비운다.
+     */
+    suspend fun deleteAllSketchesLocally() {
+        val sketchIds = sketchDao.getAllSketchesOnce().map { it.id }.toSet()
+        cancelPendingSyncs(sketchIds)
+        sketchDao.deleteAllSketches()
+    }
+
+    /**
      * 동일 sketchId 의 변경을 [SYNC_DEBOUNCE_MS] 윈도우로 묶어 마지막 한 번만
      * Firestore 에 푸시한다. Undo/Redo·지우개로 변경 빈도가 매우 높은 스케치 영역의
      * 네트워크/IO 부담을 줄인다 (중간 상태를 모두 송신하지 않고 최종 상태만 전송).

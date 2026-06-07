@@ -84,6 +84,18 @@ class AuthViewModelForegroundSyncTest {
     }
 
     @Test
+    fun `account switch resets local data before iOS style login sync`() {
+        assertEquals(
+            true,
+            shouldResetLocalDataForAccountChange(AuthAccountChangeAction.RESET_LOCAL_DATA),
+        )
+        assertEquals(
+            false,
+            shouldResetLocalDataForAccountChange(AuthAccountChangeAction.KEEP_LOCAL_DATA),
+        )
+    }
+
+    @Test
     fun `login legal documents use iOS navigation push presentation`() {
         assertEquals(
             LoginDocumentPresentation.Hidden,

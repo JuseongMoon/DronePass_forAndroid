@@ -25,6 +25,22 @@ import javax.inject.Singleton
 private const val APPLE_USER_ID_FIELD = "appleUserID"
 private const val GOOGLE_USER_ID_FIELD = "googleUserID"
 
+internal enum class AuthAccountChangeAction {
+    KEEP_LOCAL_DATA,
+    RESET_LOCAL_DATA,
+}
+
+internal data class AuthSignInResult(
+    val user: FirebaseUser,
+    val accountChangeAction: AuthAccountChangeAction = AuthAccountChangeAction.KEEP_LOCAL_DATA,
+)
+
+internal enum class ProviderAccountResolution {
+    KEEP_LOCAL_DATA,
+    MIGRATE_ACCOUNT,
+    SWITCH_ACCOUNT,
+}
+
 internal fun buildNewUserDocumentData(
     userId: String,
     email: String?,
@@ -68,16 +84,12 @@ internal fun shouldAttemptAppleAccountRecovery(
 
 internal fun isSameRecoveredProviderAccount(
     oldProviderUserId: String?,
-    savedProviderUserId: String?,
     currentProviderUserId: String,
 ): Boolean {
-    return when {
-        oldProviderUserId != null -> oldProviderUserId == currentProviderUserId
-        savedProviderUserId != null -> savedProviderUserId == currentProviderUserId
-        else -> false
-    }
+    return oldProviderUserId == currentProviderUserId
 }
 
+@Suppress("UNUSED_PARAMETER")
 internal fun isSameRecoveredAppleAccount(
     oldAppleUserId: String?,
     savedAppleUserId: String?,
@@ -85,9 +97,31 @@ internal fun isSameRecoveredAppleAccount(
 ): Boolean {
     return isSameRecoveredProviderAccount(
         oldProviderUserId = oldAppleUserId,
-        savedProviderUserId = savedAppleUserId,
         currentProviderUserId = currentAppleUserId,
     )
+}
+
+internal fun resolveProviderAccountResolution(
+    savedFirebaseUid: String?,
+    currentFirebaseUid: String,
+    oldAccountExists: Boolean,
+    oldProviderUserId: String?,
+    currentProviderUserId: String?,
+): ProviderAccountResolution {
+    if (!shouldAttemptProviderAccountRecovery(savedFirebaseUid, currentFirebaseUid)) {
+        return ProviderAccountResolution.KEEP_LOCAL_DATA
+    }
+    if (!oldAccountExists) {
+        return ProviderAccountResolution.SWITCH_ACCOUNT
+    }
+    if (currentProviderUserId == null || oldProviderUserId == null) {
+        return ProviderAccountResolution.SWITCH_ACCOUNT
+    }
+    return if (isSameRecoveredProviderAccount(oldProviderUserId, currentProviderUserId)) {
+        ProviderAccountResolution.MIGRATE_ACCOUNT
+    } else {
+        ProviderAccountResolution.SWITCH_ACCOUNT
+    }
 }
 
 internal fun buildMigratedProviderUserDocumentData(
@@ -177,7 +211,7 @@ class AuthRepository @Inject constructor(
      * @param context Activity 또는 Fragment의 Context (Credential Manager에 필요)
      * @return 성공 시 FirebaseUser, 실패 시 에러 메시지를 포함한 Result
      */
-    suspend fun signInWithGoogle(context: Context): Result<FirebaseUser> {
+    internal suspend fun signInWithGoogle(context: Context): Result<AuthSignInResult> {
         return try {
             // Credential Manager 인스턴스 생성
             val credentialManager = CredentialManager.create(context)
@@ -208,10 +242,9 @@ class AuthRepository @Inject constructor(
             val user = authResult.user
                 ?: return Result.failure(Exception())
             val googleUserId = user.googleProviderUserId()
-            recoverProviderAccountIfNeeded(
+            val accountChangeAction = recoverProviderAccountIfNeeded(
                 currentFirebaseUid = user.uid,
                 currentProviderUserId = googleUserId,
-                savedProviderUserId = encryptedPrefsHelper.loadGoogleUserId(),
                 providerUserFieldName = GOOGLE_USER_ID_FIELD,
                 providerDisplayName = "Google",
             )
@@ -224,7 +257,7 @@ class AuthRepository @Inject constructor(
                 googleUserId = googleUserId,
             )
 
-            Result.success(user)
+            Result.success(AuthSignInResult(user, accountChangeAction))
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -250,7 +283,7 @@ class AuthRepository @Inject constructor(
      * @param activity 현재 Activity (Custom Tabs intent launch 에 필요)
      * @return 성공 시 FirebaseUser, 실패 시 [Result.failure]
      */
-    suspend fun signInWithApple(activity: Activity): Result<FirebaseUser> {
+    internal suspend fun signInWithApple(activity: Activity): Result<AuthSignInResult> {
         return try {
             // Apple OAuthProvider 빌더 — email/name scope 요청. Apple 은 첫 로그인 시에만 name 을 반환.
             val provider = OAuthProvider.newBuilder(APPLE_PROVIDER_ID).apply {
@@ -271,10 +304,9 @@ class AuthRepository @Inject constructor(
                 ?: return Result.failure(Exception())
 
             val appleUserId = user.appleProviderUserId()
-            recoverProviderAccountIfNeeded(
+            val accountChangeAction = recoverProviderAccountIfNeeded(
                 currentFirebaseUid = user.uid,
                 currentProviderUserId = appleUserId,
-                savedProviderUserId = encryptedPrefsHelper.loadAppleUserId(),
                 providerUserFieldName = APPLE_USER_ID_FIELD,
                 providerDisplayName = "Apple",
             )
@@ -284,7 +316,7 @@ class AuthRepository @Inject constructor(
             appleUserId?.let { encryptedPrefsHelper.saveAppleUserId(it) }
             ensureUserDocumentSafely(user, appleUserId = appleUserId)
 
-            Result.success(user)
+            Result.success(AuthSignInResult(user, accountChangeAction))
         } catch (e: Exception) {
             Log.w(TAG, "Apple Sign-In 실패", e)
             Result.failure(e)
@@ -383,41 +415,49 @@ class AuthRepository @Inject constructor(
     private suspend fun recoverProviderAccountIfNeeded(
         currentFirebaseUid: String,
         currentProviderUserId: String?,
-        savedProviderUserId: String?,
         providerUserFieldName: String,
         providerDisplayName: String,
-    ) {
-        if (currentProviderUserId == null) return
-
+    ): AuthAccountChangeAction {
         val savedFirebaseUid = encryptedPrefsHelper.loadFirebaseUid()
         if (!shouldAttemptProviderAccountRecovery(savedFirebaseUid, currentFirebaseUid)) {
-            return
+            return AuthAccountChangeAction.KEEP_LOCAL_DATA
         }
 
-        val oldUserId = savedFirebaseUid ?: return
+        val oldUserId = savedFirebaseUid ?: return AuthAccountChangeAction.KEEP_LOCAL_DATA
         val oldUserRef = firestore.collection(USERS_COLLECTION).document(oldUserId)
         val oldUserSnapshot = runCatching { oldUserRef.get().await() }
             .getOrElse { error ->
                 Log.w(TAG, "이전 $providerDisplayName 계정 조회 실패: userId=$oldUserId", error)
-                return
+                return AuthAccountChangeAction.RESET_LOCAL_DATA
             }
 
-        if (!oldUserSnapshot.exists()) return
-
         val oldProviderUserId = oldUserSnapshot.getString(providerUserFieldName)
-        if (!isSameRecoveredProviderAccount(oldProviderUserId, savedProviderUserId, currentProviderUserId)) {
-            Log.w(TAG, "$providerDisplayName 계정 복구 건너뜀: 이전 provider User ID 와 현재 로그인 정보가 다릅니다.")
-            return
+        val resolution = resolveProviderAccountResolution(
+            savedFirebaseUid = savedFirebaseUid,
+            currentFirebaseUid = currentFirebaseUid,
+            oldAccountExists = oldUserSnapshot.exists(),
+            oldProviderUserId = oldProviderUserId,
+            currentProviderUserId = currentProviderUserId,
+        )
+
+        if (resolution == ProviderAccountResolution.SWITCH_ACCOUNT) {
+            Log.w(TAG, "$providerDisplayName 계정 전환 감지: 이전 provider User ID 와 현재 로그인 정보가 다릅니다.")
+            return AuthAccountChangeAction.RESET_LOCAL_DATA
         }
+        if (resolution == ProviderAccountResolution.KEEP_LOCAL_DATA) {
+            return AuthAccountChangeAction.KEEP_LOCAL_DATA
+        }
+        val providerUserId = currentProviderUserId ?: return AuthAccountChangeAction.RESET_LOCAL_DATA
 
         migrateProviderUserData(
             oldUserSnapshot = oldUserSnapshot,
             fromUserId = oldUserId,
             toUserId = currentFirebaseUid,
             providerUserFieldName = providerUserFieldName,
-            providerUserId = currentProviderUserId,
+            providerUserId = providerUserId,
             providerDisplayName = providerDisplayName,
         )
+        return AuthAccountChangeAction.KEEP_LOCAL_DATA
     }
 
     private suspend fun migrateProviderUserData(

@@ -389,6 +389,12 @@ class RealtimeSyncManager @Inject constructor(
         Log.d(TAG, "SnapshotListener 중단 (Shape/Drone + Sketch)")
     }
 
+    fun resetSyncTrackingForAccountSwitch() {
+        lastShapeSyncTime = 0L
+        lastSketchSyncTime = 0L
+        _lastSyncTime.value = null
+    }
+
     /**
      * iOS `RealtimeSyncManager.forceSyncNow()` 정합 — 디바운싱 우회 즉시 동기화.
      * ProfileViewModel 의 수동 백업 / 토글 ON 시 동기화 chain 의 진입점.

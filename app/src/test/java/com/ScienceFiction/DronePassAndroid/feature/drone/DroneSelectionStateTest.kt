@@ -126,6 +126,24 @@ class DroneSelectionStateTest {
     }
 
     @Test
+    fun `계정 전환 reset은 이전 계정의 드론 선택과 하이라이트를 비운다`() {
+        val state = DroneSelectionState()
+        state.syncActiveDrones(
+            listOf(
+                DroneModel(id = "drone-a", name = "A"),
+                DroneModel(id = "drone-b", name = "B"),
+            )
+        )
+        state.toggleDroneHighlight("drone-a")
+
+        state.resetForAccountSwitch()
+
+        assertEquals(emptySet<String>(), state.selectedDroneIds.value)
+        assertEquals(null, state.selectedDroneId.value)
+        assertEquals(emptySet<String>(), state.highlightedDroneIds.value)
+    }
+
+    @Test
     fun `단일 선택 드론이 삭제되면 iOS처럼 첫 활성 드론으로 대체한다`() {
         val state = DroneSelectionState()
         state.syncActiveDrones(

@@ -171,6 +171,19 @@ class DroneSelectionState private constructor(
         saveSelectedDroneIds(activeIds)
     }
 
+    @Synchronized
+    fun resetForAccountSwitch() {
+        _selectedDroneId.value = null
+        _selectedDroneIds.value = emptySet()
+        _highlightedDroneIds.value = emptySet()
+        hasCompletedInitialLoad = false
+        lastActiveDroneIds = emptySet()
+        hasExplicitRuntimeSelection = false
+        pendingActiveDrones = null
+        saveSelectedDroneId(null)
+        saveSelectedDroneIds(emptySet())
+    }
+
     fun toggleDroneHighlight(droneId: String) {
         val next = _highlightedDroneIds.value.toMutableSet()
         if (next.contains(droneId)) {

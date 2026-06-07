@@ -154,14 +154,7 @@ class AuthRepositoryUserDocumentTest {
     }
 
     @Test
-    fun `Apple 계정 복구는 Firestore 값이 없을 때만 로컬 Apple User ID 를 fallback으로 쓴다`() {
-        assertTrue(
-            isSameRecoveredAppleAccount(
-                oldAppleUserId = null,
-                savedAppleUserId = "apple-1",
-                currentAppleUserId = "apple-1",
-            )
-        )
+    fun `Apple 계정 복구는 iOS처럼 Firestore provider User ID 만 신뢰한다`() {
         assertFalse(
             isSameRecoveredAppleAccount(
                 oldAppleUserId = null,
@@ -179,34 +172,96 @@ class AuthRepositoryUserDocumentTest {
     }
 
     @Test
-    fun `provider 계정 복구는 Firestore 값이 없을 때만 로컬 provider User ID 를 fallback으로 쓴다`() {
+    fun `provider 계정 복구는 iOS처럼 Firestore provider User ID 만 신뢰한다`() {
         assertTrue(
             isSameRecoveredProviderAccount(
                 oldProviderUserId = "google-1",
-                savedProviderUserId = null,
-                currentProviderUserId = "google-1",
-            )
-        )
-        assertTrue(
-            isSameRecoveredProviderAccount(
-                oldProviderUserId = null,
-                savedProviderUserId = "google-1",
                 currentProviderUserId = "google-1",
             )
         )
         assertFalse(
             isSameRecoveredProviderAccount(
                 oldProviderUserId = "google-1",
-                savedProviderUserId = "google-2",
                 currentProviderUserId = "google-2",
             )
         )
         assertFalse(
             isSameRecoveredProviderAccount(
                 oldProviderUserId = null,
-                savedProviderUserId = null,
                 currentProviderUserId = "google-1",
             )
+        )
+    }
+
+    @Test
+    fun `provider 계정 판별은 UID가 같거나 처음 로그인인 경우 로컬 데이터를 유지한다`() {
+        assertEquals(
+            ProviderAccountResolution.KEEP_LOCAL_DATA,
+            resolveProviderAccountResolution(
+                savedFirebaseUid = null,
+                currentFirebaseUid = "current",
+                oldAccountExists = false,
+                oldProviderUserId = null,
+                currentProviderUserId = "google-1",
+            ),
+        )
+        assertEquals(
+            ProviderAccountResolution.KEEP_LOCAL_DATA,
+            resolveProviderAccountResolution(
+                savedFirebaseUid = "current",
+                currentFirebaseUid = "current",
+                oldAccountExists = true,
+                oldProviderUserId = "google-1",
+                currentProviderUserId = "google-1",
+            ),
+        )
+    }
+
+    @Test
+    fun `provider 계정 판별은 저장 UID 계정의 Firestore 식별자가 같을 때만 마이그레이션한다`() {
+        assertEquals(
+            ProviderAccountResolution.MIGRATE_ACCOUNT,
+            resolveProviderAccountResolution(
+                savedFirebaseUid = "old",
+                currentFirebaseUid = "current",
+                oldAccountExists = true,
+                oldProviderUserId = "google-1",
+                currentProviderUserId = "google-1",
+            ),
+        )
+    }
+
+    @Test
+    fun `provider 계정 판별은 이전 계정이 없거나 식별자가 다르면 계정 전환으로 처리한다`() {
+        assertEquals(
+            ProviderAccountResolution.SWITCH_ACCOUNT,
+            resolveProviderAccountResolution(
+                savedFirebaseUid = "old",
+                currentFirebaseUid = "current",
+                oldAccountExists = false,
+                oldProviderUserId = null,
+                currentProviderUserId = "google-1",
+            ),
+        )
+        assertEquals(
+            ProviderAccountResolution.SWITCH_ACCOUNT,
+            resolveProviderAccountResolution(
+                savedFirebaseUid = "old",
+                currentFirebaseUid = "current",
+                oldAccountExists = true,
+                oldProviderUserId = "google-1",
+                currentProviderUserId = "google-2",
+            ),
+        )
+        assertEquals(
+            ProviderAccountResolution.SWITCH_ACCOUNT,
+            resolveProviderAccountResolution(
+                savedFirebaseUid = "old",
+                currentFirebaseUid = "current",
+                oldAccountExists = true,
+                oldProviderUserId = null,
+                currentProviderUserId = "google-1",
+            ),
         )
     }
 

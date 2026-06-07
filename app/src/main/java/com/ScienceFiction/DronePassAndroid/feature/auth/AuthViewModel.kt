@@ -54,6 +54,10 @@ internal fun shouldSuppressGoogleSignInFailure(exception: Throwable): Boolean {
     return exception is GetCredentialCancellationException
 }
 
+internal fun shouldResetLocalDataForAccountChange(action: AuthAccountChangeAction): Boolean {
+    return action == AuthAccountChangeAction.RESET_LOCAL_DATA
+}
+
 internal fun resolveForegroundCloudSyncAction(
     isLoggedIn: Boolean,
     cloudBackupEnabled: Boolean,
@@ -174,10 +178,14 @@ class AuthViewModel @Inject constructor(
 
         viewModelScope.launch {
             authRepository.signInWithGoogle(context).fold(
-                onSuccess = { user ->
+                onSuccess = { result ->
+                    val user = result.user
                     _authState.value = AuthState.LoggedIn(user)
                     analyticsLogger.logLogin("google")
-                    activateCloudSyncAfterLogin(selectAllDronesAfterSync = true)
+                    activateCloudSyncAfterLogin(
+                        selectAllDronesAfterSync = true,
+                        accountChangeAction = result.accountChangeAction,
+                    )
                     requestFcmToken()
                 },
                 onFailure = { exception ->
@@ -209,10 +217,14 @@ class AuthViewModel @Inject constructor(
 
         viewModelScope.launch {
             authRepository.signInWithApple(activity).fold(
-                onSuccess = { user ->
+                onSuccess = { result ->
+                    val user = result.user
                     _authState.value = AuthState.LoggedIn(user)
                     analyticsLogger.logLogin("apple")
-                    activateCloudSyncAfterLogin(selectAllDronesAfterSync = true)
+                    activateCloudSyncAfterLogin(
+                        selectAllDronesAfterSync = true,
+                        accountChangeAction = result.accountChangeAction,
+                    )
                     requestFcmToken()
                 },
                 onFailure = { exception ->
@@ -246,9 +258,15 @@ class AuthViewModel @Inject constructor(
      * iOS 로그인 성공 흐름 정합:
      * 클라우드 백업 설정을 켠 뒤 실시간 리스너와 Firebase 양방향 동기화를 시작한다.
      */
-    private fun activateCloudSyncAfterLogin(selectAllDronesAfterSync: Boolean) {
+    private fun activateCloudSyncAfterLogin(
+        selectAllDronesAfterSync: Boolean,
+        accountChangeAction: AuthAccountChangeAction = AuthAccountChangeAction.KEEP_LOCAL_DATA,
+    ) {
         viewModelScope.launch {
             enableCloudBackupForLogin()
+            if (shouldResetLocalDataForAccountChange(accountChangeAction)) {
+                resetLocalDataForAccountSwitch()
+            }
             startRealtimeSync()
             performFullSync(selectAllDronesAfterSync)
         }
@@ -263,6 +281,21 @@ class AuthViewModel @Inject constructor(
         }.onFailure { error ->
             Log.e(TAG, "클라우드 백업 설정 저장 실패", error)
         }
+    }
+
+    private suspend fun resetLocalDataForAccountSwitch() {
+        Log.d(TAG, "계정 전환 감지: 로컬 데이터 초기화 시작")
+        realtimeSyncManager.stopListening()
+        realtimeSyncManager.resetSyncTrackingForAccountSwitch()
+        shapeRepository.deleteAllShapes()
+        droneRepository.deleteAllDrones()
+        sketchRepository.deleteAllSketchesLocally()
+        droneSelectionState.resetForAccountSwitch()
+        dataStore.edit { preferences ->
+            preferences.remove(ProfilePreferenceKeys.LAST_BACKUP_TIME)
+            preferences.remove(ProfilePreferenceKeys.LEGACY_LAST_BACKUP_TIME)
+        }
+        Log.d(TAG, "계정 전환 감지: 로컬 데이터 초기화 완료")
     }
 
     /**
