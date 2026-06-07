@@ -62,6 +62,11 @@ class SketchDefaultsTest {
     }
 
     @Test
+    fun `스케치 펜 버튼도 iOS처럼 8자리 hex 의 alpha 를 무시한다`() {
+        assertEquals(0xFF123456.toInt(), sketchPenButtonDisplayColor("#AA123456").toArgb())
+    }
+
+    @Test
     fun `스케치 툴바 색상 파싱 실패 시 iOS처럼 빨강으로 폴백한다`() {
         assertEquals(0xFFFF0000.toInt(), parseSketchToolbarColorSafe("not-a-color").toArgb())
     }

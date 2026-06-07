@@ -126,6 +126,10 @@ internal fun parseSketchToolbarColorSafe(color: String): Color {
     return Color(parseIosOpaqueRgbHexColor(color) ?: 0xFFFF0000.toInt())
 }
 
+internal fun sketchPenButtonDisplayColor(color: String): Color {
+    return parseSketchToolbarColorSafe(color)
+}
+
 internal fun sketchSliderFractionFromX(
     x: Float,
     width: Float,
@@ -373,11 +377,7 @@ private fun PenButton(
     isActive: Boolean,
     onClick: () -> Unit
 ) {
-    val penColor = try {
-        Color(android.graphics.Color.parseColor(color))
-    } catch (e: Exception) {
-        Color.Red
-    }
+    val penColor = sketchPenButtonDisplayColor(color)
 
     Box(
         modifier = Modifier
