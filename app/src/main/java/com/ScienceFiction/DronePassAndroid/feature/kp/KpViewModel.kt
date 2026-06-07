@@ -46,7 +46,7 @@ internal fun resolveKpDataLoadPlan(
         fetchCurrent = when (trigger) {
             KpDataLoadTrigger.Initial -> !hasCurrentKp
             KpDataLoadTrigger.UserRefresh -> false
-            KpDataLoadTrigger.AutoRefresh -> true
+            KpDataLoadTrigger.AutoRefresh -> false
         },
         fetchForecast = true,
         fetchLongTermForecast = true,
@@ -116,7 +116,7 @@ class KpViewModel @Inject constructor(
      * iOS `KPForecastView` 의 refresh / auto refresh 는
      * `fetchKPData(forceRefresh: true, fetchGFZ: false, fetchNOAA: true)` 이므로
      * 수동 갱신에서는 현재 KP(GFZ)를 다시 요청하지 않는다.
-     * 앱 공통 자동 갱신은 iOS `KPIndexManager` 타이머와 합쳐진 동작이라 현재 KP 도 갱신한다.
+     * 화면 자동 갱신도 iOS `KPForecastView` 의 5분 루프와 같이 NOAA 예보만 갱신한다.
      */
     fun loadKpData(showRefreshMessage: Boolean = true) {
         loadKpData(trigger = KpDataLoadTrigger.UserRefresh, showRefreshMessage = showRefreshMessage)

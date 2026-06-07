@@ -91,14 +91,14 @@ class KpChartsTest {
     }
 
     @Test
-    fun `auto refresh updates current KP and forecasts like iOS shared manager timer`() {
+    fun `auto refresh matches iOS forecast screen by refreshing NOAA forecast data only`() {
         listOf(false, true).forEach { hasCurrentKp ->
             val plan = resolveKpDataLoadPlan(
                 trigger = KpDataLoadTrigger.AutoRefresh,
                 hasCurrentKp = hasCurrentKp,
             )
 
-            assertEquals(true, plan.fetchCurrent)
+            assertEquals(false, plan.fetchCurrent)
             assertEquals(true, plan.fetchForecast)
             assertEquals(true, plan.fetchLongTermForecast)
             assertEquals(true, plan.forceRefresh)
