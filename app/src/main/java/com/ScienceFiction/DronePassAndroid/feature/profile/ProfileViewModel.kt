@@ -10,6 +10,7 @@ import androidx.lifecycle.viewModelScope
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.core.data.repository.DroneRepository
 import com.ScienceFiction.DronePassAndroid.core.data.repository.ShapeRepository
+import com.ScienceFiction.DronePassAndroid.core.data.repository.SketchRepository
 import com.ScienceFiction.DronePassAndroid.core.data.sync.RealtimeSyncManager
 import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncState
 import com.ScienceFiction.DronePassAndroid.feature.auth.AuthRepository
@@ -65,6 +66,9 @@ internal fun shouldNotifyProfileSyncResultForCloudToggle(
     return enabled && isLoggedIn
 }
 
+internal fun normalizeProfileJoinDateMillis(timestamp: Long?): Long? =
+    timestamp?.takeIf { it > 0L }
+
 /**
  * iOS `ProfileView` 정합 ViewModel.
  * 동기화(클라우드 백업/실시간 sync) + 약관/정책 + 계정 관리(로그아웃·탈퇴) 흐름을 담당.
@@ -75,6 +79,7 @@ class ProfileViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val firebaseAuth: FirebaseAuth,
     private val shapeRepository: ShapeRepository,
+    private val sketchRepository: SketchRepository,
     private val droneRepository: DroneRepository,
     private val firestore: FirebaseFirestore,
     private val realtimeSyncManager: RealtimeSyncManager,
@@ -101,6 +106,24 @@ class ProfileViewModel @Inject constructor(
     /** 로그인 여부 — Firebase AuthStateListener 로 자동 갱신. */
     private val _isLoggedIn = MutableStateFlow(firebaseAuth.currentUser != null)
     val isLoggedIn: StateFlow<Boolean> = _isLoggedIn.asStateFlow()
+
+    /** iOS ProfileView 가입일 행과 동일하게 Firebase Auth 생성 시각을 표시한다. */
+    private val _joinDateMillis = MutableStateFlow(
+        normalizeProfileJoinDateMillis(firebaseAuth.currentUser?.metadata?.creationTimestamp),
+    )
+    val joinDateMillis: StateFlow<Long?> = _joinDateMillis.asStateFlow()
+
+    val activeShapeCount: StateFlow<Int> = shapeRepository.getActiveShapes()
+        .map { it.size }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
+    val activeSketchCount: StateFlow<Int> = sketchRepository.getActiveSketches()
+        .map { it.size }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
+    val activeDroneCount: StateFlow<Int> = droneRepository.getActiveDrones()
+        .map { it.size }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
     /** 진행 중 동기화 (수동 백업·토글 ON 시 활성). */
     private val _isSyncing = MutableStateFlow(false)
@@ -144,7 +167,9 @@ class ProfileViewModel @Inject constructor(
 
     init {
         firebaseAuth.addAuthStateListener { auth ->
-            _isLoggedIn.value = auth.currentUser != null
+            val user = auth.currentUser
+            _isLoggedIn.value = user != null
+            _joinDateMillis.value = normalizeProfileJoinDateMillis(user?.metadata?.creationTimestamp)
         }
     }
 

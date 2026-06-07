@@ -450,9 +450,15 @@
 
     <!-- Phase 4: ProfileView (iOS ProfileView 정합) -->
     <string name="profile_title">My Profile</string>
+    <string name="profile_section_my_info">My Info</string>
     <string name="profile_section_sync">Synchronization</string>
     <string name="profile_section_terms">Terms &amp; Policies</string>
     <string name="profile_section_account">Account Management</string>
+    <string name="profile_info_join_date">Joined</string>
+    <string name="profile_info_shapes">Shapes</string>
+    <string name="profile_info_sketches">Sketches</string>
+    <string name="profile_info_drones">Drones</string>
+    <string name="profile_info_count_unit">%1$d</string>
 
     <string name="profile_sync_cloud">Real-time cloud sync</string>
     <string name="profile_sync_in_progress">Syncing...</string>

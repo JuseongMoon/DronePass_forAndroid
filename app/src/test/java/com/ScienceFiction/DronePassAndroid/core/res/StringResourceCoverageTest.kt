@@ -459,6 +459,12 @@ class StringResourceCoverageTest {
 
     @Test
     fun `profile sync and account strings match iOS localizations`() {
+        assertEquals("내 정보", stringResourceValue("values/strings.xml", "profile_section_my_info"))
+        assertEquals("가입일", stringResourceValue("values/strings.xml", "profile_info_join_date"))
+        assertEquals("도형", stringResourceValue("values/strings.xml", "profile_info_shapes"))
+        assertEquals("스케치", stringResourceValue("values/strings.xml", "profile_info_sketches"))
+        assertEquals("드론", stringResourceValue("values/strings.xml", "profile_info_drones"))
+        assertEquals("%1\$d개", stringResourceValue("values/strings.xml", "profile_info_count_unit"))
         assertEquals("실시간 클라우드 동기화", stringResourceValue("values/strings.xml", "profile_sync_cloud"))
         assertEquals("동기화 중...", stringResourceValue("values/strings.xml", "profile_sync_in_progress"))
         assertEquals("로그인이 필요합니다", stringResourceValue("values/strings.xml", "profile_sync_login_required"))
@@ -494,6 +500,12 @@ class StringResourceCoverageTest {
         )
         assertEquals("로그아웃하시겠습니까?", stringResourceValue("values/strings.xml", "profile_logout_message"))
 
+        assertEquals("My Info", stringResourceValue("values-en/strings.xml", "profile_section_my_info"))
+        assertEquals("Joined", stringResourceValue("values-en/strings.xml", "profile_info_join_date"))
+        assertEquals("Shapes", stringResourceValue("values-en/strings.xml", "profile_info_shapes"))
+        assertEquals("Sketches", stringResourceValue("values-en/strings.xml", "profile_info_sketches"))
+        assertEquals("Drones", stringResourceValue("values-en/strings.xml", "profile_info_drones"))
+        assertEquals("%1\$d", stringResourceValue("values-en/strings.xml", "profile_info_count_unit"))
         assertEquals("Real-time cloud sync", stringResourceValue("values-en/strings.xml", "profile_sync_cloud"))
         assertEquals("Syncing...", stringResourceValue("values-en/strings.xml", "profile_sync_in_progress"))
         assertEquals("Login required", stringResourceValue("values-en/strings.xml", "profile_sync_login_required"))

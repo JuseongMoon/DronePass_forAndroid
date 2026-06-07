@@ -133,4 +133,11 @@ class ProfileViewModelTest {
             )
         )
     }
+
+    @Test
+    fun `프로필 가입일은 iOS처럼 Firebase 생성 시각이 있을 때만 표시한다`() {
+        assertEquals(1_700_000_000_000L, normalizeProfileJoinDateMillis(1_700_000_000_000L))
+        assertEquals(null, normalizeProfileJoinDateMillis(0L))
+        assertEquals(null, normalizeProfileJoinDateMillis(null))
+    }
 }

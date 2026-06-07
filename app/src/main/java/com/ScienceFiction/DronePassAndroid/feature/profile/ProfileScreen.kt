@@ -52,7 +52,7 @@ internal const val ProfileDocumentSheetSkipPartiallyExpanded = false
 /**
  * iOS `ProfileView` 1:1 정합 시트 콘텐츠.
  * ModalBottomSheet 자식으로 호스팅된다.
- * 3섹션: 동기화 / 약관 및 정책 / 계정 관리.
+ * 4섹션: 내 정보 / 동기화 / 약관 및 정책 / 계정 관리.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -68,6 +68,10 @@ fun ProfileScreen(
     val syncStatus by viewModel.syncStatus.collectAsStateWithLifecycle()
     val lastBackupTime by viewModel.lastBackupTime.collectAsStateWithLifecycle()
     val lastRealtimeSyncTime by viewModel.lastRealtimeSyncTime.collectAsStateWithLifecycle()
+    val joinDateMillis by viewModel.joinDateMillis.collectAsStateWithLifecycle()
+    val activeShapeCount by viewModel.activeShapeCount.collectAsStateWithLifecycle()
+    val activeSketchCount by viewModel.activeSketchCount.collectAsStateWithLifecycle()
+    val activeDroneCount by viewModel.activeDroneCount.collectAsStateWithLifecycle()
 
     var showLogoutDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -112,7 +116,41 @@ fun ProfileScreen(
         }
         HorizontalDivider()
 
-        // ===== 1. 동기화 섹션 =====
+        // ===== 1. 내 정보 섹션 =====
+        SectionHeader(title = stringResource(R.string.profile_section_my_info))
+
+        joinDateMillis?.let { timestamp ->
+            ProfileInfoRow(
+                title = stringResource(R.string.profile_info_join_date),
+                value = formatJoinDate(timestamp),
+            )
+            HorizontalDivider(modifier = Modifier.padding(start = 16.dp))
+        }
+        ProfileInfoRow(
+            title = stringResource(R.string.profile_info_shapes),
+            value = stringResource(R.string.profile_info_count_unit, activeShapeCount),
+        )
+        HorizontalDivider(modifier = Modifier.padding(start = 16.dp))
+        ProfileInfoRow(
+            title = stringResource(R.string.profile_info_sketches),
+            value = stringResource(R.string.profile_info_count_unit, activeSketchCount),
+        )
+        HorizontalDivider(modifier = Modifier.padding(start = 16.dp))
+        ProfileInfoRow(
+            title = stringResource(R.string.profile_info_drones),
+            value = stringResource(R.string.profile_info_count_unit, activeDroneCount),
+        )
+        HorizontalDivider(modifier = Modifier.padding(start = 16.dp))
+        SettingsItem(
+            title = stringResource(R.string.profile_account_logout),
+            titleColor = MaterialTheme.colorScheme.error,
+            onClick = { if (!isAccountActionInProgress) showLogoutDialog = true },
+            enabled = shouldEnableProfileAccountAction(isAccountActionInProgress),
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // ===== 2. 동기화 섹션 =====
         SectionHeader(title = stringResource(R.string.profile_section_sync))
 
         ProfileCloudSyncToggleItem(
@@ -183,7 +221,7 @@ fun ProfileScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // ===== 2. 약관 및 정책 섹션 =====
+        // ===== 3. 약관 및 정책 섹션 =====
         SectionHeader(title = stringResource(R.string.profile_section_terms))
 
         SettingsItem(
@@ -200,17 +238,10 @@ fun ProfileScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // ===== 3. 계정 관리 섹션 (로그인 시만) =====
+        // ===== 4. 계정 관리 섹션 (회원 탈퇴만) =====
         if (isLoggedIn) {
             SectionHeader(title = stringResource(R.string.profile_section_account))
 
-            SettingsItem(
-                title = stringResource(R.string.profile_account_logout),
-                titleColor = MaterialTheme.colorScheme.error,
-                onClick = { if (!isAccountActionInProgress) showLogoutDialog = true },
-                enabled = shouldEnableProfileAccountAction(isAccountActionInProgress),
-            )
-            HorizontalDivider(modifier = Modifier.padding(start = 16.dp))
             SettingsItem(
                 title = stringResource(R.string.profile_account_delete),
                 titleColor = MaterialTheme.colorScheme.error,
@@ -354,6 +385,30 @@ private data class ProfileResultDialog(
 )
 
 @Composable
+private fun ProfileInfoRow(
+    title: String,
+    value: String,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.bodyLarge,
+        )
+        Spacer(modifier = Modifier.weight(1f))
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
 private fun ProfileCloudSyncToggleItem(
     title: String,
     subtitle: String,
@@ -408,6 +463,11 @@ internal fun shouldEnableProfileAccountAction(isAccountActionInProgress: Boolean
     !isAccountActionInProgress
 
 private fun Long?.hasSyncTimestamp(): Boolean = this != null && this != 0L
+
+private fun formatJoinDate(timestamp: Long): String {
+    val formatter = DateFormat.getDateInstance(DateFormat.LONG, Locale.getDefault())
+    return formatter.format(Date(timestamp))
+}
 
 private fun formatLastSync(timestamp: Long?): String {
     val formatter = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT, Locale.getDefault())
