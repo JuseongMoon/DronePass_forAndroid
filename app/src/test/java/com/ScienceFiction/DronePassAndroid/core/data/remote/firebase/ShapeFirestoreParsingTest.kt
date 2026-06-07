@@ -14,7 +14,7 @@ class ShapeFirestoreParsingTest {
         val shape = shapeFromFirestoreData(validDocument())
 
         requireNotNull(shape)
-        assertEquals("shape-1", shape.id)
+        assertEquals("00000000-0000-0000-0000-000000000001", shape.id)
         assertEquals("Shape", shape.title)
         assertEquals(ShapeType.CIRCLE, shape.shapeType)
         assertEquals("#007AFF", shape.color)
@@ -22,11 +22,17 @@ class ShapeFirestoreParsingTest {
     }
 
     @Test
-    fun `iOS ShapeFirebaseStore 와 같이 title color shapeType flightStartDate 누락은 invalid 이다`() {
+    fun `iOS ShapeFirebaseStore 와 같이 id title color shapeType flightStartDate 누락은 invalid 이다`() {
+        assertNull(shapeFromFirestoreData(validDocument() - "id"))
         assertNull(shapeFromFirestoreData(validDocument() - "title"))
         assertNull(shapeFromFirestoreData(validDocument() - "color"))
         assertNull(shapeFromFirestoreData(validDocument() - "shapeType"))
         assertNull(shapeFromFirestoreData(validDocument() - "flightStartDate"))
+    }
+
+    @Test
+    fun `iOS ShapeFirebaseStore 와 같이 UUID 로 파싱되지 않는 id 는 invalid 이다`() {
+        assertNull(shapeFromFirestoreData(validDocument() + ("id" to "not-a-uuid")))
     }
 
     @Test
@@ -110,7 +116,7 @@ class ShapeFirestoreParsingTest {
 
     private fun validDocument(): Map<String, Any?> {
         return mapOf(
-            "id" to "shape-1",
+            "id" to "00000000-0000-0000-0000-000000000001",
             "title" to "Shape",
             "shapeType" to "circle",
             "baseCoordinate" to mapOf(

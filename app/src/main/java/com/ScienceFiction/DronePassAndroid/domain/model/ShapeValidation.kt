@@ -1,5 +1,7 @@
 package com.ScienceFiction.DronePassAndroid.domain.model
 
+import java.util.UUID
+
 private const val MAX_FIREBASE_RADIUS_METERS = 50_000.0
 private const val MAX_FIREBASE_COORDINATE_COUNT = 1_000
 
@@ -23,6 +25,9 @@ fun ShapeModel.validateForLocalPersistence(): ShapeValidationResult {
 }
 
 fun ShapeModel.validateForFirebasePersistence(): ShapeValidationResult {
+    if (!isValidFirebaseShapeId(id)) {
+        return ShapeValidationResult(isValid = false, reason = "invalid id")
+    }
     return validateShape(
         maxRadiusMeters = MAX_FIREBASE_RADIUS_METERS,
         maxCoordinateCount = MAX_FIREBASE_COORDINATE_COUNT,
@@ -44,6 +49,10 @@ fun validateFirebaseShapeBatch(shapes: List<ShapeModel>): ShapeValidationResult 
     }
 
     return ShapeValidationResult(isValid = true)
+}
+
+private fun isValidFirebaseShapeId(id: String): Boolean {
+    return runCatching { UUID.fromString(id) }.isSuccess
 }
 
 private fun ShapeModel.validateShape(

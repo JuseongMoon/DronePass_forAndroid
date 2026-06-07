@@ -12,6 +12,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.tasks.await
 import java.util.Date
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.math.round
@@ -49,11 +50,16 @@ private fun timestampMillis(value: Any?): Long? {
     return (value as? Timestamp)?.toDate()?.time
 }
 
+private fun isValidShapeId(id: String): Boolean {
+    return runCatching { UUID.fromString(id) }.isSuccess
+}
+
 internal class ShapeFirebaseInvalidDataException(reason: String?) :
     IllegalStateException("Invalid shape data: ${reason ?: "unknown"}")
 
 internal fun shapeFromFirestoreData(data: Map<String, Any?>): ShapeModel? {
     val id = data["id"] as? String ?: return null
+    if (!isValidShapeId(id)) return null
     val title = data["title"] as? String ?: return null
     val color = data["color"] as? String ?: return null
     val shapeType = ShapeType.parseWireValue(data["shapeType"] as? String) ?: return null

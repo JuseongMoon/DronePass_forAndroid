@@ -7,6 +7,13 @@ import org.junit.Test
 class ShapeValidationTest {
 
     @Test
+    fun `도형 Firebase 저장은 iOS처럼 UUID id 만 허용한다`() {
+        assertTrue(validCircle().isValidForFirebasePersistence())
+        assertFalse(validCircle().copy(id = "not-a-uuid").isValidForFirebasePersistence())
+        assertFalse(validCircle().copy(id = "").isValidForFirebasePersistence())
+    }
+
+    @Test
     fun `iOS 와 같이 빈 제목은 유효하지 않다`() {
         val shape = validCircle().copy(title = "   ")
 
@@ -52,7 +59,7 @@ class ShapeValidationTest {
 
     private fun validCircle(): ShapeModel {
         return ShapeModel(
-            id = "shape-1",
+            id = "00000000-0000-0000-0000-000000000001",
             title = "Shape",
             shapeType = ShapeType.CIRCLE,
             baseCoordinate = Coordinate(37.0, 127.0),
