@@ -201,6 +201,7 @@ class ShapeFirebaseStore @Inject constructor(
                 .await()
         } catch (e: Exception) {
             Log.e(TAG, "도형 저장 실패: userId=$userId, shapeId=${shape.id}", e)
+            throw e
         }
     }
 
@@ -226,6 +227,7 @@ class ShapeFirebaseStore @Inject constructor(
             }
         } catch (e: Exception) {
             Log.e(TAG, "도형 배치 저장 실패: userId=$userId, count=${shapes.size}", e)
+            throw e
         }
     }
 
@@ -243,6 +245,7 @@ class ShapeFirebaseStore @Inject constructor(
             ).await()
         } catch (e: Exception) {
             Log.e(TAG, "도형 소프트 삭제 실패: userId=$userId, shapeId=$shapeId", e)
+            throw e
         }
     }
 
@@ -257,6 +260,7 @@ class ShapeFirebaseStore @Inject constructor(
             ).await()
         } catch (e: Exception) {
             Log.e(TAG, "서버 메타데이터 업데이트 실패: userId=$userId", e)
+            throw e
         }
     }
 

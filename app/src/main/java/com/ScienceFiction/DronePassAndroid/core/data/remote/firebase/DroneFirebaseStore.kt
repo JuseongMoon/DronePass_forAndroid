@@ -113,6 +113,7 @@ class DroneFirebaseStore @Inject constructor(
                 .await()
         } catch (e: Exception) {
             Log.e(TAG, "드론 저장 실패: userId=$userId, droneId=${drone.id}", e)
+            throw e
         }
     }
 
@@ -133,6 +134,7 @@ class DroneFirebaseStore @Inject constructor(
             }
         } catch (e: Exception) {
             Log.e(TAG, "드론 배치 저장 실패: userId=$userId, count=${drones.size}", e)
+            throw e
         }
     }
 
@@ -150,6 +152,7 @@ class DroneFirebaseStore @Inject constructor(
             ).await()
         } catch (e: Exception) {
             Log.e(TAG, "드론 소프트 삭제 실패: userId=$userId, droneId=$droneId", e)
+            throw e
         }
     }
 
@@ -164,6 +167,7 @@ class DroneFirebaseStore @Inject constructor(
             ).await()
         } catch (e: Exception) {
             Log.e(TAG, "서버 메타데이터 업데이트 실패: userId=$userId", e)
+            throw e
         }
     }
 

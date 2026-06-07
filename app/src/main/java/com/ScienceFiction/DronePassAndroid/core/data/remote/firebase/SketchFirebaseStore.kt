@@ -146,6 +146,7 @@ class SketchFirebaseStore @Inject constructor(
                 .await()
         } catch (e: Exception) {
             Log.e(TAG, "스케치 저장 실패: userId=$userId, sketchId=${sketch.id}", e)
+            throw e
         }
     }
 
@@ -171,6 +172,7 @@ class SketchFirebaseStore @Inject constructor(
             }
         } catch (e: Exception) {
             Log.e(TAG, "스케치 배치 저장 실패: userId=$userId, count=${sketches.size}", e)
+            throw e
         }
     }
 
@@ -188,6 +190,7 @@ class SketchFirebaseStore @Inject constructor(
             ).await()
         } catch (e: Exception) {
             Log.e(TAG, "스케치 소프트 삭제 실패: userId=$userId, sketchId=$sketchId", e)
+            throw e
         }
     }
 
@@ -202,6 +205,7 @@ class SketchFirebaseStore @Inject constructor(
             ).await()
         } catch (e: Exception) {
             Log.e(TAG, "서버 메타데이터 업데이트 실패: userId=$userId", e)
+            throw e
         }
     }
 

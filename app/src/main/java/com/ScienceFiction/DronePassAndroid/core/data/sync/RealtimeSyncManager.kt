@@ -32,6 +32,10 @@ internal fun realtimeForceSyncDomains(): List<RealtimeForceSyncDomain> {
     )
 }
 
+internal fun shouldRethrowRealtimeSyncFailure(manualRequest: Boolean): Boolean {
+    return manualRequest
+}
+
 internal fun resolveRealtimeSyncRestartUserId(
     currentListeningUserId: String?,
     currentAuthUserId: String?,
@@ -241,7 +245,7 @@ class RealtimeSyncManager @Inject constructor(
      * ShapeRepository.performFullSync()와 DroneRepository.performFullSync()를 호출하여
      * LWW 기반 양방향 동기화를 실행합니다.
      */
-    private suspend fun performShapeAndDroneSync() {
+    private suspend fun performShapeAndDroneSync(manualRequest: Boolean = false) {
         // compareAndSet 으로 race 없이 단일 진입 보장
         if (!shapeSyncInProgress.compareAndSet(false, true)) {
             Log.d(TAG, "Shape/Drone 동기화가 이미 진행 중입니다.")
@@ -274,6 +278,9 @@ class RealtimeSyncManager @Inject constructor(
 
             // 재시도 스케줄링
             scheduleShapeRetrySync()
+            if (shouldRethrowRealtimeSyncFailure(manualRequest)) {
+                throw e
+            }
         } finally {
             shapeSyncInProgress.set(false)
         }
@@ -285,7 +292,7 @@ class RealtimeSyncManager @Inject constructor(
      * SketchRepository.performFullSync()를 호출하여
      * LWW 기반 양방향 동기화를 실행합니다.
      */
-    private suspend fun performSketchSync() {
+    private suspend fun performSketchSync(manualRequest: Boolean = false) {
         if (!sketchSyncInProgress.compareAndSet(false, true)) {
             Log.d(TAG, "Sketch 동기화가 이미 진행 중입니다.")
             return
@@ -304,6 +311,9 @@ class RealtimeSyncManager @Inject constructor(
         } catch (e: Exception) {
             Log.e(TAG, "Sketch 실시간 동기화 실패", e)
             scheduleSketchRetrySync()
+            if (shouldRethrowRealtimeSyncFailure(manualRequest)) {
+                throw e
+            }
         } finally {
             sketchSyncInProgress.set(false)
         }
@@ -404,8 +414,8 @@ class RealtimeSyncManager @Inject constructor(
     suspend fun forceSyncNow() {
         realtimeForceSyncDomains().forEach { domain ->
             when (domain) {
-                RealtimeForceSyncDomain.ShapeDrone -> performShapeAndDroneSync()
-                RealtimeForceSyncDomain.Sketch -> performSketchSync()
+                RealtimeForceSyncDomain.ShapeDrone -> performShapeAndDroneSync(manualRequest = true)
+                RealtimeForceSyncDomain.Sketch -> performSketchSync(manualRequest = true)
             }
         }
     }

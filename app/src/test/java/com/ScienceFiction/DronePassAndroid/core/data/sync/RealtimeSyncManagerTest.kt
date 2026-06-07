@@ -17,6 +17,12 @@ class RealtimeSyncManagerTest {
     }
 
     @Test
+    fun `realtime listener retries silently but manual sync propagates failures`() {
+        assertEquals(false, shouldRethrowRealtimeSyncFailure(manualRequest = false))
+        assertEquals(true, shouldRethrowRealtimeSyncFailure(manualRequest = true))
+    }
+
+    @Test
     fun `realtime sync restart keeps active listener user first`() {
         assertEquals(
             "listening-user",
