@@ -1,6 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.sketch
 
-import android.graphics.Color
+import com.ScienceFiction.DronePassAndroid.core.util.parseIosOpaqueRgbHexColor
 import com.ScienceFiction.DronePassAndroid.core.util.SketchPointsCache
 import com.ScienceFiction.DronePassAndroid.core.util.SketchSmoothingAlgorithm
 import com.ScienceFiction.DronePassAndroid.domain.model.Coordinate
@@ -12,6 +12,15 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
+
+internal fun parseSketchOverlayColorSafe(hex: String, opacity: Double): Int {
+    val baseColor = parseIosOpaqueRgbHexColor(hex) ?: 0xFFFF0000.toInt()
+    val alpha = (opacity * 255).toInt().coerceIn(0, 255)
+    val red = (baseColor ushr 16) and 0xFF
+    val green = (baseColor ushr 8) and 0xFF
+    val blue = baseColor and 0xFF
+    return (alpha shl 24) or (red shl 16) or (green shl 8) or blue
+}
 
 /**
  * 스케치 폴리라인 오버레이를 관리하는 클래스.
@@ -198,18 +207,7 @@ class SketchOverlayManager {
      * HEX 색상 문자열과 투명도를 조합하여 ARGB int 값을 생성한다.
      */
     private fun parseSketchColor(hex: String, opacity: Double): Int {
-        return try {
-            val baseColor = Color.parseColor(hex)
-            val alpha = (opacity * 255).toInt().coerceIn(0, 255)
-            Color.argb(
-                alpha,
-                Color.red(baseColor),
-                Color.green(baseColor),
-                Color.blue(baseColor)
-            )
-        } catch (e: Exception) {
-            Color.RED
-        }
+        return parseSketchOverlayColorSafe(hex, opacity)
     }
 
     /**

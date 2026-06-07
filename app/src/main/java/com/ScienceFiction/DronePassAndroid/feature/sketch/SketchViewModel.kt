@@ -1,24 +1,31 @@
 package com.ScienceFiction.DronePassAndroid.feature.sketch
 
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ScienceFiction.DronePassAndroid.core.data.repository.SketchRepository
 import com.ScienceFiction.DronePassAndroid.core.util.AnalyticsLogger
 import com.ScienceFiction.DronePassAndroid.core.util.DistanceCalculator
 import com.ScienceFiction.DronePassAndroid.domain.model.Coordinate
-import com.ScienceFiction.DronePassAndroid.domain.model.PaletteColor
 import com.ScienceFiction.DronePassAndroid.domain.model.SketchModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlin.math.abs
 import kotlin.math.cos
 import javax.inject.Inject
+
+internal const val SketchEraserThresholdMeters = 30.0
 
 /**
  * 스케치 기능의 ViewModel.
@@ -29,7 +36,8 @@ import javax.inject.Inject
 @HiltViewModel
 class SketchViewModel @Inject constructor(
     private val sketchRepository: SketchRepository,
-    private val analyticsLogger: AnalyticsLogger
+    private val analyticsLogger: AnalyticsLogger,
+    private val dataStore: DataStore<Preferences>
 ) : ViewModel() {
 
     // ──────────────────────────────────────────────
@@ -45,15 +53,15 @@ class SketchViewModel @Inject constructor(
     val isEraserMode: StateFlow<Boolean> = _isEraserMode.asStateFlow()
 
     /** 현재 선택된 펜 색상 (HEX) */
-    private val _currentColor = MutableStateFlow(PaletteColor.RED.hex)
+    private val _currentColor = MutableStateFlow(DefaultSketchColor)
     val currentColor: StateFlow<String> = _currentColor.asStateFlow()
 
     /** 현재 펜 두께 */
-    private val _currentStrokeWidth = MutableStateFlow(4.0)
+    private val _currentStrokeWidth = MutableStateFlow(DefaultSketchStrokeWidth)
     val currentStrokeWidth: StateFlow<Double> = _currentStrokeWidth.asStateFlow()
 
     /** 현재 펜 투명도 (0.0 ~ 1.0) */
-    private val _currentOpacity = MutableStateFlow(1.0)
+    private val _currentOpacity = MutableStateFlow(DefaultSketchOpacity)
     val currentOpacity: StateFlow<Double> = _currentOpacity.asStateFlow()
 
     /**
@@ -90,11 +98,13 @@ class SketchViewModel @Inject constructor(
     /** Undo/Redo 액션 타입 */
     private sealed class SketchAction {
         data class Create(val sketch: SketchModel) : SketchAction()
-        data class Delete(val sketch: SketchModel) : SketchAction()
+        data class Delete(val sketches: List<SketchModel>) : SketchAction()
     }
 
     private val undoStack = ArrayDeque<SketchAction>()
     private val redoStack = ArrayDeque<SketchAction>()
+    private var latestSketchMutationJob: Job? = null
+    private var sketchModeEnterTimeMillis: Long? = null
 
     /** 마지막으로 샘플링된 포인트 (최소 거리 필터링용) */
     private var lastSampledPoint: Coordinate? = null
@@ -102,7 +112,19 @@ class SketchViewModel @Inject constructor(
     /** 최소 샘플링 거리 (미터) */
     private companion object {
         const val MIN_SAMPLING_DISTANCE_METERS = 5.0
-        const val ERASER_THRESHOLD_METERS = 30.0
+    }
+
+    init {
+        viewModelScope.launch {
+            val preferences = dataStore.data.first()
+            _currentColor.value = preferences[SketchPreferenceKeys.CURRENT_COLOR] ?: DefaultSketchColor
+            _currentStrokeWidth.value = clampSketchStrokeWidth(
+                preferences[SketchPreferenceKeys.CURRENT_STROKE_WIDTH] ?: DefaultSketchStrokeWidth
+            )
+            _currentOpacity.value = clampSketchOpacity(
+                preferences[SketchPreferenceKeys.CURRENT_OPACITY] ?: DefaultSketchOpacity
+            )
+        }
     }
 
     // ──────────────────────────────────────────────
@@ -113,21 +135,41 @@ class SketchViewModel @Inject constructor(
      * 스케치 모드로 진입한다.
      */
     fun enterSketchMode() {
+        if (!shouldEnterSketchMode(_isSketchMode.value)) return
+
+        drawingBuffer.clear()
+        _currentDrawingPoints.value = emptyList()
+        lastSampledPoint = null
+        undoStack.clear()
+        redoStack.clear()
+        updateUndoRedoState()
         _isSketchMode.value = true
         _isEraserMode.value = false
+        sketchModeEnterTimeMillis = System.currentTimeMillis()
         analyticsLogger.logSketchModeEntered()
     }
 
     /**
      * 스케치 모드를 종료한다.
-     * 진행 중인 그리기가 있으면 취소한다.
+     * 진행 중인 그리기가 있으면 iOS처럼 완료 처리한다.
      */
     fun exitSketchMode() {
-        drawingBuffer.clear()
-        _currentDrawingPoints.value = emptyList()
+        if (!_isSketchMode.value) return
+
+        if (drawingBuffer.isNotEmpty()) {
+            finishDrawing(recordUndo = false)
+        } else {
+            _currentDrawingPoints.value = emptyList()
+        }
         lastSampledPoint = null
         _isSketchMode.value = false
         _isEraserMode.value = false
+        syncSketchesOnModeComplete()
+        sketchModeEnterTimeMillis?.let { enteredAt ->
+            val durationSeconds = ((System.currentTimeMillis() - enteredAt) / 1000L).toInt()
+            analyticsLogger.logSketchModeExited(durationSeconds)
+        }
+        sketchModeEnterTimeMillis = null
     }
 
     // ──────────────────────────────────────────────
@@ -168,7 +210,7 @@ class SketchViewModel @Inject constructor(
      * 그리기를 완료한다.
      * 포인트가 2개 이상이면 스케치를 저장한다.
      */
-    fun finishDrawing() {
+    fun finishDrawing(recordUndo: Boolean = true) {
         val points = drawingBuffer.toList()
         drawingBuffer.clear()
         if (points.size < 2) {
@@ -184,12 +226,28 @@ class SketchViewModel @Inject constructor(
             opacity = _currentOpacity.value
         )
 
-        viewModelScope.launch {
+        launchSketchMutation {
             sketchRepository.insertSketch(sketch)
-            pushUndoAction(SketchAction.Create(sketch))
-            analyticsLogger.logSketchSaved()
+            if (recordUndo) {
+                pushUndoAction(SketchAction.Create(sketch))
+            }
+            val counts = sketchRepository.getSketchCounts()
+            analyticsLogger.logSketchSaved(
+                totalCount = counts.totalCount,
+                activeCount = counts.activeCount,
+            )
         }
 
+        _currentDrawingPoints.value = emptyList()
+        lastSampledPoint = null
+    }
+
+    /**
+     * 현재 그리는 중인 선을 저장하지 않고 취소한다.
+     * 2손가락 지도 조작으로 전환되거나 시스템 터치 취소가 발생할 때 사용한다.
+     */
+    fun cancelDrawing() {
+        drawingBuffer.clear()
         _currentDrawingPoints.value = emptyList()
         lastSampledPoint = null
     }
@@ -205,8 +263,7 @@ class SketchViewModel @Inject constructor(
         _isEraserMode.value = !_isEraserMode.value
         // 지우개 모드 진입 시 진행 중인 그리기 취소
         if (_isEraserMode.value) {
-            _currentDrawingPoints.value = emptyList()
-            lastSampledPoint = null
+            cancelDrawing()
         }
     }
 
@@ -220,55 +277,22 @@ class SketchViewModel @Inject constructor(
      * @param point 터치 좌표
      */
     fun deleteSketchAtPoint(point: Coordinate) {
-        val sketches = activeSketches.value
-        if (sketches.isEmpty()) return
-
-        viewModelScope.launch {
+        launchSketchMutation {
             // 동일 드래그 안에서 빠르게 연속 호출되는 N 개 코루틴 사이의 race 를 직렬화한다.
             // (이전: 동시 삭제로 같은 스케치가 두 번 softDelete 되거나, 여러 스케치가 동시 삭제됨.)
             eraserMutex.withLock {
-                for (sketch in sketches) {
-                    if (sketch.points.size < 2) continue
+                val sketch = findClosestErasableSketch(
+                    point = point,
+                    sketches = activeSketches.value,
+                ) ?: return@withLock
 
-                    // 1단계: BoundingBox 필터링 (cosLat 보정)
-                    if (!isPointNearBoundingBox(point, sketch.points)) continue
-
-                    // 2단계: 정밀 거리 계산 (점-선분 거리)
-                    val isNear = sketch.points.zipWithNext().any { (start, end) ->
-                        DistanceCalculator.distanceToSegment(point, start, end) < ERASER_THRESHOLD_METERS
-                    }
-
-                    if (isNear) {
-                        sketchRepository.softDeleteSketch(sketch)
-                        pushUndoAction(SketchAction.Delete(sketch))
-                        break // 한 번에 하나의 스케치만 삭제
-                    }
-                }
+                sketchRepository.softDeleteSketch(sketch)
+                pushUndoAction(SketchAction.Delete(listOf(sketch)))
+                analyticsLogger.logSketchDeleted(
+                    activeCount = activeSketches.value.count { !it.isDeleted && it.id != sketch.id },
+                )
             }
         }
-    }
-
-    /**
-     * BoundingBox 내에 포인트가 있는지 빠르게 확인한다.
-     * 경도 1° 당 거리는 위도에 따라 달라지므로 (지구는 회전 타원체) cosLat 보정으로 정확도를 높인다.
-     * (이전: lngThreshold = 30 / 85000 으로 한국 평균을 고정 → 위도 차이에 따른 오차).
-     */
-    private fun isPointNearBoundingBox(
-        point: Coordinate,
-        sketchPoints: List<Coordinate>
-    ): Boolean {
-        val latThreshold = ERASER_THRESHOLD_METERS / 111_000.0
-        // 평균 위도(cos)로 경도 임계값 동적 계산. 한국 영역(35~38°)에서 약 1/0.79~0.81.
-        val avgLatRad = Math.toRadians(sketchPoints.map { it.latitude }.average())
-        val cosLat = cos(avgLatRad).coerceAtLeast(0.01) // 극점 근처 0 으로 나누기 방지
-        val lngThreshold = ERASER_THRESHOLD_METERS / (111_000.0 * cosLat)
-
-        val minLat = sketchPoints.minOf { it.latitude } - latThreshold
-        val maxLat = sketchPoints.maxOf { it.latitude } + latThreshold
-        val minLng = sketchPoints.minOf { it.longitude } - lngThreshold
-        val maxLng = sketchPoints.maxOf { it.longitude } + lngThreshold
-
-        return point.latitude in minLat..maxLat && point.longitude in minLng..maxLng
     }
 
     // ──────────────────────────────────────────────
@@ -282,13 +306,13 @@ class SketchViewModel @Inject constructor(
      */
     fun undo() {
         val action = undoStack.removeLastOrNull() ?: return
-        viewModelScope.launch {
+        launchSketchMutation {
             when (action) {
                 is SketchAction.Create -> {
                     sketchRepository.softDeleteSketch(action.sketch)
                 }
                 is SketchAction.Delete -> {
-                    sketchRepository.restoreSketch(action.sketch)
+                    action.sketches.forEach { sketchRepository.restoreSketch(it) }
                 }
             }
             redoStack.addLast(action)
@@ -303,13 +327,13 @@ class SketchViewModel @Inject constructor(
      */
     fun redo() {
         val action = redoStack.removeLastOrNull() ?: return
-        viewModelScope.launch {
+        launchSketchMutation {
             when (action) {
                 is SketchAction.Create -> {
                     sketchRepository.restoreSketch(action.sketch)
                 }
                 is SketchAction.Delete -> {
-                    sketchRepository.softDeleteSketch(action.sketch)
+                    action.sketches.forEach { sketchRepository.softDeleteSketch(it) }
                 }
             }
             undoStack.addLast(action)
@@ -340,16 +364,33 @@ class SketchViewModel @Inject constructor(
     /** 펜 색상을 변경한다. */
     fun setColor(hex: String) {
         _currentColor.value = hex
+        viewModelScope.launch {
+            dataStore.edit { preferences ->
+                preferences[SketchPreferenceKeys.CURRENT_COLOR] = hex
+            }
+        }
     }
 
     /** 펜 두께를 변경한다. */
     fun setStrokeWidth(width: Double) {
-        _currentStrokeWidth.value = width
+        val clampedWidth = clampSketchStrokeWidth(width)
+        _currentStrokeWidth.value = clampedWidth
+        viewModelScope.launch {
+            dataStore.edit { preferences ->
+                preferences[SketchPreferenceKeys.CURRENT_STROKE_WIDTH] = clampedWidth
+            }
+        }
     }
 
     /** 펜 투명도를 변경한다. */
     fun setOpacity(opacity: Double) {
-        _currentOpacity.value = opacity.coerceIn(0.0, 1.0)
+        val clampedOpacity = clampSketchOpacity(opacity)
+        _currentOpacity.value = clampedOpacity
+        viewModelScope.launch {
+            dataStore.edit { preferences ->
+                preferences[SketchPreferenceKeys.CURRENT_OPACITY] = clampedOpacity
+            }
+        }
     }
 
     // ──────────────────────────────────────────────
@@ -357,15 +398,92 @@ class SketchViewModel @Inject constructor(
     // ──────────────────────────────────────────────
 
     /**
-     * 모든 스케치를 삭제한다 (하드 삭제).
-     * Undo/Redo 스택도 초기화한다.
+     * 모든 활성 스케치를 소프트 삭제한다.
+     * iOS처럼 하나의 Undo 액션으로 전체 복구할 수 있게 삭제 전 목록을 저장한다.
      */
     fun deleteAllSketches() {
-        viewModelScope.launch {
-            sketchRepository.deleteAllSketches()
-            undoStack.clear()
-            redoStack.clear()
-            updateUndoRedoState()
+        launchSketchMutation {
+            val deletedSketches = sketchRepository.deleteAllSketches()
+            if (deletedSketches.isNotEmpty()) {
+                undoStack.addLast(SketchAction.Delete(deletedSketches))
+                redoStack.clear()
+                updateUndoRedoState()
+                analyticsLogger.logSketchAllCleared(deletedSketches.size)
+            }
         }
     }
+
+    private fun launchSketchMutation(block: suspend () -> Unit): Job {
+        val previousJob = latestSketchMutationJob
+        val job = viewModelScope.launch {
+            previousJob?.join()
+            block()
+        }
+        latestSketchMutationJob = job
+        return job
+    }
+
+    private fun syncSketchesOnModeComplete() {
+        val previousJob = latestSketchMutationJob
+        viewModelScope.launch {
+            previousJob?.join()
+            sketchRepository.syncToFirebaseOnComplete()
+        }
+    }
+}
+
+internal fun findClosestErasableSketch(
+    point: Coordinate,
+    sketches: List<SketchModel>,
+    thresholdMeters: Double = SketchEraserThresholdMeters,
+): SketchModel? {
+    return sketches
+        .asSequence()
+        .filter { !it.isDeleted && it.points.isNotEmpty() }
+        .filter { isPointNearSketchBoundingBox(point, it.points, thresholdMeters) }
+        .mapNotNull { sketch ->
+            val distance = minDistanceToSketch(point, sketch.points)
+            if (distance <= thresholdMeters) sketch to distance else null
+        }
+        .minByOrNull { (_, distance) -> distance }
+        ?.first
+}
+
+internal fun minDistanceToSketch(
+    point: Coordinate,
+    sketchPoints: List<Coordinate>,
+): Double {
+    return when (sketchPoints.size) {
+        0 -> Double.POSITIVE_INFINITY
+        1 -> DistanceCalculator.haversine(point, sketchPoints[0])
+        else -> sketchPoints
+            .zipWithNext()
+            .minOf { (start, end) ->
+                DistanceCalculator.distanceToSegment(point, start, end)
+            }
+    }
+}
+
+/**
+ * BoundingBox 내에 포인트가 있는지 빠르게 확인한다.
+ * 경도 1° 당 거리는 위도에 따라 달라지므로 iOS처럼 터치 지점 위도로 cosLat을 보정한다.
+ */
+internal fun isPointNearSketchBoundingBox(
+    point: Coordinate,
+    sketchPoints: List<Coordinate>,
+    thresholdMeters: Double = SketchEraserThresholdMeters,
+): Boolean {
+    if (sketchPoints.isEmpty()) return false
+
+    val latThreshold = thresholdMeters / 111_000.0
+    val pointLatRad = Math.toRadians(point.latitude)
+    val cosLat = abs(cos(pointLatRad)).coerceAtLeast(0.01)
+    val lngThreshold = thresholdMeters / (111_000.0 * cosLat)
+
+    val minLat = sketchPoints.minOf { it.latitude } - latThreshold
+    val maxLat = sketchPoints.maxOf { it.latitude } + latThreshold
+    val minLng = sketchPoints.minOf { it.longitude } - lngThreshold
+    val maxLng = sketchPoints.maxOf { it.longitude } + lngThreshold
+
+    return point.latitude in minLat..maxLat && point.longitude in minLng..maxLng
 }

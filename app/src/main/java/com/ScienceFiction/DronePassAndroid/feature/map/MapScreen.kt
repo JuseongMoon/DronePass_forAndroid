@@ -3,6 +3,7 @@ package com.ScienceFiction.DronePassAndroid.feature.map
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.graphics.PointF
 import android.util.Log
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,10 +26,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -60,6 +63,8 @@ import com.naver.maps.map.MapView
 import com.naver.maps.map.NaverMap
 import com.naver.maps.map.NaverMapSdk
 import com.naver.maps.map.util.FusedLocationSource
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 
 /**
  * 지도 메인 화면.
@@ -77,6 +82,9 @@ fun MapScreen(
     onFocusConsumed: () -> Unit = {},
     editShapeId: String? = null,
     onEditShapeConsumed: () -> Unit = {},
+    duplicateShapeId: String? = null,
+    onDuplicateShapeConsumed: () -> Unit = {},
+    onShapeListFocusRequested: (String) -> Unit = {},
     onNavigateToWeather: () -> Unit = {},
     viewModel: MapViewModel = hiltViewModel(),
     sketchViewModel: SketchViewModel = hiltViewModel(),
@@ -85,6 +93,8 @@ fun MapScreen(
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
+    val configuration = LocalConfiguration.current
+    val density = LocalDensity.current
 
     val mapView = remember {
         NaverMapSdk.getInstance(context).client =
@@ -101,14 +111,19 @@ fun MapScreen(
     val flightZoneOverlayManager = remember { FlightZoneOverlayManager() }
 
     // 디바이스 density 를 SketchOverlayManager 에 주입 (dp→px 정확도 향상)
-    val displayDensity = LocalDensity.current.density
+    val displayDensity = density.density
     LaunchedEffect(sketchOverlayManager, displayDensity) {
         sketchOverlayManager.setDensity(displayDensity)
     }
 
     // 좌측 하단 컨트롤(내 위치 버튼/로고/축척)이 floating tab bar 위로 떠 보이도록 bottom 패딩 적용.
     // iOS NaverMapView.contentInset(bottom: -33) 대응 — Android 는 floating tab bar(60+15dp) 만큼 추가로 비워야 한다.
-    val mapBottomPaddingPx = with(LocalDensity.current) { MapBottomContentPadding.roundToPx() }
+    val mapBottomPaddingPx = with(density) { MapBottomContentPadding.roundToPx() }
+    val shapeFocusOffsets = resolveShapeFocusOffsets(
+        isTablet = configuration.smallestScreenWidthDp >= TabletSmallestWidthDp,
+    )
+    val shapeFocusOffsetXPx = with(density) { shapeFocusOffsets.x.toPx() }
+    val shapeFocusOffsetYPx = with(density) { shapeFocusOffsets.y.toPx() }
 
     // factory 에서 등록한 NaverMap 리스너 참조 — onDispose 에서 해제할 수 있도록 보관.
     var cameraIdleListener by remember { mutableStateOf<NaverMap.OnCameraIdleListener?>(null) }
@@ -131,6 +146,9 @@ fun MapScreen(
 
     // 화면 항상 켜기 설정 (Phase 3.4 B-M3 양방향 적용)
     val keepScreenOn by viewModel.keepScreenOn.collectAsStateWithLifecycle()
+    val activeShapesForPendingRequests by viewModel.activeShapes.collectAsStateWithLifecycle()
+    val visibleShapesForPendingRequests by viewModel.filteredShapes.collectAsStateWithLifecycle()
+    val pendingNewShapeRequest by viewModel.pendingNewShapeRequest.collectAsStateWithLifecycle()
     val view = LocalView.current
     DisposableEffect(keepScreenOn) {
         view.keepScreenOn = keepScreenOn
@@ -155,36 +173,61 @@ fun MapScreen(
         }
     }
 
+    LaunchedEffect(Unit) {
+        viewModel.savedShapeFocusEvent.collect { shapeId ->
+            onShapeListFocusRequested(shapeId)
+        }
+    }
+
     // 오버레이 매니저 콜백 — SideEffect 로 매 successful recomposition 후 최신 ViewModel 참조 할당
     SideEffect {
-        overlayManager.onShapeTapped = { shapeId -> viewModel.onShapeSelected(shapeId) }
+        overlayManager.onShapeTapped = { shapeId -> viewModel.onShapeOverlayTapped(shapeId) }
         flightZoneOverlayManager.onZoneTapped = { zone -> viewModel.onZoneSelected(zone) }
     }
 
     // 탭 간 연동: 저장 목록에서 도형 선택 시 해당 도형으로 포커스
-    LaunchedEffect(focusShapeId, mapReady) {
+    LaunchedEffect(focusShapeId, mapReady, visibleShapesForPendingRequests, activeShapesForPendingRequests) {
         if (focusShapeId != null && mapReady) {
-            val activeShapes = viewModel.activeShapes.value
-            val shape = activeShapes.find { it.id == focusShapeId }
+            val visibleShapes = visibleShapesForPendingRequests
+            val shape = resolvePendingMapShapeRequestTarget(focusShapeId, visibleShapes)
             if (shape != null) {
-                viewModel.onShapeSelected(shape.id)
-                viewModel.moveCameraToShape(shape)
+                viewModel.moveCameraToShape(shape, skipIfAlreadyFocused = true)
+                viewModel.selectShapeForMapFocus(shape.id)
+                onFocusConsumed()
+            } else if (shouldConsumeMissingMapShapeRequest(activeShapesForPendingRequests)) {
+                onFocusConsumed()
             }
-            onFocusConsumed()
         }
     }
 
     // 탭 간 연동: 저장 목록에서 편집 진입 시 상세 시트 건너뛰고 바로 편집 시트.
     // (focusShapeId 경로는 onShapeSelected → ShapeDetailSheet 자동 표시되므로 별도 채널 필요)
-    LaunchedEffect(editShapeId, mapReady) {
+    LaunchedEffect(editShapeId, mapReady, visibleShapesForPendingRequests, activeShapesForPendingRequests) {
         if (editShapeId != null && mapReady) {
-            val activeShapes = viewModel.activeShapes.value
-            val shape = activeShapes.find { it.id == editShapeId }
+            val visibleShapes = visibleShapesForPendingRequests
+            val shape = resolvePendingMapShapeRequestTarget(editShapeId, visibleShapes)
             if (shape != null) {
                 viewModel.onEditShapeRequested(shape)
                 viewModel.moveCameraToShape(shape)
+                onEditShapeConsumed()
+            } else if (shouldConsumeMissingMapShapeRequest(activeShapesForPendingRequests)) {
+                onEditShapeConsumed()
             }
-            onEditShapeConsumed()
+        }
+    }
+
+    // 탭 간 연동: 저장 목록 상세의 복제는 지도 상세와 동일하게 복제 편집 시트로 진입.
+    LaunchedEffect(duplicateShapeId, mapReady, visibleShapesForPendingRequests, activeShapesForPendingRequests) {
+        if (duplicateShapeId != null && mapReady) {
+            val visibleShapes = visibleShapesForPendingRequests
+            val shape = resolvePendingMapShapeRequestTarget(duplicateShapeId, visibleShapes)
+            if (shape != null) {
+                viewModel.onDuplicateRequested(shape)
+                viewModel.moveCameraToShape(shape)
+                onDuplicateShapeConsumed()
+            } else if (shouldConsumeMissingMapShapeRequest(activeShapesForPendingRequests)) {
+                onDuplicateShapeConsumed()
+            }
         }
     }
 
@@ -196,8 +239,8 @@ fun MapScreen(
     }
 
     // 카메라 이벤트 (MoveTo / MoveWithoutZoom)
-    LaunchedEffect(Unit) {
-        viewModel.cameraEvent.collect { event ->
+    LaunchedEffect(shapeFocusOffsetXPx, shapeFocusOffsetYPx) {
+        viewModel.cameraEvent.collectLatest { event ->
             naverMap?.let { map ->
                 when (event) {
                     is CameraEvent.MoveTo -> {
@@ -207,9 +250,36 @@ fun MapScreen(
                         ).animate(CameraAnimation.Easing, 500)
                         map.moveCamera(cameraUpdate)
                     }
+                    is CameraEvent.MoveToShape -> {
+                        val center = LatLng(event.coordinate.latitude, event.coordinate.longitude)
+
+                        val zoomUpdate = CameraUpdate.zoomTo(event.zoom)
+                            .animate(CameraAnimation.Easing, ShapeFocusZoomDurationMs)
+                        map.moveCamera(zoomUpdate)
+
+                        delay(ShapeFocusSecondStepDelayMs)
+
+                        val offsetCenter = offsetLatLng(
+                            center = center,
+                            map = map,
+                            offsetX = shapeFocusOffsetXPx,
+                            offsetY = shapeFocusOffsetYPx,
+                        )
+                        val cameraUpdate = CameraUpdate.toCameraPosition(
+                            CameraPosition(offsetCenter, event.zoom),
+                        ).animate(CameraAnimation.Easing, ShapeFocusMoveDurationMs)
+                        map.moveCamera(cameraUpdate)
+                    }
                     is CameraEvent.MoveWithoutZoom -> {
-                        val cameraUpdate = CameraUpdate.scrollTo(
-                            LatLng(event.coordinate.latitude, event.coordinate.longitude),
+                        val center = LatLng(event.coordinate.latitude, event.coordinate.longitude)
+                        val offsetCenter = offsetLatLng(
+                            center = center,
+                            map = map,
+                            offsetX = shapeFocusOffsetXPx,
+                            offsetY = shapeFocusOffsetYPx,
+                        )
+                        val cameraUpdate = CameraUpdate.toCameraPosition(
+                            CameraPosition(offsetCenter, map.cameraPosition.zoom),
                         ).animate(CameraAnimation.Easing, 500)
                         map.moveCamera(cameraUpdate)
                     }
@@ -251,6 +321,38 @@ fun MapScreen(
         )
     }
 
+    pendingNewShapeRequest?.let { request ->
+        val addressNotFoundFallback = stringResource(R.string.map_address_not_found)
+        val titleRes = when (request.dialogType) {
+            NewShapeConfirmDialogType.CONFIRM -> R.string.map_new_shape_alert_title
+            NewShapeConfirmDialogType.GEOCODING_FAILED -> R.string.map_address_search_failed_title
+        }
+        val messageRes = when (request.dialogType) {
+            NewShapeConfirmDialogType.CONFIRM -> R.string.map_new_shape_alert_message
+            NewShapeConfirmDialogType.GEOCODING_FAILED -> R.string.map_address_search_failed_message
+        }
+
+        AlertDialog(
+            onDismissRequest = { viewModel.cancelPendingNewShapeRequest() },
+            title = { Text(stringResource(titleRes)) },
+            text = { Text(stringResource(messageRes)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.confirmPendingNewShapeRequest(addressNotFoundFallback)
+                    }
+                ) {
+                    Text(stringResource(R.string.common_yes))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.cancelPendingNewShapeRequest() }) {
+                    Text(stringResource(R.string.common_no))
+                }
+            },
+        )
+    }
+
     // 메인 레이아웃 (Box - MainScreen 이 이미 Scaffold 제공)
     Box(modifier = Modifier.fillMaxSize()) {
         // 네이버 지도
@@ -266,13 +368,20 @@ fun MapScreen(
 
                         Log.d("NaverMapDebug", "네이버 지도 준비 완료")
 
-                        map.cameraPosition = CameraPosition(LatLng(37.5665, 126.9780), 13.0)
+                        map.cameraPosition = CameraPosition(
+                            LatLng(MapDefaultSeoulLatitude, MapDefaultSeoulLongitude),
+                            MapInitialZoomLevel,
+                        )
                         map.uiSettings.apply {
                             isLocationButtonEnabled = true
                             isZoomControlEnabled = true
                             isCompassEnabled = true
                         }
                         map.setContentPadding(0, 0, 0, mapBottomPaddingPx)
+                        map.setOnSymbolClickListener {
+                            // iOS NaverMapView.Coordinator.didTap symbol 과 동일하게 POI 라벨 탭을 소비한다.
+                            shouldConsumeNaverMapSymbolTap()
+                        }
 
                         val cameraListener = NaverMap.OnCameraIdleListener {
                             val bounds = map.contentBounds
@@ -305,6 +414,7 @@ fun MapScreen(
 
         // ── 자식 3: 스케치 입력 인터셉터 + 툴바 (isSketchMode = true 일 때만 내부에서 렌더) ──
         MapSketchInput(
+            mapView = mapView,
             naverMap = naverMap,
             sketchViewModel = sketchViewModel,
         )
@@ -355,6 +465,7 @@ fun MapScreen(
         showWeatherSheet = showWeatherSheet,
         onDismissWeatherSheet = { showWeatherSheet = false },
         viewModel = viewModel,
+        flightZoneOverlayManager = flightZoneOverlayManager,
         kpViewModel = kpViewModel,
         weatherViewModel = weatherViewModel,
         onNavigateToWeather = onNavigateToWeather,
@@ -378,6 +489,7 @@ fun MapScreen(
             naverMap?.let { map ->
                 cameraIdleListener?.let { map.removeOnCameraIdleListener(it) }
                 map.onMapLongClickListener = null
+                map.onSymbolClickListener = null
             }
             cameraIdleListener = null
             mapLongClickListener = null
@@ -390,6 +502,20 @@ fun MapScreen(
             lifecycleOwner.lifecycle.removeObserver(observer)
         }
     }
+}
+
+private fun offsetLatLng(
+    center: LatLng,
+    map: NaverMap,
+    offsetX: Float,
+    offsetY: Float,
+): LatLng {
+    val point = map.projection.toScreenLocation(center)
+    if (point.x.isNaN() || point.y.isNaN()) return center
+
+    val offsetPoint = PointF(point.x + offsetX, point.y + offsetY)
+    val offsetCenter = map.projection.fromScreenLocation(offsetPoint)
+    return if (offsetCenter.isValid) offsetCenter else center
 }
 
 @SuppressLint("MissingPermission")
@@ -407,7 +533,10 @@ private fun setupLocationTracking(map: NaverMap, context: android.content.Contex
         val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
         fusedLocationClient.lastLocation.addOnSuccessListener { location ->
             location?.let {
-                map.cameraPosition = CameraPosition(LatLng(it.latitude, it.longitude), 15.0)
+                map.cameraPosition = CameraPosition(
+                    LatLng(it.latitude, it.longitude),
+                    MapUserLocationZoomLevel,
+                )
             }
         }
     } catch (e: Exception) {
@@ -416,8 +545,31 @@ private fun setupLocationTracking(map: NaverMap, context: android.content.Contex
 }
 
 private const val LOCATION_PERMISSION_REQUEST_CODE = 1000
+private const val TabletSmallestWidthDp = 600
+internal const val MapDefaultSeoulLatitude = 37.575563
+internal const val MapDefaultSeoulLongitude = 126.976793
+internal const val MapInitialZoomLevel = 12.0
+internal const val MapUserLocationZoomLevel = 16.0
+internal const val ShapeFocusZoomDurationMs = 300L
+internal const val ShapeFocusSecondStepDelayMs = 300L
+internal const val ShapeFocusMoveDurationMs = 500L
 
 private val MapBottomContentPadding = 45.dp
+private val ShapeFocusPhoneOffsetY = 200.dp
+private val ShapeFocusTabletOffsetX = (-100).dp
+
+internal data class ShapeFocusOffsets(
+    val x: Dp,
+    val y: Dp,
+)
+
+internal fun resolveShapeFocusOffsets(isTablet: Boolean): ShapeFocusOffsets {
+    return if (isTablet) {
+        ShapeFocusOffsets(x = ShapeFocusTabletOffsetX, y = 0.dp)
+    } else {
+        ShapeFocusOffsets(x = 0.dp, y = ShapeFocusPhoneOffsetY)
+    }
+}
 
 /**
  * 사각형 [LatLngBounds] 를 양 방향으로 [ratio] 만큼 확장한다 (iOS 의 20% 버퍼 매핑).

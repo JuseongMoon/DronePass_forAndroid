@@ -11,8 +11,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlin.random.Random
 import javax.inject.Inject
 
 /**
@@ -25,10 +27,16 @@ sealed class ShapeHandling {
     data object DeleteAll : ShapeHandling()
 }
 
+sealed class DroneDeleteError {
+    data class Validation(val error: DroneDeleteValidationError) : DroneDeleteError()
+    data class Failure(val message: String) : DroneDeleteError()
+}
+
 @HiltViewModel
 class DroneViewModel @Inject constructor(
     private val droneRepository: DroneRepository,
-    private val shapeRepository: ShapeRepository
+    private val shapeRepository: ShapeRepository,
+    private val droneSelectionState: DroneSelectionState,
 ) : ViewModel() {
 
     /**
@@ -53,6 +61,23 @@ class DroneViewModel @Inject constructor(
     private val _selectedDrone = MutableStateFlow<DroneModel?>(null)
     val selectedDrone: StateFlow<DroneModel?> = _selectedDrone.asStateFlow()
 
+    /** iOS DroneDetailView 의 showingErrorAlert/errorMessage 대응. */
+    private val _deleteError = MutableStateFlow<DroneDeleteError?>(null)
+    val deleteError: StateFlow<DroneDeleteError?> = _deleteError.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            droneRepository.getAllDrones().collect { drones ->
+                if (!_showDroneEdit.value) {
+                    _selectedDrone.value = resolveDroneDetailSnapshot(
+                        selectedDrone = _selectedDrone.value,
+                        allDrones = drones,
+                    )
+                }
+            }
+        }
+    }
+
     /**
      * 드론 추가
      */
@@ -68,6 +93,7 @@ class DroneViewModel @Inject constructor(
                 memo = memo
             )
             droneRepository.insertDrone(drone)
+            droneSelectionState.addDroneToSelection(drone.id)
         }
     }
 
@@ -88,36 +114,54 @@ class DroneViewModel @Inject constructor(
      * 아니다. 사이에 앱이 죽으면 shape 만 reassign/삭제되고 drone 은 살아있는 상태가 가능.
      * 회복 경로: 다음 launch 시 사용자가 동일 작업을 재시도하거나 drone 화면에서 직접 삭제.
      * 진정한 atomic update 가 필요해지면 Room @Transaction 으로 묶는 도메인 서비스가 필요.
-     *
-     * @return 삭제 성공 여부
      */
     fun deleteDrone(drone: DroneModel, shapeHandling: ShapeHandling) {
         viewModelScope.launch {
-            // 마지막 드론 삭제 불가 체크 (방어적, UI 에서도 막혀야 함)
-            val currentDrones = activeDrones.value
-            if (currentDrones.size <= 1) return@launch
+            try {
+                val currentDrones = activeDrones.value
+                val connectedShapeCount = shapeRepository.getActiveShapeCountByDroneId(drone.id)
+                val validationError = validateDroneDeleteRequest(
+                    activeDrones = currentDrones,
+                    connectedShapeCount = connectedShapeCount,
+                    shapeHandling = shapeHandling,
+                )
+                if (validationError != null) {
+                    _deleteError.value = DroneDeleteError.Validation(validationError)
+                    return@launch
+                }
 
-            // 연결된 도형 처리
-            when (shapeHandling) {
-                is ShapeHandling.Reassign -> {
-                    val targetDrone = currentDrones.find { it.id == shapeHandling.targetDroneId }
-                    if (targetDrone != null) {
-                        shapeRepository.reassignShapes(drone.id, targetDrone.id, targetDrone.color)
+                // 연결된 도형 처리
+                when (shapeHandling) {
+                    is ShapeHandling.Reassign -> {
+                        val targetDrone = currentDrones.find { it.id == shapeHandling.targetDroneId }
+                        if (targetDrone != null && connectedShapeCount > 0) {
+                            shapeRepository.reassignShapes(drone.id, targetDrone.id)
+                        }
+                    }
+                    is ShapeHandling.DeleteAll -> {
+                        if (connectedShapeCount > 0) {
+                            shapeRepository.softDeleteShapesByDroneId(drone.id)
+                        }
                     }
                 }
-                is ShapeHandling.DeleteAll -> {
-                    shapeRepository.softDeleteShapesByDroneId(drone.id)
-                }
+
+                // 드론 소프트 삭제 (Repository 내부에서 softDelete() 로 updatedAt 갱신됨 — stale 가드 불필요)
+                droneRepository.softDeleteDrone(drone)
+
+                // 상세/편집 시트 닫기
+                _showDroneDetail.value = false
+                _showDroneEdit.value = false
+                _selectedDrone.value = null
+            } catch (e: Exception) {
+                _deleteError.value = DroneDeleteError.Failure(
+                    e.localizedMessage ?: e.message ?: e.toString()
+                )
             }
-
-            // 드론 소프트 삭제 (Repository 내부에서 softDelete() 로 updatedAt 갱신됨 — stale 가드 불필요)
-            droneRepository.softDeleteDrone(drone)
-
-            // 상세/편집 시트 닫기
-            _showDroneDetail.value = false
-            _showDroneEdit.value = false
-            _selectedDrone.value = null
         }
+    }
+
+    fun clearDeleteError() {
+        _deleteError.value = null
     }
 
     /**
@@ -128,9 +172,7 @@ class DroneViewModel @Inject constructor(
      * activeDrones.value 를 사용하되 빈 리스트일 가능성을 호출자가 인지해야 한다.
      */
     fun suggestNextColor(drones: List<DroneModel> = activeDrones.value): PaletteColor {
-        val usedColors = drones.mapNotNull { PaletteColor.fromHex(it.color) }.toSet()
-        val availableColors = PaletteColor.entries.filter { it != PaletteColor.GRAY && it !in usedColors }
-        return availableColors.firstOrNull() ?: PaletteColor.BLUE
+        return suggestNextDroneColor(drones)
     }
 
     /**
@@ -158,6 +200,16 @@ class DroneViewModel @Inject constructor(
     }
 
     /**
+     * 편집 저장 후 iOS DroneDetailView 와 동일하게 상세 화면으로 돌아간다.
+     */
+    fun showDetailSheet(drone: DroneModel) {
+        _selectedDrone.value = drone
+        _selectedDroneId.value = drone.id
+        _showDroneEdit.value = false
+        _showDroneDetail.value = true
+    }
+
+    /**
      * 선택 해제
      */
     fun clearSelection() {
@@ -181,6 +233,15 @@ class DroneViewModel @Inject constructor(
      */
     fun dismissEditSheet() {
         _showDroneEdit.value = false
+        val currentDrone = _selectedDrone.value
+        if (!shouldReturnToDroneDetailAfterEditDismiss(currentDrone) || currentDrone == null) {
+            return
+        }
+
+        _showDroneDetail.value = true
+        viewModelScope.launch {
+            _selectedDrone.value = droneRepository.getDroneById(currentDrone.id) ?: currentDrone
+        }
     }
 
     /**
@@ -197,4 +258,28 @@ class DroneViewModel @Inject constructor(
     suspend fun getShapeCountForDrone(droneId: String): Int {
         return shapeRepository.getActiveShapeCountByDroneId(droneId)
     }
+}
+
+internal fun suggestNextDroneColor(
+    drones: List<DroneModel>,
+    randomIndex: (Int) -> Int = { bound -> Random.nextInt(bound) },
+): PaletteColor {
+    val selectableColors = PaletteColor.droneSelectableEntries
+    val usedColors = drones.mapNotNull { PaletteColor.fromHex(it.color) }.toSet()
+    val availableColors = selectableColors.filter { it !in usedColors }
+
+    return availableColors.firstOrNull()
+        ?: selectableColors[randomIndex(selectableColors.size).coerceIn(selectableColors.indices)]
+}
+
+internal fun resolveDroneDetailSnapshot(
+    selectedDrone: DroneModel?,
+    allDrones: List<DroneModel>,
+): DroneModel? {
+    if (selectedDrone == null) return null
+    return allDrones.find { it.id == selectedDrone.id } ?: selectedDrone
+}
+
+internal fun shouldReturnToDroneDetailAfterEditDismiss(selectedDrone: DroneModel?): Boolean {
+    return selectedDrone != null
 }

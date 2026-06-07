@@ -9,14 +9,38 @@ import com.ScienceFiction.DronePassAndroid.R
  * [labelRes] 는 strings.xml 에 정의된 다국어 문자열 리소스 ID 이다.
  * 화면에서는 `stringResource(option.labelRes)` 로 사용한다.
  */
-enum class SortOption(@StringRes val labelRes: Int) {
-    TITLE(R.string.saved_sort_title),
-    DATE_CREATED(R.string.saved_sort_date_created),
-    FLIGHT_START(R.string.saved_sort_flight_start),
-    FLIGHT_END(R.string.saved_sort_flight_end),
+enum class SortOption(
+    val rawValue: String,
+    @StringRes val labelRes: Int,
+) {
+    TITLE("title", R.string.saved_sort_title),
+    DATE_CREATED("dateCreated", R.string.saved_sort_date_created),
+    FLIGHT_START("flightStartDate", R.string.saved_sort_flight_start),
+    FLIGHT_END("flightEndDate", R.string.saved_sort_flight_end);
+
+    companion object {
+        fun fromRawValue(rawValue: String?): SortOption {
+            return entries.firstOrNull { it.rawValue == rawValue } ?: TITLE
+        }
+    }
 }
 
-enum class SortDirection(@StringRes val labelRes: Int) {
-    ASCENDING(R.string.saved_sort_ascending),
-    DESCENDING(R.string.saved_sort_descending),
+enum class SortDirection(
+    val rawValue: String,
+    @StringRes val labelRes: Int,
+) {
+    ASCENDING("ascending", R.string.saved_sort_ascending),
+    DESCENDING("descending", R.string.saved_sort_descending);
+
+    companion object {
+        fun fromRawValue(rawValue: String?): SortDirection {
+            return entries.firstOrNull { it.rawValue == rawValue } ?: ASCENDING
+        }
+    }
+}
+
+/** iOS ShapeSortingManager.cycleSortOption 동등 — enum 다음 값으로 순환한다. */
+internal fun nextSavedSortOption(current: SortOption): SortOption {
+    val values = SortOption.entries
+    return values[(current.ordinal + 1) % values.size]
 }

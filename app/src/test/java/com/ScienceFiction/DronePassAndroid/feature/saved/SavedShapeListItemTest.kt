@@ -1,0 +1,92 @@
+package com.ScienceFiction.DronePassAndroid.feature.saved
+
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.unit.dp
+import org.junit.Assert.assertEquals
+import org.junit.Test
+import java.text.SimpleDateFormat
+import java.util.Locale
+import java.util.TimeZone
+
+class SavedShapeListItemTest {
+
+    private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.KOREA).apply {
+        timeZone = TimeZone.getTimeZone("Asia/Seoul")
+    }
+
+    @Test
+    fun `저장 목록 행 날짜는 iOS처럼 하이픈 형식으로 표시한다`() {
+        val text = formatSavedShapeDateRange(
+            startDateMillis = 1_735_657_200_000L,
+            endDateMillis = 1_735_743_600_000L,
+            dateFormat = dateFormat,
+        )
+
+        assertEquals("2025-01-01 ~ 2025-01-02", text)
+    }
+
+    @Test
+    fun `저장 목록 행 종료일이 없으면 iOS처럼 시작일만 표시한다`() {
+        val text = formatSavedShapeDateRange(
+            startDateMillis = 1_735_657_200_000L,
+            endDateMillis = null,
+            dateFormat = dateFormat,
+        )
+
+        assertEquals("2025-01-01", text)
+    }
+
+    @Test
+    fun `저장 목록 행 색상은 손상된 HEX 를 iOS처럼 기본 파랑으로 폴백한다`() {
+        assertEquals(0xFF007AFF.toInt(), resolveSavedShapeDisplayColor("not-a-color").toArgb())
+    }
+
+    @Test
+    fun `저장 목록 행 색상은 팔레트 외 유효 HEX 를 그대로 사용한다`() {
+        assertEquals(0xFF123456.toInt(), resolveSavedShapeDisplayColor("#123456").toArgb())
+    }
+
+    @Test
+    fun `저장 목록 행 색상은 iOS처럼 8자리 HEX 의 하위 RGB 만 사용한다`() {
+        assertEquals(0xFF123456.toInt(), resolveSavedShapeDisplayColor("#AA123456").toArgb())
+    }
+
+    @Test
+    fun `저장 목록 행 색상은 iOS처럼 짧은 HEX 도 스캐너 결과를 사용한다`() {
+        assertEquals(0xFF000001.toInt(), resolveSavedShapeDisplayColor("#1").toArgb())
+    }
+
+    @Test
+    fun `저장 목록 색상 인디케이터 그림자는 iOS radius 1 과 맞춘다`() {
+        assertEquals(1f, SavedShapeColorIndicatorShadowElevation.value, 0f)
+    }
+
+    @Test
+    fun `저장 목록 행 레이아웃 토큰은 iOS ShapeListRow 값을 따른다`() {
+        assertEquals(55.dp, SavedShapeRowMinHeight)
+        assertEquals(4.dp, SavedShapeRowHorizontalPadding)
+        assertEquals(12.dp, SavedShapeInfoLeadingSpacing)
+        assertEquals(8.dp, SavedShapeDetailLeadingSpacing)
+        assertEquals(30.dp, SavedShapeDetailButtonWidth)
+        assertEquals(12.dp, SavedShapeDetailChevronSize)
+    }
+
+    @Test
+    fun `저장 목록 색상 인디케이터 크기는 iOS ShapeColorIndicator 값을 따른다`() {
+        assertEquals(4.dp, SavedShapeColorIndicatorWidth)
+        assertEquals(35.dp, SavedShapeColorIndicatorHeight)
+        assertEquals(15.dp, SavedShapeColorIndicatorCornerRadius)
+    }
+
+    @Test
+    fun `저장 목록 만료 도형 색상 인디케이터는 iOS systemGray 를 사용한다`() {
+        assertEquals(0xFF8E8E93.toInt(), SavedShapeExpiredIndicatorColor.toArgb())
+    }
+
+    @Test
+    fun `저장 목록 행 만료 색상 판정은 iOS처럼 종료 시각과 같아도 만료로 본다`() {
+        assertEquals(true, isSavedShapeListItemExpired(flightEndDateMillis = 1_000L, now = 1_000L))
+        assertEquals(false, isSavedShapeListItemExpired(flightEndDateMillis = 1_001L, now = 1_000L))
+        assertEquals(false, isSavedShapeListItemExpired(flightEndDateMillis = null, now = 1_000L))
+    }
+}

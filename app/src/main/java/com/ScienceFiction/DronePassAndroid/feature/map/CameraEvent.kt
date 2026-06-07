@@ -17,6 +17,15 @@ sealed class CameraEvent {
     ) : CameraEvent()
 
     /**
+     * iOS MoveToShapeNotification 과 같은 2단계 이동.
+     * 먼저 현재 중심에서 목표 줌으로 맞춘 뒤, 지도 projection 기준 오프셋 중심으로 이동한다.
+     */
+    data class MoveToShape(
+        val coordinate: Coordinate,
+        val zoom: Double
+    ) : CameraEvent()
+
+    /**
      * 특정 좌표로 카메라 이동 (현재 줌 레벨 유지)
      */
     data class MoveWithoutZoom(

@@ -1,10 +1,12 @@
 package com.ScienceFiction.DronePassAndroid.feature.drone
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,20 +16,20 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -43,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
+import com.ScienceFiction.DronePassAndroid.domain.model.PaletteColor
 
 /**
  * 드론 관리 목록 화면
@@ -60,6 +63,7 @@ fun DroneListScreen(
     val showDroneDetail by droneViewModel.showDroneDetail.collectAsStateWithLifecycle()
     val showDroneEdit by droneViewModel.showDroneEdit.collectAsStateWithLifecycle()
     val selectedDrone by droneViewModel.selectedDrone.collectAsStateWithLifecycle()
+    val deleteError by droneViewModel.deleteError.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = {
@@ -79,61 +83,51 @@ fun DroneListScreen(
                     }
                 }
             )
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = {
-                    droneViewModel.showEditSheet(null)
-                }
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = stringResource(R.string.drone_list_add)
-                )
-            }
         }
     ) { innerPadding ->
-        if (drones.isEmpty()) {
-            // Empty State
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding),
+            contentPadding = PaddingValues(bottom = 24.dp),
+        ) {
+            item {
+                DroneListSectionHeader(text = stringResource(R.string.drone_list_section_my))
+            }
+
+            if (drones.isEmpty()) {
+                item {
                     Text(
                         text = stringResource(R.string.drone_list_empty),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = stringResource(R.string.drone_list_empty_hint),
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
                     )
                 }
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-            ) {
-                items(drones, key = { it.id }) { drone ->
+            } else {
+                itemsIndexed(drones, key = { _, drone -> drone.id }) { index, drone ->
                     DroneListItem(
                         drone = drone,
                         onClick = { droneViewModel.selectDrone(drone.id) }
                     )
-                    HorizontalDivider(
-                        modifier = Modifier.padding(start = 68.dp),
-                        color = MaterialTheme.colorScheme.outlineVariant
-                    )
+                    if (index != drones.lastIndex) {
+                        HorizontalDivider(
+                            modifier = Modifier.padding(start = 68.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant
+                        )
+                    }
                 }
+            }
+
+            item {
+                Spacer(modifier = Modifier.height(16.dp))
+                DroneAddItem(onClick = { droneViewModel.showEditSheet(null) })
+            }
+
+            item {
+                Spacer(modifier = Modifier.height(20.dp))
+                DroneListSectionHeader(text = stringResource(R.string.drone_list_section_usage))
+                DroneUsageSection()
             }
         }
     }
@@ -165,6 +159,7 @@ fun DroneListScreen(
         val suggestedColor = remember(drones) {
             droneViewModel.suggestNextColor(drones)
         }
+        val suggestedName = stringResource(R.string.drone_edit_default_name, drones.size + 1)
         val duplicateNameChecker = remember(drones) {
             { name: String, excludeId: String? ->
                 droneViewModel.isDuplicateName(name, excludeId, drones)
@@ -172,11 +167,13 @@ fun DroneListScreen(
         }
         DroneEditSheet(
             drone = selectedDrone,
+            suggestedName = suggestedName,
             suggestedColor = suggestedColor,
             isDuplicateName = duplicateNameChecker,
             onSave = { drone ->
                 if (selectedDrone != null) {
                     droneViewModel.updateDrone(drone)
+                    droneViewModel.showDetailSheet(drone)
                 } else {
                     droneViewModel.addDrone(
                         name = drone.name,
@@ -186,13 +183,38 @@ fun DroneListScreen(
                         size = drone.size,
                         memo = drone.memo
                     )
+                    droneViewModel.dismissEditSheet()
                 }
-                droneViewModel.dismissEditSheet()
-                droneViewModel.dismissDetailSheet()
             },
             onDismiss = {
                 droneViewModel.dismissEditSheet()
             }
+        )
+    }
+
+    deleteError?.let { error ->
+        val message = when (error) {
+            is DroneDeleteError.Validation -> when (error.error) {
+                DroneDeleteValidationError.CANNOT_DELETE_LAST_DRONE -> {
+                    stringResource(R.string.drone_detail_delete_last_drone_error)
+                }
+                DroneDeleteValidationError.TARGET_DRONE_NOT_FOUND -> {
+                    stringResource(R.string.drone_detail_target_drone_not_found_error)
+                }
+            }
+            is DroneDeleteError.Failure -> {
+                error.message.takeIf { it.isNotBlank() } ?: stringResource(R.string.common_unknown_error)
+            }
+        }
+        AlertDialog(
+            onDismissRequest = { droneViewModel.clearDeleteError() },
+            title = { Text(stringResource(R.string.common_error)) },
+            text = { Text(message) },
+            confirmButton = {
+                TextButton(onClick = { droneViewModel.clearDeleteError() }) {
+                    Text(stringResource(R.string.common_confirm))
+                }
+            },
         )
     }
 }
@@ -209,23 +231,25 @@ private fun DroneListItem(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() }
-            .padding(horizontal = 16.dp, vertical = 14.dp),
+            .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // 색상 원형
-        Box(
-            modifier = Modifier
-                .size(36.dp)
-                .clip(CircleShape)
-                .background(
-                    drone.paletteColor?.composeColor
-                        ?: MaterialTheme.colorScheme.primary
-                )
-        )
+        drone.paletteColor?.takeIf(::shouldShowDroneListColorIndicator)?.let { paletteColor ->
+            Box(
+                modifier = Modifier
+                    .size(20.dp)
+                    .clip(CircleShape)
+                    .background(paletteColor.composeColor)
+                    .border(
+                        width = 1.dp,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f),
+                        shape = CircleShape,
+                    )
+            )
 
-        Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(8.dp))
+        }
 
-        // 드론 이름
         Text(
             text = drone.name,
             style = MaterialTheme.typography.bodyLarge,
@@ -234,13 +258,62 @@ private fun DroneListItem(
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
+    }
+}
 
-        // 화살표
+internal fun shouldShowDroneListColorIndicator(color: PaletteColor?): Boolean = color != null
+
+@Composable
+private fun DroneAddItem(onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         Icon(
-            imageVector = Icons.Default.ChevronRight,
+            imageVector = Icons.Default.AddCircle,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(24.dp)
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(22.dp),
+        )
+        Spacer(modifier = Modifier.width(12.dp))
+        Text(
+            text = stringResource(R.string.drone_list_add),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurface,
         )
     }
+}
+
+@Composable
+private fun DroneUsageSection() {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.drone_list_usage_color_customization),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            text = stringResource(R.string.drone_list_usage_last_drone),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+private fun DroneListSectionHeader(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 18.dp, bottom = 6.dp),
+    )
 }

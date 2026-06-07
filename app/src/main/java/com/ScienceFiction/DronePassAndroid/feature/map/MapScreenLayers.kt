@@ -1,26 +1,34 @@
 package com.ScienceFiction.DronePassAndroid.feature.map
 
 import android.graphics.PointF
-import androidx.compose.foundation.gestures.detectDragGestures
+import android.view.MotionEvent
+import android.view.View
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.FlightZoneLayer
 import com.ScienceFiction.DronePassAndroid.domain.model.Coordinate
 import com.ScienceFiction.DronePassAndroid.feature.kp.KpForecastContent
 import com.ScienceFiction.DronePassAndroid.feature.kp.KpSheetHeader
@@ -28,6 +36,8 @@ import com.ScienceFiction.DronePassAndroid.feature.kp.KpViewModel
 import com.ScienceFiction.DronePassAndroid.feature.map.component.DroneSelectionDropdown
 import com.ScienceFiction.DronePassAndroid.feature.map.component.MapFloatingButtons
 import com.ScienceFiction.DronePassAndroid.feature.map.overlay.ShapeOverlayManager
+import com.ScienceFiction.DronePassAndroid.feature.settings.KpInfoGuideSheet
+import com.ScienceFiction.DronePassAndroid.feature.settings.WeatherInfoGuideSheet
 import com.ScienceFiction.DronePassAndroid.feature.shape.ShapeDetailSheet
 import com.ScienceFiction.DronePassAndroid.feature.shape.ShapeEditScreen
 import com.ScienceFiction.DronePassAndroid.feature.sketch.SketchOverlayManager
@@ -37,9 +47,11 @@ import com.ScienceFiction.DronePassAndroid.feature.vworld.FlightZoneLayerSelecto
 import com.ScienceFiction.DronePassAndroid.feature.vworld.FlightZoneOverlayManager
 import com.ScienceFiction.DronePassAndroid.feature.vworld.VWorldZoneDetailSheet
 import com.ScienceFiction.DronePassAndroid.feature.weather.WeatherForecastContent
+import com.ScienceFiction.DronePassAndroid.feature.weather.WeatherInfoTopic
 import com.ScienceFiction.DronePassAndroid.feature.weather.WeatherSheetHeader
 import com.ScienceFiction.DronePassAndroid.feature.weather.WeatherViewModel
 import com.naver.maps.map.NaverMap
+import com.naver.maps.map.MapView
 
 /**
  * MapScreen 의 자식 Composable 4종.
@@ -78,6 +90,7 @@ internal fun MapOverlayEffects(
     // 화면에 직접 그리지 않는 영역에서만 collect — recomposition 범위 격리
     val filteredShapes by viewModel.filteredShapes.collectAsStateWithLifecycle()
     val selectedShapeId by viewModel.selectedShapeId.collectAsStateWithLifecycle()
+    val highlightedDroneIds by viewModel.highlightedDroneIds.collectAsStateWithLifecycle()
     val flightZones by viewModel.flightZones.collectAsStateWithLifecycle()
     val visibleLayers by viewModel.visibleLayers.collectAsStateWithLifecycle()
 
@@ -92,29 +105,45 @@ internal fun MapOverlayEffects(
     // visibleLayers 변경에 따른 fetch 는 MapViewModel.flightZoneLoadCollector 가
     // (visibleLayers, currentMapBounds) combine 으로 처리한다. 여기서는 fetch 결과인
     // flightZones 의 변경만 오버레이에 반영한다.
-    LaunchedEffect(flightZones, mapReady, visibleLayers) {
-        if (!mapReady) return@LaunchedEffect
+    LaunchedEffect(flightZones, mapReady, visibleLayers, isSketchMode) {
+        if (!shouldRenderFlightZoneOverlays(mapReady = mapReady, isSketchMode = isSketchMode)) {
+            if (mapReady && isSketchMode) {
+                flightZoneOverlayManager.clearAllOverlays()
+            }
+            return@LaunchedEffect
+        }
         if (visibleLayers.isEmpty()) {
             flightZoneOverlayManager.clearAllOverlays()
             return@LaunchedEffect
         }
-        flightZones.forEach { (layer, zones) ->
+        hiddenFlightZoneLayers(visibleLayers).forEach { layer ->
+            flightZoneOverlayManager.removeLayerOverlays(layer)
+        }
+        flightZones.filterKeys { it in visibleLayers }.forEach { (layer, zones) ->
             flightZoneOverlayManager.setZones(layer, zones)
         }
     }
 
     // 도형 오버레이 갱신 (만료/미시작 필터 적용된 filteredShapes 사용)
-    LaunchedEffect(filteredShapes, mapReady) {
-        if (mapReady) {
-            overlayManager.updateOverlays(filteredShapes)
+    LaunchedEffect(filteredShapes, highlightedDroneIds, mapReady, isSketchMode) {
+        if (!shouldRenderShapeOverlays(mapReady = mapReady, isSketchMode = isSketchMode)) {
+            if (mapReady && isSketchMode) {
+                overlayManager.clearOverlays()
+            }
+            return@LaunchedEffect
         }
+        overlayManager.updateOverlays(filteredShapes, highlightedDroneIds)
     }
 
     // 선택 하이라이트
-    LaunchedEffect(selectedShapeId, filteredShapes, mapReady) {
-        if (mapReady) {
-            overlayManager.setHighlight(selectedShapeId, filteredShapes)
+    LaunchedEffect(selectedShapeId, filteredShapes, mapReady, isSketchMode) {
+        if (!shouldRenderShapeOverlays(mapReady = mapReady, isSketchMode = isSketchMode)) {
+            if (mapReady && isSketchMode) {
+                overlayManager.clearOverlays()
+            }
+            return@LaunchedEffect
         }
+        overlayManager.setHighlight(selectedShapeId, filteredShapes)
     }
 
     // 저장된 스케치 오버레이
@@ -148,10 +177,8 @@ internal fun MapOverlayEffects(
         }
     }
 
-    // 스케치 모드 진입/종료 시 NaverMap 제스처 토글
-    LaunchedEffect(isSketchMode, naverMap) {
-        naverMap?.uiSettings?.setAllGesturesEnabled(!isSketchMode)
-    }
+    // 스케치 모드에서도 iOS처럼 2손가락 지도 조작은 유지한다.
+    // 1손가락 입력 차단/처리는 MapSketchInput 의 MapView 터치 리스너에서 담당한다.
 }
 
 // ──────────────────────────────────────────────
@@ -177,12 +204,18 @@ internal fun MapFloatingControls(
     val isSketchMode by sketchViewModel.isSketchMode.collectAsStateWithLifecycle()
     val activeDrones by viewModel.activeDrones.collectAsStateWithLifecycle()
     val selectedDroneIds by viewModel.selectedDroneIds.collectAsStateWithLifecycle()
-    val highlightedDroneId by viewModel.highlightedDroneId.collectAsStateWithLifecycle()
+    val highlightedDroneIds by viewModel.highlightedDroneIds.collectAsStateWithLifecycle()
     val visibleLayerCount by viewModel.visibleLayerCount.collectAsStateWithLifecycle()
     val koreaFeaturesEnabled by viewModel.koreaFeaturesEnabled.collectAsStateWithLifecycle()
     val currentKp by kpViewModel.currentKp.collectAsStateWithLifecycle()
     val kpLevel by kpViewModel.kpLevel.collectAsStateWithLifecycle()
     val weatherData by weatherViewModel.weatherData.collectAsStateWithLifecycle()
+    val configuration = LocalConfiguration.current
+    val isTabletLayout = configuration.screenWidthDp >= MapTabletBreakpointDp
+    val droneDropdownTopPadding = resolveDroneDropdownTopPadding(
+        screenHeightDp = configuration.screenHeightDp,
+        isTablet = isTabletLayout,
+    )
 
     Box(modifier = modifier.fillMaxSize()) {
         // 드론 선택 드롭다운 (상단 우측)
@@ -193,13 +226,13 @@ internal fun MapFloatingControls(
             DroneSelectionDropdown(
                 activeDrones = activeDrones,
                 selectedDroneIds = selectedDroneIds,
-                highlightedDroneId = highlightedDroneId,
+                highlightedDroneIds = highlightedDroneIds,
                 onToggleSelection = { viewModel.toggleDroneSelection(it) },
                 onToggleHighlight = { viewModel.toggleDroneHighlight(it) },
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .statusBarsPadding()
-                    .padding(top = 8.dp, end = 16.dp),
+                    .padding(top = droneDropdownTopPadding, end = 16.dp),
             )
         }
 
@@ -207,9 +240,11 @@ internal fun MapFloatingControls(
         if (!isSketchMode) {
             MapFloatingButtons(
                 onCreateShape = {
-                    val center = naverMap?.cameraPosition?.target?.let {
-                        Coordinate(it.latitude, it.longitude)
-                    } ?: Coordinate(37.5665, 126.9780)
+                    val target = naverMap?.cameraPosition?.target
+                    val center = resolveCreateShapeCoordinateFromMapCenter(
+                        latitude = target?.latitude,
+                        longitude = target?.longitude,
+                    )
                     viewModel.onCreateShapeRequested(center)
                 },
                 onEnterSketchMode = { sketchViewModel.enterSketchMode() },
@@ -222,12 +257,74 @@ internal fun MapFloatingControls(
                 currentWeather = weatherData?.current,
                 sunrise = weatherData?.sunrise,
                 sunset = weatherData?.sunset,
+                sunriseTimes = weatherData?.sunriseTimes.orEmpty(),
+                sunsetTimes = weatherData?.sunsetTimes.orEmpty(),
                 onWeatherClick = onShowWeather,
+                isTabletLayout = isTabletLayout,
                 modifier = Modifier.fillMaxSize(),
             )
         }
     }
 }
+
+internal fun hiddenFlightZoneLayers(
+    visibleLayers: Set<FlightZoneLayer>
+): List<FlightZoneLayer> = FlightZoneLayer.entries.filterNot { it in visibleLayers }
+
+internal const val MapCreateShapeFallbackLatitude = 37.5665
+internal const val MapCreateShapeFallbackLongitude = 126.9780
+
+internal fun resolveCreateShapeCoordinateFromMapCenter(
+    latitude: Double?,
+    longitude: Double?,
+): Coordinate {
+    return if (latitude != null && longitude != null) {
+        Coordinate(latitude, longitude)
+    } else {
+        Coordinate(MapCreateShapeFallbackLatitude, MapCreateShapeFallbackLongitude)
+    }
+}
+
+internal fun shouldRenderShapeOverlays(
+    mapReady: Boolean,
+    isSketchMode: Boolean,
+): Boolean = mapReady && !isSketchMode
+
+internal fun shouldRenderFlightZoneOverlays(
+    mapReady: Boolean,
+    isSketchMode: Boolean,
+): Boolean = mapReady && !isSketchMode
+
+internal fun visibleFlightZoneLayersForRender(
+    visibleLayers: Set<FlightZoneLayer>,
+    mapReady: Boolean,
+    isSketchMode: Boolean,
+): Set<FlightZoneLayer> {
+    return if (shouldRenderFlightZoneOverlays(mapReady = mapReady, isSketchMode = isSketchMode)) {
+        visibleLayers
+    } else {
+        emptySet()
+    }
+}
+
+internal fun resolveDroneDropdownTopPadding(
+    screenHeightDp: Int,
+    isTablet: Boolean,
+): Dp {
+    if (isTablet) return 30.dp
+
+    return when {
+        screenHeightDp > 900 -> 60.dp
+        screenHeightDp > 850 -> 50.dp
+        else -> 40.dp
+    }
+}
+
+internal fun resolveSketchToolbarBottomPadding(isTablet: Boolean): Dp {
+    return if (isTablet) 20.dp else 15.dp
+}
+
+private const val MapTabletBreakpointDp = 600
 
 // ──────────────────────────────────────────────
 // 3. MapSketchInput — 스케치 입력 인터셉터 + 툴바
@@ -239,6 +336,7 @@ internal fun MapFloatingControls(
  */
 @Composable
 internal fun MapSketchInput(
+    mapView: MapView,
     naverMap: NaverMap?,
     sketchViewModel: SketchViewModel,
     modifier: Modifier = Modifier,
@@ -251,48 +349,59 @@ internal fun MapSketchInput(
     val canUndo by sketchViewModel.canUndo.collectAsStateWithLifecycle()
     val canRedo by sketchViewModel.canRedo.collectAsStateWithLifecycle()
     val activeSketches by sketchViewModel.activeSketches.collectAsStateWithLifecycle()
+    val configuration = LocalConfiguration.current
+    val isTabletLayout = configuration.screenWidthDp >= MapTabletBreakpointDp
 
     if (!isSketchMode) return
 
-    Box(modifier = modifier.fillMaxSize()) {
-        // 터치 인터셉트 레이어
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .pointerInput(isEraserMode) {
-                    detectDragGestures(
-                        onDragStart = { offset ->
-                            val map = naverMap ?: return@detectDragGestures
-                            val latLng = map.projection.fromScreenLocation(
-                                PointF(offset.x, offset.y)
-                            )
-                            val coord = Coordinate.fromLatLng(latLng)
-                            if (isEraserMode) {
-                                sketchViewModel.deleteSketchAtPoint(coord)
-                            } else {
-                                sketchViewModel.startDrawing(coord)
-                            }
-                        },
-                        onDrag = { change, _ ->
-                            change.consume()
-                            val map = naverMap ?: return@detectDragGestures
-                            val latLng = map.projection.fromScreenLocation(
-                                PointF(change.position.x, change.position.y)
-                            )
-                            val coord = Coordinate.fromLatLng(latLng)
-                            if (isEraserMode) {
-                                sketchViewModel.deleteSketchAtPoint(coord)
-                            } else {
-                                sketchViewModel.continueDrawing(coord)
-                            }
-                        },
-                        onDragEnd = {
-                            if (!isEraserMode) sketchViewModel.finishDrawing()
-                        },
-                    )
-                },
-        )
+    DisposableEffect(mapView, naverMap, isSketchMode, isEraserMode) {
+        val map = naverMap
+        if (map == null) {
+            onDispose { mapView.setOnTouchListener(null) }
+        } else {
+            var isSketchTouchActive = false
+            val listener = View.OnTouchListener { _, event ->
+                val decision = resolveSketchTouchEvent(
+                    eventType = event.toSketchTouchEventType(),
+                    pointerCount = event.pointerCount,
+                    isSketchTouchActive = isSketchTouchActive,
+                    isEraserMode = isEraserMode,
+                )
 
+                when (decision.action) {
+                    SketchTouchAction.StartDrawing -> {
+                        sketchViewModel.startDrawing(event.toMapCoordinate(map))
+                    }
+                    SketchTouchAction.ContinueDrawing -> {
+                        sketchViewModel.continueDrawing(event.toMapCoordinate(map))
+                    }
+                    SketchTouchAction.FinishDrawing -> {
+                        sketchViewModel.finishDrawing()
+                    }
+                    SketchTouchAction.CancelDrawing -> {
+                        sketchViewModel.cancelDrawing()
+                    }
+                    SketchTouchAction.DeleteAtPoint -> {
+                        sketchViewModel.deleteSketchAtPoint(event.toMapCoordinate(map))
+                    }
+                    null -> Unit
+                }
+
+                isSketchTouchActive = decision.nextIsSketchTouchActive
+                decision.consume
+            }
+            mapView.setOnTouchListener(listener)
+
+            onDispose {
+                if (isSketchTouchActive && !isEraserMode) {
+                    sketchViewModel.cancelDrawing()
+                }
+                mapView.setOnTouchListener(null)
+            }
+        }
+    }
+
+    Box(modifier = modifier.fillMaxSize()) {
         // 하단 스케치 툴바
         SketchToolbar(
             currentColor = currentColor,
@@ -312,7 +421,118 @@ internal fun MapSketchInput(
             onDone = { sketchViewModel.exitSketchMode() },
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = 16.dp),
+                .navigationBarsPadding()
+                .padding(bottom = resolveSketchToolbarBottomPadding(isTablet = isTabletLayout)),
+        )
+    }
+}
+
+private fun MotionEvent.toMapCoordinate(map: NaverMap): Coordinate {
+    val latLng = map.projection.fromScreenLocation(PointF(x, y))
+    return Coordinate.fromLatLng(latLng)
+}
+
+internal enum class SketchTouchEventType {
+    Down,
+    Move,
+    Up,
+    Cancel,
+    Other,
+}
+
+internal enum class SketchTouchAction {
+    StartDrawing,
+    ContinueDrawing,
+    FinishDrawing,
+    CancelDrawing,
+    DeleteAtPoint,
+}
+
+internal data class SketchTouchDecision(
+    val consume: Boolean,
+    val nextIsSketchTouchActive: Boolean,
+    val action: SketchTouchAction?,
+)
+
+private fun MotionEvent.toSketchTouchEventType(): SketchTouchEventType {
+    return when (actionMasked) {
+        MotionEvent.ACTION_DOWN -> SketchTouchEventType.Down
+        MotionEvent.ACTION_MOVE -> SketchTouchEventType.Move
+        MotionEvent.ACTION_UP -> SketchTouchEventType.Up
+        MotionEvent.ACTION_CANCEL -> SketchTouchEventType.Cancel
+        else -> SketchTouchEventType.Other
+    }
+}
+
+internal fun resolveSketchTouchEvent(
+    eventType: SketchTouchEventType,
+    pointerCount: Int,
+    isSketchTouchActive: Boolean,
+    isEraserMode: Boolean,
+): SketchTouchDecision {
+    if (pointerCount != 1) {
+        return SketchTouchDecision(
+            consume = false,
+            nextIsSketchTouchActive = false,
+            action = if (isSketchTouchActive && !isEraserMode) {
+                SketchTouchAction.CancelDrawing
+            } else {
+                null
+            },
+        )
+    }
+
+    return when (eventType) {
+        SketchTouchEventType.Down -> SketchTouchDecision(
+            consume = true,
+            nextIsSketchTouchActive = true,
+            action = if (isEraserMode) {
+                SketchTouchAction.DeleteAtPoint
+            } else {
+                SketchTouchAction.StartDrawing
+            },
+        )
+        SketchTouchEventType.Move -> {
+            if (!isSketchTouchActive) {
+                SketchTouchDecision(
+                    consume = true,
+                    nextIsSketchTouchActive = false,
+                    action = null,
+                )
+            } else {
+                SketchTouchDecision(
+                    consume = true,
+                    nextIsSketchTouchActive = true,
+                    action = if (isEraserMode) {
+                        SketchTouchAction.DeleteAtPoint
+                    } else {
+                        SketchTouchAction.ContinueDrawing
+                    },
+                )
+            }
+        }
+        SketchTouchEventType.Up -> SketchTouchDecision(
+            consume = true,
+            nextIsSketchTouchActive = false,
+            action = if (isSketchTouchActive && !isEraserMode) {
+                SketchTouchAction.FinishDrawing
+            } else {
+                null
+            },
+        )
+        SketchTouchEventType.Cancel -> SketchTouchDecision(
+            consume = true,
+            nextIsSketchTouchActive = false,
+            action = if (isSketchTouchActive && !isEraserMode) {
+                SketchTouchAction.CancelDrawing
+            } else {
+                null
+            },
+        )
+        SketchTouchEventType.Other -> SketchTouchDecision(
+            consume = true,
+            nextIsSketchTouchActive = isSketchTouchActive,
+            action = null,
         )
     }
 }
@@ -333,6 +553,7 @@ internal fun MapBottomSheets(
     showWeatherSheet: Boolean,
     onDismissWeatherSheet: () -> Unit,
     viewModel: MapViewModel,
+    flightZoneOverlayManager: FlightZoneOverlayManager,
     kpViewModel: KpViewModel,
     weatherViewModel: WeatherViewModel,
     onNavigateToWeather: () -> Unit = {},
@@ -343,6 +564,8 @@ internal fun MapBottomSheets(
     val isDuplicateMode by viewModel.isDuplicateMode.collectAsStateWithLifecycle()
     val newShapeCoordinate by viewModel.newShapeCoordinate.collectAsStateWithLifecycle()
     val activeDrones by viewModel.activeDrones.collectAsStateWithLifecycle()
+    val primarySelectedDroneId by viewModel.primarySelectedDroneId.collectAsStateWithLifecycle()
+    val shapeEditDefaults by viewModel.shapeEditDefaults.collectAsStateWithLifecycle()
     val reverseGeocodedAddress by viewModel.reverseGeocodedAddress.collectAsStateWithLifecycle()
     val visibleLayers by viewModel.visibleLayers.collectAsStateWithLifecycle()
     val flightZones by viewModel.flightZones.collectAsStateWithLifecycle()
@@ -350,17 +573,31 @@ internal fun MapBottomSheets(
     val showZoneDetail by viewModel.showZoneDetail.collectAsStateWithLifecycle()
     val koreaFeaturesEnabled by viewModel.koreaFeaturesEnabled.collectAsStateWithLifecycle()
     val selectedZone by viewModel.selectedZone.collectAsStateWithLifecycle()
+    var showKpInfoSheet by remember { mutableStateOf(false) }
+    var showWeatherInfoSheet by remember { mutableStateOf(false) }
+    var selectedWeatherInfoTopic by remember { mutableStateOf<WeatherInfoTopic?>(null) }
 
     // 도형 상세
     if (showShapeDetail) {
         selectedShape?.let { shape ->
             ShapeDetailSheet(
                 shape = shape,
-                onEdit = { viewModel.onEditShapeRequested(shape) },
+                onEdit = {
+                    viewModel.onEditShapeRequested(
+                        shape = shape,
+                        returnToDetailAfterSave = true,
+                    )
+                },
                 onDelete = { viewModel.deleteShape(shape) },
                 onDismiss = { viewModel.dismissShapeDetail() },
-                onDuplicate = { viewModel.onDuplicateRequested(shape) },
+                onDuplicate = {
+                    viewModel.onDuplicateRequested(
+                        shape = shape,
+                        returnToDetailAfterDismiss = true,
+                    )
+                },
                 drone = viewModel.getDroneById(shape.droneId),
+                activeDrones = activeDrones,
                 koreaFeaturesEnabled = koreaFeaturesEnabled,
             )
         }
@@ -372,10 +609,21 @@ internal fun MapBottomSheets(
             shape = selectedShape,
             initialCoordinate = newShapeCoordinate,
             drones = activeDrones,
+            editDefaults = shapeEditDefaults,
+            fallbackSelectedDroneId = primarySelectedDroneId,
             reverseGeocodedAddress = reverseGeocodedAddress,
             geocodingApi = viewModel.naverGeocodingApi,
             isDuplicateMode = isDuplicateMode,
-            onSave = { viewModel.saveShape(it, isDuplicate = isDuplicateMode) },
+            onPersistEditDefaults = { viewModel.saveShapeEditDefaults(it) },
+            onDateOnlyModeChanged = { viewModel.setShapeEditDateOnlyMode(it) },
+            onSave = { updatedShape, originalShapeAtEditStart ->
+                viewModel.saveShape(
+                    shape = updatedShape,
+                    isDuplicate = isDuplicateMode,
+                    focusAfterSave = selectedShape == null || isDuplicateMode,
+                    originalShapeAtEditStart = originalShapeAtEditStart,
+                )
+            },
             onDismiss = { viewModel.dismissShapeEdit() },
         )
     }
@@ -398,7 +646,10 @@ internal fun MapBottomSheets(
             VWorldZoneDetailSheet(
                 zone = zone,
                 findContact = { name -> viewModel.findContact(name) },
-                onDismiss = { viewModel.dismissZoneDetail() },
+                onDismiss = {
+                    flightZoneOverlayManager.clearSelection()
+                    viewModel.dismissZoneDetail()
+                },
             )
         }
     }
@@ -414,7 +665,7 @@ internal fun MapBottomSheets(
                 KpSheetHeader(
                     isLoading = kpIsLoading,
                     onRefresh = { kpViewModel.loadKpData() },
-                    onInfo = null,
+                    onInfo = { showKpInfoSheet = true },
                 )
                 KpForecastContent(
                     viewModel = kpViewModel,
@@ -435,13 +686,50 @@ internal fun MapBottomSheets(
                 WeatherSheetHeader(
                     isLoading = weatherIsLoading,
                     onRefresh = { weatherViewModel.refreshWeather() },
-                    onInfo = null,
+                    onInfo = {
+                        selectedWeatherInfoTopic = null
+                        showWeatherInfoSheet = true
+                    },
                 )
                 WeatherForecastContent(
                     viewModel = weatherViewModel,
                     modifier = Modifier.padding(bottom = 16.dp),
+                    onWeatherInfoRequested = { topic ->
+                        selectedWeatherInfoTopic = topic
+                        showWeatherInfoSheet = true
+                    },
                 )
             }
+        }
+    }
+
+    // KP 정보 가이드 — iOS KPForecastView info.circle sheet 정합.
+    if (showKpInfoSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showKpInfoSheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        ) {
+            KpInfoGuideSheet(onDismiss = { showKpInfoSheet = false })
+        }
+    }
+
+    // 날씨 정보 가이드 — iOS WeatherForecastView info.circle sheet 정합.
+    if (showWeatherInfoSheet) {
+        val selectedCategory by weatherViewModel.selectedCategory.collectAsStateWithLifecycle()
+        val isUsingGps by weatherViewModel.isUsingGps.collectAsStateWithLifecycle()
+        val locationAccuracyMeters by weatherViewModel.locationAccuracyMeters.collectAsStateWithLifecycle()
+        ModalBottomSheet(
+            onDismissRequest = { showWeatherInfoSheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        ) {
+            WeatherInfoGuideSheet(
+                onDismiss = { showWeatherInfoSheet = false },
+                initialTopic = selectedWeatherInfoTopic,
+                category = selectedCategory,
+                onCategoryChanged = { weatherViewModel.setCategory(it) },
+                isUsingGps = isUsingGps,
+                locationAccuracyMeters = locationAccuracyMeters,
+            )
         }
     }
 }

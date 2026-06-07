@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.map.component
 
+import androidx.annotation.DrawableRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -43,22 +44,35 @@ import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
+import com.ScienceFiction.DronePassAndroid.domain.model.PaletteColor
+import com.ScienceFiction.DronePassAndroid.feature.drone.selectedDronesForIosDropdown
+
+internal val DroneDropdownMenuItemHorizontalPadding = 12.dp
+internal val DroneDropdownMenuItemVerticalPadding = 8.dp
+internal val DroneDropdownShadowElevation = 4.dp
+internal val DroneDropdownEmptyIconSize = 12.dp
+internal val DroneDropdownChevronIconSize = 10.dp
+internal val DroneDropdownTextSize = 14.sp
+@DrawableRes
+internal val DroneDropdownEmptyIconRes = R.drawable.ic_drone
 
 @Composable
 fun DroneSelectionDropdown(
     activeDrones: List<DroneModel>,
     selectedDroneIds: Set<String>,
-    highlightedDroneId: String?,
+    highlightedDroneIds: Set<String>,
     onToggleSelection: (String) -> Unit,
     onToggleHighlight: (String) -> Unit,
     modifier: Modifier = Modifier
@@ -67,9 +81,7 @@ fun DroneSelectionDropdown(
     var triggerHeight by remember { mutableStateOf(0) }
     val density = LocalDensity.current
 
-    val selectedDrones = activeDrones
-        .filter { it.id in selectedDroneIds }
-        .sortedBy { it.name }
+    val selectedDrones = selectedDronesForIosDropdown(activeDrones, selectedDroneIds)
 
     Box(
         modifier = modifier.onGloballyPositioned { coordinates ->
@@ -92,16 +104,22 @@ fun DroneSelectionDropdown(
                 Surface(
                     shape = RoundedCornerShape(20.dp),
                     color = MaterialTheme.colorScheme.surface,
-                    shadowElevation = 2.dp
+                    shadowElevation = DroneDropdownShadowElevation
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
+                        Icon(
+                            painter = painterResource(DroneDropdownEmptyIconRes),
+                            contentDescription = null,
+                            modifier = Modifier.size(DroneDropdownEmptyIconSize),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                        )
                         Text(
                             text = stringResource(R.string.drone_dropdown_select),
-                            style = MaterialTheme.typography.bodySmall,
+                            fontSize = DroneDropdownTextSize,
                             fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -111,7 +129,7 @@ fun DroneSelectionDropdown(
                 selectedDrones.forEach { drone ->
                     DroneChip(
                         drone = drone,
-                        isHighlighted = drone.id == highlightedDroneId,
+                        isHighlighted = drone.id in highlightedDroneIds,
                         onClick = { onToggleHighlight(drone.id) }
                     )
                 }
@@ -123,7 +141,7 @@ fun DroneSelectionDropdown(
             onClick = { showDropdown = !showDropdown },
             shape = CircleShape,
             color = MaterialTheme.colorScheme.surface,
-            shadowElevation = 2.dp,
+            shadowElevation = DroneDropdownShadowElevation,
             modifier = Modifier
                 .size(32.dp)
                 .align(Alignment.TopEnd)
@@ -139,7 +157,7 @@ fun DroneSelectionDropdown(
                         stringResource(R.string.drone_dropdown_collapse)
                     else
                         stringResource(R.string.drone_dropdown_toggle),
-                    modifier = Modifier.size(16.dp),
+                    modifier = Modifier.size(DroneDropdownChevronIconSize),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -181,7 +199,7 @@ fun DroneSelectionDropdown(
                         modifier = Modifier.width(IntrinsicSize.Max),
                         shape = RoundedCornerShape(12.dp),
                         color = MaterialTheme.colorScheme.surface,
-                        shadowElevation = 4.dp
+                        shadowElevation = DroneDropdownShadowElevation
                     ) {
                         Column {
                             activeDrones.forEachIndexed { index, drone ->
@@ -189,7 +207,10 @@ fun DroneSelectionDropdown(
                                 Row(
                                     modifier = Modifier
                                         .clickable { onToggleSelection(drone.id) }
-                                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                                        .padding(
+                                            horizontal = DroneDropdownMenuItemHorizontalPadding,
+                                            vertical = DroneDropdownMenuItemVerticalPadding,
+                                        ),
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
@@ -218,7 +239,7 @@ fun DroneSelectionDropdown(
                                     // 드론 이름
                                     Text(
                                         text = drone.name,
-                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontSize = DroneDropdownTextSize,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
                                 }
@@ -252,7 +273,7 @@ private fun DroneChip(
     Surface(
         shape = RoundedCornerShape(20.dp),
         color = MaterialTheme.colorScheme.surface,
-        shadowElevation = 2.dp,
+        shadowElevation = DroneDropdownShadowElevation,
         border = if (isHighlighted)
             BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
         else
@@ -266,23 +287,26 @@ private fun DroneChip(
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             // 드론 색상 원
-            val droneColor = drone.paletteColor?.composeColor ?: Color.Gray
-            Box(
-                modifier = Modifier
-                    .size(12.dp)
-                    .background(droneColor, CircleShape)
-            )
+            drone.paletteColor?.takeIf(::shouldShowSelectedDroneChipColorIndicator)?.let { paletteColor ->
+                Box(
+                    modifier = Modifier
+                        .size(12.dp)
+                        .background(paletteColor.composeColor, CircleShape)
+                )
+            }
 
             // 드론 이름
             Text(
                 text = drone.name,
-                style = MaterialTheme.typography.bodySmall,
+                fontSize = DroneDropdownTextSize,
                 fontWeight = FontWeight.Medium,
                 color = MaterialTheme.colorScheme.onSurface
             )
         }
     }
 }
+
+internal fun shouldShowSelectedDroneChipColorIndicator(color: PaletteColor?): Boolean = color != null
 
 /**
  * iOS `FlowLayout(spacing:, lineSpacing:, firstLineReservedWidth:)` 정합 Custom Layout.

@@ -1,11 +1,29 @@
 package com.ScienceFiction.DronePassAndroid.feature.map.overlay
 
 import android.graphics.Color
+import com.ScienceFiction.DronePassAndroid.core.util.parseIosOpaqueRgbHexColor
 import com.naver.maps.map.NaverMap
 import com.naver.maps.map.overlay.CircleOverlay
 import com.naver.maps.map.overlay.Overlay
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeType
+
+internal fun parseMapOverlayColorSafe(colorString: String): Int {
+    return parseIosOpaqueRgbHexColor(colorString) ?: Color.BLACK
+}
+
+internal fun shouldRenderMapCircleOverlay(shape: ShapeModel): Boolean {
+    return shape.shapeType == ShapeType.CIRCLE && shape.radius != null
+}
+
+internal fun resolveMapCircleHighlightRadius(shape: ShapeModel): Double? {
+    if (!shouldRenderMapCircleOverlay(shape)) return null
+    return (shape.radius ?: return null) + 2
+}
+
+internal fun uniqueMapOverlayShapesByFirstId(shapes: List<ShapeModel>): List<ShapeModel> {
+    return shapes.distinctBy { it.id }
+}
 
 /**
  * 네이버 Maps SDK 오버레이를 관리하는 클래스.
@@ -28,6 +46,8 @@ class ShapeOverlayManager {
 
     private var highlightOverlay: CircleOverlay? = null
 
+    private var highlightedDroneIds: Set<String> = emptySet()
+
     /** 도형 탭 시 호출되는 콜백. shapeId를 전달한다. */
     var onShapeTapped: ((String) -> Unit)? = null
 
@@ -37,18 +57,21 @@ class ShapeOverlayManager {
         val lon: Double,
         val radius: Double,
         val color: String,
+        val droneId: String?,
         val isExpired: Boolean,
         val isNotStarted: Boolean,
         val updatedAt: Long
     )
 
     private fun ShapeModel.toKey(): ShapeKey? {
+        if (!shouldRenderMapCircleOverlay(this)) return null
         val r = radius ?: return null
         return ShapeKey(
             lat = baseCoordinate.latitude,
             lon = baseCoordinate.longitude,
             radius = r,
             color = color,
+            droneId = droneId,
             isExpired = isExpired,
             isNotStarted = isNotStarted,
             updatedAt = updatedAt
@@ -71,9 +94,13 @@ class ShapeOverlayManager {
      * Diff: 신규는 add, 사라진 것은 remove, 속성 변경된 것만 in-place update.
      * 한 도형의 updatedAt 만 변해도 100개를 전부 destroy/create 하던 이전 동작을 제거.
      */
-    fun updateOverlays(shapes: List<ShapeModel>) {
+    fun updateOverlays(shapes: List<ShapeModel>, highlightedDroneIds: Set<String>) {
+        val didHighlightChange = this.highlightedDroneIds != highlightedDroneIds
+        this.highlightedDroneIds = highlightedDroneIds
+
         val map = naverMap ?: return
-        val newKeys = shapes.mapNotNull { shape -> shape.toKey()?.let { shape.id to it } }.toMap()
+        val uniqueShapes = uniqueMapOverlayShapesByFirstId(shapes)
+        val newKeys = uniqueShapes.mapNotNull { shape -> shape.toKey()?.let { shape.id to it } }.toMap()
 
         // 1. 사라진 도형의 오버레이 제거
         val removedIds = overlays.keys - newKeys.keys
@@ -83,7 +110,7 @@ class ShapeOverlayManager {
         }
 
         // 2. 신규/변경된 도형만 add 또는 in-place 속성 갱신
-        shapes.forEach { shape ->
+        uniqueShapes.forEach { shape ->
             val newKey = newKeys[shape.id] ?: return@forEach
             val oldKey = appliedShapeKeys[shape.id]
             when {
@@ -91,7 +118,7 @@ class ShapeOverlayManager {
                     addCircleOverlay(shape, map)
                     appliedShapeKeys[shape.id] = newKey
                 }
-                oldKey != newKey -> {
+                oldKey != newKey || didHighlightChange -> {
                     overlays[shape.id]?.let { overlay -> updateCircleOverlay(overlay, shape) }
                     appliedShapeKeys[shape.id] = newKey
                 }
@@ -115,7 +142,7 @@ class ShapeOverlayManager {
             this.radius = radius
             this.color = calculateFillColor(shape)
             this.outlineColor = calculateOutlineColor(shape)
-            this.outlineWidth = if (shape.isNotStarted) 1 else 2
+            this.outlineWidth = calculateOutlineWidth(shape)
             this.globalZIndex = 50
             this.map = map
 
@@ -136,7 +163,7 @@ class ShapeOverlayManager {
         overlay.radius = radius
         overlay.color = calculateFillColor(shape)
         overlay.outlineColor = calculateOutlineColor(shape)
-        overlay.outlineWidth = if (shape.isNotStarted) 1 else 2
+        overlay.outlineWidth = calculateOutlineWidth(shape)
     }
 
     // ──────────────────────────────────────────────
@@ -155,13 +182,13 @@ class ShapeOverlayManager {
         highlightOverlay = null
 
         val shape = shapes.find { it.id == shapeId } ?: return
-        val radius = shape.radius ?: return
+        val radius = resolveMapCircleHighlightRadius(shape) ?: return
 
         highlightOverlay = CircleOverlay().apply {
             this.center = shape.baseCoordinate.toLatLng()
-            this.radius = radius + 2
+            this.radius = radius
             this.color = Color.TRANSPARENT
-            this.outlineColor = Color.RED
+            this.outlineColor = parseColorSafe(SYSTEM_RED)
             this.outlineWidth = 5
             this.globalZIndex = 60
             this.map = naverMap
@@ -174,49 +201,75 @@ class ShapeOverlayManager {
 
     /**
      * 도형의 상태에 따른 채우기 색상(ARGB)을 계산한다.
-     * - 만료됨: 알파 20%
-     * - 미시작: 알파 20%
-     * - 활성: 알파 30%
+     * iOS createCircleOverlay/updateOverlayProperties 정합.
+     * - 미시작: 20%, 강조 50%
+     * - 활성/만료: 30%, 강조 70%
+     * - 만료 도형은 채움과 외곽선 모두 systemGray 기반
      */
     private fun calculateFillColor(shape: ShapeModel): Int {
-        val baseColor = parseColorSafe(shape.color)
-
+        val mainColor = mainColorFor(shape)
+        val isHighlighted = isDroneHighlighted(shape)
         val alpha = when {
-            shape.isExpired -> 0x33       // 20%
-            shape.isNotStarted -> 0x33    // 20%
-            else -> 0x4D                  // 30%
+            shape.isNotStarted && isHighlighted -> 0x80
+            shape.isNotStarted -> 0x33
+            isHighlighted -> 0xB3
+            else -> 0x4D
         }
 
-        return Color.argb(
-            alpha,
-            Color.red(baseColor),
-            Color.green(baseColor),
-            Color.blue(baseColor)
-        )
+        return withAlpha(mainColor, alpha)
     }
 
     /**
      * 도형의 상태에 따른 외곽선 색상을 계산한다.
-     * 만료된 도형은 회색, 그 외는 도형의 색상을 사용한다.
      */
     private fun calculateOutlineColor(shape: ShapeModel): Int {
+        val mainColor = mainColorFor(shape)
+        val isHighlighted = isDroneHighlighted(shape)
+        return when {
+            shape.isNotStarted && isHighlighted -> parseColorSafe(HIGHLIGHT_OUTLINE)
+            shape.isNotStarted -> withAlpha(mainColor, 0x80)
+            isHighlighted -> parseColorSafe(HIGHLIGHT_OUTLINE)
+            else -> mainColor
+        }
+    }
+
+    private fun calculateOutlineWidth(shape: ShapeModel): Int {
+        return if (shape.isNotStarted) 1 else 2
+    }
+
+    private fun mainColorFor(shape: ShapeModel): Int {
         return if (shape.isExpired) {
-            Color.GRAY
+            parseColorSafe(SYSTEM_GRAY)
         } else {
             parseColorSafe(shape.color)
         }
     }
 
+    private fun isDroneHighlighted(shape: ShapeModel): Boolean {
+        return shape.droneId?.let { it in highlightedDroneIds } ?: false
+    }
+
+    private fun withAlpha(color: Int, alpha: Int): Int {
+        return Color.argb(
+            alpha,
+            Color.red(color),
+            Color.green(color),
+            Color.blue(color)
+        )
+    }
+
     /**
      * 색상 문자열을 안전하게 파싱한다.
-     * 파싱 실패 시 기본 파란색(#007AFF)을 반환한다.
+     * iOS MapViewModel 의 `UIColor(hex:) ?? .black` fallback 과 동일하게 검정색을 반환한다.
      */
     private fun parseColorSafe(colorString: String): Int {
-        return try {
-            Color.parseColor(colorString)
-        } catch (e: Exception) {
-            Color.parseColor("#007AFF")
-        }
+        return parseMapOverlayColorSafe(colorString)
+    }
+
+    private companion object {
+        const val SYSTEM_GRAY = "#8E8E93"
+        const val SYSTEM_RED = "#FF3B30"
+        const val HIGHLIGHT_OUTLINE = "#333333"
     }
 
     // ──────────────────────────────────────────────

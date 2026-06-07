@@ -3,37 +3,35 @@ package com.ScienceFiction.DronePassAndroid.feature.drone
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,26 +40,29 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.rememberTextMeasurer
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.PaletteColor
 
+private const val DRONE_NAME_MAX_WIDTH_DP = 210
+internal val DroneEditMemoMinHeight = 100.dp
+
 /**
- * 드론 생성/편집 BottomSheet
- *
- * @param drone 편집 대상 드론 (null이면 새로 추가 모드)
- * @param suggestedColor 새 드론 생성 시 추천 색상
- * @param isDuplicateName 이름 중복 여부 체크 함수
- * @param onSave 저장 콜백
- * @param onDismiss 닫기 콜백
+ * 드론 생성/편집 BottomSheet.
+ * iOS DroneEditView 의 NavigationStack + Form 구조에 맞춰 상단 액션과 섹션형 입력으로 구성한다.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DroneEditSheet(
     drone: DroneModel? = null,
+    suggestedName: String = "",
     suggestedColor: PaletteColor = PaletteColor.BLUE,
     isDuplicateName: (String, String?) -> Boolean,
     onSave: (DroneModel) -> Unit,
@@ -69,240 +70,367 @@ fun DroneEditSheet(
 ) {
     val isEditMode = drone != null
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val textMeasurer = rememberTextMeasurer()
+    val density = LocalDensity.current
+    val droneNameTextStyle = MaterialTheme.typography.bodyLarge.copy(
+        fontSize = 17.sp,
+        letterSpacing = 0.sp,
+    )
+    val droneNameMaxWidthPx = with(density) { DRONE_NAME_MAX_WIDTH_DP.dp.toPx() }
 
-    // 상태 초기화
-    var name by remember { mutableStateOf(drone?.name ?: "") }
-    var selectedColor by remember {
-        mutableStateOf(drone?.paletteColor ?: suggestedColor)
+    var name by remember(drone?.id, suggestedName) {
+        mutableStateOf(drone?.name ?: suggestedName)
     }
-    var serialNumber by remember { mutableStateOf(drone?.serialNumber ?: "") }
-    var takeoffWeight by remember { mutableStateOf(drone?.takeoffWeight ?: "") }
-    var size by remember { mutableStateOf(drone?.size ?: "") }
-    var memo by remember { mutableStateOf(drone?.memo ?: "") }
-
-    // 검증 상태 — isDuplicateName 은 List 순회를 동반하므로 name/drone?.id 가 변할 때만 재계산.
-    // 이전: 매 recomposition (예: 다른 필드 입력) 마다 List 순회 반복.
-    val nameError = name.isBlank()
-    val duplicateWarning by remember(name, drone?.id) {
-        derivedStateOf { name.isNotBlank() && isDuplicateName(name, drone?.id) }
+    var selectedColor by remember(drone?.id, suggestedColor) {
+        mutableStateOf(resolveInitialDroneEditColor(drone, suggestedColor))
     }
+    var serialNumber by remember(drone?.id) { mutableStateOf(drone?.serialNumber ?: "") }
+    var takeoffWeight by remember(drone?.id) { mutableStateOf(drone?.takeoffWeight ?: "") }
+    var size by remember(drone?.id) { mutableStateOf(drone?.size ?: "") }
+    var memo by remember(drone?.id) { mutableStateOf(drone?.memo ?: "") }
+    var saveErrorMessage by remember { mutableStateOf<String?>(null) }
 
-    // 색상 목록 (GRAY 제외)
     val selectableColors = remember {
-        PaletteColor.entries.filter { it != PaletteColor.GRAY }
+        droneEditSelectableColors()
+    }
+    val saveFailedTitle = stringResource(R.string.drone_edit_alert_save_failed)
+    val nameRequiredMessage = stringResource(R.string.drone_edit_alert_name_required)
+    val duplicateNameMessage = stringResource(R.string.drone_edit_alert_name_duplicate)
+    val canSave = canSaveDroneEditName(name)
+
+    fun saveDrone() {
+        val trimmedName = name.trim()
+
+        when {
+            trimmedName.isEmpty() -> {
+                saveErrorMessage = nameRequiredMessage
+            }
+            isDuplicateName(trimmedName, drone?.id) -> {
+                saveErrorMessage = duplicateNameMessage
+            }
+            else -> {
+                val resultDrone = (drone ?: DroneModel()).copy(
+                    name = trimmedName,
+                    color = selectedColor.hex,
+                    serialNumber = normalizeDroneEditOptionalField(serialNumber),
+                    takeoffWeight = normalizeDroneEditOptionalField(takeoffWeight),
+                    size = normalizeDroneEditOptionalField(size),
+                    memo = normalizeDroneEditOptionalField(memo),
+                    updatedAt = System.currentTimeMillis(),
+                )
+                onSave(resultDrone)
+            }
+        }
     }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        sheetState = sheetState
+        sheetState = sheetState,
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .navigationBarsPadding()
-                .padding(horizontal = 20.dp)
-                .verticalScroll(rememberScrollState())
+                .navigationBarsPadding(),
         ) {
-            // 헤더
-            Text(
-                text = if (isEditMode) stringResource(R.string.drone_edit_title_edit) else stringResource(R.string.drone_edit_title_create),
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
-            )
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            // ===== 이름 =====
-            OutlinedTextField(
-                value = name,
-                onValueChange = { name = it },
-                label = { Text(stringResource(R.string.drone_edit_label_name)) },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                isError = duplicateWarning,
-                supportingText = if (duplicateWarning) {
-                    { Text(stringResource(R.string.drone_edit_duplicate_warning), color = MaterialTheme.colorScheme.error) }
-                } else null
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // ===== 색상 선택 =====
-            Text(
-                text = stringResource(R.string.drone_edit_color),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.primary
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            ColorPickerGrid(
-                colors = selectableColors,
-                selectedColor = selectedColor,
-                onColorSelected = { selectedColor = it }
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            HorizontalDivider()
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // ===== 추가 정보 =====
-            Text(
-                text = stringResource(R.string.drone_edit_additional_info),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.primary
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // 시리얼 번호
-            OutlinedTextField(
-                value = serialNumber,
-                onValueChange = { serialNumber = it },
-                label = { Text(stringResource(R.string.drone_edit_serial_number)) },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // 이륙 무게. 단위/형식("250g", "1.5kg", "1500" 등) 자유 입력 의도이므로
-            // 숫자 strict 검증은 적용하지 않는다. 향후 항공안전법 카테고리 자동 판정이
-            // 필요해지면 별도 파서를 두고 입력은 자유 유지 (UX 제약 최소화).
-            OutlinedTextField(
-                value = takeoffWeight,
-                onValueChange = { takeoffWeight = it.take(20) }, // 과도한 입력 길이만 컷
-                label = { Text(stringResource(R.string.drone_edit_takeoff_weight)) },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // 크기 ("28cm × 21cm" 등 자유 형식). 동일 정책으로 길이만 제한.
-            OutlinedTextField(
-                value = size,
-                onValueChange = { size = it.take(40) },
-                label = { Text(stringResource(R.string.drone_edit_size)) },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // 메모
-            OutlinedTextField(
-                value = memo,
-                onValueChange = { memo = it },
-                label = { Text(stringResource(R.string.drone_edit_memo)) },
-                modifier = Modifier.fillMaxWidth(),
-                minLines = 3,
-                placeholder = { Text(stringResource(R.string.drone_edit_memo_placeholder)) }
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // ===== 하단 버튼 =====
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                OutlinedButton(
-                    onClick = onDismiss,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text(stringResource(R.string.common_cancel))
-                }
-                Button(
-                    onClick = {
-                        val resultDrone = (drone ?: DroneModel()).copy(
-                            name = name.trim(),
-                            color = selectedColor.hex,
-                            serialNumber = serialNumber.ifBlank { null },
-                            takeoffWeight = takeoffWeight.ifBlank { null },
-                            size = size.ifBlank { null },
-                            memo = memo.ifBlank { null },
-                            updatedAt = System.currentTimeMillis()
-                        )
-                        onSave(resultDrone)
-                    },
-                    modifier = Modifier.weight(1f),
-                    enabled = name.isNotBlank() && !duplicateWarning,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary
+            TopAppBar(
+                navigationIcon = {
+                    TextButton(onClick = onDismiss) {
+                        Text(stringResource(R.string.common_cancel))
+                    }
+                },
+                title = {
+                    Text(
+                        text = if (isEditMode) {
+                            stringResource(R.string.drone_edit_title_edit)
+                        } else {
+                            stringResource(R.string.drone_edit_title_create)
+                        },
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
                     )
-                ) {
-                    Text(stringResource(R.string.common_save))
-                }
-            }
+                },
+                actions = {
+                    TextButton(
+                        onClick = ::saveDrone,
+                        enabled = canSave,
+                    ) {
+                        Text(
+                            stringResource(
+                                if (isEditMode) R.string.common_save else R.string.drone_edit_add
+                            )
+                        )
+                    }
+                },
+            )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp)
+                    .padding(top = 4.dp)
+                    .verticalScroll(rememberScrollState()),
+            ) {
+                DroneEditSection(
+                    header = stringResource(R.string.drone_edit_section_basic),
+                    footer = stringResource(R.string.drone_edit_section_basic_footer),
+                ) {
+                    DroneEditInputField(
+                        value = name,
+                        onValueChange = { candidate ->
+                            if (
+                                shouldAcceptDroneNameChange(
+                                    oldName = name,
+                                    newName = candidate,
+                                    maxWidthPx = droneNameMaxWidthPx,
+                                    measureTextWidth = { text ->
+                                        textMeasurer.measure(
+                                            text = text,
+                                            style = droneNameTextStyle,
+                                        ).size.width.toFloat()
+                                    },
+                                )
+                            ) {
+                                name = candidate
+                            }
+                        },
+                        placeholder = stringResource(R.string.drone_edit_name_placeholder),
+                        singleLine = true,
+                        textStyle = droneNameTextStyle,
+                    )
+                }
+
+                DroneEditSection(
+                    header = stringResource(R.string.drone_edit_color),
+                ) {
+                    ColorPickerGrid(
+                        colors = selectableColors,
+                        selectedColor = selectedColor,
+                        onColorSelected = { selectedColor = it },
+                    )
+                }
+
+                DroneEditSection(
+                    header = stringResource(R.string.drone_edit_section_serial),
+                    footer = stringResource(R.string.drone_edit_section_serial_footer),
+                ) {
+                    DroneEditInputField(
+                        value = serialNumber,
+                        onValueChange = { serialNumber = it },
+                        placeholder = stringResource(R.string.drone_edit_serial_placeholder),
+                        singleLine = true,
+                    )
+                }
+
+                DroneEditSection(
+                    header = stringResource(R.string.drone_edit_section_specs),
+                    footer = stringResource(R.string.drone_edit_section_specs_footer),
+                ) {
+                    DroneEditInputField(
+                        value = takeoffWeight,
+                        onValueChange = { takeoffWeight = it },
+                        placeholder = stringResource(R.string.drone_edit_weight_placeholder),
+                        singleLine = true,
+                    )
+                    HorizontalDivider()
+                    DroneEditInputField(
+                        value = size,
+                        onValueChange = { size = it },
+                        placeholder = stringResource(R.string.drone_edit_size_placeholder),
+                        singleLine = true,
+                    )
+                }
+
+                DroneEditSection(
+                    header = stringResource(R.string.drone_edit_section_memo),
+                    footer = stringResource(R.string.drone_edit_section_memo_footer),
+                ) {
+                    DroneEditInputField(
+                        value = memo,
+                        onValueChange = { memo = it },
+                        placeholder = null,
+                        singleLine = false,
+                        minLines = 4,
+                        modifier = Modifier.heightIn(min = DroneEditMemoMinHeight),
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+            }
+        }
+    }
+
+    saveErrorMessage?.let { message ->
+        AlertDialog(
+            onDismissRequest = { saveErrorMessage = null },
+            title = { Text(saveFailedTitle) },
+            text = { Text(message) },
+            confirmButton = {
+                TextButton(onClick = { saveErrorMessage = null }) {
+                    Text(stringResource(R.string.common_confirm))
+                }
+            },
+        )
+    }
+}
+
+@Composable
+private fun DroneEditSection(
+    header: String,
+    footer: String? = null,
+    content: @Composable () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 12.dp),
+    ) {
+        Text(
+            text = header,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(bottom = 6.dp),
+        )
+        content()
+        footer?.let {
+            Text(
+                text = it,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 6.dp),
+            )
         }
     }
 }
 
-/**
- * 색상 선택 그리드
- */
+@Composable
+private fun DroneEditInputField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String?,
+    singleLine: Boolean,
+    minLines: Int = 1,
+    textStyle: TextStyle = MaterialTheme.typography.bodyLarge,
+    modifier: Modifier = Modifier,
+) {
+    val placeholderText = resolveDroneEditPlaceholderText(placeholder)
+    TextField(
+        value = value,
+        onValueChange = onValueChange,
+        modifier = modifier.fillMaxWidth(),
+        placeholder = placeholderText?.let { resolvedPlaceholder ->
+            {
+                Text(
+                    text = resolvedPlaceholder,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        },
+        singleLine = singleLine,
+        minLines = minLines,
+        textStyle = textStyle,
+        colors = TextFieldDefaults.colors(
+            focusedContainerColor = Color.Transparent,
+            unfocusedContainerColor = Color.Transparent,
+            disabledContainerColor = Color.Transparent,
+            focusedIndicatorColor = Color.Transparent,
+            unfocusedIndicatorColor = Color.Transparent,
+            disabledIndicatorColor = Color.Transparent,
+        ),
+    )
+}
+
+internal fun shouldAcceptDroneNameChange(
+    oldName: String,
+    newName: String,
+    maxWidthPx: Float,
+    measureTextWidth: (String) -> Float,
+): Boolean {
+    return measureTextWidth(newName) <= maxWidthPx
+}
+
+internal fun resolveInitialDroneEditColor(
+    drone: DroneModel?,
+    suggestedColor: PaletteColor,
+): PaletteColor {
+    return if (drone != null) {
+        drone.paletteColor ?: PaletteColor.BLUE
+    } else {
+        suggestedColor
+    }
+}
+
+internal fun droneEditSelectableColors(): List<PaletteColor> =
+    PaletteColor.droneSelectableEntries
+
+internal fun canSaveDroneEditName(name: String): Boolean =
+    name.trim().isNotEmpty()
+
+internal fun normalizeDroneEditOptionalField(value: String): String? =
+    value.takeUnless { it.isBlank() }
+
+internal fun resolveDroneEditPlaceholderText(placeholder: String?): String? =
+    placeholder?.takeIf { it.isNotEmpty() }
+
 @Composable
 fun ColorPickerGrid(
     colors: List<PaletteColor>,
     selectedColor: PaletteColor,
     onColorSelected: (PaletteColor) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(5),
-        modifier = modifier
-            .fillMaxWidth()
-            .height(120.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        items(colors) { color ->
-            ColorCircle(
+    Column(modifier = modifier.fillMaxWidth()) {
+        colors.forEachIndexed { index, color ->
+            ColorPickerRow(
                 color = color,
                 isSelected = color == selectedColor,
-                onClick = { onColorSelected(color) }
+                onClick = { onColorSelected(color) },
             )
+            if (index != colors.lastIndex) {
+                HorizontalDivider(modifier = Modifier.padding(start = 40.dp))
+            }
         }
     }
 }
 
-/**
- * 색상 원형 아이템
- */
 @Composable
-private fun ColorCircle(
+private fun ColorPickerRow(
     color: PaletteColor,
     isSelected: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
-    Box(
+    Row(
         modifier = Modifier
-            .size(44.dp)
-            .clip(CircleShape)
-            .background(color.composeColor)
-            .then(
-                if (isSelected) {
-                    Modifier.border(3.dp, MaterialTheme.colorScheme.onSurface, CircleShape)
-                } else {
-                    Modifier
-                }
-            )
-            .clickable { onClick() },
-        contentAlignment = Alignment.Center
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
+        Box(
+            modifier = Modifier
+                .size(24.dp)
+                .clip(CircleShape)
+                .background(color.composeColor)
+                .border(
+                    width = 1.dp,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f),
+                    shape = CircleShape,
+                ),
+        )
+        Spacer(modifier = Modifier.width(16.dp))
+        Text(
+            text = color.localizedLabel(),
+            style = MaterialTheme.typography.bodyLarge,
+        )
+        Spacer(modifier = Modifier.weight(1f))
         if (isSelected) {
             Icon(
                 imageVector = Icons.Default.Check,
-                contentDescription = stringResource(R.string.drone_edit_color_selected, color.koreanName),
-                tint = Color.White,
-                modifier = Modifier.size(20.dp)
+                contentDescription = stringResource(
+                    R.string.drone_edit_color_selected,
+                    color.localizedLabel(),
+                ),
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(20.dp),
             )
         }
     }

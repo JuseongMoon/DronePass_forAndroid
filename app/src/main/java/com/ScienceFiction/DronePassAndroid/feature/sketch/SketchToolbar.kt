@@ -1,57 +1,171 @@
 package com.ScienceFiction.DronePassAndroid.feature.sketch
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.drag
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.automirrored.filled.Redo
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.DeleteForever
-import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.CleaningServices
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.AlertDialog
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.sp
 import com.ScienceFiction.DronePassAndroid.R
+import com.ScienceFiction.DronePassAndroid.core.util.parseIosOpaqueRgbHexColor
+
+internal val SketchToolbarButtonSize = 32.dp
+internal val SketchToolbarIconSize = 18.dp
+internal val SketchToolbarContainerCornerRadius = 30.dp
+internal val SketchToolbarHorizontalPadding = 16.dp
+internal val SketchToolbarVerticalPadding = 12.dp
+internal val SketchToolbarItemSpacing = 12.dp
+internal val SketchToolbarDividerHeight = 24.dp
+internal val SketchToolbarShadowElevation = 10.dp
+internal val SketchToolbarDoneHorizontalPadding = 14.dp
+internal val SketchToolbarDoneVerticalPadding = 8.dp
+internal val SketchToolbarDoneCornerRadius = 16.dp
+internal val SketchToolbarDoneFontSize = 14.sp
+internal val SketchDeleteBadgeFontSize = 9.sp
+internal val SketchPenPickerCardCornerRadius = 16.dp
+internal val SketchPenPickerCardPadding = 10.dp
+internal val SketchPenPickerCardSpacing = 10.dp
+internal const val SketchPenPickerAnimationDurationMs = 200
+internal const val SketchPenPickerInitialScale = 0.95f
+internal const val SketchPenPickerTransformOriginPivotX = 0.5f
+internal const val SketchPenPickerTransformOriginPivotY = 1f
+internal val SketchPenPickerButtonSize = 44.dp
+internal val SketchPenPickerButtonSpacing = 4.dp
+internal val SketchPenPickerContentWidth = 236.dp
+internal val SketchOpacityCheckerboardSquareSize = 6.dp
+internal const val SketchOpacityCheckerboardDarkAlpha = 0.3f
+internal val SketchGradientSliderHeight = 30.dp
+internal val SketchGradientSliderCornerRadius = 15.dp
+internal val SketchGradientSliderThumbSize = 28.dp
+internal val SketchGradientSliderThumbInnerSize = 20.dp
+internal const val SketchGradientSliderThumbShadowAlpha = 0.25f
+internal val SketchGradientSliderThumbShadowOffsetY = 1.dp
+internal const val SketchHueSliderMin = 0f
+internal const val SketchHueSliderMax = 360f
+internal const val SketchOpacitySliderMin = 0.1f
+internal const val SketchOpacitySliderMax = 1.0f
+
+internal fun formatSketchDeleteBadgeCount(sketchCount: Int): String {
+    return sketchCount.toString()
+}
+
+internal fun sketchHueDegreesFromIosHexColor(hex: String): Float {
+    val color = parseIosOpaqueRgbHexColor(hex) ?: return 0f
+    val red = ((color ushr 16) and 0xFF) / 255f
+    val green = ((color ushr 8) and 0xFF) / 255f
+    val blue = (color and 0xFF) / 255f
+    val max = maxOf(red, green, blue)
+    val min = minOf(red, green, blue)
+    val delta = max - min
+    if (delta == 0f) return 0f
+
+    val hue = when (max) {
+        red -> 60f * (((green - blue) / delta) % 6f)
+        green -> 60f * (((blue - red) / delta) + 2f)
+        else -> 60f * (((red - green) / delta) + 4f)
+    }
+    return if (hue < 0f) hue + 360f else hue
+}
+
+internal fun parseSketchToolbarColorSafe(color: String): Color {
+    return Color(parseIosOpaqueRgbHexColor(color) ?: 0xFFFF0000.toInt())
+}
+
+internal fun sketchSliderFractionFromX(
+    x: Float,
+    width: Float,
+    thumbRadius: Float,
+): Float {
+    val travelWidth = (width - (thumbRadius * 2f)).coerceAtLeast(1f)
+    return ((x - thumbRadius) / travelWidth).coerceIn(0f, 1f)
+}
+
+internal fun sketchSliderValueFromX(
+    x: Float,
+    width: Float,
+    thumbRadius: Float,
+    valueMin: Float,
+    valueMax: Float,
+): Float {
+    val fraction = sketchSliderFractionFromX(
+        x = x,
+        width = width,
+        thumbRadius = thumbRadius,
+    )
+    return valueMin + (fraction * (valueMax - valueMin))
+}
+
+internal fun sketchSliderThumbCenterX(
+    value: Float,
+    width: Float,
+    thumbRadius: Float,
+    valueMin: Float,
+    valueMax: Float,
+): Float {
+    val valueRange = valueMax - valueMin
+    val fraction = if (valueRange <= 0f) {
+        0f
+    } else {
+        ((value - valueMin) / valueRange).coerceIn(0f, 1f)
+    }
+    val travelWidth = (width - (thumbRadius * 2f)).coerceAtLeast(1f)
+    return thumbRadius + (fraction * travelWidth)
+}
 
 /**
  * 스케치 모드 메인 툴바.
@@ -104,8 +218,20 @@ fun SketchToolbar(
         // 펜 설정 카드 (토글)
         AnimatedVisibility(
             visible = showPenSettings && !isEraserMode,
-            enter = expandVertically(),
-            exit = shrinkVertically()
+            enter = fadeIn(
+                animationSpec = tween(SketchPenPickerAnimationDurationMs),
+            ) + scaleIn(
+                animationSpec = tween(SketchPenPickerAnimationDurationMs),
+                initialScale = SketchPenPickerInitialScale,
+                transformOrigin = SketchPenPickerTransformOrigin,
+            ),
+            exit = fadeOut(
+                animationSpec = tween(SketchPenPickerAnimationDurationMs),
+            ) + scaleOut(
+                animationSpec = tween(SketchPenPickerAnimationDurationMs),
+                targetScale = SketchPenPickerInitialScale,
+                transformOrigin = SketchPenPickerTransformOrigin,
+            ),
         ) {
             PenSettingsCard(
                 currentColor = currentColor,
@@ -121,18 +247,19 @@ fun SketchToolbar(
         // 메인 툴바
         Surface(
             modifier = Modifier
-                .fillMaxWidth()
+                .wrapContentWidth()
                 .padding(horizontal = 16.dp, vertical = 8.dp),
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(SketchToolbarContainerCornerRadius),
             color = MaterialTheme.colorScheme.surface,
-            shadowElevation = 6.dp,
-            tonalElevation = 2.dp
+            shadowElevation = SketchToolbarShadowElevation,
         ) {
             Row(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 4.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly,
+                    .padding(
+                        horizontal = SketchToolbarHorizontalPadding,
+                        vertical = SketchToolbarVerticalPadding,
+                    ),
+                horizontalArrangement = Arrangement.spacedBy(SketchToolbarItemSpacing),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // 펜 버튼 (현재 색/두께 표시)
@@ -143,19 +270,24 @@ fun SketchToolbar(
                     onClick = {
                         if (isEraserMode) {
                             onToggleEraser()
+                            showPenSettings = false
+                        } else {
+                            showPenSettings = !showPenSettings
                         }
-                        showPenSettings = !showPenSettings
                     }
                 )
 
                 // 지우개 버튼
                 ToolbarIconButton(
-                    icon = Icons.Default.DeleteForever,
+                    icon = Icons.Default.CleaningServices,
                     contentDescription = stringResource(R.string.sketch_eraser),
                     isActive = isEraserMode,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     onClick = {
                         showPenSettings = false
-                        onToggleEraser()
+                        if (!isEraserMode) {
+                            onToggleEraser()
+                        }
                     }
                 )
 
@@ -175,6 +307,13 @@ fun SketchToolbar(
                     onClick = onRedo
                 )
 
+                Box(
+                    modifier = Modifier
+                        .width(1.dp)
+                        .height(SketchToolbarDividerHeight)
+                        .background(MaterialTheme.colorScheme.outlineVariant)
+                )
+
                 // 전체 삭제 버튼 (뱃지로 개수 표시)
                 DeleteAllButton(
                     sketchCount = sketchCount,
@@ -182,11 +321,9 @@ fun SketchToolbar(
                 )
 
                 // 완료 버튼
-                ToolbarIconButton(
-                    icon = Icons.Default.Check,
-                    contentDescription = stringResource(R.string.sketch_done),
-                    tint = MaterialTheme.colorScheme.primary,
-                    onClick = onDone
+                DoneButton(
+                    text = stringResource(R.string.sketch_done),
+                    onClick = onDone,
                 )
             }
         }
@@ -220,6 +357,11 @@ fun SketchToolbar(
     }
 }
 
+internal val SketchPenPickerTransformOrigin = TransformOrigin(
+    pivotFractionX = SketchPenPickerTransformOriginPivotX,
+    pivotFractionY = SketchPenPickerTransformOriginPivotY,
+)
+
 // ──────────────────────────────────────────────
 // 펜 버튼
 // ──────────────────────────────────────────────
@@ -237,36 +379,27 @@ private fun PenButton(
         Color.Red
     }
 
-    val indicatorSize = (strokeWidth * 2).coerceIn(6.0, 20.0).dp
-
     Box(
         modifier = Modifier
-            .size(44.dp)
-            .clip(CircleShape)
-            .then(
+            .size(SketchToolbarButtonSize)
+            .clip(RoundedCornerShape(8.dp))
+            .background(
                 if (isActive) {
-                    Modifier.border(2.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
                 } else {
-                    Modifier
+                    Color.Transparent
                 }
             )
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
-        // 펜 아이콘
-        Icon(
-            imageVector = Icons.Default.Edit,
-            contentDescription = stringResource(R.string.sketch_pen),
-            modifier = Modifier.size(22.dp),
-            tint = if (isActive) penColor else MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        // 두께 인디케이터 (우하단)
         Box(
             modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .size(indicatorSize)
-                .background(penColor, CircleShape)
-                .border(1.dp, MaterialTheme.colorScheme.surface, CircleShape)
+                .width(strokeWidth.coerceAtLeast(3.0).dp)
+                .height(20.dp)
+                .rotate(-45f)
+                .clip(RoundedCornerShape((strokeWidth / 2).dp))
+                .background(penColor)
         )
     }
 }
@@ -280,9 +413,17 @@ private fun DeleteAllButton(
     sketchCount: Int,
     onClick: () -> Unit
 ) {
-    IconButton(
-        onClick = onClick,
-        enabled = sketchCount > 0
+    Box(
+        modifier = Modifier
+            .size(SketchToolbarButtonSize)
+            .then(
+                if (sketchCount > 0) {
+                    Modifier.clickable(onClick = onClick)
+                } else {
+                    Modifier
+                }
+            ),
+        contentAlignment = Alignment.Center,
     ) {
         if (sketchCount > 0) {
             BadgedBox(
@@ -292,26 +433,50 @@ private fun DeleteAllButton(
                         contentColor = MaterialTheme.colorScheme.onError
                     ) {
                         Text(
-                            text = if (sketchCount > 99) "99+" else sketchCount.toString(),
-                            fontSize = 10.sp
+                            text = formatSketchDeleteBadgeCount(sketchCount),
+                            fontSize = SketchDeleteBadgeFontSize,
                         )
                     }
                 }
             ) {
                 Icon(
-                    imageVector = Icons.Default.DeleteForever,
+                    imageVector = Icons.Default.Delete,
                     contentDescription = stringResource(R.string.sketch_delete_all),
-                    tint = MaterialTheme.colorScheme.error
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(SketchToolbarIconSize),
                 )
             }
         } else {
             Icon(
-                imageVector = Icons.Default.DeleteForever,
+                imageVector = Icons.Default.Delete,
                 contentDescription = stringResource(R.string.sketch_delete_all),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f),
+                modifier = Modifier.size(SketchToolbarIconSize),
             )
         }
     }
+}
+
+@Composable
+private fun DoneButton(
+    text: String,
+    onClick: () -> Unit,
+) {
+    Text(
+        text = text,
+        fontSize = SketchToolbarDoneFontSize,
+        fontWeight = FontWeight.SemiBold,
+        color = Color.White,
+        textAlign = TextAlign.Center,
+        modifier = Modifier
+            .clip(RoundedCornerShape(SketchToolbarDoneCornerRadius))
+            .background(Color(0xFF007AFF))
+            .clickable(onClick = onClick)
+            .padding(
+                horizontal = SketchToolbarDoneHorizontalPadding,
+                vertical = SketchToolbarDoneVerticalPadding,
+            ),
+    )
 }
 
 // ──────────────────────────────────────────────
@@ -327,15 +492,32 @@ private fun ToolbarIconButton(
     tint: Color = MaterialTheme.colorScheme.onSurface,
     onClick: () -> Unit
 ) {
-    IconButton(
-        onClick = onClick,
-        enabled = enabled
+    Box(
+        modifier = Modifier
+            .size(SketchToolbarButtonSize)
+            .clip(RoundedCornerShape(8.dp))
+            .background(
+                if (isActive) {
+                    Color(0xFFFF9500).copy(alpha = 0.15f)
+                } else {
+                    Color.Transparent
+                }
+            )
+            .then(
+                if (enabled) {
+                    Modifier.clickable(onClick = onClick)
+                } else {
+                    Modifier
+                }
+            ),
+        contentAlignment = Alignment.Center,
     ) {
         Icon(
             imageVector = icon,
             contentDescription = contentDescription,
+            modifier = Modifier.size(SketchToolbarIconSize),
             tint = when {
-                isActive -> MaterialTheme.colorScheme.primary
+                isActive -> Color(0xFFFF9500)
                 !enabled -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
                 else -> tint
             }
@@ -357,82 +539,48 @@ private fun PenSettingsCard(
     onOpacityChanged: (Double) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    Surface(
+        modifier = modifier.wrapContentWidth(),
+        shape = RoundedCornerShape(SketchPenPickerCardCornerRadius),
+        color = MaterialTheme.colorScheme.surface,
+        shadowElevation = 8.dp,
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            modifier = Modifier.padding(SketchPenPickerCardPadding),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(SketchPenPickerCardSpacing)
         ) {
-            // ──── 색상 선택 ────
-            Text(
-                text = stringResource(R.string.sketch_color),
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            ColorSelector(
-                currentColor = currentColor,
-                onColorChanged = onColorChanged
-            )
-
-            // ──── 두께 선택 ────
-            Text(
-                text = stringResource(R.string.sketch_stroke_width),
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
             StrokeWidthSelector(
                 currentWidth = currentStrokeWidth,
-                onWidthChanged = onStrokeWidthChanged
+                onWidthChanged = onStrokeWidthChanged,
             )
-
-            // ──── 투명도 슬라이더 ────
-            Text(
-                text = stringResource(R.string.sketch_opacity, (currentOpacity * 100).toInt()),
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-
-            // 현재 색상 기반 투명도 그라데이션 슬라이더
-            val penColor = try {
-                Color(android.graphics.Color.parseColor(currentColor))
-            } catch (e: Exception) { Color.Red }
 
             Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(32.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(
-                        brush = Brush.horizontalGradient(
-                            colors = listOf(
-                                penColor.copy(alpha = 0.1f),
-                                penColor.copy(alpha = 0.5f),
-                                penColor
-                            )
-                        )
-                    )
-            ) {
-                Slider(
-                    value = currentOpacity.toFloat(),
-                    onValueChange = { onOpacityChanged(it.toDouble()) },
-                    valueRange = 0.1f..1.0f,
-                    colors = SliderDefaults.colors(
-                        thumbColor = Color.White,
-                        activeTrackColor = Color.Transparent,
-                        inactiveTrackColor = Color.Transparent
-                    ),
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
+                    .width(SketchPenPickerContentWidth)
+                    .height(1.dp)
+                    .background(MaterialTheme.colorScheme.outlineVariant)
+            )
+
+            ColorSelector(
+                currentColor = currentColor,
+                onColorChanged = onColorChanged,
+                modifier = Modifier.width(SketchPenPickerContentWidth),
+            )
+
+            Box(
+                modifier = Modifier
+                    .width(SketchPenPickerContentWidth)
+                    .height(1.dp)
+                    .background(MaterialTheme.colorScheme.outlineVariant)
+            )
+
+            OpacitySelector(
+                currentColor = currentColor,
+                currentOpacity = currentOpacity,
+                onOpacityChanged = onOpacityChanged,
+                modifier = Modifier.width(SketchPenPickerContentWidth),
+            )
         }
     }
 }
@@ -444,7 +592,8 @@ private fun PenSettingsCard(
 @Composable
 private fun ColorSelector(
     currentColor: String,
-    onColorChanged: (String) -> Unit
+    onColorChanged: (String) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     // 현재 색상의 Hue 값으로 초기화하되, 이후 슬라이더 자체가 SSOT.
     // currentColor 가 외부에서 변경되어도 sliderPosition 을 강제 동기화하지 않는다.
@@ -452,60 +601,214 @@ private fun ColorSelector(
     // hexToHue 재계산 round-trip 으로 부동소수점 오차가 누적되어 thumb 가 미세하게 점프했다.
     var sliderPosition by remember { mutableStateOf(hexToHue(currentColor)) }
 
-    Column {
-        // 레인보우 그라데이션 슬라이더
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(32.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .background(
-                    brush = Brush.horizontalGradient(
-                        colors = (0..10).map { i ->
-                            Color.hsv(i * 36f, 0.85f, 0.9f)
-                        }
-                    )
-                )
-        ) {
-            // 슬라이더 오버레이
-            Slider(
-                value = sliderPosition,
-                onValueChange = { newHue ->
-                    sliderPosition = newHue
-                    onColorChanged(hueToHex(newHue))
-                },
-                valueRange = 0f..360f,
-                colors = SliderDefaults.colors(
-                    thumbColor = Color.White,
-                    activeTrackColor = Color.Transparent,
-                    inactiveTrackColor = Color.Transparent
-                ),
-                modifier = Modifier.fillMaxWidth()
-            )
+    LaunchedEffect(currentColor) {
+        val newPosition = hexToHue(currentColor)
+        if (shouldSyncSketchHueSlider(sliderPosition, newPosition)) {
+            sliderPosition = newPosition
         }
+    }
 
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // 현재 선택된 색상 미리보기
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+    Box(
+        modifier = modifier
+            .height(SketchGradientSliderHeight)
+    ) {
+        SketchGradientSlider(
+            value = sliderPosition,
+            valueMin = SketchHueSliderMin,
+            valueMax = SketchHueSliderMax,
+            thumbColor = parseSketchColor(currentColor),
+            onValueChanged = { newHue ->
+                sliderPosition = newHue
+                onColorChanged(hueToHex(newHue))
+            },
+            modifier = Modifier.fillMaxWidth(),
         ) {
             Box(
                 modifier = Modifier
-                    .size(24.dp)
-                    .clip(CircleShape)
+                    .matchParentSize()
                     .background(
-                        try { Color(android.graphics.Color.parseColor(currentColor)) }
-                        catch (e: Exception) { Color.Red }
+                        brush = Brush.horizontalGradient(
+                            colors = (0..10).map { i ->
+                                Color.hsv(i * 36f, 0.85f, 0.9f)
+                            }
+                        )
                     )
-                    .border(1.dp, Color.Gray.copy(alpha = 0.3f), CircleShape)
             )
-            Text(
-                text = currentColor.uppercase(),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+        }
+    }
+}
+
+@Composable
+private fun OpacitySelector(
+    currentColor: String,
+    currentOpacity: Double,
+    onOpacityChanged: (Double) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val penColor = parseSketchColor(currentColor)
+
+    Box(
+        modifier = modifier
+            .height(SketchGradientSliderHeight)
+    ) {
+        val opacity = currentOpacity.toFloat()
+        SketchGradientSlider(
+            value = opacity,
+            valueMin = SketchOpacitySliderMin,
+            valueMax = SketchOpacitySliderMax,
+            thumbColor = penColor.copy(alpha = opacity.coerceIn(SketchOpacitySliderMin, SketchOpacitySliderMax)),
+            onValueChanged = { onOpacityChanged(it.toDouble()) },
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            OpacityCheckerboardPattern(modifier = Modifier.matchParentSize())
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(
+                        brush = Brush.horizontalGradient(
+                            colors = listOf(
+                                penColor.copy(alpha = 0.1f),
+                                penColor.copy(alpha = 0.25f),
+                                penColor.copy(alpha = 0.5f),
+                                penColor.copy(alpha = 0.75f),
+                                penColor,
+                            )
+                        )
+                    )
             )
+        }
+    }
+}
+
+@Composable
+private fun SketchGradientSlider(
+    value: Float,
+    valueMin: Float,
+    valueMax: Float,
+    thumbColor: Color,
+    onValueChanged: (Float) -> Unit,
+    modifier: Modifier = Modifier,
+    trackContent: @Composable BoxScope.() -> Unit,
+) {
+    val currentOnValueChanged by rememberUpdatedState(onValueChanged)
+
+    Box(
+        modifier = modifier
+            .height(SketchGradientSliderHeight)
+            .pointerInput(valueMin, valueMax) {
+                val thumbRadiusPx = SketchGradientSliderThumbSize.toPx() / 2f
+
+                fun updateValue(x: Float) {
+                    currentOnValueChanged(
+                        sketchSliderValueFromX(
+                            x = x,
+                            width = size.width.toFloat(),
+                            thumbRadius = thumbRadiusPx,
+                            valueMin = valueMin,
+                            valueMax = valueMax,
+                        )
+                    )
+                }
+
+                awaitEachGesture {
+                    val down = awaitFirstDown(requireUnconsumed = false)
+                    updateValue(down.position.x)
+                    drag(down.id) { change ->
+                        updateValue(change.position.x)
+                        change.consume()
+                    }
+                }
+            }
+    ) {
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .clip(RoundedCornerShape(SketchGradientSliderCornerRadius)),
+            content = trackContent,
+        )
+
+        Canvas(modifier = Modifier.matchParentSize()) {
+            val thumbRadiusPx = SketchGradientSliderThumbSize.toPx() / 2f
+            val innerRadiusPx = SketchGradientSliderThumbInnerSize.toPx() / 2f
+            val centerX = sketchSliderThumbCenterX(
+                value = value,
+                width = size.width,
+                thumbRadius = thumbRadiusPx,
+                valueMin = valueMin,
+                valueMax = valueMax,
+            )
+            val center = Offset(centerX, size.height / 2f)
+            val shadowCenter = center.copy(
+                y = center.y + SketchGradientSliderThumbShadowOffsetY.toPx(),
+            )
+
+            drawCircle(
+                color = Color.Black.copy(alpha = SketchGradientSliderThumbShadowAlpha),
+                radius = thumbRadiusPx,
+                center = shadowCenter,
+            )
+            drawCircle(
+                color = Color.White,
+                radius = thumbRadiusPx,
+                center = center,
+            )
+            drawCircle(
+                color = thumbColor,
+                radius = innerRadiusPx,
+                center = center,
+            )
+        }
+    }
+}
+
+@Composable
+private fun OpacityCheckerboardPattern(
+    modifier: Modifier = Modifier,
+) {
+    val squareSize = SketchOpacityCheckerboardSquareSize
+    Canvas(modifier = modifier) {
+        val squarePx = squareSize.toPx()
+        val columns = kotlin.math.ceil(size.width / squarePx).toInt()
+        val rows = kotlin.math.ceil(size.height / squarePx).toInt()
+        for (row in 0 until rows) {
+            for (column in 0 until columns) {
+                val color = if ((row + column) % 2 == 0) {
+                    Color.White
+                } else {
+                    Color.Gray.copy(alpha = SketchOpacityCheckerboardDarkAlpha)
+                }
+                drawRect(
+                    color = color,
+                    topLeft = Offset(column * squarePx, row * squarePx),
+                    size = Size(squarePx, squarePx),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PenStrokeOptionButton(
+    width: Double,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .size(SketchPenPickerButtonSize)
+            .clip(CircleShape)
+            .background(if (isSelected) Color.Black else Color.Transparent)
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(
+            modifier = Modifier
+                .width(width.dp)
+                .height(30.dp)
+                .rotate(-45f)
+                .clip(RoundedCornerShape((width / 2).dp))
+                .background(if (isSelected) Color.White else Color.Gray)
+        ) {
         }
     }
 }
@@ -522,45 +825,17 @@ private fun StrokeWidthSelector(
     val widthOptions = listOf(2.0, 4.0, 6.0, 8.0, 10.0)
 
     Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceEvenly,
+        modifier = Modifier.width(SketchPenPickerContentWidth),
+        horizontalArrangement = Arrangement.spacedBy(SketchPenPickerButtonSpacing),
         verticalAlignment = Alignment.CenterVertically
     ) {
         widthOptions.forEach { width ->
             val isSelected = width == currentWidth
-            val dotSize = (width * 2.5).coerceIn(5.0, 25.0).dp
-
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .then(
-                        if (isSelected) {
-                            Modifier.border(
-                                2.dp,
-                                MaterialTheme.colorScheme.primary,
-                                CircleShape
-                            )
-                        } else {
-                            Modifier
-                        }
-                    )
-                    .clickable { onWidthChanged(width) },
-                contentAlignment = Alignment.Center
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(dotSize)
-                        .background(
-                            if (isSelected) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            },
-                            CircleShape
-                        )
-                )
-            }
+            PenStrokeOptionButton(
+                width = width,
+                isSelected = isSelected,
+                onClick = { onWidthChanged(width) },
+            )
         }
     }
 }
@@ -573,14 +848,7 @@ private fun StrokeWidthSelector(
  * HEX 문자열을 HSV의 Hue 값(0~360)으로 변환
  */
 private fun hexToHue(hex: String): Float {
-    return try {
-        val color = android.graphics.Color.parseColor(hex)
-        val hsv = FloatArray(3)
-        android.graphics.Color.colorToHSV(color, hsv)
-        hsv[0] // Hue (0~360)
-    } catch (e: Exception) {
-        0f
-    }
+    return sketchHueDegreesFromIosHexColor(hex)
 }
 
 /**
@@ -590,4 +858,8 @@ private fun hexToHue(hex: String): Float {
 private fun hueToHex(hue: Float): String {
     val color = android.graphics.Color.HSVToColor(floatArrayOf(hue, 0.85f, 0.9f))
     return String.format("#%06X", 0xFFFFFF and color)
+}
+
+private fun parseSketchColor(color: String): Color {
+    return parseSketchToolbarColorSafe(color)
 }

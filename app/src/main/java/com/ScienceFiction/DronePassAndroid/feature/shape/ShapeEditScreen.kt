@@ -5,8 +5,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -14,17 +16,25 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.AirplanemodeActive
+import androidx.compose.material.icons.filled.Cancel
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -34,6 +44,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -46,30 +57,51 @@ import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.core.data.remote.NaverGeocodingApi
+import com.ScienceFiction.DronePassAndroid.core.data.repository.reverseGeocodingResultsToAddress
 import com.ScienceFiction.DronePassAndroid.core.util.CoordinateParser
 import com.ScienceFiction.DronePassAndroid.domain.model.Coordinate
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
-import com.ScienceFiction.DronePassAndroid.domain.model.PaletteColor
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
-import com.ScienceFiction.DronePassAndroid.domain.model.ShapeType
 
-import java.text.SimpleDateFormat
+import java.text.DateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
-import java.util.TimeZone
+import kotlinx.coroutines.launch
+
+internal const val CoordinateInputSheetSkipPartiallyExpanded = false
+internal const val CoordinateInputSheetInteractiveDismissEnabled = false
+internal const val CoordinateInputSheetHeightFraction = 0.85f
+internal const val ShapeDateTimeSelectionSkipPartiallyExpanded = true
+internal val CoordinateValidationSuccessColor = Color(0xFF34C759)
+internal val CoordinateAddressResultCardCornerRadius = 12.dp
+internal val CoordinateAddressResultCardShadowElevation = 5.dp
+internal val CoordinateAddressResultCardShadowColor = Color.Black.copy(alpha = 0.10f)
+internal val CoordinateResolvingIndicatorHeight = 180.dp
+internal val CoordinateGuideCardCornerRadius = 20.dp
+internal val CoordinateGuideCardMaxWidth = 500.dp
+internal val CoordinateGuideCardPadding = 16.dp
+internal val CoordinateGuideCardVerticalSpacing = 8.dp
+internal val ShapeEditMemoMinHeight = 170.dp
 
 /**
  * 도형 편집 화면 — iOS ShapeEditView 1:1 정합.
@@ -87,60 +119,101 @@ fun ShapeEditScreen(
     shape: ShapeModel? = null,
     initialCoordinate: Coordinate? = null,
     drones: List<DroneModel> = emptyList(),
+    editDefaults: ShapeEditDefaults = ShapeEditDefaults(),
+    fallbackSelectedDroneId: String? = null,
     reverseGeocodedAddress: String? = null,
     geocodingApi: NaverGeocodingApi? = null,
     isDuplicateMode: Boolean = false,
-    onSave: (ShapeModel) -> Unit,
+    onPersistEditDefaults: (ShapeEditDefaults) -> Unit = {},
+    onDateOnlyModeChanged: (Boolean) -> Unit = {},
+    onSave: (ShapeModel, ShapeModel?) -> Unit,
     onDismiss: () -> Unit
 ) {
-    // 복제 모드: shape 전체 데이터 활용하되 신규 ID + " (복사)" suffix + 새 createdAt 으로 저장.
-    val isEditMode = shape != null && !isDuplicateMode
+    // 복제 모드: shape 전체 데이터 활용하되 신규 ID + 새 createdAt 으로 저장.
+    val isEditMode = isExistingShapeEditMode(
+        shape = shape,
+        isDuplicateMode = isDuplicateMode,
+    )
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     val editKey = if (isDuplicateMode) "duplicate-${shape?.id}" else shape?.id
     val defaultTitle = stringResource(R.string.shape_edit_default_title)
-    val duplicateSuffix = stringResource(R.string.shape_detail_copy_suffix)
+    val errorCoordinateRequired = stringResource(R.string.shape_edit_error_coordinate_required)
+    val errorNoAddress = stringResource(R.string.shape_edit_error_no_address)
+    val errorNoCoordinate = stringResource(R.string.shape_edit_error_no_coordinate)
+    val errorRadiusRequired = stringResource(R.string.shape_edit_error_radius_required)
+    val coordinateAddressFallback = stringResource(R.string.coordinate_alert_address_not_found_fallback)
+    val nowForInitialValues = remember(editKey) { System.currentTimeMillis() }
+    val originalShapeAtEditStart = remember(editKey) { shape }
+    val coroutineScope = rememberCoroutineScope()
 
     // ===== 초기값 보관 (hasChanges 비교용) =====
     val initialTitle = remember(editKey) {
-        when {
-            isDuplicateMode && shape != null -> "${shape.title} $duplicateSuffix"
-            shape != null -> shape.title
-            else -> ""
-        }
+        resolveInitialShapeEditTitle(shape)
     }
     val initialAddress = remember(editKey) { shape?.address ?: reverseGeocodedAddress ?: "" }
-    val initialRadius = remember(editKey) {
-        shape?.radius?.let { String.format(Locale.US, "%.0f", it) } ?: "500"
+    val initialRadius = remember(editKey, editDefaults.radius) {
+        resolveInitialShapeEditRadius(
+            shape = shape,
+            editDefaults = editDefaults,
+        )
     }
-    val initialHeight = remember(editKey) {
-        shape?.height?.let { String.format(Locale.US, "%.0f", it) } ?: ""
+    val initialHeight = remember(editKey, editDefaults.height) {
+        resolveInitialShapeEditHeight(
+            shape = shape,
+            editDefaults = editDefaults,
+        )
     }
     val initialMemo = remember(editKey) { shape?.memo ?: "" }
-    val initialFlightStart = remember(editKey) { shape?.flightStartDate ?: System.currentTimeMillis() }
-    val initialFlightEnd = remember(editKey) { shape?.flightEndDate }
-    val initialCoord = remember(editKey) {
-        shape?.baseCoordinate ?: initialCoordinate ?: Coordinate(37.5665, 126.9780)
+    val initialFlightStart = remember(editKey, editDefaults.startDate) {
+        resolveInitialShapeEditFlightStart(
+            shape = shape,
+            editDefaults = editDefaults,
+            now = nowForInitialValues,
+        )
     }
-    val initialDroneId = remember(editKey) { shape?.droneId }
+    val initialFlightEnd = remember(editKey, editDefaults.endDate) {
+        resolveInitialShapeEditFlightEnd(
+            shape = shape,
+            editDefaults = editDefaults,
+            now = nowForInitialValues,
+        )
+    }
+    val initialCoord = remember(editKey) {
+        shape?.baseCoordinate ?: initialCoordinate
+    }
+    val initialDroneId = remember(
+        editKey,
+        shape?.droneId,
+        drones,
+        editDefaults.selectedDroneId,
+        fallbackSelectedDroneId,
+    ) {
+        resolveInitialShapeEditDroneId(
+            shape = shape,
+            activeDrones = drones,
+            editDefaults = editDefaults,
+            fallbackSelectedDroneId = fallbackSelectedDroneId,
+        )
+    }
 
     // ===== 편집 상태 =====
     var title by remember(editKey) { mutableStateOf(initialTitle) }
     var address by remember(editKey) { mutableStateOf(initialAddress) }
-    var radiusText by remember(editKey) { mutableStateOf(initialRadius) }
-    var heightText by remember(editKey) { mutableStateOf(initialHeight) }
+    var radiusText by remember(editKey, initialRadius) { mutableStateOf(initialRadius) }
+    var heightText by remember(editKey, initialHeight) { mutableStateOf(initialHeight) }
     var memo by remember(editKey) { mutableStateOf(initialMemo) }
-    var flightStartDate by remember(editKey) { mutableStateOf(initialFlightStart) }
-    var flightEndDate by remember(editKey) { mutableStateOf(initialFlightEnd) }
+    var flightStartDate by remember(editKey, initialFlightStart) { mutableStateOf(initialFlightStart) }
+    var flightEndDate by remember(editKey, initialFlightEnd) { mutableStateOf(initialFlightEnd) }
     var coordinate by remember(editKey) { mutableStateOf(initialCoord) }
     var coordinateText by remember(editKey) {
-        mutableStateOf(CoordinateParser.formatDecimal(initialCoord))
+        mutableStateOf(initialCoord?.let { formatShapeEditCoordinateText(it) }.orEmpty())
     }
-    var coordinateParseError by remember(editKey) { mutableStateOf(false) }
 
-    var selectedDrone by remember(editKey) {
-        mutableStateOf(initialDroneId?.let { id -> drones.find { it.id == id } })
+    var selectedDroneId by remember(editKey, initialDroneId) {
+        mutableStateOf(initialDroneId)
     }
+    val selectedDrone = selectedDroneId?.let { id -> drones.find { it.id == id } }
     var showDroneDropdown by remember { mutableStateOf(false) }
 
     // 역지오코딩 결과가 나중에 도착할 경우 주소 업데이트
@@ -150,72 +223,120 @@ fun ShapeEditScreen(
         }
     }
 
+    var showCoordinateInput by remember { mutableStateOf(false) }
+    var coordinateInputText by remember(editKey) { mutableStateOf(coordinateText) }
+    var coordinateInputValidation by remember(editKey) { mutableStateOf<Boolean?>(null) }
+    var isResolvingCoordinateAddress by remember { mutableStateOf(false) }
+    var coordinateResolveRequestId by remember { mutableIntStateOf(0) }
+    var coordinateAddressSearchResult by remember(editKey) {
+        mutableStateOf<CoordinateAddressSearchResult?>(null)
+    }
+    var pendingCoordinateWithoutAddress by remember { mutableStateOf<Coordinate?>(null) }
     var showAddressSearch by remember { mutableStateOf(false) }
     var showStartDatePicker by remember { mutableStateOf(false) }
     var showEndDatePicker by remember { mutableStateOf(false) }
-    var showStartTimePicker by remember { mutableStateOf(false) }
-    var showEndTimePicker by remember { mutableStateOf(false) }
-    var pendingStartDateMillis by remember { mutableStateOf<Long?>(null) }
-    var pendingEndDateMillis by remember { mutableStateOf<Long?>(null) }
     var showCancelAlert by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    val hasExistingTimeData = remember(editKey) {
-        if (shape != null) {
-            val startCal = Calendar.getInstance().apply { timeInMillis = shape.flightStartDate }
-            val hasStartTime = startCal.get(Calendar.HOUR_OF_DAY) != 0 || startCal.get(Calendar.MINUTE) != 0
-            val hasEndTime = shape.flightEndDate?.let { endMillis ->
-                val endCal = Calendar.getInstance().apply { timeInMillis = endMillis }
-                endCal.get(Calendar.HOUR_OF_DAY) != 0 || endCal.get(Calendar.MINUTE) != 0
-            } ?: false
-            hasStartTime || hasEndTime
-        } else {
-            false
-        }
+    var isDateOnly by remember(editKey, editDefaults.isDateOnly) {
+        mutableStateOf(editDefaults.isDateOnly)
     }
-    var isDateOnly by remember(editKey) { mutableStateOf(!hasExistingTimeData) }
 
-    val dateFormat = remember { SimpleDateFormat("yyyy년 MM월 dd일", Locale.KOREA) }
-    val dateTimeFormat = remember { SimpleDateFormat("yyyy년 MM월 dd일 HH:mm", Locale.KOREA) }
+    val dateFormat = remember {
+        DateFormat.getDateInstance(DateFormat.MEDIUM, Locale.getDefault())
+    }
+    val dateTimeFormat = remember {
+        DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT, Locale.getDefault())
+    }
 
     // ===== hasChanges 계산 (iOS ShapeEditViewModel.hasChanges 정합) =====
-    val hasChanges = title != initialTitle ||
-        address != initialAddress ||
-        radiusText != initialRadius ||
-        heightText != initialHeight ||
-        memo != initialMemo ||
-        flightStartDate != initialFlightStart ||
-        flightEndDate != initialFlightEnd ||
-        coordinate != initialCoord ||
-        selectedDrone?.id != initialDroneId
+    val hasChanges = hasShapeEditContentChanges(
+        title = title,
+        initialTitle = initialTitle,
+        address = address,
+        initialAddress = initialAddress,
+        radius = radiusText,
+        initialRadius = initialRadius,
+        height = heightText,
+        initialHeight = initialHeight,
+        memo = memo,
+        initialMemo = initialMemo,
+        coordinate = coordinate,
+        initialCoordinate = initialCoord,
+        selectedDroneId = selectedDroneId,
+        initialDroneId = initialDroneId,
+    )
 
     // 취소 핸들러 — 변경사항 있으면 알림, 없으면 즉시 닫기 (iOS Toolbar 정합)
     val handleCancel: () -> Unit = {
         if (hasChanges) showCancelAlert = true else onDismiss()
     }
 
+    val dismissCoordinateInput: () -> Unit = {
+        coordinateResolveRequestId += 1
+        showCoordinateInput = false
+        coordinateInputValidation = null
+        isResolvingCoordinateAddress = false
+        coordinateAddressSearchResult = null
+        pendingCoordinateWithoutAddress = null
+    }
+
     // 저장 핸들러
-    val handleSave: () -> Unit = {
+    val handleSave: () -> Unit = save@{
+        val coordinateForSave = coordinate
+        val validationError = validateShapeEditSaveFields(
+            coordinate = coordinateForSave,
+            address = address,
+            radius = radiusText,
+        )
+        if (validationError != null) {
+            errorMessage = when (validationError) {
+                ShapeEditSaveValidationError.COORDINATE_REQUIRED -> errorCoordinateRequired
+                ShapeEditSaveValidationError.RADIUS_REQUIRED -> errorRadiusRequired
+                ShapeEditSaveValidationError.NO_COORDINATE -> errorNoCoordinate
+            }
+            return@save
+        }
+
         val now = System.currentTimeMillis()
-        // 색상은 선택된 드론의 paletteColor 자동 적용 (iOS 정합 — 색상 선택 섹션 없음)
-        val droneColor = selectedDrone?.paletteColor ?: PaletteColor.BLUE
-        val resultShape = (shape ?: ShapeModel()).copy(
-            id = if (isDuplicateMode) java.util.UUID.randomUUID().toString()
-                else (shape?.id ?: java.util.UUID.randomUUID().toString()),
-            title = title.ifBlank { defaultTitle },
-            shapeType = ShapeType.CIRCLE,
-            baseCoordinate = coordinate,
-            address = address.ifBlank { null },
-            radius = radiusText.toDoubleOrNull() ?: 500.0,
-            height = heightText.toDoubleOrNull(),
-            memo = memo.ifBlank { null },
-            color = droneColor.hex,
-            droneId = selectedDrone?.id,
+        // 색상은 선택된 드론의 color 문자열을 그대로 적용 (iOS ShapeEditViewModel selectedColor 정합)
+        val selectedColor = resolveShapeEditSelectedColor(selectedDrone)
+        onPersistEditDefaults(
+            ShapeEditDefaults(
+                selectedDroneId = selectedDroneId,
+                radius = radiusText,
+                height = heightText,
+                startDate = flightStartDate,
+                endDate = flightEndDate,
+                isDateOnly = isDateOnly,
+            )
+        )
+        val resultCoordinate = coordinateForSave ?: run {
+            errorMessage = errorNoCoordinate
+            return@save
+        }
+        val resultShape = buildShapeEditSavedShape(
+            originalShape = shape,
+            isDuplicateMode = isDuplicateMode,
+            generatedId = java.util.UUID.randomUUID().toString(),
+            title = title,
+            defaultTitle = defaultTitle,
+            coordinate = resultCoordinate,
+            address = address,
+            noAddressFallback = errorNoAddress,
+            radius = radiusText,
+            height = heightText,
+            memo = memo,
+            selectedColor = selectedColor,
+            selectedDroneId = selectedDroneId,
             flightStartDate = flightStartDate,
             flightEndDate = flightEndDate,
-            createdAt = if (isDuplicateMode) now else (shape?.createdAt ?: now),
-            updatedAt = now,
+            now = now,
         )
-        onSave(resultShape)
+        onSave(
+            resultShape,
+            if (isEditMode) originalShapeAtEditStart else null,
+        )
     }
 
     ModalBottomSheet(
@@ -232,8 +353,7 @@ fun ShapeEditScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = if (isEditMode) stringResource(R.string.shape_edit_title_edit)
-                            else stringResource(R.string.shape_edit_title_create),
+                        text = resolveShapeEditNavigationTitle(isEditMode),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
                     )
@@ -246,7 +366,6 @@ fun ShapeEditScreen(
                 actions = {
                     TextButton(
                         onClick = handleSave,
-                        enabled = !coordinateParseError,
                     ) {
                         Text(
                             text = stringResource(R.string.shape_edit_navigation_save),
@@ -277,16 +396,27 @@ fun ShapeEditScreen(
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             val drone = selectedDrone
-                            if (drone != null) {
-                                val droneColor = drone.paletteColor?.composeColor
-                                    ?: PaletteColor.BLUE.composeColor
+                            val paletteColor = drone?.paletteColor
+                            val selectedPaletteColor = paletteColor?.takeIf(::shouldShowShapeEditDroneColorIndicator)
+                            if (selectedPaletteColor != null) {
                                 Box(
                                     modifier = Modifier
                                         .size(12.dp)
                                         .clip(CircleShape)
-                                        .background(droneColor)
+                                        .background(selectedPaletteColor.composeColor)
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Default.AirplanemodeActive,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(12.dp),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                            }
+
+                            if (drone != null) {
                                 Text(drone.name)
                             } else {
                                 Text(
@@ -306,32 +436,38 @@ fun ShapeEditScreen(
                             expanded = showDroneDropdown,
                             onDismissRequest = { showDroneDropdown = false },
                         ) {
-                            // 미할당 옵션
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.shape_edit_drone_placeholder)) },
-                                onClick = {
-                                    selectedDrone = null
-                                    showDroneDropdown = false
-                                },
-                            )
                             drones.forEach { drone ->
                                 DropdownMenuItem(
                                     text = {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            val dc = drone.paletteColor?.composeColor
-                                                ?: PaletteColor.BLUE.composeColor
-                                            Box(
-                                                modifier = Modifier
-                                                    .size(12.dp)
-                                                    .clip(CircleShape)
-                                                    .background(dc)
-                                            )
-                                            Spacer(modifier = Modifier.width(8.dp))
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                        ) {
+                                            drone.paletteColor
+                                                ?.takeIf(::shouldShowShapeEditDroneColorIndicator)
+                                                ?.let { paletteColor ->
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .size(12.dp)
+                                                            .clip(CircleShape)
+                                                            .background(paletteColor.composeColor)
+                                                    )
+                                                    Spacer(modifier = Modifier.width(8.dp))
+                                                }
                                             Text(drone.name)
+                                            if (shouldShowShapeEditDroneSelectionCheckmark(drone.id, selectedDroneId)) {
+                                                Spacer(modifier = Modifier.weight(1f))
+                                                Icon(
+                                                    imageVector = Icons.Default.Check,
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(16.dp),
+                                                    tint = MaterialTheme.colorScheme.primary,
+                                                )
+                                            }
                                         }
                                     },
                                     onClick = {
-                                        selectedDrone = drone
+                                        selectedDroneId = drone.id
                                         showDroneDropdown = false
                                     },
                                 )
@@ -353,100 +489,45 @@ fun ShapeEditScreen(
                 HorizontalDivider()
 
                 // 좌표 (인라인 편집 + Decimal/DMS 파싱)
-                Column(modifier = Modifier.padding(vertical = 8.dp)) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(min = 44.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            text = stringResource(R.string.shape_edit_coordinate_label),
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.Bold,
-                        )
-                        Spacer(modifier = Modifier.weight(1f))
-                        OutlinedTextField(
-                            value = coordinateText,
-                            onValueChange = { newValue ->
-                                coordinateText = newValue
-                                val parsed = CoordinateParser.parse(newValue)
-                                if (parsed != null) {
-                                    coordinate = parsed
-                                    coordinateParseError = false
-                                } else {
-                                    coordinateParseError = newValue.isNotBlank()
-                                }
-                            },
-                            modifier = Modifier.width(220.dp),
-                            singleLine = true,
-                            placeholder = {
-                                Text(
-                                    text = stringResource(R.string.shape_edit_coordinate_placeholder),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                )
-                            },
-                            isError = coordinateParseError,
-                            textStyle = MaterialTheme.typography.bodyMedium,
-                        )
-                    }
-                    if (coordinateParseError) {
-                        Text(
-                            text = stringResource(R.string.shape_edit_coordinate_invalid),
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.padding(start = 4.dp, top = 2.dp),
-                        )
-                    } else if (coordinateText.isNotBlank()) {
-                        Text(
-                            text = coordinate.formattedCoordinate,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.padding(start = 4.dp, top = 2.dp),
-                        )
-                    }
-                }
+                EditFormClickableRow(
+                    label = stringResource(R.string.shape_edit_coordinate_label),
+                    value = coordinateText.ifBlank {
+                        stringResource(R.string.shape_edit_coordinate_placeholder)
+                    },
+                    valueColor = if (coordinateText.isBlank()) {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    } else {
+                        MaterialTheme.colorScheme.onSurface
+                    },
+                    onClick = {
+                        coordinateInputText = initialCoordinateInputSheetText(coordinateText)
+                        coordinateInputValidation = null
+                        coordinateAddressSearchResult = null
+                        showCoordinateInput = true
+                    },
+                )
                 HorizontalDivider()
 
-                // 주소 (인라인 편집 + 검색 아이콘)
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp)
-                        .heightIn(min = 44.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = stringResource(R.string.shape_edit_address_search_placeholder),
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Bold,
+                // 주소 (iOS처럼 행 탭 → 주소 검색 화면)
+                if (geocodingApi != null) {
+                    EditFormClickableRow(
+                        label = stringResource(R.string.shape_edit_label_address),
+                        value = address.ifBlank {
+                            stringResource(R.string.shape_edit_address_search_placeholder)
+                        },
+                        valueColor = if (address.isBlank()) {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        } else {
+                            MaterialTheme.colorScheme.onSurface
+                        },
+                        onClick = { showAddressSearch = true },
                     )
-                    Spacer(modifier = Modifier.weight(1f))
-                    if (geocodingApi != null) {
-                        IconButton(
-                            onClick = { showAddressSearch = true },
-                            modifier = Modifier.size(36.dp),
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Search,
-                                contentDescription = stringResource(R.string.shape_edit_search_address),
-                                tint = MaterialTheme.colorScheme.primary,
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(4.dp))
-                    }
-                    OutlinedTextField(
+                } else {
+                    EditFormTextFieldRow(
+                        label = stringResource(R.string.shape_edit_label_address),
                         value = address,
                         onValueChange = { address = it },
-                        modifier = Modifier.width(220.dp),
-                        singleLine = true,
-                        placeholder = {
-                            Text(
-                                text = stringResource(R.string.shape_edit_placeholder_address),
-                                style = MaterialTheme.typography.bodyMedium,
-                            )
-                        },
-                        textStyle = MaterialTheme.typography.bodyMedium,
+                        placeholder = stringResource(R.string.shape_edit_placeholder_address),
                     )
                 }
                 HorizontalDivider()
@@ -456,12 +537,10 @@ fun ShapeEditScreen(
                     label = stringResource(R.string.shape_edit_radius_label),
                     value = radiusText,
                     onValueChange = { newValue ->
-                        if (newValue.isEmpty() || newValue.matches(Regex("^\\d*\\.?\\d*$"))) {
-                            radiusText = newValue
-                        }
+                        radiusText = filterShapeEditNumberInput(newValue)
                     },
-                    placeholder = "500",
-                    keyboardType = KeyboardType.Decimal,
+                    placeholder = stringResource(R.string.shape_edit_radius_placeholder),
+                    keyboardType = KeyboardType.Number,
                 )
                 HorizontalDivider()
 
@@ -470,24 +549,24 @@ fun ShapeEditScreen(
                     label = stringResource(R.string.shape_edit_altitude_label),
                     value = heightText,
                     onValueChange = { newValue ->
-                        if (newValue.isEmpty() || newValue.matches(Regex("^\\d*\\.?\\d*$"))) {
-                            heightText = newValue
-                        }
+                        heightText = filterShapeEditNumberInput(newValue)
                     },
-                    placeholder = "0",
-                    keyboardType = KeyboardType.Decimal,
+                    placeholder = stringResource(R.string.shape_edit_altitude_placeholder),
+                    keyboardType = KeyboardType.Number,
                 )
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // ===== Section 3: 비행 기간 (iOS DateSection 정합) =====
-                Text(
-                    text = stringResource(R.string.shape_edit_section_flight_period),
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-                Spacer(modifier = Modifier.height(8.dp))
+                // ===== Section 3: iOS DateSection 정합 — 헤더 없이 날짜 행만 표시 =====
+                if (ShowShapeEditFlightPeriodSectionHeader) {
+                    Text(
+                        text = stringResource(R.string.shape_edit_section_flight_period),
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
 
                 // 시작일
                 EditFormClickableRow(
@@ -501,10 +580,8 @@ fun ShapeEditScreen(
                 // 종료일
                 EditFormClickableRow(
                     label = stringResource(R.string.shape_edit_end_date),
-                    value = flightEndDate?.let {
-                        if (isDateOnly) dateFormat.format(Date(it))
-                        else dateTimeFormat.format(Date(it))
-                    } ?: stringResource(R.string.common_not_set),
+                    value = if (isDateOnly) dateFormat.format(Date(flightEndDate))
+                        else dateTimeFormat.format(Date(flightEndDate)),
                     onClick = { showEndDatePicker = true },
                 )
                 HorizontalDivider()
@@ -526,39 +603,26 @@ fun ShapeEditScreen(
                     Switch(
                         checked = isDateOnly,
                         onCheckedChange = { newValue ->
+                            val resolvedPeriod = resolveShapeEditFlightPeriodOnDateOnlyModeToggle(
+                                startDate = flightStartDate,
+                                endDate = flightEndDate,
+                                isDateOnly = newValue,
+                            )
                             isDateOnly = newValue
-                            if (newValue) {
-                                val startCal = Calendar.getInstance().apply {
-                                    timeInMillis = flightStartDate
-                                    set(Calendar.HOUR_OF_DAY, 0)
-                                    set(Calendar.MINUTE, 0)
-                                    set(Calendar.SECOND, 0)
-                                    set(Calendar.MILLISECOND, 0)
-                                }
-                                flightStartDate = startCal.timeInMillis
-                                flightEndDate?.let { endMillis ->
-                                    val endCal = Calendar.getInstance().apply {
-                                        timeInMillis = endMillis
-                                        set(Calendar.HOUR_OF_DAY, 0)
-                                        set(Calendar.MINUTE, 0)
-                                        set(Calendar.SECOND, 0)
-                                        set(Calendar.MILLISECOND, 0)
-                                    }
-                                    flightEndDate = endCal.timeInMillis
-                                }
-                            }
+                            flightStartDate = resolvedPeriod.startDate
+                            flightEndDate = resolvedPeriod.endDate ?: resolvedPeriod.startDate
+                            onDateOnlyModeChanged(newValue)
                         },
                     )
                 }
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // ===== Section 4: 메모 (iOS MemoSection 정합 — minHeight 170pt → 180dp) =====
+                // ===== Section 4: 메모 (iOS MemoSection 정합 — minHeight 170pt) =====
                 Text(
-                    text = stringResource(R.string.shape_edit_section_memo),
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.primary,
+                    text = stringResource(R.string.shape_edit_label_memo),
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Bold,
                 )
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -567,7 +631,7 @@ fun ShapeEditScreen(
                     onValueChange = { memo = it },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(min = 180.dp),
+                        .heightIn(min = ShapeEditMemoMinHeight),
                     placeholder = { Text(stringResource(R.string.shape_edit_placeholder_memo)) },
                 )
 
@@ -603,177 +667,180 @@ fun ShapeEditScreen(
         )
     }
 
-    // ===== 시작일 DatePickerDialog =====
+    if (showCoordinateInput) {
+        val selectCoordinateAddressResult: (CoordinateAddressSearchResult) -> Unit = { result ->
+            coordinate = result.coordinate
+            coordinateText = formatShapeEditCoordinateText(result.coordinate)
+            address = result.address
+            coordinateInputValidation = null
+            showCoordinateInput = false
+            coordinateAddressSearchResult = null
+        }
+        CoordinateInputSheet(
+            coordinateText = coordinateInputText,
+            isCoordinateValid = coordinateInputValidation == true,
+            isCoordinateInvalid = coordinateInputValidation == false,
+            isResolvingAddress = isResolvingCoordinateAddress,
+            addressSearchResult = coordinateAddressSearchResult,
+            onCoordinateTextChange = { newValue ->
+                coordinateInputText = newValue
+                coordinateResolveRequestId += 1
+                isResolvingCoordinateAddress = false
+                coordinateAddressSearchResult = null
+                coordinateInputValidation = coordinateInputValidationAfterTextChange()
+            },
+            onSearch = {
+                val searchText = coordinateInputText
+                val parsed = CoordinateParser.parse(searchText)
+                coordinateInputValidation = coordinateInputValidationForSearch(parsed)
+                if (parsed != null) {
+                    if (geocodingApi == null) {
+                        pendingCoordinateWithoutAddress = parsed
+                    } else {
+                        isResolvingCoordinateAddress = true
+                        coordinateAddressSearchResult = null
+                        val requestId = ++coordinateResolveRequestId
+                        coroutineScope.launch {
+                            val resolvedAddress = try {
+                                val response = geocodingApi.reverseGeocode(
+                                    coords = "${parsed.longitude},${parsed.latitude}",
+                                )
+                                if (response.status.code == 0) {
+                                    reverseGeocodingResultsToAddress(response.results)
+                                } else {
+                                    ""
+                                }
+                            } catch (_: Exception) {
+                                ""
+                            }
+                            if (requestId != coordinateResolveRequestId) return@launch
+
+                            isResolvingCoordinateAddress = false
+                            if (resolvedAddress.isBlank()) {
+                                pendingCoordinateWithoutAddress = parsed
+                            } else {
+                                coordinateAddressSearchResult = coordinateAddressSearchResultOrNull(
+                                    resolvedAddress = resolvedAddress,
+                                    coordinate = parsed,
+                                    originalText = searchText,
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            onConfirm = {
+                coordinateAddressSearchResult?.let(selectCoordinateAddressResult)
+            },
+            onResultSelected = selectCoordinateAddressResult,
+            onDismiss = dismissCoordinateInput,
+        )
+    }
+
+    pendingCoordinateWithoutAddress?.let { pendingCoordinate ->
+        AlertDialog(
+            onDismissRequest = {
+                pendingCoordinateWithoutAddress = null
+            },
+            title = { Text(stringResource(R.string.coordinate_alert_address_not_found_title)) },
+            text = { Text(stringResource(R.string.coordinate_alert_address_not_found_message)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        coordinate = pendingCoordinate
+                        coordinateText = formatShapeEditCoordinateText(pendingCoordinate)
+                        address = resolveCoordinateAddressForSave(
+                            resolvedAddress = "",
+                            fallbackAddress = coordinateAddressFallback,
+                        )
+                        coordinateInputValidation = null
+                        showCoordinateInput = false
+                        pendingCoordinateWithoutAddress = null
+                    },
+                ) {
+                    Text(stringResource(R.string.common_yes))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingCoordinateWithoutAddress = null }) {
+                    Text(stringResource(R.string.common_no))
+                }
+            },
+        )
+    }
+
+    errorMessage?.let { message ->
+        AlertDialog(
+            onDismissRequest = { errorMessage = null },
+            title = { Text(stringResource(R.string.shape_edit_alert_error_title)) },
+            text = { Text(message) },
+            confirmButton = {
+                TextButton(onClick = { errorMessage = null }) {
+                    Text(stringResource(R.string.common_confirm))
+                }
+            },
+        )
+    }
+
+    // ===== 시작일 DateTimeSelectionView 정합 시트 =====
     if (showStartDatePicker) {
-        val datePickerState = rememberDatePickerState(initialSelectedDateMillis = flightStartDate)
-        DatePickerDialog(
-            onDismissRequest = { showStartDatePicker = false },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        datePickerState.selectedDateMillis?.let { selectedDateMillis ->
-                            if (isDateOnly) {
-                                flightStartDate = selectedDateMillis
-                            } else {
-                                pendingStartDateMillis = selectedDateMillis
-                                showStartTimePicker = true
-                            }
-                        }
-                        showStartDatePicker = false
-                    },
-                ) {
-                    Text(stringResource(R.string.common_confirm))
-                }
+        ShapeDateTimeSelectionSheet(
+            initialDateMillis = flightStartDate,
+            isDateOnly = isDateOnly,
+            title = stringResource(R.string.shape_edit_start_date_select),
+            onDismiss = { showStartDatePicker = false },
+            onDateSelected = { selectedDate ->
+                val newStart = selectedStartShapeEditDate(
+                    selectedDate = selectedDate,
+                    isDateOnly = isDateOnly,
+                )
+                flightStartDate = newStart
+                flightEndDate = coerceShapeEditEndDateAtOrAfterStart(
+                    startDate = newStart,
+                    proposedEndDate = flightEndDate,
+                    isDateOnly = isDateOnly,
+                )
+                showStartDatePicker = false
             },
-            dismissButton = {
-                TextButton(onClick = { showStartDatePicker = false }) {
-                    Text(stringResource(R.string.common_cancel))
-                }
-            },
-        ) {
-            DatePicker(state = datePickerState)
-        }
-    }
-
-    // ===== 시작일 TimePickerDialog =====
-    if (showStartTimePicker) {
-        val existingCal = Calendar.getInstance().apply { timeInMillis = flightStartDate }
-        val startTimePickerState = rememberTimePickerState(
-            initialHour = existingCal.get(Calendar.HOUR_OF_DAY),
-            initialMinute = existingCal.get(Calendar.MINUTE),
-            is24Hour = true,
-        )
-        AlertDialog(
-            onDismissRequest = {
-                showStartTimePicker = false
-                pendingStartDateMillis = null
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        pendingStartDateMillis?.let { dateMillis ->
-                            val cal = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
-                                timeInMillis = dateMillis
-                            }
-                            val localCal = Calendar.getInstance().apply {
-                                set(Calendar.YEAR, cal.get(Calendar.YEAR))
-                                set(Calendar.MONTH, cal.get(Calendar.MONTH))
-                                set(Calendar.DAY_OF_MONTH, cal.get(Calendar.DAY_OF_MONTH))
-                                set(Calendar.HOUR_OF_DAY, startTimePickerState.hour)
-                                set(Calendar.MINUTE, startTimePickerState.minute)
-                                set(Calendar.SECOND, 0)
-                                set(Calendar.MILLISECOND, 0)
-                            }
-                            flightStartDate = localCal.timeInMillis
-                        }
-                        showStartTimePicker = false
-                        pendingStartDateMillis = null
-                    },
-                ) {
-                    Text(stringResource(R.string.common_confirm))
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = {
-                        showStartTimePicker = false
-                        pendingStartDateMillis = null
-                    },
-                ) {
-                    Text(stringResource(R.string.common_cancel))
-                }
-            },
-            title = { Text(stringResource(R.string.shape_edit_select_time)) },
-            text = { TimePicker(state = startTimePickerState) },
         )
     }
 
-    // ===== 종료일 DatePickerDialog =====
+    // ===== 종료일 DateTimeSelectionView 정합 시트 =====
     if (showEndDatePicker) {
-        val datePickerState = rememberDatePickerState(
-            initialSelectedDateMillis = flightEndDate ?: System.currentTimeMillis()
-        )
-        DatePickerDialog(
-            onDismissRequest = { showEndDatePicker = false },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        datePickerState.selectedDateMillis?.let { selectedDateMillis ->
-                            if (isDateOnly) {
-                                flightEndDate = selectedDateMillis
-                            } else {
-                                pendingEndDateMillis = selectedDateMillis
-                                showEndTimePicker = true
-                            }
-                        }
-                        showEndDatePicker = false
-                    },
-                ) {
-                    Text(stringResource(R.string.common_confirm))
+        val endDateSelectableDates = remember(flightStartDate) {
+            object : SelectableDates {
+                override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                    val localSelectedDay = shapeEditLocalMillisFromDatePicker(
+                        dateMillis = utcTimeMillis,
+                        hour = 0,
+                        minute = 0,
+                    )
+                    return endOfShapeEditLocalDay(localSelectedDay) >= flightStartDate
                 }
-            },
-            dismissButton = {
-                TextButton(onClick = { showEndDatePicker = false }) {
-                    Text(stringResource(R.string.common_cancel))
-                }
-            },
-        ) {
-            DatePicker(state = datePickerState)
+            }
         }
-    }
-
-    // ===== 종료일 TimePickerDialog =====
-    if (showEndTimePicker) {
-        val existingEndCal = Calendar.getInstance().apply {
-            timeInMillis = flightEndDate ?: System.currentTimeMillis()
-        }
-        val endTimePickerState = rememberTimePickerState(
-            initialHour = existingEndCal.get(Calendar.HOUR_OF_DAY),
-            initialMinute = existingEndCal.get(Calendar.MINUTE),
-            is24Hour = true,
-        )
-        AlertDialog(
-            onDismissRequest = {
-                showEndTimePicker = false
-                pendingEndDateMillis = null
+        ShapeDateTimeSelectionSheet(
+            initialDateMillis = coerceShapeEditEndDateAtOrAfterStart(
+                startDate = flightStartDate,
+                proposedEndDate = flightEndDate,
+                isDateOnly = isDateOnly,
+            ),
+            isDateOnly = isDateOnly,
+            title = stringResource(R.string.shape_edit_end_date_select),
+            selectableDates = endDateSelectableDates,
+            onDismiss = { showEndDatePicker = false },
+            onDateSelected = { selectedDate ->
+                val proposedEnd = selectedEndShapeEditDate(
+                    selectedDate = selectedDate,
+                    isDateOnly = isDateOnly,
+                )
+                flightEndDate = coerceShapeEditEndDateAtOrAfterStart(
+                    startDate = flightStartDate,
+                    proposedEndDate = proposedEnd,
+                    isDateOnly = isDateOnly,
+                )
+                showEndDatePicker = false
             },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        pendingEndDateMillis?.let { dateMillis ->
-                            val cal = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
-                                timeInMillis = dateMillis
-                            }
-                            val localCal = Calendar.getInstance().apply {
-                                set(Calendar.YEAR, cal.get(Calendar.YEAR))
-                                set(Calendar.MONTH, cal.get(Calendar.MONTH))
-                                set(Calendar.DAY_OF_MONTH, cal.get(Calendar.DAY_OF_MONTH))
-                                set(Calendar.HOUR_OF_DAY, endTimePickerState.hour)
-                                set(Calendar.MINUTE, endTimePickerState.minute)
-                                set(Calendar.SECOND, 0)
-                                set(Calendar.MILLISECOND, 0)
-                            }
-                            flightEndDate = localCal.timeInMillis
-                        }
-                        showEndTimePicker = false
-                        pendingEndDateMillis = null
-                    },
-                ) {
-                    Text(stringResource(R.string.common_confirm))
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = {
-                        showEndTimePicker = false
-                        pendingEndDateMillis = null
-                    },
-                ) {
-                    Text(stringResource(R.string.common_cancel))
-                }
-            },
-            title = { Text(stringResource(R.string.shape_edit_select_time)) },
-            text = { TimePicker(state = endTimePickerState) },
         )
     }
 
@@ -784,13 +851,256 @@ fun ShapeEditScreen(
             onAddressSelected = { result ->
                 address = result.address
                 coordinate = result.coordinate
-                coordinateText = CoordinateParser.formatDecimal(result.coordinate)
-                coordinateParseError = false
+                coordinateText = formatShapeEditCoordinateText(result.coordinate)
                 showAddressSearch = false
             },
             onDismiss = { showAddressSearch = false },
         )
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CoordinateInputSheet(
+    coordinateText: String,
+    isCoordinateValid: Boolean,
+    isCoordinateInvalid: Boolean,
+    isResolvingAddress: Boolean,
+    addressSearchResult: CoordinateAddressSearchResult?,
+    onCoordinateTextChange: (String) -> Unit,
+    onSearch: () -> Unit,
+    onConfirm: () -> Unit,
+    onResultSelected: (CoordinateAddressSearchResult) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = CoordinateInputSheetSkipPartiallyExpanded,
+    )
+    ModalBottomSheet(
+        onDismissRequest = {
+            if (CoordinateInputSheetInteractiveDismissEnabled) onDismiss()
+        },
+        sheetState = sheetState,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(CoordinateInputSheetHeightFraction)
+                .navigationBarsPadding()
+                .padding(bottom = 24.dp),
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp)
+                    .padding(horizontal = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                TextButton(onClick = onDismiss, modifier = Modifier.width(80.dp)) {
+                    Text(stringResource(R.string.coordinate_cancel))
+                }
+                Text(
+                    text = stringResource(R.string.coordinate_title),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.weight(1f),
+                )
+                TextButton(
+                    onClick = onConfirm,
+                    enabled = canConfirmCoordinateInput(isCoordinateInvalid),
+                    modifier = Modifier.width(80.dp),
+                ) {
+                    Text(stringResource(R.string.coordinate_confirm))
+                }
+            }
+            HorizontalDivider()
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 360.dp)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    CoordinateInputSearchField(
+                        coordinateText = coordinateText,
+                        onCoordinateTextChange = onCoordinateTextChange,
+                        onClear = {
+                            onCoordinateTextChange("")
+                        },
+                        onSearch = onSearch,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Button(
+                        onClick = onSearch,
+                        enabled = shouldEnableSearchAddressSubmit(coordinateText),
+                        shape = RoundedCornerShape(SearchAddressBarCornerRadius),
+                        contentPadding = PaddingValues(
+                            horizontal = SearchAddressSearchButtonHorizontalPadding,
+                            vertical = SearchAddressSearchButtonVerticalPadding,
+                        ),
+                    ) {
+                        Text(stringResource(R.string.common_search))
+                    }
+                }
+
+                when {
+                    isCoordinateInvalid -> {
+                        Text(
+                            text = stringResource(R.string.coordinate_validation_invalid),
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(top = 4.dp),
+                        )
+                    }
+                    isCoordinateValid -> {
+                        Text(
+                            text = stringResource(R.string.coordinate_validation_valid),
+                            color = CoordinateValidationSuccessColor,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(top = 4.dp),
+                        )
+                    }
+                }
+
+                CoordinateGuideCard(
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .padding(top = 16.dp),
+                )
+
+                if (isResolvingAddress) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(CoordinateResolvingIndicatorHeight),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                }
+
+                addressSearchResult
+                    ?.takeIf { !isResolvingAddress && !isCoordinateInvalid }
+                    ?.let { result ->
+                        CoordinateAddressResultCard(
+                            result = result,
+                            onClick = { onResultSelected(result) },
+                            modifier = Modifier.padding(top = 16.dp),
+                        )
+                    }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CoordinateAddressResultCard(
+    result: CoordinateAddressSearchResult,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val cardShape = RoundedCornerShape(CoordinateAddressResultCardCornerRadius)
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .shadow(
+                elevation = CoordinateAddressResultCardShadowElevation,
+                shape = cardShape,
+                ambientColor = CoordinateAddressResultCardShadowColor,
+                spotColor = CoordinateAddressResultCardShadowColor,
+                clip = false,
+            )
+            .clip(cardShape)
+            .background(MaterialTheme.colorScheme.surface)
+            .clickable(onClick = onClick)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(
+            text = result.address,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Text(
+            text = result.originalText,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
+@Composable
+private fun CoordinateInputSearchField(
+    coordinateText: String,
+    onCoordinateTextChange: (String) -> Unit,
+    onClear: () -> Unit,
+    onSearch: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    BasicTextField(
+        value = coordinateText,
+        onValueChange = onCoordinateTextChange,
+        modifier = modifier
+            .clip(RoundedCornerShape(SearchAddressBarCornerRadius))
+            .background(SearchAddressBarBackgroundColor)
+            .padding(SearchAddressBarInnerPadding),
+        textStyle = MaterialTheme.typography.bodyMedium.copy(
+            color = MaterialTheme.colorScheme.onSurface,
+        ),
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+        keyboardActions = KeyboardActions(onSearch = { onSearch() }),
+        decorationBox = { innerTextField ->
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Search,
+                    contentDescription = null,
+                    tint = SearchAddressBarIconColor,
+                    modifier = Modifier.size(18.dp),
+                )
+                Box(modifier = Modifier.weight(1f)) {
+                    if (coordinateText.isEmpty()) {
+                        Text(
+                            text = stringResource(R.string.coordinate_placeholder),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = SearchAddressBarIconColor,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    innerTextField()
+                }
+                if (coordinateText.isNotEmpty()) {
+                    IconButton(
+                        onClick = onClear,
+                        modifier = Modifier.size(24.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Cancel,
+                            contentDescription = stringResource(R.string.common_clear),
+                            tint = SearchAddressBarIconColor,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
+                }
+            }
+        },
+    )
 }
 
 /**
@@ -861,6 +1171,41 @@ private fun EditFormTextFieldRow(
     }
 }
 
+@Composable
+private fun CoordinateGuideCard(
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .widthIn(max = CoordinateGuideCardMaxWidth)
+            .fillMaxWidth()
+            .background(
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+                shape = RoundedCornerShape(CoordinateGuideCardCornerRadius),
+            )
+            .padding(CoordinateGuideCardPadding),
+        verticalArrangement = Arrangement.spacedBy(CoordinateGuideCardVerticalSpacing),
+    ) {
+        Text(
+            text = stringResource(R.string.coordinate_guide),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            text = stringResource(R.string.coordinate_format_title),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        coordinateGuideExampleResourceIds().forEach { resId ->
+            Text(
+                text = stringResource(resId),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
 /**
  * iOS Form 행 — bold label + trailing value + chevron.right.
  * 클릭 가능 (날짜/좌표/주소 시트 트리거 등).
@@ -869,6 +1214,7 @@ private fun EditFormTextFieldRow(
 private fun EditFormClickableRow(
     label: String,
     value: String,
+    valueColor: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onSurface,
     onClick: () -> Unit,
 ) {
     Row(
@@ -888,7 +1234,7 @@ private fun EditFormClickableRow(
         Text(
             text = value,
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface,
+            color = valueColor,
         )
         Spacer(modifier = Modifier.width(4.dp))
         Icon(
@@ -897,5 +1243,100 @@ private fun EditFormClickableRow(
             modifier = Modifier.size(16.dp),
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ShapeDateTimeSelectionSheet(
+    initialDateMillis: Long,
+    isDateOnly: Boolean,
+    title: String,
+    selectableDates: SelectableDates? = null,
+    onDismiss: () -> Unit,
+    onDateSelected: (Long) -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = ShapeDateTimeSelectionSkipPartiallyExpanded,
+    )
+    val initialCalendar = remember(initialDateMillis) {
+        Calendar.getInstance().apply { timeInMillis = initialDateMillis }
+    }
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = shapeEditDatePickerMillisFromLocalMillis(initialDateMillis),
+        selectableDates = selectableDates ?: object : SelectableDates {},
+    )
+    val timePickerState = rememberTimePickerState(
+        initialHour = initialCalendar.get(Calendar.HOUR_OF_DAY),
+        initialMinute = initialCalendar.get(Calendar.MINUTE),
+        is24Hour = true,
+    )
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .padding(bottom = 16.dp),
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                TextButton(onClick = onDismiss, modifier = Modifier.width(64.dp)) {
+                    Text(stringResource(R.string.common_cancel))
+                }
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.weight(1f),
+                )
+                Spacer(modifier = Modifier.width(64.dp))
+            }
+            HorizontalDivider(
+                thickness = 0.5.dp,
+                color = MaterialTheme.colorScheme.outlineVariant,
+            )
+            DatePicker(state = datePickerState)
+            if (!isDateOnly) {
+                HorizontalDivider(
+                    thickness = 0.5.dp,
+                    color = MaterialTheme.colorScheme.outlineVariant,
+                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    TimePicker(state = timePickerState)
+                }
+            }
+            Button(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
+                    .height(48.dp),
+                onClick = {
+                    val selectedDateMillis = datePickerState.selectedDateMillis
+                        ?: shapeEditDatePickerMillisFromLocalMillis(initialDateMillis)
+                    val selectedLocalMillis = shapeEditLocalMillisFromDatePicker(
+                        dateMillis = selectedDateMillis,
+                        hour = if (isDateOnly) 0 else timePickerState.hour,
+                        minute = if (isDateOnly) 0 else timePickerState.minute,
+                    )
+                    onDateSelected(selectedLocalMillis)
+                },
+            ) {
+                Text(stringResource(R.string.date_time_done))
+            }
+        }
     }
 }
