@@ -168,23 +168,21 @@ class MapCameraFocusTest {
     }
 
     @Test
-    fun `오버레이 탭은 iOS처럼 저장 목록 포커스와 카메라 이동을 수행한다`() {
-        val coordinate = Coordinate(37.0, 127.0)
+    fun `오버레이 탭은 iOS처럼 새 도형이면 저장 목록 포커스만 수행한다`() {
         val action = resolveShapeOverlayTapAction(
             tappedShape = shape(
                 id = "target",
-                coordinate = coordinate,
+                coordinate = Coordinate(37.0, 127.0),
                 start = 1L,
                 end = 2L,
             ),
         )
 
         assertEquals("target", action?.shapeId)
-        assertEquals(CameraEvent.MoveWithoutZoom(coordinate), action?.cameraEvent)
     }
 
     @Test
-    fun `오버레이 탭은 iOS처럼 현재 줌을 유지하는 카메라 이동을 함께 수행한다`() {
+    fun `오버레이 탭은 iOS처럼 이미 같은 좌표가 포커스되어 있어도 저장 목록 포커스를 수행한다`() {
         val coordinate = Coordinate(37.0, 127.0)
 
         val action = resolveShapeOverlayTapAction(
@@ -197,7 +195,6 @@ class MapCameraFocusTest {
         )
 
         assertEquals("target", action?.shapeId)
-        assertEquals(CameraEvent.MoveWithoutZoom(coordinate), action?.cameraEvent)
     }
 
     @Test

@@ -17,7 +17,6 @@
 
 최근 완료된 릴리스 하드닝:
 
-- `bef1fbd fix: pan map when shape overlay opens saved list`
 - `6ee40a3 fix: avoid api keys in debug http logs`
 - `fbd90b1 fix: disable os backup for local app state`
 - `c19c9c7 fix: harden shape memo webview`
@@ -49,7 +48,6 @@
 - UUID shape id 강제
 - 실시간 sync trigger timing
 - 계정 전환 전 로컬 reset 순서
-- 지도 오버레이 탭 시 저장 목록 포커스 + 현재 줌 유지 카메라 이동
 - KP forecast auto refresh
 - Weather chart current markers
 - Weather info category selected 표시
