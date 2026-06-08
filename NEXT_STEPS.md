@@ -17,6 +17,7 @@
 
 최근 완료된 릴리스 하드닝:
 
+- `6ee40a3 fix: avoid api keys in debug http logs`
 - `fbd90b1 fix: disable os backup for local app state`
 - `c19c9c7 fix: harden shape memo webview`
 - `7191dd8 fix: strip android logs from release builds`
@@ -52,6 +53,7 @@
 - Weather info category selected 표시
 - FCM token/device id 원문 로그 제거
 - Release 빌드에서 `android.util.Log` 제거
+- Debug HTTP 로그에서 API key 노출 방지
 - 메모 링크 WebView 로컬 파일 접근/혼합 콘텐츠 차단
 - OS Auto Backup 비활성화와 백업/데이터 추출 규칙 방어적 exclude
 - README 최신화
