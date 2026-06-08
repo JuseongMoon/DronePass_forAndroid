@@ -1,6 +1,8 @@
 package com.ScienceFiction.DronePassAndroid.feature.auth
 
 import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -153,9 +155,11 @@ fun LoginScreen(
                 // iOS DronePass 와 같은 Apple ID 로 로그인 시 동일 Firebase UID → 데이터 자동 호환.
                 Button(
                     onClick = {
-                        val activity = context as? Activity
+                        val activity = context.findActivity()
                         if (activity != null) {
                             viewModel.signInWithApple(activity)
+                        } else {
+                            loginErrorMessage = context.getString(R.string.login_apple_error)
                         }
                     },
                     modifier = Modifier
@@ -292,6 +296,14 @@ fun LoginScreen(
                 }
             },
         )
+    }
+}
+
+private tailrec fun Context.findActivity(): Activity? {
+    return when (this) {
+        is Activity -> this
+        is ContextWrapper -> baseContext.findActivity()
+        else -> null
     }
 }
 
