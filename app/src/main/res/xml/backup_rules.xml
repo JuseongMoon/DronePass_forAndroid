@@ -3,37 +3,15 @@
    DronePass Android - Auto Backup Rules (API 30 이하)
    https://developer.android.com/guide/topics/data/autobackup
 
-   Note: 이 파일은 API 31 이상에서는 무시됩니다.
-   API 31+에서는 data_extraction_rules.xml이 사용됩니다.
+   OS Auto Backup은 AndroidManifest.xml에서 비활성화되어 있다.
+   이 파일은 allowBackup이 다시 켜졌을 때도 로컬 인증/위치/캐시 상태가
+   시스템 백업으로 유출되지 않도록 방어적으로 전체 로컬 저장소를 제외한다.
+   API 31+에서는 data_extraction_rules.xml이 사용된다.
 -->
 <full-backup-content>
-    <!-- DataStore preferences 포함 -->
-    <include domain="file" path="datastore/" />
-
-    <!-- 일반 SharedPreferences 포함 (특정 파일 제외 적용을 위해 도메인 전체 포함) -->
-    <include domain="sharedpref" path="." />
-
-    <!-- 데이터베이스 도메인 포함 (특정 DB 제외 적용을 위해) -->
-    <include domain="database" path="." />
-
-    <!--
-        EncryptedSharedPreferences 제외 (기기별 암호화 키로 인해 복원 불가)
-        실제 파일명은 EncryptedPrefsHelper.PREFS_FILE_NAME = "dronepass_encrypted_prefs"
-        잘못된 파일명을 제외하면 EncryptedPrefs가 클라우드 백업에 포함되어 복원 시
-        마스터키 불일치로 SharedPreferences 폭주(크래시) 발생.
-    -->
-    <exclude domain="sharedpref" path="dronepass_encrypted_prefs.xml" />
-    <exclude domain="sharedpref" path="__androidx_security_crypto_encrypted_prefs__.xml" />
-
-    <!-- 손상 시 폴백용 평문 prefs (deviceId/uid가 기기에 종속이라 복원 부적합) -->
-    <exclude domain="sharedpref" path="dronepass_prefs_fallback.xml" />
-
-    <!-- Room 데이터베이스 제외 (Firebase에서 동기화) -->
-    <exclude domain="database" path="dronepass_database" />
-    <exclude domain="database" path="dronepass_database-wal" />
-    <exclude domain="database" path="dronepass_database-shm" />
-
-    <!-- Firebase 관련 내부 파일 제외 -->
-    <exclude domain="sharedpref" path="com.google.firebase.crashlytics.xml" />
-    <exclude domain="sharedpref" path="com.google.firebase.messaging.xml" />
+    <exclude domain="root" path="." />
+    <exclude domain="file" path="." />
+    <exclude domain="database" path="." />
+    <exclude domain="sharedpref" path="." />
+    <exclude domain="external" path="." />
 </full-backup-content>
