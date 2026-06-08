@@ -6,6 +6,7 @@ import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncPreferenceKeys
 import com.ScienceFiction.DronePassAndroid.core.data.sync.buildAccountSwitchLocalChangeState
 import com.ScienceFiction.DronePassAndroid.core.data.sync.hasUnsyncedLocalChanges
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Test
 
 class AuthViewModelForegroundSyncTest {
@@ -204,19 +205,20 @@ class AuthViewModelForegroundSyncTest {
     }
 
     @Test
-    fun `login legal documents use iOS navigation push presentation`() {
+    fun `login legal documents use iOS modal sheet presentation`() {
         assertEquals(
             LoginDocumentPresentation.Hidden,
             resolveLoginDocumentPresentation(null),
         )
         assertEquals(
-            LoginDocumentPresentation.Pushed,
+            LoginDocumentPresentation.Sheet,
             resolveLoginDocumentPresentation(LoginDocTarget.Terms),
         )
         assertEquals(
-            LoginDocumentPresentation.Pushed,
+            LoginDocumentPresentation.Sheet,
             resolveLoginDocumentPresentation(LoginDocTarget.Privacy),
         )
+        assertFalse(LoginDocumentSheetSkipPartiallyExpanded)
     }
 
     @Test

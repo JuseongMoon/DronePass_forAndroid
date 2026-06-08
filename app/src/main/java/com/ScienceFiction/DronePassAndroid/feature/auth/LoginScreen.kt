@@ -22,10 +22,12 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -67,6 +69,7 @@ internal val LoginTermsTopSpacing = 12.dp
 internal val LoginSkipButtonTopSpacing = 16.dp
 internal val LoginBottomSpacing = 32.dp
 internal val LoginTermsLineSpacing = 2.dp
+internal const val LoginDocumentSheetSkipPartiallyExpanded = false
 
 /**
  * 로그인 화면 Composable.
@@ -101,145 +104,148 @@ fun LoginScreen(
         }
     }
 
-    when (resolveLoginDocumentPresentation(docTarget)) {
-        LoginDocumentPresentation.Pushed -> {
-            val target = docTarget ?: return
+    Scaffold { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(horizontal = LoginScreenHorizontalPadding),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Image(
+                painter = painterResource(R.drawable.login_logo),
+                contentDescription = stringResource(R.string.login_logo_description),
+                modifier = Modifier
+                    .size(LoginLogoSize)
+                    .clip(RoundedCornerShape(LoginLogoCornerRadius)),
+                contentScale = ContentScale.Crop,
+            )
+
+            Spacer(modifier = Modifier.height(LoginLogoBottomSpacing))
+
+            Text(
+                text = stringResource(R.string.login_title),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+            )
+
+            Spacer(modifier = Modifier.height(LoginTitleBottomSpacing))
+
+            HorizontalDivider(modifier = Modifier.padding(horizontal = LoginDividerHorizontalPadding))
+
+            Spacer(modifier = Modifier.height(LoginDividerBottomSpacing))
+
+            // 로딩 상태
+            if (authState is AuthState.Loading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(48.dp)
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = stringResource(R.string.login_loading),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            } else {
+                // Apple Sign-In 버튼 — Apple HIG: 검정 배경 + 흰 텍스트/로고, Google 위에 배치.
+                // iOS DronePass 와 같은 Apple ID 로 로그인 시 동일 Firebase UID → 데이터 자동 호환.
+                Button(
+                    onClick = {
+                        val activity = context as? Activity
+                        if (activity != null) {
+                            viewModel.signInWithApple(activity)
+                        }
+                    },
+                    modifier = Modifier
+                        .widthIn(max = LoginButtonMaxWidth)
+                        .fillMaxWidth()
+                        .height(LoginButtonHeight),
+                    shape = RoundedCornerShape(LoginButtonCornerRadius),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.Black,
+                        contentColor = Color.White,
+                    ),
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_apple_logo),
+                        contentDescription = stringResource(R.string.login_apple_logo_description),
+                        tint = Color.White,
+                        modifier = Modifier.size(LoginProviderIconSize),
+                    )
+                    Spacer(modifier = Modifier.size(LoginProviderIconTextSpacing))
+                    Text(
+                        text = stringResource(R.string.login_apple),
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(LoginGoogleButtonTopSpacing))
+
+                OutlinedButton(
+                    onClick = { viewModel.signInWithGoogle(context) },
+                    modifier = Modifier
+                        .widthIn(max = LoginButtonMaxWidth)
+                        .fillMaxWidth()
+                        .height(LoginButtonHeight),
+                    shape = RoundedCornerShape(LoginButtonCornerRadius),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        contentColor = MaterialTheme.colorScheme.onSurface,
+                    ),
+                ) {
+                    Image(
+                        painter = painterResource(R.drawable.ic_google_logo),
+                        contentDescription = stringResource(R.string.login_google_logo_description),
+                        modifier = Modifier.size(LoginProviderIconSize),
+                    )
+                    Spacer(modifier = Modifier.size(LoginProviderIconTextSpacing))
+                    Text(
+                        text = stringResource(R.string.login_google),
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                }
+
+                LoginTermsNotice(
+                    onTermsClick = { docTarget = LoginDocTarget.Terms },
+                    onPrivacyClick = { docTarget = LoginDocTarget.Privacy },
+                    modifier = Modifier.padding(top = LoginTermsTopSpacing),
+                )
+
+                if (showSkipLogin) {
+                    Spacer(modifier = Modifier.height(LoginSkipButtonTopSpacing))
+
+                    OutlinedButton(
+                        onClick = onSkipLogin,
+                        modifier = Modifier
+                            .widthIn(max = LoginButtonMaxWidth)
+                            .fillMaxWidth()
+                            .height(LoginButtonHeight),
+                        shape = RoundedCornerShape(LoginButtonCornerRadius),
+                    ) {
+                        Text(
+                            text = stringResource(R.string.login_skip),
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(LoginBottomSpacing))
+        }
+    }
+
+    docTarget?.let { target ->
+        ModalBottomSheet(
+            onDismissRequest = { docTarget = null },
+            sheetState = rememberModalBottomSheetState(
+                skipPartiallyExpanded = LoginDocumentSheetSkipPartiallyExpanded,
+            ),
+        ) {
             when (target) {
                 LoginDocTarget.Terms -> TermsOfServiceScreen(onDismiss = { docTarget = null })
                 LoginDocTarget.Privacy -> PrivacyPolicyScreen(onDismiss = { docTarget = null })
-            }
-        }
-        LoginDocumentPresentation.Hidden -> {
-            Scaffold { innerPadding ->
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding)
-                        .padding(horizontal = LoginScreenHorizontalPadding),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Image(
-                        painter = painterResource(R.drawable.login_logo),
-                        contentDescription = stringResource(R.string.login_logo_description),
-                        modifier = Modifier
-                            .size(LoginLogoSize)
-                            .clip(RoundedCornerShape(LoginLogoCornerRadius)),
-                        contentScale = ContentScale.Crop,
-                    )
-
-                    Spacer(modifier = Modifier.height(LoginLogoBottomSpacing))
-
-                    Text(
-                        text = stringResource(R.string.login_title),
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center,
-                    )
-
-                    Spacer(modifier = Modifier.height(LoginTitleBottomSpacing))
-
-                    HorizontalDivider(modifier = Modifier.padding(horizontal = LoginDividerHorizontalPadding))
-
-                    Spacer(modifier = Modifier.height(LoginDividerBottomSpacing))
-
-                    // 로딩 상태
-                    if (authState is AuthState.Loading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(48.dp)
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = stringResource(R.string.login_loading),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    } else {
-                        // Apple Sign-In 버튼 — Apple HIG: 검정 배경 + 흰 텍스트/로고, Google 위에 배치.
-                        // iOS DronePass 와 같은 Apple ID 로 로그인 시 동일 Firebase UID → 데이터 자동 호환.
-                        Button(
-                            onClick = {
-                                val activity = context as? Activity
-                                if (activity != null) {
-                                    viewModel.signInWithApple(activity)
-                                }
-                            },
-                            modifier = Modifier
-                                .widthIn(max = LoginButtonMaxWidth)
-                                .fillMaxWidth()
-                                .height(LoginButtonHeight),
-                            shape = RoundedCornerShape(LoginButtonCornerRadius),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color.Black,
-                                contentColor = Color.White,
-                            ),
-                        ) {
-                            Icon(
-                                painter = painterResource(R.drawable.ic_apple_logo),
-                                contentDescription = stringResource(R.string.login_apple_logo_description),
-                                tint = Color.White,
-                                modifier = Modifier.size(LoginProviderIconSize),
-                            )
-                            Spacer(modifier = Modifier.size(LoginProviderIconTextSpacing))
-                            Text(
-                                text = stringResource(R.string.login_apple),
-                                style = MaterialTheme.typography.titleMedium,
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(LoginGoogleButtonTopSpacing))
-
-                        OutlinedButton(
-                            onClick = { viewModel.signInWithGoogle(context) },
-                            modifier = Modifier
-                                .widthIn(max = LoginButtonMaxWidth)
-                                .fillMaxWidth()
-                                .height(LoginButtonHeight),
-                            shape = RoundedCornerShape(LoginButtonCornerRadius),
-                            colors = ButtonDefaults.outlinedButtonColors(
-                                containerColor = MaterialTheme.colorScheme.surface,
-                                contentColor = MaterialTheme.colorScheme.onSurface,
-                            ),
-                        ) {
-                            Image(
-                                painter = painterResource(R.drawable.ic_google_logo),
-                                contentDescription = stringResource(R.string.login_google_logo_description),
-                                modifier = Modifier.size(LoginProviderIconSize),
-                            )
-                            Spacer(modifier = Modifier.size(LoginProviderIconTextSpacing))
-                            Text(
-                                text = stringResource(R.string.login_google),
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                        }
-
-                        LoginTermsNotice(
-                            onTermsClick = { docTarget = LoginDocTarget.Terms },
-                            onPrivacyClick = { docTarget = LoginDocTarget.Privacy },
-                            modifier = Modifier.padding(top = LoginTermsTopSpacing),
-                        )
-
-                        if (showSkipLogin) {
-                            Spacer(modifier = Modifier.height(LoginSkipButtonTopSpacing))
-
-                            OutlinedButton(
-                                onClick = onSkipLogin,
-                                modifier = Modifier
-                                    .widthIn(max = LoginButtonMaxWidth)
-                                    .fillMaxWidth()
-                                    .height(LoginButtonHeight),
-                                shape = RoundedCornerShape(LoginButtonCornerRadius),
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.login_skip),
-                                    style = MaterialTheme.typography.titleMedium
-                                )
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(LoginBottomSpacing))
-                }
             }
         }
     }
@@ -296,14 +302,14 @@ internal sealed class LoginDocTarget {
 
 internal enum class LoginDocumentPresentation {
     Hidden,
-    Pushed,
+    Sheet,
 }
 
 internal fun resolveLoginDocumentPresentation(target: LoginDocTarget?): LoginDocumentPresentation {
     return if (target == null) {
         LoginDocumentPresentation.Hidden
     } else {
-        LoginDocumentPresentation.Pushed
+        LoginDocumentPresentation.Sheet
     }
 }
 
