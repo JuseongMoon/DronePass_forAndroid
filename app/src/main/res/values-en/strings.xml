@@ -45,6 +45,7 @@
     <string name="login_error_title">Login Error</string>
     <string name="login_error_unknown">Unknown error</string>
     <string name="login_google_error">An error occurred while signing in with Google.</string>
+    <string name="login_google_config_missing">Google sign-in is not configured. Please check WEB_CLIENT_ID.</string>
     <string name="login_apple_error">An error occurred while signing in with Apple.</string>
     <string name="login_sync_failed">Data sync failed. Please check your network connection.</string>
     <string name="login_account_switch_title">Switch account</string>

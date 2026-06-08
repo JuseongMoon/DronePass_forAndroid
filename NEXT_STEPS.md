@@ -102,6 +102,14 @@
 - VWorld API key 운영 키 확인
 - FCM 서버 payload의 `shapeId` 또는 `shape_id`, `title`, `body` 형식 확인
 
+2026-06-09 로컬 설정 확인:
+
+- `applicationId`와 `app/google-services.json`의 `package_name`은 `com.ScienceFiction.DronePassAndroid`로 일치
+- `local.properties`의 `NAVER_MAP_CLIENT_ID`, `NAVER_MAP_CLIENT_SECRET`, `VWORLD_API_KEY`는 값이 있음
+- `local.properties`의 `WEB_CLIENT_ID`는 현재 비어 있음
+  - Android Google 로그인은 이 값이 설정되어야 동작함
+  - 값이 비어 있으면 앱은 Google 로그인 시 명시적인 설정 누락 오류를 표시하도록 보강됨
+
 ### 3.3 Release signing
 
 `keystore.properties.example`을 기준으로 실제 서명 파일을 구성합니다.

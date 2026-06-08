@@ -6,6 +6,7 @@ import android.util.Log
 import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
 import com.ScienceFiction.DronePassAndroid.BuildConfig
+import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.core.data.local.EncryptedPrefsHelper
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
@@ -170,6 +171,9 @@ internal fun buildMigratedOldUserPatch(
     "migratedAt" to Timestamp(Date(nowMillis)),
 )
 
+internal fun isGoogleWebClientIdConfigured(webClientId: String): Boolean =
+    webClientId.isNotBlank()
+
 /**
  * Firebase Auth 래퍼 Repository.
  *
@@ -220,6 +224,10 @@ class AuthRepository @Inject constructor(
      */
     internal suspend fun signInWithGoogle(context: Context): Result<AuthSignInResult> {
         return try {
+            if (!isGoogleWebClientIdConfigured(WEB_CLIENT_ID)) {
+                return Result.failure(IllegalStateException(context.getString(R.string.login_google_config_missing)))
+            }
+
             // Credential Manager 인스턴스 생성
             val credentialManager = CredentialManager.create(context)
 

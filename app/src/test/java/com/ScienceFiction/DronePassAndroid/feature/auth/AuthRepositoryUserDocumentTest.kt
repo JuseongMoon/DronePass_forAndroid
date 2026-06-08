@@ -322,4 +322,11 @@ class AuthRepositoryUserDocumentTest {
         assertEquals("new-uid", patch["migratedTo"])
         assertEquals(1_700_000_000_000L, (patch["migratedAt"] as Timestamp).toDate().time)
     }
+
+    @Test
+    fun `Google 로그인은 WEB_CLIENT_ID 가 설정된 경우에만 시작한다`() {
+        assertFalse(isGoogleWebClientIdConfigured(""))
+        assertFalse(isGoogleWebClientIdConfigured("   "))
+        assertTrue(isGoogleWebClientIdConfigured("web-client-id.apps.googleusercontent.com"))
+    }
 }

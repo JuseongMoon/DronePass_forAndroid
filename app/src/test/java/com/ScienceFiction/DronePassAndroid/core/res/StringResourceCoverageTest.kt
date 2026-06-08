@@ -32,6 +32,10 @@ class StringResourceCoverageTest {
         assertEquals("로그인 오류", stringResourceValue("values/strings.xml", "login_error_title"))
         assertEquals("알 수 없는 오류", stringResourceValue("values/strings.xml", "login_error_unknown"))
         assertEquals("Google 로그인 중 오류가 발생했습니다.", stringResourceValue("values/strings.xml", "login_google_error"))
+        assertEquals(
+            "Google 로그인 설정이 누락되었습니다. WEB_CLIENT_ID를 확인해주세요.",
+            stringResourceValue("values/strings.xml", "login_google_config_missing"),
+        )
         assertEquals("Apple 로그인 중 오류가 발생했습니다.", stringResourceValue("values/strings.xml", "login_apple_error"))
         assertEquals(
             "데이터 동기화에 실패했습니다. 네트워크 상태를 확인해주세요.",
@@ -46,6 +50,10 @@ class StringResourceCoverageTest {
         assertEquals(
             "An error occurred while signing in with Google.",
             stringResourceValue("values-en/strings.xml", "login_google_error"),
+        )
+        assertEquals(
+            "Google sign-in is not configured. Please check WEB_CLIENT_ID.",
+            stringResourceValue("values-en/strings.xml", "login_google_config_missing"),
         )
         assertEquals(
             "An error occurred while signing in with Apple.",

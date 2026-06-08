@@ -47,6 +47,7 @@
     <string name="login_error_title">로그인 오류</string>
     <string name="login_error_unknown">알 수 없는 오류</string>
     <string name="login_google_error">Google 로그인 중 오류가 발생했습니다.</string>
+    <string name="login_google_config_missing">Google 로그인 설정이 누락되었습니다. WEB_CLIENT_ID를 확인해주세요.</string>
     <string name="login_apple_error">Apple 로그인 중 오류가 발생했습니다.</string>
     <string name="login_sync_failed">데이터 동기화에 실패했습니다. 네트워크 상태를 확인해주세요.</string>
     <string name="login_account_switch_title">다른 계정으로 전환</string>
