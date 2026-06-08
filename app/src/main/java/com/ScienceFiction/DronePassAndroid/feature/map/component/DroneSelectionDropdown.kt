@@ -13,8 +13,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -40,15 +43,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
-import androidx.compose.ui.layout.Layout
-import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.Constraints
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -68,6 +67,7 @@ internal val DroneDropdownTextSize = 14.sp
 @DrawableRes
 internal val DroneDropdownEmptyIconRes = R.drawable.ic_drone
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DroneSelectionDropdown(
     activeDrones: List<DroneModel>,
@@ -83,24 +83,14 @@ fun DroneSelectionDropdown(
 
     val selectedDrones = selectedDronesForIosDropdown(activeDrones, selectedDroneIds)
 
-    Box(
-        modifier = modifier.onGloballyPositioned { coordinates ->
-            triggerHeight = coordinates.size.height
-        }
-    ) {
-        // iOS `WrappingHStack(alignment: .trailing, spacing: 8, lineSpacing: 4, firstLineReservedWidth: 40)` 정합:
-        // - 첫째줄은 chevron(32dp) + spacing(8dp) = 40dp 만큼 우측 공간을 예약 → chevron 좌측에 칩 배치
-        // - 둘째줄부터는 전체 너비를 사용 → chevron 아래까지 칩이 확장됨
-        // - 각 줄은 우측 정렬, 줄 내부는 좌→우 순서로 배치
-        // 빈 상태 "드론 선택" 버튼도 동일 Layout 의 단일 자식으로 두어 위치 로직을 통일.
-        FirstLineReservedFlowLayout(
-            spacing = 8.dp,
-            lineSpacing = 4.dp,
-            firstLineReservedWidth = 40.dp,
-            modifier = Modifier.align(Alignment.TopEnd)
+    Box(modifier = modifier) {
+        Row(
+            verticalAlignment = Alignment.Top,
+            modifier = Modifier.onGloballyPositioned { coordinates ->
+                triggerHeight = coordinates.size.height
+            }
         ) {
             if (selectedDrones.isEmpty()) {
-                // 빈 상태: "드론 선택" 버튼
                 Surface(
                     shape = RoundedCornerShape(20.dp),
                     color = MaterialTheme.colorScheme.surface,
@@ -125,41 +115,46 @@ fun DroneSelectionDropdown(
                         )
                     }
                 }
+                Spacer(modifier = Modifier.width(8.dp))
             } else {
-                selectedDrones.forEach { drone ->
-                    DroneChip(
-                        drone = drone,
-                        isHighlighted = drone.id in highlightedDroneIds,
-                        onClick = { onToggleHighlight(drone.id) }
+                FlowRow(
+                    modifier = Modifier.weight(1f, fill = false),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    selectedDrones.forEach { drone ->
+                        DroneChip(
+                            drone = drone,
+                            isHighlighted = drone.id in highlightedDroneIds,
+                            onClick = { onToggleHighlight(drone.id) }
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+            }
+
+            Surface(
+                onClick = { showDropdown = !showDropdown },
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.surface,
+                shadowElevation = DroneDropdownShadowElevation,
+                modifier = Modifier.size(32.dp)
+            ) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    Icon(
+                        imageVector = if (showDropdown) Icons.Default.KeyboardArrowUp
+                        else Icons.Default.KeyboardArrowDown,
+                        contentDescription = if (showDropdown)
+                            stringResource(R.string.drone_dropdown_collapse)
+                        else
+                            stringResource(R.string.drone_dropdown_toggle),
+                        modifier = Modifier.size(DroneDropdownChevronIconSize),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-            }
-        }
-
-        // Chevron 버튼 - 우측 상단 절대 위치 (iOS `ZStack.topTrailing` 정합)
-        Surface(
-            onClick = { showDropdown = !showDropdown },
-            shape = CircleShape,
-            color = MaterialTheme.colorScheme.surface,
-            shadowElevation = DroneDropdownShadowElevation,
-            modifier = Modifier
-                .size(32.dp)
-                .align(Alignment.TopEnd)
-        ) {
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier.fillMaxSize()
-            ) {
-                Icon(
-                    imageVector = if (showDropdown) Icons.Default.KeyboardArrowUp
-                    else Icons.Default.KeyboardArrowDown,
-                    contentDescription = if (showDropdown)
-                        stringResource(R.string.drone_dropdown_collapse)
-                    else
-                        stringResource(R.string.drone_dropdown_toggle),
-                    modifier = Modifier.size(DroneDropdownChevronIconSize),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
         }
 
@@ -307,95 +302,3 @@ private fun DroneChip(
 }
 
 internal fun shouldShowSelectedDroneChipColorIndicator(color: PaletteColor?): Boolean = color != null
-
-/**
- * iOS `FlowLayout(spacing:, lineSpacing:, firstLineReservedWidth:)` 정합 Custom Layout.
- *
- * - 첫째줄에는 우측에 [firstLineReservedWidth] 만큼 공간을 예약 (chevron 자리)
- * - 둘째줄부터는 전체 너비를 사용
- * - 각 줄은 우측 정렬, 줄 내부는 좌→우 순서로 배치
- * - 자식은 무한 제약(`Constraints()`) 으로 측정해 자기 ideal size 를 가짐 (iOS `sizeThatFits(.unspecified)` 정합)
- */
-@Composable
-private fun FirstLineReservedFlowLayout(
-    spacing: Dp,
-    lineSpacing: Dp,
-    firstLineReservedWidth: Dp,
-    modifier: Modifier = Modifier,
-    content: @Composable () -> Unit
-) {
-    Layout(
-        content = content,
-        modifier = modifier
-    ) { measurables, constraints ->
-        val spacingPx = spacing.roundToPx()
-        val lineSpacingPx = lineSpacing.roundToPx()
-        val reservedPx = firstLineReservedWidth.roundToPx()
-        val proposalWidth = constraints.maxWidth
-
-        // 각 자식 측정 (iOS `sizeThatFits(.unspecified)` 정합)
-        val placeables = measurables.map { it.measure(Constraints()) }
-
-        // 1단계: 자식들을 줄에 그룹화
-        // (originalIndex, placeable) 쌍을 줄별 리스트로 관리
-        val lines = mutableListOf<MutableList<Pair<Int, Placeable>>>()
-        lines.add(mutableListOf())
-        var currentLineWidth = 0
-
-        placeables.forEachIndexed { index, placeable ->
-            val currentLineIndex = lines.lastIndex
-            val availableWidth = if (currentLineIndex == 0)
-                proposalWidth - reservedPx
-            else
-                proposalWidth
-
-            // 줄바꿈 조건: 현재 줄에 이미 항목이 있고, 새 항목 추가 시 가용 너비 초과
-            if (currentLineWidth + placeable.width > availableWidth && currentLineWidth > 0) {
-                lines.add(mutableListOf())
-                currentLineWidth = 0
-            }
-
-            lines.last().add(index to placeable)
-            // iOS 와 동일하게 spacing 포함 누적 (보수적 줄바꿈)
-            currentLineWidth += placeable.width + spacingPx
-        }
-
-        // 2단계: 위치 계산 (각 줄 우측 정렬, 줄 내부는 좌→우)
-        val positions = arrayOfNulls<IntOffset>(placeables.size)
-        var currentY = 0
-
-        lines.forEachIndexed { lineIndex, line ->
-            if (line.isEmpty()) return@forEachIndexed
-
-            val lineWidth = line.sumOf { it.second.width } + (line.size - 1) * spacingPx
-            val lineHeight = line.maxOf { it.second.height }
-
-            val availableWidth = if (lineIndex == 0)
-                proposalWidth - reservedPx
-            else
-                proposalWidth
-
-            // 줄의 시작 x: 가용 너비에서 줄 너비를 뺀 위치 (우측 정렬)
-            var currentX = availableWidth - lineWidth
-
-            line.forEach { (originalIndex, placeable) ->
-                positions[originalIndex] = IntOffset(currentX, currentY)
-                currentX += placeable.width + spacingPx
-            }
-
-            currentY += lineHeight + lineSpacingPx
-        }
-
-        val totalHeight = if (lines.any { it.isNotEmpty() })
-            currentY - lineSpacingPx
-        else
-            0
-
-        layout(proposalWidth, totalHeight) {
-            placeables.forEachIndexed { index, placeable ->
-                val pos = positions[index] ?: IntOffset.Zero
-                placeable.place(pos.x, pos.y)
-            }
-        }
-    }
-}
