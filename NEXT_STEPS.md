@@ -1,291 +1,141 @@
-# 작업 이어가기 핸드오프 노트
+# DronePass Android 작업 이어가기
 
-> 마지막 업데이트: 2026-05-19 (Cross-Platform 로그인 Phase A 완료)
-> 다음 세션에서 이 문서 + `REFACTORING_PLAN.md` 를 함께 읽으면 즉시 이어서 진행할 수 있다.
+> 마지막 업데이트: 2026-06-08
+> 브랜치: `fix/critical-pri0-fixes`
+> 상태: iOS 동작 대조와 Android 출시 하드닝 진행 중
 
----
+이 문서는 다음 세션에서 바로 이어가기 위한 현재 기준 핸드오프입니다. 오래된 Phase별 상세 이력은 `REFACTORING_PLAN.md`와 `MIGRATION_PLAN.md`에 남겨두고, 여기에는 지금 실제로 필요한 항목만 둡니다.
 
-## 1. 현재 위치 한눈에 보기
+## 1. 현재 상태
 
 | 항목 | 값 |
 |---|---|
-| **브랜치** | `fix/critical-pri0-fixes` |
-| **마지막 커밋** | `3d44d09` (feat: Cross-Platform 로그인 Phase A — Android Apple Sign-In) |
-| **워킹 트리** | clean (변경 없음 — REFACTORING_PLAN/NEXT_STEPS 갱신 후) |
-| **원격 동기화** | `origin/fix/critical-pri0-fixes` 보다 17 커밋 ahead (push 미수행) |
-| **누적 처리** | **124건 중 124건 완료 (100%)** ✅ |
-| **잔여** | 없음 — Phase 1/2/3 모두 종료 |
+| 워킹 트리 | clean |
+| 주요 검증 | `:app:testDebugUnitTest`, `:app:assembleDebug`, `:app:minifyReleaseWithR8` 통과 |
+| Release signing | 실제 `keystore.properties` 없으면 `assembleRelease`/`bundleRelease`가 의도적으로 실패 |
+| 남은 성격 | 실기기 회귀, 콘솔/스토어 운영 설정, 최종 iOS 동기화 검증 |
 
----
+최근 완료된 릴리스 하드닝:
 
-## 2. 완료된 작업 누적 (19 커밋)
+- `7191dd8 fix: strip android logs from release builds`
+- `fbf4619 fix: avoid logging raw fcm device ids`
+- `eeaf6da docs: refresh android project README`
+- `8070866 fix: avoid logging raw fcm tokens`
+- `d5e8874 fix: require release signing for release builds`
+- `d0cd1a1 fix: match iOS date-only shape edit default`
 
-`git log --oneline fix/critical-pri0-fixes ^main` 결과:
+## 2. 이번 라운드에서 확인한 내용
 
-```
-4f890ae fix(ui): Phase 3.5 Medium 15건 - 다국어/SharedFlow/sp/포맷 정비
-266579a fix(map): Phase 3.4 Medium 10건 - 오버레이 성능/density/zIndex/debounce 정비
-a82f4db fix(infra): Phase 3.3 Medium 11건 - DI/테마/매니페스트 정비
-71a8b6a fix(data): Phase 3.2 Medium 8건 - 캐시 동시성/sync 헬퍼/배치 insert
-f10dde9 fix(algorithm): Phase 3.1 Medium 11건 - 코드 품질/일관성 정비
-e2de3d1 docs: REFACTORING_PLAN.md - Phase 2 완료 표기 (High 45건 모두 [x])
-43c5d5c fix(ui): Phase 2.5 High 13건 - Kp/Weather 라이프사이클/Sections/메모이즈/검증
-1d3a81b fix(map): Phase 2.4 High 9건 - Overlay Diff/메모이즈/Mutex/Ticker/replay
-994e500 fix(infra): Phase 2.3 High 6건 - 위치 캐시/알림 채널/Nav 정리/Hilt/로깅/Naver 분리
-efa98fc fix(data): Phase 2.2 High 9건 - Repository LWW 정교화 + FirebaseStore Result + Sync 정리
-ea7b74d fix(algorithm): Phase 2.1 High 8건 - Smoothing/Parser/Gust/Geocoding/NOTAM 정합
-db4b805 docs: REFACTORING_PLAN.md - Phase 1 완료 표기 (Critical 19건 모두 [x])
-a755801 fix(ui): Phase 1.5 Critical 5건 - LoginScreen/AuthVM/SavedList/WebView/SettingsVM 정리
-b2638e0 fix(map): Phase 1.4 Critical 4건 - 위치추적 누수/회전 카메라 손실/리스너 해제/Overlay 누수
-3d07521 fix(infra): Phase 1.3 Critical 6건 - 백업/권한/테마/서명/queries
-d77b413 fix(security): Phase 1.2 A-C1 - EncryptedPrefs MasterKey.Builder + 손상 폴백
-967bab8 fix(algorithm): Phase 1.1 Critical 3건 - Haversine WGS-84 통일 + CRI NaN 가드 + SketchPointsCache TOCTOU
-efed981 docs: REFACTORING_PLAN.md 추가 - 잔여 119건 단계별 체크리스트
-40dafb7 fix(critical): Pri 0 5건 - 동기화 파이프라인 복구 + 비행구역 안전 기준 정합
-```
+코드 대조 후 수정 없이 통과한 영역:
 
-### 2.1 Pri 0 (가장 시급한 5건) — `40dafb7`
+- 드론 목록/상세/편집/삭제/선택 상태
+- 저장 도형 목록, 편집/복제 진입, 날짜 기본값
+- 지도 기본 위치, 현재 위치 이동 줌, 플로팅 컨트롤
+- 기상 예보, KP 예보, 차트 현재 시각 표시
+- VWorld 레이어/상세/관할기관 연락처 캐시
+- 설정/프로필/앱 정보/패치노트/문서 시트
+- 알림 예약 로직과 부팅 후 재예약
+- 백업/데이터 추출 규칙
 
-| # | 핵심 |
-|---|---|
-| 1 | Migration 1→2 SQL 을 v2 entity 스키마와 정합화 (DronePassDatabase.kt) |
-| 2 | RealtimeSyncManager `getLong("lastModified")` → `getTimestamp(...).time` (레거시 폴백 유지) |
-| 3 | SketchFirebaseStore 메타데이터 경로 `metadata/server` → `metadata/sketchServer` |
-| 4 | Repository 3종에 Firebase 즉시 푸시 헬퍼 (`syncXToFirebase`) 추가 |
-| 5 | FlightZoneCalculator Ray Casting `latI/lonI` 변수명 + iOS 원본 정합 |
+수정 완료된 영역:
 
-### 2.2 Phase 1 — Critical (19건) — 5개 영역 커밋
+- Apple 로그인 Activity context unwrap
+- 로그인 약관/개인정보 시트 흐름
+- 한국어 도형 문구와 상세 라벨
+- iOS 기준 gust warning hysteresis
+- UUID shape id 강제
+- 실시간 sync trigger timing
+- 계정 전환 전 로컬 reset 순서
+- KP forecast auto refresh
+- Weather chart current markers
+- Weather info category selected 표시
+- FCM token/device id 원문 로그 제거
+- Release 빌드에서 `android.util.Log` 제거
+- README 최신화
 
-- **Phase 1.1 알고리즘 (3건)** `967bab8`: Haversine WGS-84 통일 / CRI NaN 가드 / SketchPointsCache TOCTOU
-- **Phase 1.2 데이터 (1건)** `d77b413`: EncryptedPrefsHelper MasterKey.Builder + 손상 폴백 + FcmService 통합
-- **Phase 1.3 인프라 (6건)** `3d07521`: 백업규칙 파일명 정정 / POST_NOTIFICATIONS / SCHEDULE_EXACT_ALARM / Material 테마 / Release signingConfig / `<queries>`
-- **Phase 1.4 지도 (4건)** `b2638e0`: AndroidView update 람다 위치추적 분리 / configChanges / 리스너 해제 / OverlayManager 3종 detach()
-- **Phase 1.5 UI (5건)** `a755801`: LoginScreen LaunchedEffect 통합 / SettingsViewModel.signOut FCM+Sync / WebView 화이트리스트 / AuthViewModel init 순서 / SavedList key prefix
+## 3. 남은 필수 작업
 
-### 2.3 Phase 2 — High (45건) — 5개 영역 커밋
+### 3.1 실기기 회귀
 
-- **Phase 2.1 알고리즘 (8건)** `ea7b74d`: Smoothing 가드/Catmull-Rom 정합/DMS 분초/Decimal anchor/Gust NaN/Geocoding nullable/Locale.ROOT/NOTAM sliding window
-- **Phase 2.2 데이터 (9건)** `efa98fc`: Repository syncFromFirebase LWW / performFullSync 로컬-우세 업로드 / FirebaseStore Result / AtomicBoolean / retry 가드 / 데드 콜백 제거 / Sketch 500ms 디바운싱 / baseCoordinate 폴백 제거 / EntityMapper 폴백
-- **Phase 2.3 인프라 (6건)** `994e500`: BootReceiver DataStore 위치 캐시 / NotificationChannel IMPORTANCE_HIGH 분리 / NavGraph dead route 정리 / FcmService @AndroidEntryPoint / HTTP 로깅 DEBUG 분기 / Naver OkHttp+Retrofit @Named 분리
-- **Phase 2.4 지도 (9건)** `1d3a81b`: ShapeOverlayManager Map+ShapeKey Diff / FlightZoneOverlayManager zoneId Diff / setOutOfBoundsVisibility / LaunchedEffect key 좁히기 / continueDrawing O(n²)→O(n) / 지우개 Mutex / cosLat 보정 / filteredShapes 60초 ticker / cameraEvent replay=1
-- **Phase 2.5 UI (13건)** `43c5d5c`: Kp/Weather start/stopAutoRefresh / SavedListVM Sections+Default / ShapeEdit shape.id key / DroneEditSheet 메모이즈 / suggestNextColor 명시 인자 / DroneList 메모이즈 / DroneDetailSheet shapeCount nullable / DatePicker 주석 / Save 비활성 / droneId→name Map / Kp Refresh 비활성 / 스와이프 확인 다이얼로그
+최소 1대의 Android 13+ 실기기에서 확인합니다.
 
-### 2.4 Phase 3 — Medium (55건) — 5개 영역 커밋
+1. 지도 로드, 현재 위치 권한, 현재 위치 이동
+2. 원형/사각형/다각형 생성, 저장, 편집, 삭제, 복제
+3. 드론 생성/수정/삭제와 도형 드론 연결
+4. 스케치 그리기, 지우기, undo/redo, 저장 후 재실행 복원
+5. Google 로그인, Apple 로그인, 로그아웃, 계정 전환
+6. Firestore iOS ↔ Android 동기화
+7. FCM 수신, 로컬 종료일 알림, 일출/일몰 알림
+8. 언어 변경, 한국 현지 기능 ON/OFF, VWorld 레이어 해제
+9. 패치노트/약관/개인정보 문서 로드
+10. 앱 삭제 후 재설치 또는 백업 복원 시 EncryptedPrefs 복구
 
-- **Phase 3.1 알고리즘 (11건)** `f10dde9`: FlightZoneCalc KM 상수 / CRI windFactor / SketchSmoothing segments / WMO 4·5·10 / AltitudeFormatter Regex 캐시 / ShapeModel effectiveColor 제거 / ShapeType 확장 가이드 / PaletteColor parseColor 폴백 / VWorldModels typed accessor / SketchPointsCache LRU 코멘트 / KpIndexModel.fromKp NaN 가드
-- **Phase 3.2 데이터 (8건)** `71a8b6a`: SyncMerge.kt 신규 (mergeLWW/filterServerNewer) → Shape/Drone/Sketch Repo 정리 / KpIndex·Weather·VWorld 캐시 동시성(@Volatile+Mutex) / SketchFirebaseStore unchecked cast 단계 검증 / Coordinate StringBuilder JSON+NaN 안전화 / DAO 배치 insert / EntityMapper 폴백
-- **Phase 3.3 인프라 (11건)** `a82f4db`: RepositoryModule @Provides 제거 → @Inject constructor 자동 / Retrofit 4종 @Named 분리 (vWorld/kpNoaa/kpNoaa27Day/kpGfz) / Naver timeout 코멘트 / Color Brand/Neutral/Accent 팔레트 + 기존 토큰 @Deprecated alias / Type.kt 8종 토큰 / Theme dynamicColor=false 정책 / MIGRATION 정리 / appcompat 직접 의존 제거 / Compose BOM 업그레이드 코멘트 / BootReceiver category.DEFAULT / LocalLifecycleOwner deprecation 해결
-- **Phase 3.4 지도/오버레이 (10건)** `266579a`: OverlayManager 의도 코멘트 / SketchOverlayManager density 주입 + Catmull-Rom 병렬 + keepScreenOn 양방향 / FlightZoneOverlayManager BASE_Z_INDEX 10 / MapScreen SideEffect 콜백 / 향후 분리 코멘트 / MapFloatingButtons format 메모이즈+Locale.ROOT / SketchToolbar slider SSOT / MapViewModel SharedFlow.debounce+distinctUntilChanged
-- **Phase 3.5 UI (15건)** `4f890ae`: SortOption @StringRes / SimpleDateFormat remember / AuthVM syncMessage SharedFlow / deleteAccount fail-fast / DroneVM 트랜잭션 코멘트 / dismissShapeDetail 코멘트 / ShapeDetailSheet hide await / SearchAddressSheet 검토 / WeatherVM error 다국어 코멘트 / Locale.ROOT 일괄 / sp.toPx (SunTimeline/WeatherCharts) / KpCharts density 잔재 제거 / maxSheetHeight remember / SettingsSubScreen 코멘트 / DroneEditSheet 길이 컷
+### 3.2 운영 콘솔 설정
 
-### 2.5 신규 파일
+- Firebase Android 앱 SHA-1/SHA-256 등록
+- Firebase Apple provider OAuth 설정 확인
+- Firebase Web client id를 `local.properties`의 `WEB_CLIENT_ID`에 설정
+- Naver Cloud Android 앱 패키지명/SHA-1 등록
+- VWorld API key 운영 키 확인
+- FCM 서버 payload의 `shapeId` 또는 `shape_id`, `title`, `body` 형식 확인
 
-| 파일 | 용도 |
-|---|---|
-| `REFACTORING_PLAN.md` | 124건 전체 체크리스트 (Phase 1/2/3 모두 [x]) |
-| `app/src/main/java/.../core/data/UserLocationKeys.kt` | BootReceiver 위치 캐시 공유 키 |
-| `app/src/main/java/.../core/data/sync/SyncMerge.kt` | mergeLWW / filterServerNewer 헬퍼 (Phase 3.2) |
-| `app/src/main/java/.../feature/map/MapScreenLayers.kt` | MapScreen 자식 Composable 4종 (B-M6 후속) |
-| `app/src/main/java/.../feature/settings/NotificationPermissionRequest.kt` | 알림 권한 안내 카드 |
-| `app/src/main/res/values-night/themes.xml` | 다크 모드 테마 |
-| `keystore.properties.example` | Release 서명 샘플 |
-| `app/src/test/java/.../core/util/FlightZoneCalculatorTest.kt` | Ray Casting + Haversine 테스트 (14건) |
-| `app/src/test/java/.../core/util/CRICalculatorTest.kt` | Magnus NaN 가드 테스트 (8건) |
-| `app/src/test/java/.../core/util/CoordinateParserTest.kt` | DMS/Decimal anchor 테스트 (12건) |
+### 3.3 Release signing
 
-**총 단위 테스트 누계: 34건 (모두 PASS)**
-
-### 2.5 검증 명령
+`keystore.properties.example`을 기준으로 실제 서명 파일을 구성합니다.
 
 ```bash
-export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
-export PATH="$JAVA_HOME/bin:$PATH"
-./gradlew :app:assembleDebug         # BUILD SUCCESSFUL
-./gradlew :app:testDebugUnitTest     # BUILD SUCCESSFUL
-```
-
----
-
-## 3. 후속 작업 진행 상황
-
-Phase 1/2/3 (124건) + 후속 PR 4건 + Cross-Platform 로그인 Phase A 완료.
-
-### 3.1 완료된 후속 작업
-
-| 작업 | 상태 | 메모 |
-|---|---|---|
-| Phase A: Android Apple Sign-In | ✅ 완료 | Firebase OAuthProvider("apple.com"). iOS 와 동일 Apple ID → 동일 UID 자동 호환. Firebase Console 설정은 사용자 작업. |
-
-### 3.2 Phase B (iOS Google Sign-In) — 사용자 결정 시 진행
-
-iOS 측 변경 (다른 저장소): `/Users/david/Development/Swift/myProjects/DronePass`
-- GoogleSignIn SPM 추가
-- GoogleLoginManager.swift 신규
-- LoginView 에 Google 버튼
-
-### 3.3 추가 후보 (필요 시 진행)
-
-1. **운영 작업**: gh CLI 설치 → push → PR 생성 → 머지
-2. **회귀 테스트 사이클**: 실기기 핵심 시나리오 5가지 검증 (지도/도형 CRUD/스케치/로그인/설정)
-3. **2단계 업그레이드**:
-   - Compose BOM 2026.05.00 (Material3 1.4.x)
-   - 통합 테스트(Espresso/Compose UI Test)
-   - LeakCanary 도입
-   - Play Store 등록 준비 (서명 키, Play App Signing, Release 빌드)
-   - Account Linking UI (한 계정에 Apple + Google 연결)
-
-> `REFACTORING_PLAN.md` 의 `## 4. Phase 3 — Medium (55건)` 섹션 참조 (모두 [x] 처리됨).
-
----
-
-## 4. 후속 PR (모두 완료)
-
-| 항목 | 상태 | 메모 |
-|---|---|---|
-| **B-M6** MapScreen 25+ collect → 4종 자식 Composable 분리 | ✅ 완료 | `MapScreenLayers.kt` 신규 (MapOverlayEffects/MapFloatingControls/MapSketchInput/MapBottomSheets). 본체 728→392줄. 자식별 recomposition 범위 격리 |
-| **D-M9** WeatherViewModel/KpViewModel error sealed class + @StringRes | ✅ 완료 | `sealed class WeatherError`, `sealed class KpError` 도입. UI 가 `stringResource(error.messageRes)` 변환 |
-| **D-M14** SettingsSubScreen sealed class 통합 | ✅ 완료 | Terms/Privacy/LocationTerms 3개 분기 → `WebDoc(titleRes, url)` 1개로 통합 |
-| **E-M9** Compose BOM 2024.09.00 → 2025.06.01 | ✅ 완료 | Material3 1.3.x 유지 + Kotlin 2.0.21 호환. 2026.05.00 (Material3 1.4.x) 업그레이드는 별도 PR |
-| Phase 2.3 deprecated 경고 (해결됨) | ✅ | `NotificationPermissionRequest.kt:61` LocalLifecycleOwner — Phase 3.3 에서 lifecycle.compose 패키지로 이전 완료 |
-
----
-
-## 5. 운영 작업 (사용자 직접 수행 필요)
-
-이 항목들은 자동화 불가 — 다음 세션에서도 사용자 개입 필요.
-
-### 5.1 Git push + PR 생성 (인증 미설정으로 차단됨)
-
-옵션 A: gh CLI
-```bash
-brew install gh
-gh auth login
-git push -u origin fix/critical-pri0-fixes
-gh pr create --base main --head fix/critical-pri0-fixes \
-  --title "fix: 코드 종합 점검 - Pri 0 + Phase 1 + Phase 2 (69건 처리)" \
-  --body "REFACTORING_PLAN.md 참조. 124건 중 69건(55.6%) 처리 완료."
-```
-
-옵션 B: SSH 변경
-```bash
-git remote set-url origin git@github.com:JuseongMoon/DronePass_forAndroid.git
-git push -u origin fix/critical-pri0-fixes
-# GitHub 웹에서 PR 생성
-```
-
-### 5.2 Release 서명 설정 (Play Store 출시 전 필수)
-
-`keystore.properties.example` 참조하여:
-```bash
-keytool -genkey -v -keystore release.jks -keyalg RSA -keysize 2048 \
-  -validity 10000 -alias dronepass
+keytool -genkey -v -keystore release.jks -keyalg RSA -keysize 2048 -validity 10000 -alias dronepass
 cp keystore.properties.example keystore.properties
-# keystore.properties 에 실제 비밀번호 입력
 ```
 
-### 5.3 Firebase 콘솔 (이미 설정됨, 변경 시에만 검토)
+`keystore.properties` 예시:
 
-현재 `applicationIdSuffix` 사용 안 함 (Phase 1.3 결정). Firebase 패키지 분리가 필요해지면 Firebase 콘솔에 별도 앱 등록 필요.
-
----
-
-## 6. 다음 세션 시작 — 명령 예시
-
-가장 좋은 시작 문구 (복사해서 붙여넣으면 즉시 이어서 진행):
-
-### 6.1 push/PR 생성
-
-```
-NEXT_STEPS.md 5.1 따라 gh CLI 설치하고 push + PR 생성 도와줘
+```properties
+storeFile=release.jks
+storePassword=...
+keyAlias=dronepass
+keyPassword=...
 ```
 
-### 6.2 회귀 테스트 시나리오
-
-```
-NEXT_STEPS.md 의 핵심 회귀 시나리오 5가지(지도/도형 CRUD/스케치/로그인/설정)를 함께 점검해줘
-```
-
-### 6.3 별도 PR 진행 (4. 미완 항목)
-
-```
-NEXT_STEPS.md 4. 의 B-M6 MapScreen 4종 자식 Composable 분리 진행해줘
-```
-또는
-```
-WeatherViewModel/KpViewModel error 를 sealed class + @StringRes 로 정비해줘
-```
-
----
-
-## 7. 환경 정보 (다음 세션에서도 동일)
-
-### 7.1 빌드 환경
+서명 설정 전에는 다음 명령이 실패해야 정상입니다.
 
 ```bash
-# Java (Android Studio JBR — 시스템 Java 미설치이므로 매 세션 export 필요)
+./gradlew :app:assembleRelease
+./gradlew :app:bundleRelease
+```
+
+서명 설정 후에는 `bundleRelease` 결과물로 Play Console 내부 테스트 트랙에 올립니다.
+
+## 4. 검증 명령
+
+```bash
 export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
 export PATH="$JAVA_HOME/bin:$PATH"
 
-# 작업 디렉토리
-cd /Users/david/Development/Android/Projects/DronePass
-
-# 검증 명령
-./gradlew :app:assembleDebug                                                    # 컴파일+APK
-./gradlew :app:testDebugUnitTest                                                # 단위 테스트
-./gradlew :app:testDebugUnitTest --tests "*FlightZoneCalculatorTest"            # 특정 테스트
+./gradlew :app:testDebugUnitTest
+./gradlew :app:assembleDebug
+./gradlew :app:minifyReleaseWithR8
 ```
 
-### 7.2 주요 경로
+참고:
+
+- `:app:minifyReleaseWithR8`는 현재 성공합니다.
+- Naver Maps SDK와 Play Services Location에서 R8 warning이 여러 줄 출력될 수 있지만, 현재는 build failure가 아닙니다.
+- `assembleRelease`와 `bundleRelease`는 실제 release signing 설정 전까지 의도적으로 차단됩니다.
+
+## 5. 다음에 바로 볼 후보
+
+1. 실기기 회귀를 먼저 돌리고 실패 항목을 코드 수정 단위로 커밋
+2. iOS ↔ Android Firestore 실제 계정 동기화 시나리오 검증
+3. Play Store 내부 테스트용 signing 구성 후 `bundleRelease` 검증
+4. `MIGRATION_PLAN.md`가 역사 문서로 남아 있어도 되는지 결정, 필요하면 README처럼 최신 상태 문서로 축약
+
+## 6. 주요 경로
 
 | 종류 | 경로 |
 |---|---|
-| 프로젝트 루트 | `/Users/david/Development/Android/Projects/DronePass/` |
-| 코드 베이스 | `app/src/main/java/com/ScienceFiction/DronePassAndroid/` |
-| 단위 테스트 | `app/src/test/java/com/ScienceFiction/DronePassAndroid/` |
-| Room 스키마 | `app/schemas/com.ScienceFiction.DronePassAndroid.core.data.local.room.DronePassDatabase/` |
-| iOS 원본 (참조) | `/Users/david/Development/Swift/myProjects/DronePass/DronePass/` |
-
-### 7.3 빌드 정보
-
-- Min SDK 28, Target SDK 36, Compile SDK 36
-- Kotlin 2.0.21, AGP 8.13.0, Java 11
-- Compose BOM 2024.09.00, Hilt 2.51.1, Room 2.6.1
-- Firebase BoM 33.1.0, Naver Maps SDK 3.23.1
-
----
-
-## 8. 참고 문서
-
-| 문서 | 역할 |
-|---|---|
-| `REFACTORING_PLAN.md` | 124건 전체 체크리스트 (정적 명세) — **다음 세션에서도 이 파일이 작업 단위 정의의 단일 진실 공급원** |
-| `NEXT_STEPS.md` (현 문서) | 진행 상태 + 핸드오프 (동적 진행 노트) |
-| `CLAUDE.md` | 프로젝트 가이드 (코딩 규칙, 빌드 설정) |
-| `MIGRATION_PLAN.md` | iOS → Android 마이그레이션 원본 계획서 (Phase 0~8) |
-
----
-
-## 9. 작업 진행 시 유의사항
-
-### 9.1 Phase 3 작업 중 주의
-
-- Phase 3 는 대부분 코드 품질/일관성 작업 → **기능 변경 최소화**
-- 큰 리팩토링(예: Repository 3종 추상화 SyncableRepository<T>) 은 한 커밋에 영향 큼 → 영역 단위로 묶되 빌드 검증 빈번히
-- Hilt RepositoryModule 의 중복 @Provides 제거(E-M1)는 호출 그래프 모두 검증 필요
-- AppCompat 의존성 제거(E-M8) 는 Phase 1.3 의 Material 테마 전환과 연계 — 호환성 확인 후 점진 제거
-
-### 9.2 커밋 전 필수 확인
-
-1. `./gradlew :app:assembleDebug` BUILD SUCCESSFUL
-2. 단위 테스트가 영향받는 영역이면 `./gradlew :app:testDebugUnitTest` 통과
-3. 커밋 메시지에 처리한 Medium 항목(예: `A-M1`, `B-M5`) 모두 명시
-4. REFACTORING_PLAN.md 의 해당 체크박스 `[x]` 처리 (sed 일괄)
-
-### 9.3 sed 일괄 체크 패턴
-
-Phase 3 종료 시 사용:
-```bash
-sed -i '' -E 's/- \[ \] \*\*(A-M[0-9]+|B-M[0-9]+|C-M[0-9]+|D-M[0-9]+|E-M[0-9]+):/- [x] **\1:/g' REFACTORING_PLAN.md
-grep -c "^- \[x\]" REFACTORING_PLAN.md  # 64 → 119 가 되어야 함 (Phase 3 = 55 추가)
-grep -c "^- \[ \]" REFACTORING_PLAN.md  # 55 → 0
-```
+| Android 프로젝트 | `/Users/david/Development/Android/Projects/DronePass` |
+| Android 코드 | `app/src/main/java/com/ScienceFiction/DronePassAndroid` |
+| Android 테스트 | `app/src/test/java/com/ScienceFiction/DronePassAndroid` |
+| iOS 원본 | `/Users/david/Development/Swift/myProjects/DronePass/DronePass` |
+| release signing 예시 | `keystore.properties.example` |
