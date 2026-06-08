@@ -13,7 +13,7 @@
 | 워킹 트리 | clean |
 | 주요 검증 | `:app:testDebugUnitTest`, `:app:assembleDebug`, `:app:minifyReleaseWithR8` 통과 |
 | Release signing | 실제 `keystore.properties` 없으면 `assembleRelease`/`bundleRelease`가 의도적으로 실패함을 확인 |
-| 남은 성격 | 실기기 회귀, 콘솔/스토어 운영 설정, 최종 iOS 동기화 검증 |
+| 남은 성격 | 실기기 전체 회귀, 콘솔/스토어 운영 설정, 최종 iOS 동기화 검증 |
 
 최근 완료된 릴리스 하드닝:
 
@@ -65,6 +65,13 @@
 ### 3.1 실기기 회귀
 
 최소 1대의 Android 13+ 실기기에서 확인합니다.
+
+2026-06-08 부분 확인:
+
+- Android 15 실기기에 `app-debug.apk`를 데이터 유지 방식으로 설치
+- 런처 실행 후 지도, 현재 위치, 드론 선택칩, KP/날씨 카드 렌더링 확인
+- 저장 목록 bottom sheet와 설정 bottom sheet 전환 확인
+- 위 smoke 경로에서 `AndroidRuntime`/DronePass 치명 오류 로그 없음
 
 1. 지도 로드, 현재 위치 권한, 현재 위치 이동
 2. 원형/사각형/다각형 생성, 저장, 편집, 삭제, 복제
@@ -133,7 +140,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 
 ## 5. 다음에 바로 볼 후보
 
-1. 실기기 회귀를 먼저 돌리고 실패 항목을 코드 수정 단위로 커밋
+1. 남은 실기기 회귀 시나리오를 돌리고 실패 항목을 코드 수정 단위로 커밋
 2. iOS ↔ Android Firestore 실제 계정 동기화 시나리오 검증
 3. Play Store 내부 테스트용 signing 구성 후 `bundleRelease` 검증
 4. `MIGRATION_PLAN.md`가 역사 문서로 남아 있어도 되는지 결정, 필요하면 README처럼 최신 상태 문서로 축약
