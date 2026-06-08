@@ -454,10 +454,15 @@
     <string name="profile_section_sync">Synchronization</string>
     <string name="profile_section_terms">Terms &amp; Policies</string>
     <string name="profile_section_account">Account Management</string>
+    <string name="profile_info_email">Email</string>
+    <string name="profile_info_email_hidden">Hidden</string>
+    <string name="profile_info_login_method">Login</string>
     <string name="profile_info_join_date">Joined</string>
-    <string name="profile_info_shapes">Shapes</string>
+    <string name="profile_info_join_unknown">Unknown</string>
+    <string name="profile_info_shapes">Active Shapes</string>
     <string name="profile_info_sketches">Sketches</string>
     <string name="profile_info_drones">Drones</string>
+    <string name="profile_info_expired_shapes">Expired Shapes</string>
     <string name="profile_info_count_unit">%1$d</string>
 
     <string name="profile_sync_cloud">Real-time cloud sync</string>

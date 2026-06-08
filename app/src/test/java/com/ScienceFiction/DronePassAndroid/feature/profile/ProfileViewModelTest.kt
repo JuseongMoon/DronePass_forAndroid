@@ -1,6 +1,7 @@
 package com.ScienceFiction.DronePassAndroid.feature.profile
 
 import androidx.datastore.preferences.core.preferencesOf
+import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -139,5 +140,34 @@ class ProfileViewModelTest {
         assertEquals(1_700_000_000_000L, normalizeProfileJoinDateMillis(1_700_000_000_000L))
         assertEquals(null, normalizeProfileJoinDateMillis(0L))
         assertEquals(null, normalizeProfileJoinDateMillis(null))
+    }
+
+    @Test
+    fun `프로필 로그인 방식은 iOS처럼 Apple Google 순서로 판별한다`() {
+        assertEquals(
+            ProfileLoginProvider.APPLE,
+            resolveProfileLoginProvider(listOf("firebase", "google.com", "apple.com")),
+        )
+        assertEquals(
+            ProfileLoginProvider.GOOGLE,
+            resolveProfileLoginProvider(listOf("firebase", "google.com")),
+        )
+        assertEquals(
+            ProfileLoginProvider.UNKNOWN,
+            resolveProfileLoginProvider(listOf("firebase", "password")),
+        )
+        assertEquals(ProfileLoginProvider.UNKNOWN, resolveProfileLoginProvider(emptyList()))
+    }
+
+    @Test
+    fun `프로필 만료 도형 수는 iOS처럼 종료일이 현재보다 과거인 도형만 센다`() {
+        val shapes = listOf(
+            ShapeModel(flightEndDate = 999L),
+            ShapeModel(flightEndDate = 1_000L),
+            ShapeModel(flightEndDate = 1_001L),
+            ShapeModel(flightEndDate = null),
+        )
+
+        assertEquals(1, countExpiredProfileShapes(shapes, now = 1_000L))
     }
 }

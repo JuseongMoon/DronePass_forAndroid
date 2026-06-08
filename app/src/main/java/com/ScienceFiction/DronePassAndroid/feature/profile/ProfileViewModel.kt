@@ -13,6 +13,7 @@ import com.ScienceFiction.DronePassAndroid.core.data.repository.ShapeRepository
 import com.ScienceFiction.DronePassAndroid.core.data.repository.SketchRepository
 import com.ScienceFiction.DronePassAndroid.core.data.sync.RealtimeSyncManager
 import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncState
+import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 import com.ScienceFiction.DronePassAndroid.feature.auth.AuthRepository
 import com.ScienceFiction.DronePassAndroid.service.FcmService
 import com.google.firebase.auth.FirebaseAuth
@@ -69,6 +70,29 @@ internal fun shouldNotifyProfileSyncResultForCloudToggle(
 internal fun normalizeProfileJoinDateMillis(timestamp: Long?): Long? =
     timestamp?.takeIf { it > 0L }
 
+enum class ProfileLoginProvider {
+    APPLE,
+    GOOGLE,
+    UNKNOWN,
+}
+
+internal fun resolveProfileLoginProvider(providerIds: List<String>): ProfileLoginProvider {
+    return when {
+        "apple.com" in providerIds -> ProfileLoginProvider.APPLE
+        "google.com" in providerIds -> ProfileLoginProvider.GOOGLE
+        else -> ProfileLoginProvider.UNKNOWN
+    }
+}
+
+internal fun countExpiredProfileShapes(
+    shapes: List<ShapeModel>,
+    now: Long = System.currentTimeMillis(),
+): Int {
+    return shapes.count { shape ->
+        shape.flightEndDate?.let { endDate -> endDate < now } == true
+    }
+}
+
 /**
  * iOS `ProfileView` 정합 ViewModel.
  * 동기화(클라우드 백업/실시간 sync) + 약관/정책 + 계정 관리(로그아웃·탈퇴) 흐름을 담당.
@@ -107,6 +131,16 @@ class ProfileViewModel @Inject constructor(
     private val _isLoggedIn = MutableStateFlow(firebaseAuth.currentUser != null)
     val isLoggedIn: StateFlow<Boolean> = _isLoggedIn.asStateFlow()
 
+    private val _profileEmail = MutableStateFlow(firebaseAuth.currentUser?.email)
+    val profileEmail: StateFlow<String?> = _profileEmail.asStateFlow()
+
+    private val _profileLoginProvider = MutableStateFlow(
+        resolveProfileLoginProvider(
+            firebaseAuth.currentUser?.providerData?.map { it.providerId }.orEmpty(),
+        ),
+    )
+    val profileLoginProvider: StateFlow<ProfileLoginProvider> = _profileLoginProvider.asStateFlow()
+
     /** iOS ProfileView 가입일 행과 동일하게 Firebase Auth 생성 시각을 표시한다. */
     private val _joinDateMillis = MutableStateFlow(
         normalizeProfileJoinDateMillis(firebaseAuth.currentUser?.metadata?.creationTimestamp),
@@ -115,6 +149,10 @@ class ProfileViewModel @Inject constructor(
 
     val activeShapeCount: StateFlow<Int> = shapeRepository.getActiveShapes()
         .map { it.size }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
+    val expiredShapeCount: StateFlow<Int> = shapeRepository.getActiveShapes()
+        .map { shapes -> countExpiredProfileShapes(shapes) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
     val activeSketchCount: StateFlow<Int> = sketchRepository.getActiveSketches()
@@ -169,6 +207,10 @@ class ProfileViewModel @Inject constructor(
         firebaseAuth.addAuthStateListener { auth ->
             val user = auth.currentUser
             _isLoggedIn.value = user != null
+            _profileEmail.value = user?.email
+            _profileLoginProvider.value = resolveProfileLoginProvider(
+                user?.providerData?.map { it.providerId }.orEmpty(),
+            )
             _joinDateMillis.value = normalizeProfileJoinDateMillis(user?.metadata?.creationTimestamp)
         }
     }

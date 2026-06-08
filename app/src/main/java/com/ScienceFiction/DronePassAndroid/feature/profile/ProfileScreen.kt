@@ -36,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ScienceFiction.DronePassAndroid.R
@@ -68,8 +69,11 @@ fun ProfileScreen(
     val syncStatus by viewModel.syncStatus.collectAsStateWithLifecycle()
     val lastBackupTime by viewModel.lastBackupTime.collectAsStateWithLifecycle()
     val lastRealtimeSyncTime by viewModel.lastRealtimeSyncTime.collectAsStateWithLifecycle()
+    val profileEmail by viewModel.profileEmail.collectAsStateWithLifecycle()
+    val profileLoginProvider by viewModel.profileLoginProvider.collectAsStateWithLifecycle()
     val joinDateMillis by viewModel.joinDateMillis.collectAsStateWithLifecycle()
     val activeShapeCount by viewModel.activeShapeCount.collectAsStateWithLifecycle()
+    val expiredShapeCount by viewModel.expiredShapeCount.collectAsStateWithLifecycle()
     val activeSketchCount by viewModel.activeSketchCount.collectAsStateWithLifecycle()
     val activeDroneCount by viewModel.activeDroneCount.collectAsStateWithLifecycle()
 
@@ -119,13 +123,22 @@ fun ProfileScreen(
         // ===== 1. 내 정보 섹션 =====
         SectionHeader(title = stringResource(R.string.profile_section_my_info))
 
-        joinDateMillis?.let { timestamp ->
-            ProfileInfoRow(
-                title = stringResource(R.string.profile_info_join_date),
-                value = formatJoinDate(timestamp),
-            )
-            HorizontalDivider(modifier = Modifier.padding(start = 16.dp))
-        }
+        ProfileInfoRow(
+            title = stringResource(R.string.profile_info_email),
+            value = profileEmail ?: stringResource(R.string.profile_info_email_hidden),
+        )
+        HorizontalDivider(modifier = Modifier.padding(start = 16.dp))
+        ProfileInfoRow(
+            title = stringResource(R.string.profile_info_login_method),
+            value = profileLoginProvider.displayText(),
+        )
+        HorizontalDivider(modifier = Modifier.padding(start = 16.dp))
+        ProfileInfoRow(
+            title = stringResource(R.string.profile_info_join_date),
+            value = joinDateMillis?.let(::formatJoinDate)
+                ?: stringResource(R.string.profile_info_join_unknown),
+        )
+        HorizontalDivider(modifier = Modifier.padding(start = 16.dp))
         ProfileInfoRow(
             title = stringResource(R.string.profile_info_shapes),
             value = stringResource(R.string.profile_info_count_unit, activeShapeCount),
@@ -139,6 +152,11 @@ fun ProfileScreen(
         ProfileInfoRow(
             title = stringResource(R.string.profile_info_drones),
             value = stringResource(R.string.profile_info_count_unit, activeDroneCount),
+        )
+        HorizontalDivider(modifier = Modifier.padding(start = 16.dp))
+        ProfileInfoRow(
+            title = stringResource(R.string.profile_info_expired_shapes),
+            value = stringResource(R.string.profile_info_count_unit, expiredShapeCount),
         )
         HorizontalDivider(modifier = Modifier.padding(start = 16.dp))
         SettingsItem(
@@ -398,12 +416,15 @@ private fun ProfileInfoRow(
         Text(
             text = title,
             style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.weight(1f),
         )
-        Spacer(modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.width(16.dp))
         Text(
             text = value,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.End,
+            modifier = Modifier.weight(1f),
         )
     }
 }
@@ -461,6 +482,14 @@ internal fun shouldEnableProfileManualBackup(isSyncing: Boolean): Boolean = !isS
 
 internal fun shouldEnableProfileAccountAction(isAccountActionInProgress: Boolean): Boolean =
     !isAccountActionInProgress
+
+private fun ProfileLoginProvider.displayText(): String {
+    return when (this) {
+        ProfileLoginProvider.APPLE -> "Apple"
+        ProfileLoginProvider.GOOGLE -> "Google"
+        ProfileLoginProvider.UNKNOWN -> "—"
+    }
+}
 
 private fun Long?.hasSyncTimestamp(): Boolean = this != null && this != 0L
 
