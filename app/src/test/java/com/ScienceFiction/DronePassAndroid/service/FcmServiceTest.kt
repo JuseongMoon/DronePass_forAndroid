@@ -78,6 +78,21 @@ class FcmServiceTest {
     }
 
     @Test
+    fun `FCM device id 로그는 release 에서 원문 식별자를 노출하지 않는다`() {
+        val deviceId = "secret-device-id"
+        val messages = listOf(
+            fcmDeviceIdCreatedLogMessage(deviceId),
+            fcmTokenStoredLogMessage(deviceId),
+            fcmTokenDeactivatedLogMessage(deviceId),
+        )
+
+        messages.forEach { message ->
+            assertFalse(message.contains(deviceId))
+            assertTrue(message.contains(deviceId.length.toString()))
+        }
+    }
+
+    @Test
     fun `FCM 데이터에서 camelCase shapeId 를 알림 포커스 대상으로 추출한다`() {
         val shapeId = extractNotificationShapeId(
             mapOf(

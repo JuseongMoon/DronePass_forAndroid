@@ -61,6 +61,15 @@ internal fun formatFcmAppVersion(versionName: String?, versionCode: Long?): Stri
 internal fun fcmTokenUpdatedLogMessage(token: String): String =
     "FCM 토큰 갱신: length=${token.length}"
 
+internal fun fcmDeviceIdCreatedLogMessage(deviceId: String): String =
+    "새 디바이스 ID 생성: length=${deviceId.length}"
+
+internal fun fcmTokenStoredLogMessage(deviceId: String): String =
+    "FCM 토큰 저장 성공: deviceIdLength=${deviceId.length}"
+
+internal fun fcmTokenDeactivatedLogMessage(deviceId: String): String =
+    "FCM 토큰 비활성화 성공: deviceIdLength=${deviceId.length}"
+
 /**
  * FCM 푸시 알림 서비스
  * Firebase Cloud Messaging을 통해 수신된 메시지를 처리하고 알림을 표시합니다.
@@ -144,7 +153,7 @@ class FcmService : FirebaseMessagingService() {
 
             deviceRef.update(deactivateData)
                 .addOnSuccessListener {
-                    Log.d(TAG, "FCM 토큰 비활성화 성공: deviceId=$deviceId")
+                    Log.d(TAG, fcmTokenDeactivatedLogMessage(deviceId))
                 }
                 .addOnFailureListener { e ->
                     Log.e(TAG, "FCM 토큰 비활성화 실패", e)
@@ -186,7 +195,7 @@ class FcmService : FirebaseMessagingService() {
 
             val deviceId = UUID.randomUUID().toString()
             prefs.edit().putString(FCM_DEVICE_ID_PREFERENCE_KEY, deviceId).apply()
-            Log.d(TAG, "새 디바이스 ID 생성: $deviceId")
+            Log.d(TAG, fcmDeviceIdCreatedLogMessage(deviceId))
             return deviceId
         }
 
@@ -227,7 +236,7 @@ class FcmService : FirebaseMessagingService() {
                     )
                     deviceRef.set(deviceData, SetOptions.merge())
                         .addOnSuccessListener {
-                            Log.d(TAG, "FCM 토큰 저장 성공: deviceId=$deviceId")
+                            Log.d(TAG, fcmTokenStoredLogMessage(deviceId))
                         }
                         .addOnFailureListener { e ->
                             Log.e(TAG, "FCM 토큰 저장 실패", e)
