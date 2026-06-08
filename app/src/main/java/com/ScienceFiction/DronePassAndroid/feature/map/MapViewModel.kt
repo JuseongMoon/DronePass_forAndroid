@@ -107,6 +107,7 @@ internal fun resolveShapeFocusCameraEvent(
 
 internal data class ShapeOverlayTapAction(
     val shapeId: String,
+    val cameraEvent: CameraEvent.MoveWithoutZoom,
 )
 
 internal fun resolveShapeOverlayTapAction(
@@ -115,6 +116,7 @@ internal fun resolveShapeOverlayTapAction(
     val shape = tappedShape ?: return null
     return ShapeOverlayTapAction(
         shapeId = shape.id,
+        cameraEvent = CameraEvent.MoveWithoutZoom(shape.baseCoordinate),
     )
 }
 
@@ -484,6 +486,7 @@ class MapViewModel @Inject constructor(
         _showShapeDetail.value = false
         viewModelScope.launch {
             _savedShapeFocusEvent.emit(action.shapeId)
+            _cameraEvent.emit(action.cameraEvent)
         }
     }
 
