@@ -18,7 +18,9 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -63,6 +65,7 @@ internal val DroneDropdownMenuItemVerticalPadding = 8.dp
 internal val DroneDropdownShadowElevation = 4.dp
 internal val DroneDropdownEmptyIconSize = 12.dp
 internal val DroneDropdownChevronIconSize = 10.dp
+internal val DroneDropdownTriggerSize = 32.dp
 internal val DroneDropdownTextSize = 14.sp
 @DrawableRes
 internal val DroneDropdownEmptyIconRes = R.drawable.ic_drone
@@ -94,10 +97,13 @@ fun DroneSelectionDropdown(
                 Surface(
                     shape = RoundedCornerShape(20.dp),
                     color = MaterialTheme.colorScheme.surface,
-                    shadowElevation = DroneDropdownShadowElevation
+                    shadowElevation = DroneDropdownShadowElevation,
+                    modifier = Modifier.height(DroneDropdownTriggerSize),
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .padding(horizontal = 12.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
@@ -138,7 +144,7 @@ fun DroneSelectionDropdown(
                 shape = CircleShape,
                 color = MaterialTheme.colorScheme.surface,
                 shadowElevation = DroneDropdownShadowElevation,
-                modifier = Modifier.size(32.dp)
+                modifier = Modifier.size(DroneDropdownTriggerSize)
             ) {
                 Box(
                     contentAlignment = Alignment.Center,
@@ -269,6 +275,7 @@ private fun DroneChip(
         shape = RoundedCornerShape(20.dp),
         color = MaterialTheme.colorScheme.surface,
         shadowElevation = DroneDropdownShadowElevation,
+        modifier = Modifier.height(DroneDropdownTriggerSize),
         border = if (isHighlighted)
             BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
         else
@@ -277,7 +284,8 @@ private fun DroneChip(
         Row(
             modifier = Modifier
                 .clickable(onClick = onClick)
-                .padding(horizontal = 12.dp, vertical = 8.dp),
+                .fillMaxHeight()
+                .padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {

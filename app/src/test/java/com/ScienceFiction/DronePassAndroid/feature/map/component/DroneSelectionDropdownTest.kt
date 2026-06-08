@@ -39,4 +39,9 @@ class DroneSelectionDropdownTest {
         assertEquals(14.sp, DroneDropdownTextSize)
         assertEquals(10.dp, DroneDropdownChevronIconSize)
     }
+
+    @Test
+    fun `드론 선택 버튼 높이는 오른쪽 드롭다운 원 지름과 같다`() {
+        assertEquals(32.dp, DroneDropdownTriggerSize)
+    }
 }
