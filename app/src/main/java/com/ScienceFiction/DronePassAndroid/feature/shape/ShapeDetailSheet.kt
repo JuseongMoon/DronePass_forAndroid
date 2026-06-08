@@ -13,6 +13,7 @@ import android.text.style.ClickableSpan
 import android.text.style.URLSpan
 import android.text.util.Linkify
 import android.view.View
+import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.TextView
@@ -600,6 +601,15 @@ internal val ShapeDetailMemoHeight = 180.dp
 internal const val ShapeDetailExternalMapSkipPartiallyExpanded = true
 internal const val ShapeDetailMemoWebSheetSkipPartiallyExpanded = true
 internal const val ShapeDetailMemoWebSheetHeightFraction = 0.92f
+internal const val ShapeDetailMemoWebJavaScriptEnabled = true
+internal const val ShapeDetailMemoWebDomStorageEnabled = true
+internal const val ShapeDetailMemoWebJavaScriptCanOpenWindowsAutomatically = false
+internal const val ShapeDetailMemoWebAllowFileAccess = false
+internal const val ShapeDetailMemoWebAllowContentAccess = false
+internal const val ShapeDetailMemoWebAllowFileAccessFromFileUrls = false
+internal const val ShapeDetailMemoWebAllowUniversalAccessFromFileUrls = false
+internal const val ShapeDetailMemoWebSafeBrowsingEnabled = true
+internal const val ShapeDetailMemoWebMixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
 
 @Composable
 private fun ShapeDetailCopyToast(
@@ -679,6 +689,7 @@ private fun MemoLinkifyView(
     )
 }
 
+@Suppress("DEPRECATION")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ShapeDetailMemoWebSheet(
@@ -726,8 +737,17 @@ private fun ShapeDetailMemoWebSheet(
                 factory = { context ->
                     WebView(context).apply {
                         webViewClient = WebViewClient()
-                        settings.javaScriptEnabled = true
-                        settings.domStorageEnabled = true
+                        settings.javaScriptEnabled = ShapeDetailMemoWebJavaScriptEnabled
+                        settings.domStorageEnabled = ShapeDetailMemoWebDomStorageEnabled
+                        settings.javaScriptCanOpenWindowsAutomatically =
+                            ShapeDetailMemoWebJavaScriptCanOpenWindowsAutomatically
+                        settings.allowFileAccess = ShapeDetailMemoWebAllowFileAccess
+                        settings.allowContentAccess = ShapeDetailMemoWebAllowContentAccess
+                        settings.allowFileAccessFromFileURLs = ShapeDetailMemoWebAllowFileAccessFromFileUrls
+                        settings.allowUniversalAccessFromFileURLs =
+                            ShapeDetailMemoWebAllowUniversalAccessFromFileUrls
+                        settings.safeBrowsingEnabled = ShapeDetailMemoWebSafeBrowsingEnabled
+                        settings.mixedContentMode = ShapeDetailMemoWebMixedContentMode
                         loadUrl(url)
                     }
                 },

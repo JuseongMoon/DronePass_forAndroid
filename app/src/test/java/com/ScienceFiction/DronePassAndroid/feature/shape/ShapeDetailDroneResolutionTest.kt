@@ -1,6 +1,7 @@
 package com.ScienceFiction.DronePassAndroid.feature.shape
 
 import android.text.util.Linkify
+import android.webkit.WebSettings
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.unit.dp
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
@@ -94,6 +95,19 @@ class ShapeDetailDroneResolutionTest {
         assertEquals(ShapeDetailMemoLinkAction.SYSTEM_INTENT, resolveShapeDetailMemoLinkAction("mailto:pilot@example.com"))
         assertTrue(ShapeDetailMemoWebSheetSkipPartiallyExpanded)
         assertEquals(0.92f, ShapeDetailMemoWebSheetHeightFraction, 0f)
+    }
+
+    @Test
+    fun `메모 웹 링크 WebView는 임의 URL에 대한 로컬 접근과 혼합 콘텐츠를 차단한다`() {
+        assertTrue(ShapeDetailMemoWebJavaScriptEnabled)
+        assertTrue(ShapeDetailMemoWebDomStorageEnabled)
+        assertFalse(ShapeDetailMemoWebJavaScriptCanOpenWindowsAutomatically)
+        assertFalse(ShapeDetailMemoWebAllowFileAccess)
+        assertFalse(ShapeDetailMemoWebAllowContentAccess)
+        assertFalse(ShapeDetailMemoWebAllowFileAccessFromFileUrls)
+        assertFalse(ShapeDetailMemoWebAllowUniversalAccessFromFileUrls)
+        assertTrue(ShapeDetailMemoWebSafeBrowsingEnabled)
+        assertEquals(WebSettings.MIXED_CONTENT_NEVER_ALLOW, ShapeDetailMemoWebMixedContentMode)
     }
 
     @Test
