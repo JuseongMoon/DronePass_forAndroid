@@ -116,6 +116,13 @@ keytool -genkey -v -keystore release.jks -keyalg RSA -keysize 2048 -validity 100
 
 Android 13 이상에서는 알림 권한을 허용해야 FCM/로컬 알림을 볼 수 있습니다. Android 12 이상에서는 정확한 알람 권한 상태에 따라 일출/일몰 알림 예약 동작이 달라질 수 있습니다.
 
+## 릴리스 보안 기준
+
+- Release 빌드에서는 R8 규칙으로 `android.util.Log` 호출을 제거합니다.
+- FCM token과 device id는 debug 로그에서도 원문을 출력하지 않습니다.
+- Android OS Auto Backup은 비활성화되어 있습니다. 앱 데이터 백업/동기화는 Firebase 흐름을 기준으로 검증합니다.
+- 메모 링크용 앱 내부 WebView는 로컬 파일 접근과 혼합 콘텐츠를 차단합니다.
+
 ## 문제 해결
 
 지도가 표시되지 않는 경우:

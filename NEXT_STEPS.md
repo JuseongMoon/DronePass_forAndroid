@@ -17,6 +17,8 @@
 
 최근 완료된 릴리스 하드닝:
 
+- `fbd90b1 fix: disable os backup for local app state`
+- `c19c9c7 fix: harden shape memo webview`
 - `7191dd8 fix: strip android logs from release builds`
 - `fbf4619 fix: avoid logging raw fcm device ids`
 - `eeaf6da docs: refresh android project README`
@@ -35,7 +37,6 @@
 - VWorld 레이어/상세/관할기관 연락처 캐시
 - 설정/프로필/앱 정보/패치노트/문서 시트
 - 알림 예약 로직과 부팅 후 재예약
-- 백업/데이터 추출 규칙
 
 수정 완료된 영역:
 
@@ -51,6 +52,8 @@
 - Weather info category selected 표시
 - FCM token/device id 원문 로그 제거
 - Release 빌드에서 `android.util.Log` 제거
+- 메모 링크 WebView 로컬 파일 접근/혼합 콘텐츠 차단
+- OS Auto Backup 비활성화와 백업/데이터 추출 규칙 방어적 exclude
 - README 최신화
 
 ## 3. 남은 필수 작업
@@ -68,7 +71,7 @@
 7. FCM 수신, 로컬 종료일 알림, 일출/일몰 알림
 8. 언어 변경, 한국 현지 기능 ON/OFF, VWorld 레이어 해제
 9. 패치노트/약관/개인정보 문서 로드
-10. 앱 삭제 후 재설치 또는 백업 복원 시 EncryptedPrefs 복구
+10. 앱 삭제 후 재설치 시 로그인/Firestore 동기화/FCM deviceId 재생성
 
 ### 3.2 운영 콘솔 설정
 
@@ -122,6 +125,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 - `:app:minifyReleaseWithR8`는 현재 성공합니다.
 - Naver Maps SDK와 Play Services Location에서 R8 warning이 여러 줄 출력될 수 있지만, 현재는 build failure가 아닙니다.
 - `assembleRelease`와 `bundleRelease`는 실제 release signing 설정 전까지 의도적으로 차단됩니다.
+- OS Auto Backup은 비활성화되어 있으며, 앱 데이터 백업/동기화는 Firebase 흐름 기준으로 검증합니다.
 
 ## 5. 다음에 바로 볼 후보
 
