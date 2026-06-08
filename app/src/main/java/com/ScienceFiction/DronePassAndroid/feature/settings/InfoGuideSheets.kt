@@ -18,6 +18,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Air
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Opacity
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Thermostat
@@ -513,17 +514,30 @@ private fun WeatherCategoryMenu(
             DroneCategory.entries.forEach { entry ->
                 DropdownMenuItem(
                     text = {
-                        Column {
-                            Text(
-                                text = stringResource(entry.labelRes),
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Medium,
-                            )
-                            Text(
-                                text = stringResource(entry.descriptionRes),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = stringResource(entry.labelRes),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Medium,
+                                )
+                                Text(
+                                    text = stringResource(entry.descriptionRes),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                            if (shouldShowWeatherCategoryMenuCheckmark(entry, category)) {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(16.dp),
+                                )
+                            }
                         }
                     },
                     onClick = {
@@ -1115,6 +1129,11 @@ internal fun weatherElementGuideItems(category: DroneCategory): List<WeatherElem
         ),
     )
 }
+
+internal fun shouldShowWeatherCategoryMenuCheckmark(
+    entry: DroneCategory,
+    selected: DroneCategory,
+): Boolean = entry == selected
 
 internal fun weatherGuideWindSpeedThresholds(category: DroneCategory): Pair<Double, Double> = when (category) {
     DroneCategory.TOY -> 7.0 to 9.0

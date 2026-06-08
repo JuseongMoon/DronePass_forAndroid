@@ -91,6 +91,22 @@ class InfoGuideSheetsTest {
     }
 
     @Test
+    fun `weather guide category menu marks selected category like iOS`() {
+        assertTrue(
+            shouldShowWeatherCategoryMenuCheckmark(
+                entry = DroneCategory.CLASS3,
+                selected = DroneCategory.CLASS3,
+            ),
+        )
+        assertFalse(
+            shouldShowWeatherCategoryMenuCheckmark(
+                entry = DroneCategory.CLASS4,
+                selected = DroneCategory.CLASS3,
+            ),
+        )
+    }
+
+    @Test
     fun `weather guide note parser matches iOS FormattedNoteText line rules`() {
         assertEquals(
             listOf(
