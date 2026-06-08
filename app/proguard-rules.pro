@@ -7,6 +7,16 @@
 -keepattributes SourceFile,LineNumberTable
 -renamesourcefileattribute SourceFile
 
+# ── Release Logging ──────────────────────────────────────────
+# Release 빌드에서는 사용자/동기화 식별자가 포함될 수 있는 android.util.Log 호출을 제거합니다.
+-assumenosideeffects class android.util.Log {
+    public static int v(...);
+    public static int d(...);
+    public static int i(...);
+    public static int w(...);
+    public static int e(...);
+}
+
 # ── Hilt / Dagger ────────────────────────────────────────────
 # Hilt가 생성한 컴포넌트 및 모듈을 유지합니다.
 -keep class dagger.hilt.** { *; }
