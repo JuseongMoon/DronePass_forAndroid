@@ -12,11 +12,12 @@
 |---|---|
 | 워킹 트리 | clean |
 | 주요 검증 | `:app:testDebugUnitTest`, `:app:assembleDebug`, `:app:minifyReleaseWithR8` 통과 |
-| Release signing | 실제 `keystore.properties` 없으면 `assembleRelease`/`bundleRelease`가 의도적으로 실패 |
+| Release signing | 실제 `keystore.properties` 없으면 `assembleRelease`/`bundleRelease`가 의도적으로 실패함을 확인 |
 | 남은 성격 | 실기기 회귀, 콘솔/스토어 운영 설정, 최종 iOS 동기화 검증 |
 
 최근 완료된 릴리스 하드닝:
 
+- `674a5b8 fix: keep shape overlay tap aligned with ios`
 - `6ee40a3 fix: avoid api keys in debug http logs`
 - `fbd90b1 fix: disable os backup for local app state`
 - `c19c9c7 fix: harden shape memo webview`
@@ -51,6 +52,7 @@
 - KP forecast auto refresh
 - Weather chart current markers
 - Weather info category selected 표시
+- 지도 도형 오버레이 탭을 iOS처럼 저장 목록 포커스만 수행하도록 보정
 - FCM token/device id 원문 로그 제거
 - Release 빌드에서 `android.util.Log` 제거
 - Debug HTTP 로그에서 API key 노출 방지
@@ -126,7 +128,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 
 - `:app:minifyReleaseWithR8`는 현재 성공합니다.
 - Naver Maps SDK와 Play Services Location에서 R8 warning이 여러 줄 출력될 수 있지만, 현재는 build failure가 아닙니다.
-- `assembleRelease`와 `bundleRelease`는 실제 release signing 설정 전까지 의도적으로 차단됩니다.
+- `assembleRelease`와 `bundleRelease`는 실제 release signing 설정 전까지 의도적으로 차단되며, 2026-06-08에 실패 경로를 재확인했습니다.
 - OS Auto Backup은 비활성화되어 있으며, 앱 데이터 백업/동기화는 Firebase 흐름 기준으로 검증합니다.
 
 ## 5. 다음에 바로 볼 후보
