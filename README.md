@@ -79,6 +79,13 @@ Firebase 사용을 위해 `app/google-services.json`도 필요합니다.
 keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android
 ```
 
+현재 로컬 debug keystore 지문:
+
+- SHA-1: `30:C4:5A:F9:91:83:D9:6C:F7:6C:41:31:9E:DA:82:E7:59:8F:20:86`
+- SHA-256: `BC:5A:36:F1:68:B8:B9:F9:9A:95:14:D8:5F:35:00:37:40:90:B9:97:4C:88:27:28:7E:4A:0A:61:91:FB:B2:CB`
+
+Release SHA-1/SHA-256은 실제 release keystore 구성 후 같은 방식으로 별도 산출하여 Firebase/Naver Cloud Console에 등록해야 합니다.
+
 ## 빌드와 테스트
 
 Android Studio에서 Gradle Sync 후 실행하거나, 터미널에서 다음 명령을 사용합니다.

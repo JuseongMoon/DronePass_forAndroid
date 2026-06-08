@@ -109,6 +109,10 @@
 - `local.properties`의 `WEB_CLIENT_ID`는 현재 비어 있음
   - Android Google 로그인은 이 값이 설정되어야 동작함
   - 값이 비어 있으면 앱은 Google 로그인 시 명시적인 설정 누락 오류를 표시하도록 보강됨
+- 현재 로컬 debug keystore 지문
+  - SHA-1: `30:C4:5A:F9:91:83:D9:6C:F7:6C:41:31:9E:DA:82:E7:59:8F:20:86`
+  - SHA-256: `BC:5A:36:F1:68:B8:B9:F9:9A:95:14:D8:5F:35:00:37:40:90:B9:97:4C:88:27:28:7E:4A:0A:61:91:FB:B2:CB`
+- Release SHA-1/SHA-256은 실제 release keystore 구성 후 별도 산출 필요
 
 ### 3.3 Release signing
 
