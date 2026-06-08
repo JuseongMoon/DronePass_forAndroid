@@ -1,4 +1,5 @@
 import java.util.Properties
+import org.gradle.api.GradleException
 
 plugins {
     alias(libs.plugins.android.application)
@@ -19,13 +20,33 @@ val localProperties = Properties().apply {
 }
 
 // keystore.properties 에서 Release 서명 정보 로드 (CI/로컬 모두 지원)
-// 파일이 없으면 release 빌드는 debug 키로 폴백한다. Play Store 출시 전 반드시 추가 필요.
 val keystoreProperties = Properties().apply {
     val keystorePropertiesFile = rootProject.file("keystore.properties")
     if (keystorePropertiesFile.exists()) {
         load(keystorePropertiesFile.inputStream())
     }
 }
+
+val releaseStoreFilePath = keystoreProperties.getProperty("storeFile")
+    ?.trim()
+    ?.takeIf { it.isNotEmpty() }
+val releaseStoreFile = releaseStoreFilePath?.let { rootProject.file(it) }
+val releaseStorePassword = keystoreProperties.getProperty("storePassword")
+    ?.trim()
+    ?.takeIf { it.isNotEmpty() && it != "YOUR_STORE_PASSWORD" }
+val releaseKeyAlias = keystoreProperties.getProperty("keyAlias")
+    ?.trim()
+    ?.takeIf { it.isNotEmpty() && it != "YOUR_KEY_ALIAS" }
+val releaseKeyPassword = keystoreProperties.getProperty("keyPassword")
+    ?.trim()
+    ?.takeIf { it.isNotEmpty() && it != "YOUR_KEY_PASSWORD" }
+val hasReleaseSigningConfig = releaseStoreFile?.exists() == true &&
+    releaseStorePassword != null &&
+    releaseKeyAlias != null &&
+    releaseKeyPassword != null
+val releaseSigningErrorMessage =
+    "Release signing is not configured. Copy keystore.properties.example to " +
+        "keystore.properties, fill the real signing values, and make sure storeFile exists."
 
 android {
     namespace = "com.ScienceFiction.DronePassAndroid"
@@ -53,18 +74,13 @@ android {
     }
 
     signingConfigs {
-        // Release 서명 설정. keystore.properties + 키스토어 파일이 존재할 때만 생성한다.
-        // 파일이 없으면 buildTypes.release 가 debug 키로 폴백 (Play Store 업로드 불가).
-        val hasReleaseKeystore = keystoreProperties.getProperty("storeFile")?.let { path ->
-            rootProject.file(path).exists()
-        } ?: false
-
-        if (hasReleaseKeystore) {
+        // Release 서명 설정. keystore.properties + 키스토어 파일이 완전할 때만 생성한다.
+        if (hasReleaseSigningConfig) {
             create("release") {
-                storeFile = rootProject.file(keystoreProperties.getProperty("storeFile"))
-                storePassword = keystoreProperties.getProperty("storePassword")
-                keyAlias = keystoreProperties.getProperty("keyAlias")
-                keyPassword = keystoreProperties.getProperty("keyPassword")
+                storeFile = releaseStoreFile
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
             }
         }
     }
@@ -85,9 +101,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            // keystore.properties 가 있으면 release 서명 사용, 없으면 debug 폴백
             signingConfig = signingConfigs.findByName("release")
-                ?: signingConfigs.getByName("debug")
         }
     }
     compileOptions {
@@ -181,4 +195,23 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+}
+
+val validateReleaseSigning by tasks.registering {
+    doLast {
+        if (!hasReleaseSigningConfig) {
+            throw GradleException(releaseSigningErrorMessage)
+        }
+    }
+}
+
+tasks.matching { it.name == "assembleRelease" || it.name == "bundleRelease" }
+    .configureEach {
+        dependsOn(validateReleaseSigning)
+    }
+
+gradle.taskGraph.whenReady {
+    if (!hasReleaseSigningConfig && allTasks.any { it.name == "assembleRelease" || it.name == "bundleRelease" }) {
+        throw GradleException(releaseSigningErrorMessage)
+    }
 }
