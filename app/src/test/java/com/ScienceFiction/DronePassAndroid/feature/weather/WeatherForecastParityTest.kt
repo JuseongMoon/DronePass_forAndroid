@@ -128,6 +128,20 @@ class WeatherForecastParityTest {
     }
 
     @Test
+    fun `weather charts show iOS current time marker only inside the forecast range`() {
+        val dataPoints = listOf(
+            10_000L to 1.0,
+            20_000L to 2.0,
+            30_000L to 3.0,
+        )
+
+        assertEquals(20_000L, resolveWeatherChartCurrentTimeMarkerMs(dataPoints, 20_000L))
+        assertNull(resolveWeatherChartCurrentTimeMarkerMs(dataPoints, 9_999L))
+        assertNull(resolveWeatherChartCurrentTimeMarkerMs(dataPoints, 30_001L))
+        assertNull(resolveWeatherChartCurrentTimeMarkerMs(emptyList(), 20_000L))
+    }
+
+    @Test
     fun `weather drone category defaults to iOS class3`() {
         assertEquals(DroneCategory.CLASS3, DroneCategory.IosDefault)
         assertEquals(DroneCategory.CLASS3, DroneCategory.fromStoredValue("CLASS3"))

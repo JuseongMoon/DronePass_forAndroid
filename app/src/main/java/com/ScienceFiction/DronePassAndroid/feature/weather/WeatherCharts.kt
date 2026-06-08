@@ -344,7 +344,8 @@ internal fun WeatherLineChart(
 @Composable
 private fun PrecipitationBarChart(
     dataPoints: List<Pair<Long, Double>>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    currentTimeMs: Long? = null,
 ) {
     if (dataPoints.isEmpty()) return
 
@@ -442,6 +443,19 @@ private fun PrecipitationBarChart(
             labelTime += threeHoursMs
         }
 
+        // 현재 시간 빨강 수직선 (iOS WeatherForecastView RuleMark 정합)
+        currentTimeMs?.let { now ->
+            if (now in dataPoints.first().first..dataPoints.last().first) {
+                val nowX = toScreenX(now)
+                drawLine(
+                    color = Color(0xFFFF0000),
+                    start = Offset(nowX, topPadding),
+                    end = Offset(nowX, topPadding + chartHeight),
+                    strokeWidth = 2f,
+                )
+            }
+        }
+
         // 바 그리기
         val barWidthRatio = 0.6f
         val totalBars = dataPoints.size
@@ -496,6 +510,7 @@ private fun PrecipitationBarChart(
 fun TemperatureChart(
     hourlyData: List<HourlyWeatherData>,
     modifier: Modifier = Modifier,
+    nowMillis: Long = System.currentTimeMillis(),
 ) {
     val dataPoints = hourlyData.map { it.time to it.temperature }
     ChartCard(
@@ -507,7 +522,8 @@ fun TemperatureChart(
             lineColor = Color(0xFFFF6B35),
             fillAlpha = 0.15f,
             yAxisLabel = "\u00B0C",
-            formatValue = { String.format("%.0f\u00B0", it) }
+            formatValue = { String.format("%.0f\u00B0", it) },
+            currentTimeMs = resolveWeatherChartCurrentTimeMarkerMs(dataPoints, nowMillis),
         )
     }
 }
@@ -517,6 +533,7 @@ fun WindSpeedChart(
     hourlyData: List<HourlyWeatherData>,
     category: DroneCategory,
     modifier: Modifier = Modifier,
+    nowMillis: Long = System.currentTimeMillis(),
 ) {
     val dataPoints = hourlyData.map { it.time to it.windSpeed }
     val (cautionThreshold, dangerThreshold) = iosWindSpeedThresholds(category)
@@ -531,7 +548,8 @@ fun WindSpeedChart(
             warningThreshold = cautionThreshold,
             dangerThreshold = dangerThreshold,
             yAxisLabel = "m/s",
-            formatValue = { String.format(Locale.ROOT, "%.1f", it) }
+            formatValue = { String.format(Locale.ROOT, "%.1f", it) },
+            currentTimeMs = resolveWeatherChartCurrentTimeMarkerMs(dataPoints, nowMillis),
         )
     }
 }
@@ -541,6 +559,7 @@ fun GustDifferenceChart(
     hourlyData: List<HourlyWeatherData>,
     category: DroneCategory,
     modifier: Modifier = Modifier,
+    nowMillis: Long = System.currentTimeMillis(),
 ) {
     val dataPoints = hourlyData.map { it.time to it.gustDifference }
     val (cautionThreshold, dangerThreshold) = iosGustDifferenceThresholds(category)
@@ -555,7 +574,8 @@ fun GustDifferenceChart(
             warningThreshold = cautionThreshold,
             dangerThreshold = dangerThreshold,
             yAxisLabel = "m/s",
-            formatValue = { String.format(Locale.ROOT, "%.1f", it) }
+            formatValue = { String.format(Locale.ROOT, "%.1f", it) },
+            currentTimeMs = resolveWeatherChartCurrentTimeMarkerMs(dataPoints, nowMillis),
         )
     }
 }
@@ -564,6 +584,7 @@ fun GustDifferenceChart(
 fun PrecipitationChart(
     hourlyData: List<HourlyWeatherData>,
     modifier: Modifier = Modifier,
+    nowMillis: Long = System.currentTimeMillis(),
 ) {
     val dataPoints = hourlyData.map { it.time to it.precipitation }
     ChartCard(
@@ -571,7 +592,8 @@ fun PrecipitationChart(
         modifier = modifier,
     ) {
         PrecipitationBarChart(
-            dataPoints = dataPoints
+            dataPoints = dataPoints,
+            currentTimeMs = resolveWeatherChartCurrentTimeMarkerMs(dataPoints, nowMillis),
         )
     }
 }
@@ -580,6 +602,7 @@ fun PrecipitationChart(
 fun VisibilityChart(
     hourlyData: List<HourlyWeatherData>,
     modifier: Modifier = Modifier,
+    nowMillis: Long = System.currentTimeMillis(),
 ) {
     val dataPoints = hourlyData.map { it.time to it.visibility }
     ChartCard(
@@ -593,7 +616,8 @@ fun VisibilityChart(
             warningThreshold = IosVisibilityGoodKm,
             dangerThreshold = IosVisibilityPoorKm,
             yAxisLabel = "km",
-            formatValue = { String.format(Locale.ROOT, "%.0f", it) }
+            formatValue = { String.format(Locale.ROOT, "%.0f", it) },
+            currentTimeMs = resolveWeatherChartCurrentTimeMarkerMs(dataPoints, nowMillis),
         )
     }
 }
@@ -602,6 +626,7 @@ fun VisibilityChart(
 fun CriChart(
     hourlyData: List<HourlyWeatherData>,
     modifier: Modifier = Modifier,
+    nowMillis: Long = System.currentTimeMillis(),
 ) {
     val dataPoints = hourlyData.map { it.time to it.cri }
     ChartCard(
@@ -615,9 +640,18 @@ fun CriChart(
             warningThreshold = IosCriModerate,
             dangerThreshold = IosCriHigh,
             yAxisLabel = "%",
-            formatValue = { String.format(Locale.ROOT, "%.0f", it) }
+            formatValue = { String.format(Locale.ROOT, "%.0f", it) },
+            currentTimeMs = resolveWeatherChartCurrentTimeMarkerMs(dataPoints, nowMillis),
         )
     }
+}
+
+internal fun resolveWeatherChartCurrentTimeMarkerMs(
+    dataPoints: List<Pair<Long, Double>>,
+    nowMillis: Long = System.currentTimeMillis(),
+): Long? {
+    if (dataPoints.isEmpty()) return null
+    return nowMillis.takeIf { it in dataPoints.first().first..dataPoints.last().first }
 }
 
 // ─── 차트 Card 래퍼 ────────────────────────────────────────────
