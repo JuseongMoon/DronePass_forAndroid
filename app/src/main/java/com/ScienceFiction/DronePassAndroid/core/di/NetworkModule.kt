@@ -27,11 +27,32 @@ import javax.inject.Singleton
 object NetworkModule {
 
     /**
-     * 디버그 빌드에서만 본문(BODY) 로깅. Release 에서는 NONE 으로 API 키/PII 노출을 차단.
+     * Naver Maps APIGW 헤더명.
      */
-    private fun httpLoggingLevel(): HttpLoggingInterceptor.Level =
-        if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY
+    internal const val NaverApiKeyIdHeader = "X-NCP-APIGW-API-KEY-ID"
+    internal const val NaverApiKeyHeader = "X-NCP-APIGW-API-KEY"
+
+    /**
+     * Naver API는 인증값이 header로 전달되므로 debug 로깅 시에도 header redaction을 고정한다.
+     */
+    internal fun naverHttpLoggingInterceptor(
+        logger: HttpLoggingInterceptor.Logger = HttpLoggingInterceptor.Logger.DEFAULT,
+        debug: Boolean = BuildConfig.DEBUG,
+    ): HttpLoggingInterceptor = HttpLoggingInterceptor(logger).apply {
+        redactHeader(NaverApiKeyIdHeader)
+        redactHeader(NaverApiKeyHeader)
+        level = if (debug) HttpLoggingInterceptor.Level.BODY
         else HttpLoggingInterceptor.Level.NONE
+    }
+
+    /**
+     * VWorld key는 query parameter로 전달되어 OkHttp 로거가 안전하게 redaction할 수 없다.
+     */
+    internal fun genericHttpLoggingInterceptor(
+        logger: HttpLoggingInterceptor.Logger = HttpLoggingInterceptor.Logger.DEFAULT,
+    ): HttpLoggingInterceptor = HttpLoggingInterceptor(logger).apply {
+        level = HttpLoggingInterceptor.Level.NONE
+    }
 
     /**
      * Naver Maps APIGW 전용 OkHttpClient.
@@ -47,12 +68,12 @@ object NetworkModule {
             .readTimeout(30, TimeUnit.SECONDS)
             .addInterceptor { chain ->
                 val request = chain.request().newBuilder()
-                    .addHeader("X-NCP-APIGW-API-KEY-ID", BuildConfig.NAVER_MAP_CLIENT_ID)
-                    .addHeader("X-NCP-APIGW-API-KEY", BuildConfig.NAVER_MAP_CLIENT_SECRET)
+                    .addHeader(NaverApiKeyIdHeader, BuildConfig.NAVER_MAP_CLIENT_ID)
+                    .addHeader(NaverApiKeyHeader, BuildConfig.NAVER_MAP_CLIENT_SECRET)
                     .build()
                 chain.proceed(request)
             }
-            .addInterceptor(HttpLoggingInterceptor().apply { level = httpLoggingLevel() })
+            .addInterceptor(naverHttpLoggingInterceptor())
             .build()
     }
 
@@ -66,11 +87,7 @@ object NetworkModule {
         return OkHttpClient.Builder()
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
-            .addInterceptor(HttpLoggingInterceptor().apply {
-                // 범용 클라이언트는 BODY 까지는 필요 없고 BASIC(요청 라인) 정도만.
-                level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BASIC
-                        else HttpLoggingInterceptor.Level.NONE
-            })
+            .addInterceptor(genericHttpLoggingInterceptor())
             .build()
     }
 
