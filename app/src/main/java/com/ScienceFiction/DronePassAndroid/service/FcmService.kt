@@ -58,6 +58,9 @@ internal fun formatFcmAppVersion(versionName: String?, versionCode: Long?): Stri
     return "$version ($build)"
 }
 
+internal fun fcmTokenUpdatedLogMessage(token: String): String =
+    "FCM 토큰 갱신: length=${token.length}"
+
 /**
  * FCM 푸시 알림 서비스
  * Firebase Cloud Messaging을 통해 수신된 메시지를 처리하고 알림을 표시합니다.
@@ -263,7 +266,7 @@ class FcmService : FirebaseMessagingService() {
      */
     override fun onNewToken(token: String) {
         super.onNewToken(token)
-        Log.d(TAG, "FCM 토큰 갱신: $token")
+        Log.d(TAG, fcmTokenUpdatedLogMessage(token))
         saveTokenToFirestore(applicationContext, token)
     }
 

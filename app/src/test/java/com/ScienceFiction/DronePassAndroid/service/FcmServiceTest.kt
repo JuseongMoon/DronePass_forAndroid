@@ -69,6 +69,15 @@ class FcmServiceTest {
     }
 
     @Test
+    fun `FCM token 갱신 로그는 release 에서 원문 토큰을 노출하지 않는다`() {
+        val token = "secret-fcm-token"
+        val message = fcmTokenUpdatedLogMessage(token)
+
+        assertFalse(message.contains(token))
+        assertTrue(message.contains("length=${token.length}"))
+    }
+
+    @Test
     fun `FCM 데이터에서 camelCase shapeId 를 알림 포커스 대상으로 추출한다`() {
         val shapeId = extractNotificationShapeId(
             mapOf(
