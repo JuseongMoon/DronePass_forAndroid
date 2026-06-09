@@ -20,8 +20,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredHeight
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
@@ -68,6 +69,7 @@ internal val DroneDropdownChevronIconSize = 10.dp
 internal val DroneDropdownTriggerDiameter = 32.dp
 internal val DroneDropdownSelectionButtonHeight = DroneDropdownTriggerDiameter
 internal val DroneDropdownTriggerSize = DroneDropdownTriggerDiameter
+internal val DroneDropdownControlVerticalAlignment: Alignment.Vertical = Alignment.Top
 internal val DroneDropdownTextSize = 14.sp
 @DrawableRes
 internal val DroneDropdownEmptyIconRes = R.drawable.ic_drone
@@ -90,7 +92,7 @@ fun DroneSelectionDropdown(
 
     Box(modifier = modifier) {
         Row(
-            verticalAlignment = Alignment.Top,
+            verticalAlignment = DroneDropdownControlVerticalAlignment,
             modifier = Modifier.onGloballyPositioned { coordinates ->
                 triggerHeight = coordinates.size.height
             }
@@ -101,8 +103,8 @@ fun DroneSelectionDropdown(
                     color = MaterialTheme.colorScheme.surface,
                     shadowElevation = DroneDropdownShadowElevation,
                     modifier = Modifier
-                        .height(DroneDropdownSelectionButtonHeight)
-                        .align(Alignment.Top),
+                        .requiredHeight(DroneDropdownSelectionButtonHeight)
+                        .align(DroneDropdownControlVerticalAlignment),
                 ) {
                     Row(
                         modifier = Modifier
@@ -130,9 +132,10 @@ fun DroneSelectionDropdown(
                 FlowRow(
                     modifier = Modifier
                         .weight(1f, fill = false)
-                        .align(Alignment.Top),
+                        .align(DroneDropdownControlVerticalAlignment),
                     horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    itemVerticalAlignment = DroneDropdownControlVerticalAlignment,
                 ) {
                     selectedDrones.forEach { drone ->
                         DroneChip(
@@ -150,8 +153,8 @@ fun DroneSelectionDropdown(
                 color = MaterialTheme.colorScheme.surface,
                 shadowElevation = DroneDropdownShadowElevation,
                 modifier = Modifier
-                    .size(DroneDropdownTriggerDiameter)
-                    .align(Alignment.Top)
+                    .requiredSize(DroneDropdownTriggerSize)
+                    .align(DroneDropdownControlVerticalAlignment)
             ) {
                 Box(
                     contentAlignment = Alignment.Center,
@@ -284,7 +287,7 @@ private fun DroneChip(
         shape = RoundedCornerShape(20.dp),
         color = MaterialTheme.colorScheme.surface,
         shadowElevation = DroneDropdownShadowElevation,
-        modifier = Modifier.height(DroneDropdownSelectionButtonHeight),
+        modifier = Modifier.requiredHeight(DroneDropdownSelectionButtonHeight),
         border = if (isHighlighted)
             BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
         else

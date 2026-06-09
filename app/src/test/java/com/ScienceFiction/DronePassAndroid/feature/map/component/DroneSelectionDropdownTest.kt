@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.map.component
 
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ScienceFiction.DronePassAndroid.R
@@ -45,5 +46,10 @@ class DroneSelectionDropdownTest {
         assertEquals(32.dp, DroneDropdownTriggerDiameter)
         assertEquals(DroneDropdownTriggerDiameter, DroneDropdownSelectionButtonHeight)
         assertEquals(DroneDropdownTriggerDiameter, DroneDropdownTriggerSize)
+    }
+
+    @Test
+    fun `드론 선택 버튼과 오른쪽 드롭다운 원은 같은 상단 정렬을 쓴다`() {
+        assertEquals(Alignment.Top, DroneDropdownControlVerticalAlignment)
     }
 }
