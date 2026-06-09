@@ -63,6 +63,12 @@ class RealtimeSyncManagerTest {
     }
 
     @Test
+    fun `drone collection listener schedules server snapshots because iOS does not update metadata`() {
+        assertEquals(true, shouldScheduleDroneCollectionSync(hasPendingWrites = false))
+        assertEquals(false, shouldScheduleDroneCollectionSync(hasPendingWrites = true))
+    }
+
+    @Test
     fun `realtime sync restart keeps active listener user first`() {
         assertEquals(
             "listening-user",

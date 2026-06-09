@@ -58,17 +58,22 @@ internal fun shouldScheduleRealtimeSync(
     return serverLastModified > (lastSyncTime ?: Long.MIN_VALUE)
 }
 
+internal fun shouldScheduleDroneCollectionSync(hasPendingWrites: Boolean): Boolean {
+    return !hasPendingWrites
+}
+
 /**
  * Firestore 실시간 동기화 매니저
  *
- * Firestore의 metadata/server 및 metadata/sketchServer 문서에 SnapshotListener를 등록하여
+ * Firestore의 metadata/server, drones 컬렉션, metadata/sketchServer 에 SnapshotListener를 등록하여
  * 서버 데이터 변경을 감지하고 로컬 데이터와 동기화합니다.
  *
  * iOS의 RealtimeSyncManager.swift와 동일한 패턴:
  * - 2초 디바운싱
  * - 자신의 변경에 의한 트리거 스킵 (서버 lastModified <= 마지막 동기화 시각)
  * - 최대 3회 재시도 (5초, 10초, 15초 간격)
- * - Shape/Drone용 metadata/server 리스너 + Sketch용 metadata/sketchServer 리스너
+ * - Shape용 metadata/server 리스너 + iOS DroneFirebaseStore 정합용 drones 컬렉션 리스너
+ * - Sketch용 metadata/sketchServer 리스너
  */
 @Singleton
 class RealtimeSyncManager @Inject constructor(
@@ -90,8 +95,11 @@ class RealtimeSyncManager @Inject constructor(
         private const val BASE_RETRY_DELAY_MS = 5000L
     }
 
-    /** Firestore 스냅샷 리스너 등록 참조 (Shape/Drone용 metadata/server) */
+    /** Firestore 스냅샷 리스너 등록 참조 (Shape용 metadata/server) */
     private var metadataListener: ListenerRegistration? = null
+
+    /** iOS DroneFirebaseStore 는 metadata/server 를 갱신하지 않으므로 drones 컬렉션도 직접 감시한다. */
+    private var droneCollectionListener: ListenerRegistration? = null
 
     /** Firestore 스냅샷 리스너 등록 참조 (Sketch용 metadata/sketchServer) */
     private var sketchMetadataListener: ListenerRegistration? = null
@@ -143,15 +151,21 @@ class RealtimeSyncManager @Inject constructor(
     /**
      * Firestore SnapshotListener 시작
      *
-     * 두 개의 리스너를 설정합니다:
-     * 1. users/{userId}/metadata/server - Shape/Drone 변경 감시
-     * 2. users/{userId}/metadata/sketchServer - Sketch 변경 감시
+     * 세 개의 리스너를 설정합니다:
+     * 1. users/{userId}/metadata/server - Shape 변경 및 Android Drone metadata 감시
+     * 2. users/{userId}/drones - iOS DroneFirebaseStore 변경 감시
+     * 3. users/{userId}/metadata/sketchServer - Sketch 변경 감시
      *
      * @param userId 감시할 사용자 ID
      */
     fun startListening(userId: String) {
         // 중복 리스너 방지: 이미 동일 userId로 리스닝 중이면 무시
-        if (currentListeningUserId == userId && metadataListener != null) {
+        if (
+            currentListeningUserId == userId &&
+            metadataListener != null &&
+            droneCollectionListener != null &&
+            sketchMetadataListener != null
+        ) {
             Log.d(TAG, "이미 userId=$userId 에 대해 리스닝 중입니다.")
             return
         }
@@ -165,11 +179,14 @@ class RealtimeSyncManager @Inject constructor(
         // 1. Shape/Drone 메타데이터 리스너 설정
         setupShapeMetadataListener(userId)
 
-        // 2. Sketch 메타데이터 리스너 설정
+        // 2. iOS 드론 변경 감지를 위한 컬렉션 리스너 설정
+        setupDroneCollectionListener(userId)
+
+        // 3. Sketch 메타데이터 리스너 설정
         setupSketchMetadataListener(userId)
 
         _isRealtimeSyncEnabled.value = true
-        Log.d(TAG, "SnapshotListener 설정 완료 (Shape/Drone + Sketch)")
+        Log.d(TAG, "SnapshotListener 설정 완료 (Shape metadata + Drone collection + Sketch)")
     }
 
     /**
@@ -210,14 +227,36 @@ class RealtimeSyncManager @Inject constructor(
                         return@launch
                     }
 
-                    // 디바운싱: 이전 Job 취소 후 2초 대기
-                    debounceJob?.cancel()
-                    debounceJob = scope.launch {
-                        delay(DEBOUNCE_DELAY_MS)
-                        performShapeAndDroneSync()
-                    }
+                    scheduleShapeAndDroneSyncDebounced()
                 }
             }
+        }
+    }
+
+    /**
+     * iOS DroneFirebaseStore.save/delete 는 metadata/server 를 갱신하지 않고 drones 컬렉션만 바꾼다.
+     * Android metadata 리스너만으로는 iOS 드론-only 변경을 실시간으로 받을 수 없으므로 컬렉션을 직접 감시한다.
+     */
+    private fun setupDroneCollectionListener(userId: String) {
+        val collectionRef = firestore
+            .collection("users")
+            .document(userId)
+            .collection("drones")
+
+        droneCollectionListener = collectionRef.addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                Log.e(TAG, "Drone 컬렉션 SnapshotListener 오류", error)
+                _syncState.value = SyncState.Error(error.message ?: "알 수 없는 오류")
+                return@addSnapshotListener
+            }
+
+            if (snapshot == null) return@addSnapshotListener
+            if (!shouldScheduleDroneCollectionSync(snapshot.metadata.hasPendingWrites())) {
+                Log.d(TAG, "로컬 pending write 이므로 Drone 컬렉션 동기화를 건너뜁니다.")
+                return@addSnapshotListener
+            }
+
+            scheduleShapeAndDroneSyncDebounced()
         }
     }
 
@@ -266,6 +305,14 @@ class RealtimeSyncManager @Inject constructor(
                     }
                 }
             }
+        }
+    }
+
+    private fun scheduleShapeAndDroneSyncDebounced() {
+        debounceJob?.cancel()
+        debounceJob = scope.launch {
+            delay(DEBOUNCE_DELAY_MS)
+            performShapeAndDroneSync()
         }
     }
 
@@ -416,6 +463,9 @@ class RealtimeSyncManager @Inject constructor(
         metadataListener = null
         debounceJob?.cancel()
         debounceJob = null
+
+        droneCollectionListener?.remove()
+        droneCollectionListener = null
 
         // Sketch 리스너 제거
         sketchMetadataListener?.remove()

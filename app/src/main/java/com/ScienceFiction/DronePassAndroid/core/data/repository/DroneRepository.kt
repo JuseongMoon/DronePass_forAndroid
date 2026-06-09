@@ -2,13 +2,16 @@ package com.ScienceFiction.DronePassAndroid.core.data.repository
 
 import android.content.Context
 import android.util.Log
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.dao.DroneDao
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.mapper.toDomain
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.mapper.toEntity
 import com.ScienceFiction.DronePassAndroid.core.data.remote.firebase.DroneFirebaseStore
+import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncPreferenceKeys
+import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncMergeResult
 import com.ScienceFiction.DronePassAndroid.core.data.sync.filterServerNewer
-import com.ScienceFiction.DronePassAndroid.core.data.sync.mergeLWW
 import com.ScienceFiction.DronePassAndroid.core.data.sync.shouldUpdateServerMetadataAfterFullSync
 import com.ScienceFiction.DronePassAndroid.core.util.compareIosLocalizedStandardStrings
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
@@ -17,15 +20,57 @@ import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.util.Locale
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
+
+internal fun shouldKeepLocalDroneMissingOnServer(
+    localDroneUpdatedAt: Long,
+    lastSyncTime: Long?,
+): Boolean {
+    return lastSyncTime == null || localDroneUpdatedAt > lastSyncTime
+}
+
+internal fun mergeDronesForFullSync(
+    localDrones: List<DroneModel>,
+    serverDrones: List<DroneModel>,
+    lastSyncTime: Long?,
+): SyncMergeResult<DroneModel> {
+    val serverById = serverDrones.associateBy { it.id }
+    val localById = localDrones.associateBy { it.id }
+    val allIds = serverById.keys + localById.keys
+
+    val merged = allIds.mapNotNull { id ->
+        val local = localById[id]
+        val server = serverById[id]
+        when {
+            local == null -> server!!
+            server == null -> local.takeIf {
+                shouldKeepLocalDroneMissingOnServer(
+                    localDroneUpdatedAt = it.updatedAt,
+                    lastSyncTime = lastSyncTime,
+                )
+            }
+            server.updatedAt >= local.updatedAt -> server
+            else -> local
+        }
+    }
+
+    val toUpload = merged.filter { drone ->
+        val server = serverById[drone.id]
+        server == null || drone.updatedAt > server.updatedAt
+    }
+
+    return SyncMergeResult(merged, toUpload)
+}
 
 @Singleton
 class DroneRepository @Inject constructor(
     private val droneDao: DroneDao,
     private val droneFirebaseStore: DroneFirebaseStore,
     private val auth: FirebaseAuth,
+    private val dataStore: DataStore<Preferences>,
     @ApplicationContext private val context: Context,
 ) {
 
@@ -175,12 +220,26 @@ class DroneRepository @Inject constructor(
         try {
             val serverDrones = droneFirebaseStore.loadAllDronesIncludingDeleted(userId).getOrThrow()
             val localDrones = droneDao.getAllDronesOnce().map { it.toDomain() }
+            val lastSyncTime = dataStore.data.first()[SyncPreferenceKeys.LAST_SYNC_TIME]
+            val serverIds = serverDrones.mapTo(mutableSetOf()) { it.id }
+            val staleLocalIds = localDrones
+                .filter { it.id !in serverIds }
+                .filterNot {
+                    shouldKeepLocalDroneMissingOnServer(
+                        localDroneUpdatedAt = it.updatedAt,
+                        lastSyncTime = lastSyncTime,
+                    )
+                }
+                .map { it.id }
             val toApply = filterServerNewer(
                 local = localDrones,
                 server = serverDrones,
                 idOf = { it.id },
                 updatedAtOf = { it.updatedAt },
             )
+            if (staleLocalIds.isNotEmpty()) {
+                droneDao.deleteDronesByIds(staleLocalIds)
+            }
             if (toApply.isNotEmpty()) {
                 droneDao.insertDrones(toApply.map { it.toEntity() })
             }
@@ -192,7 +251,10 @@ class DroneRepository @Inject constructor(
     }
 
     /**
-     * 양방향 동기화 (LWW 충돌 해결). [mergeLWW] 헬퍼 사용.
+     * 양방향 동기화 (LWW 충돌 해결).
+     *
+     * iOS DroneFirebaseStore.delete 는 문서를 hard delete 하므로,
+     * 마지막 동기화 시각 이전 로컬 항목이 서버에서 사라졌다면 iOS 삭제로 보고 재업로드하지 않는다.
      */
     suspend fun performFullSync() {
         val userId = auth.currentUser?.uid ?: run {
@@ -203,17 +265,22 @@ class DroneRepository @Inject constructor(
         try {
             val localDrones = droneDao.getAllDronesOnce().map { it.toDomain() }
             val serverDrones = droneFirebaseStore.loadAllDronesIncludingDeleted(userId).getOrThrow()
+            val lastSyncTime = dataStore.data.first()[SyncPreferenceKeys.LAST_SYNC_TIME]
 
-            val result = mergeLWW(
-                local = localDrones,
-                server = serverDrones,
-                idOf = { it.id },
-                updatedAtOf = { it.updatedAt },
+            val result = mergeDronesForFullSync(
+                localDrones = localDrones,
+                serverDrones = serverDrones,
+                lastSyncTime = lastSyncTime,
             )
 
-            if (result.merged.isNotEmpty()) {
-                droneDao.insertDrones(result.merged.map { it.toEntity() })
+            val mergedIds = result.merged.mapTo(mutableSetOf()) { it.id }
+            val staleLocalIds = localDrones
+                .map { it.id }
+                .filter { it !in mergedIds }
+            if (staleLocalIds.isNotEmpty()) {
+                droneDao.deleteDronesByIds(staleLocalIds)
             }
+            if (result.merged.isNotEmpty()) droneDao.insertDrones(result.merged.map { it.toEntity() })
 
             val toUpload = result.toUpload.filterValidForFirebaseWrite("performFullSync/upload")
             if (toUpload.isNotEmpty()) {
