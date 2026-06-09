@@ -117,6 +117,7 @@ class DroneRepository @Inject constructor(
             defaultName = context.getString(R.string.drone_edit_default_name_first),
         )
         droneDao.insertDrone(defaultDrone.toEntity())
+        markDroneLocalModification()
         syncDroneToFirebase(defaultDrone)
         Log.d(TAG, "기본 드론 자동 생성: droneId=${defaultDrone.id}")
         return defaultDrone
