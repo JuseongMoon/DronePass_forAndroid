@@ -34,7 +34,7 @@ class ShapeFirebaseStoreTest {
             shapeType = ShapeType.CIRCLE,
             baseCoordinate = Coordinate(37.1234567, 126.9876544),
             radius = 120.0,
-            color = "#007AFF",
+            color = "#007aff",
             createdAt = 1_700_000_000_000L,
             updatedAt = 1_700_000_123_000L,
             flightStartDate = 1_700_000_456_000L,
@@ -46,6 +46,7 @@ class ShapeFirebaseStoreTest {
 
         assertEquals("circle", data["shapeType"])
         assertFalse(data["shapeType"] == ShapeType.CIRCLE.name)
+        assertEquals("#007AFF", data["color"])
         assertEquals(37.123457, baseCoordinate["latitude"])
         assertEquals(126.987654, baseCoordinate["longitude"])
         assertTrue(baseCoordinate["latitude"] is Double)

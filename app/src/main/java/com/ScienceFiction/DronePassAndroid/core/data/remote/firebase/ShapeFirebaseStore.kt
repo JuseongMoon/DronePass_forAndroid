@@ -4,6 +4,7 @@ import android.util.Log
 import com.ScienceFiction.DronePassAndroid.domain.model.Coordinate
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeType
+import com.ScienceFiction.DronePassAndroid.domain.model.normalizeFirebaseHexColorForWrite
 import com.ScienceFiction.DronePassAndroid.domain.model.validateFirebaseShapeBatch
 import com.ScienceFiction.DronePassAndroid.domain.model.validateForFirebasePersistence
 import com.google.firebase.Timestamp
@@ -70,7 +71,7 @@ internal fun shapeToFirestoreDocumentData(shape: ShapeModel): Map<String, Any?> 
         "height" to shape.height,
         "memo" to shape.memo,
         "address" to shape.address,
-        "color" to shape.color,
+        "color" to normalizeFirebaseHexColorForWrite(shape.color),
         "droneId" to shape.droneId,
         "createdAt" to Timestamp(Date(shape.createdAt)),
         "updatedAt" to Timestamp(Date(shape.updatedAt)),

@@ -15,7 +15,7 @@ class DroneFirestoreParsingTest {
         val drone = DroneModel(
             id = "00000000-0000-0000-0000-000000000001",
             name = "Drone",
-            color = "#007AFF",
+            color = "#007aff",
             serialNumber = "SN-1",
             takeoffWeight = "249g",
             size = "140x140x55mm",

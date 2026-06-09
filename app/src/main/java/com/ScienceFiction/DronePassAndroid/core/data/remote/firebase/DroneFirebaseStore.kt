@@ -2,6 +2,7 @@ package com.ScienceFiction.DronePassAndroid.core.data.remote.firebase
 
 import android.util.Log
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
+import com.ScienceFiction.DronePassAndroid.domain.model.normalizeFirebaseHexColorForWrite
 import com.ScienceFiction.DronePassAndroid.domain.model.validateFirebaseDroneBatch
 import com.ScienceFiction.DronePassAndroid.domain.model.validateForFirebasePersistence
 import com.google.firebase.Timestamp
@@ -29,7 +30,7 @@ internal fun droneToFirestoreDocumentData(drone: DroneModel): Map<String, Any?> 
     return mapOf(
         "id" to drone.id,
         "name" to drone.name,
-        "color" to drone.color,
+        "color" to normalizeFirebaseHexColorForWrite(drone.color),
         "serialNumber" to drone.serialNumber,
         "takeoffWeight" to drone.takeoffWeight,
         "size" to drone.size,

@@ -28,7 +28,7 @@ class SketchFirebaseStoreTest {
         val sketch = SketchModel(
             id = "00000000-0000-0000-0000-000000000001",
             points = listOf(Coordinate(37.1234567, 126.9876544)),
-            color = "#123456",
+            color = "#123abc",
             strokeWidth = 5.0,
             opacity = 0.3333,
             createdAt = 1_700_000_000_000L,
@@ -44,6 +44,7 @@ class SketchFirebaseStoreTest {
         assertEquals(126.987654, point["longitude"])
         assertTrue(point["latitude"] is Double)
         assertTrue(point["longitude"] is Double)
+        assertEquals("#123ABC", data["color"])
         assertEquals(0.33, data["opacity"])
         assertTrue(data["createdAt"] is Timestamp)
         assertTrue(data["updatedAt"] is Timestamp)

@@ -3,6 +3,7 @@ package com.ScienceFiction.DronePassAndroid.core.data.remote.firebase
 import android.util.Log
 import com.ScienceFiction.DronePassAndroid.domain.model.Coordinate
 import com.ScienceFiction.DronePassAndroid.domain.model.SketchModel
+import com.ScienceFiction.DronePassAndroid.domain.model.normalizeFirebaseHexColorForWrite
 import com.ScienceFiction.DronePassAndroid.domain.model.validateFirebaseSketchBatch
 import com.ScienceFiction.DronePassAndroid.domain.model.validateForFirebasePersistence
 import com.google.firebase.Timestamp
@@ -44,7 +45,7 @@ internal fun sketchToFirestoreDocumentData(sketch: SketchModel): Map<String, Any
                 "longitude" to roundSketchCoordinateForFirestore(point.longitude)
             )
         },
-        "color" to sketch.color,
+        "color" to normalizeFirebaseHexColorForWrite(sketch.color),
         "strokeWidth" to sketch.strokeWidth,
         "opacity" to roundSketchOpacityForFirestore(sketch.opacity),
         "createdAt" to Timestamp(Date(sketch.createdAt)),
