@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.Preferences.Key
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ScienceFiction.DronePassAndroid.R
@@ -47,9 +48,10 @@ internal val FIRESTORE_USER_SUBCOLLECTIONS_TO_DELETE = listOf(
     "devices",
 )
 
-internal val ACCOUNT_DELETION_SYNC_PREFERENCE_KEYS_TO_CLEAR = listOf(
+internal val ACCOUNT_DELETION_SYNC_PREFERENCE_KEYS_TO_CLEAR: List<Key<*>> = listOf(
     SyncPreferenceKeys.LAST_SYNC_TIME,
     SyncPreferenceKeys.LAST_LOCAL_MODIFICATION_TIME,
+    SyncPreferenceKeys.SYNCED_SHAPE_BASELINE,
     SyncPreferenceKeys.LAST_SKETCH_SYNC_TIME,
     SyncPreferenceKeys.LAST_LOCAL_SKETCH_MODIFICATION_TIME,
 )
@@ -342,7 +344,9 @@ class ProfileViewModel @Inject constructor(
                 it.remove(ProfilePreferenceKeys.LAST_BACKUP_TIME)
                 it.remove(ProfilePreferenceKeys.LEGACY_CLOUD_BACKUP_ENABLED)
                 it.remove(ProfilePreferenceKeys.LEGACY_LAST_BACKUP_TIME)
-                ACCOUNT_DELETION_SYNC_PREFERENCE_KEYS_TO_CLEAR.forEach(it::remove)
+                ACCOUNT_DELETION_SYNC_PREFERENCE_KEYS_TO_CLEAR.forEach { key ->
+                    it.remove(key)
+                }
             }
 
             runCatching { realtimeSyncManager.stopListening() }
