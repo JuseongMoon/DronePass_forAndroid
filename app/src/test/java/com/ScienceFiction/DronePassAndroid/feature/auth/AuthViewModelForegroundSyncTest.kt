@@ -233,7 +233,7 @@ class AuthViewModelForegroundSyncTest {
         assertEquals(350.dp, LoginButtonMaxWidth)
         assertEquals(50.dp, LoginButtonHeight)
         assertEquals(12.dp, LoginButtonCornerRadius)
-        assertEquals(20.dp, LoginProviderIconSize)
+        assertEquals(18.dp, LoginProviderIconSize)
         assertEquals(8.dp, LoginProviderIconTextSpacing)
         assertEquals(12.dp, LoginGoogleButtonTopSpacing)
         assertEquals(12.dp, LoginTermsTopSpacing)
