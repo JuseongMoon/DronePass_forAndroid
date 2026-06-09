@@ -104,6 +104,15 @@ internal fun MapOverlayEffects(
     val currentStrokeWidth by sketchViewModel.currentStrokeWidth.collectAsStateWithLifecycle()
     val currentOpacity by sketchViewModel.currentOpacity.collectAsStateWithLifecycle()
 
+    // iOS `ClearMapOverlays` 정합: 로그아웃/탈퇴 시 로컬 도형은 유지하고 하이라이트만 제거한다.
+    LaunchedEffect(mapReady) {
+        viewModel.clearMapHighlightEvent.collect {
+            if (mapReady) {
+                overlayManager.setHighlight(null, emptyList())
+            }
+        }
+    }
+
     // 비행구역 오버레이 갱신.
     // visibleLayers 변경에 따른 fetch 는 MapViewModel.flightZoneLoadCollector 가
     // (visibleLayers, currentMapBounds) combine 으로 처리한다. 여기서는 fetch 결과인

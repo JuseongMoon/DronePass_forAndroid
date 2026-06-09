@@ -67,6 +67,7 @@ import javax.inject.Inject
 
 internal const val ShapeFocusDefaultRadiusMeters = 100.0
 internal const val CameraEventReplay = 0
+internal const val MapHighlightClearEventReplay = 0
 
 internal fun calculateShapeFocusZoomLevel(radius: Double): Double {
     val minRadius = 100.0
@@ -450,6 +451,12 @@ class MapViewModel @Inject constructor(
     private val _cameraEvent = MutableSharedFlow<CameraEvent>(replay = CameraEventReplay)
     val cameraEvent: SharedFlow<CameraEvent> = _cameraEvent.asSharedFlow()
 
+    private val _clearMapHighlightEvent = MutableSharedFlow<Unit>(
+        replay = MapHighlightClearEventReplay,
+        extraBufferCapacity = 1,
+    )
+    val clearMapHighlightEvent: SharedFlow<Unit> = _clearMapHighlightEvent.asSharedFlow()
+
     private val _savedShapeFocusEvent = MutableSharedFlow<String>()
     val savedShapeFocusEvent: SharedFlow<String> = _savedShapeFocusEvent.asSharedFlow()
 
@@ -502,6 +509,15 @@ class MapViewModel @Inject constructor(
     fun clearSelection() {
         _selectedShapeId.value = null
         _showShapeDetail.value = false
+    }
+
+    /**
+     * iOS `ClearMapOverlays` 알림 정합.
+     * 로그아웃/탈퇴 시 로컬 도형은 보존하고 지도 하이라이트/상세 선택만 정리한다.
+     */
+    fun clearMapHighlightForAccountSessionEnd() {
+        clearSelection()
+        _clearMapHighlightEvent.tryEmit(Unit)
     }
 
     /**

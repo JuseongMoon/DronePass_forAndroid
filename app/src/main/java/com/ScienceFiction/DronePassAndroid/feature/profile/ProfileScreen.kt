@@ -61,6 +61,7 @@ internal val ProfileLogoutToSyncSectionSpacing = 16.dp
 @Composable
 fun ProfileScreen(
     onDismiss: () -> Unit,
+    onAccountSessionEnded: () -> Unit = {},
     viewModel: ProfileViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
@@ -291,7 +292,10 @@ fun ProfileScreen(
             confirmButton = {
                 TextButton(onClick = {
                     showLogoutDialog = false
-                    viewModel.signOut { onDismiss() }
+                    viewModel.signOut {
+                        onAccountSessionEnded()
+                        onDismiss()
+                    }
                 }) {
                     Text(
                         stringResource(R.string.profile_account_logout),
@@ -343,6 +347,7 @@ fun ProfileScreen(
                     showDeleteFinalDialog = false
                     viewModel.deleteAccount { success, message ->
                         if (success) {
+                            onAccountSessionEnded()
                             onDismiss()
                         } else {
                             resultDialog = ProfileResultDialog(

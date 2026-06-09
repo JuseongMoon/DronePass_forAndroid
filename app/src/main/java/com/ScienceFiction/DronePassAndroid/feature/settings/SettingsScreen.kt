@@ -83,6 +83,7 @@ fun SettingsScreen(
     // iOS 동등 오버레이로 호스팅할 때 자체 TopAppBar 를 숨김.
     // 오버레이가 자체 큰 "설정" 헤더(.title .bold) 를 그리므로 이중 헤더 방지.
     showTopAppBar: Boolean = true,
+    onAccountSessionEnded: () -> Unit = {},
 ) {
     var showDroneListSheet by remember { mutableStateOf(false) }
     var showAppInfoSheet by remember { mutableStateOf(false) }
@@ -94,6 +95,7 @@ fun SettingsScreen(
         onNavigateToDroneList = { showDroneListSheet = true },
         onNavigateToAppInfo = { showAppInfoSheet = true },
         onNavigateToPatchNotes = { showPatchNotesSheet = true },
+        onAccountSessionEnded = onAccountSessionEnded,
     )
 
     if (showDroneListSheet) {
@@ -132,6 +134,7 @@ private fun SettingsMainContent(
     onNavigateToDroneList: () -> Unit,
     onNavigateToAppInfo: () -> Unit,
     onNavigateToPatchNotes: () -> Unit,
+    onAccountSessionEnded: () -> Unit,
 ) {
     val hideExpiredShapes by settingsViewModel.hideExpiredShapes.collectAsStateWithLifecycle()
     val hideNotStartedShapes by settingsViewModel.hideNotStartedShapes.collectAsStateWithLifecycle()
@@ -411,7 +414,8 @@ private fun SettingsMainContent(
                 onDismiss = {
                     showProfileSheet = false
                     settingsViewModel.checkAuthState()
-                }
+                },
+                onAccountSessionEnded = onAccountSessionEnded,
             )
         }
     }

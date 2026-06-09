@@ -604,6 +604,9 @@ internal fun MainScreen(
             SettingsOverlay(
                 isTablet = isTablet,
                 onDismiss = { showSettingsOverlay = false },
+                onAccountSessionEnded = {
+                    mapViewModel.clearMapHighlightForAccountSessionEnd()
+                },
             )
         }
 
@@ -1083,6 +1086,7 @@ private fun SavedListOverlay(
 private fun SettingsOverlay(
     isTablet: Boolean,
     onDismiss: () -> Unit,
+    onAccountSessionEnded: () -> Unit = {},
 ) {
     val configuration = LocalConfiguration.current
     val density = LocalDensity.current
@@ -1235,7 +1239,10 @@ private fun SettingsOverlay(
                         )
                     }
                 }
-                SettingsScreen(showTopAppBar = false)
+                SettingsScreen(
+                    showTopAppBar = false,
+                    onAccountSessionEnded = onAccountSessionEnded,
+                )
             }
         }
     }

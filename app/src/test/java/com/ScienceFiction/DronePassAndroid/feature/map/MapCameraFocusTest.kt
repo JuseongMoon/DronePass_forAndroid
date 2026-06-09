@@ -35,6 +35,11 @@ class MapCameraFocusTest {
     }
 
     @Test
+    fun `계정 종료 지도 하이라이트 정리 이벤트는 iOS NotificationCenter 처럼 과거 이벤트를 재생하지 않는다`() {
+        assertEquals(0, MapHighlightClearEventReplay)
+    }
+
+    @Test
     fun `도형 포커스 오프셋은 iOS phone과 iPad 값을 따른다`() {
         assertEquals(ShapeFocusOffsets(x = 0.dp, y = 200.dp), resolveShapeFocusOffsets(isTablet = false))
         assertEquals(ShapeFocusOffsets(x = (-100).dp, y = 0.dp), resolveShapeFocusOffsets(isTablet = true))
