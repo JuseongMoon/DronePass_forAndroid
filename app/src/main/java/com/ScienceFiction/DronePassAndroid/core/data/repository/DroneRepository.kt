@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.dao.DroneDao
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.mapper.toDomain
@@ -127,6 +128,7 @@ class DroneRepository @Inject constructor(
      */
     suspend fun insertDrone(drone: DroneModel) {
         droneDao.insertDrone(drone.toEntity())
+        markDroneLocalModification()
         syncDroneToFirebase(drone)
     }
 
@@ -136,6 +138,7 @@ class DroneRepository @Inject constructor(
      */
     suspend fun updateDrone(drone: DroneModel) {
         droneDao.updateDrone(drone.toEntity())
+        markDroneLocalModification()
         syncDroneToFirebase(drone)
     }
 
@@ -146,6 +149,7 @@ class DroneRepository @Inject constructor(
     suspend fun softDeleteDrone(drone: DroneModel) {
         val deletedDrone = drone.softDelete()
         droneDao.updateDrone(deletedDrone.toEntity())
+        markDroneLocalModification()
         syncDroneToFirebase(deletedDrone)
     }
 
@@ -156,6 +160,7 @@ class DroneRepository @Inject constructor(
     suspend fun restoreDrone(drone: DroneModel) {
         val restoredDrone = drone.restore()
         droneDao.updateDrone(restoredDrone.toEntity())
+        markDroneLocalModification()
         syncDroneToFirebase(restoredDrone)
     }
 
@@ -165,6 +170,12 @@ class DroneRepository @Inject constructor(
      */
     suspend fun deleteAllDrones() {
         droneDao.deleteAllDrones()
+    }
+
+    private suspend fun markDroneLocalModification(now: Long = System.currentTimeMillis()) {
+        dataStore.edit { preferences ->
+            preferences[SyncPreferenceKeys.LAST_LOCAL_DRONE_MODIFICATION_TIME] = now
+        }
     }
 
     /**

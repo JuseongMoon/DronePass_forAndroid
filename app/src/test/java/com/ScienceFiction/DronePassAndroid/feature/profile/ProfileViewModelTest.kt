@@ -55,6 +55,7 @@ class ProfileViewModelTest {
             listOf(
                 SyncPreferenceKeys.LAST_SYNC_TIME,
                 SyncPreferenceKeys.LAST_LOCAL_MODIFICATION_TIME,
+                SyncPreferenceKeys.LAST_LOCAL_DRONE_MODIFICATION_TIME,
                 SyncPreferenceKeys.SYNCED_SHAPE_BASELINE,
                 SyncPreferenceKeys.LAST_SKETCH_SYNC_TIME,
                 SyncPreferenceKeys.LAST_LOCAL_SKETCH_MODIFICATION_TIME,

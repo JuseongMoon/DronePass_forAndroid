@@ -9,6 +9,7 @@ import kotlin.math.abs
 internal object SyncPreferenceKeys {
     val LAST_SYNC_TIME = longPreferencesKey("lastSyncTime")
     val LAST_LOCAL_MODIFICATION_TIME = longPreferencesKey("lastLocalModificationTime")
+    val LAST_LOCAL_DRONE_MODIFICATION_TIME = longPreferencesKey("lastLocalDroneModificationTime")
     val LAST_SKETCH_SYNC_TIME = longPreferencesKey("lastSketchSyncTime")
     val LAST_LOCAL_SKETCH_MODIFICATION_TIME = longPreferencesKey("lastLocalSketchModificationTime")
     val SYNCED_SHAPE_BASELINE = stringPreferencesKey("syncedShapeBaseline")
@@ -16,6 +17,7 @@ internal object SyncPreferenceKeys {
 
 internal val SHAPE_REALTIME_SYNC_SUCCESS_KEYS_TO_CLEAR: List<Preferences.Key<*>> = listOf(
     SyncPreferenceKeys.LAST_LOCAL_MODIFICATION_TIME,
+    SyncPreferenceKeys.LAST_LOCAL_DRONE_MODIFICATION_TIME,
 )
 
 internal val SKETCH_REALTIME_SYNC_SUCCESS_KEYS_TO_CLEAR: List<Preferences.Key<*>> = listOf(
@@ -54,6 +56,9 @@ internal fun hasUnsyncedLocalChanges(
 internal fun buildAccountSwitchLocalChangeState(
     currentShapeUpdatedAtById: Map<String, Long>,
     syncedShapeBaseline: Map<String, Long>?,
+    droneCount: Int = 0,
+    lastLocalDroneModificationTime: Long? = null,
+    lastSyncTime: Long? = null,
     sketchCount: Int,
     lastLocalSketchModificationTime: Long?,
     lastSketchSyncTime: Long?,
@@ -62,6 +67,12 @@ internal fun buildAccountSwitchLocalChangeState(
         currentShapeUpdatedAtById = currentShapeUpdatedAtById,
         syncedShapeBaseline = syncedShapeBaseline,
     )
+    val hasUnsyncedDrones = hasUnsyncedLocalChanges(
+        lastLocalModificationTime = lastLocalDroneModificationTime,
+        lastSyncTime = lastSyncTime,
+        localItemCount = droneCount,
+    )
+    val droneAtRiskCount = if (hasUnsyncedDrones) droneCount else 0
     val hasUnsyncedSketches = hasUnsyncedLocalChanges(
         lastLocalModificationTime = lastLocalSketchModificationTime,
         lastSyncTime = lastSketchSyncTime,
@@ -70,8 +81,8 @@ internal fun buildAccountSwitchLocalChangeState(
     val sketchAtRiskCount = if (hasUnsyncedSketches) sketchCount else 0
 
     return AccountSwitchLocalChangeState(
-        hasUnsyncedLocalChanges = unsyncedShapeCount > 0 || hasUnsyncedSketches,
-        atRiskCount = unsyncedShapeCount + sketchAtRiskCount,
+        hasUnsyncedLocalChanges = unsyncedShapeCount > 0 || hasUnsyncedDrones || hasUnsyncedSketches,
+        atRiskCount = unsyncedShapeCount + droneAtRiskCount + sketchAtRiskCount,
     )
 }
 

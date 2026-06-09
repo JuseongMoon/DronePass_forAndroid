@@ -200,9 +200,27 @@ class AuthViewModelForegroundSyncTest {
     }
 
     @Test
+    fun `account switch warning includes dirty drones because Android clears them too`() {
+        val state = buildAccountSwitchLocalChangeState(
+            currentShapeUpdatedAtById = mapOf("same" to 100),
+            syncedShapeBaseline = mapOf("same" to 100),
+            droneCount = 2,
+            lastLocalDroneModificationTime = 200,
+            lastSyncTime = 100,
+            sketchCount = 0,
+            lastLocalSketchModificationTime = null,
+            lastSketchSyncTime = null,
+        )
+
+        assertEquals(true, state.hasUnsyncedLocalChanges)
+        assertEquals(2, state.atRiskCount)
+    }
+
+    @Test
     fun `sync preference keys use iOS UserDefaults names`() {
         assertEquals("lastSyncTime", SyncPreferenceKeys.LAST_SYNC_TIME.name)
         assertEquals("lastLocalModificationTime", SyncPreferenceKeys.LAST_LOCAL_MODIFICATION_TIME.name)
+        assertEquals("lastLocalDroneModificationTime", SyncPreferenceKeys.LAST_LOCAL_DRONE_MODIFICATION_TIME.name)
         assertEquals("lastSketchSyncTime", SyncPreferenceKeys.LAST_SKETCH_SYNC_TIME.name)
         assertEquals(
             "lastLocalSketchModificationTime",
@@ -222,6 +240,9 @@ class AuthViewModelForegroundSyncTest {
                 "shape-a" to 100,
                 "shape-b" to 200,
             ),
+            droneCount = 2,
+            lastLocalDroneModificationTime = 100,
+            lastSyncTime = 200,
             sketchCount = 3,
             lastLocalSketchModificationTime = 100,
             lastSketchSyncTime = 200,

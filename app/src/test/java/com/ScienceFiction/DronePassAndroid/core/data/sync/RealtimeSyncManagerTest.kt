@@ -17,9 +17,12 @@ class RealtimeSyncManagerTest {
     }
 
     @Test
-    fun `shape realtime sync success clears local modification marker like iOS`() {
+    fun `shape drone realtime sync success clears local modification markers like iOS`() {
         assertEquals(
-            listOf(SyncPreferenceKeys.LAST_LOCAL_MODIFICATION_TIME),
+            listOf(
+                SyncPreferenceKeys.LAST_LOCAL_MODIFICATION_TIME,
+                SyncPreferenceKeys.LAST_LOCAL_DRONE_MODIFICATION_TIME,
+            ),
             SHAPE_REALTIME_SYNC_SUCCESS_KEYS_TO_CLEAR,
         )
     }
