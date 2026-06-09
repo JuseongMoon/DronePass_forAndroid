@@ -13,7 +13,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material.icons.outlined.FindInPage
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -33,6 +33,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import com.ScienceFiction.DronePassAndroid.R
+
+internal val DocumentErrorIcon = Icons.Outlined.FindInPage
 
 /**
  * iOS `TermsOfServiceView` / `PrivacyPolicyView` 정합 공통 시트 콘텐츠.
@@ -139,7 +141,7 @@ private fun ErrorContent(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Icon(
-            imageVector = Icons.Default.ErrorOutline,
+            imageVector = DocumentErrorIcon,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(48.dp),
