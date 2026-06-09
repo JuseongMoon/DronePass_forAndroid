@@ -3,6 +3,7 @@ package com.ScienceFiction.DronePassAndroid.feature.document
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.FindInPage
 import com.ScienceFiction.DronePassAndroid.domain.model.ParsedDocument
+import com.ScienceFiction.DronePassAndroid.domain.model.PatchNote
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -50,6 +51,49 @@ class DocumentEntryPolicyTest {
         assertEquals(
             true,
             shouldAutoLoadPatchNotesOnEnter(PatchNotesUiState.Content(emptyList())),
+        )
+    }
+
+    @Test
+    fun `패치노트 reload 는 이전 콘텐츠가 있으면 iOS처럼 리스트를 유지한다`() {
+        val existingContent = PatchNotesUiState.Content(
+            listOf(
+                PatchNote(
+                    version = "v1.0.0",
+                    date = "2025-01-01",
+                    title = "Release",
+                    features = emptyList(),
+                ),
+            ),
+        )
+
+        assertEquals(existingContent, patchNotesStateBeforeReload(existingContent))
+        assertEquals(
+            existingContent,
+            patchNotesStateAfterReloadFailure(previousState = existingContent, message = "network"),
+        )
+    }
+
+    @Test
+    fun `패치노트 reload 는 이전 콘텐츠가 없을 때만 loading 과 error 를 보여준다`() {
+        assertEquals(PatchNotesUiState.Loading, patchNotesStateBeforeReload(PatchNotesUiState.Loading))
+        assertEquals(
+            PatchNotesUiState.Loading,
+            patchNotesStateBeforeReload(PatchNotesUiState.Content(emptyList())),
+        )
+        assertEquals(
+            PatchNotesUiState.Error("network"),
+            patchNotesStateAfterReloadFailure(
+                previousState = PatchNotesUiState.Loading,
+                message = "network",
+            ),
+        )
+        assertEquals(
+            PatchNotesUiState.Error("network"),
+            patchNotesStateAfterReloadFailure(
+                previousState = PatchNotesUiState.Content(emptyList()),
+                message = "network",
+            ),
         )
     }
 }

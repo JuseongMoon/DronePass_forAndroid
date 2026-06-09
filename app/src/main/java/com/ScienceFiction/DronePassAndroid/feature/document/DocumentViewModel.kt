@@ -52,11 +52,36 @@ class DocumentViewModel @Inject constructor(
 
     fun loadPatchNotes() {
         viewModelScope.launch {
-            _patchNotesState.value = PatchNotesUiState.Loading
+            val previousState = _patchNotesState.value
+            _patchNotesState.value = patchNotesStateBeforeReload(previousState)
             repository.fetchPatchNotes().fold(
                 onSuccess = { _patchNotesState.value = PatchNotesUiState.Content(it) },
-                onFailure = { _patchNotesState.value = PatchNotesUiState.Error(it.localizedMessage) },
+                onFailure = {
+                    _patchNotesState.value = patchNotesStateAfterReloadFailure(
+                        previousState = previousState,
+                        message = it.localizedMessage,
+                    )
+                },
             )
         }
+    }
+}
+
+internal fun patchNotesStateBeforeReload(currentState: PatchNotesUiState): PatchNotesUiState {
+    return if (currentState is PatchNotesUiState.Content && currentState.notes.isNotEmpty()) {
+        currentState
+    } else {
+        PatchNotesUiState.Loading
+    }
+}
+
+internal fun patchNotesStateAfterReloadFailure(
+    previousState: PatchNotesUiState,
+    message: String?,
+): PatchNotesUiState {
+    return if (previousState is PatchNotesUiState.Content && previousState.notes.isNotEmpty()) {
+        previousState
+    } else {
+        PatchNotesUiState.Error(message)
     }
 }
