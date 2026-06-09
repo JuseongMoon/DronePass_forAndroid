@@ -57,6 +57,29 @@ private fun isValidShapeId(id: String): Boolean {
 internal class ShapeFirebaseInvalidDataException(reason: String?) :
     IllegalStateException("Invalid shape data: ${reason ?: "unknown"}")
 
+internal fun shapeToFirestoreDocumentData(shape: ShapeModel): Map<String, Any?> {
+    return mapOf(
+        "id" to shape.id,
+        "title" to shape.title,
+        "shapeType" to shape.shapeType.rawValue,
+        "baseCoordinate" to coordinateToFirestoreMap(shape.baseCoordinate),
+        "radius" to shape.radius,
+        "secondCoordinate" to shape.secondCoordinate?.let(::coordinateToFirestoreMap),
+        "polygonCoordinates" to shape.polygonCoordinates?.let(::coordinatesToFirestoreList),
+        "polylineCoordinates" to shape.polylineCoordinates?.let(::coordinatesToFirestoreList),
+        "height" to shape.height,
+        "memo" to shape.memo,
+        "address" to shape.address,
+        "color" to shape.color,
+        "droneId" to shape.droneId,
+        "createdAt" to Timestamp(Date(shape.createdAt)),
+        "updatedAt" to Timestamp(Date(shape.updatedAt)),
+        "flightStartDate" to Timestamp(Date(shape.flightStartDate)),
+        "flightEndDate" to shape.flightEndDate?.let { Timestamp(Date(it)) },
+        "deletedAt" to shape.deletedAt?.let { Timestamp(Date(it)) }
+    )
+}
+
 internal fun shapeFromFirestoreData(data: Map<String, Any?>): ShapeModel? {
     val id = data["id"] as? String ?: return null
     if (!isValidShapeId(id)) return null
@@ -278,26 +301,7 @@ class ShapeFirebaseStore @Inject constructor(
      * ShapeModel -> Firestore 문서 데이터로 변환
      */
     fun shapeToFirestoreData(shape: ShapeModel): Map<String, Any?> {
-        return mapOf(
-            "id" to shape.id,
-            "title" to shape.title,
-            "shapeType" to shape.shapeType.rawValue,
-            "baseCoordinate" to coordinateToFirestoreMap(shape.baseCoordinate),
-            "radius" to shape.radius,
-            "secondCoordinate" to shape.secondCoordinate?.let(::coordinateToFirestoreMap),
-            "polygonCoordinates" to shape.polygonCoordinates?.let(::coordinatesToFirestoreList),
-            "polylineCoordinates" to shape.polylineCoordinates?.let(::coordinatesToFirestoreList),
-            "height" to shape.height,
-            "memo" to shape.memo,
-            "address" to shape.address,
-            "color" to shape.color,
-            "droneId" to shape.droneId,
-            "createdAt" to Timestamp(Date(shape.createdAt)),
-            "updatedAt" to Timestamp(Date(shape.updatedAt)),
-            "flightStartDate" to Timestamp(Date(shape.flightStartDate)),
-            "flightEndDate" to shape.flightEndDate?.let { Timestamp(Date(it)) },
-            "deletedAt" to shape.deletedAt?.let { Timestamp(Date(it)) }
-        )
+        return shapeToFirestoreDocumentData(shape)
     }
 
     /**

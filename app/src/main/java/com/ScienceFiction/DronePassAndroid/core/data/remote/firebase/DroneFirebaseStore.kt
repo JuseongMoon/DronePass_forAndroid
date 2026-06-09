@@ -15,6 +15,21 @@ private fun droneTimestampMillis(value: Any?): Long? {
     return (value as? Timestamp)?.toDate()?.time
 }
 
+internal fun droneToFirestoreDocumentData(drone: DroneModel): Map<String, Any?> {
+    return mapOf(
+        "id" to drone.id,
+        "name" to drone.name,
+        "color" to drone.color,
+        "serialNumber" to drone.serialNumber,
+        "takeoffWeight" to drone.takeoffWeight,
+        "size" to drone.size,
+        "memo" to drone.memo,
+        "createdAt" to Timestamp(Date(drone.createdAt)),
+        "updatedAt" to Timestamp(Date(drone.updatedAt)),
+        "deletedAt" to drone.deletedAt?.let { Timestamp(Date(it)) }
+    )
+}
+
 internal fun droneFromFirestoreData(data: Map<String, Any?>): DroneModel? {
     val id = data["id"] as? String ?: return null
     val name = data["name"] as? String ?: return null
@@ -179,18 +194,7 @@ class DroneFirebaseStore @Inject constructor(
      * DroneModel -> Firestore 문서 데이터로 변환
      */
     fun droneToFirestoreData(drone: DroneModel): Map<String, Any?> {
-        return mapOf(
-            "id" to drone.id,
-            "name" to drone.name,
-            "color" to drone.color,
-            "serialNumber" to drone.serialNumber,
-            "takeoffWeight" to drone.takeoffWeight,
-            "size" to drone.size,
-            "memo" to drone.memo,
-            "createdAt" to Timestamp(Date(drone.createdAt)),
-            "updatedAt" to Timestamp(Date(drone.updatedAt)),
-            "deletedAt" to drone.deletedAt?.let { Timestamp(Date(it)) }
-        )
+        return droneToFirestoreDocumentData(drone)
     }
 
     /**

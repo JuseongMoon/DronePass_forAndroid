@@ -1,12 +1,38 @@
 package com.ScienceFiction.DronePassAndroid.core.data.remote.firebase
 
+import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.google.firebase.Timestamp
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.util.Date
 
 class DroneFirestoreParsingTest {
+
+    @Test
+    fun `Drone Firestore 쓰기는 iOS 계약처럼 날짜를 Timestamp로 저장한다`() {
+        val drone = DroneModel(
+            id = "drone-1",
+            name = "Drone",
+            color = "#007AFF",
+            serialNumber = "SN-1",
+            takeoffWeight = "249g",
+            size = "140x140x55mm",
+            memo = "memo",
+            createdAt = 1_700_000_000_000L,
+            updatedAt = 1_700_000_123_000L,
+            deletedAt = 1_700_000_456_000L,
+        )
+
+        val data = droneToFirestoreDocumentData(drone)
+
+        assertEquals("drone-1", data["id"])
+        assertEquals("#007AFF", data["color"])
+        assertTrue(data["createdAt"] is Timestamp)
+        assertTrue(data["updatedAt"] is Timestamp)
+        assertTrue(data["deletedAt"] is Timestamp)
+    }
 
     @Test
     fun `iOS DroneFirebaseStore 와 같이 필수 필드가 모두 있으면 파싱한다`() {

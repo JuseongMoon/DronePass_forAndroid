@@ -1,7 +1,12 @@
 package com.ScienceFiction.DronePassAndroid.core.data.remote.firebase
 
 import com.ScienceFiction.DronePassAndroid.domain.model.Coordinate
+import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
+import com.ScienceFiction.DronePassAndroid.domain.model.ShapeType
+import com.google.firebase.Timestamp
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ShapeFirebaseStoreTest {
@@ -19,5 +24,86 @@ class ShapeFirebaseStoreTest {
 
         assertEquals(37.123457, map["latitude"])
         assertEquals(126.987654, map["longitude"])
+    }
+
+    @Test
+    fun `Shape Firestore 쓰기는 iOS 계약처럼 소문자 shapeType Timestamp Double 좌표 map을 사용한다`() {
+        val shape = ShapeModel(
+            id = "00000000-0000-0000-0000-000000000001",
+            title = "신규 도형22",
+            shapeType = ShapeType.CIRCLE,
+            baseCoordinate = Coordinate(37.1234567, 126.9876544),
+            radius = 120.0,
+            color = "#007AFF",
+            createdAt = 1_700_000_000_000L,
+            updatedAt = 1_700_000_123_000L,
+            flightStartDate = 1_700_000_456_000L,
+            flightEndDate = 1_700_000_789_000L,
+        )
+
+        val data = shapeToFirestoreDocumentData(shape)
+        val baseCoordinate = data["baseCoordinate"] as Map<*, *>
+
+        assertEquals("circle", data["shapeType"])
+        assertFalse(data["shapeType"] == ShapeType.CIRCLE.name)
+        assertEquals(37.123457, baseCoordinate["latitude"])
+        assertEquals(126.987654, baseCoordinate["longitude"])
+        assertTrue(baseCoordinate["latitude"] is Double)
+        assertTrue(baseCoordinate["longitude"] is Double)
+        assertTrue(data["createdAt"] is Timestamp)
+        assertTrue(data["updatedAt"] is Timestamp)
+        assertTrue(data["flightStartDate"] is Timestamp)
+        assertTrue(data["flightEndDate"] is Timestamp)
+    }
+
+    @Test
+    fun `Shape Firestore 쓰기는 polygon polyline 좌표도 GeoPoint 대신 Double map 배열로 저장한다`() {
+        val polygonShape = ShapeModel(
+            id = "00000000-0000-0000-0000-000000000002",
+            title = "Polygon",
+            shapeType = ShapeType.POLYGON,
+            baseCoordinate = Coordinate(37.0, 127.0),
+            polygonCoordinates = listOf(
+                Coordinate(37.1234567, 127.1234567),
+                Coordinate(37.2234567, 127.2234567),
+                Coordinate(37.3234567, 127.3234567),
+            ),
+            color = "#007AFF",
+            createdAt = 1_700_000_000_000L,
+            updatedAt = 1_700_000_123_000L,
+            flightStartDate = 1_700_000_456_000L,
+        )
+        val polylineShape = ShapeModel(
+            id = "00000000-0000-0000-0000-000000000003",
+            title = "Polyline",
+            shapeType = ShapeType.POLYLINE,
+            baseCoordinate = Coordinate(37.0, 127.0),
+            polylineCoordinates = listOf(
+                Coordinate(36.1234567, 126.1234567),
+                Coordinate(36.2234567, 126.2234567),
+            ),
+            color = "#007AFF",
+            createdAt = 1_700_000_000_000L,
+            updatedAt = 1_700_000_123_000L,
+            flightStartDate = 1_700_000_456_000L,
+        )
+
+        val polygonData = shapeToFirestoreDocumentData(polygonShape)
+        val polygonPoints = polygonData["polygonCoordinates"] as List<*>
+        val firstPolygonPoint = polygonPoints.first() as Map<*, *>
+        val polylineData = shapeToFirestoreDocumentData(polylineShape)
+        val polylinePoints = polylineData["polylineCoordinates"] as List<*>
+        val firstPolylinePoint = polylinePoints.first() as Map<*, *>
+
+        assertEquals("polygon", polygonData["shapeType"])
+        assertEquals(37.123457, firstPolygonPoint["latitude"])
+        assertEquals(127.123457, firstPolygonPoint["longitude"])
+        assertTrue(firstPolygonPoint["latitude"] is Double)
+        assertTrue(firstPolygonPoint["longitude"] is Double)
+        assertEquals("polyline", polylineData["shapeType"])
+        assertEquals(36.123457, firstPolylinePoint["latitude"])
+        assertEquals(126.123457, firstPolylinePoint["longitude"])
+        assertTrue(firstPolylinePoint["latitude"] is Double)
+        assertTrue(firstPolylinePoint["longitude"] is Double)
     }
 }

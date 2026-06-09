@@ -35,6 +35,24 @@ private fun isValidSketchId(id: String): Boolean {
 internal class SketchFirebaseInvalidDataException(reason: String?) :
     IllegalStateException("Invalid sketch data: ${reason ?: "unknown"}")
 
+internal fun sketchToFirestoreDocumentData(sketch: SketchModel): Map<String, Any?> {
+    return mapOf(
+        "id" to sketch.id,
+        "points" to sketch.points.map { point ->
+            mapOf(
+                "latitude" to roundSketchCoordinateForFirestore(point.latitude),
+                "longitude" to roundSketchCoordinateForFirestore(point.longitude)
+            )
+        },
+        "color" to sketch.color,
+        "strokeWidth" to sketch.strokeWidth,
+        "opacity" to roundSketchOpacityForFirestore(sketch.opacity),
+        "createdAt" to Timestamp(Date(sketch.createdAt)),
+        "updatedAt" to Timestamp(Date(sketch.updatedAt)),
+        "deletedAt" to sketch.deletedAt?.let { Timestamp(Date(it)) }
+    )
+}
+
 internal fun sketchFromFirestoreData(data: Map<String, Any?>): SketchModel? {
     val id = data["id"] as? String ?: return null
     if (!isValidSketchId(id)) return null
@@ -218,21 +236,7 @@ class SketchFirebaseStore @Inject constructor(
      * points는 List<Map<String, Double>> 형태로 저장 (각 {latitude, longitude})
      */
     fun sketchToFirestoreData(sketch: SketchModel): Map<String, Any?> {
-        return mapOf(
-            "id" to sketch.id,
-            "points" to sketch.points.map { point ->
-                mapOf(
-                    "latitude" to roundSketchCoordinateForFirestore(point.latitude),
-                    "longitude" to roundSketchCoordinateForFirestore(point.longitude)
-                )
-            },
-            "color" to sketch.color,
-            "strokeWidth" to sketch.strokeWidth,
-            "opacity" to roundSketchOpacityForFirestore(sketch.opacity),
-            "createdAt" to Timestamp(Date(sketch.createdAt)),
-            "updatedAt" to Timestamp(Date(sketch.updatedAt)),
-            "deletedAt" to sketch.deletedAt?.let { Timestamp(Date(it)) }
-        )
+        return sketchToFirestoreDocumentData(sketch)
     }
 
     /**
