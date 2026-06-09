@@ -2,6 +2,7 @@ package com.ScienceFiction.DronePassAndroid.feature.auth
 
 import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncPreferenceKeys
 import com.ScienceFiction.DronePassAndroid.core.data.sync.buildAccountSwitchLocalChangeState
 import com.ScienceFiction.DronePassAndroid.core.data.sync.hasUnsyncedLocalChanges
@@ -235,6 +236,7 @@ class AuthViewModelForegroundSyncTest {
         assertEquals(12.dp, LoginButtonCornerRadius)
         assertEquals(18.dp, LoginProviderIconSize)
         assertEquals(8.dp, LoginProviderIconTextSpacing)
+        assertEquals(19.sp, LoginProviderTextSize)
         assertEquals(8.dp, LoginGoogleButtonTopSpacing)
         assertEquals(8.dp, LoginTermsTopSpacing)
         assertEquals(16.dp, LoginSkipButtonTopSpacing)

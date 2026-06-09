@@ -49,6 +49,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.feature.document.PrivacyPolicyScreen
@@ -66,6 +67,7 @@ internal val LoginButtonHeight = 50.dp
 internal val LoginButtonCornerRadius = 12.dp
 internal val LoginProviderIconSize = 18.dp
 internal val LoginProviderIconTextSpacing = 8.dp
+internal val LoginProviderTextSize = 19.sp
 internal val LoginGoogleButtonTopSpacing = 8.dp
 internal val LoginTermsTopSpacing = 8.dp
 internal val LoginSkipButtonTopSpacing = 16.dp
@@ -181,7 +183,8 @@ fun LoginScreen(
                     Spacer(modifier = Modifier.size(LoginProviderIconTextSpacing))
                     Text(
                         text = stringResource(R.string.login_apple),
-                        style = MaterialTheme.typography.titleMedium,
+                        fontSize = LoginProviderTextSize,
+                        fontWeight = FontWeight.SemiBold,
                     )
                 }
 
@@ -207,7 +210,8 @@ fun LoginScreen(
                     Spacer(modifier = Modifier.size(LoginProviderIconTextSpacing))
                     Text(
                         text = stringResource(R.string.login_google),
-                        style = MaterialTheme.typography.titleMedium
+                        fontSize = LoginProviderTextSize,
+                        fontWeight = FontWeight.SemiBold,
                     )
                 }
 
