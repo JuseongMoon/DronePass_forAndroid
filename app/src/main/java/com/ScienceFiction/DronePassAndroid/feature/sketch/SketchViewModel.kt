@@ -117,7 +117,9 @@ class SketchViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             val preferences = dataStore.data.first()
-            _currentColor.value = preferences[SketchPreferenceKeys.CURRENT_COLOR] ?: DefaultSketchColor
+            _currentColor.value = normalizeSketchFirestoreColor(
+                preferences[SketchPreferenceKeys.CURRENT_COLOR] ?: DefaultSketchColor,
+            )
             _currentStrokeWidth.value = clampSketchStrokeWidth(
                 preferences[SketchPreferenceKeys.CURRENT_STROKE_WIDTH] ?: DefaultSketchStrokeWidth
             )
@@ -376,10 +378,11 @@ class SketchViewModel @Inject constructor(
 
     /** 펜 색상을 변경한다. */
     fun setColor(hex: String) {
-        _currentColor.value = hex
+        val normalizedColor = normalizeSketchFirestoreColor(hex)
+        _currentColor.value = normalizedColor
         viewModelScope.launch {
             dataStore.edit { preferences ->
-                preferences[SketchPreferenceKeys.CURRENT_COLOR] = hex
+                preferences[SketchPreferenceKeys.CURRENT_COLOR] = normalizedColor
             }
         }
     }

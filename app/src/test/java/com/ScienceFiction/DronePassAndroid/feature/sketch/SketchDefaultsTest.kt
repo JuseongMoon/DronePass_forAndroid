@@ -31,6 +31,13 @@ class SketchDefaultsTest {
     }
 
     @Test
+    fun `스케치 Firestore 색상은 저장 전 RRGGBB hex 로 정규화한다`() {
+        assertEquals("#123456", normalizeSketchFirestoreColor("#123456"))
+        assertEquals("#123456", normalizeSketchFirestoreColor("#AA123456"))
+        assertEquals("#FF0000", normalizeSketchFirestoreColor("not-a-color"))
+    }
+
+    @Test
     fun `스케치 모드 재진입은 iOS처럼 이미 활성 상태면 무시한다`() {
         assertEquals(true, shouldEnterSketchMode(isSketchModeActive = false))
         assertEquals(false, shouldEnterSketchMode(isSketchModeActive = true))

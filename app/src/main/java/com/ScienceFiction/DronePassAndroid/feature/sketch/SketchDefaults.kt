@@ -2,6 +2,8 @@ package com.ScienceFiction.DronePassAndroid.feature.sketch
 
 import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import com.ScienceFiction.DronePassAndroid.core.util.parseIosOpaqueRgbHexColor
+import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.min
 
@@ -21,6 +23,11 @@ internal fun clampSketchStrokeWidth(width: Double): Double {
 
 internal fun clampSketchOpacity(opacity: Double): Double {
     return opacity.coerceIn(0.1, 1.0)
+}
+
+internal fun normalizeSketchFirestoreColor(color: String): String {
+    val parsed = parseIosOpaqueRgbHexColor(color) ?: return DefaultSketchColor
+    return String.format(Locale.US, "#%06X", parsed and 0xFFFFFF)
 }
 
 internal fun shouldEnterSketchMode(isSketchModeActive: Boolean): Boolean {
