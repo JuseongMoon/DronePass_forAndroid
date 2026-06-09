@@ -1,5 +1,7 @@
 package com.ScienceFiction.DronePassAndroid.core.data.sync
 
+import androidx.datastore.preferences.core.MutablePreferences
+import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlin.math.abs
@@ -10,6 +12,28 @@ internal object SyncPreferenceKeys {
     val LAST_SKETCH_SYNC_TIME = longPreferencesKey("lastSketchSyncTime")
     val LAST_LOCAL_SKETCH_MODIFICATION_TIME = longPreferencesKey("lastLocalSketchModificationTime")
     val SYNCED_SHAPE_BASELINE = stringPreferencesKey("syncedShapeBaseline")
+}
+
+internal val SHAPE_REALTIME_SYNC_SUCCESS_KEYS_TO_CLEAR: List<Preferences.Key<*>> = listOf(
+    SyncPreferenceKeys.LAST_LOCAL_MODIFICATION_TIME,
+)
+
+internal val SKETCH_REALTIME_SYNC_SUCCESS_KEYS_TO_CLEAR: List<Preferences.Key<*>> = listOf(
+    SyncPreferenceKeys.LAST_LOCAL_SKETCH_MODIFICATION_TIME,
+)
+
+internal fun MutablePreferences.recordShapeRealtimeSyncSuccess(syncTimeMillis: Long) {
+    this[SyncPreferenceKeys.LAST_SYNC_TIME] = syncTimeMillis
+    SHAPE_REALTIME_SYNC_SUCCESS_KEYS_TO_CLEAR.forEach { key ->
+        remove(key)
+    }
+}
+
+internal fun MutablePreferences.recordSketchRealtimeSyncSuccess(syncTimeMillis: Long) {
+    this[SyncPreferenceKeys.LAST_SKETCH_SYNC_TIME] = syncTimeMillis
+    SKETCH_REALTIME_SYNC_SUCCESS_KEYS_TO_CLEAR.forEach { key ->
+        remove(key)
+    }
 }
 
 internal data class AccountSwitchLocalChangeState(

@@ -17,6 +17,22 @@ class RealtimeSyncManagerTest {
     }
 
     @Test
+    fun `shape realtime sync success clears local modification marker like iOS`() {
+        assertEquals(
+            listOf(SyncPreferenceKeys.LAST_LOCAL_MODIFICATION_TIME),
+            SHAPE_REALTIME_SYNC_SUCCESS_KEYS_TO_CLEAR,
+        )
+    }
+
+    @Test
+    fun `sketch realtime sync success clears local modification marker like iOS`() {
+        assertEquals(
+            listOf(SyncPreferenceKeys.LAST_LOCAL_SKETCH_MODIFICATION_TIME),
+            SKETCH_REALTIME_SYNC_SUCCESS_KEYS_TO_CLEAR,
+        )
+    }
+
+    @Test
     fun `realtime listener retries silently but manual sync propagates failures`() {
         assertEquals(false, shouldRethrowRealtimeSyncFailure(manualRequest = false))
         assertEquals(true, shouldRethrowRealtimeSyncFailure(manualRequest = true))

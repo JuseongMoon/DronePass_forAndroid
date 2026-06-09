@@ -343,7 +343,7 @@ class RealtimeSyncManager @Inject constructor(
             // 동기화 시각 업데이트
             lastShapeSyncTime = System.currentTimeMillis()
             dataStore.edit { preferences ->
-                preferences[SyncPreferenceKeys.LAST_SYNC_TIME] = lastShapeSyncTime
+                preferences.recordShapeRealtimeSyncSuccess(lastShapeSyncTime)
             }
             _lastSyncTime.value = lastShapeSyncTime
 
@@ -386,7 +386,7 @@ class RealtimeSyncManager @Inject constructor(
 
             lastSketchSyncTime = System.currentTimeMillis()
             dataStore.edit { preferences ->
-                preferences[SyncPreferenceKeys.LAST_SKETCH_SYNC_TIME] = lastSketchSyncTime
+                preferences.recordSketchRealtimeSyncSuccess(lastSketchSyncTime)
             }
             sketchRetryCount = 0
 
