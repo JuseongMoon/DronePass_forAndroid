@@ -197,6 +197,24 @@ class MapScreenLayersTest {
     }
 
     @Test
+    fun `비행구역 로드 결과는 iOS처럼 현재 표시 중인 레이어일 때만 반영한다`() {
+        assertEquals(
+            true,
+            shouldApplyFlightZoneLayerResult(
+                layer = FlightZoneLayer.PROHIBITED,
+                currentVisibleLayers = setOf(FlightZoneLayer.PROHIBITED),
+            ),
+        )
+        assertEquals(
+            false,
+            shouldApplyFlightZoneLayerResult(
+                layer = FlightZoneLayer.CONTROL_ZONE,
+                currentVisibleLayers = setOf(FlightZoneLayer.PROHIBITED),
+            ),
+        )
+    }
+
+    @Test
     fun `비행구역 표시 수는 iOS overlayCount처럼 렌더 가능한 폴리곤 오버레이 수를 센다`() {
         val outerOne = listOf(37.0 to 126.0, 37.0 to 127.0, 38.0 to 127.0)
         val outerTwo = listOf(35.0 to 128.0, 35.0 to 129.0, 36.0 to 129.0)

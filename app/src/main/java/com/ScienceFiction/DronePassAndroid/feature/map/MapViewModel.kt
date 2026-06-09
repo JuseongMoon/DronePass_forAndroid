@@ -53,6 +53,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
@@ -213,6 +214,11 @@ internal fun resolveInitialVisibleFlightZoneLayers(
         }
     }.toSet()
 }
+
+internal fun shouldApplyFlightZoneLayerResult(
+    layer: FlightZoneLayer,
+    currentVisibleLayers: Set<FlightZoneLayer>,
+): Boolean = layer in currentVisibleLayers
 
 internal enum class ShapeEditPostSaveAction {
     CLOSE,
@@ -958,8 +964,8 @@ class MapViewModel @Inject constructor(
         combine(_visibleLayers, _currentMapBounds) { layers, bounds -> layers to bounds }
             .debounce(DEBOUNCE_MS)
             .distinctUntilChanged()
-            .collect { (layers, bounds) ->
-                if (bounds == null || layers.isEmpty()) return@collect
+            .collectLatest { (layers, bounds) ->
+                if (bounds == null || layers.isEmpty()) return@collectLatest
                 loadFlightZones(
                     southWestLat = bounds.sw.first,
                     southWestLon = bounds.sw.second,
@@ -1095,7 +1101,12 @@ class MapViewModel @Inject constructor(
             // 새 fetch 라운드 시작 시 이전 결과는 클리어 (요청한 레이어 셋만 정확히 반영되도록).
             _flightZones.value = emptyMap()
             val results = vWorldRepository.fetchMultipleLayers(layers, bbox) { layer, features ->
-                _flightZones.update { current -> current + (layer to features) }
+                if (shouldApplyFlightZoneLayerResult(layer, _visibleLayers.value)) {
+                    _flightZones.update { current -> current + (layer to features) }
+                }
+            }
+            _flightZones.update { current ->
+                filterFlightZoneCacheForVisibleLayers(current, _visibleLayers.value)
             }
             Log.d(TAG, "비행구역 로드 완료: ${results.values.sumOf { it.size }}개 구역")
         } catch (e: VWorldServiceException.InvalidKey) {
