@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.weather
 
+import androidx.compose.ui.unit.dp
 import androidx.datastore.preferences.core.preferencesOf
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.core.util.DroneCategory
@@ -45,6 +46,13 @@ class WeatherForecastParityTest {
     fun `forecast charts are visible whenever iOS hourly forecast is not empty`() {
         assertFalse(shouldShowWeatherForecastCharts(emptyList()))
         assertTrue(shouldShowWeatherForecastCharts(listOf(hourlyWeather())))
+    }
+
+    @Test
+    fun `forecast chart heights match iOS WeatherForecastView chart frames`() {
+        assertEquals(250.dp, WeatherForecastChartHeight)
+        assertEquals(WeatherForecastChartHeight, WeatherLineChartDefaultHeight)
+        assertEquals(WeatherForecastChartHeight, WeatherPrecipitationBarChartHeight)
     }
 
     @Test

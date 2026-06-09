@@ -5,7 +5,7 @@ import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.domain.model.Kp27DayForecast
 import com.ScienceFiction.DronePassAndroid.domain.model.KpIndexData
 import com.ScienceFiction.DronePassAndroid.domain.model.KpLevel
-import com.ScienceFiction.DronePassAndroid.feature.weather.WeatherLineChartDefaultHeight
+import com.ScienceFiction.DronePassAndroid.feature.weather.WeatherForecastChartHeight
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.util.Calendar
@@ -138,8 +138,8 @@ class KpChartsTest {
     }
 
     @Test
-    fun `shared weather line chart keeps existing weather default height`() {
-        assertEquals(160.dp, WeatherLineChartDefaultHeight)
+    fun `KP and weather forecast chart heights share the same iOS frame`() {
+        assertEquals(WeatherForecastChartHeight, KpForecastChartHeight)
     }
 
     @Test

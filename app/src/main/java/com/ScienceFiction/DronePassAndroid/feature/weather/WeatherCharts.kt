@@ -40,7 +40,9 @@ import java.util.Locale
 
 // ─── 공통 Line Chart ────────────────────────────────────────────
 
-internal val WeatherLineChartDefaultHeight = 160.dp
+internal val WeatherForecastChartHeight = 250.dp
+internal val WeatherLineChartDefaultHeight = WeatherForecastChartHeight
+internal val WeatherPrecipitationBarChartHeight = WeatherForecastChartHeight
 
 /**
  * Y축 배경 색상 영역. WeatherLineChart 의 [backgroundZones] 에 전달.
@@ -350,6 +352,7 @@ private fun PrecipitationBarChart(
     dataPoints: List<Pair<Long, Double>>,
     modifier: Modifier = Modifier,
     currentTimeMs: Long? = null,
+    chartHeight: Dp = WeatherPrecipitationBarChartHeight,
 ) {
     if (dataPoints.isEmpty()) return
 
@@ -360,7 +363,7 @@ private fun PrecipitationBarChart(
     Canvas(
         modifier = modifier
             .fillMaxWidth()
-            .height(160.dp)
+            .height(chartHeight)
     ) {
         val leftPadding = 48f
         val rightPadding = 16f
