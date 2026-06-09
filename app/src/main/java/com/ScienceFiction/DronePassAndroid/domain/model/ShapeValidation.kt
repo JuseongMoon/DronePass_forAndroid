@@ -65,6 +65,9 @@ private fun ShapeModel.validateShape(
     if (title.isBlank()) {
         return ShapeValidationResult(isValid = false, reason = "blank title")
     }
+    if (!isValidFirebaseHexColor(color)) {
+        return ShapeValidationResult(isValid = false, reason = "invalid color")
+    }
     if (!baseCoordinate.isValidShapeCoordinate()) {
         return ShapeValidationResult(isValid = false, reason = "invalid base coordinate")
     }

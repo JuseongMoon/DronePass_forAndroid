@@ -33,6 +33,15 @@ class SketchValidationTest {
     }
 
     @Test
+    fun `스케치 Firebase 저장은 iOS 계약처럼 RRGGBB hex 색상만 허용한다`() {
+        assertTrue(validSketch().copy(color = "#FF0000").isValidForFirebasePersistence())
+        assertTrue(validSketch().copy(color = "#ff0000").isValidForFirebasePersistence())
+        assertFalse(validSketch().copy(color = "red").isValidForFirebasePersistence())
+        assertFalse(validSketch().copy(color = "#FF000080").isValidForFirebasePersistence())
+        assertFalse(validSketch().copy(color = "FF0000").isValidForFirebasePersistence())
+    }
+
+    @Test
     fun `스케치 Firebase 저장은 iOS처럼 strokeWidth 0 초과 50 이하만 허용한다`() {
         assertFalse(validSketch().copy(strokeWidth = 0.0).isValidForFirebasePersistence())
         assertFalse(validSketch().copy(strokeWidth = -1.0).isValidForFirebasePersistence())

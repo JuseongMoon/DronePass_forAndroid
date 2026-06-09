@@ -12,6 +12,7 @@ import com.ScienceFiction.DronePassAndroid.core.data.sync.mergeLWW
 import com.ScienceFiction.DronePassAndroid.core.data.sync.shouldUpdateServerMetadataAfterFullSync
 import com.ScienceFiction.DronePassAndroid.core.util.compareIosLocalizedStandardStrings
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
+import com.ScienceFiction.DronePassAndroid.domain.model.validateForFirebasePersistence
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.util.Locale
@@ -127,6 +128,7 @@ class DroneRepository @Inject constructor(
      */
     private suspend fun syncDroneToFirebase(drone: DroneModel) {
         val userId = auth.currentUser?.uid ?: return
+        if (!drone.isValidForFirebaseWrite("syncDroneToFirebase")) return
         try {
             droneFirebaseStore.saveDrone(userId, drone)
             droneFirebaseStore.updateServerMetadata(userId)
@@ -147,7 +149,9 @@ class DroneRepository @Inject constructor(
         }
 
         try {
-            val localDrones = droneDao.getAllDronesOnce().map { it.toDomain() }
+            val localDrones = droneDao.getAllDronesOnce()
+                .map { it.toDomain() }
+                .filterValidForFirebaseWrite("syncToFirebase")
             if (localDrones.isNotEmpty()) {
                 droneFirebaseStore.saveDrones(userId, localDrones)
                 droneFirebaseStore.updateServerMetadata(userId)
@@ -211,18 +215,41 @@ class DroneRepository @Inject constructor(
                 droneDao.insertDrones(result.merged.map { it.toEntity() })
             }
 
-            if (result.toUpload.isNotEmpty()) {
-                droneFirebaseStore.saveDrones(userId, result.toUpload)
+            val toUpload = result.toUpload.filterValidForFirebaseWrite("performFullSync/upload")
+            if (toUpload.isNotEmpty()) {
+                droneFirebaseStore.saveDrones(userId, toUpload)
             }
 
-            if (shouldUpdateServerMetadataAfterFullSync(result.toUpload.size)) {
+            if (shouldUpdateServerMetadataAfterFullSync(toUpload.size)) {
                 droneFirebaseStore.updateServerMetadata(userId)
             }
 
-            Log.d(TAG, "performFullSync 완료: 로컬=${localDrones.size}, 서버=${serverDrones.size}, 머지=${result.merged.size}, 업로드=${result.toUpload.size}")
+            Log.d(TAG, "performFullSync 완료: 로컬=${localDrones.size}, 서버=${serverDrones.size}, 머지=${result.merged.size}, 업로드=${toUpload.size}")
         } catch (e: Exception) {
             Log.e(TAG, "performFullSync 실패", e)
             throw e
+        }
+    }
+
+    private fun DroneModel.isValidForFirebaseWrite(operation: String): Boolean {
+        val validation = validateForFirebasePersistence()
+        if (!validation.isValid) {
+            Log.w(TAG, "$operation: 유효하지 않은 드론 Firebase 저장 스킵: droneId=$id, reason=${validation.reason}")
+        }
+        return validation.isValid
+    }
+
+    private fun List<DroneModel>.filterValidForFirebaseWrite(operation: String): List<DroneModel> {
+        val seenIds = mutableSetOf<String>()
+        return filter { drone ->
+            when {
+                !drone.isValidForFirebaseWrite(operation) -> false
+                !seenIds.add(drone.id) -> {
+                    Log.w(TAG, "$operation: 중복 드론 ID 스킵: droneId=${drone.id}")
+                    false
+                }
+                else -> true
+            }
         }
     }
 }

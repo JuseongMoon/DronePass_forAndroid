@@ -16,6 +16,9 @@ fun SketchModel.validateForFirebasePersistence(): SketchValidationResult {
     if (!points.all { it.isValidShapeCoordinate() }) {
         return SketchValidationResult(isValid = false, reason = "invalid point")
     }
+    if (!isValidFirebaseHexColor(color)) {
+        return SketchValidationResult(isValid = false, reason = "invalid color")
+    }
     if (!strokeWidth.isFinite() || strokeWidth <= 0.0 || strokeWidth > MAX_FIREBASE_SKETCH_STROKE_WIDTH) {
         return SketchValidationResult(isValid = false, reason = "invalid stroke width")
     }

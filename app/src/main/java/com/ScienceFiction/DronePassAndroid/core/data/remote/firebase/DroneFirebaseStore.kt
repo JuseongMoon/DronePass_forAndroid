@@ -2,6 +2,8 @@ package com.ScienceFiction.DronePassAndroid.core.data.remote.firebase
 
 import android.util.Log
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
+import com.ScienceFiction.DronePassAndroid.domain.model.validateFirebaseDroneBatch
+import com.ScienceFiction.DronePassAndroid.domain.model.validateForFirebasePersistence
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
@@ -14,6 +16,9 @@ import javax.inject.Singleton
 private fun droneTimestampMillis(value: Any?): Long? {
     return (value as? Timestamp)?.toDate()?.time
 }
+
+internal class DroneFirebaseInvalidDataException(reason: String?) :
+    IllegalStateException("Invalid drone data: ${reason ?: "unknown"}")
 
 internal fun droneToFirestoreDocumentData(drone: DroneModel): Map<String, Any?> {
     return mapOf(
@@ -121,6 +126,11 @@ class DroneFirebaseStore @Inject constructor(
      */
     suspend fun saveDrone(userId: String, drone: DroneModel) {
         try {
+            val validation = drone.validateForFirebasePersistence()
+            if (!validation.isValid) {
+                throw DroneFirebaseInvalidDataException(validation.reason)
+            }
+
             val data = droneToFirestoreData(drone)
             dronesCollection(userId)
                 .document(drone.id)
@@ -138,6 +148,11 @@ class DroneFirebaseStore @Inject constructor(
      */
     suspend fun saveDrones(userId: String, drones: List<DroneModel>) {
         try {
+            val validation = validateFirebaseDroneBatch(drones)
+            if (!validation.isValid) {
+                throw DroneFirebaseInvalidDataException(validation.reason)
+            }
+
             drones.chunked(500).forEach { chunk ->
                 val batch = firestore.batch()
                 chunk.forEach { drone ->

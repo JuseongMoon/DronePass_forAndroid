@@ -28,6 +28,15 @@ class ShapeValidationTest {
     }
 
     @Test
+    fun `도형 Firebase 저장은 iOS 계약처럼 RRGGBB hex 색상만 허용한다`() {
+        assertTrue(validCircle().copy(color = "#007AFF").isValidForFirebasePersistence())
+        assertTrue(validCircle().copy(color = "#007aff").isValidForFirebasePersistence())
+        assertFalse(validCircle().copy(color = "blue").isValidForFirebasePersistence())
+        assertFalse(validCircle().copy(color = "#007AFFCC").isValidForFirebasePersistence())
+        assertFalse(validCircle().copy(color = "007AFF").isValidForFirebasePersistence())
+    }
+
+    @Test
     fun `원형 반경은 없으면 통과하지만 0 이하와 Firebase 50km 초과는 거부한다`() {
         assertTrue(validCircle().copy(radius = null).isValidForLocalPersistence())
         assertFalse(validCircle().copy(radius = 0.0).isValidForLocalPersistence())

@@ -13,7 +13,7 @@ class DroneFirestoreParsingTest {
     @Test
     fun `Drone Firestore 쓰기는 iOS 계약처럼 날짜를 Timestamp로 저장한다`() {
         val drone = DroneModel(
-            id = "drone-1",
+            id = "00000000-0000-0000-0000-000000000001",
             name = "Drone",
             color = "#007AFF",
             serialNumber = "SN-1",
@@ -27,7 +27,7 @@ class DroneFirestoreParsingTest {
 
         val data = droneToFirestoreDocumentData(drone)
 
-        assertEquals("drone-1", data["id"])
+        assertEquals("00000000-0000-0000-0000-000000000001", data["id"])
         assertEquals("#007AFF", data["color"])
         assertTrue(data["createdAt"] is Timestamp)
         assertTrue(data["updatedAt"] is Timestamp)
