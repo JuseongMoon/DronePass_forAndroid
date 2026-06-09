@@ -522,7 +522,7 @@ internal fun resolveSketchTouchEvent(
         SketchTouchEventType.Move -> {
             if (!isSketchTouchActive) {
                 SketchTouchDecision(
-                    consume = true,
+                    consume = false,
                     nextIsSketchTouchActive = false,
                     action = null,
                 )
@@ -539,7 +539,7 @@ internal fun resolveSketchTouchEvent(
             }
         }
         SketchTouchEventType.Up -> SketchTouchDecision(
-            consume = true,
+            consume = isSketchTouchActive,
             nextIsSketchTouchActive = false,
             action = if (isSketchTouchActive && !isEraserMode) {
                 SketchTouchAction.FinishDrawing
@@ -548,7 +548,7 @@ internal fun resolveSketchTouchEvent(
             },
         )
         SketchTouchEventType.Cancel -> SketchTouchDecision(
-            consume = true,
+            consume = isSketchTouchActive,
             nextIsSketchTouchActive = false,
             action = if (isSketchTouchActive && !isEraserMode) {
                 SketchTouchAction.CancelDrawing
@@ -557,7 +557,7 @@ internal fun resolveSketchTouchEvent(
             },
         )
         SketchTouchEventType.Other -> SketchTouchDecision(
-            consume = true,
+            consume = isSketchTouchActive,
             nextIsSketchTouchActive = isSketchTouchActive,
             action = null,
         )

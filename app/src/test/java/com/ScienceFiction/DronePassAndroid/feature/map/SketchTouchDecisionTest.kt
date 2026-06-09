@@ -44,7 +44,7 @@ class SketchTouchDecisionTest {
     }
 
     @Test
-    fun `1손가락 move 가 비활성 터치면 좌표 액션 없이 소비한다`() {
+    fun `1손가락 move 가 비활성 터치면 iOS처럼 지도에 전달한다`() {
         val decision = resolveSketchTouchEvent(
             eventType = SketchTouchEventType.Move,
             pointerCount = 1,
@@ -54,7 +54,7 @@ class SketchTouchDecisionTest {
 
         assertEquals(
             SketchTouchDecision(
-                consume = true,
+                consume = false,
                 nextIsSketchTouchActive = false,
                 action = null,
             ),
@@ -154,6 +154,53 @@ class SketchTouchDecisionTest {
                 action = null,
             ),
             decision,
+        )
+    }
+
+    @Test
+    fun `비활성 up cancel other 이벤트는 iOS처럼 지도에 전달한다`() {
+        val upDecision = resolveSketchTouchEvent(
+            eventType = SketchTouchEventType.Up,
+            pointerCount = 1,
+            isSketchTouchActive = false,
+            isEraserMode = false,
+        )
+        val cancelDecision = resolveSketchTouchEvent(
+            eventType = SketchTouchEventType.Cancel,
+            pointerCount = 1,
+            isSketchTouchActive = false,
+            isEraserMode = false,
+        )
+        val otherDecision = resolveSketchTouchEvent(
+            eventType = SketchTouchEventType.Other,
+            pointerCount = 1,
+            isSketchTouchActive = false,
+            isEraserMode = false,
+        )
+
+        assertEquals(
+            SketchTouchDecision(
+                consume = false,
+                nextIsSketchTouchActive = false,
+                action = null,
+            ),
+            upDecision,
+        )
+        assertEquals(
+            SketchTouchDecision(
+                consume = false,
+                nextIsSketchTouchActive = false,
+                action = null,
+            ),
+            cancelDecision,
+        )
+        assertEquals(
+            SketchTouchDecision(
+                consume = false,
+                nextIsSketchTouchActive = false,
+                action = null,
+            ),
+            otherDecision,
         )
     }
 }
