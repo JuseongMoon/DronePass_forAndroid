@@ -140,7 +140,6 @@ fun DroneSelectionDropdown(
             }
 
             Surface(
-                onClick = { showDropdown = !showDropdown },
                 shape = CircleShape,
                 color = MaterialTheme.colorScheme.surface,
                 shadowElevation = DroneDropdownShadowElevation,
@@ -148,7 +147,9 @@ fun DroneSelectionDropdown(
             ) {
                 Box(
                     contentAlignment = Alignment.Center,
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clickable { showDropdown = !showDropdown }
                 ) {
                     Icon(
                         imageVector = if (showDropdown) Icons.Default.KeyboardArrowUp
