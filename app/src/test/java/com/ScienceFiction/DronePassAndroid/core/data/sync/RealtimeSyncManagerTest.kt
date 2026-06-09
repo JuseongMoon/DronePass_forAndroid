@@ -1,6 +1,8 @@
 package com.ScienceFiction.DronePassAndroid.core.data.sync
 
+import androidx.datastore.preferences.core.mutablePreferencesOf
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 class RealtimeSyncManagerTest {
@@ -33,6 +35,32 @@ class RealtimeSyncManagerTest {
             listOf(SyncPreferenceKeys.LAST_LOCAL_SKETCH_MODIFICATION_TIME),
             SKETCH_REALTIME_SYNC_SUCCESS_KEYS_TO_CLEAR,
         )
+    }
+
+    @Test
+    fun `shape drone sync success records sync time and clears dirty markers`() {
+        val preferences = mutablePreferencesOf(
+            SyncPreferenceKeys.LAST_LOCAL_MODIFICATION_TIME to 100L,
+            SyncPreferenceKeys.LAST_LOCAL_DRONE_MODIFICATION_TIME to 200L,
+        )
+
+        preferences.recordShapeRealtimeSyncSuccess(300L)
+
+        assertEquals(300L, preferences[SyncPreferenceKeys.LAST_SYNC_TIME])
+        assertNull(preferences[SyncPreferenceKeys.LAST_LOCAL_MODIFICATION_TIME])
+        assertNull(preferences[SyncPreferenceKeys.LAST_LOCAL_DRONE_MODIFICATION_TIME])
+    }
+
+    @Test
+    fun `sketch sync success records sync time and clears dirty marker`() {
+        val preferences = mutablePreferencesOf(
+            SyncPreferenceKeys.LAST_LOCAL_SKETCH_MODIFICATION_TIME to 100L,
+        )
+
+        preferences.recordSketchRealtimeSyncSuccess(300L)
+
+        assertEquals(300L, preferences[SyncPreferenceKeys.LAST_SKETCH_SYNC_TIME])
+        assertNull(preferences[SyncPreferenceKeys.LAST_LOCAL_SKETCH_MODIFICATION_TIME])
     }
 
     @Test

@@ -19,6 +19,8 @@ import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncPreferenceKeys
 import com.ScienceFiction.DronePassAndroid.core.data.sync.buildAccountSwitchLocalChangeState
 import com.ScienceFiction.DronePassAndroid.core.data.sync.decodeAccountSwitchShapeBaseline
 import com.ScienceFiction.DronePassAndroid.core.data.sync.encodeAccountSwitchShapeBaseline
+import com.ScienceFiction.DronePassAndroid.core.data.sync.recordShapeRealtimeSyncSuccess
+import com.ScienceFiction.DronePassAndroid.core.data.sync.recordSketchRealtimeSyncSuccess
 import com.ScienceFiction.DronePassAndroid.feature.drone.DroneSelectionState
 import com.ScienceFiction.DronePassAndroid.feature.profile.ProfilePreferenceKeys
 import com.ScienceFiction.DronePassAndroid.feature.profile.storedCloudBackupEnabled
@@ -450,15 +452,17 @@ class AuthViewModel @Inject constructor(
             shapeRepository.performFullSync()
             droneRepository.performFullSync()
             saveSyncedShapeBaseline()
+            val shapeSyncTime = System.currentTimeMillis()
             dataStore.edit { preferences ->
-                preferences[SyncPreferenceKeys.LAST_SYNC_TIME] = System.currentTimeMillis()
+                preferences.recordShapeRealtimeSyncSuccess(shapeSyncTime)
             }
             if (selectAllDronesAfterSync) {
                 selectAllActiveDrones()
             }
             sketchRepository.performFullSync()
+            val sketchSyncTime = System.currentTimeMillis()
             dataStore.edit { preferences ->
-                preferences[SyncPreferenceKeys.LAST_SKETCH_SYNC_TIME] = System.currentTimeMillis()
+                preferences.recordSketchRealtimeSyncSuccess(sketchSyncTime)
             }
             Log.d(TAG, "Firebase 양방향 동기화 완료")
         } catch (e: Exception) {
