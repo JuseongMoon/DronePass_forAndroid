@@ -5,6 +5,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncPreferenceKeys
 import com.ScienceFiction.DronePassAndroid.core.data.sync.buildAccountSwitchLocalChangeState
+import com.ScienceFiction.DronePassAndroid.core.data.sync.countAccountSwitchShapeBaselineChanges
+import com.ScienceFiction.DronePassAndroid.core.data.sync.decodeAccountSwitchShapeBaseline
+import com.ScienceFiction.DronePassAndroid.core.data.sync.encodeAccountSwitchShapeBaseline
 import com.ScienceFiction.DronePassAndroid.core.data.sync.hasUnsyncedLocalChanges
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -161,18 +164,39 @@ class AuthViewModelForegroundSyncTest {
     }
 
     @Test
-    fun `account switch warning counts shapes and sketches when either domain is dirty`() {
+    fun `account switch warning counts only shape changes since iOS baseline`() {
         val state = buildAccountSwitchLocalChangeState(
-            shapeCount = 2,
+            currentShapeUpdatedAtById = mapOf(
+                "same" to 100,
+                "modified" to 2_500,
+                "added" to 300,
+            ),
+            syncedShapeBaseline = mapOf(
+                "same" to 100,
+                "modified" to 1_000,
+                "removed" to 700,
+            ),
+            sketchCount = 0,
+            lastLocalSketchModificationTime = null,
+            lastSketchSyncTime = null,
+        )
+
+        assertEquals(true, state.hasUnsyncedLocalChanges)
+        assertEquals(3, state.atRiskCount)
+    }
+
+    @Test
+    fun `account switch warning still includes dirty sketches because Android can lose them too`() {
+        val state = buildAccountSwitchLocalChangeState(
+            currentShapeUpdatedAtById = mapOf("same" to 100),
+            syncedShapeBaseline = mapOf("same" to 100),
             sketchCount = 3,
-            lastLocalModificationTime = 200,
-            lastSyncTime = 100,
-            lastLocalSketchModificationTime = 50,
+            lastLocalSketchModificationTime = 200,
             lastSketchSyncTime = 100,
         )
 
         assertEquals(true, state.hasUnsyncedLocalChanges)
-        assertEquals(5, state.atRiskCount)
+        assertEquals(3, state.atRiskCount)
     }
 
     @Test
@@ -184,25 +208,82 @@ class AuthViewModelForegroundSyncTest {
             "lastLocalSketchModificationTime",
             SyncPreferenceKeys.LAST_LOCAL_SKETCH_MODIFICATION_TIME.name,
         )
+        assertEquals("syncedShapeBaseline", SyncPreferenceKeys.SYNCED_SHAPE_BASELINE.name)
     }
 
     @Test
     fun `clean local data does not ask account switch confirmation even when items exist`() {
         val state = buildAccountSwitchLocalChangeState(
-            shapeCount = 2,
+            currentShapeUpdatedAtById = mapOf(
+                "shape-a" to 100,
+                "shape-b" to 200,
+            ),
+            syncedShapeBaseline = mapOf(
+                "shape-a" to 100,
+                "shape-b" to 200,
+            ),
             sketchCount = 3,
-            lastLocalModificationTime = 100,
-            lastSyncTime = 200,
             lastLocalSketchModificationTime = 100,
             lastSketchSyncTime = 200,
         )
 
         assertEquals(false, state.hasUnsyncedLocalChanges)
-        assertEquals(5, state.atRiskCount)
+        assertEquals(0, state.atRiskCount)
         assertEquals(
             false,
             shouldRequestAccountSwitchConfirmation(state.hasUnsyncedLocalChanges),
         )
+    }
+
+    @Test
+    fun `account switch shape baseline missing falls back to current active shape count`() {
+        assertEquals(
+            2,
+            countAccountSwitchShapeBaselineChanges(
+                currentShapeUpdatedAtById = mapOf(
+                    "shape-a" to 100,
+                    "shape-b" to 200,
+                ),
+                syncedShapeBaseline = null,
+            ),
+        )
+    }
+
+    @Test
+    fun `account switch shape baseline ignores timestamp differences within iOS one second tolerance`() {
+        assertEquals(
+            0,
+            countAccountSwitchShapeBaselineChanges(
+                currentShapeUpdatedAtById = mapOf("shape-a" to 1_900),
+                syncedShapeBaseline = mapOf("shape-a" to 1_000),
+            ),
+        )
+        assertEquals(
+            1,
+            countAccountSwitchShapeBaselineChanges(
+                currentShapeUpdatedAtById = mapOf("shape-a" to 2_001),
+                syncedShapeBaseline = mapOf("shape-a" to 1_000),
+            ),
+        )
+    }
+
+    @Test
+    fun `account switch shape baseline uses iOS UserDefaults json shape`() {
+        val encoded = encodeAccountSwitchShapeBaseline(
+            mapOf(
+                "shape-a" to 100,
+                "shape-b" to 200,
+            ),
+        )
+
+        assertEquals(
+            mapOf(
+                "shape-a" to 100L,
+                "shape-b" to 200L,
+            ),
+            decodeAccountSwitchShapeBaseline(encoded),
+        )
+        assertEquals(null, decodeAccountSwitchShapeBaseline(""))
     }
 
     @Test

@@ -17,6 +17,8 @@ import com.ScienceFiction.DronePassAndroid.core.data.sync.AccountSwitchLocalChan
 import com.ScienceFiction.DronePassAndroid.core.data.sync.RealtimeSyncManager
 import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncPreferenceKeys
 import com.ScienceFiction.DronePassAndroid.core.data.sync.buildAccountSwitchLocalChangeState
+import com.ScienceFiction.DronePassAndroid.core.data.sync.decodeAccountSwitchShapeBaseline
+import com.ScienceFiction.DronePassAndroid.core.data.sync.encodeAccountSwitchShapeBaseline
 import com.ScienceFiction.DronePassAndroid.feature.drone.DroneSelectionState
 import com.ScienceFiction.DronePassAndroid.feature.profile.ProfilePreferenceKeys
 import com.ScienceFiction.DronePassAndroid.feature.profile.storedCloudBackupEnabled
@@ -398,6 +400,7 @@ class AuthViewModel @Inject constructor(
             preferences.remove(ProfilePreferenceKeys.LEGACY_LAST_BACKUP_TIME)
             preferences.remove(SyncPreferenceKeys.LAST_SYNC_TIME)
             preferences.remove(SyncPreferenceKeys.LAST_LOCAL_MODIFICATION_TIME)
+            preferences.remove(SyncPreferenceKeys.SYNCED_SHAPE_BASELINE)
             preferences.remove(SyncPreferenceKeys.LAST_SKETCH_SYNC_TIME)
             preferences.remove(SyncPreferenceKeys.LAST_LOCAL_SKETCH_MODIFICATION_TIME)
         }
@@ -406,14 +409,30 @@ class AuthViewModel @Inject constructor(
 
     private suspend fun buildLocalChangeStateForAccountSwitch(): AccountSwitchLocalChangeState {
         val preferences = dataStore.data.first()
+        val currentShapeUpdatedAtById = shapeRepository.getAllShapes()
+            .first()
+            .filter { !it.isDeleted }
+            .associate { shape -> shape.id to shape.updatedAt }
         return buildAccountSwitchLocalChangeState(
-            shapeCount = shapeRepository.getAllShapes().first().size,
+            currentShapeUpdatedAtById = currentShapeUpdatedAtById,
+            syncedShapeBaseline = decodeAccountSwitchShapeBaseline(
+                preferences[SyncPreferenceKeys.SYNCED_SHAPE_BASELINE],
+            ),
             sketchCount = sketchRepository.getAllSketches().first().size,
-            lastLocalModificationTime = preferences[SyncPreferenceKeys.LAST_LOCAL_MODIFICATION_TIME],
-            lastSyncTime = preferences[SyncPreferenceKeys.LAST_SYNC_TIME],
             lastLocalSketchModificationTime = preferences[SyncPreferenceKeys.LAST_LOCAL_SKETCH_MODIFICATION_TIME],
             lastSketchSyncTime = preferences[SyncPreferenceKeys.LAST_SKETCH_SYNC_TIME],
         )
+    }
+
+    private suspend fun saveSyncedShapeBaseline() {
+        val activeShapeUpdatedAtById = shapeRepository.getAllShapes()
+            .first()
+            .filter { !it.isDeleted }
+            .associate { shape -> shape.id to shape.updatedAt }
+        dataStore.edit { preferences ->
+            preferences[SyncPreferenceKeys.SYNCED_SHAPE_BASELINE] =
+                encodeAccountSwitchShapeBaseline(activeShapeUpdatedAtById)
+        }
     }
 
     /**
@@ -425,6 +444,7 @@ class AuthViewModel @Inject constructor(
             Log.d(TAG, "Firebase 양방향 동기화 시작")
             shapeRepository.performFullSync()
             droneRepository.performFullSync()
+            saveSyncedShapeBaseline()
             dataStore.edit { preferences ->
                 preferences[SyncPreferenceKeys.LAST_SYNC_TIME] = System.currentTimeMillis()
             }
