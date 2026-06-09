@@ -1,6 +1,7 @@
 package com.ScienceFiction.DronePassAndroid.feature.profile
 
 import androidx.datastore.preferences.core.preferencesOf
+import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncPreferenceKeys
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -46,6 +47,19 @@ class ProfileViewModelTest {
     @Test
     fun `탈퇴 Firestore 데이터 삭제가 최종 실패해도 iOS처럼 Auth 계정 삭제는 계속 진행한다`() {
         assertTrue(shouldContinueAccountDeletionAfterFirestoreDeleteFailure())
+    }
+
+    @Test
+    fun `탈퇴 시 iOS처럼 클라우드 동기화 추적 키를 정리한다`() {
+        assertEquals(
+            listOf(
+                SyncPreferenceKeys.LAST_SYNC_TIME,
+                SyncPreferenceKeys.LAST_LOCAL_MODIFICATION_TIME,
+                SyncPreferenceKeys.LAST_SKETCH_SYNC_TIME,
+                SyncPreferenceKeys.LAST_LOCAL_SKETCH_MODIFICATION_TIME,
+            ),
+            ACCOUNT_DELETION_SYNC_PREFERENCE_KEYS_TO_CLEAR,
+        )
     }
 
     @Test

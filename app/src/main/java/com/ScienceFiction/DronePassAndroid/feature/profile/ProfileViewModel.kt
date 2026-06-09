@@ -12,6 +12,7 @@ import com.ScienceFiction.DronePassAndroid.core.data.repository.DroneRepository
 import com.ScienceFiction.DronePassAndroid.core.data.repository.ShapeRepository
 import com.ScienceFiction.DronePassAndroid.core.data.repository.SketchRepository
 import com.ScienceFiction.DronePassAndroid.core.data.sync.RealtimeSyncManager
+import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncPreferenceKeys
 import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncState
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 import com.ScienceFiction.DronePassAndroid.feature.auth.AuthRepository
@@ -44,6 +45,13 @@ internal val FIRESTORE_USER_SUBCOLLECTIONS_TO_DELETE = listOf(
     "sketches",
     "metadata",
     "devices",
+)
+
+internal val ACCOUNT_DELETION_SYNC_PREFERENCE_KEYS_TO_CLEAR = listOf(
+    SyncPreferenceKeys.LAST_SYNC_TIME,
+    SyncPreferenceKeys.LAST_LOCAL_MODIFICATION_TIME,
+    SyncPreferenceKeys.LAST_SKETCH_SYNC_TIME,
+    SyncPreferenceKeys.LAST_LOCAL_SKETCH_MODIFICATION_TIME,
 )
 
 private const val FIRESTORE_BATCH_LIMIT = 500
@@ -334,6 +342,7 @@ class ProfileViewModel @Inject constructor(
                 it.remove(ProfilePreferenceKeys.LAST_BACKUP_TIME)
                 it.remove(ProfilePreferenceKeys.LEGACY_CLOUD_BACKUP_ENABLED)
                 it.remove(ProfilePreferenceKeys.LEGACY_LAST_BACKUP_TIME)
+                ACCOUNT_DELETION_SYNC_PREFERENCE_KEYS_TO_CLEAR.forEach(it::remove)
             }
 
             runCatching { realtimeSyncManager.stopListening() }
