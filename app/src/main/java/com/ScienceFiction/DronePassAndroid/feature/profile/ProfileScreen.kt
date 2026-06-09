@@ -49,6 +49,8 @@ import java.util.Date
 import java.util.Locale
 
 internal const val ProfileDocumentSheetSkipPartiallyExpanded = false
+internal val ProfileInfoToLogoutSectionSpacing = 10.dp
+internal val ProfileLogoutToSyncSectionSpacing = 16.dp
 
 /**
  * iOS `ProfileView` 1:1 정합 시트 콘텐츠.
@@ -158,7 +160,9 @@ fun ProfileScreen(
             title = stringResource(R.string.profile_info_expired_shapes),
             value = stringResource(R.string.profile_info_count_unit, expiredShapeCount),
         )
-        HorizontalDivider(modifier = Modifier.padding(start = 16.dp))
+
+        // iOS ProfileView: 내 정보 카드와 로그아웃은 별도 Section이며 listSectionSpacing(10)을 둔다.
+        Spacer(modifier = Modifier.height(ProfileInfoToLogoutSectionSpacing))
         SettingsItem(
             title = stringResource(R.string.profile_account_logout),
             titleColor = MaterialTheme.colorScheme.error,
@@ -166,7 +170,7 @@ fun ProfileScreen(
             enabled = shouldEnableProfileAccountAction(isAccountActionInProgress),
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(ProfileLogoutToSyncSectionSpacing))
 
         // ===== 2. 동기화 섹션 =====
         SectionHeader(title = stringResource(R.string.profile_section_sync))
