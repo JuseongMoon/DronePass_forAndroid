@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.saved
 
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,7 +19,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AirplanemodeActive
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Inbox
 import androidx.compose.material.icons.filled.Search
@@ -38,6 +38,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -455,9 +456,17 @@ internal enum class SavedListEmptyState {
     NO_MATCHING_SHAPES,
 }
 
+internal enum class SavedListEmptyIconStyle {
+    INBOX,
+    DRONE,
+    SEARCH,
+}
+
 internal val SavedListEmptyIconSize = 48.dp
 internal val SavedListEmptyVerticalSpacing = 16.dp
 internal val SavedListEmptySecondaryColor = Color(0xFF8E8E93)
+@DrawableRes
+internal val SavedListEmptyDroneIconRes = R.drawable.ic_drone
 
 internal fun resolveSavedListEmptyState(
     hasShapes: Boolean,
@@ -467,6 +476,14 @@ internal fun resolveSavedListEmptyState(
         !hasShapes -> SavedListEmptyState.NO_SHAPES
         selectedDroneCount == 0 -> SavedListEmptyState.NO_DRONE_SELECTED
         else -> SavedListEmptyState.NO_MATCHING_SHAPES
+    }
+}
+
+internal fun resolveSavedListEmptyIconStyle(state: SavedListEmptyState): SavedListEmptyIconStyle {
+    return when (state) {
+        SavedListEmptyState.NO_SHAPES -> SavedListEmptyIconStyle.INBOX
+        SavedListEmptyState.NO_DRONE_SELECTED -> SavedListEmptyIconStyle.DRONE
+        SavedListEmptyState.NO_MATCHING_SHAPES -> SavedListEmptyIconStyle.SEARCH
     }
 }
 
@@ -489,11 +506,7 @@ private fun EmptyState(
         SavedListEmptyState.NO_DRONE_SELECTED -> stringResource(R.string.saved_empty_no_drone_selected_hint)
         SavedListEmptyState.NO_MATCHING_SHAPES -> stringResource(R.string.saved_empty_no_matching_shapes_hint)
     }
-    val icon = when (state) {
-        SavedListEmptyState.NO_SHAPES -> Icons.Default.Inbox
-        SavedListEmptyState.NO_DRONE_SELECTED -> Icons.Default.AirplanemodeActive
-        SavedListEmptyState.NO_MATCHING_SHAPES -> Icons.Default.Search
-    }
+    val iconStyle = resolveSavedListEmptyIconStyle(state)
 
     Box(
         modifier = Modifier.fillMaxSize(),
@@ -503,12 +516,26 @@ private fun EmptyState(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(SavedListEmptyVerticalSpacing),
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                modifier = Modifier.size(SavedListEmptyIconSize),
-                tint = SavedListEmptySecondaryColor,
-            )
+            when (iconStyle) {
+                SavedListEmptyIconStyle.INBOX -> Icon(
+                    imageVector = Icons.Default.Inbox,
+                    contentDescription = null,
+                    modifier = Modifier.size(SavedListEmptyIconSize),
+                    tint = SavedListEmptySecondaryColor,
+                )
+                SavedListEmptyIconStyle.DRONE -> Icon(
+                    painter = painterResource(SavedListEmptyDroneIconRes),
+                    contentDescription = null,
+                    modifier = Modifier.size(SavedListEmptyIconSize),
+                    tint = SavedListEmptySecondaryColor,
+                )
+                SavedListEmptyIconStyle.SEARCH -> Icon(
+                    imageVector = Icons.Default.Search,
+                    contentDescription = null,
+                    modifier = Modifier.size(SavedListEmptyIconSize),
+                    tint = SavedListEmptySecondaryColor,
+                )
+            }
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleMedium,

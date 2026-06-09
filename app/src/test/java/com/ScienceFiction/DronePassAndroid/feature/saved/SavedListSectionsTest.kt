@@ -3,6 +3,7 @@ package com.ScienceFiction.DronePassAndroid.feature.saved
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
+import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.domain.model.Coordinate
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
@@ -417,6 +418,23 @@ class SavedListSectionsTest {
         assertEquals(48.dp, SavedListEmptyIconSize)
         assertEquals(16.dp, SavedListEmptyVerticalSpacing)
         assertEquals(0xFF8E8E93.toInt(), SavedListEmptySecondaryColor.toArgb())
+    }
+
+    @Test
+    fun `저장 목록 빈 상태 아이콘은 iOS tray drone magnifyingglass 분기를 따른다`() {
+        assertEquals(
+            SavedListEmptyIconStyle.INBOX,
+            resolveSavedListEmptyIconStyle(SavedListEmptyState.NO_SHAPES),
+        )
+        assertEquals(
+            SavedListEmptyIconStyle.DRONE,
+            resolveSavedListEmptyIconStyle(SavedListEmptyState.NO_DRONE_SELECTED),
+        )
+        assertEquals(
+            SavedListEmptyIconStyle.SEARCH,
+            resolveSavedListEmptyIconStyle(SavedListEmptyState.NO_MATCHING_SHAPES),
+        )
+        assertEquals(R.drawable.ic_drone, SavedListEmptyDroneIconRes)
     }
 
     @Test
