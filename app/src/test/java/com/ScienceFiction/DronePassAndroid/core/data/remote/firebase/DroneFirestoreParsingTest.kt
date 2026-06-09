@@ -39,7 +39,7 @@ class DroneFirestoreParsingTest {
         val drone = droneFromFirestoreData(validDocument())
 
         requireNotNull(drone)
-        assertEquals("drone-1", drone.id)
+        assertEquals("00000000-0000-0000-0000-000000000001", drone.id)
         assertEquals("Drone", drone.name)
         assertEquals("#007AFF", drone.color)
         assertEquals("SN-1", drone.serialNumber)
@@ -54,6 +54,11 @@ class DroneFirestoreParsingTest {
         assertNull(droneFromFirestoreData(validDocument() - "color"))
         assertNull(droneFromFirestoreData(validDocument() - "createdAt"))
         assertNull(droneFromFirestoreData(validDocument() - "updatedAt"))
+    }
+
+    @Test
+    fun `iOS DroneFirebaseStore 와 같이 UUID 로 파싱되지 않는 id 는 invalid 이다`() {
+        assertNull(droneFromFirestoreData(validDocument() + ("id" to "not-a-uuid")))
     }
 
     @Test
@@ -75,7 +80,7 @@ class DroneFirestoreParsingTest {
 
     private fun validDocument(): Map<String, Any?> {
         return mapOf(
-            "id" to "drone-1",
+            "id" to "00000000-0000-0000-0000-000000000001",
             "name" to "Drone",
             "color" to "#007AFF",
             "serialNumber" to "SN-1",

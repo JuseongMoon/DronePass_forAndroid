@@ -10,11 +10,16 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.tasks.await
 import java.util.Date
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
 private fun droneTimestampMillis(value: Any?): Long? {
     return (value as? Timestamp)?.toDate()?.time
+}
+
+private fun isValidDroneId(id: String): Boolean {
+    return runCatching { UUID.fromString(id) }.isSuccess
 }
 
 internal class DroneFirebaseInvalidDataException(reason: String?) :
@@ -37,6 +42,7 @@ internal fun droneToFirestoreDocumentData(drone: DroneModel): Map<String, Any?> 
 
 internal fun droneFromFirestoreData(data: Map<String, Any?>): DroneModel? {
     val id = data["id"] as? String ?: return null
+    if (!isValidDroneId(id)) return null
     val name = data["name"] as? String ?: return null
     val color = data["color"] as? String ?: return null
     val createdAt = droneTimestampMillis(data["createdAt"]) ?: return null
