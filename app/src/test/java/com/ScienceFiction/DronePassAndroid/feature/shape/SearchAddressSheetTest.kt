@@ -27,6 +27,11 @@ class SearchAddressSheetTest {
     }
 
     @Test
+    fun `주소 검색 시트는 iOS처럼 기본 좌우 여백을 사용한다`() {
+        assertEquals(16.dp, SearchAddressSheetHorizontalPadding)
+    }
+
+    @Test
     fun `주소 검색 버튼은 iOS처럼 빈 문자열일 때만 비활성화한다`() {
         assertFalse(shouldEnableSearchAddressSubmit(""))
         assertTrue(shouldEnableSearchAddressSubmit("역"))

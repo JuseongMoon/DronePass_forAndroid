@@ -71,6 +71,7 @@ data class AddressSearchResult(
 internal const val SearchAddressSheetSkipPartiallyExpanded = false
 internal const val SearchAddressSheetInteractiveDismissEnabled = false
 internal const val SearchAddressSheetHeightFraction = 0.85f
+internal val SearchAddressSheetHorizontalPadding = 16.dp
 internal val SearchAddressBarCornerRadius = 8.dp
 internal val SearchAddressBarInnerPadding = 8.dp
 internal val SearchAddressSearchButtonHorizontalPadding = 16.dp
@@ -199,7 +200,7 @@ fun SearchAddressSheet(
                 .fillMaxWidth()
                 .fillMaxHeight(SearchAddressSheetHeightFraction)
                 .navigationBarsPadding()
-                .padding(horizontal = 20.dp)
+                .padding(horizontal = SearchAddressSheetHorizontalPadding)
         ) {
             Box(modifier = Modifier.fillMaxWidth()) {
                 TextButton(
