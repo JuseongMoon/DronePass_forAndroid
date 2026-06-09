@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.sketch
 
+import androidx.annotation.DrawableRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -28,7 +29,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.automirrored.filled.Redo
-import androidx.compose.material.icons.filled.CleaningServices
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -52,6 +52,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -59,6 +60,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.sp
 import com.ScienceFiction.DronePassAndroid.R
@@ -77,6 +79,8 @@ internal val SketchToolbarDoneVerticalPadding = 8.dp
 internal val SketchToolbarDoneCornerRadius = 16.dp
 internal val SketchToolbarDoneFontSize = 14.sp
 internal val SketchDeleteBadgeFontSize = 9.sp
+@DrawableRes
+internal val SketchEraserIconRes = R.drawable.ic_eraser
 internal val SketchPenPickerCardCornerRadius = 16.dp
 internal val SketchPenPickerCardPadding = 10.dp
 internal val SketchPenPickerCardSpacing = 10.dp
@@ -283,7 +287,7 @@ fun SketchToolbar(
 
                 // 지우개 버튼
                 ToolbarIconButton(
-                    icon = Icons.Default.CleaningServices,
+                    painter = painterResource(SketchEraserIconRes),
                     contentDescription = stringResource(R.string.sketch_eraser),
                     isActive = isEraserMode,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -485,7 +489,8 @@ private fun DoneButton(
 
 @Composable
 private fun ToolbarIconButton(
-    icon: ImageVector,
+    icon: ImageVector? = null,
+    painter: Painter? = null,
     contentDescription: String,
     enabled: Boolean = true,
     isActive: Boolean = false,
@@ -512,16 +517,26 @@ private fun ToolbarIconButton(
             ),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = contentDescription,
-            modifier = Modifier.size(SketchToolbarIconSize),
-            tint = when {
-                isActive -> Color(0xFFFF9500)
-                !enabled -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
-                else -> tint
-            }
-        )
+        val iconTint = when {
+            isActive -> Color(0xFFFF9500)
+            !enabled -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+            else -> tint
+        }
+        if (painter != null) {
+            Icon(
+                painter = painter,
+                contentDescription = contentDescription,
+                modifier = Modifier.size(SketchToolbarIconSize),
+                tint = iconTint,
+            )
+        } else if (icon != null) {
+            Icon(
+                imageVector = icon,
+                contentDescription = contentDescription,
+                modifier = Modifier.size(SketchToolbarIconSize),
+                tint = iconTint,
+            )
+        }
     }
 }
 

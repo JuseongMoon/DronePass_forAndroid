@@ -3,6 +3,7 @@ package com.ScienceFiction.DronePassAndroid.feature.sketch
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ScienceFiction.DronePassAndroid.R
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -127,6 +128,7 @@ class SketchDefaultsTest {
     fun `스케치 툴바 치수는 iOS SketchToolbarView 와 맞춘다`() {
         assertEquals(32.dp, SketchToolbarButtonSize)
         assertEquals(18.dp, SketchToolbarIconSize)
+        assertEquals(R.drawable.ic_eraser, SketchEraserIconRes)
         assertEquals(30.dp, SketchToolbarContainerCornerRadius)
         assertEquals(16.dp, SketchToolbarHorizontalPadding)
         assertEquals(12.dp, SketchToolbarVerticalPadding)
