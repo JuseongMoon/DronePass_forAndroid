@@ -22,11 +22,12 @@ class ShapeFirestoreParsingTest {
     }
 
     @Test
-    fun `iOS ShapeFirebaseStore 와 같이 id title color shapeType flightStartDate 누락은 invalid 이다`() {
+    fun `iOS ShapeFirebaseStore 와 같이 필수 필드 누락은 invalid 이다`() {
         assertNull(shapeFromFirestoreData(validDocument() - "id"))
         assertNull(shapeFromFirestoreData(validDocument() - "title"))
         assertNull(shapeFromFirestoreData(validDocument() - "color"))
         assertNull(shapeFromFirestoreData(validDocument() - "shapeType"))
+        assertNull(shapeFromFirestoreData(validDocument() - "baseCoordinate"))
         assertNull(shapeFromFirestoreData(validDocument() - "flightStartDate"))
     }
 
@@ -61,10 +62,13 @@ class ShapeFirestoreParsingTest {
     @Test
     fun `Firestore 파싱은 Android 레거시 enum name 을 허용하지만 unknown 은 invalid 이다`() {
         val legacy = shapeFromFirestoreData(validDocument() + ("shapeType" to "CIRCLE"))
+        val mixedCase = shapeFromFirestoreData(validDocument() + ("shapeType" to "Circle"))
         val unknown = shapeFromFirestoreData(validDocument() + ("shapeType" to "unknown"))
 
         requireNotNull(legacy)
         assertEquals(ShapeType.CIRCLE, legacy.shapeType)
+        requireNotNull(mixedCase)
+        assertEquals(ShapeType.CIRCLE, mixedCase.shapeType)
         assertNull(unknown)
     }
 

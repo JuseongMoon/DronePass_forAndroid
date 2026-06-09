@@ -107,4 +107,28 @@ class ShapeFirebaseStoreTest {
         assertTrue(firstPolylinePoint["latitude"] is Double)
         assertTrue(firstPolylinePoint["longitude"] is Double)
     }
+
+    @Test
+    fun `Shape Firestore 쓰기는 rectangle secondCoordinate 도 Double map 으로 저장한다`() {
+        val shape = ShapeModel(
+            id = "00000000-0000-0000-0000-000000000004",
+            title = "Rectangle",
+            shapeType = ShapeType.RECTANGLE,
+            baseCoordinate = Coordinate(37.0, 127.0),
+            secondCoordinate = Coordinate(37.1234567, 127.1234567),
+            color = "#007AFF",
+            createdAt = 1_700_000_000_000L,
+            updatedAt = 1_700_000_123_000L,
+            flightStartDate = 1_700_000_456_000L,
+        )
+
+        val data = shapeToFirestoreDocumentData(shape)
+        val secondCoordinate = data["secondCoordinate"] as Map<*, *>
+
+        assertEquals("rectangle", data["shapeType"])
+        assertEquals(37.123457, secondCoordinate["latitude"])
+        assertEquals(127.123457, secondCoordinate["longitude"])
+        assertTrue(secondCoordinate["latitude"] is Double)
+        assertTrue(secondCoordinate["longitude"] is Double)
+    }
 }
