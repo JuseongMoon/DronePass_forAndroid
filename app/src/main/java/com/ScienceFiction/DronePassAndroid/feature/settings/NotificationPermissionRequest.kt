@@ -27,7 +27,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -53,7 +52,8 @@ import com.ScienceFiction.DronePassAndroid.R
  *    사용자가 시스템 설정에서 직접 허용해야 하므로 안내 + Intent 만 제공.
  *
  * 카드는 권한이 부족할 때만 노출되며, 권한이 부여되면 자동으로 숨겨진다.
- * 알림 섹션 헤더 바로 아래에 배치해 알림 토글 ON 동작 전 사용자에게 안내한다.
+ * 앱 시작 자동 권한 요청은 MainActivity 의 1회 요청 흐름이 담당하므로,
+ * 설정 화면에서는 사용자가 버튼을 눌렀을 때만 권한을 다시 요청한다.
  */
 @Composable
 fun NotificationPermissionRequest(
@@ -121,15 +121,6 @@ fun NotificationPermissionRequest(
         }
     }
 
-    // 첫 진입 시 한 번만 자동 요청 — 사용자가 카드 버튼을 누르지 않고도 단순 거부 시
-    // 시스템 다이얼로그가 한 번 뜨도록.
-    LaunchedEffect(Unit) {
-        if (!notificationPermissionGranted &&
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
-        ) {
-            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-        }
-    }
 }
 
 @Composable
