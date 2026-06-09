@@ -1,9 +1,11 @@
 package com.ScienceFiction.DronePassAndroid.feature.kp
 
+import androidx.compose.ui.unit.dp
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.domain.model.Kp27DayForecast
 import com.ScienceFiction.DronePassAndroid.domain.model.KpIndexData
 import com.ScienceFiction.DronePassAndroid.domain.model.KpLevel
+import com.ScienceFiction.DronePassAndroid.feature.weather.WeatherLineChartDefaultHeight
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.util.Calendar
@@ -128,6 +130,16 @@ class KpChartsTest {
     @Test
     fun `current KP value font size matches iOS currentKPCard`() {
         assertEquals(60, KpCurrentValueFontSizeSp)
+    }
+
+    @Test
+    fun `KP forecast chart height matches iOS forecast chart frame`() {
+        assertEquals(250.dp, KpForecastChartHeight)
+    }
+
+    @Test
+    fun `shared weather line chart keeps existing weather default height`() {
+        assertEquals(160.dp, WeatherLineChartDefaultHeight)
     }
 
     @Test

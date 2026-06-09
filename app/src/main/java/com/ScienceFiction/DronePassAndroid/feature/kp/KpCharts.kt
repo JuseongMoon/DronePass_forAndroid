@@ -49,6 +49,7 @@ private val WarningYellow = Color(0xFFDAA520)
 private val ZoneGreen = Color(0xFF4CAF50)
 private val ZoneYellow = Color(0xFFFFC107)
 private val ZoneRed = Color(0xFFF44336)
+internal val KpForecastChartHeight = 250.dp
 private val Kp27DayLineChartWidth = 900.dp
 private const val KpForecastPastWindowMs = 6L * 60 * 60 * 1000
 private const val KpForecastFutureWindowMs = 48L * 60 * 60 * 1000
@@ -112,6 +113,7 @@ fun KpForecastLineChart(
                     BackgroundZone(7.0..9.0, ZoneRed),
                 ),
                 formatValue = { it.toInt().toString() },
+                chartHeight = KpForecastChartHeight,
             )
         }
     }
@@ -240,6 +242,7 @@ private fun Kp27DayLineChart(longTermForecast: List<Kp27DayForecast>) {
                 BackgroundZone(7.0..9.0, ZoneRed),
             ),
             formatValue = { it.toInt().toString() },
+            chartHeight = KpForecastChartHeight,
         )
     }
 }

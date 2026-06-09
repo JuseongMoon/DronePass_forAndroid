@@ -28,6 +28,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ScienceFiction.DronePassAndroid.R
@@ -38,6 +39,8 @@ import java.util.Date
 import java.util.Locale
 
 // ─── 공통 Line Chart ────────────────────────────────────────────
+
+internal val WeatherLineChartDefaultHeight = 160.dp
 
 /**
  * Y축 배경 색상 영역. WeatherLineChart 의 [backgroundZones] 에 전달.
@@ -81,6 +84,7 @@ internal fun WeatherLineChart(
     predicted: List<Boolean> = emptyList(),
     pointColors: List<Color>? = null,
     backgroundZones: List<BackgroundZone> = emptyList(),
+    chartHeight: Dp = WeatherLineChartDefaultHeight,
 ) {
     if (dataPoints.isEmpty()) return
 
@@ -93,7 +97,7 @@ internal fun WeatherLineChart(
     Canvas(
         modifier = modifier
             .fillMaxWidth()
-            .height(160.dp)
+            .height(chartHeight)
     ) {
         val leftPadding = 48f
         val rightPadding = 16f
