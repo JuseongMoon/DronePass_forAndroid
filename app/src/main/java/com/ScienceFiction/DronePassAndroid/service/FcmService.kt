@@ -310,13 +310,12 @@ class FcmService : FirebaseMessagingService() {
     }
 
     private fun publishForegroundNotification(title: String, body: String, shapeId: String?) {
-        ForegroundNotificationBus.publish(
-            ForegroundNotification(
-                title = title,
-                body = body,
-                shapeId = shapeId,
-            )
-        )
+        foregroundNotificationForRemoteDelivery(
+            title = title,
+            body = body,
+            shapeId = shapeId,
+            appInForeground = AppForegroundState.isForeground,
+        )?.let(ForegroundNotificationBus::publish)
     }
 
     /**

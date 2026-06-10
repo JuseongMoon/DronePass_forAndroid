@@ -209,4 +209,28 @@ class FcmServiceTest {
             )
         )
     }
+
+    @Test
+    fun `FCM 수신 팝업은 iOS willPresent 처럼 앱 포그라운드에서만 만든다`() {
+        val notification = foregroundNotificationForRemoteDelivery(
+            title = "비행 종료일 알림",
+            body = "7일 뒤 종료됩니다.",
+            shapeId = " shape-2 ",
+            appInForeground = true,
+        )
+
+        requireNotNull(notification)
+        assertEquals("비행 종료일 알림", notification.title)
+        assertEquals("7일 뒤 종료됩니다.", notification.body)
+        assertEquals("shape-2", notification.shapeId)
+
+        assertNull(
+            foregroundNotificationForRemoteDelivery(
+                title = "비행 종료일 알림",
+                body = "7일 뒤 종료됩니다.",
+                shapeId = "shape-2",
+                appInForeground = false,
+            )
+        )
+    }
 }
