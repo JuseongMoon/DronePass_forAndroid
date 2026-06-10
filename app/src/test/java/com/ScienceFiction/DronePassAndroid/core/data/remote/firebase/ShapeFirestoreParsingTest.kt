@@ -58,6 +58,29 @@ class ShapeFirestoreParsingTest {
     }
 
     @Test
+    fun `Firestore 파싱은 좌표와 숫자 필드의 정수 타입을 invalid 로 본다`() {
+        val integerBaseCoordinate = validDocument() + (
+            "baseCoordinate" to mapOf(
+                "latitude" to 37,
+                "longitude" to 127.0,
+            )
+        )
+        val integerRadius = validDocument() + ("radius" to 100)
+        val integerHeight = validDocument() + ("height" to 120)
+        val nonFiniteHeight = validDocument() + ("height" to Double.NaN)
+        val integerRectangleCoordinate = validDocument() + mapOf(
+            "shapeType" to "rectangle",
+            "secondCoordinate" to mapOf("latitude" to 37.0, "longitude" to 127),
+        )
+
+        assertNull(shapeFromFirestoreData(integerBaseCoordinate))
+        assertNull(shapeFromFirestoreData(integerRadius))
+        assertNull(shapeFromFirestoreData(integerHeight))
+        assertNull(shapeFromFirestoreData(nonFiniteHeight))
+        assertNull(shapeFromFirestoreData(integerRectangleCoordinate))
+    }
+
+    @Test
     fun `Firestore 파싱은 Firebase 계약을 어긴 원형 반경을 invalid 로 본다`() {
         assertNull(shapeFromFirestoreData(validDocument() + ("radius" to 0.0)))
         assertNull(shapeFromFirestoreData(validDocument() + ("radius" to Double.POSITIVE_INFINITY)))

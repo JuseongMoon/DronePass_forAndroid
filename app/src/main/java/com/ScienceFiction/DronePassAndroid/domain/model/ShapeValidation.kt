@@ -74,6 +74,9 @@ private fun ShapeModel.validateShape(
     if (!baseCoordinate.isValidShapeCoordinate()) {
         return ShapeValidationResult(isValid = false, reason = "invalid base coordinate")
     }
+    if (height != null && !height.isFinite()) {
+        return ShapeValidationResult(isValid = false, reason = "invalid height")
+    }
 
     return when (shapeType) {
         ShapeType.CIRCLE -> validateCircleRadius(radius, maxRadiusMeters)

@@ -105,8 +105,10 @@ class SketchFirebaseStoreTest {
     @Test
     fun `스케치 선택 필드가 존재하지만 Firebase 계약을 어기면 invalid 이다`() {
         assertNull(sketchFromFirestoreData(validDocument() + ("color" to "red")))
+        assertNull(sketchFromFirestoreData(validDocument() + ("strokeWidth" to 5)))
         assertNull(sketchFromFirestoreData(validDocument() + ("strokeWidth" to 0.0)))
         assertNull(sketchFromFirestoreData(validDocument() + ("strokeWidth" to 50.1)))
+        assertNull(sketchFromFirestoreData(validDocument() + ("opacity" to 1)))
         assertNull(sketchFromFirestoreData(validDocument() + ("opacity" to -0.1)))
         assertNull(sketchFromFirestoreData(validDocument() + ("opacity" to Double.NaN)))
     }
@@ -134,6 +136,7 @@ class SketchFirebaseStoreTest {
     fun `스케치 points 좌표 값은 finite 범위 안의 Double map 이어야 한다`() {
         val outOfRangePoint = listOf(mapOf("latitude" to 91.0, "longitude" to 127.0))
         val nonFinitePoint = listOf(mapOf("latitude" to 37.0, "longitude" to Double.NaN))
+        val integerPoint = listOf(mapOf("latitude" to 37, "longitude" to 127.0))
 
         assertNull(
             sketchFromFirestoreData(
@@ -143,6 +146,11 @@ class SketchFirebaseStoreTest {
         assertNull(
             sketchFromFirestoreData(
                 validDocument() + ("points" to nonFinitePoint),
+            ),
+        )
+        assertNull(
+            sketchFromFirestoreData(
+                validDocument() + ("points" to integerPoint),
             ),
         )
     }

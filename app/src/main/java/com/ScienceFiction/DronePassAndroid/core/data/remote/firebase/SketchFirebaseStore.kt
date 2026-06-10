@@ -37,8 +37,8 @@ private fun isValidSketchId(id: String): Boolean {
 
 private fun firestoreMapToSketchPoint(value: Any?): Coordinate? {
     val map = value as? Map<*, *> ?: return null
-    val latitude = (map["latitude"] as? Number)?.toDouble() ?: return null
-    val longitude = (map["longitude"] as? Number)?.toDouble() ?: return null
+    val latitude = map["latitude"] as? Double ?: return null
+    val longitude = map["longitude"] as? Double ?: return null
     return Coordinate(latitude = latitude, longitude = longitude)
         .takeIf { it.isValidShapeCoordinate() }
 }
@@ -87,8 +87,8 @@ internal fun sketchFromFirestoreData(data: Map<String, Any?>): SketchModel? {
         id = id,
         points = points,
         color = data["color"] as? String ?: "#FF0000",
-        strokeWidth = (data["strokeWidth"] as? Number)?.toDouble() ?: 3.0,
-        opacity = (data["opacity"] as? Number)?.toDouble() ?: 1.0,
+        strokeWidth = data["strokeWidth"]?.let { it as? Double ?: return null } ?: 3.0,
+        opacity = data["opacity"]?.let { it as? Double ?: return null } ?: 1.0,
         createdAt = createdAt,
         updatedAt = updatedAt,
         deletedAt = deletedAt

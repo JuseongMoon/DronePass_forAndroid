@@ -34,8 +34,8 @@ internal fun coordinateToFirestoreMap(coordinate: Coordinate): Map<String, Doubl
 
 private fun firestoreMapToCoordinate(value: Any?): Coordinate? {
     val map = value as? Map<*, *> ?: return null
-    val latitude = (map["latitude"] as? Number)?.toDouble() ?: return null
-    val longitude = (map["longitude"] as? Number)?.toDouble() ?: return null
+    val latitude = map["latitude"] as? Double ?: return null
+    val longitude = map["longitude"] as? Double ?: return null
     return Coordinate(latitude = latitude, longitude = longitude)
 }
 
@@ -105,7 +105,7 @@ internal fun shapeFromFirestoreData(data: Map<String, Any?>): ShapeModel? {
     val deletedAt = timestampMillis(data["deletedAt"])
     val baseCoordinate = firestoreMapToCoordinate(data["baseCoordinate"]) ?: return null
     val radius = if (shapeType == ShapeType.CIRCLE) {
-        (data["radius"] as? Number)?.toDouble()
+        data["radius"]?.let { it as? Double ?: return null }
     } else {
         null
     }
@@ -139,7 +139,7 @@ internal fun shapeFromFirestoreData(data: Map<String, Any?>): ShapeModel? {
         secondCoordinate = secondCoordinate,
         polygonCoordinates = polygonCoordinates,
         polylineCoordinates = polylineCoordinates,
-        height = (data["height"] as? Number)?.toDouble(),
+        height = data["height"]?.let { it as? Double ?: return null },
         memo = data["memo"] as? String,
         color = color,
         droneId = data["droneId"] as? String,
