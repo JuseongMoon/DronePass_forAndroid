@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.Air
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Opacity
 import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.filled.Storm
 import androidx.compose.material.icons.filled.Thermostat
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.WaterDrop
@@ -978,7 +979,7 @@ internal fun weatherElementGuideItems(category: DroneCategory): List<WeatherElem
             titleRes = R.string.weather_info_gust_title,
             safeRangeRes = R.string.weather_info_gust_safe_range,
             safeRangeArgs = listOf(gustCaution),
-            icon = Icons.Default.Air,
+            icon = Icons.Default.Storm,
             iconColor = Color(0xFFFF9500),
             levels = listOf(
                 WeatherElementLevelItem(
