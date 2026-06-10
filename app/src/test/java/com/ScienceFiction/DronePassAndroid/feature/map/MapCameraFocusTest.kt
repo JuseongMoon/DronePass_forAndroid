@@ -130,6 +130,27 @@ class MapCameraFocusTest {
     }
 
     @Test
+    fun `비원형 도형 포커스 이벤트도 실제 포커스 중심이 같으면 생략된다`() {
+        val rectangle = shape(
+            id = "rectangle",
+            coordinate = Coordinate(37.0, 127.0),
+            start = 1L,
+            end = 2L,
+        ).copy(
+            shapeType = ShapeType.RECTANGLE,
+            secondCoordinate = Coordinate(37.02, 127.04),
+        )
+
+        assertNull(
+            resolveShapeFocusCameraEvent(
+                currentSelectedShape = rectangle,
+                targetShape = rectangle,
+                skipIfAlreadyFocused = true,
+            ),
+        )
+    }
+
+    @Test
     fun `도형 포커스 이벤트는 iOS처럼 반경 기반 줌을 포함한다`() {
         val target = shape(
             id = "target",

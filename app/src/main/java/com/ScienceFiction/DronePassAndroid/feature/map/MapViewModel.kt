@@ -132,14 +132,14 @@ internal fun resolveShapeFocusCameraEvent(
     targetShape: ShapeModel,
     skipIfAlreadyFocused: Boolean,
 ): CameraEvent.MoveToShape? {
+    val focusCoordinate = calculateShapeFocusCoordinate(targetShape)
     if (
         skipIfAlreadyFocused &&
-        shouldSkipShapeFocusMove(currentSelectedShape, targetShape.baseCoordinate)
+        shouldSkipShapeFocusMove(currentSelectedShape, focusCoordinate)
     ) {
         return null
     }
 
-    val focusCoordinate = calculateShapeFocusCoordinate(targetShape)
     return CameraEvent.MoveToShape(
         coordinate = focusCoordinate,
         zoom = calculateShapeFocusZoomLevel(calculateShapeFocusRadiusMeters(targetShape)),
