@@ -6,6 +6,7 @@ import com.ScienceFiction.DronePassAndroid.domain.model.ShapeType
 import com.google.firebase.Timestamp
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -130,5 +131,47 @@ class ShapeFirebaseStoreTest {
         assertEquals(127.123457, secondCoordinate["longitude"])
         assertTrue(secondCoordinate["latitude"] is Double)
         assertTrue(secondCoordinate["longitude"] is Double)
+    }
+
+    @Test
+    fun `Shape Firestore 쓰기는 현재 shapeType 에 맞지 않는 geometry 필드를 비운다`() {
+        val circle = ShapeModel(
+            id = "00000000-0000-0000-0000-000000000005",
+            title = "Circle",
+            shapeType = ShapeType.CIRCLE,
+            baseCoordinate = Coordinate(37.0, 127.0),
+            radius = 120.0,
+            secondCoordinate = Coordinate(37.1, 127.1),
+            polygonCoordinates = listOf(
+                Coordinate(37.0, 127.0),
+                Coordinate(37.1, 127.1),
+                Coordinate(37.2, 127.2),
+            ),
+            polylineCoordinates = listOf(
+                Coordinate(37.0, 127.0),
+                Coordinate(37.1, 127.1),
+            ),
+            color = "#007AFF",
+            createdAt = 1_700_000_000_000L,
+            updatedAt = 1_700_000_123_000L,
+            flightStartDate = 1_700_000_456_000L,
+        )
+        val rectangle = circle.copy(
+            id = "00000000-0000-0000-0000-000000000006",
+            title = "Rectangle",
+            shapeType = ShapeType.RECTANGLE,
+        )
+
+        val circleData = shapeToFirestoreDocumentData(circle)
+        val rectangleData = shapeToFirestoreDocumentData(rectangle)
+
+        assertEquals(120.0, circleData["radius"])
+        assertNull(circleData["secondCoordinate"])
+        assertNull(circleData["polygonCoordinates"])
+        assertNull(circleData["polylineCoordinates"])
+        assertNull(rectangleData["radius"])
+        assertTrue(rectangleData["secondCoordinate"] is Map<*, *>)
+        assertNull(rectangleData["polygonCoordinates"])
+        assertNull(rectangleData["polylineCoordinates"])
     }
 }

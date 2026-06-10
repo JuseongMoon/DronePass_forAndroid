@@ -21,6 +21,7 @@ fun ShapeModel.validateForLocalPersistence(): ShapeValidationResult {
     return validateShape(
         maxRadiusMeters = null,
         maxCoordinateCount = null,
+        requireTypedGeometry = false,
     )
 }
 
@@ -31,6 +32,7 @@ fun ShapeModel.validateForFirebasePersistence(): ShapeValidationResult {
     return validateShape(
         maxRadiusMeters = MAX_FIREBASE_RADIUS_METERS,
         maxCoordinateCount = MAX_FIREBASE_COORDINATE_COUNT,
+        requireTypedGeometry = true,
     )
 }
 
@@ -58,6 +60,7 @@ private fun isValidFirebaseShapeId(id: String): Boolean {
 private fun ShapeModel.validateShape(
     maxRadiusMeters: Double?,
     maxCoordinateCount: Int?,
+    requireTypedGeometry: Boolean,
 ): ShapeValidationResult {
     if (id.isBlank()) {
         return ShapeValidationResult(isValid = false, reason = "blank id")
@@ -74,18 +77,25 @@ private fun ShapeModel.validateShape(
 
     return when (shapeType) {
         ShapeType.CIRCLE -> validateCircleRadius(radius, maxRadiusMeters)
-        ShapeType.RECTANGLE -> validateOptionalCoordinate(secondCoordinate, "invalid second coordinate")
+        ShapeType.RECTANGLE -> validateCoordinate(
+            coordinate = secondCoordinate,
+            required = requireTypedGeometry,
+            missingReason = "missing second coordinate",
+            invalidReason = "invalid second coordinate",
+        )
         ShapeType.POLYGON -> validateCoordinateList(
             coordinates = polygonCoordinates,
             minCount = 3,
             maxCount = maxCoordinateCount,
             label = "polygon coordinates",
+            required = requireTypedGeometry,
         )
         ShapeType.POLYLINE -> validateCoordinateList(
             coordinates = polylineCoordinates,
             minCount = 2,
             maxCount = maxCoordinateCount,
             label = "polyline coordinates",
+            required = requireTypedGeometry,
         )
     }
 }
@@ -104,14 +114,19 @@ private fun validateCircleRadius(
     return ShapeValidationResult(isValid = true)
 }
 
-private fun validateOptionalCoordinate(
+private fun validateCoordinate(
     coordinate: Coordinate?,
-    reason: String,
+    required: Boolean,
+    missingReason: String,
+    invalidReason: String,
 ): ShapeValidationResult {
-    if (coordinate == null || coordinate.isValidShapeCoordinate()) {
+    if (coordinate == null) {
+        return ShapeValidationResult(isValid = !required, reason = missingReason.takeIf { required })
+    }
+    if (coordinate.isValidShapeCoordinate()) {
         return ShapeValidationResult(isValid = true)
     }
-    return ShapeValidationResult(isValid = false, reason = reason)
+    return ShapeValidationResult(isValid = false, reason = invalidReason)
 }
 
 private fun validateCoordinateList(
@@ -119,8 +134,11 @@ private fun validateCoordinateList(
     minCount: Int,
     maxCount: Int?,
     label: String,
+    required: Boolean,
 ): ShapeValidationResult {
-    if (coordinates == null) return ShapeValidationResult(isValid = true)
+    if (coordinates == null) {
+        return ShapeValidationResult(isValid = !required, reason = "$label missing".takeIf { required })
+    }
     if (coordinates.size < minCount) {
         return ShapeValidationResult(isValid = false, reason = "$label below minimum")
     }

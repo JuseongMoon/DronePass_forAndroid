@@ -44,7 +44,7 @@ private fun coordinatesToFirestoreList(coordinates: List<Coordinate>): List<Map<
 
 private fun firestoreListToCoordinates(value: Any?): List<Coordinate>? {
     val list = value as? List<*> ?: return null
-    return list.mapNotNull(::firestoreMapToCoordinate)
+    return list.map { item -> firestoreMapToCoordinate(item) ?: return null }
 }
 
 private fun timestampMillis(value: Any?): Long? {
@@ -64,10 +64,16 @@ internal fun shapeToFirestoreDocumentData(shape: ShapeModel): Map<String, Any?> 
         "title" to shape.title,
         "shapeType" to shape.shapeType.rawValue,
         "baseCoordinate" to coordinateToFirestoreMap(shape.baseCoordinate),
-        "radius" to shape.radius,
-        "secondCoordinate" to shape.secondCoordinate?.let(::coordinateToFirestoreMap),
-        "polygonCoordinates" to shape.polygonCoordinates?.let(::coordinatesToFirestoreList),
-        "polylineCoordinates" to shape.polylineCoordinates?.let(::coordinatesToFirestoreList),
+        "radius" to shape.radius.takeIf { shape.shapeType == ShapeType.CIRCLE },
+        "secondCoordinate" to shape.secondCoordinate
+            ?.takeIf { shape.shapeType == ShapeType.RECTANGLE }
+            ?.let(::coordinateToFirestoreMap),
+        "polygonCoordinates" to shape.polygonCoordinates
+            ?.takeIf { shape.shapeType == ShapeType.POLYGON }
+            ?.let(::coordinatesToFirestoreList),
+        "polylineCoordinates" to shape.polylineCoordinates
+            ?.takeIf { shape.shapeType == ShapeType.POLYLINE }
+            ?.let(::coordinatesToFirestoreList),
         "height" to shape.height,
         "memo" to shape.memo,
         "address" to shape.address,
@@ -103,17 +109,21 @@ internal fun shapeFromFirestoreData(data: Map<String, Any?>): ShapeModel? {
         null
     }
     val secondCoordinate = if (shapeType == ShapeType.RECTANGLE) {
-        firestoreMapToCoordinate(data["secondCoordinate"])
+        firestoreMapToCoordinate(data["secondCoordinate"]) ?: return null
     } else {
         null
     }
     val polygonCoordinates = if (shapeType == ShapeType.POLYGON) {
         firestoreListToCoordinates(data["polygonCoordinates"])
+            ?.takeIf { it.size >= 3 }
+            ?: return null
     } else {
         null
     }
     val polylineCoordinates = if (shapeType == ShapeType.POLYLINE) {
         firestoreListToCoordinates(data["polylineCoordinates"])
+            ?.takeIf { it.size >= 2 }
+            ?: return null
     } else {
         null
     }

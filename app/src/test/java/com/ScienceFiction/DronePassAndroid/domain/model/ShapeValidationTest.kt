@@ -60,6 +60,39 @@ class ShapeValidationTest {
     }
 
     @Test
+    fun `도형 Firebase 저장은 타입별 필수 geometry 를 요구한다`() {
+        val validRectangle = validCircle().copy(
+            shapeType = ShapeType.RECTANGLE,
+            radius = null,
+            secondCoordinate = Coordinate(37.1, 127.1),
+        )
+        val validPolygon = validCircle().copy(
+            shapeType = ShapeType.POLYGON,
+            radius = null,
+            polygonCoordinates = listOf(
+                Coordinate(37.0, 127.0),
+                Coordinate(37.1, 127.1),
+                Coordinate(37.2, 127.2),
+            ),
+        )
+        val validPolyline = validCircle().copy(
+            shapeType = ShapeType.POLYLINE,
+            radius = null,
+            polylineCoordinates = listOf(
+                Coordinate(37.0, 127.0),
+                Coordinate(37.1, 127.1),
+            ),
+        )
+
+        assertFalse(validCircle().copy(shapeType = ShapeType.RECTANGLE, radius = null).isValidForFirebasePersistence())
+        assertFalse(validCircle().copy(shapeType = ShapeType.POLYGON, radius = null).isValidForFirebasePersistence())
+        assertFalse(validCircle().copy(shapeType = ShapeType.POLYLINE, radius = null).isValidForFirebasePersistence())
+        assertTrue(validRectangle.isValidForFirebasePersistence())
+        assertTrue(validPolygon.isValidForFirebasePersistence())
+        assertTrue(validPolyline.isValidForFirebasePersistence())
+    }
+
+    @Test
     fun `Firebase batch 는 중복 ID 를 거부한다`() {
         val shape = validCircle()
 
