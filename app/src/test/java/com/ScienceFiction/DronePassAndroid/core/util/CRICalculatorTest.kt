@@ -44,6 +44,27 @@ class CRICalculatorTest {
         assertEquals(73.0, cri, 0.0)
     }
 
+    @Test
+    fun `현재 CRI smoother는 iOS WeatherManager처럼 최근 5틱 이동평균 후 반올림한다`() {
+        val smoother = CurrentCriSmoother()
+
+        assertEquals(10.0, smoother.smooth(10.0), 0.0)
+        assertEquals(20.0, smoother.smooth(30.0), 0.0)
+        assertEquals(30.0, smoother.smooth(50.0), 0.0)
+        assertEquals(40.0, smoother.smooth(70.0), 0.0)
+        assertEquals(50.0, smoother.smooth(90.0), 0.0)
+        assertEquals(60.0, smoother.smooth(60.0), 0.0)
+    }
+
+    @Test
+    fun `현재 CRI smoother는 비정상 입력을 버퍼에 넣지 않는다`() {
+        val smoother = CurrentCriSmoother()
+
+        assertEquals(50.0, smoother.smooth(50.0), 0.0)
+        assertTrue(smoother.smooth(Double.NaN).isNaN())
+        assertEquals(60.0, smoother.smooth(70.0), 0.0)
+    }
+
     // endregion
 
     // region 비정상 입력 가드

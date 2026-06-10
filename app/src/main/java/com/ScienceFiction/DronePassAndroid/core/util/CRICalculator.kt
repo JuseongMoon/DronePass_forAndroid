@@ -27,6 +27,12 @@ object CRICalculator {
      * @return iOS WeatherManager처럼 반올림된 CRI 값 (1-100) 또는 비정상 입력 시 NaN
      */
     fun calculate(temperature: Double, dewPoint: Double, windSpeed: Double): Double {
+        val criFinal = calculateUnrounded(temperature, dewPoint, windSpeed)
+        if (!criFinal.isFinite()) return criFinal
+        return criFinal.roundToInt().toDouble()
+    }
+
+    internal fun calculateUnrounded(temperature: Double, dewPoint: Double, windSpeed: Double): Double {
         if (!temperature.isFinite() || !dewPoint.isFinite() || !windSpeed.isFinite()) {
             return Double.NaN
         }
@@ -59,8 +65,7 @@ object CRICalculator {
         // 하한: CRI_RH 이하로 내려가지 않음
         val criFinal = maxOf(criWindAdjusted, criRH)
 
-        // 최종: 1-100 범위로 클램핑 후 iOS WeatherManager.finalCRI처럼 반올림
-        return criFinal.coerceIn(1.0, 100.0).roundToInt().toDouble()
+        return criFinal.coerceIn(1.0, 100.0)
     }
 
     /**
@@ -95,4 +100,25 @@ object CRICalculator {
 
     private const val MIN_STABILIZED_TEMPERATURE_C = -80.0
     private const val MAX_STABILIZED_TEMPERATURE_C = 60.0
+}
+
+internal class CurrentCriSmoother(
+    private val maxSamples: Int = 5,
+) {
+    private val samples = ArrayDeque<Double>()
+
+    fun smooth(nextCri: Double): Double {
+        if (!nextCri.isFinite()) return nextCri
+
+        samples.addLast(nextCri.coerceIn(1.0, 100.0))
+        while (samples.size > maxSamples) {
+            samples.removeFirst()
+        }
+
+        return (samples.sum() / samples.size).roundToInt().toDouble()
+    }
+
+    fun reset() {
+        samples.clear()
+    }
 }

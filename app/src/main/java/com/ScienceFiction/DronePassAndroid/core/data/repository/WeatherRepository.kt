@@ -3,6 +3,7 @@ package com.ScienceFiction.DronePassAndroid.core.data.repository
 import com.ScienceFiction.DronePassAndroid.core.data.remote.weather.WeatherApi
 import com.ScienceFiction.DronePassAndroid.core.data.remote.weather.WeatherResponse
 import com.ScienceFiction.DronePassAndroid.core.util.CRICalculator
+import com.ScienceFiction.DronePassAndroid.core.util.CurrentCriSmoother
 import com.ScienceFiction.DronePassAndroid.core.util.DroneCategory
 import com.ScienceFiction.DronePassAndroid.core.util.GustDifferenceCalculator
 import com.ScienceFiction.DronePassAndroid.domain.model.CurrentWeatherData
@@ -28,6 +29,7 @@ class WeatherRepository @Inject constructor(
     @Volatile private var cacheTimestamp: Long = 0L
     @Volatile private var cachedCategory: DroneCategory = DroneCategory.IosDefault
     private val cacheMutex = Mutex()
+    private val currentCriSmoother = CurrentCriSmoother()
 
     companion object {
         private const val CACHE_DURATION_MS = 3 * 60 * 1000L // 3분
@@ -103,7 +105,7 @@ class WeatherRepository @Inject constructor(
                 windGusts = gusts,
                 precipitation = current.precipitation ?: 0.0,
                 weatherCode = current.weatherCode ?: 0,
-                cri = CRICalculator.calculate(temp, dewPt, wind),
+                cri = currentCriSmoother.smooth(CRICalculator.calculateUnrounded(temp, dewPt, wind)),
                 gustDifferenceLevel = GustDifferenceCalculator.evaluate(wind, gusts, category)
             )
         }

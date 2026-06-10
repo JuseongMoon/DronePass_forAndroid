@@ -1,10 +1,13 @@
 package com.ScienceFiction.DronePassAndroid.core.data.repository
 
+import com.ScienceFiction.DronePassAndroid.core.data.remote.weather.CurrentWeather
 import com.ScienceFiction.DronePassAndroid.core.data.remote.weather.HourlyWeather
 import com.ScienceFiction.DronePassAndroid.core.data.remote.weather.WeatherApi
 import com.ScienceFiction.DronePassAndroid.core.data.remote.weather.WeatherResponse
+import com.ScienceFiction.DronePassAndroid.core.util.CRICalculator
 import java.time.LocalDateTime
 import java.time.ZoneOffset
+import kotlin.math.roundToInt
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -43,8 +46,75 @@ class WeatherRepositoryTest {
         assertEquals(9 * 60 * 60, data.utcOffsetSeconds)
     }
 
+    @Test
+    fun `current CRI uses iOS moving average while hourly forecast keeps raw rounded CRI`() = runBlocking {
+        val firstCurrent = currentWeather(temperature = 20.0, dewPoint = 20.0, windSpeed = 0.0)
+        val secondCurrent = currentWeather(temperature = 25.0, dewPoint = 5.0, windSpeed = 0.0)
+        val secondHourly = hourlyWeather(temperature = 25.0, dewPoint = 5.0, windSpeed = 0.0)
+        val api = FakeWeatherApi(weatherResponse(current = firstCurrent))
+        val repository = WeatherRepository(api)
+
+        val first = repository.fetchWeather(latitude = 37.0, longitude = 127.0).getOrThrow()
+        assertEquals(CRICalculator.calculate(20.0, 20.0, 0.0), first.current?.cri ?: -1.0, 0.0)
+
+        repository.invalidateCache()
+        api.response = weatherResponse(current = secondCurrent, hourly = secondHourly)
+        val second = repository.fetchWeather(latitude = 37.0, longitude = 127.0).getOrThrow()
+
+        val expectedCurrent = (
+            CRICalculator.calculateUnrounded(20.0, 20.0, 0.0) +
+                CRICalculator.calculateUnrounded(25.0, 5.0, 0.0)
+            ).div(2.0).roundToInt().toDouble()
+        assertEquals(expectedCurrent, second.current?.cri ?: -1.0, 0.0)
+        assertEquals(
+            CRICalculator.calculate(25.0, 5.0, 0.0),
+            second.hourlyForecast.single().cri,
+            0.0,
+        )
+    }
+
+    private fun weatherResponse(
+        current: CurrentWeather? = null,
+        hourly: HourlyWeather? = null,
+    ): WeatherResponse = WeatherResponse(
+        current = current,
+        hourly = hourly,
+        daily = null,
+        utcOffsetSeconds = 9 * 60 * 60,
+    )
+
+    private fun currentWeather(
+        temperature: Double,
+        dewPoint: Double,
+        windSpeed: Double,
+    ): CurrentWeather = CurrentWeather(
+        temperature = temperature,
+        dewPoint = dewPoint,
+        windSpeed = windSpeed,
+        windDirection = 0.0,
+        windGusts = null,
+        precipitation = 0.0,
+        weatherCode = 0,
+    )
+
+    private fun hourlyWeather(
+        temperature: Double,
+        dewPoint: Double,
+        windSpeed: Double,
+    ): HourlyWeather = HourlyWeather(
+        time = listOf("2026-01-01T00:00"),
+        temperature = listOf(temperature),
+        dewPoint = listOf(dewPoint),
+        windSpeed = listOf(windSpeed),
+        windDirection = listOf(0.0),
+        windGusts = null,
+        precipitation = listOf(0.0),
+        visibility = listOf(10000.0),
+        weatherCode = listOf(0),
+    )
+
     private class FakeWeatherApi(
-        private val response: WeatherResponse,
+        var response: WeatherResponse,
     ) : WeatherApi {
         override suspend fun getWeather(
             latitude: Double,
