@@ -19,10 +19,12 @@ import com.ScienceFiction.DronePassAndroid.core.data.repository.GeocodingReposit
 import com.ScienceFiction.DronePassAndroid.core.data.repository.ShapeRepository
 import com.ScienceFiction.DronePassAndroid.core.data.repository.VWorldRepository
 import com.ScienceFiction.DronePassAndroid.core.util.AnalyticsLogger
+import com.ScienceFiction.DronePassAndroid.core.util.DistanceCalculator
 import com.ScienceFiction.DronePassAndroid.core.util.FlightZoneCalculator
 import com.ScienceFiction.DronePassAndroid.domain.model.Coordinate
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
+import com.ScienceFiction.DronePassAndroid.domain.model.ShapeType
 import com.ScienceFiction.DronePassAndroid.feature.drone.DroneSelectionState
 import com.ScienceFiction.DronePassAndroid.feature.drone.filterShapesForSelectedDrones
 import com.ScienceFiction.DronePassAndroid.feature.drone.selectedDronesForIosDropdown
@@ -80,13 +82,49 @@ internal fun calculateShapeFocusZoomLevel(radius: Double): Double {
     return maxZoom - ((radius - minRadius) * (maxZoom - minZoom) / (maxRadius - minRadius))
 }
 
+internal fun shapeFocusCoordinates(shape: ShapeModel): List<Coordinate> {
+    return when (shape.shapeType) {
+        ShapeType.CIRCLE -> listOf(shape.baseCoordinate)
+        ShapeType.RECTANGLE -> listOfNotNull(shape.baseCoordinate, shape.secondCoordinate)
+        ShapeType.POLYGON -> shape.polygonCoordinates?.takeIf { it.isNotEmpty() } ?: listOf(shape.baseCoordinate)
+        ShapeType.POLYLINE -> shape.polylineCoordinates?.takeIf { it.isNotEmpty() } ?: listOf(shape.baseCoordinate)
+    }
+}
+
+internal fun calculateShapeFocusCoordinate(shape: ShapeModel): Coordinate {
+    if (shape.shapeType == ShapeType.CIRCLE) return shape.baseCoordinate
+
+    val coordinates = shapeFocusCoordinates(shape)
+    val minLatitude = coordinates.minOf { it.latitude }
+    val maxLatitude = coordinates.maxOf { it.latitude }
+    val minLongitude = coordinates.minOf { it.longitude }
+    val maxLongitude = coordinates.maxOf { it.longitude }
+    return Coordinate(
+        latitude = (minLatitude + maxLatitude) / 2.0,
+        longitude = (minLongitude + maxLongitude) / 2.0,
+    )
+}
+
+internal fun calculateShapeFocusRadiusMeters(shape: ShapeModel): Double {
+    if (shape.shapeType == ShapeType.CIRCLE) {
+        return shape.radius ?: ShapeFocusDefaultRadiusMeters
+    }
+
+    val center = calculateShapeFocusCoordinate(shape)
+    val radius = shapeFocusCoordinates(shape)
+        .maxOfOrNull { coordinate -> DistanceCalculator.haversine(center, coordinate) }
+        ?: ShapeFocusDefaultRadiusMeters
+
+    return radius.coerceAtLeast(ShapeFocusDefaultRadiusMeters)
+}
+
 internal fun shouldConsumeNaverMapSymbolTap(): Boolean = true
 
 internal fun shouldSkipShapeFocusMove(
     currentSelectedShape: ShapeModel?,
     targetCoordinate: Coordinate,
 ): Boolean {
-    return currentSelectedShape?.baseCoordinate == targetCoordinate
+    return currentSelectedShape?.let(::calculateShapeFocusCoordinate) == targetCoordinate
 }
 
 internal fun resolveShapeFocusCameraEvent(
@@ -101,9 +139,10 @@ internal fun resolveShapeFocusCameraEvent(
         return null
     }
 
+    val focusCoordinate = calculateShapeFocusCoordinate(targetShape)
     return CameraEvent.MoveToShape(
-        coordinate = targetShape.baseCoordinate,
-        zoom = calculateShapeFocusZoomLevel(targetShape.radius ?: ShapeFocusDefaultRadiusMeters),
+        coordinate = focusCoordinate,
+        zoom = calculateShapeFocusZoomLevel(calculateShapeFocusRadiusMeters(targetShape)),
     )
 }
 
@@ -684,8 +723,12 @@ class MapViewModel @Inject constructor(
                     _selectedShapeId.value = updatedShape.id
                     _showShapeDetail.value = false
                     _savedShapeFocusEvent.emit(updatedShape.id)
-                    val zoom = calculateZoomLevel(updatedShape.radius ?: ShapeFocusDefaultRadiusMeters)
-                    _cameraEvent.emit(CameraEvent.MoveToShape(updatedShape.baseCoordinate, zoom))
+                    _cameraEvent.emit(
+                        CameraEvent.MoveToShape(
+                            coordinate = calculateShapeFocusCoordinate(updatedShape),
+                            zoom = calculateShapeFocusZoomLevel(calculateShapeFocusRadiusMeters(updatedShape)),
+                        ),
+                    )
                 }
                 ShapeEditPostSaveAction.RETURN_TO_DETAIL -> {
                     _selectedShapeId.value = updatedShape.id

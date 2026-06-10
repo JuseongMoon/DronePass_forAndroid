@@ -4,6 +4,7 @@ import androidx.compose.ui.unit.dp
 import com.ScienceFiction.DronePassAndroid.domain.model.Coordinate
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
+import com.ScienceFiction.DronePassAndroid.domain.model.ShapeType
 import com.ScienceFiction.DronePassAndroid.feature.drone.filterShapesForSelectedDrones
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -170,6 +171,72 @@ class MapCameraFocusTest {
                 skipIfAlreadyFocused = false,
             ),
         )
+    }
+
+    @Test
+    fun `사각형 도형 포커스는 두 좌표의 중심과 geometry 반경을 사용한다`() {
+        val target = shape(
+            id = "rectangle",
+            coordinate = Coordinate(37.0, 127.0),
+            start = 1L,
+            end = 2L,
+        ).copy(
+            shapeType = ShapeType.RECTANGLE,
+            secondCoordinate = Coordinate(37.02, 127.04),
+        )
+
+        val focusCoordinate = calculateShapeFocusCoordinate(target)
+        val focusRadius = calculateShapeFocusRadiusMeters(target)
+
+        assertEquals(37.01, focusCoordinate.latitude, 0.000001)
+        assertEquals(127.02, focusCoordinate.longitude, 0.000001)
+        assertEquals(true, focusRadius > ShapeFocusDefaultRadiusMeters)
+        assertEquals(
+            CameraEvent.MoveToShape(
+                coordinate = focusCoordinate,
+                zoom = calculateShapeFocusZoomLevel(focusRadius),
+            ),
+            resolveShapeFocusCameraEvent(
+                currentSelectedShape = null,
+                targetShape = target,
+                skipIfAlreadyFocused = false,
+            ),
+        )
+    }
+
+    @Test
+    fun `다각형과 선 도형 포커스 반경은 실제 좌표 범위를 반영한다`() {
+        val polygon = shape(
+            id = "polygon",
+            coordinate = Coordinate(37.0, 127.0),
+            start = 1L,
+            end = 2L,
+        ).copy(
+            shapeType = ShapeType.POLYGON,
+            polygonCoordinates = listOf(
+                Coordinate(37.0, 127.0),
+                Coordinate(37.02, 127.0),
+                Coordinate(37.02, 127.04),
+            ),
+        )
+        val polyline = polygon.copy(
+            id = "polyline",
+            shapeType = ShapeType.POLYLINE,
+            polygonCoordinates = null,
+            polylineCoordinates = listOf(
+                Coordinate(37.0, 127.0),
+                Coordinate(37.0, 127.08),
+            ),
+        )
+
+        val polygonFocusCoordinate = calculateShapeFocusCoordinate(polygon)
+        assertEquals(37.01, polygonFocusCoordinate.latitude, 0.000001)
+        assertEquals(127.02, polygonFocusCoordinate.longitude, 0.000001)
+        assertEquals(true, calculateShapeFocusRadiusMeters(polygon) > ShapeFocusDefaultRadiusMeters)
+        val polylineFocusCoordinate = calculateShapeFocusCoordinate(polyline)
+        assertEquals(37.0, polylineFocusCoordinate.latitude, 0.000001)
+        assertEquals(127.04, polylineFocusCoordinate.longitude, 0.000001)
+        assertEquals(true, calculateShapeFocusRadiusMeters(polyline) > calculateShapeFocusRadiusMeters(polygon))
     }
 
     @Test

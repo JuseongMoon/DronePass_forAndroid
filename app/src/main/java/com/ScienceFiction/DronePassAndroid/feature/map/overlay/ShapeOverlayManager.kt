@@ -2,11 +2,15 @@ package com.ScienceFiction.DronePassAndroid.feature.map.overlay
 
 import android.graphics.Color
 import com.ScienceFiction.DronePassAndroid.core.util.parseIosOpaqueRgbHexColor
+import com.ScienceFiction.DronePassAndroid.domain.model.Coordinate
+import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
+import com.ScienceFiction.DronePassAndroid.domain.model.ShapeType
+import com.naver.maps.geometry.LatLng
 import com.naver.maps.map.NaverMap
 import com.naver.maps.map.overlay.CircleOverlay
 import com.naver.maps.map.overlay.Overlay
-import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
-import com.ScienceFiction.DronePassAndroid.domain.model.ShapeType
+import com.naver.maps.map.overlay.PolygonOverlay
+import com.naver.maps.map.overlay.PolylineOverlay
 
 internal fun parseMapOverlayColorSafe(colorString: String): Int {
     return parseIosOpaqueRgbHexColor(colorString) ?: Color.BLACK
@@ -16,9 +20,65 @@ internal fun shouldRenderMapCircleOverlay(shape: ShapeModel): Boolean {
     return shape.shapeType == ShapeType.CIRCLE && shape.radius != null
 }
 
+internal enum class MapShapeOverlayKind {
+    CIRCLE,
+    RECTANGLE,
+    POLYGON,
+    POLYLINE,
+}
+
+internal fun resolveMapShapeOverlayKind(shape: ShapeModel): MapShapeOverlayKind? {
+    return when (shape.shapeType) {
+        ShapeType.CIRCLE -> if (shape.radius != null) MapShapeOverlayKind.CIRCLE else null
+        ShapeType.RECTANGLE -> if (shape.secondCoordinate != null) MapShapeOverlayKind.RECTANGLE else null
+        ShapeType.POLYGON -> if ((shape.polygonCoordinates?.size ?: 0) >= 3) MapShapeOverlayKind.POLYGON else null
+        ShapeType.POLYLINE -> if ((shape.polylineCoordinates?.size ?: 0) >= 2) MapShapeOverlayKind.POLYLINE else null
+    }
+}
+
+internal fun shouldRenderMapShapeOverlay(shape: ShapeModel): Boolean {
+    return resolveMapShapeOverlayKind(shape) != null
+}
+
+internal fun rectangleOverlayCoordinates(shape: ShapeModel): List<Coordinate>? {
+    val second = shape.secondCoordinate ?: return null
+    return listOf(
+        shape.baseCoordinate,
+        shape.baseCoordinate.copy(longitude = second.longitude),
+        second,
+        second.copy(longitude = shape.baseCoordinate.longitude),
+    )
+}
+
+internal fun shapeOverlayCoordinates(shape: ShapeModel): List<Coordinate>? {
+    return when (resolveMapShapeOverlayKind(shape)) {
+        MapShapeOverlayKind.CIRCLE -> listOf(shape.baseCoordinate)
+        MapShapeOverlayKind.RECTANGLE -> rectangleOverlayCoordinates(shape)
+        MapShapeOverlayKind.POLYGON -> shape.polygonCoordinates
+        MapShapeOverlayKind.POLYLINE -> shape.polylineCoordinates
+        null -> null
+    }
+}
+
 internal fun resolveMapCircleHighlightRadius(shape: ShapeModel): Double? {
     if (!shouldRenderMapCircleOverlay(shape)) return null
     return (shape.radius ?: return null) + 2
+}
+
+internal fun resolveMapShapeHighlightCoordinates(shape: ShapeModel): List<Coordinate>? {
+    val coordinates = when (resolveMapShapeOverlayKind(shape)) {
+        MapShapeOverlayKind.RECTANGLE,
+        MapShapeOverlayKind.POLYGON -> shapeOverlayCoordinates(shape)?.closeIfNeeded()
+        MapShapeOverlayKind.POLYLINE -> shapeOverlayCoordinates(shape)
+        MapShapeOverlayKind.CIRCLE,
+        null -> null
+    } ?: return null
+    return coordinates.takeIf { it.size >= 2 }
+}
+
+private fun List<Coordinate>.closeIfNeeded(): List<Coordinate> {
+    if (isEmpty() || first() == last()) return this
+    return this + first()
 }
 
 internal fun uniqueMapOverlayShapesByFirstId(shapes: List<ShapeModel>): List<ShapeModel> {
@@ -35,16 +95,13 @@ class ShapeOverlayManager {
 
     private var naverMap: NaverMap? = null
 
-    /**
-     * shapeId → CircleOverlay 매핑. Diff 기반 갱신을 위해 Map 구조 사용.
-     * (이전: List 단일 구조로 매번 clear → 전체 재생성 → 100개 60fps 기준 위반 위험.)
-     */
-    private val overlays = mutableMapOf<String, CircleOverlay>()
+    /** shapeId → Overlay 매핑. Diff 기반으로 신규/변경/삭제만 반영한다. */
+    private val overlays = mutableMapOf<String, Overlay>()
 
     /** updateOverlays 의 Diff 비교를 위해 마지막으로 적용된 shape state 캐시. */
     private val appliedShapeKeys = mutableMapOf<String, ShapeKey>()
 
-    private var highlightOverlay: CircleOverlay? = null
+    private var highlightOverlay: Overlay? = null
 
     private var highlightedDroneIds: Set<String> = emptySet()
 
@@ -53,9 +110,11 @@ class ShapeOverlayManager {
 
     /** Diff 비교를 위한 도형 속성 키 (변경 감지에 영향을 주는 모든 필드). */
     private data class ShapeKey(
+        val kind: MapShapeOverlayKind,
         val lat: Double,
         val lon: Double,
-        val radius: Double,
+        val radius: Double?,
+        val coordinates: List<Coordinate>,
         val color: String,
         val droneId: String?,
         val isExpired: Boolean,
@@ -64,12 +123,14 @@ class ShapeOverlayManager {
     )
 
     private fun ShapeModel.toKey(): ShapeKey? {
-        if (!shouldRenderMapCircleOverlay(this)) return null
-        val r = radius ?: return null
+        val kind = resolveMapShapeOverlayKind(this) ?: return null
+        val coordinates = shapeOverlayCoordinates(this) ?: return null
         return ShapeKey(
+            kind = kind,
             lat = baseCoordinate.latitude,
             lon = baseCoordinate.longitude,
-            radius = r,
+            radius = radius,
+            coordinates = coordinates,
             color = color,
             droneId = droneId,
             isExpired = isExpired,
@@ -91,8 +152,8 @@ class ShapeOverlayManager {
 
     /**
      * shapes 리스트를 기반으로 오버레이를 갱신한다.
-     * Diff: 신규는 add, 사라진 것은 remove, 속성 변경된 것만 in-place update.
-     * 한 도형의 updatedAt 만 변해도 100개를 전부 destroy/create 하던 이전 동작을 제거.
+     * Diff: 신규는 add, 사라진 것은 remove, 속성 변경된 것만 재생성한다.
+     * 한 도형의 updatedAt 만 변해도 100개를 전부 destroy/create 하던 동작을 피한다.
      */
     fun updateOverlays(shapes: List<ShapeModel>, highlightedDroneIds: Set<String>) {
         val didHighlightChange = this.highlightedDroneIds != highlightedDroneIds
@@ -109,17 +170,18 @@ class ShapeOverlayManager {
             appliedShapeKeys.remove(id)
         }
 
-        // 2. 신규/변경된 도형만 add 또는 in-place 속성 갱신
+        // 2. 신규/변경된 도형만 add 또는 재생성
         uniqueShapes.forEach { shape ->
             val newKey = newKeys[shape.id] ?: return@forEach
             val oldKey = appliedShapeKeys[shape.id]
             when {
                 oldKey == null -> {
-                    addCircleOverlay(shape, map)
+                    addShapeOverlay(shape, map)
                     appliedShapeKeys[shape.id] = newKey
                 }
                 oldKey != newKey || didHighlightChange -> {
-                    overlays[shape.id]?.let { overlay -> updateCircleOverlay(overlay, shape) }
+                    overlays.remove(shape.id)?.map = null
+                    addShapeOverlay(shape, map)
                     appliedShapeKeys[shape.id] = newKey
                 }
                 // oldKey == newKey 면 in-place 갱신도 불필요 → skip
@@ -128,42 +190,52 @@ class ShapeOverlayManager {
     }
 
     // ──────────────────────────────────────────────
-    // 원형 오버레이 add / update
+    // 도형 오버레이 add
     // ──────────────────────────────────────────────
 
     /**
-     * 원형 오버레이를 새로 추가한다.
+     * 도형 오버레이를 새로 추가한다.
      */
-    private fun addCircleOverlay(shape: ShapeModel, map: NaverMap) {
-        val radius = shape.radius ?: return
-
-        val circleOverlay = CircleOverlay().apply {
-            this.center = shape.baseCoordinate.toLatLng()
-            this.radius = radius
-            this.color = calculateFillColor(shape)
-            this.outlineColor = calculateOutlineColor(shape)
-            this.outlineWidth = calculateOutlineWidth(shape)
+    private fun addShapeOverlay(shape: ShapeModel, map: NaverMap) {
+        val overlay = when (resolveMapShapeOverlayKind(shape)) {
+            MapShapeOverlayKind.CIRCLE -> {
+                val radius = shape.radius ?: return
+                CircleOverlay().apply {
+                    this.center = shape.baseCoordinate.toLatLng()
+                    this.radius = radius
+                    this.color = calculateFillColor(shape)
+                    this.outlineColor = calculateOutlineColor(shape)
+                    this.outlineWidth = calculateOutlineWidth(shape)
+                }
+            }
+            MapShapeOverlayKind.RECTANGLE,
+            MapShapeOverlayKind.POLYGON -> {
+                val coordinates = shapeOverlayCoordinates(shape) ?: return
+                PolygonOverlay().apply {
+                    this.coords = coordinates.toLatLngs()
+                    this.color = calculateFillColor(shape)
+                    this.outlineColor = calculateOutlineColor(shape)
+                    this.outlineWidth = calculateOutlineWidth(shape)
+                }
+            }
+            MapShapeOverlayKind.POLYLINE -> {
+                val coordinates = shapeOverlayCoordinates(shape) ?: return
+                PolylineOverlay().apply {
+                    this.coords = coordinates.toLatLngs()
+                    this.color = calculateOutlineColor(shape)
+                    this.width = calculatePolylineWidth(shape)
+                }
+            }
+            null -> return
+        }.apply {
             this.globalZIndex = 50
             this.map = map
-
             setOnClickListener {
                 onShapeTapped?.invoke(shape.id)
                 true
             }
         }
-        overlays[shape.id] = circleOverlay
-    }
-
-    /**
-     * 기존 오버레이의 속성만 in-place 로 갱신한다 (overlay 인스턴스 재사용).
-     */
-    private fun updateCircleOverlay(overlay: CircleOverlay, shape: ShapeModel) {
-        val radius = shape.radius ?: return
-        overlay.center = shape.baseCoordinate.toLatLng()
-        overlay.radius = radius
-        overlay.color = calculateFillColor(shape)
-        overlay.outlineColor = calculateOutlineColor(shape)
-        overlay.outlineWidth = calculateOutlineWidth(shape)
+        overlays[shape.id] = overlay
     }
 
     // ──────────────────────────────────────────────
@@ -182,14 +254,30 @@ class ShapeOverlayManager {
         highlightOverlay = null
 
         val shape = shapes.find { it.id == shapeId } ?: return
-        val radius = resolveMapCircleHighlightRadius(shape) ?: return
 
-        highlightOverlay = CircleOverlay().apply {
-            this.center = shape.baseCoordinate.toLatLng()
-            this.radius = radius
-            this.color = Color.TRANSPARENT
-            this.outlineColor = parseColorSafe(SYSTEM_RED)
-            this.outlineWidth = 5
+        highlightOverlay = when (resolveMapShapeOverlayKind(shape)) {
+            MapShapeOverlayKind.CIRCLE -> {
+                val radius = resolveMapCircleHighlightRadius(shape) ?: return
+                CircleOverlay().apply {
+                    this.center = shape.baseCoordinate.toLatLng()
+                    this.radius = radius
+                    this.color = Color.TRANSPARENT
+                    this.outlineColor = parseColorSafe(SYSTEM_RED)
+                    this.outlineWidth = 5
+                }
+            }
+            MapShapeOverlayKind.RECTANGLE,
+            MapShapeOverlayKind.POLYGON,
+            MapShapeOverlayKind.POLYLINE -> {
+                val coordinates = resolveMapShapeHighlightCoordinates(shape) ?: return
+                PolylineOverlay().apply {
+                    this.coords = coordinates.toLatLngs()
+                    this.color = parseColorSafe(SYSTEM_RED)
+                    this.width = 5
+                }
+            }
+            null -> return
+        }?.apply {
             this.globalZIndex = 60
             this.map = naverMap
         }
@@ -237,6 +325,10 @@ class ShapeOverlayManager {
         return if (shape.isNotStarted) 1 else 2
     }
 
+    private fun calculatePolylineWidth(shape: ShapeModel): Int {
+        return if (isDroneHighlighted(shape)) 5 else 3
+    }
+
     private fun mainColorFor(shape: ShapeModel): Int {
         return if (shape.isExpired) {
             parseColorSafe(SYSTEM_GRAY)
@@ -265,6 +357,9 @@ class ShapeOverlayManager {
     private fun parseColorSafe(colorString: String): Int {
         return parseMapOverlayColorSafe(colorString)
     }
+
+    private fun List<Coordinate>.toLatLngs(): List<LatLng> =
+        map { it.toLatLng() }
 
     private companion object {
         const val SYSTEM_GRAY = "#8E8E93"
