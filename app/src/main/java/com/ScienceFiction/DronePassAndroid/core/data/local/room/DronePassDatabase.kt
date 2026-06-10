@@ -39,8 +39,8 @@ abstract class DronePassDatabase : RoomDatabase() {
          * v1 -> v2 마이그레이션
          *
          * 실제 스키마 변경:
-         * - shapes 테이블: 4개 컬럼 제거 (secondLatitude, secondLongitude,
-         *   polygonCoordinates, polylineCoordinates) — Circle 외 도형 모델 미사용
+         * - shapes 테이블: 당시 v2에서 쓰지 않던 4개 geometry 컬럼 제거
+         *   (secondLatitude, secondLongitude, polygonCoordinates, polylineCoordinates)
          * - drones 테이블: 신규 추가
          * - sketches 테이블: 신규 추가
          *
