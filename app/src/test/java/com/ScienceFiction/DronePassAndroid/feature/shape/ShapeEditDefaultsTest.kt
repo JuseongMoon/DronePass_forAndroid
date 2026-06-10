@@ -472,6 +472,27 @@ class ShapeEditDefaultsTest {
     }
 
     @Test
+    fun `비원형 도형 저장 검증은 기존 geometry 보존을 위해 반경을 요구하지 않는다`() {
+        assertEquals(
+            ShapeEditSaveValidationError.RADIUS_REQUIRED,
+            validateShapeEditSaveFields(
+                coordinate = Coordinate(37.0, 127.0),
+                address = "",
+                radius = "",
+                requiresRadius = true,
+            ),
+        )
+        assertNull(
+            validateShapeEditSaveFields(
+                coordinate = Coordinate(37.0, 127.0),
+                address = "",
+                radius = "",
+                requiresRadius = false,
+            ),
+        )
+    }
+
+    @Test
     fun `도형 편집 드론 색상 원은 iOS처럼 팔레트 색상이 있을 때만 표시한다`() {
         assertTrue(shouldShowShapeEditDroneColorIndicator(PaletteColor.BLUE))
         assertFalse(shouldShowShapeEditDroneColorIndicator(null))
@@ -528,14 +549,14 @@ class ShapeEditDefaultsTest {
     }
 
     @Test
-    fun `도형 저장 결과는 iOS처럼 원형 모델만 만들고 기존 보조 geometry를 제거한다`() {
+    fun `기존 비원형 도형 저장은 타입과 geometry를 보존한다`() {
         val original = ShapeModel(
             id = "shape-rect",
             title = "기존 사각형",
             shapeType = ShapeType.RECTANGLE,
             baseCoordinate = Coordinate(37.0, 127.0),
             radius = null,
-            secondCoordinate = Coordinate(37.1, 127.1),
+            secondCoordinate = Coordinate(37.5, 127.5),
             polygonCoordinates = listOf(Coordinate(37.2, 127.2)),
             polylineCoordinates = listOf(Coordinate(37.3, 127.3)),
             createdAt = 1_000L,
@@ -551,7 +572,7 @@ class ShapeEditDefaultsTest {
             coordinate = Coordinate(36.0, 128.0),
             address = "",
             noAddressFallback = "주소를 찾을 수 없습니다",
-            radius = "120",
+            radius = "",
             height = "",
             memo = "",
             selectedColor = "#123456",
@@ -563,10 +584,10 @@ class ShapeEditDefaultsTest {
 
         assertEquals("shape-rect", saved.id)
         assertEquals("새 도형", saved.title)
-        assertEquals(ShapeType.CIRCLE, saved.shapeType)
+        assertEquals(ShapeType.RECTANGLE, saved.shapeType)
         assertEquals(Coordinate(36.0, 128.0), saved.baseCoordinate)
-        assertEquals(120.0, saved.radius ?: -1.0, 0.0)
-        assertNull(saved.secondCoordinate)
+        assertNull(saved.radius)
+        assertEquals(Coordinate(36.5, 128.5), saved.secondCoordinate)
         assertNull(saved.polygonCoordinates)
         assertNull(saved.polylineCoordinates)
         assertNull(saved.height)
@@ -579,6 +600,54 @@ class ShapeEditDefaultsTest {
         assertEquals(3_000L, saved.flightStartDate)
         assertEquals(4_000L, saved.flightEndDate)
         assertEquals(5_000L, saved.updatedAt)
+    }
+
+    @Test
+    fun `기존 polygon 도형 저장은 좌표 변경량만큼 전체 geometry를 이동한다`() {
+        val original = ShapeModel(
+            id = "shape-polygon",
+            title = "기존 다각형",
+            shapeType = ShapeType.POLYGON,
+            baseCoordinate = Coordinate(37.0, 127.0),
+            radius = null,
+            polygonCoordinates = listOf(
+                Coordinate(37.0, 127.0),
+                Coordinate(37.5, 127.0),
+                Coordinate(37.5, 127.5),
+            ),
+            createdAt = 1_000L,
+        )
+
+        val saved = buildShapeEditSavedShape(
+            originalShape = original,
+            isDuplicateMode = false,
+            generatedId = "generated-shape",
+            title = original.title,
+            defaultTitle = "새 도형",
+            coordinate = Coordinate(38.0, 128.0),
+            address = "",
+            noAddressFallback = "주소를 찾을 수 없습니다",
+            radius = "",
+            height = "",
+            memo = "",
+            selectedColor = "#123456",
+            selectedDroneId = null,
+            flightStartDate = 3_000L,
+            flightEndDate = 4_000L,
+            now = 5_000L,
+        )
+
+        assertEquals(ShapeType.POLYGON, saved.shapeType)
+        assertEquals(Coordinate(38.0, 128.0), saved.baseCoordinate)
+        assertNull(saved.radius)
+        assertEquals(
+            listOf(
+                Coordinate(38.0, 128.0),
+                Coordinate(38.5, 128.0),
+                Coordinate(38.5, 128.5),
+            ),
+            saved.polygonCoordinates,
+        )
     }
 
     @Test

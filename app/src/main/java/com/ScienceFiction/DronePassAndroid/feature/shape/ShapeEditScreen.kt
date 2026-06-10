@@ -290,6 +290,7 @@ fun ShapeEditScreen(
             coordinate = coordinateForSave,
             address = address,
             radius = radiusText,
+            requiresRadius = shouldRequireShapeEditRadius(shape),
         )
         if (validationError != null) {
             errorMessage = when (validationError) {

@@ -290,15 +290,20 @@ internal fun buildShapeEditSavedShape(
     now: Long,
 ): ShapeModel {
     val baseShape = originalShape ?: ShapeModel()
+    val geometry = resolveShapeEditSavedGeometry(
+        originalShape = originalShape,
+        coordinate = coordinate,
+        radius = radius,
+    )
     return baseShape.copy(
         id = if (isDuplicateMode) generatedId else (originalShape?.id ?: generatedId),
         title = title.ifBlank { defaultTitle },
-        shapeType = ShapeType.CIRCLE,
-        baseCoordinate = coordinate,
-        radius = radius.toDoubleOrNull() ?: 0.0,
-        secondCoordinate = null,
-        polygonCoordinates = null,
-        polylineCoordinates = null,
+        shapeType = geometry.shapeType,
+        baseCoordinate = geometry.baseCoordinate,
+        radius = geometry.radius,
+        secondCoordinate = geometry.secondCoordinate,
+        polygonCoordinates = geometry.polygonCoordinates,
+        polylineCoordinates = geometry.polylineCoordinates,
         height = height.toDoubleOrNull(),
         memo = memo.ifBlank { null },
         address = address.ifBlank { noAddressFallback },
@@ -308,6 +313,91 @@ internal fun buildShapeEditSavedShape(
         color = selectedColor,
         droneId = selectedDroneId,
         updatedAt = now,
+    )
+}
+
+internal data class ShapeEditSavedGeometry(
+    val shapeType: ShapeType,
+    val baseCoordinate: Coordinate,
+    val radius: Double?,
+    val secondCoordinate: Coordinate?,
+    val polygonCoordinates: List<Coordinate>?,
+    val polylineCoordinates: List<Coordinate>?,
+)
+
+internal fun shouldRequireShapeEditRadius(shape: ShapeModel?): Boolean {
+    return when (shape?.shapeType) {
+        ShapeType.RECTANGLE,
+        ShapeType.POLYGON,
+        ShapeType.POLYLINE -> false
+        ShapeType.CIRCLE,
+        null -> true
+    }
+}
+
+internal fun resolveShapeEditSavedGeometry(
+    originalShape: ShapeModel?,
+    coordinate: Coordinate,
+    radius: String,
+): ShapeEditSavedGeometry {
+    if (originalShape == null || originalShape.shapeType == ShapeType.CIRCLE) {
+        return ShapeEditSavedGeometry(
+            shapeType = ShapeType.CIRCLE,
+            baseCoordinate = coordinate,
+            radius = radius.toDoubleOrNull() ?: 0.0,
+            secondCoordinate = null,
+            polygonCoordinates = null,
+            polylineCoordinates = null,
+        )
+    }
+
+    val translatedGeometry = translateShapeEditGeometry(
+        originalShape = originalShape,
+        targetBaseCoordinate = coordinate,
+    )
+    return ShapeEditSavedGeometry(
+        shapeType = originalShape.shapeType,
+        baseCoordinate = coordinate,
+        radius = null,
+        secondCoordinate = if (originalShape.shapeType == ShapeType.RECTANGLE) {
+            translatedGeometry.secondCoordinate
+        } else {
+            null
+        },
+        polygonCoordinates = if (originalShape.shapeType == ShapeType.POLYGON) {
+            translatedGeometry.polygonCoordinates
+        } else {
+            null
+        },
+        polylineCoordinates = if (originalShape.shapeType == ShapeType.POLYLINE) {
+            translatedGeometry.polylineCoordinates
+        } else {
+            null
+        },
+    )
+}
+
+private data class TranslatedShapeEditGeometry(
+    val secondCoordinate: Coordinate?,
+    val polygonCoordinates: List<Coordinate>?,
+    val polylineCoordinates: List<Coordinate>?,
+)
+
+private fun translateShapeEditGeometry(
+    originalShape: ShapeModel,
+    targetBaseCoordinate: Coordinate,
+): TranslatedShapeEditGeometry {
+    fun Coordinate.translated(): Coordinate {
+        return Coordinate(
+            latitude = latitude + targetBaseCoordinate.latitude - originalShape.baseCoordinate.latitude,
+            longitude = longitude + targetBaseCoordinate.longitude - originalShape.baseCoordinate.longitude,
+        )
+    }
+
+    return TranslatedShapeEditGeometry(
+        secondCoordinate = originalShape.secondCoordinate?.translated(),
+        polygonCoordinates = originalShape.polygonCoordinates?.map { it.translated() },
+        polylineCoordinates = originalShape.polylineCoordinates?.map { it.translated() },
     )
 }
 
@@ -400,11 +490,12 @@ internal fun validateShapeEditSaveFields(
     coordinate: Coordinate?,
     address: String,
     radius: String,
+    requiresRadius: Boolean = true,
 ): ShapeEditSaveValidationError? {
     if (coordinate == null && address.isEmpty()) {
         return ShapeEditSaveValidationError.COORDINATE_REQUIRED
     }
-    if (radius.isEmpty()) {
+    if (requiresRadius && radius.isEmpty()) {
         return ShapeEditSaveValidationError.RADIUS_REQUIRED
     }
     if (coordinate == null) {
