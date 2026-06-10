@@ -62,6 +62,13 @@ class DroneFirestoreParsingTest {
     }
 
     @Test
+    fun `Firestore 파싱은 Firebase 계약을 어긴 이름과 색상을 invalid 로 본다`() {
+        assertNull(droneFromFirestoreData(validDocument() + ("name" to "   ")))
+        assertNull(droneFromFirestoreData(validDocument() + ("color" to "blue")))
+        assertNull(droneFromFirestoreData(validDocument() + ("color" to "#007AFFCC")))
+    }
+
+    @Test
     fun `선택 필드가 누락되어도 iOS처럼 null 로 파싱한다`() {
         val drone = droneFromFirestoreData(
             validDocument()

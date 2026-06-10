@@ -103,6 +103,15 @@ class SketchFirebaseStoreTest {
     }
 
     @Test
+    fun `스케치 선택 필드가 존재하지만 Firebase 계약을 어기면 invalid 이다`() {
+        assertNull(sketchFromFirestoreData(validDocument() + ("color" to "red")))
+        assertNull(sketchFromFirestoreData(validDocument() + ("strokeWidth" to 0.0)))
+        assertNull(sketchFromFirestoreData(validDocument() + ("strokeWidth" to 50.1)))
+        assertNull(sketchFromFirestoreData(validDocument() + ("opacity" to -0.1)))
+        assertNull(sketchFromFirestoreData(validDocument() + ("opacity" to Double.NaN)))
+    }
+
+    @Test
     fun `스케치 points 필드가 손상되면 부분 좌표를 버리지 않고 invalid 이다`() {
         val incompletePoint = listOf(
             mapOf("latitude" to 37.0, "longitude" to 127.0),

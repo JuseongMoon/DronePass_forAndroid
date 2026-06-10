@@ -37,6 +37,34 @@ class ShapeFirestoreParsingTest {
     }
 
     @Test
+    fun `Firestore 파싱은 Firebase 계약을 어긴 색상과 좌표 범위를 invalid 로 본다`() {
+        val invalidColor = validDocument() + ("color" to "blue")
+        val invalidBaseCoordinate = validDocument() + (
+            "baseCoordinate" to mapOf(
+                "latitude" to 91.0,
+                "longitude" to 127.0,
+            )
+        )
+        val nonFiniteBaseCoordinate = validDocument() + (
+            "baseCoordinate" to mapOf(
+                "latitude" to Double.NaN,
+                "longitude" to 127.0,
+            )
+        )
+
+        assertNull(shapeFromFirestoreData(invalidColor))
+        assertNull(shapeFromFirestoreData(invalidBaseCoordinate))
+        assertNull(shapeFromFirestoreData(nonFiniteBaseCoordinate))
+    }
+
+    @Test
+    fun `Firestore 파싱은 Firebase 계약을 어긴 원형 반경을 invalid 로 본다`() {
+        assertNull(shapeFromFirestoreData(validDocument() + ("radius" to 0.0)))
+        assertNull(shapeFromFirestoreData(validDocument() + ("radius" to Double.POSITIVE_INFINITY)))
+        assertNull(shapeFromFirestoreData(validDocument() + ("radius" to 50_000.1)))
+    }
+
+    @Test
     fun `startedAt 은 iOS 레거시 fallback 으로 flightStartDate 를 대체한다`() {
         val document = validDocument()
             .minus("flightStartDate")
@@ -137,12 +165,17 @@ class ShapeFirestoreParsingTest {
                 mapOf("latitude" to "37.1", "longitude" to 127.1),
             ),
         )
+        val rectangleOutOfRangeCoordinate = validDocument() + mapOf(
+            "shapeType" to "rectangle",
+            "secondCoordinate" to mapOf("latitude" to 37.0, "longitude" to 181.0),
+        )
 
         assertNull(shapeFromFirestoreData(rectangleMissingSecond))
         assertNull(shapeFromFirestoreData(polygonMissingCoordinates))
         assertNull(shapeFromFirestoreData(polygonBelowMinimum))
         assertNull(shapeFromFirestoreData(polylineMissingCoordinates))
         assertNull(shapeFromFirestoreData(polylineInvalidCoordinate))
+        assertNull(shapeFromFirestoreData(rectangleOutOfRangeCoordinate))
     }
 
     @Test
