@@ -64,6 +64,11 @@ internal fun droneFromFirestoreData(data: Map<String, Any?>): DroneModel? {
     )
 }
 
+internal fun droneFromFirestoreDocument(documentId: String, data: Map<String, Any?>): DroneModel? {
+    val drone = droneFromFirestoreData(data) ?: return null
+    return drone.takeIf { it.id == documentId }
+}
+
 /**
  * Firestore의 drones 컬렉션과 통신하는 Store 클래스.
  * 경로: users/{userId}/drones/{droneId}
@@ -98,7 +103,7 @@ class DroneFirebaseStore @Inject constructor(
             val snapshot = dronesCollection(userId).get().await()
             val drones = snapshot.documents.mapNotNull { doc ->
                 val data = doc.data ?: return@mapNotNull null
-                droneFromFirestoreData(data)
+                firestoreDocumentToDrone(doc.id, data)
             }.filter { it.deletedAt == null }
             Result.success(drones)
         } catch (e: Exception) {
@@ -115,7 +120,7 @@ class DroneFirebaseStore @Inject constructor(
             val snapshot = dronesCollection(userId).get().await()
             val drones = snapshot.documents.mapNotNull { doc ->
                 val data = doc.data ?: return@mapNotNull null
-                droneFromFirestoreData(data)
+                firestoreDocumentToDrone(doc.id, data)
             }
             Result.success(drones)
         } catch (e: Exception) {
@@ -227,6 +232,19 @@ class DroneFirebaseStore @Inject constructor(
             droneFromFirestoreData(data)
         } catch (e: Exception) {
             Log.e(TAG, "Firestore 데이터 -> DroneModel 변환 실패", e)
+            null
+        }
+    }
+
+    fun firestoreDocumentToDrone(documentId: String, data: Map<String, Any?>): DroneModel? {
+        return try {
+            val drone = droneFromFirestoreDocument(documentId, data)
+            if (drone == null) {
+                Log.w(TAG, "문서 ID 불일치 또는 필수 필드 누락/손상으로 드론 스킵: docId=$documentId, id=${data["id"]}")
+            }
+            drone
+        } catch (e: Exception) {
+            Log.e(TAG, "Firestore 문서 -> DroneModel 변환 실패: docId=$documentId", e)
             null
         }
     }

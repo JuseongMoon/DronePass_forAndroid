@@ -82,6 +82,11 @@ internal fun sketchFromFirestoreData(data: Map<String, Any?>): SketchModel? {
     )
 }
 
+internal fun sketchFromFirestoreDocument(documentId: String, data: Map<String, Any?>): SketchModel? {
+    val sketch = sketchFromFirestoreData(data) ?: return null
+    return sketch.takeIf { it.id == documentId }
+}
+
 /**
  * Firestore의 sketches 컬렉션과 통신하는 Store 클래스.
  * 경로: users/{userId}/sketches/{sketchId}
@@ -118,7 +123,7 @@ class SketchFirebaseStore @Inject constructor(
             val snapshot = sketchesCollection(userId).get().await()
             val sketches = snapshot.documents.mapNotNull { doc ->
                 val data = doc.data ?: return@mapNotNull null
-                sketchFromFirestoreData(data)
+                firestoreDocumentToSketch(doc.id, data)
             }.filter { it.deletedAt == null }
             Result.success(sketches)
         } catch (e: Exception) {
@@ -135,7 +140,7 @@ class SketchFirebaseStore @Inject constructor(
             val snapshot = sketchesCollection(userId).get().await()
             val sketches = snapshot.documents.mapNotNull { doc ->
                 val data = doc.data ?: return@mapNotNull null
-                sketchFromFirestoreData(data)
+                firestoreDocumentToSketch(doc.id, data)
             }
             Result.success(sketches)
         } catch (e: Exception) {
@@ -253,6 +258,19 @@ class SketchFirebaseStore @Inject constructor(
             sketchFromFirestoreData(data)
         } catch (e: Exception) {
             Log.e(TAG, "Firestore 데이터 -> SketchModel 변환 실패", e)
+            null
+        }
+    }
+
+    fun firestoreDocumentToSketch(documentId: String, data: Map<String, Any?>): SketchModel? {
+        return try {
+            val sketch = sketchFromFirestoreDocument(documentId, data)
+            if (sketch == null) {
+                Log.w(TAG, "문서 ID 불일치 또는 필수 필드 누락/손상으로 스케치 스킵: docId=$documentId, id=${data["id"]}")
+            }
+            sketch
+        } catch (e: Exception) {
+            Log.e(TAG, "Firestore 문서 -> SketchModel 변환 실패: docId=$documentId", e)
             null
         }
     }

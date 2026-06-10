@@ -145,6 +145,23 @@ class ShapeFirestoreParsingTest {
         assertNull(shapeFromFirestoreData(polylineInvalidCoordinate))
     }
 
+    @Test
+    fun `Firestore 문서 파싱은 문서 ID 와 id 필드가 다르면 invalid 이다`() {
+        assertEquals(
+            "00000000-0000-0000-0000-000000000001",
+            shapeFromFirestoreDocument(
+                documentId = "00000000-0000-0000-0000-000000000001",
+                data = validDocument(),
+            )?.id,
+        )
+        assertNull(
+            shapeFromFirestoreDocument(
+                documentId = "00000000-0000-0000-0000-000000000099",
+                data = validDocument(),
+            ),
+        )
+    }
+
     private fun validDocument(): Map<String, Any?> {
         return mapOf(
             "id" to "00000000-0000-0000-0000-000000000001",

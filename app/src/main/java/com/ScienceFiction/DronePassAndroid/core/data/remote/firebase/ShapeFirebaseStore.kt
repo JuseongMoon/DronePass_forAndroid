@@ -150,6 +150,11 @@ internal fun shapeFromFirestoreData(data: Map<String, Any?>): ShapeModel? {
     )
 }
 
+internal fun shapeFromFirestoreDocument(documentId: String, data: Map<String, Any?>): ShapeModel? {
+    val shape = shapeFromFirestoreData(data) ?: return null
+    return shape.takeIf { it.id == documentId }
+}
+
 /**
  * Firestore의 shapes 컬렉션과 통신하는 Store 클래스.
  * 경로: users/{userId}/shapes/{shapeId}
@@ -188,7 +193,7 @@ class ShapeFirebaseStore @Inject constructor(
             val snapshot = shapesCollection(userId).get().await()
             val shapes = snapshot.documents.mapNotNull { doc ->
                 val data = doc.data ?: return@mapNotNull null
-                firestoreDataToShape(data)
+                firestoreDocumentToShape(doc.id, data)
             }.filter { it.deletedAt == null }
 
             val validation = validateFirebaseShapeBatch(shapes)
@@ -211,7 +216,7 @@ class ShapeFirebaseStore @Inject constructor(
             val snapshot = shapesCollection(userId).get().await()
             val shapes = snapshot.documents.mapNotNull { doc ->
                 val data = doc.data ?: return@mapNotNull null
-                firestoreDataToShape(data)
+                firestoreDocumentToShape(doc.id, data)
             }
             Result.success(shapes)
         } catch (e: Exception) {
@@ -329,6 +334,19 @@ class ShapeFirebaseStore @Inject constructor(
             shape
         } catch (e: Exception) {
             Log.e(TAG, "Firestore 데이터 -> ShapeModel 변환 실패", e)
+            null
+        }
+    }
+
+    fun firestoreDocumentToShape(documentId: String, data: Map<String, Any?>): ShapeModel? {
+        return try {
+            val shape = shapeFromFirestoreDocument(documentId, data)
+            if (shape == null) {
+                Log.w(TAG, "문서 ID 불일치 또는 필수 필드 누락/손상으로 도형 스킵: docId=$documentId, id=${data["id"]}")
+            }
+            shape
+        } catch (e: Exception) {
+            Log.e(TAG, "Firestore 문서 -> ShapeModel 변환 실패: docId=$documentId", e)
             null
         }
     }
