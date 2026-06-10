@@ -122,9 +122,9 @@ internal fun shouldConsumeNaverMapSymbolTap(): Boolean = true
 
 internal fun shouldSkipShapeFocusMove(
     currentSelectedShape: ShapeModel?,
-    targetCoordinate: Coordinate,
+    targetShape: ShapeModel,
 ): Boolean {
-    return currentSelectedShape?.let(::calculateShapeFocusCoordinate) == targetCoordinate
+    return currentSelectedShape?.id == targetShape.id
 }
 
 internal fun resolveShapeFocusCameraEvent(
@@ -132,14 +132,14 @@ internal fun resolveShapeFocusCameraEvent(
     targetShape: ShapeModel,
     skipIfAlreadyFocused: Boolean,
 ): CameraEvent.MoveToShape? {
-    val focusCoordinate = calculateShapeFocusCoordinate(targetShape)
     if (
         skipIfAlreadyFocused &&
-        shouldSkipShapeFocusMove(currentSelectedShape, focusCoordinate)
+        shouldSkipShapeFocusMove(currentSelectedShape, targetShape)
     ) {
         return null
     }
 
+    val focusCoordinate = calculateShapeFocusCoordinate(targetShape)
     return CameraEvent.MoveToShape(
         coordinate = focusCoordinate,
         zoom = calculateShapeFocusZoomLevel(calculateShapeFocusRadiusMeters(targetShape)),
