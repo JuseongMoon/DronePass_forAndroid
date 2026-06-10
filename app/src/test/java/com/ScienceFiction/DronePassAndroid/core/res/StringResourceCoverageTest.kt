@@ -889,13 +889,13 @@ class StringResourceCoverageTest {
     fun `drone detail and edit strings match iOS localizations`() {
         assertEquals("제작 번호", stringResourceValue("values/strings.xml", "drone_detail_serial_number"))
         assertEquals("이륙 무게", stringResourceValue("values/strings.xml", "drone_detail_takeoff_weight"))
-        assertEquals("메모 없음", stringResourceValue("values/strings.xml", "drone_detail_memo_empty"))
+        assertEquals("메모가 없습니다", stringResourceValue("values/strings.xml", "drone_detail_memo_empty"))
         assertEquals(
-            "'%s'을(를) 삭제하시겠습니까?",
+            "정말로 '%s'을(를) 삭제하시겠습니까?",
             androidDisplayStringResourceValue("values/strings.xml", "drone_detail_delete_message"),
         )
         assertEquals(
-            "'%1\$s'에 연결된 %2\$d개의 도형을 어떻게 처리할까요?",
+            "'%1\$s'에 연결된 %2\$d개의 도형을 어떻게 처리하시겠습니까?",
             androidDisplayStringResourceValue("values/strings.xml", "drone_detail_delete_with_shapes_message"),
         )
 
