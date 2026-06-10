@@ -141,6 +141,13 @@ class WeatherForecastParityTest {
     }
 
     @Test
+    fun `current weather visibility uses iOS one decimal kilometer format`() {
+        assertEquals("10.0 km", formatIosVisibilityKilometers(10.0))
+        assertEquals("2.4 km", formatIosVisibilityKilometers(2.44))
+        assertEquals("2.5 km", formatIosVisibilityKilometers(2.45))
+    }
+
+    @Test
     fun `weather warning icons use iOS WeatherThresholds boundary rules`() {
         assertEquals(WarningIconType.None, resolveTemperatureWarningIcon(-10.0))
         assertEquals(WarningIconType.Caution, resolveTemperatureWarningIcon(-10.1))

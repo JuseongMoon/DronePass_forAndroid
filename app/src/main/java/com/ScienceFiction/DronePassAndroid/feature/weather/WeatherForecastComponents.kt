@@ -257,7 +257,7 @@ internal fun CurrentWeatherSection(
                                 icon = Icons.Default.Visibility,
                                 iconColor = VisibilityPurple,
                                 label = stringResource(R.string.weather_visibility),
-                                value = "%.0f km".format(Locale.ROOT, visibility),
+                                value = formatIosVisibilityKilometers(visibility),
                                 warningIcon = visibilityWarning,
                                 onClick = { onWeatherInfoRequested(WeatherInfoTopic.Visibility) },
                             )
@@ -554,6 +554,9 @@ private fun WeatherDataCell(
 
 internal fun formatIosTemperatureDegrees(temperatureC: Double): String =
     "%.0f°".format(Locale.ROOT, temperatureC)
+
+internal fun formatIosVisibilityKilometers(visibilityKm: Double): String =
+    "%.1f km".format(Locale.ROOT, visibilityKm)
 
 @StringRes
 internal fun resolveWindDirectionLabelRes(degrees: Double): Int {

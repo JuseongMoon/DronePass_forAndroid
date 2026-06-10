@@ -8,8 +8,8 @@ import org.junit.Test
 /**
  * CRICalculator 단위 테스트
  *
- * 비정상 입력(NaN/Infinity/비물리적 값)에 대해 안전 sentinel(NaN)이 반환되는지,
- * 정상 범위 입력에 대해 1..100 범위의 값이 반환되는지를 검증한다.
+ * 비정상 입력(NaN/Infinity)에 대해 안전 sentinel(NaN)이 반환되는지,
+ * 유한한 극값은 iOS WeatherManager처럼 안정화되어 1..100 범위의 값이 반환되는지를 검증한다.
  */
 class CRICalculatorTest {
 
@@ -63,32 +63,18 @@ class CRICalculatorTest {
     }
 
     @Test
-    fun `절대영도 이하는 NaN 반환`() {
-        assertTrue(
-            "온도 -300°C는 NaN",
-            CRICalculator.calculate(-300.0, 20.0, 0.0).isNaN()
-        )
-        assertTrue(
-            "이슬점 -273.15°C 이하는 NaN",
-            CRICalculator.calculate(20.0, -273.15, 0.0).isNaN()
-        )
-    }
-
-    @Test
-    fun `Magnus 공식 분모가 0 이하가 되는 입력은 NaN`() {
-        // b + temperature = 243.04 + temperature = 0  → temperature = -243.04
-        // -243.04 < -273.15는 아니므로 ABSOLUTE_ZERO_C 가드는 통과하지만
-        // Magnus 분모 가드에서 NaN 반환
-        assertTrue(CRICalculator.calculate(-243.04, 0.0, 0.0).isNaN())
-        assertTrue(CRICalculator.calculate(-244.0, 0.0, 0.0).isNaN())
-    }
-
-    @Test
     fun `음수 풍속은 0으로 클램프되어 NaN이 아닌 정상 값 반환`() {
         // 음수 풍속(API 오류)이 들어와도 CRI 자체는 계산되어야 함
         val cri = CRICalculator.calculate(temperature = 20.0, dewPoint = 18.0, windSpeed = -3.0)
         assertFalse("음수 풍속은 NaN이 아님", cri.isNaN())
         assertTrue("CRI 1..100", cri in 1.0..100.0)
+    }
+
+    @Test
+    fun `유한한 온도 이슬점 극값은 iOS WeatherManager처럼 안정화되어 계산된다`() {
+        assertEquals(100.0, CRICalculator.calculate(-300.0, 20.0, 0.0), 0.0)
+        assertEquals(1.0, CRICalculator.calculate(20.0, -300.0, 0.0), 0.0)
+        assertFalse(CRICalculator.calculate(-244.0, 0.0, 0.0).isNaN())
     }
 
     // endregion
