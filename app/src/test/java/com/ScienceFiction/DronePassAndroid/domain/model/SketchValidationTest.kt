@@ -51,6 +51,15 @@ class SketchValidationTest {
     }
 
     @Test
+    fun `스케치 Firebase 저장은 opacity 0 이상 1 이하 finite 값만 허용한다`() {
+        assertFalse(validSketch().copy(opacity = -0.1).isValidForFirebasePersistence())
+        assertFalse(validSketch().copy(opacity = 1.1).isValidForFirebasePersistence())
+        assertFalse(validSketch().copy(opacity = Double.NaN).isValidForFirebasePersistence())
+        assertTrue(validSketch().copy(opacity = 0.0).isValidForFirebasePersistence())
+        assertTrue(validSketch().copy(opacity = 1.0).isValidForFirebasePersistence())
+    }
+
+    @Test
     fun `스케치 Firebase batch 는 중복 ID 를 거부한다`() {
         val sketch = validSketch()
 

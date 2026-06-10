@@ -22,6 +22,9 @@ fun SketchModel.validateForFirebasePersistence(): SketchValidationResult {
     if (!strokeWidth.isFinite() || strokeWidth <= 0.0 || strokeWidth > MAX_FIREBASE_SKETCH_STROKE_WIDTH) {
         return SketchValidationResult(isValid = false, reason = "invalid stroke width")
     }
+    if (!opacity.isFinite() || opacity !in 0.0..1.0) {
+        return SketchValidationResult(isValid = false, reason = "invalid opacity")
+    }
     return SketchValidationResult(isValid = true)
 }
 
