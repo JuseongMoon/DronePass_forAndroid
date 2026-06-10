@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -42,6 +43,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -55,7 +57,15 @@ import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.feature.document.PrivacyPolicyScreen
 import com.ScienceFiction.DronePassAndroid.feature.document.TermsOfServiceScreen
 
-internal val LoginScreenHorizontalPadding = 32.dp
+internal const val LoginTabletBreakpointDp = 600
+internal val LoginScreenHorizontalPadding = 0.dp
+internal val LoginButtonHorizontalPadding = 24.dp
+internal val LoginVerticalPaddingPhone = 24.dp
+internal val LoginVerticalPaddingTablet = 32.dp
+internal val LoginTopSpacerPhone = 40.dp
+internal val LoginTopSpacerTablet = 72.dp
+internal val LoginTermsBottomPaddingPhone = 24.dp
+internal val LoginTermsBottomPaddingTablet = 40.dp
 internal val LoginLogoSize = 200.dp
 internal val LoginLogoCornerRadius = 24.dp
 internal val LoginLogoBottomSpacing = 32.dp
@@ -71,9 +81,17 @@ internal val LoginProviderTextSize = 19.sp
 internal val LoginGoogleButtonTopSpacing = 8.dp
 internal val LoginTermsTopSpacing = 8.dp
 internal val LoginSkipButtonTopSpacing = 16.dp
-internal val LoginBottomSpacing = 32.dp
 internal val LoginTermsLineSpacing = 2.dp
 internal const val LoginDocumentSheetSkipPartiallyExpanded = false
+
+internal fun resolveLoginVerticalPadding(isTablet: Boolean) =
+    if (isTablet) LoginVerticalPaddingTablet else LoginVerticalPaddingPhone
+
+internal fun resolveLoginTopSpacer(isTablet: Boolean) =
+    if (isTablet) LoginTopSpacerTablet else LoginTopSpacerPhone
+
+internal fun resolveLoginTermsBottomPadding(isTablet: Boolean) =
+    if (isTablet) LoginTermsBottomPaddingTablet else LoginTermsBottomPaddingPhone
 
 /**
  * 로그인 화면 Composable.
@@ -94,6 +112,10 @@ fun LoginScreen(
     val authState by viewModel.authState.collectAsStateWithLifecycle()
     val accountSwitchConfirmation by viewModel.accountSwitchConfirmation.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val configuration = LocalConfiguration.current
+    val isTablet = configuration.screenWidthDp >= LoginTabletBreakpointDp
+    val topSpacer = resolveLoginTopSpacer(isTablet)
+    val termsBottomPadding = resolveLoginTermsBottomPadding(isTablet)
     var docTarget by remember { mutableStateOf<LoginDocTarget?>(null) }
     var loginErrorMessage by remember { mutableStateOf<String?>(null) }
 
@@ -113,10 +135,19 @@ fun LoginScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(horizontal = LoginScreenHorizontalPadding),
+                .padding(
+                    horizontal = LoginScreenHorizontalPadding,
+                    vertical = resolveLoginVerticalPadding(isTablet),
+                ),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.Center,
         ) {
+            Spacer(
+                modifier = Modifier
+                    .weight(1f)
+                    .heightIn(min = topSpacer)
+            )
+
             Image(
                 painter = painterResource(R.drawable.login_logo),
                 contentDescription = stringResource(R.string.login_logo_description),
@@ -165,6 +196,7 @@ fun LoginScreen(
                         }
                     },
                     modifier = Modifier
+                        .padding(horizontal = LoginButtonHorizontalPadding)
                         .widthIn(max = LoginButtonMaxWidth)
                         .fillMaxWidth()
                         .height(LoginButtonHeight),
@@ -193,6 +225,7 @@ fun LoginScreen(
                 OutlinedButton(
                     onClick = { viewModel.signInWithGoogle(context) },
                     modifier = Modifier
+                        .padding(horizontal = LoginButtonHorizontalPadding)
                         .widthIn(max = LoginButtonMaxWidth)
                         .fillMaxWidth()
                         .height(LoginButtonHeight),
@@ -218,7 +251,10 @@ fun LoginScreen(
                 LoginTermsNotice(
                     onTermsClick = { docTarget = LoginDocTarget.Terms },
                     onPrivacyClick = { docTarget = LoginDocTarget.Privacy },
-                    modifier = Modifier.padding(top = LoginTermsTopSpacing),
+                    modifier = Modifier.padding(
+                        top = LoginTermsTopSpacing,
+                        bottom = if (showSkipLogin) 0.dp else termsBottomPadding,
+                    ),
                 )
 
                 if (showSkipLogin) {
@@ -227,6 +263,7 @@ fun LoginScreen(
                     OutlinedButton(
                         onClick = onSkipLogin,
                         modifier = Modifier
+                            .padding(horizontal = LoginButtonHorizontalPadding)
                             .widthIn(max = LoginButtonMaxWidth)
                             .fillMaxWidth()
                             .height(LoginButtonHeight),
@@ -240,7 +277,11 @@ fun LoginScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(LoginBottomSpacing))
+            Spacer(
+                modifier = Modifier
+                    .weight(1f)
+                    .heightIn(min = topSpacer)
+            )
         }
     }
 

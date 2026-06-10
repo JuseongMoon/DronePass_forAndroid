@@ -326,7 +326,21 @@ class AuthViewModelForegroundSyncTest {
 
     @Test
     fun `login layout dimensions follow iOS LoginView tokens`() {
-        assertEquals(32.dp, LoginScreenHorizontalPadding)
+        assertEquals(600, LoginTabletBreakpointDp)
+        assertEquals(0.dp, LoginScreenHorizontalPadding)
+        assertEquals(24.dp, LoginButtonHorizontalPadding)
+        assertEquals(24.dp, LoginVerticalPaddingPhone)
+        assertEquals(32.dp, LoginVerticalPaddingTablet)
+        assertEquals(40.dp, LoginTopSpacerPhone)
+        assertEquals(72.dp, LoginTopSpacerTablet)
+        assertEquals(24.dp, LoginTermsBottomPaddingPhone)
+        assertEquals(40.dp, LoginTermsBottomPaddingTablet)
+        assertEquals(24.dp, resolveLoginVerticalPadding(isTablet = false))
+        assertEquals(32.dp, resolveLoginVerticalPadding(isTablet = true))
+        assertEquals(40.dp, resolveLoginTopSpacer(isTablet = false))
+        assertEquals(72.dp, resolveLoginTopSpacer(isTablet = true))
+        assertEquals(24.dp, resolveLoginTermsBottomPadding(isTablet = false))
+        assertEquals(40.dp, resolveLoginTermsBottomPadding(isTablet = true))
         assertEquals(200.dp, LoginLogoSize)
         assertEquals(24.dp, LoginLogoCornerRadius)
         assertEquals(32.dp, LoginLogoBottomSpacing)
@@ -342,7 +356,6 @@ class AuthViewModelForegroundSyncTest {
         assertEquals(8.dp, LoginGoogleButtonTopSpacing)
         assertEquals(8.dp, LoginTermsTopSpacing)
         assertEquals(16.dp, LoginSkipButtonTopSpacing)
-        assertEquals(32.dp, LoginBottomSpacing)
         assertEquals(2.dp, LoginTermsLineSpacing)
     }
 }
