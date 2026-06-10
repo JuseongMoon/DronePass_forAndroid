@@ -67,10 +67,11 @@ fun SunTimeline(
     sunset: String?,
     sunriseTimes: List<String> = sunrise?.let(::listOf) ?: emptyList(),
     sunsetTimes: List<String> = sunset?.let(::listOf) ?: emptyList(),
+    utcOffsetSeconds: Int? = null,
     modifier: Modifier = Modifier,
 ) {
-    val nowDateTime = rememberSunEventNow()
-    val timelineState = remember(sunrise, sunset, sunriseTimes, sunsetTimes, nowDateTime) {
+    val nowDateTime = rememberSunEventNow(utcOffsetSeconds)
+    val timelineState = remember(sunrise, sunset, sunriseTimes, sunsetTimes, utcOffsetSeconds, nowDateTime) {
         resolveSunTimelineState(
             sunriseIsoList = sunriseTimes.ifEmpty { sunrise?.let(::listOf).orEmpty() },
             sunsetIsoList = sunsetTimes.ifEmpty { sunset?.let(::listOf).orEmpty() },

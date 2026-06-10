@@ -115,6 +115,7 @@ fun MapFloatingButtons(
     sunset: String? = null,
     sunriseTimes: List<String> = sunrise?.let(::listOf) ?: emptyList(),
     sunsetTimes: List<String> = sunset?.let(::listOf) ?: emptyList(),
+    weatherUtcOffsetSeconds: Int? = null,
     onWeatherClick: () -> Unit = {},
     isTabletLayout: Boolean = false,
     modifier: Modifier = Modifier
@@ -216,7 +217,8 @@ fun MapFloatingButtons(
                 sunset = sunset,
                 sunriseTimes = sunriseTimes,
                 sunsetTimes = sunsetTimes,
-                onClick = onWeatherClick
+                onClick = onWeatherClick,
+                utcOffsetSeconds = weatherUtcOffsetSeconds,
             )
         }
 

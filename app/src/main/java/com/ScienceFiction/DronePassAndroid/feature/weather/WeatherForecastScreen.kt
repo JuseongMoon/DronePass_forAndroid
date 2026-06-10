@@ -241,6 +241,7 @@ private fun WeatherForecastBody(
                 sunset = data.sunset,
                 sunriseTimes = data.sunriseTimes,
                 sunsetTimes = data.sunsetTimes,
+                utcOffsetSeconds = data.utcOffsetSeconds,
             )
         }
 

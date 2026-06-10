@@ -40,6 +40,7 @@ class WeatherRepositoryTest {
                 .toEpochMilli(),
             data.hourlyForecast.single().time,
         )
+        assertEquals(9 * 60 * 60, data.utcOffsetSeconds)
     }
 
     private class FakeWeatherApi(

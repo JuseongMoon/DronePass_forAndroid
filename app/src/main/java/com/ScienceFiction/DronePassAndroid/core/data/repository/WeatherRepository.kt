@@ -124,7 +124,8 @@ class WeatherRepository @Inject constructor(
             sunrise = sunrise,
             sunset = sunset,
             sunriseTimes = sunriseTimes,
-            sunsetTimes = sunsetTimes
+            sunsetTimes = sunsetTimes,
+            utcOffsetSeconds = response.utcOffsetSeconds,
         )
     }
 

@@ -8,7 +8,8 @@ data class WeatherData(
     val sunrise: String?,
     val sunset: String?,
     val sunriseTimes: List<String> = sunrise?.let(::listOf) ?: emptyList(),
-    val sunsetTimes: List<String> = sunset?.let(::listOf) ?: emptyList()
+    val sunsetTimes: List<String> = sunset?.let(::listOf) ?: emptyList(),
+    val utcOffsetSeconds: Int? = null
 )
 
 data class CurrentWeatherData(

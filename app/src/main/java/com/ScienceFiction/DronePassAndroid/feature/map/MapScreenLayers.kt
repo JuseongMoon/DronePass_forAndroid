@@ -271,6 +271,7 @@ internal fun MapFloatingControls(
                 sunset = weatherData?.sunset,
                 sunriseTimes = weatherData?.sunriseTimes.orEmpty(),
                 sunsetTimes = weatherData?.sunsetTimes.orEmpty(),
+                weatherUtcOffsetSeconds = weatherData?.utcOffsetSeconds,
                 onWeatherClick = onShowWeather,
                 isTabletLayout = isTabletLayout,
                 modifier = Modifier.fillMaxSize(),
