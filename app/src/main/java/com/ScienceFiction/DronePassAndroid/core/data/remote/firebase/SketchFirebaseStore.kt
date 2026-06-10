@@ -72,7 +72,7 @@ internal fun sketchFromFirestoreData(data: Map<String, Any?>): SketchModel? {
     val id = data["id"] as? String ?: return null
     if (!isValidSketchId(id)) return null
 
-    val createdAt = sketchTimestampMillis(data["createdAt"]) ?: System.currentTimeMillis()
+    val createdAt = sketchTimestampMillis(data["createdAt"]) ?: return null
     val updatedAt = sketchTimestampMillis(data["updatedAt"]) ?: createdAt
     val deletedAt = sketchTimestampMillis(data["deletedAt"])
 

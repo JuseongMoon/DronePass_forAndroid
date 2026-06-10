@@ -81,6 +81,11 @@ class SketchFirebaseStoreTest {
     }
 
     @Test
+    fun `스케치 createdAt 누락은 날짜 계약 위반으로 invalid 이다`() {
+        assertNull(sketchFromFirestoreData(validDocument() - "createdAt"))
+    }
+
+    @Test
     fun `스케치 선택 필드 누락은 iOS 기본값으로 파싱한다`() {
         val sketch = sketchFromFirestoreData(
             validDocument()
