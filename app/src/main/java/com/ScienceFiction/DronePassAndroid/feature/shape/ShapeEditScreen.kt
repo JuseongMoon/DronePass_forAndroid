@@ -243,6 +243,7 @@ fun ShapeEditScreen(
     var isDateOnly by remember(editKey, editDefaults.isDateOnly) {
         mutableStateOf(editDefaults.isDateOnly)
     }
+    val showRadiusField = shouldRequireShapeEditRadius(shape)
 
     val dateFormat = remember {
         DateFormat.getDateInstance(DateFormat.MEDIUM, Locale.getDefault())
@@ -539,16 +540,18 @@ fun ShapeEditScreen(
                 HorizontalDivider()
 
                 // 반경
-                EditFormTextFieldRow(
-                    label = stringResource(R.string.shape_edit_radius_label),
-                    value = radiusText,
-                    onValueChange = { newValue ->
-                        radiusText = filterShapeEditNumberInput(newValue)
-                    },
-                    placeholder = stringResource(R.string.shape_edit_radius_placeholder),
-                    keyboardType = KeyboardType.Number,
-                )
-                HorizontalDivider()
+                if (showRadiusField) {
+                    EditFormTextFieldRow(
+                        label = stringResource(R.string.shape_edit_radius_label),
+                        value = radiusText,
+                        onValueChange = { newValue ->
+                            radiusText = filterShapeEditNumberInput(newValue)
+                        },
+                        placeholder = stringResource(R.string.shape_edit_radius_placeholder),
+                        keyboardType = KeyboardType.Number,
+                    )
+                    HorizontalDivider()
+                }
 
                 // 고도
                 EditFormTextFieldRow(

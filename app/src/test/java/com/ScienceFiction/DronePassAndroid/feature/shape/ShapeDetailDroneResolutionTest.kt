@@ -6,6 +6,8 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.unit.dp
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.PaletteColor
+import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
+import com.ScienceFiction.DronePassAndroid.domain.model.ShapeType
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -70,6 +72,14 @@ class ShapeDetailDroneResolutionTest {
     @Test
     fun `상세 정보 행 최소 높이는 iOS defaultMinListRowHeight 44와 맞춘다`() {
         assertEquals(44.dp, ShapeDetailRowMinHeight)
+    }
+
+    @Test
+    fun `상세 정보 도형 타입은 ShapeType 한국어 표시명을 사용한다`() {
+        assertEquals("원", shapeDetailTypeText(ShapeModel(shapeType = ShapeType.CIRCLE)))
+        assertEquals("사각형", shapeDetailTypeText(ShapeModel(shapeType = ShapeType.RECTANGLE)))
+        assertEquals("다각형", shapeDetailTypeText(ShapeModel(shapeType = ShapeType.POLYGON)))
+        assertEquals("선", shapeDetailTypeText(ShapeModel(shapeType = ShapeType.POLYLINE)))
     }
 
     @Test

@@ -493,6 +493,15 @@ class ShapeEditDefaultsTest {
     }
 
     @Test
+    fun `도형 편집 반경 입력은 신규와 원형 도형에만 표시한다`() {
+        assertTrue(shouldRequireShapeEditRadius(null))
+        assertTrue(shouldRequireShapeEditRadius(ShapeModel(shapeType = ShapeType.CIRCLE)))
+        assertFalse(shouldRequireShapeEditRadius(ShapeModel(shapeType = ShapeType.RECTANGLE)))
+        assertFalse(shouldRequireShapeEditRadius(ShapeModel(shapeType = ShapeType.POLYGON)))
+        assertFalse(shouldRequireShapeEditRadius(ShapeModel(shapeType = ShapeType.POLYLINE)))
+    }
+
+    @Test
     fun `도형 편집 드론 색상 원은 iOS처럼 팔레트 색상이 있을 때만 표시한다`() {
         assertTrue(shouldShowShapeEditDroneColorIndicator(PaletteColor.BLUE))
         assertFalse(shouldShowShapeEditDroneColorIndicator(null))
