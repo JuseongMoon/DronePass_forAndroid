@@ -12,6 +12,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.time.LocalDateTime
 import java.time.ZoneId
+import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -107,7 +108,10 @@ class WeatherRepository @Inject constructor(
             )
         }
 
-        val hourlyData = mapHourlyData(response.hourly)
+        val hourlyData = mapHourlyData(
+            hourly = response.hourly,
+            utcOffsetSeconds = response.utcOffsetSeconds,
+        )
 
         val sunriseTimes = response.daily?.sunrise.orEmpty()
         val sunsetTimes = response.daily?.sunset.orEmpty()
@@ -127,17 +131,26 @@ class WeatherRepository @Inject constructor(
     /**
      * 시간별 예보 데이터 매핑
      */
-    private fun mapHourlyData(hourly: com.ScienceFiction.DronePassAndroid.core.data.remote.weather.HourlyWeather?): List<HourlyWeatherData> {
+    private fun mapHourlyData(
+        hourly: com.ScienceFiction.DronePassAndroid.core.data.remote.weather.HourlyWeather?,
+        utcOffsetSeconds: Int?,
+    ): List<HourlyWeatherData> {
         if (hourly == null) return emptyList()
 
         val times = hourly.time ?: return emptyList()
         val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+        val responseOffset = runCatching {
+            utcOffsetSeconds?.let(ZoneOffset::ofTotalSeconds)
+        }.getOrNull()
 
         return times.indices.mapNotNull { i ->
             try {
                 val timeStr = times[i]
                 val localDateTime = LocalDateTime.parse(timeStr, formatter)
-                val epochMillis = localDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                val instant = responseOffset
+                    ?.let { localDateTime.atOffset(it).toInstant() }
+                    ?: localDateTime.atZone(ZoneId.systemDefault()).toInstant()
+                val epochMillis = instant.toEpochMilli()
 
                 val temp = hourly.temperature?.getOrNull(i) ?: 0.0
                 val dewPt = hourly.dewPoint?.getOrNull(i) ?: 0.0

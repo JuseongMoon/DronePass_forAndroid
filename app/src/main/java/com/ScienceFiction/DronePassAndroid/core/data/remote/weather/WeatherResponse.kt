@@ -7,7 +7,8 @@ import com.squareup.moshi.JsonClass
 data class WeatherResponse(
     val current: CurrentWeather?,
     val hourly: HourlyWeather?,
-    val daily: DailyWeather?
+    val daily: DailyWeather?,
+    @Json(name = "utc_offset_seconds") val utcOffsetSeconds: Int? = null
 )
 
 @JsonClass(generateAdapter = true)
