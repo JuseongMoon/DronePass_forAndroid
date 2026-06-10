@@ -72,6 +72,7 @@ internal data class BackgroundZone(
  * KP 등 고급 사용 시 옵션:
  * - [yAxisRange] / [yLabelStep]: Y축 0..9 같은 강제 범위
  * - [xLabelIntervalMs]: X축 라벨 간격 (기본 3시간)
+ * - [xLabelTimesMs]: X축 라벨을 표시할 명시적 시각들 (KP 차트의 iOS AxisMarks values 정합)
  * - [currentTimeMs]: 현재 시간 빨강 수직선
  * - [predicted]: dataPoints 와 같은 size 의 Boolean 리스트. 양쪽이 모두 true 인 segment 는 점선
  * - [pointColors]: 각 데이터 포인트에 표시할 원의 색 (예: KpLevel 별 색상)
@@ -91,6 +92,7 @@ internal fun WeatherLineChart(
     yAxisRange: ClosedFloatingPointRange<Double>? = null,
     yLabelStep: Double? = null,
     xLabelIntervalMs: Long? = null,
+    xLabelTimesMs: List<Long>? = null,
     currentTimeMs: Long? = null,
     predicted: List<Boolean> = emptyList(),
     pointColors: List<Color>? = null,
@@ -157,16 +159,18 @@ internal fun WeatherLineChart(
             }
         }
 
-        // 격자선 (수평, 3개)
-        val gridCount = 3
-        for (i in 0..gridCount) {
-            val y = topPadding + chartHeight * i / gridCount
-            drawLine(
-                color = onSurfaceVariant.copy(alpha = 0.1f),
-                start = Offset(leftPadding, y),
-                end = Offset(size.width - rightPadding, y),
-                strokeWidth = 1f
-            )
+        // 격자선 (수평). yLabelStep 이 있으면 iOS AxisMarks 처럼 각 라벨마다 표시한다.
+        if (yLabelStep == null || yLabelStep <= 0.0) {
+            val gridCount = 3
+            for (i in 0..gridCount) {
+                val y = topPadding + chartHeight * i / gridCount
+                drawLine(
+                    color = onSurfaceVariant.copy(alpha = 0.1f),
+                    start = Offset(leftPadding, y),
+                    end = Offset(size.width - rightPadding, y),
+                    strokeWidth = 1f
+                )
+            }
         }
 
         // Y축 라벨 — yLabelStep 명시 시 그 간격으로 0..yMax 표시. 기본은 3개(상/중/하).
@@ -180,6 +184,12 @@ internal fun WeatherLineChart(
             var v = yMin
             while (v <= yMax + 0.0001) {
                 val y = toScreenY(v)
+                drawLine(
+                    color = onSurfaceVariant.copy(alpha = 0.1f),
+                    start = Offset(leftPadding, y),
+                    end = Offset(size.width - rightPadding, y),
+                    strokeWidth = 1f
+                )
                 drawContext.canvas.nativeCanvas.drawText(
                     formatValue(v),
                     leftPadding - 6f,
@@ -211,11 +221,13 @@ internal fun WeatherLineChart(
         val intervalMs = xLabelIntervalMs ?: (3 * 60 * 60 * 1000L)
         val timeFormat = SimpleDateFormat("HH", Locale.getDefault())
         val dateFormat = SimpleDateFormat("MM/dd", Locale.getDefault())
-        val firstTime = dataPoints.first().first
-        // 첫 데이터 시간을 interval 단위로 올림
-        val startLabel = ((firstTime / intervalMs) + 1) * intervalMs
-        var labelTime = startLabel
-        while (labelTime <= dataPoints.last().first) {
+        val labelTimes = resolveTimeChartLabelTimes(
+            dataStartMs = dataPoints.first().first,
+            dataEndMs = dataPoints.last().first,
+            intervalMs = intervalMs,
+            explicitLabelTimesMs = xLabelTimesMs,
+        )
+        for (labelTime in labelTimes) {
             val x = toScreenX(labelTime)
             if (x >= leftPadding && x <= size.width - rightPadding) {
                 // 자정(00시)이면 날짜 라벨로 대체 — KP 처럼 다일에 걸친 차트 가독성 향상.
@@ -235,7 +247,6 @@ internal fun WeatherLineChart(
                     strokeWidth = 1f
                 )
             }
-            labelTime += intervalMs
         }
 
         // Warning threshold (노란 점선)
@@ -352,6 +363,30 @@ internal fun WeatherLineChart(
             }
         }
     }
+}
+
+internal fun resolveTimeChartLabelTimes(
+    dataStartMs: Long,
+    dataEndMs: Long,
+    intervalMs: Long,
+    explicitLabelTimesMs: List<Long>? = null,
+): List<Long> {
+    if (dataEndMs < dataStartMs) return emptyList()
+    explicitLabelTimesMs?.let { explicitTimes ->
+        return explicitTimes
+            .filter { it in dataStartMs..dataEndMs }
+            .distinct()
+    }
+    if (intervalMs <= 0L) return emptyList()
+
+    val labelTimes = mutableListOf<Long>()
+    val startLabel = ((dataStartMs / intervalMs) + 1) * intervalMs
+    var labelTime = startLabel
+    while (labelTime <= dataEndMs) {
+        labelTimes.add(labelTime)
+        labelTime += intervalMs
+    }
+    return labelTimes
 }
 
 @Composable

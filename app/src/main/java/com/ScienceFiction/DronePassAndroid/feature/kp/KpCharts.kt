@@ -54,6 +54,7 @@ internal const val KpForecastVisibleDomainMs = 24L * 60 * 60 * 1000
 internal const val KpForecastLabelIntervalMs = 3L * 60 * 60 * 1000
 internal const val Kp27DayVisibleDomainMs = 786_240L * 1000
 internal const val Kp27DayLabelIntervalMs = 24L * 60 * 60 * 1000
+internal const val KpYAxisLabelStep = 1.0
 
 internal enum class KpDataSource {
     GFZ_CURRENT,
@@ -83,6 +84,7 @@ fun KpForecastLineChart(
     val dataPoints = parsed.map { it.timeMillis to it.item.kp }
     val predicted = parsed.map { it.isPredicted }
     val pointColors = parsed.map { Color(KpLevel.fromKp(it.item.kp).color.toInt()) }
+    val xLabelTimes = parsed.map { it.timeMillis }
     val primaryColor = MaterialTheme.colorScheme.primary
 
     KpChartCard(
@@ -107,8 +109,9 @@ fun KpForecastLineChart(
                     warningThreshold = 5.0,
                     dangerThreshold = 7.0,
                     yAxisRange = 0.0..9.0,
-                    yLabelStep = 3.0,
+                    yLabelStep = KpYAxisLabelStep,
                     xLabelIntervalMs = KpForecastLabelIntervalMs,
+                    xLabelTimesMs = xLabelTimes,
                     currentTimeMs = System.currentTimeMillis(),
                     predicted = predicted,
                     pointColors = pointColors,
@@ -223,6 +226,7 @@ private fun Kp27DayLineChart(longTermForecast: List<Kp27DayForecast>) {
     }
     val dataPoints = parsedForecast.map { (timeMs, forecast) -> timeMs to forecast.kp }
     val pointColors = parsedForecast.map { (_, forecast) -> Color(KpLevel.fromKp(forecast.kp).color.toInt()) }
+    val xLabelTimes = parsedForecast.map { (timeMs, _) -> timeMs }
     val primaryColor = MaterialTheme.colorScheme.primary
 
     ScrollableTimeChartViewport(
@@ -236,8 +240,9 @@ private fun Kp27DayLineChart(longTermForecast: List<Kp27DayForecast>) {
             warningThreshold = 5.0,
             dangerThreshold = 7.0,
             yAxisRange = 0.0..9.0,
-            yLabelStep = 3.0,
+            yLabelStep = KpYAxisLabelStep,
             xLabelIntervalMs = Kp27DayLabelIntervalMs,
+            xLabelTimesMs = xLabelTimes,
             currentTimeMs = kp27DayCurrentMarkerMillis(),
             pointColors = pointColors,
             backgroundZones = listOf(

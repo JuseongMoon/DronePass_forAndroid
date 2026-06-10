@@ -6,6 +6,7 @@ import com.ScienceFiction.DronePassAndroid.domain.model.Kp27DayForecast
 import com.ScienceFiction.DronePassAndroid.domain.model.KpIndexData
 import com.ScienceFiction.DronePassAndroid.domain.model.KpLevel
 import com.ScienceFiction.DronePassAndroid.feature.weather.WeatherForecastChartHeight
+import com.ScienceFiction.DronePassAndroid.feature.weather.resolveTimeChartLabelTimes
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.util.Calendar
@@ -145,6 +146,7 @@ class KpChartsTest {
         assertEquals(3 * hourMs, KpForecastLabelIntervalMs)
         assertEquals(786_240_000L, Kp27DayVisibleDomainMs)
         assertEquals(24 * hourMs, Kp27DayLabelIntervalMs)
+        assertEquals(1.0, KpYAxisLabelStep, 0.0)
     }
 
     @Test
@@ -227,6 +229,26 @@ class KpChartsTest {
                         ap = 20,
                     ),
                 ),
+            ),
+        )
+    }
+
+    @Test
+    fun `KP x axis labels can use iOS source data timestamps instead of rounded intervals`() {
+        val hourMs = 60L * 60 * 1000
+        val sourceTimes = listOf(
+            12 * hourMs,
+            36 * hourMs,
+            60 * hourMs,
+        )
+
+        assertEquals(
+            sourceTimes,
+            resolveTimeChartLabelTimes(
+                dataStartMs = sourceTimes.first(),
+                dataEndMs = sourceTimes.last(),
+                intervalMs = Kp27DayLabelIntervalMs,
+                explicitLabelTimesMs = sourceTimes,
             ),
         )
     }
