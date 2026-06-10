@@ -124,6 +124,7 @@ class DroneViewModel @Inject constructor(
                     activeDrones = currentDrones,
                     connectedShapeCount = connectedShapeCount,
                     shapeHandling = shapeHandling,
+                    deletingDroneId = drone.id,
                 )
                 if (validationError != null) {
                     _deleteError.value = DroneDeleteError.Validation(validationError)

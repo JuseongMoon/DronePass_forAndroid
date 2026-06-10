@@ -70,7 +70,7 @@ class DroneSelectionState private constructor(
     }
 
     @Synchronized
-    private fun onPersistedSelectionLoaded(selection: StoredDroneSelection) {
+    internal fun onPersistedSelectionLoaded(selection: StoredDroneSelection) {
         selection.selectedDroneId?.let { savedDroneId ->
             _selectedDroneId.value = savedDroneId
         }
@@ -140,6 +140,7 @@ class DroneSelectionState private constructor(
 
     @Synchronized
     fun toggleDroneSelection(droneId: String) {
+        hasExplicitRuntimeSelection = true
         val next = _selectedDroneIds.value.toMutableSet()
         if (next.contains(droneId)) {
             next.remove(droneId)
@@ -153,6 +154,7 @@ class DroneSelectionState private constructor(
 
     @Synchronized
     fun addDroneToSelection(droneId: String) {
+        hasExplicitRuntimeSelection = true
         val next = _selectedDroneIds.value + droneId
         _selectedDroneIds.value = next
         saveSelectedDroneIds(next)

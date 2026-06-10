@@ -11,15 +11,19 @@ internal fun validateDroneDeleteRequest(
     activeDrones: List<DroneModel>,
     connectedShapeCount: Int,
     shapeHandling: ShapeHandling,
+    deletingDroneId: String? = null,
 ): DroneDeleteValidationError? {
     if (activeDrones.size <= 1) {
         return DroneDeleteValidationError.CANNOT_DELETE_LAST_DRONE
     }
-    if (
+    val hasInvalidReassignTarget =
         connectedShapeCount > 0 &&
-        shapeHandling is ShapeHandling.Reassign &&
-        activeDrones.none { it.id == shapeHandling.targetDroneId }
-    ) {
+            shapeHandling is ShapeHandling.Reassign &&
+            (
+                shapeHandling.targetDroneId == deletingDroneId ||
+                    activeDrones.none { it.id == shapeHandling.targetDroneId }
+            )
+    if (hasInvalidReassignTarget) {
         return DroneDeleteValidationError.TARGET_DRONE_NOT_FOUND
     }
     return null

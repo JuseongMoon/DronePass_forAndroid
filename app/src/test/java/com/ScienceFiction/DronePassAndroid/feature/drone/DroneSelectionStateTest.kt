@@ -159,6 +159,43 @@ class DroneSelectionStateTest {
     }
 
     @Test
+    fun `런타임 선택 변경은 늦게 도착한 저장 선택값에 덮어쓰이지 않는다`() {
+        val state = DroneSelectionState()
+        state.syncActiveDrones(
+            listOf(
+                DroneModel(id = "drone-a", name = "A"),
+                DroneModel(id = "drone-b", name = "B"),
+            )
+        )
+
+        state.toggleDroneSelection("drone-b")
+        state.onPersistedSelectionLoaded(
+            StoredDroneSelection(
+                selectedDroneId = null,
+                selectedDroneIds = setOf("drone-b"),
+            )
+        )
+
+        assertEquals(setOf("drone-a"), state.selectedDroneIds.value)
+    }
+
+    @Test
+    fun `새 드론 선택 추가는 늦게 도착한 저장 선택값에 덮어쓰이지 않는다`() {
+        val state = DroneSelectionState()
+        state.syncActiveDrones(listOf(DroneModel(id = "drone-a", name = "A")))
+
+        state.addDroneToSelection("drone-b")
+        state.onPersistedSelectionLoaded(
+            StoredDroneSelection(
+                selectedDroneId = null,
+                selectedDroneIds = setOf("drone-a"),
+            )
+        )
+
+        assertEquals(setOf("drone-a", "drone-b"), state.selectedDroneIds.value)
+    }
+
+    @Test
     fun `계정 전환 reset은 이전 계정의 드론 선택과 하이라이트를 비운다`() {
         val state = DroneSelectionState()
         state.syncActiveDrones(

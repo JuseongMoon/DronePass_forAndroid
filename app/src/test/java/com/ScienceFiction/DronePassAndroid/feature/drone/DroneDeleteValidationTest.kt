@@ -39,6 +39,22 @@ class DroneDeleteValidationTest {
     }
 
     @Test
+    fun `연결 도형 재할당 대상이 삭제할 드론 자신이면 삭제를 중단한다`() {
+        assertEquals(
+            DroneDeleteValidationError.TARGET_DRONE_NOT_FOUND,
+            validateDroneDeleteRequest(
+                activeDrones = listOf(
+                    DroneModel(id = "drone-a", name = "A"),
+                    DroneModel(id = "drone-b", name = "B"),
+                ),
+                connectedShapeCount = 2,
+                shapeHandling = ShapeHandling.Reassign("drone-a"),
+                deletingDroneId = "drone-a",
+            ),
+        )
+    }
+
+    @Test
     fun `연결 도형이 없으면 iOS처럼 재할당 대상 검증 없이 통과한다`() {
         assertNull(
             validateDroneDeleteRequest(
