@@ -188,14 +188,14 @@ class StringResourceCoverageTest {
     fun `shape edit labels match iOS localizations`() {
         assertEquals("반경(m)", stringResourceValue("values/strings.xml", "shape_edit_radius_label"))
         assertEquals("고도(m)", stringResourceValue("values/strings.xml", "shape_edit_altitude_label"))
-        assertEquals("주소 검색", stringResourceValue("values/strings.xml", "shape_edit_address_search_placeholder"))
+        assertEquals("주소를 검색하세요", stringResourceValue("values/strings.xml", "shape_edit_address_search_placeholder"))
         assertEquals("주소 검색", stringResourceValue("values/strings.xml", "shape_edit_placeholder_address"))
-        assertEquals("제목 입력", stringResourceValue("values/strings.xml", "shape_edit_title_placeholder"))
-        assertEquals("좌표 입력", stringResourceValue("values/strings.xml", "shape_edit_coordinate_placeholder"))
-        assertEquals("반경 입력", stringResourceValue("values/strings.xml", "shape_edit_radius_placeholder"))
-        assertEquals("고도 입력", stringResourceValue("values/strings.xml", "shape_edit_altitude_placeholder"))
+        assertEquals("제목을 입력하세요", stringResourceValue("values/strings.xml", "shape_edit_title_placeholder"))
+        assertEquals("좌표를 입력하세요", stringResourceValue("values/strings.xml", "shape_edit_coordinate_placeholder"))
+        assertEquals("반경을 입력하세요", stringResourceValue("values/strings.xml", "shape_edit_radius_placeholder"))
+        assertEquals("비행 고도를 입력해주세요", stringResourceValue("values/strings.xml", "shape_edit_altitude_placeholder"))
         assertEquals("메모", stringResourceValue("values/strings.xml", "shape_edit_label_memo"))
-        assertEquals("메모 입력", stringResourceValue("values/strings.xml", "shape_edit_placeholder_memo"))
+        assertEquals("메모를 입력하세요", stringResourceValue("values/strings.xml", "shape_edit_placeholder_memo"))
         assertEquals("시작일 선택", stringResourceValue("values/strings.xml", "shape_edit_start_date_select"))
         assertEquals("종료일 선택", stringResourceValue("values/strings.xml", "shape_edit_end_date_select"))
         assertEquals(
@@ -294,6 +294,29 @@ class StringResourceCoverageTest {
         assertEquals(
             "All shapes past their end date will be deleted. This action cannot be undone.",
             stringResourceValue("values-en/strings.xml", "settings_delete_expired_alert_message"),
+        )
+    }
+
+    @Test
+    fun `settings account deletion strings do not imply local data deletion`() {
+        assertEquals("회원 탈퇴", stringResourceValue("values/strings.xml", "settings_delete_account"))
+        assertEquals(
+            "탈퇴 시 계정만 삭제되며, 로컬 데이터는 계속 사용할 수 있습니다.",
+            stringResourceValue("values/strings.xml", "settings_delete_account_subtitle"),
+        )
+        assertEquals(
+            "계정이 삭제되고\\n클라우드 동기화가 중단됩니다.\\n\\n기기에 저장된 도형, 드론, 스케치는\\n계속 사용할 수 있습니다.\\n\\n정말 탈퇴하시겠습니까?",
+            stringResourceValue("values/strings.xml", "settings_delete_account_confirm"),
+        )
+
+        assertEquals("Delete account", stringResourceValue("values-en/strings.xml", "settings_delete_account"))
+        assertEquals(
+            "Only the account will be deleted. Local data will remain available.",
+            stringResourceValue("values-en/strings.xml", "settings_delete_account_subtitle"),
+        )
+        assertEquals(
+            "Your account will be deleted and cloud sync will stop.\\n\\nShapes, drones, and sketches saved on this device will remain available.\\n\\nAre you sure you want to delete your account?",
+            stringResourceValue("values-en/strings.xml", "settings_delete_account_confirm"),
         )
     }
 
@@ -876,15 +899,15 @@ class StringResourceCoverageTest {
             androidDisplayStringResourceValue("values/strings.xml", "drone_detail_delete_with_shapes_message"),
         )
 
-        assertEquals("한 줄 이내로 입력해주세요", stringResourceValue("values/strings.xml", "drone_edit_section_basic_footer"))
-        assertEquals("시리얼 번호 입력 (선택)", stringResourceValue("values/strings.xml", "drone_edit_serial_placeholder"))
-        assertEquals("시리얼 번호", stringResourceValue("values/strings.xml", "drone_edit_section_serial"))
+        assertEquals("한 줄을 넘어가지 않도록 입력해주세요", stringResourceValue("values/strings.xml", "drone_edit_section_basic_footer"))
+        assertEquals("제작 번호 입력 (선택)", stringResourceValue("values/strings.xml", "drone_edit_serial_placeholder"))
+        assertEquals("제작 번호", stringResourceValue("values/strings.xml", "drone_edit_section_serial"))
         assertEquals(
-            "드론의 제조번호 또는 시리얼 번호를 입력하세요",
+            "드론의 제작 번호 또는 시리얼 번호를 입력하세요",
             androidDisplayStringResourceValue("values/strings.xml", "drone_edit_section_serial_footer"),
         )
-        assertEquals("드론의 이륙 중량과 크기를 입력하세요", stringResourceValue("values/strings.xml", "drone_edit_section_specs_footer"))
-        assertEquals("이미 사용 중인 드론 이름입니다.", stringResourceValue("values/strings.xml", "drone_edit_alert_name_duplicate"))
+        assertEquals("드론의 이륙 무게와 크기를 입력하세요", stringResourceValue("values/strings.xml", "drone_edit_section_specs_footer"))
+        assertEquals("이미 존재하는 드론 이름입니다.", stringResourceValue("values/strings.xml", "drone_edit_alert_name_duplicate"))
         assertEquals("내 드론", stringResourceValue("values/strings.xml", "drone_edit_default_name_first"))
 
         assertEquals("Serial Number", stringResourceValue("values-en/strings.xml", "drone_detail_serial_number"))
