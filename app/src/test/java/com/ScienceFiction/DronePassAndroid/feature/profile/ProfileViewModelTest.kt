@@ -186,4 +186,16 @@ class ProfileViewModelTest {
 
         assertEquals(1, countExpiredProfileShapes(shapes, now = 1_000L))
     }
+
+    @Test
+    fun `로그아웃 baseline은 iOS처럼 활성 도형 updatedAt만 저장한다`() {
+        val baseline = buildProfileSyncedShapeBaseline(
+            listOf(
+                ShapeModel(id = "active", updatedAt = 100L, deletedAt = null),
+                ShapeModel(id = "deleted", updatedAt = 200L, deletedAt = 300L),
+            ),
+        )
+
+        assertEquals(mapOf("active" to 100L), baseline)
+    }
 }

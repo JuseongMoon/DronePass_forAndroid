@@ -15,6 +15,7 @@ import com.ScienceFiction.DronePassAndroid.core.data.repository.SketchRepository
 import com.ScienceFiction.DronePassAndroid.core.data.sync.RealtimeSyncManager
 import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncPreferenceKeys
 import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncState
+import com.ScienceFiction.DronePassAndroid.core.data.sync.encodeAccountSwitchShapeBaseline
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 import com.ScienceFiction.DronePassAndroid.feature.auth.AuthRepository
 import com.ScienceFiction.DronePassAndroid.service.FcmService
@@ -102,6 +103,12 @@ internal fun countExpiredProfileShapes(
     return shapes.count { shape ->
         shape.flightEndDate?.let { endDate -> endDate < now } == true
     }
+}
+
+internal fun buildProfileSyncedShapeBaseline(shapes: List<ShapeModel>): Map<String, Long> {
+    return shapes
+        .filter { !it.isDeleted }
+        .associate { shape -> shape.id to shape.updatedAt }
 }
 
 /**
@@ -292,7 +299,10 @@ class ProfileViewModel @Inject constructor(
         viewModelScope.launch {
             // 1) 로그아웃 직전 로컬 데이터를 Firebase 로 동기화 (iOS ProfileView.logout 정합).
             if (firebaseAuth.currentUser != null) {
-                runCatching { realtimeSyncManager.forceSyncNow() }
+                runCatching {
+                    realtimeSyncManager.forceSyncNow()
+                    saveProfileSyncedShapeBaseline()
+                }
                     .onFailure { Log.w(TAG, "로그아웃 전 동기화 실패", it) }
             }
             // 2) FCM 토큰 비활성화 (userId 살아있는 동안)
@@ -305,6 +315,14 @@ class ProfileViewModel @Inject constructor(
             authRepository.signOut()
             _isAccountActionInProgress.value = false
             onComplete()
+        }
+    }
+
+    private suspend fun saveProfileSyncedShapeBaseline() {
+        val baseline = buildProfileSyncedShapeBaseline(shapeRepository.getAllShapes().first())
+        dataStore.edit { preferences ->
+            preferences[SyncPreferenceKeys.SYNCED_SHAPE_BASELINE] =
+                encodeAccountSwitchShapeBaseline(baseline)
         }
     }
 
