@@ -28,6 +28,13 @@ class NotificationReceiver : BroadcastReceiver() {
 
         Log.d(TAG, "알림 수신: type=$type, title=$title, shapeId=$shapeId")
 
+        foregroundNotificationForLocalDelivery(
+            title = title,
+            body = body,
+            shapeId = shapeId,
+            appInForeground = AppForegroundState.isForeground,
+        )?.let(ForegroundNotificationBus::publish)
+
         // 알림 채널 생성 확인
         FcmService.createNotificationChannel(context)
 

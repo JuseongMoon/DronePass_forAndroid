@@ -106,6 +106,20 @@ internal fun foregroundNotificationFromClickPayload(
     )
 }
 
+internal fun foregroundNotificationForLocalDelivery(
+    title: String,
+    body: String,
+    shapeId: String?,
+    appInForeground: Boolean,
+): ForegroundNotification? {
+    if (!appInForeground) return null
+    return ForegroundNotification(
+        title = title,
+        body = body,
+        shapeId = normalizeNotificationShapeId(shapeId),
+    )
+}
+
 internal fun extractForegroundNotification(intent: Intent?): ForegroundNotification? {
     if (intent == null) return null
     return foregroundNotificationFromClickPayload(

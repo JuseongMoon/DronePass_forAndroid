@@ -185,4 +185,28 @@ class FcmServiceTest {
         assertEquals("도형 종료일 알림", notification.title)
         assertEquals("도형이 곧 종료됩니다.", notification.body)
     }
+
+    @Test
+    fun `로컬 알림은 iOS willPresent 처럼 앱 포그라운드에서만 팝업 이벤트를 만든다`() {
+        val notification = foregroundNotificationForLocalDelivery(
+            title = "일출 10분 전",
+            body = "일출까지 10분 남았습니다.",
+            shapeId = " shape-1 ",
+            appInForeground = true,
+        )
+
+        requireNotNull(notification)
+        assertEquals("일출 10분 전", notification.title)
+        assertEquals("일출까지 10분 남았습니다.", notification.body)
+        assertEquals("shape-1", notification.shapeId)
+
+        assertNull(
+            foregroundNotificationForLocalDelivery(
+                title = "일출 10분 전",
+                body = "일출까지 10분 남았습니다.",
+                shapeId = "shape-1",
+                appInForeground = false,
+            )
+        )
+    }
 }

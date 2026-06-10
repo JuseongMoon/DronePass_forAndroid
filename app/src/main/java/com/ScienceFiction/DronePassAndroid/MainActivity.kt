@@ -17,6 +17,7 @@ import androidx.lifecycle.lifecycleScope
 import com.ScienceFiction.DronePassAndroid.core.data.NotificationPreferenceKeys
 import com.ScienceFiction.DronePassAndroid.core.data.storedLaunchNotificationPermissionRequested
 import com.ScienceFiction.DronePassAndroid.feature.settings.storedKeepScreenAwake
+import com.ScienceFiction.DronePassAndroid.service.AppForegroundState
 import com.ScienceFiction.DronePassAndroid.service.ForegroundNotification
 import com.ScienceFiction.DronePassAndroid.service.extractForegroundNotification
 import com.ScienceFiction.DronePassAndroid.service.extractNotificationShapeId
@@ -66,6 +67,16 @@ class MainActivity : ComponentActivity() {
         setIntent(intent)
         notificationShapeId.value = extractNotificationShapeId(intent)
         notificationForPopup.value = extractForegroundNotification(intent)
+    }
+
+    override fun onStart() {
+        super.onStart()
+        AppForegroundState.onActivityStarted()
+    }
+
+    override fun onStop() {
+        AppForegroundState.onActivityStopped()
+        super.onStop()
     }
 
     private fun requestLaunchNotificationPermissionIfNeeded() {
