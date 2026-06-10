@@ -149,7 +149,6 @@
     <string name="saved_item_status_active">Active</string>
 
     <!-- ShapeDetailSheet -->
-    <string name="shape_detail_type">Shape type</string>
     <string name="shape_detail_coordinate">Coordinates</string>
     <string name="shape_detail_copy_coordinate">Copy coordinate</string>
     <string name="shape_detail_address">Address</string>

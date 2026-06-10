@@ -149,8 +149,6 @@ internal fun buildExternalMapTargets(
 internal fun encodeExternalMapDestinationName(destinationName: String): String =
     java.net.URLEncoder.encode(destinationName, Charsets.UTF_8.name()).replace("+", "%20")
 
-internal fun shapeDetailTypeText(shape: ShapeModel): String = shape.shapeType.koreanName
-
 internal const val ShapeDetailSheetHeightFraction = 0.8f
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -284,7 +282,7 @@ fun ShapeDetailSheet(
                     .padding(top = 4.dp)
                     .verticalScroll(rememberScrollState())
             ) {
-                // iOS Section 1 — 행 순서: 드론 → 제목 → 타입 → 좌표 → 주소 → 반경 → 고도 → 시작일 → 종료일.
+                // iOS Section 1 — 행 순서: 드론 → 제목 → 좌표 → 주소 → 반경 → 고도 → 시작일 → 종료일.
                 // 좌측 라벨(bold primary), 우측 값(secondary). StatusBadge 제거.
 
                 // 드론 — iOS connectedDrone 상태 분기 (정상/삭제됨/레거시 fallback/미할당)
@@ -297,16 +295,6 @@ fun ShapeDetailSheet(
                 ShapeDetailRow(label = stringResource(R.string.shape_detail_title_label)) {
                     Text(
                         text = shape.title.ifBlank { stringResource(R.string.common_no_title) },
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                ShapeDetailRowDivider()
-
-                // 도형 타입
-                ShapeDetailRow(label = stringResource(R.string.shape_detail_type)) {
-                    Text(
-                        text = shapeDetailTypeText(shape),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )

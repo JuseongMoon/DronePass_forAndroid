@@ -153,7 +153,6 @@
     <string name="saved_item_status_active">활성</string>
 
     <!-- ShapeDetailSheet -->
-    <string name="shape_detail_type">도형 타입</string>
     <string name="shape_detail_coordinate">좌표</string>
     <string name="shape_detail_copy_coordinate">좌표 복사</string>
     <string name="shape_detail_address">주소</string>
