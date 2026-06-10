@@ -323,7 +323,7 @@ fun ProfileScreen(
                     showDeleteFinalDialog = true
                 }) {
                     Text(
-                        stringResource(R.string.common_delete),
+                        stringResource(R.string.profile_delete_account_button),
                         color = MaterialTheme.colorScheme.error,
                     )
                 }

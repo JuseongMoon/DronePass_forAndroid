@@ -523,8 +523,9 @@ class StringResourceCoverageTest {
             "탈퇴 시 계정만 삭제되며, 로컬 데이터는 계속 사용할 수 있습니다.",
             stringResourceValue("values/strings.xml", "profile_account_delete_desc"),
         )
+        assertEquals("탈퇴하기", stringResourceValue("values/strings.xml", "profile_delete_account_button"))
         assertEquals(
-            "계정이 삭제되고\\n클라우드 동기화가 중단됩니다.\\n\\n기기에 저장된 도형, 드론, 스케치는\\n계속 사용할 수 있습니다.\\n\\n정말 탈퇴하시겠습니까?",
+            "계정이 삭제되고\\n클라우드 동기화가 중단됩니다.\\n\\n기기에 저장된 도형과 드론은\\n계속 사용할 수 있습니다.\\n\\n정말 탈퇴하시겠습니까?",
             stringResourceValue("values/strings.xml", "profile_delete_account_message"),
         )
         assertEquals("영구 탈퇴", stringResourceValue("values/strings.xml", "profile_delete_account_final_button"))
@@ -565,8 +566,9 @@ class StringResourceCoverageTest {
             "Only the account will be deleted. Local data will remain available.",
             stringResourceValue("values-en/strings.xml", "profile_account_delete_desc"),
         )
+        assertEquals("Delete", stringResourceValue("values-en/strings.xml", "profile_delete_account_button"))
         assertEquals(
-            "Your account will be deleted and cloud sync will stop.\\n\\nShapes, drones, and sketches saved on this device will remain available.\\n\\nAre you sure you want to delete your account?",
+            "Your account will be deleted and cloud sync will stop.\\n\\nShapes and drones saved on this device will remain available.\\n\\nAre you sure you want to delete your account?",
             stringResourceValue("values-en/strings.xml", "profile_delete_account_message"),
         )
         assertEquals("Permanently Delete", stringResourceValue("values-en/strings.xml", "profile_delete_account_final_button"))

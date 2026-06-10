@@ -846,7 +846,8 @@
     <string name="profile_account_delete">회원 탈퇴</string>
     <string name="profile_account_delete_desc">탈퇴 시 계정만 삭제되며, 로컬 데이터는 계속 사용할 수 있습니다.</string>
     <string name="profile_logout_message">로그아웃하시겠습니까?</string>
-    <string name="profile_delete_account_message">계정이 삭제되고\n클라우드 동기화가 중단됩니다.\n\n기기에 저장된 도형, 드론, 스케치는\n계속 사용할 수 있습니다.\n\n정말 탈퇴하시겠습니까?</string>
+    <string name="profile_delete_account_button">탈퇴하기</string>
+    <string name="profile_delete_account_message">계정이 삭제되고\n클라우드 동기화가 중단됩니다.\n\n기기에 저장된 도형과 드론은\n계속 사용할 수 있습니다.\n\n정말 탈퇴하시겠습니까?</string>
     <string name="profile_delete_account_final_title">최종 확인</string>
     <string name="profile_delete_account_final_message">이 작업은 되돌릴 수 없습니다.</string>
     <string name="profile_delete_account_final_button">영구 탈퇴</string>
