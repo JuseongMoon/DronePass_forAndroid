@@ -198,6 +198,16 @@ class ProfileViewModel @Inject constructor(
     private val _syncResultMessage = MutableSharedFlow<SyncResult>()
     val syncResultMessage: SharedFlow<SyncResult> = _syncResultMessage.asSharedFlow()
 
+    private val authStateListener = FirebaseAuth.AuthStateListener { auth ->
+        val user = auth.currentUser
+        _isLoggedIn.value = user != null
+        _profileEmail.value = user?.email
+        _profileLoginProvider.value = resolveProfileLoginProvider(
+            user?.providerData?.map { it.providerId }.orEmpty(),
+        )
+        _joinDateMillis.value = normalizeProfileJoinDateMillis(user?.metadata?.creationTimestamp)
+    }
+
     /**
      * 5종 동기화 상태 (iOS `realtimeCloudSyncStatusText` 정합).
      * isSyncing → Syncing
@@ -222,15 +232,12 @@ class ProfileViewModel @Inject constructor(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ProfileSyncStatus.Disabled)
 
     init {
-        firebaseAuth.addAuthStateListener { auth ->
-            val user = auth.currentUser
-            _isLoggedIn.value = user != null
-            _profileEmail.value = user?.email
-            _profileLoginProvider.value = resolveProfileLoginProvider(
-                user?.providerData?.map { it.providerId }.orEmpty(),
-            )
-            _joinDateMillis.value = normalizeProfileJoinDateMillis(user?.metadata?.creationTimestamp)
-        }
+        firebaseAuth.addAuthStateListener(authStateListener)
+    }
+
+    override fun onCleared() {
+        firebaseAuth.removeAuthStateListener(authStateListener)
+        super.onCleared()
     }
 
     /**
