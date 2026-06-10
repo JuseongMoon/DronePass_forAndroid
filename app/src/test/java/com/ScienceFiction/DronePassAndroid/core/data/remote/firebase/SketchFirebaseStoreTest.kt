@@ -81,8 +81,29 @@ class SketchFirebaseStoreTest {
     }
 
     @Test
-    fun `스케치 createdAt 누락은 날짜 계약 위반으로 invalid 이다`() {
-        assertNull(sketchFromFirestoreData(validDocument() - "createdAt"))
+    fun `스케치 createdAt 누락은 iOS처럼 현재 시각으로 fallback 한다`() {
+        val fallbackNow = 1_800_000_000_000L
+        val sketch = sketchFromFirestoreData(
+            data = validDocument() - "createdAt",
+            nowMillis = fallbackNow,
+        )
+
+        requireNotNull(sketch)
+        assertEquals(fallbackNow, sketch.createdAt)
+        assertEquals(1_700_000_123_000L, sketch.updatedAt)
+    }
+
+    @Test
+    fun `스케치 createdAt updatedAt 이 모두 누락되면 iOS처럼 둘 다 현재 시각으로 fallback 한다`() {
+        val fallbackNow = 1_800_000_000_000L
+        val sketch = sketchFromFirestoreData(
+            data = validDocument() - "createdAt" - "updatedAt",
+            nowMillis = fallbackNow,
+        )
+
+        requireNotNull(sketch)
+        assertEquals(fallbackNow, sketch.createdAt)
+        assertEquals(fallbackNow, sketch.updatedAt)
     }
 
     @Test
