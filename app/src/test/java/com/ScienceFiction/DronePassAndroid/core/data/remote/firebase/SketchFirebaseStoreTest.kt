@@ -98,6 +98,42 @@ class SketchFirebaseStoreTest {
     }
 
     @Test
+    fun `스케치 points 필드가 손상되면 부분 좌표를 버리지 않고 invalid 이다`() {
+        val incompletePoint = listOf(
+            mapOf("latitude" to 37.0, "longitude" to 127.0),
+            mapOf("latitude" to 37.1),
+        )
+
+        assertNull(
+            sketchFromFirestoreData(
+                validDocument() + ("points" to "not-a-list"),
+            ),
+        )
+        assertNull(
+            sketchFromFirestoreData(
+                validDocument() + ("points" to incompletePoint),
+            ),
+        )
+    }
+
+    @Test
+    fun `스케치 points 좌표 값은 finite 범위 안의 Double map 이어야 한다`() {
+        val outOfRangePoint = listOf(mapOf("latitude" to 91.0, "longitude" to 127.0))
+        val nonFinitePoint = listOf(mapOf("latitude" to 37.0, "longitude" to Double.NaN))
+
+        assertNull(
+            sketchFromFirestoreData(
+                validDocument() + ("points" to outOfRangePoint),
+            ),
+        )
+        assertNull(
+            sketchFromFirestoreData(
+                validDocument() + ("points" to nonFinitePoint),
+            ),
+        )
+    }
+
+    @Test
     fun `Firestore 문서 파싱은 문서 ID 와 id 필드가 다르면 invalid 이다`() {
         assertEquals(
             "00000000-0000-0000-0000-000000000001",

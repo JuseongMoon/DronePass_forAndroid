@@ -3,6 +3,7 @@ package com.ScienceFiction.DronePassAndroid.core.data.remote.firebase
 import android.util.Log
 import com.ScienceFiction.DronePassAndroid.domain.model.Coordinate
 import com.ScienceFiction.DronePassAndroid.domain.model.SketchModel
+import com.ScienceFiction.DronePassAndroid.domain.model.isValidShapeCoordinate
 import com.ScienceFiction.DronePassAndroid.domain.model.normalizeFirebaseHexColorForWrite
 import com.ScienceFiction.DronePassAndroid.domain.model.validateFirebaseSketchBatch
 import com.ScienceFiction.DronePassAndroid.domain.model.validateForFirebasePersistence
@@ -31,6 +32,19 @@ private fun sketchTimestampMillis(value: Any?): Long? {
 
 private fun isValidSketchId(id: String): Boolean {
     return runCatching { UUID.fromString(id) }.isSuccess
+}
+
+private fun firestoreMapToSketchPoint(value: Any?): Coordinate? {
+    val map = value as? Map<*, *> ?: return null
+    val latitude = (map["latitude"] as? Number)?.toDouble() ?: return null
+    val longitude = (map["longitude"] as? Number)?.toDouble() ?: return null
+    return Coordinate(latitude = latitude, longitude = longitude)
+        .takeIf { it.isValidShapeCoordinate() }
+}
+
+private fun firestoreListToSketchPoints(value: Any?): List<Coordinate>? {
+    val list = value as? List<*> ?: return null
+    return list.map { item -> firestoreMapToSketchPoint(item) ?: return null }
 }
 
 internal class SketchFirebaseInvalidDataException(reason: String?) :
@@ -62,12 +76,10 @@ internal fun sketchFromFirestoreData(data: Map<String, Any?>): SketchModel? {
     val updatedAt = sketchTimestampMillis(data["updatedAt"]) ?: createdAt
     val deletedAt = sketchTimestampMillis(data["deletedAt"])
 
-    val rawPoints = data["points"] as? List<*> ?: emptyList<Any?>()
-    val points = rawPoints.mapNotNull { entry ->
-        val pointMap = entry as? Map<*, *> ?: return@mapNotNull null
-        val latitude = (pointMap["latitude"] as? Number)?.toDouble() ?: return@mapNotNull null
-        val longitude = (pointMap["longitude"] as? Number)?.toDouble() ?: return@mapNotNull null
-        Coordinate(latitude = latitude, longitude = longitude)
+    val points = if (data.containsKey("points")) {
+        firestoreListToSketchPoints(data["points"]) ?: return null
+    } else {
+        emptyList()
     }
 
     return SketchModel(
@@ -250,8 +262,8 @@ class SketchFirebaseStore @Inject constructor(
      *
      * Firestore SDK 가 반환하는 Map 은 Any 컨테이너이므로, 이전의
      * `as? List<Map<String, Any>>` 는 erasure 후 List 만 확인하던 unchecked cast 였다.
-     * 각 원소를 단계별로 Map<*, *> → Number 로 안전 검사하여 손상된 문서에서도
-     * 부분 복구 가능하도록 한다.
+     * 각 원소를 단계별로 Map<*, *> → Number 로 안전 검사한다. points 필드가
+     * 존재하는데 원소 하나라도 손상되어 있으면 부분 손실을 만들지 않고 문서 전체를 스킵한다.
      */
     fun firestoreDataToSketch(data: Map<String, Any?>): SketchModel? {
         return try {
