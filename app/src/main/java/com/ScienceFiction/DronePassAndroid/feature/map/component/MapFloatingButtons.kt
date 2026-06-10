@@ -153,7 +153,7 @@ fun MapFloatingButtons(
                 onClick = onEnterSketchMode,
                 modifier = Modifier.size(MapSketchButtonSize),
                 shape = CircleShape,
-                containerColor = Color.White,
+                containerColor = MaterialTheme.colorScheme.surface,
                 contentColor = MapFloatingAccentColor,
                 elevation = FloatingActionButtonDefaults.elevation(
                     defaultElevation = MapSketchButtonShadowElevation,
@@ -282,7 +282,7 @@ private fun FlightZoneLayerFab(
     Surface(
         onClick = onClick,
         shape = RoundedCornerShape(FlightZoneFabCornerRadius),
-        color = Color.White,
+        color = MaterialTheme.colorScheme.surface,
         shadowElevation = FlightZoneFabShadowElevation,
         modifier = modifier.size(FlightZoneFabSize)
     ) {
