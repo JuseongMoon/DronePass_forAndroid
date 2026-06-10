@@ -6,6 +6,7 @@ import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeType
 import com.ScienceFiction.DronePassAndroid.feature.drone.filterShapesForSelectedDrones
+import com.naver.maps.map.LocationTrackingMode
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -22,6 +23,11 @@ class MapCameraFocusTest {
     @Test
     fun `최초 사용자 위치 센터링은 iOS CenterOnUserLocation처럼 줌 16을 사용한다`() {
         assertEquals(16.0, MapUserLocationZoomLevel, 0.0)
+    }
+
+    @Test
+    fun `사용자 위치 오버레이는 iOS처럼 계속 따라가기 모드가 아니다`() {
+        assertEquals(LocationTrackingMode.NoFollow, MapInitialLocationTrackingMode)
     }
 
     @Test

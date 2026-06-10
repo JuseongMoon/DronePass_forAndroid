@@ -538,7 +538,7 @@ private fun setupLocationTracking(map: NaverMap, context: android.content.Contex
 
         val locationSource = FusedLocationSource(activity, LOCATION_PERMISSION_REQUEST_CODE)
         map.locationSource = locationSource
-        map.locationTrackingMode = LocationTrackingMode.Follow
+        map.locationTrackingMode = MapInitialLocationTrackingMode
 
         val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
         fusedLocationClient.lastLocation.addOnSuccessListener { location ->
@@ -560,6 +560,7 @@ internal const val MapDefaultSeoulLatitude = 37.575563
 internal const val MapDefaultSeoulLongitude = 126.976793
 internal const val MapInitialZoomLevel = 12.0
 internal const val MapUserLocationZoomLevel = 16.0
+internal val MapInitialLocationTrackingMode = LocationTrackingMode.NoFollow
 internal const val ShapeFocusZoomDurationMs = 300L
 internal const val ShapeFocusSecondStepDelayMs = 300L
 internal const val ShapeFocusMoveDurationMs = 500L
