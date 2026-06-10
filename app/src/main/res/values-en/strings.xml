@@ -319,9 +319,9 @@
     <string name="settings_sign_out">Sign out</string>
     <string name="settings_sign_out_confirm">Do you want to sign out?</string>
     <string name="settings_sign_out_success">Signed out successfully</string>
-    <string name="settings_delete_account">Delete account</string>
+    <string name="settings_delete_account">Delete Account</string>
     <string name="settings_delete_account_subtitle">Only the account will be deleted. Local data will remain available.</string>
-    <string name="settings_delete_account_confirm">Your account will be deleted and cloud sync will stop.\n\nShapes, drones, and sketches saved on this device will remain available.\n\nAre you sure you want to delete your account?</string>
+    <string name="settings_delete_account_confirm">Your account will be deleted and cloud sync will stop.\n\nShapes and drones saved on this device will remain available.\n\nAre you sure you want to delete your account?</string>
     <string name="settings_delete_account_button">Delete</string>
     <string name="settings_section_notifications">Notifications</string>
     <string name="settings_sunrise_alarm">Sunrise notifications</string>
