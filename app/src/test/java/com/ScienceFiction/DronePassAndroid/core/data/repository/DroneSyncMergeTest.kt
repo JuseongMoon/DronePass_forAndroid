@@ -23,7 +23,7 @@ class DroneSyncMergeTest {
     }
 
     @Test
-    fun `이전 동기화 이후 서버에서 사라진 로컬 드론은 iOS hard delete 로 보고 되살리지 않는다`() {
+    fun `이전 동기화 이후 서버에서 사라진 로컬 드론은 원격 삭제로 보고 되살리지 않는다`() {
         val local = drone(id = "ios-deleted", updatedAt = 20L)
 
         val result = mergeDronesForFullSync(

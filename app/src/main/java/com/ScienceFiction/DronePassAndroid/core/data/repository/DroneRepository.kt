@@ -265,8 +265,9 @@ class DroneRepository @Inject constructor(
     /**
      * 양방향 동기화 (LWW 충돌 해결).
      *
-     * iOS DroneFirebaseStore.delete 는 문서를 hard delete 하므로,
-     * 마지막 동기화 시각 이전 로컬 항목이 서버에서 사라졌다면 iOS 삭제로 보고 재업로드하지 않는다.
+     * 서버에 없는 로컬 드론은 상대 플랫폼/계정 정리/레거시 hard delete 등으로
+     * 문서가 실제 삭제된 경우일 수 있다. 마지막 동기화 시각 이전 항목이면
+     * 원격 삭제로 보고 재업로드하지 않는다.
      */
     suspend fun performFullSync() {
         val userId = auth.currentUser?.uid ?: run {
