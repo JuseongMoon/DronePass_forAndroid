@@ -19,10 +19,10 @@ import java.util.Calendar
 class ShapeEditDefaultsTest {
 
     @Test
-    fun `도형 편집 일단위 입력 기본값은 iOS처럼 켜져 있다`() {
-        assertTrue(DefaultShapeEditDateOnlyMode)
-        assertTrue(ShapeEditDefaults().isDateOnly)
-        assertTrue(storedShapeEditDefaults(preferencesOf()).isDateOnly)
+    fun `도형 편집 일단위 입력 기본값은 iOS처럼 꺼져 있다`() {
+        assertFalse(DefaultShapeEditDateOnlyMode)
+        assertFalse(ShapeEditDefaults().isDateOnly)
+        assertFalse(storedShapeEditDefaults(preferencesOf()).isDateOnly)
     }
 
     @Test
