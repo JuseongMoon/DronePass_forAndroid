@@ -56,6 +56,7 @@ import com.ScienceFiction.DronePassAndroid.feature.settings.WeatherInfoGuideShee
 import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.ZoneId
+import java.time.ZoneOffset
 import java.time.temporal.ChronoUnit
 import java.util.Date
 import java.util.Locale
@@ -257,7 +258,10 @@ private fun WeatherForecastBody(
         }
 
         // ③ 6개 예보 차트 (현재 정시부터 3일)
-        val chartHours = resolveWeatherForecastChartHours(data.hourlyForecast)
+        val chartHours = resolveWeatherForecastChartHours(
+            hourlyForecast = data.hourlyForecast,
+            utcOffsetSeconds = data.utcOffsetSeconds,
+        )
         if (shouldShowWeatherForecastCharts(chartHours)) {
             item { TemperatureChart(hourlyData = chartHours) }
             item { WindSpeedChart(hourlyData = chartHours, category = category) }
@@ -314,8 +318,10 @@ private const val WeatherForecastChartHours = 3 * 24
 internal fun resolveWeatherForecastChartHours(
     hourlyForecast: List<HourlyWeatherData>,
     nowMillis: Long = System.currentTimeMillis(),
+    utcOffsetSeconds: Int? = null,
 ): List<HourlyWeatherData> {
-    val currentHourStart = resolveCurrentWeatherForecastHourStartMillis(nowMillis)
+    val zoneId = resolveWeatherForecastChartZone(utcOffsetSeconds)
+    val currentHourStart = resolveCurrentWeatherForecastHourStartMillis(nowMillis, zoneId)
     return hourlyForecast
         .asSequence()
         .filter { it.time >= currentHourStart }
@@ -332,6 +338,12 @@ internal fun resolveCurrentWeatherForecastHourStartMillis(
         .truncatedTo(ChronoUnit.HOURS)
         .toInstant()
         .toEpochMilli()
+}
+
+private fun resolveWeatherForecastChartZone(utcOffsetSeconds: Int?): ZoneId {
+    return runCatching {
+        utcOffsetSeconds?.let(ZoneOffset::ofTotalSeconds)
+    }.getOrNull() ?: ZoneId.systemDefault()
 }
 
 internal fun shouldShowWeatherForecastCharts(
