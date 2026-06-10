@@ -248,8 +248,8 @@
     <string name="drone_detail_memo_empty">메모 없음</string>
     <string name="drone_detail_clipboard_label">드론 정보</string>
     <string name="drone_detail_copied">복사되었습니다</string>
-    <string name="drone_detail_serial_number">시리얼 번호</string>
-    <string name="drone_detail_takeoff_weight">이륙 중량</string>
+    <string name="drone_detail_serial_number">제작 번호</string>
+    <string name="drone_detail_takeoff_weight">이륙 무게</string>
     <string name="drone_detail_size">크기</string>
     <string name="drone_detail_delete_impossible_title">삭제 불가</string>
     <string name="drone_detail_delete_impossible_message">최소 하나의 드론이 필요합니다.\n마지막 드론은 삭제할 수 없습니다.</string>
