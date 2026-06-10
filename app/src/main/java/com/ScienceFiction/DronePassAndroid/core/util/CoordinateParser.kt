@@ -31,8 +31,10 @@ object CoordinateParser {
      * 입력 전체에 anchor(`^`/`$`) 적용하여 "abc 99.9, 99.9" 같은 부분 매치를
      * 거부한다. 소수점 뒤 자릿수도 명시적으로 강제(`(?:\.\d+)?`).
      */
+    private const val SIGNED_DECIMAL = """[+-]?\d{1,3}(?:\.\d+)?"""
+
     private val DECIMAL_PATTERN = Regex(
-        """^\s*(-?\d{1,3}(?:\.\d+)?)\s*°?\s*[,\s]\s*(-?\d{1,3}(?:\.\d+)?)\s*°?\s*$"""
+        """^\s*($SIGNED_DECIMAL)\s*°?\s*[,\s]\s*($SIGNED_DECIMAL)\s*°?\s*$"""
     )
 
     /**
@@ -40,7 +42,7 @@ object CoordinateParser {
      * 예: geo:37.5661,126.9781
      */
     private val GEO_URI_PATTERN = Regex(
-        """^\s*geo:\s*(-?\d{1,3}(?:\.\d+)?)\s*,\s*(-?\d{1,3}(?:\.\d+)?)\s*$"""
+        """^\s*geo:\s*($SIGNED_DECIMAL)\s*,\s*($SIGNED_DECIMAL)\s*$"""
     )
 
     /**

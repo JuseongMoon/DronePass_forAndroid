@@ -37,6 +37,14 @@ class CoordinateParserTest {
     }
 
     @Test
+    fun `iOS처럼 명시적 양수 부호가 붙은 십진수도 파싱된다`() {
+        val c = CoordinateParser.parse("+37.5665 +126.9780")
+        assertNotNull(c)
+        assertEquals(37.5665, c!!.latitude, 0.0001)
+        assertEquals(126.9780, c.longitude, 0.0001)
+    }
+
+    @Test
     fun `좌우 공백은 허용`() {
         val c = CoordinateParser.parse("  37.5665, 126.9780  ")
         assertNotNull(c)
@@ -90,6 +98,14 @@ class CoordinateParserTest {
     fun `Geo URI 파싱`() {
         val c = CoordinateParser.parse("geo:37.5665,126.9780")
         assertNotNull(c)
+    }
+
+    @Test
+    fun `iOS처럼 명시적 양수 부호가 붙은 Geo URI도 파싱된다`() {
+        val c = CoordinateParser.parse("geo:+37.5665,+126.9780")
+        assertNotNull(c)
+        assertEquals(37.5665, c!!.latitude, 0.0001)
+        assertEquals(126.9780, c.longitude, 0.0001)
     }
 
     @Test
