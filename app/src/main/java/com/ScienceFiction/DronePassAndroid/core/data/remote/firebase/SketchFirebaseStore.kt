@@ -229,6 +229,10 @@ class SketchFirebaseStore @Inject constructor(
                 )
             ).await()
         } catch (e: Exception) {
+            if (isMissingFirestoreDocument(e)) {
+                Log.d(TAG, "스케치 소프트 삭제 스킵: 서버 문서가 이미 없음 userId=$userId, sketchId=$sketchId")
+                return
+            }
             Log.e(TAG, "스케치 소프트 삭제 실패: userId=$userId, sketchId=$sketchId", e)
             throw e
         }
