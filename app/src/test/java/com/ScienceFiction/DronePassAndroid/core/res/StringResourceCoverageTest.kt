@@ -41,6 +41,12 @@ class StringResourceCoverageTest {
             "데이터 동기화에 실패했습니다. 네트워크 상태를 확인해주세요.",
             stringResourceValue("values/strings.xml", "login_sync_failed"),
         )
+        assertEquals("다른 계정으로 전환할까요?", stringResourceValue("values/strings.xml", "login_account_switch_title"))
+        assertEquals(
+            "클라우드에 저장되지 않은 로컬 항목 %1\$d개가 있습니다. 계속하면 영구 삭제되어 복구할 수 없습니다. 기존 계정으로 다시 로그인하면 보존됩니다.",
+            stringResourceValue("values/strings.xml", "login_account_switch_message"),
+        )
+        assertEquals("계속(삭제)", stringResourceValue("values/strings.xml", "login_account_switch_confirm"))
         assertEquals("Google 로고", stringResourceValue("values/strings.xml", "login_google_logo_description"))
         assertEquals("Sign In / Sign Up", stringResourceValue("values-en/strings.xml", "login_title"))
         assertEquals("Continue with Apple", stringResourceValue("values-en/strings.xml", "login_apple"))
@@ -63,6 +69,12 @@ class StringResourceCoverageTest {
             "Data sync failed. Please check your network connection.",
             stringResourceValue("values-en/strings.xml", "login_sync_failed"),
         )
+        assertEquals("Switch to a different account?", stringResourceValue("values-en/strings.xml", "login_account_switch_title"))
+        assertEquals(
+            "There are %1\$d local item(s) not saved to the cloud. Continuing will permanently delete them with no way to recover. Log in again with the previous account to keep them.",
+            stringResourceValue("values-en/strings.xml", "login_account_switch_message"),
+        )
+        assertEquals("Continue (Discard)", stringResourceValue("values-en/strings.xml", "login_account_switch_confirm"))
     }
 
     @Test
