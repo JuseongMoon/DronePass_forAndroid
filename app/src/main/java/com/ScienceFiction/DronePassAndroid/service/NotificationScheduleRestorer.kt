@@ -67,10 +67,16 @@ class NotificationScheduleRestorer @Inject constructor(
         val sunsetEnabled = storedSunsetAlarmEnabled(preferences)
 
         if (sunriseEnabled) {
-            notificationScheduler.scheduleSunriseAlarms(weatherData.sunriseTimes)
+            notificationScheduler.scheduleSunriseAlarms(
+                sunriseTimeStrings = weatherData.sunriseTimes,
+                utcOffsetSeconds = weatherData.utcOffsetSeconds,
+            )
         }
         if (sunsetEnabled) {
-            notificationScheduler.scheduleSunsetAlarms(weatherData.sunsetTimes)
+            notificationScheduler.scheduleSunsetAlarms(
+                sunsetTimeStrings = weatherData.sunsetTimes,
+                utcOffsetSeconds = weatherData.utcOffsetSeconds,
+            )
         }
     }
 
@@ -88,10 +94,16 @@ class NotificationScheduleRestorer @Inject constructor(
 
         val weatherData = weatherRepository.fetchWeather(lat, lon).getOrNull()
         if (sunriseEnabled) {
-            notificationScheduler.scheduleSunriseAlarms(weatherData?.sunriseTimes)
+            notificationScheduler.scheduleSunriseAlarms(
+                sunriseTimeStrings = weatherData?.sunriseTimes,
+                utcOffsetSeconds = weatherData?.utcOffsetSeconds,
+            )
         }
         if (sunsetEnabled) {
-            notificationScheduler.scheduleSunsetAlarms(weatherData?.sunsetTimes)
+            notificationScheduler.scheduleSunsetAlarms(
+                sunsetTimeStrings = weatherData?.sunsetTimes,
+                utcOffsetSeconds = weatherData?.utcOffsetSeconds,
+            )
         }
     }
 

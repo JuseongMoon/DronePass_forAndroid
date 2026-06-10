@@ -12,6 +12,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
+import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -30,6 +31,22 @@ internal fun calculateEndDateNotificationTime(
 
 internal fun truncateNotificationTriggerToMinute(triggerTime: LocalDateTime): LocalDateTime {
     return triggerTime.withSecond(0).withNano(0)
+}
+
+internal fun resolveNotificationSunZone(utcOffsetSeconds: Int?): ZoneId {
+    return runCatching {
+        utcOffsetSeconds?.let(ZoneOffset::ofTotalSeconds)
+    }.getOrNull() ?: ZoneId.systemDefault()
+}
+
+internal fun calculateNotificationTriggerAtMillis(
+    triggerTime: LocalDateTime,
+    zoneId: ZoneId = ZoneId.systemDefault(),
+): Long {
+    return truncateNotificationTriggerToMinute(triggerTime)
+        .atZone(zoneId)
+        .toInstant()
+        .toEpochMilli()
 }
 
 internal fun parseNotificationSunTime(
@@ -153,16 +170,17 @@ class NotificationScheduler @Inject constructor(
      * 일출 알림 예약 (30분 전, 10분 전)
      * @param sunriseTimeString ISO 형식 일출 시간 문자열 (예: "2026-02-24T07:15")
      */
-    fun scheduleSunriseAlarms(sunriseTimeString: String?) {
-        scheduleSunriseAlarms(sunriseTimeString?.let(::listOf))
+    fun scheduleSunriseAlarms(sunriseTimeString: String?, utcOffsetSeconds: Int? = null) {
+        scheduleSunriseAlarms(sunriseTimeString?.let(::listOf), utcOffsetSeconds)
     }
 
     /**
      * 일출 알림 예약 (30분 전, 10분 전)
      * iOS처럼 오늘 일출이 지났으면 전달된 후보 중 다음 미래 일출을 사용합니다.
      */
-    fun scheduleSunriseAlarms(sunriseTimeStrings: List<String>?) {
-        val now = LocalDateTime.now()
+    fun scheduleSunriseAlarms(sunriseTimeStrings: List<String>?, utcOffsetSeconds: Int? = null) {
+        val zoneId = resolveNotificationSunZone(utcOffsetSeconds)
+        val now = LocalDateTime.now(zoneId)
         val plan = resolveSunAlarmSchedulePlan(sunriseTimeStrings, now)
         if (plan.shouldCancelExisting) {
             cancelSunriseAlarms()
@@ -187,6 +205,7 @@ class NotificationScheduler @Inject constructor(
                 type = TYPE_SUNRISE,
                 title = context.getString(content.title),
                 body = context.getString(content.body),
+                zoneId = zoneId,
             )
             Log.d(TAG, "일출 30분 전 알림 예약: $before30")
         }
@@ -201,6 +220,7 @@ class NotificationScheduler @Inject constructor(
                 type = TYPE_SUNRISE,
                 title = context.getString(content.title),
                 body = context.getString(content.body),
+                zoneId = zoneId,
             )
             Log.d(TAG, "일출 10분 전 알림 예약: $before10")
         }
@@ -221,16 +241,17 @@ class NotificationScheduler @Inject constructor(
      * 일몰 알림 예약 (30분 전, 10분 전)
      * @param sunsetTimeString ISO 형식 일몰 시간 문자열 (예: "2026-02-24T18:00")
      */
-    fun scheduleSunsetAlarms(sunsetTimeString: String?) {
-        scheduleSunsetAlarms(sunsetTimeString?.let(::listOf))
+    fun scheduleSunsetAlarms(sunsetTimeString: String?, utcOffsetSeconds: Int? = null) {
+        scheduleSunsetAlarms(sunsetTimeString?.let(::listOf), utcOffsetSeconds)
     }
 
     /**
      * 일몰 알림 예약 (30분 전, 10분 전)
      * iOS처럼 오늘 일몰이 지났으면 전달된 후보 중 다음 미래 일몰을 사용합니다.
      */
-    fun scheduleSunsetAlarms(sunsetTimeStrings: List<String>?) {
-        val now = LocalDateTime.now()
+    fun scheduleSunsetAlarms(sunsetTimeStrings: List<String>?, utcOffsetSeconds: Int? = null) {
+        val zoneId = resolveNotificationSunZone(utcOffsetSeconds)
+        val now = LocalDateTime.now(zoneId)
         val plan = resolveSunAlarmSchedulePlan(sunsetTimeStrings, now)
         if (plan.shouldCancelExisting) {
             cancelSunsetAlarms()
@@ -255,6 +276,7 @@ class NotificationScheduler @Inject constructor(
                 type = TYPE_SUNSET,
                 title = context.getString(content.title),
                 body = context.getString(content.body),
+                zoneId = zoneId,
             )
             Log.d(TAG, "일몰 30분 전 알림 예약: $before30")
         }
@@ -269,6 +291,7 @@ class NotificationScheduler @Inject constructor(
                 type = TYPE_SUNSET,
                 title = context.getString(content.title),
                 body = context.getString(content.body),
+                zoneId = zoneId,
             )
             Log.d(TAG, "일몰 10분 전 알림 예약: $before10")
         }
@@ -351,7 +374,8 @@ class NotificationScheduler @Inject constructor(
         type: String,
         title: String,
         body: String,
-        shapeId: String? = null
+        shapeId: String? = null,
+        zoneId: ZoneId = ZoneId.systemDefault(),
     ) {
         val intent = Intent(context, NotificationReceiver::class.java).apply {
             if (type == TYPE_END_DATE && shapeId != null) {
@@ -372,10 +396,7 @@ class NotificationScheduler @Inject constructor(
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val triggerAtMillis = truncateNotificationTriggerToMinute(triggerTime)
-            .atZone(ZoneId.systemDefault())
-            .toInstant()
-            .toEpochMilli()
+        val triggerAtMillis = calculateNotificationTriggerAtMillis(triggerTime, zoneId)
 
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {

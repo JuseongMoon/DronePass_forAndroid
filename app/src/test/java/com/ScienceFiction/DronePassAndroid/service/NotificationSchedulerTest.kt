@@ -1,6 +1,7 @@
 package com.ScienceFiction.DronePassAndroid.service
 
 import com.ScienceFiction.DronePassAndroid.R
+import java.time.Instant
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -56,6 +57,19 @@ class NotificationSchedulerTest {
             selectNextSunEventTime(
                 listOf("2026-06-03T07:15:30", "2026-06-04T07:15:30"),
                 now,
+            ),
+        )
+    }
+
+    @Test
+    fun `일출 일몰 알림 trigger millis 는 날씨 응답 timezone offset 을 사용한다`() {
+        val triggerTime = LocalDateTime.of(2026, 1, 1, 7, 15, 30)
+
+        assertEquals(
+            Instant.parse("2025-12-31T22:15:00Z").toEpochMilli(),
+            calculateNotificationTriggerAtMillis(
+                triggerTime = triggerTime,
+                zoneId = resolveNotificationSunZone(9 * 60 * 60),
             ),
         )
     }

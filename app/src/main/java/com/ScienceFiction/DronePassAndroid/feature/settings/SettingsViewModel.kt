@@ -250,7 +250,10 @@ class SettingsViewModel @Inject constructor(
                     } catch (e: Exception) {
                         null
                     }
-                    notificationScheduler.scheduleSunriseAlarms(weatherData?.sunriseTimes)
+                    notificationScheduler.scheduleSunriseAlarms(
+                        sunriseTimeStrings = weatherData?.sunriseTimes,
+                        utcOffsetSeconds = weatherData?.utcOffsetSeconds,
+                    )
                 }
             } else {
                 notificationScheduler.cancelSunriseAlarms()
@@ -276,7 +279,10 @@ class SettingsViewModel @Inject constructor(
                     } catch (e: Exception) {
                         null
                     }
-                    notificationScheduler.scheduleSunsetAlarms(weatherData?.sunsetTimes)
+                    notificationScheduler.scheduleSunsetAlarms(
+                        sunsetTimeStrings = weatherData?.sunsetTimes,
+                        utcOffsetSeconds = weatherData?.utcOffsetSeconds,
+                    )
                 }
             } else {
                 notificationScheduler.cancelSunsetAlarms()
