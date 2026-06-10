@@ -138,6 +138,16 @@ class KpChartsTest {
     }
 
     @Test
+    fun `KP charts use iOS visible domains and source data label intervals`() {
+        val hourMs = 60L * 60 * 1000
+
+        assertEquals(24 * hourMs, KpForecastVisibleDomainMs)
+        assertEquals(3 * hourMs, KpForecastLabelIntervalMs)
+        assertEquals(786_240_000L, Kp27DayVisibleDomainMs)
+        assertEquals(24 * hourMs, Kp27DayLabelIntervalMs)
+    }
+
+    @Test
     fun `KP and weather forecast chart heights share the same iOS frame`() {
         assertEquals(WeatherForecastChartHeight, KpForecastChartHeight)
     }

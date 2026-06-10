@@ -88,6 +88,35 @@ class WeatherForecastParityTest {
     }
 
     @Test
+    fun `forecast charts use iOS twelve hour visible domain with hourly labels`() {
+        assertEquals(12 * HourMs, IosWeatherChartVisibleDomainMs)
+        assertEquals(HourMs, IosWeatherChartXLabelIntervalMs)
+        assertEquals(
+            2.0,
+            resolveScrollableTimeChartWidthScale(
+                dataPoints = listOf(0L to 1.0, 24 * HourMs to 2.0),
+                visibleDomainMs = IosWeatherChartVisibleDomainMs,
+            ).toDouble(),
+            0.0,
+        )
+        assertEquals(
+            1.0,
+            resolveScrollableTimeChartWidthScale(
+                dataPoints = listOf(0L to 1.0, 6 * HourMs to 2.0),
+                visibleDomainMs = IosWeatherChartVisibleDomainMs,
+            ).toDouble(),
+            0.0,
+        )
+    }
+
+    @Test
+    fun `precipitation chart y axis keeps iOS minimum ten millimeter range`() {
+        assertEquals(10.0, resolveIosPrecipitationYMax(emptyList()), 0.0)
+        assertEquals(10.0, resolveIosPrecipitationYMax(listOf(0.0, 3.0)), 0.0)
+        assertEquals(15.0, resolveIosPrecipitationYMax(listOf(12.1)), 0.0)
+    }
+
+    @Test
     fun `weather data source text opens the Android provider attribution URL`() {
         assertEquals("https://open-meteo.com/", WeatherDataSourceUrl)
     }

@@ -2,7 +2,6 @@ package com.ScienceFiction.DronePassAndroid.feature.kp
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,8 +11,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Warning
@@ -38,6 +35,7 @@ import com.ScienceFiction.DronePassAndroid.domain.model.Kp27DayForecast
 import com.ScienceFiction.DronePassAndroid.domain.model.KpIndexData
 import com.ScienceFiction.DronePassAndroid.domain.model.KpLevel
 import com.ScienceFiction.DronePassAndroid.feature.weather.BackgroundZone
+import com.ScienceFiction.DronePassAndroid.feature.weather.ScrollableTimeChartViewport
 import com.ScienceFiction.DronePassAndroid.feature.weather.WeatherLineChart
 import java.text.ParsePosition
 import java.text.SimpleDateFormat
@@ -50,10 +48,12 @@ private val ZoneGreen = Color(0xFF4CAF50)
 private val ZoneYellow = Color(0xFFFFC107)
 private val ZoneRed = Color(0xFFF44336)
 internal val KpForecastChartHeight = 250.dp
-private val Kp27DayLineChartWidth = 900.dp
 private const val KpForecastPastWindowMs = 6L * 60 * 60 * 1000
 private const val KpForecastFutureWindowMs = 48L * 60 * 60 * 1000
-private const val Kp27DayLabelIntervalMs = 5L * 24 * 60 * 60 * 1000
+internal const val KpForecastVisibleDomainMs = 24L * 60 * 60 * 1000
+internal const val KpForecastLabelIntervalMs = 3L * 60 * 60 * 1000
+internal const val Kp27DayVisibleDomainMs = 786_240L * 1000
+internal const val Kp27DayLabelIntervalMs = 24L * 60 * 60 * 1000
 
 internal enum class KpDataSource {
     GFZ_CURRENT,
@@ -96,25 +96,31 @@ fun KpForecastLineChart(
             KpChartState.Loading -> KpChartLoadingPlaceholder()
             KpChartState.Error -> KpChartErrorPlaceholder(errorMessage.orEmpty())
             KpChartState.Empty -> KpChartNoDataPlaceholder()
-            KpChartState.Data -> WeatherLineChart(
+            KpChartState.Data -> ScrollableTimeChartViewport(
                 dataPoints = dataPoints,
-                lineColor = primaryColor,
-                warningThreshold = 5.0,
-                dangerThreshold = 7.0,
-                yAxisRange = 0.0..9.0,
-                yLabelStep = 3.0,
-                xLabelIntervalMs = 6 * 60 * 60 * 1000L,
-                currentTimeMs = System.currentTimeMillis(),
-                predicted = predicted,
-                pointColors = pointColors,
-                backgroundZones = listOf(
-                    BackgroundZone(0.0..5.0, ZoneGreen),
-                    BackgroundZone(5.0..7.0, ZoneYellow),
-                    BackgroundZone(7.0..9.0, ZoneRed),
-                ),
-                formatValue = { it.toInt().toString() },
-                chartHeight = KpForecastChartHeight,
-            )
+                visibleDomainMs = KpForecastVisibleDomainMs,
+            ) { chartModifier ->
+                WeatherLineChart(
+                    dataPoints = dataPoints,
+                    modifier = chartModifier,
+                    lineColor = primaryColor,
+                    warningThreshold = 5.0,
+                    dangerThreshold = 7.0,
+                    yAxisRange = 0.0..9.0,
+                    yLabelStep = 3.0,
+                    xLabelIntervalMs = KpForecastLabelIntervalMs,
+                    currentTimeMs = System.currentTimeMillis(),
+                    predicted = predicted,
+                    pointColors = pointColors,
+                    backgroundZones = listOf(
+                        BackgroundZone(0.0..5.0, ZoneGreen),
+                        BackgroundZone(5.0..7.0, ZoneYellow),
+                        BackgroundZone(7.0..9.0, ZoneRed),
+                    ),
+                    formatValue = { it.toInt().toString() },
+                    chartHeight = KpForecastChartHeight,
+                )
+            }
         }
     }
 }
@@ -218,16 +224,14 @@ private fun Kp27DayLineChart(longTermForecast: List<Kp27DayForecast>) {
     val dataPoints = parsedForecast.map { (timeMs, forecast) -> timeMs to forecast.kp }
     val pointColors = parsedForecast.map { (_, forecast) -> Color(KpLevel.fromKp(forecast.kp).color.toInt()) }
     val primaryColor = MaterialTheme.colorScheme.primary
-    val scrollState = rememberScrollState()
 
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .horizontalScroll(scrollState),
-    ) {
+    ScrollableTimeChartViewport(
+        dataPoints = dataPoints,
+        visibleDomainMs = Kp27DayVisibleDomainMs,
+    ) { chartModifier ->
         WeatherLineChart(
             dataPoints = dataPoints,
-            modifier = Modifier.width(Kp27DayLineChartWidth),
+            modifier = chartModifier,
             lineColor = primaryColor,
             warningThreshold = 5.0,
             dangerThreshold = 7.0,

@@ -3,15 +3,21 @@ package com.ScienceFiction.DronePassAndroid.feature.weather
 import android.graphics.Paint
 import android.graphics.Typeface
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -37,12 +43,15 @@ import com.ScienceFiction.DronePassAndroid.domain.model.HourlyWeatherData
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.math.ceil
 
 // ─── 공통 Line Chart ────────────────────────────────────────────
 
 internal val WeatherForecastChartHeight = 250.dp
 internal val WeatherLineChartDefaultHeight = WeatherForecastChartHeight
 internal val WeatherPrecipitationBarChartHeight = WeatherForecastChartHeight
+internal const val IosWeatherChartVisibleDomainMs = 12L * 60 * 60 * 1000
+internal const val IosWeatherChartXLabelIntervalMs = 60L * 60 * 1000
 
 /**
  * Y축 배경 색상 영역. WeatherLineChart 의 [backgroundZones] 에 전달.
@@ -345,6 +354,34 @@ internal fun WeatherLineChart(
     }
 }
 
+@Composable
+internal fun ScrollableTimeChartViewport(
+    dataPoints: List<Pair<Long, Double>>,
+    visibleDomainMs: Long,
+    modifier: Modifier = Modifier,
+    content: @Composable (Modifier) -> Unit,
+) {
+    val scrollState = rememberScrollState()
+    BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
+        val viewportWidth = maxWidth
+        val widthScale = remember(dataPoints, visibleDomainMs) {
+            resolveScrollableTimeChartWidthScale(dataPoints, visibleDomainMs)
+        }
+        Box(modifier = Modifier.horizontalScroll(scrollState)) {
+            content(Modifier.width(viewportWidth * widthScale))
+        }
+    }
+}
+
+internal fun resolveScrollableTimeChartWidthScale(
+    dataPoints: List<Pair<Long, Double>>,
+    visibleDomainMs: Long,
+): Float {
+    if (dataPoints.size < 2 || visibleDomainMs <= 0L) return 1f
+    val durationMs = (dataPoints.last().first - dataPoints.first().first).coerceAtLeast(0L)
+    return maxOf(1.0, durationMs.toDouble() / visibleDomainMs.toDouble()).toFloat()
+}
+
 // ─── 강수량 Bar Chart ────────────────────────────────────────────
 
 @Composable
@@ -352,6 +389,7 @@ private fun PrecipitationBarChart(
     dataPoints: List<Pair<Long, Double>>,
     modifier: Modifier = Modifier,
     currentTimeMs: Long? = null,
+    xLabelIntervalMs: Long = IosWeatherChartXLabelIntervalMs,
     chartHeight: Dp = WeatherPrecipitationBarChartHeight,
 ) {
     if (dataPoints.isEmpty()) return
@@ -375,8 +413,7 @@ private fun PrecipitationBarChart(
 
         if (chartWidth <= 0 || chartHeight <= 0) return@Canvas
 
-        val rawMax = dataPoints.maxOf { it.second }
-        val yMax = if (rawMax < 0.1) 1.0 else rawMax * 1.1
+        val yMax = resolveIosPrecipitationYMax(dataPoints.map { it.second })
         val yMin = 0.0
 
         val xMin = dataPoints.first().first.toDouble()
@@ -427,9 +464,9 @@ private fun PrecipitationBarChart(
             isAntiAlias = true
         }
         val timeFormat = SimpleDateFormat("HH", Locale.getDefault())
-        val threeHoursMs = 3 * 60 * 60 * 1000L
+        val intervalMs = xLabelIntervalMs
         val firstTime = dataPoints.first().first
-        val startLabel = ((firstTime / threeHoursMs) + 1) * threeHoursMs
+        val startLabel = ((firstTime / intervalMs) + 1) * intervalMs
         var labelTime = startLabel
         while (labelTime <= dataPoints.last().first) {
             val x = toScreenX(labelTime)
@@ -447,7 +484,7 @@ private fun PrecipitationBarChart(
                     strokeWidth = 1f
                 )
             }
-            labelTime += threeHoursMs
+            labelTime += intervalMs
         }
 
         // 현재 시간 빨강 수직선 (iOS WeatherForecastView RuleMark 정합)
@@ -511,6 +548,11 @@ private fun PrecipitationBarChart(
     }
 }
 
+internal fun resolveIosPrecipitationYMax(precipitations: List<Double>): Double {
+    val maxPrecip = precipitations.maxOrNull() ?: 0.0
+    return maxOf(10.0, ceil(maxPrecip * 1.2))
+}
+
 // ─── 개별 차트 6종 ────────────────────────────────────────────
 
 @Composable
@@ -524,14 +566,18 @@ fun TemperatureChart(
         title = stringResource(R.string.weather_chart_temperature),
         modifier = modifier,
     ) {
-        WeatherLineChart(
-            dataPoints = dataPoints,
-            lineColor = Color(0xFFFF6B35),
-            fillAlpha = 0.15f,
-            yAxisLabel = "\u00B0C",
-            formatValue = { String.format("%.0f\u00B0", it) },
-            currentTimeMs = resolveWeatherChartCurrentTimeMarkerMs(dataPoints, nowMillis),
-        )
+        ScrollableTimeChartViewport(dataPoints, IosWeatherChartVisibleDomainMs) { chartModifier ->
+            WeatherLineChart(
+                dataPoints = dataPoints,
+                modifier = chartModifier,
+                lineColor = Color(0xFFFF6B35),
+                fillAlpha = 0.15f,
+                yAxisLabel = "\u00B0C",
+                formatValue = { String.format("%.0f\u00B0", it) },
+                xLabelIntervalMs = IosWeatherChartXLabelIntervalMs,
+                currentTimeMs = resolveWeatherChartCurrentTimeMarkerMs(dataPoints, nowMillis),
+            )
+        }
     }
 }
 
@@ -548,16 +594,20 @@ fun WindSpeedChart(
         title = stringResource(R.string.weather_chart_wind_speed),
         modifier = modifier,
     ) {
-        WeatherLineChart(
-            dataPoints = dataPoints,
-            lineColor = Color(0xFF42A5F5),
-            fillAlpha = 0.1f,
-            warningThreshold = cautionThreshold,
-            dangerThreshold = dangerThreshold,
-            yAxisLabel = "m/s",
-            formatValue = { String.format(Locale.ROOT, "%.1f", it) },
-            currentTimeMs = resolveWeatherChartCurrentTimeMarkerMs(dataPoints, nowMillis),
-        )
+        ScrollableTimeChartViewport(dataPoints, IosWeatherChartVisibleDomainMs) { chartModifier ->
+            WeatherLineChart(
+                dataPoints = dataPoints,
+                modifier = chartModifier,
+                lineColor = Color(0xFF42A5F5),
+                fillAlpha = 0.1f,
+                warningThreshold = cautionThreshold,
+                dangerThreshold = dangerThreshold,
+                yAxisLabel = "m/s",
+                formatValue = { String.format(Locale.ROOT, "%.1f", it) },
+                xLabelIntervalMs = IosWeatherChartXLabelIntervalMs,
+                currentTimeMs = resolveWeatherChartCurrentTimeMarkerMs(dataPoints, nowMillis),
+            )
+        }
     }
 }
 
@@ -574,16 +624,20 @@ fun GustDifferenceChart(
         title = stringResource(R.string.weather_chart_gust_difference),
         modifier = modifier,
     ) {
-        WeatherLineChart(
-            dataPoints = dataPoints,
-            lineColor = Color(0xFFFF7043),
-            fillAlpha = 0.1f,
-            warningThreshold = cautionThreshold,
-            dangerThreshold = dangerThreshold,
-            yAxisLabel = "m/s",
-            formatValue = { String.format(Locale.ROOT, "%.1f", it) },
-            currentTimeMs = resolveWeatherChartCurrentTimeMarkerMs(dataPoints, nowMillis),
-        )
+        ScrollableTimeChartViewport(dataPoints, IosWeatherChartVisibleDomainMs) { chartModifier ->
+            WeatherLineChart(
+                dataPoints = dataPoints,
+                modifier = chartModifier,
+                lineColor = Color(0xFFFF7043),
+                fillAlpha = 0.1f,
+                warningThreshold = cautionThreshold,
+                dangerThreshold = dangerThreshold,
+                yAxisLabel = "m/s",
+                formatValue = { String.format(Locale.ROOT, "%.1f", it) },
+                xLabelIntervalMs = IosWeatherChartXLabelIntervalMs,
+                currentTimeMs = resolveWeatherChartCurrentTimeMarkerMs(dataPoints, nowMillis),
+            )
+        }
     }
 }
 
@@ -598,10 +652,14 @@ fun PrecipitationChart(
         title = stringResource(R.string.weather_chart_precipitation),
         modifier = modifier,
     ) {
-        PrecipitationBarChart(
-            dataPoints = dataPoints,
-            currentTimeMs = resolveWeatherChartCurrentTimeMarkerMs(dataPoints, nowMillis),
-        )
+        ScrollableTimeChartViewport(dataPoints, IosWeatherChartVisibleDomainMs) { chartModifier ->
+            PrecipitationBarChart(
+                dataPoints = dataPoints,
+                modifier = chartModifier,
+                currentTimeMs = resolveWeatherChartCurrentTimeMarkerMs(dataPoints, nowMillis),
+                xLabelIntervalMs = IosWeatherChartXLabelIntervalMs,
+            )
+        }
     }
 }
 
@@ -616,16 +674,20 @@ fun VisibilityChart(
         title = stringResource(R.string.weather_chart_visibility),
         modifier = modifier,
     ) {
-        WeatherLineChart(
-            dataPoints = dataPoints,
-            lineColor = Color(0xFF78909C),
-            fillAlpha = 0.1f,
-            warningThreshold = IosVisibilityGoodKm,
-            dangerThreshold = IosVisibilityPoorKm,
-            yAxisLabel = "km",
-            formatValue = { String.format(Locale.ROOT, "%.0f", it) },
-            currentTimeMs = resolveWeatherChartCurrentTimeMarkerMs(dataPoints, nowMillis),
-        )
+        ScrollableTimeChartViewport(dataPoints, IosWeatherChartVisibleDomainMs) { chartModifier ->
+            WeatherLineChart(
+                dataPoints = dataPoints,
+                modifier = chartModifier,
+                lineColor = Color(0xFF78909C),
+                fillAlpha = 0.1f,
+                warningThreshold = IosVisibilityGoodKm,
+                dangerThreshold = IosVisibilityPoorKm,
+                yAxisLabel = "km",
+                formatValue = { String.format(Locale.ROOT, "%.0f", it) },
+                xLabelIntervalMs = IosWeatherChartXLabelIntervalMs,
+                currentTimeMs = resolveWeatherChartCurrentTimeMarkerMs(dataPoints, nowMillis),
+            )
+        }
     }
 }
 
@@ -640,16 +702,20 @@ fun CriChart(
         title = stringResource(R.string.weather_chart_cri),
         modifier = modifier,
     ) {
-        WeatherLineChart(
-            dataPoints = dataPoints,
-            lineColor = Color(0xFF26A69A),
-            fillAlpha = 0.1f,
-            warningThreshold = IosCriModerate,
-            dangerThreshold = IosCriHigh,
-            yAxisLabel = "%",
-            formatValue = { String.format(Locale.ROOT, "%.0f", it) },
-            currentTimeMs = resolveWeatherChartCurrentTimeMarkerMs(dataPoints, nowMillis),
-        )
+        ScrollableTimeChartViewport(dataPoints, IosWeatherChartVisibleDomainMs) { chartModifier ->
+            WeatherLineChart(
+                dataPoints = dataPoints,
+                modifier = chartModifier,
+                lineColor = Color(0xFF26A69A),
+                fillAlpha = 0.1f,
+                warningThreshold = IosCriModerate,
+                dangerThreshold = IosCriHigh,
+                yAxisLabel = "%",
+                formatValue = { String.format(Locale.ROOT, "%.0f", it) },
+                xLabelIntervalMs = IosWeatherChartXLabelIntervalMs,
+                currentTimeMs = resolveWeatherChartCurrentTimeMarkerMs(dataPoints, nowMillis),
+            )
+        }
     }
 }
 
