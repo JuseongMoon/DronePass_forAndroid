@@ -1,6 +1,6 @@
 # DronePass Android 작업 이어가기
 
-> 마지막 업데이트: 2026-06-08
+> 마지막 업데이트: 2026-06-12
 > 브랜치: `fix/critical-pri0-fixes`
 > 상태: iOS 동작 대조와 Android 출시 하드닝 진행 중
 
@@ -12,11 +12,20 @@
 |---|---|
 | 워킹 트리 | clean |
 | 주요 검증 | `:app:testDebugUnitTest`, `:app:assembleDebug`, `:app:minifyReleaseWithR8` 통과 |
-| Release signing | 실제 `keystore.properties` 없으면 `assembleRelease`/`bundleRelease`가 의도적으로 실패함을 확인 |
+| Release signing | 실제 `keystore.properties` 없으면 `assembleRelease`/`bundleRelease`가 의도적으로 실패함을 재확인 |
 | 남은 성격 | 실기기 전체 회귀, 콘솔/스토어 운영 설정, 최종 iOS 동기화 검증 |
 
-최근 완료된 릴리스 하드닝:
+최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- `0957956 fix: gate sun alarm rescheduling to user location`
+- `55ae939 fix: harden drone selection handling`
+- `5cca01b fix: smooth current weather cri`
+- `7fecccc fix: align kp chart axes with ios`
+- `7d39eb0 fix: gate fcm foreground popup`
+- `f7a1152 fix: remove profile auth listener`
+- `9b021a5 fix: tolerate missing remote deletes`
+- `024c77a fix: accept signed coordinate input`
+- `55adb34 fix: save profile sync baseline on logout`
 - `674a5b8 fix: keep shape overlay tap aligned with ios`
 - `6ee40a3 fix: avoid api keys in debug http logs`
 - `fbd90b1 fix: disable os backup for local app state`
@@ -39,9 +48,16 @@
 - VWorld 레이어/상세/관할기관 연락처 캐시
 - 설정/프로필/앱 정보/패치노트/문서 시트
 - 알림 예약 로직과 부팅 후 재예약
+- 계정/로그인/로그아웃/계정삭제/실시간 동기화 흐름
+- Sketch Firestore 직렬화/파싱 계약
 
 수정 완료된 영역:
 
+- 일출/일몰 알림 재예약을 iOS처럼 실제 사용자 위치 기반 날씨에만 수행
+- 드론 선택 버튼 높이와 드롭다운 원 지름/상단 정렬 일치
+- 드론 재할당 삭제 흐름의 자기 자신 타겟 방어
+- 전경 FCM 팝업 표시 조건 보정
+- KP 차트 축과 현재 날씨 CRI 표시 보정
 - Apple 로그인 Activity context unwrap
 - 로그인 약관/개인정보 시트 흐름
 - 한국어 도형 문구와 상세 라벨
@@ -60,11 +76,34 @@
 - OS Auto Backup 비활성화와 백업/데이터 추출 규칙 방어적 exclude
 - README 최신화
 
+## 2.1 Firestore 크로스플랫폼 계약
+
+iOS와 Android가 공유하는 `users/{uid}/shapes`, `users/{uid}/sketches`, `users/{uid}/drones` 컬렉션은 다음 원칙을 유지합니다.
+
+- 쓰기는 표준 형식만 사용하고, 읽기는 레거시 값을 관대하게 허용한다.
+- `shapeType` 등 enum류 필드는 쓰기 시 소문자 raw value만 사용한다. 읽기 시에는 대소문자를 무시한다.
+- 날짜는 Firestore `Timestamp`만 사용한다. epoch `Long`, ISO 문자열, Unix 초는 쓰지 않는다.
+- 좌표는 `{latitude: Double, longitude: Double}` map만 사용한다. `GeoPoint`, 배열, 정수, 문자열은 쓰지 않는다.
+- 색상은 `#RRGGBB` 형식만 사용한다.
+- 문서 id와 내부 `id` 필드는 같은 UUID 문자열이어야 한다.
+- 필수 필드가 없거나 타입이 깨진 문서는 양 플랫폼 모두 skip될 수 있으므로, 쓰기 전에 검증한다.
+- 삭제는 기존 문서에 `deletedAt`/`updatedAt`을 갱신하는 soft delete로 처리하고, 빈 tombstone 문서를 새로 만들지 않는다.
+
+현재 Android 상태:
+
+- Shape: `shapeType` 쓰기 lowercase, 읽기 case-insensitive. 레거시 `CIRCLE` 문서 파싱 테스트 유지.
+- Drone: UUID id, `Timestamp`, hex color, optional 필드 보존/파싱 테스트 유지.
+- Sketch: `Timestamp`, Double 좌표 map 배열, opacity/좌표 반올림, UUID id 검증 테스트 유지.
+
 ## 3. 남은 필수 작업
 
 ### 3.1 실기기 회귀
 
 최소 1대의 Android 13+ 실기기에서 확인합니다.
+
+2026-06-12 확인:
+
+- `adb devices` 결과 연결된 기기 없음. 실기기 smoke는 진행하지 못함.
 
 2026-06-08 부분 확인:
 
@@ -156,7 +195,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 
 - `:app:minifyReleaseWithR8`는 현재 성공합니다.
 - Naver Maps SDK와 Play Services Location에서 R8 warning이 여러 줄 출력될 수 있지만, 현재는 build failure가 아닙니다.
-- `assembleRelease`와 `bundleRelease`는 실제 release signing 설정 전까지 의도적으로 차단되며, 2026-06-08에 실패 경로를 재확인했습니다.
+- `assembleRelease`와 `bundleRelease`는 실제 release signing 설정 전까지 의도적으로 차단되며, 2026-06-12에 `assembleRelease` 실패 경로를 재확인했습니다.
 - OS Auto Backup은 비활성화되어 있으며, 앱 데이터 백업/동기화는 Firebase 흐름 기준으로 검증합니다.
 
 ## 5. 다음에 바로 볼 후보
