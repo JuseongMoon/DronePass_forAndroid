@@ -10,8 +10,9 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ScienceFiction.DronePassAndroid.core.util.AnalyticsLogger
+import com.ScienceFiction.DronePassAndroid.core.data.UserLocationKeys
 import com.ScienceFiction.DronePassAndroid.core.data.repository.WeatherRepository
+import com.ScienceFiction.DronePassAndroid.core.util.AnalyticsLogger
 import com.ScienceFiction.DronePassAndroid.core.util.DroneCategory
 import com.ScienceFiction.DronePassAndroid.domain.model.WeatherData
 import com.ScienceFiction.DronePassAndroid.service.NotificationScheduleRestorer
@@ -90,6 +91,7 @@ class WeatherViewModel @Inject constructor(
 
     private var currentLatitude: Double = 0.0
     private var currentLongitude: Double = 0.0
+    private var currentWeatherUsesUserLocation: Boolean = false
 
     /**
      * 자동 갱신 Job. Composable 의 ON_START/ON_STOP 라이프사이클에 맞춰 시작/중단된다.
@@ -113,7 +115,12 @@ class WeatherViewModel @Inject constructor(
             }
             // 카테고리 변경 시 날씨 데이터 재계산
             if (currentLatitude != 0.0 || currentLongitude != 0.0) {
-                fetchWeatherInternal(currentLatitude, currentLongitude, category)
+                fetchWeatherInternal(
+                    latitude = currentLatitude,
+                    longitude = currentLongitude,
+                    category = category,
+                    isUserLocationBacked = currentWeatherUsesUserLocation,
+                )
             }
         }
     }
@@ -172,22 +179,40 @@ class WeatherViewModel @Inject constructor(
             if (location != null) {
                 currentLatitude = location.latitude
                 currentLongitude = location.longitude
+                currentWeatherUsesUserLocation = true
                 updateLocationAccuracy(location)
-                fetchWeatherInternal(location.latitude, location.longitude, selectedCategory.value)
+                fetchWeatherInternal(
+                    latitude = location.latitude,
+                    longitude = location.longitude,
+                    category = selectedCategory.value,
+                    isUserLocationBacked = true,
+                )
             } else {
                 // 마지막 알려진 위치 시도
                 val lastLocation = fusedLocationClient.lastLocation.await()
                 if (lastLocation != null) {
                     currentLatitude = lastLocation.latitude
                     currentLongitude = lastLocation.longitude
+                    currentWeatherUsesUserLocation = true
                     updateLocationAccuracy(lastLocation)
-                    fetchWeatherInternal(lastLocation.latitude, lastLocation.longitude, selectedCategory.value)
+                    fetchWeatherInternal(
+                        latitude = lastLocation.latitude,
+                        longitude = lastLocation.longitude,
+                        category = selectedCategory.value,
+                        isUserLocationBacked = true,
+                    )
                 } else {
                     // 기본 위치 (서울)
                     currentLatitude = DEFAULT_LATITUDE
                     currentLongitude = DEFAULT_LONGITUDE
+                    currentWeatherUsesUserLocation = false
                     clearLocationAccuracy()
-                    fetchWeatherInternal(DEFAULT_LATITUDE, DEFAULT_LONGITUDE, selectedCategory.value)
+                    fetchWeatherInternal(
+                        latitude = DEFAULT_LATITUDE,
+                        longitude = DEFAULT_LONGITUDE,
+                        category = selectedCategory.value,
+                        isUserLocationBacked = false,
+                    )
                 }
             }
         } catch (e: SecurityException) {
@@ -195,8 +220,14 @@ class WeatherViewModel @Inject constructor(
             // 기본 위치로 시도
             currentLatitude = DEFAULT_LATITUDE
             currentLongitude = DEFAULT_LONGITUDE
+            currentWeatherUsesUserLocation = false
             clearLocationAccuracy()
-            fetchWeatherInternal(DEFAULT_LATITUDE, DEFAULT_LONGITUDE, selectedCategory.value)
+            fetchWeatherInternal(
+                latitude = DEFAULT_LATITUDE,
+                longitude = DEFAULT_LONGITUDE,
+                category = selectedCategory.value,
+                isUserLocationBacked = false,
+            )
         } catch (e: Exception) {
             _error.value = WeatherError.LocationUnavailable
             clearLocationAccuracy()
@@ -222,21 +253,32 @@ class WeatherViewModel @Inject constructor(
     private suspend fun fetchWeatherInternal(
         latitude: Double,
         longitude: Double,
-        category: DroneCategory
+        category: DroneCategory,
+        isUserLocationBacked: Boolean,
     ) {
         weatherRepository.fetchWeather(latitude, longitude, category)
             .onSuccess { data ->
                 _weatherData.value = data
                 _error.value = null
                 _lastUpdateTime.value = System.currentTimeMillis()
-                runCatching {
-                    notificationScheduleRestorer.rescheduleSunAlarmsForWeatherData(data)
+                if (isUserLocationBacked) {
+                    runCatching { cacheSunAlarmLocation(latitude, longitude) }
+                    runCatching {
+                        notificationScheduleRestorer.rescheduleSunAlarmsForWeatherData(data)
+                    }
                 }
             }
             .onFailure { _ ->
                 _error.value = WeatherError.LoadFailed
             }
         _isLoading.value = false
+    }
+
+    private suspend fun cacheSunAlarmLocation(latitude: Double, longitude: Double) {
+        dataStore.edit { preferences ->
+            preferences[UserLocationKeys.KEY_LAST_LATITUDE] = latitude
+            preferences[UserLocationKeys.KEY_LAST_LONGITUDE] = longitude
+        }
     }
 }
 
