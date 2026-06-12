@@ -116,7 +116,7 @@ internal fun isSavedListNotStarted(shape: ShapeModel, now: Long = System.current
 }
 
 internal fun isSavedListExpired(shape: ShapeModel, now: Long = System.currentTimeMillis()): Boolean {
-    return shape.flightEndDate?.let { it < now } ?: false
+    return shape.flightEndDate?.let { it <= now } ?: false
 }
 
 internal fun sortSavedShapes(

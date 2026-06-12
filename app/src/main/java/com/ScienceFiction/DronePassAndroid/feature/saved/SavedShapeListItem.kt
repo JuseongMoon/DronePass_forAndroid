@@ -183,5 +183,5 @@ internal fun isSavedShapeListItemExpired(
     flightEndDateMillis: Long?,
     now: Long = System.currentTimeMillis(),
 ): Boolean {
-    return flightEndDateMillis?.let { it < now } ?: false
+    return flightEndDateMillis?.let { it <= now } ?: false
 }

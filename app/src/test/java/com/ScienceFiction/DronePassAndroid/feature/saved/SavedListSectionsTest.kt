@@ -97,7 +97,7 @@ class SavedListSectionsTest {
     }
 
     @Test
-    fun `저장 목록은 iOS ShapeModel처럼 종료 시각과 현재가 같으면 아직 만료가 아니다`() {
+    fun `저장 목록은 iOS SavedTableListView처럼 종료 시각과 현재가 같으면 만료 섹션으로 분류한다`() {
         val now = 10_000L
         val sections = buildSavedShapeSections(
             shapes = listOf(
@@ -112,10 +112,10 @@ class SavedListSectionsTest {
             now = now,
         )
 
-        assertEquals(listOf("ended-now", "active"), sections.activeFiltered.map { it.id })
-        assertEquals(emptyList<String>(), sections.expired.map { it.id })
+        assertEquals(listOf("active"), sections.activeFiltered.map { it.id })
+        assertEquals(listOf("ended-now"), sections.expired.map { it.id })
         assertEquals(2, sections.total)
-        assertEquals(false, isSavedListExpired(shape(id = "ended-now", start = now - 1_000, end = now), now))
+        assertEquals(true, isSavedListExpired(shape(id = "ended-now", start = now - 1_000, end = now), now))
         assertEquals(true, isSavedListExpired(shape(id = "expired", start = now - 1_000, end = now - 1), now))
     }
 
