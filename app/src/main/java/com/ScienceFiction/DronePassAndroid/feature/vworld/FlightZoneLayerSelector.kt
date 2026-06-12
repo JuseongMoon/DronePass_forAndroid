@@ -66,6 +66,8 @@ internal val FlightZoneLayerSelectorLegalNoticeTopPadding = 16.dp
 internal val FlightZoneLayerSelectorLegalNoticeBottomPadding = 8.dp
 internal val FlightZoneLayerSelectorLegalNoticeBorderWidth = 1.dp
 internal val FlightZoneLayerSelectorLegalNoticeBorderColor = Color(0x4D007AFF) // iOS .blue.opacity(0.3)
+internal val FlightZoneLayerSelectorStatHeaderOuterHorizontalPadding = 0.dp
+internal val FlightZoneLayerSelectorStatHeaderOuterVerticalPadding = 0.dp
 internal val FlightZoneLayerSelectorDividerLeadingPadding = 60.dp
 
 internal fun sortedFlightZoneLayersForSelector(
@@ -255,14 +257,14 @@ private fun StatHeader(
     totalCount: Int,
     displayedCount: Int
 ) {
-    Card(
+    Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        ),
-        shape = RoundedCornerShape(8.dp)
+            .padding(
+                horizontal = FlightZoneLayerSelectorStatHeaderOuterHorizontalPadding,
+                vertical = FlightZoneLayerSelectorStatHeaderOuterVerticalPadding,
+            ),
+        color = MaterialTheme.colorScheme.surfaceVariant,
     ) {
         Row(
             modifier = Modifier

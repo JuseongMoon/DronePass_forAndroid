@@ -62,6 +62,8 @@
 - `8070866 fix: avoid logging raw fcm tokens`
 - `d5e8874 fix: require release signing for release builds`
 - `d0cd1a1 fix: match iOS date-only shape edit default`
+- `077c1ce fix: match ios sketch hue sync`
+- `246bc93 fix: remove nullable force unwraps`
 
 ## 2. 이번 라운드에서 확인한 내용
 
@@ -114,6 +116,7 @@
 - 지도 롱프레스 역지오코딩 결과를 iOS `MainView.handleLongPress`처럼 성공이면 빈 주소도 새 도형 확인 흐름으로 유지하도록 보정
 - 스케치 색상 슬라이더 외부 색상 동기화 조건을 iOS `ColorGradientSlider`처럼 hue 절대 차이 기준으로 보정
 - 드론 상세 콜백, 날씨 오류 화면, VWorld 지정번호, 알림 재예약의 nullable 경계에서 강제 언랩을 제거
+- VWorld 비행구역 레이어 선택 시트의 통계 헤더를 iOS처럼 전체 폭 배경 밴드로 보정
 - 메인 저장/설정 오버레이 전환을 iOS처럼 이동과 opacity 결합 전환으로 보정
 - 스케치 오버레이를 iOS처럼 현재 지도 bounds와 겹치는 스케치만 렌더링하도록 보정
 - VWorld 상세 고도 행을 상한/하한 중 하나만 있어도 표시하도록 보정

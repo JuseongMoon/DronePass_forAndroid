@@ -44,6 +44,12 @@ class FlightZoneLayerSelectorTest {
     }
 
     @Test
+    fun `통계 헤더는 iOS처럼 전체 폭 배경 밴드로 표시한다`() {
+        assertEquals(0.dp, FlightZoneLayerSelectorStatHeaderOuterHorizontalPadding)
+        assertEquals(0.dp, FlightZoneLayerSelectorStatHeaderOuterVerticalPadding)
+    }
+
+    @Test
     fun `레이어 행 separator는 iOS처럼 마지막 행 뒤에도 표시한다`() {
         assertEquals(60.dp, FlightZoneLayerSelectorDividerLeadingPadding)
         assertTrue(shouldShowFlightZoneLayerDividerAfterItem(index = 0, lastIndex = 2))
