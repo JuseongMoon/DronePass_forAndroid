@@ -110,6 +110,7 @@
 - 저장 목록 만료 도형 경계값을 iOS `SavedTableListView`처럼 `flightEndDate <= now` 기준으로 보정
 - 저장 목록 행 제목 표시를 iOS `ShapeInfoContent`처럼 빈 문자열/공백도 원문 그대로 유지하도록 보정
 - 종료일 알림 본문을 iOS `SettingManager.scheduleEndDateAlarm`처럼 빈 문자열/공백 제목도 그대로 포함하도록 보정
+- 지도 롱프레스 역지오코딩 결과를 iOS `MainView.handleLongPress`처럼 성공이면 빈 주소도 새 도형 확인 흐름으로 유지하도록 보정
 - 메인 저장/설정 오버레이 전환을 iOS처럼 이동과 opacity 결합 전환으로 보정
 - 스케치 오버레이를 iOS처럼 현재 지도 bounds와 겹치는 스케치만 렌더링하도록 보정
 - VWorld 상세 고도 행을 상한/하한 중 하나만 있어도 표시하도록 보정

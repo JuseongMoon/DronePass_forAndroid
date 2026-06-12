@@ -162,11 +162,10 @@ internal fun pendingNewShapeRequestForReverseGeocodeResult(
     coordinate: Coordinate,
     address: String?,
 ): PendingNewShapeRequest {
-    val normalizedAddress = address?.takeIf { it.isNotBlank() }
     return PendingNewShapeRequest(
         coordinate = coordinate,
-        address = normalizedAddress,
-        dialogType = if (normalizedAddress == null) {
+        address = address,
+        dialogType = if (address == null) {
             NewShapeConfirmDialogType.GEOCODING_FAILED
         } else {
             NewShapeConfirmDialogType.CONFIRM

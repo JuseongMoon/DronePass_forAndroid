@@ -560,17 +560,26 @@ class MapCameraFocusTest {
     }
 
     @Test
-    fun `롱프레스 역지오코딩 실패나 빈 주소는 iOS처럼 주소 검색 실패 확인창을 준비한다`() {
+    fun `롱프레스 역지오코딩은 iOS처럼 성공한 빈 주소도 새 도형 확인창으로 유지한다`() {
         val coordinate = Coordinate(37.5665, 126.9780)
 
         assertEquals(
             NewShapeConfirmDialogType.GEOCODING_FAILED,
             pendingNewShapeRequestForReverseGeocodeResult(coordinate, null).dialogType,
         )
-        assertEquals(
-            NewShapeConfirmDialogType.GEOCODING_FAILED,
-            pendingNewShapeRequestForReverseGeocodeResult(coordinate, "").dialogType,
-        )
+        listOf("", "   ").forEach { address ->
+            val request = pendingNewShapeRequestForReverseGeocodeResult(coordinate, address)
+
+            assertEquals(address, request.address)
+            assertEquals(NewShapeConfirmDialogType.CONFIRM, request.dialogType)
+            assertEquals(
+                address,
+                resolvePendingNewShapeAddress(
+                    request = request,
+                    addressNotFoundFallback = "해당 위치의 주소가 존재하지 않습니다",
+                ),
+            )
+        }
     }
 
     @Test
