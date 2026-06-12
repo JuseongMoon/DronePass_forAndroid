@@ -96,6 +96,22 @@ internal data class NotificationContentResourceIds(
     val body: Int,
 )
 
+internal data class EndDateNotificationBodyResource(
+    val body: Int,
+    val shapeTitle: String? = null,
+)
+
+internal fun endDateNotificationBodyResource(shapeTitle: String?): EndDateNotificationBodyResource {
+    return shapeTitle
+        ?.let {
+            EndDateNotificationBodyResource(
+                body = R.string.notification_end_date_body_with_title,
+                shapeTitle = it,
+            )
+        }
+        ?: EndDateNotificationBodyResource(body = R.string.notification_end_date_body)
+}
+
 internal fun sunriseNotificationContentResources(minutesBefore: Int): NotificationContentResourceIds {
     return when (minutesBefore) {
         30 -> NotificationContentResourceIds(
@@ -330,15 +346,10 @@ class NotificationScheduler @Inject constructor(
         }
 
         val requestCode = getEndDateRequestCode(shapeId)
-        val body = shapeTitle
-            ?.takeIf { it.isNotBlank() }
-            ?.let {
-                context.getString(
-                    com.ScienceFiction.DronePassAndroid.R.string.notification_end_date_body_with_title,
-                    it,
-                )
-            }
-            ?: context.getString(R.string.notification_end_date_body)
+        val bodyResource = endDateNotificationBodyResource(shapeTitle)
+        val body = bodyResource.shapeTitle
+            ?.let { context.getString(bodyResource.body, it) }
+            ?: context.getString(bodyResource.body)
 
         scheduleAlarm(
             requestCode = requestCode,

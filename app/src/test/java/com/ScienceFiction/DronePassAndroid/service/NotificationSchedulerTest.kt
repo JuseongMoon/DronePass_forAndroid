@@ -36,6 +36,35 @@ class NotificationSchedulerTest {
     }
 
     @Test
+    fun `종료일 알림 본문은 iOS처럼 빈 문자열과 공백 제목도 원문 그대로 포함한다`() {
+        assertEquals(
+            EndDateNotificationBodyResource(body = R.string.notification_end_date_body),
+            endDateNotificationBodyResource(null),
+        )
+        assertEquals(
+            EndDateNotificationBodyResource(
+                body = R.string.notification_end_date_body_with_title,
+                shapeTitle = "",
+            ),
+            endDateNotificationBodyResource(""),
+        )
+        assertEquals(
+            EndDateNotificationBodyResource(
+                body = R.string.notification_end_date_body_with_title,
+                shapeTitle = "   ",
+            ),
+            endDateNotificationBodyResource("   "),
+        )
+        assertEquals(
+            EndDateNotificationBodyResource(
+                body = R.string.notification_end_date_body_with_title,
+                shapeTitle = "Flight Area",
+            ),
+            endDateNotificationBodyResource("Flight Area"),
+        )
+    }
+
+    @Test
     fun `일출 일몰 알림은 iOS와 동일하게 지난 오늘 값 대신 다음 미래 값을 선택한다`() {
         val now = LocalDateTime.of(2026, 6, 3, 12, 0)
 
