@@ -62,8 +62,12 @@ class DroneFirestoreParsingTest {
     }
 
     @Test
-    fun `Firestore 파싱은 Firebase 계약을 어긴 이름을 invalid 로 본다`() {
-        assertNull(droneFromFirestoreData(validDocument() + ("name" to "   ")))
+    fun `Firestore 파싱은 iOS처럼 빈 이름 문자열을 보존한다`() {
+        val emptyName = droneFromFirestoreData(validDocument() + ("name" to ""))
+        val whitespaceName = droneFromFirestoreData(validDocument() + ("name" to "   "))
+
+        assertEquals("", requireNotNull(emptyName).name)
+        assertEquals("   ", requireNotNull(whitespaceName).name)
     }
 
     @Test

@@ -15,7 +15,15 @@ class DroneValidationTest {
 
     @Test
     fun `드론 Firebase 저장은 빈 이름을 거부한다`() {
+        assertFalse(validDrone().copy(name = "").isValidForFirebasePersistence())
         assertFalse(validDrone().copy(name = "   ").isValidForFirebasePersistence())
+    }
+
+    @Test
+    fun `드론 Firebase 읽기는 iOS 파서처럼 빈 이름 문자열을 허용한다`() {
+        assertTrue(validDrone().copy(name = "").isValidForFirebaseRead())
+        assertTrue(validDrone().copy(name = "   ").isValidForFirebaseRead())
+        assertFalse(validDrone().copy(id = "not-a-uuid").isValidForFirebaseRead())
     }
 
     @Test

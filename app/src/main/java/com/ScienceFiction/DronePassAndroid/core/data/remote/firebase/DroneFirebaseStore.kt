@@ -2,6 +2,7 @@ package com.ScienceFiction.DronePassAndroid.core.data.remote.firebase
 
 import android.util.Log
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
+import com.ScienceFiction.DronePassAndroid.domain.model.isValidForFirebaseRead
 import com.ScienceFiction.DronePassAndroid.domain.model.isValidForFirebasePersistence
 import com.ScienceFiction.DronePassAndroid.domain.model.normalizeFirebaseHexColorForRead
 import com.ScienceFiction.DronePassAndroid.domain.model.normalizeFirebaseHexColorForWrite
@@ -66,7 +67,7 @@ internal fun droneFromFirestoreData(data: Map<String, Any?>): DroneModel? {
         createdAt = createdAt,
         updatedAt = updatedAt,
         deletedAt = deletedAt
-    ).takeIf { it.isValidForFirebasePersistence() }
+    ).takeIf { it.isValidForFirebaseRead() }
 }
 
 internal fun droneFromFirestoreDocument(documentId: String, data: Map<String, Any?>): DroneModel? {

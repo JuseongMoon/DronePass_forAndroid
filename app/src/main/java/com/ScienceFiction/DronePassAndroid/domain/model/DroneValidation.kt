@@ -20,7 +20,19 @@ fun DroneModel.validateForFirebasePersistence(): DroneValidationResult {
     return DroneValidationResult(isValid = true)
 }
 
+fun DroneModel.validateForFirebaseRead(): DroneValidationResult {
+    if (!isValidFirebaseDroneId(id)) {
+        return DroneValidationResult(isValid = false, reason = "invalid id")
+    }
+    if (!isValidFirebaseHexColor(color)) {
+        return DroneValidationResult(isValid = false, reason = "invalid color")
+    }
+    return DroneValidationResult(isValid = true)
+}
+
 fun DroneModel.isValidForFirebasePersistence(): Boolean = validateForFirebasePersistence().isValid
+
+fun DroneModel.isValidForFirebaseRead(): Boolean = validateForFirebaseRead().isValid
 
 fun validateFirebaseDroneBatch(drones: List<DroneModel>): DroneValidationResult {
     drones.forEach { drone ->
