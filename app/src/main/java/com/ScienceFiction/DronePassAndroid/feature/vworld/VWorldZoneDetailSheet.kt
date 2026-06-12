@@ -84,7 +84,7 @@ internal fun resolveNotamStatusValueColor(status: NotamStatus): Color? = when (s
 }
 
 internal fun shouldShowAltitudeRow(upper: String?, lower: String?): Boolean =
-    upper != null && lower != null
+    upper != null || lower != null
 
 internal fun resolvePublicContactLookupName(zone: DroneZoneFeature): String? =
     zone.zoneCode ?: zone.zoneName ?: zone.heritageName
