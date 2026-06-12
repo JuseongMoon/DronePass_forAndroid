@@ -17,6 +17,9 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- `f5e6cd4 fix: initialize app language like ios`
+- `a9c1840 docs: refresh android parity handoff`
+- `a6da481 docs: refresh android handoff status`
 - `5ba0df4 fix: ignore apple sign-in cancellation`
 - `8666ad1 fix: match iOS palette color labels`
 - `a0e1444 fix: match iOS map app labels`
@@ -77,6 +80,7 @@
 - 계정/로그인/로그아웃/계정삭제/실시간 동기화 흐름
 - Sketch Firestore 직렬화/파싱 계약
 - 저장 목록 도형 탭 → 지도 포커스/줌/하이라이트 흐름
+- 저장 목록 오버레이 헤더/정렬 칩 토큰, 아이콘, 문자열, 순환 동작
 - Shape/Drone/Sketch Firestore 쓰기 표준과 레거시 읽기 방어 계약
 - 주소 검색/좌표 입력/지도 롱프레스 도형 생성 흐름
 - 스케치 모드 제스처/툴바/undo·redo/지우개 동작
@@ -152,6 +156,7 @@ iOS와 Android가 공유하는 `users/{uid}/shapes`, `users/{uid}/sketches`, `us
 - Sketch: `Timestamp`, Double 좌표 map 배열, opacity/좌표 반올림, UUID id 검증 테스트 유지.
 - 2026-06-12 추가 방어: Shape/Drone/Sketch 읽기에서 color 필드가 문자열이지만 `#RRGGBB`가 아니면 문서 전체를 버리지 않고 플랫폼 기본색으로 fallback. 쓰기는 계속 표준 hex만 허용.
 - 2026-06-12 재확인: Shape/Drone/Sketch 모두 문서 ID와 내부 `id` 불일치 시 skip하며, 원격 soft delete 헬퍼는 `update(deletedAt, updatedAt)` 기반이라 빈 tombstone 문서를 새로 만들지 않음.
+- 2026-06-12 재확인: Sketch `color` 누락/손상 fallback(`#FF0000`)과 `points` 부분 파싱은 iOS `SketchFirebaseStore`와 동일하며, 쓰기 검증은 계속 표준 `#RRGGBB`만 허용.
 
 ## 3. 남은 필수 작업
 
@@ -163,6 +168,7 @@ iOS와 Android가 공유하는 `users/{uid}/shapes`, `users/{uid}/sketches`, `us
 
 - `adb devices` 결과 연결된 기기 없음. 실기기 smoke는 진행하지 못함.
 - 추가 재확인에서도 연결된 기기 없음. 로컬 테스트/빌드 검증만 진행.
+- 저장 목록 오버레이 헤더/정렬 칩과 Firestore 계약은 소스 대조로 재확인했지만, 실기기 터치/렌더링 회귀는 기기 연결 후 다시 확인 필요.
 
 2026-06-08 부분 확인:
 
