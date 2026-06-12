@@ -26,7 +26,7 @@ internal fun normalizeNotificationShapeId(shapeId: String?): String? {
 }
 
 internal fun normalizeNotificationText(text: String?): String? {
-    return text?.trim()?.takeIf { it.isNotEmpty() }
+    return text
 }
 
 internal data class NotificationClickPayload(
@@ -59,7 +59,7 @@ private fun extractNotificationText(
     keys: List<String>,
 ): String? {
     for (key in keys) {
-        normalizeNotificationText(data[key])?.let { return it }
+        if (data.containsKey(key)) return normalizeNotificationText(data[key])
     }
     return null
 }
@@ -69,7 +69,7 @@ private fun extractNotificationText(
     keys: List<String>,
 ): String? {
     for (key in keys) {
-        normalizeNotificationText(intent.getStringExtra(key))?.let { return it }
+        if (intent.hasExtra(key)) return normalizeNotificationText(intent.getStringExtra(key))
     }
     return null
 }

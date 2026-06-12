@@ -129,7 +129,7 @@ class FcmServiceTest {
     }
 
     @Test
-    fun `알림 클릭 payload 는 iOS 탭 팝업 복원을 위해 제목 본문과 shapeId 를 정규화한다`() {
+    fun `알림 클릭 payload 는 iOS 탭 팝업처럼 제목 본문 원문을 보존하고 shapeId 만 정규화한다`() {
         val payload = notificationClickPayload(
             shapeId = " shape-789 ",
             title = " 비행 종료일 알림 ",
@@ -137,17 +137,33 @@ class FcmServiceTest {
         )
 
         assertEquals("shape-789", payload.shapeId)
-        assertEquals("비행 종료일 알림", payload.title)
-        assertEquals("곧 비행이 종료됩니다.", payload.body)
+        assertEquals(" 비행 종료일 알림 ", payload.title)
+        assertEquals(" 곧 비행이 종료됩니다. ", payload.body)
     }
 
     @Test
-    fun `알림 클릭 payload 에 제목과 본문이 없으면 iOS 탭 팝업을 만들지 않는다`() {
+    fun `알림 클릭 payload 에 제목과 본문 키가 있으면 iOS처럼 빈 문자열도 팝업으로 복원한다`() {
         val notification = foregroundNotificationFromClickPayload(
             notificationClickPayload(
                 shapeId = "shape-1",
                 title = " ",
                 body = "",
+            )
+        )
+
+        requireNotNull(notification)
+        assertEquals(" ", notification.title)
+        assertEquals("", notification.body)
+        assertEquals("shape-1", notification.shapeId)
+    }
+
+    @Test
+    fun `알림 클릭 payload 에 제목과 본문 값이 모두 없으면 팝업을 만들지 않는다`() {
+        val notification = foregroundNotificationFromClickPayload(
+            notificationClickPayload(
+                shapeId = "shape-1",
+                title = null,
+                body = null,
             )
         )
 
@@ -159,15 +175,32 @@ class FcmServiceTest {
         val notification = extractForegroundNotification(
             mapOf(
                 "shapeId" to "shape-123",
-                "title" to "비행 종료일 알림",
-                "body" to "7일 뒤 종료됩니다.",
+                "title" to " 비행 종료일 알림 ",
+                "body" to " 7일 뒤 종료됩니다. ",
             )
         )
 
         requireNotNull(notification)
         assertEquals("shape-123", notification.shapeId)
-        assertEquals("비행 종료일 알림", notification.title)
-        assertEquals("7일 뒤 종료됩니다.", notification.body)
+        assertEquals(" 비행 종료일 알림 ", notification.title)
+        assertEquals(" 7일 뒤 종료됩니다. ", notification.body)
+    }
+
+    @Test
+    fun `FCM data payload 는 iOS처럼 첫 제목 본문 키가 빈 문자열이어도 fallback 키로 대체하지 않는다`() {
+        val notification = extractForegroundNotification(
+            mapOf(
+                "shapeId" to "shape-123",
+                NotificationScheduler.EXTRA_NOTIFICATION_TITLE to "",
+                "title" to "대체 제목",
+                NotificationScheduler.EXTRA_NOTIFICATION_BODY to " ",
+                "body" to "대체 본문",
+            )
+        )
+
+        requireNotNull(notification)
+        assertEquals("", notification.title)
+        assertEquals(" ", notification.body)
     }
 
     @Test
