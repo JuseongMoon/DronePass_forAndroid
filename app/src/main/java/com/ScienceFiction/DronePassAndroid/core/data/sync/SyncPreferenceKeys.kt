@@ -4,6 +4,7 @@ import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 import kotlin.math.abs
 
 internal object SyncPreferenceKeys {
@@ -24,8 +25,14 @@ internal val SKETCH_REALTIME_SYNC_SUCCESS_KEYS_TO_CLEAR: List<Preferences.Key<*>
     SyncPreferenceKeys.LAST_LOCAL_SKETCH_MODIFICATION_TIME,
 )
 
-internal fun MutablePreferences.recordShapeRealtimeSyncSuccess(syncTimeMillis: Long) {
+internal fun MutablePreferences.recordShapeRealtimeSyncSuccess(
+    syncTimeMillis: Long,
+    syncedShapeBaseline: String? = null,
+) {
     this[SyncPreferenceKeys.LAST_SYNC_TIME] = syncTimeMillis
+    if (syncedShapeBaseline != null) {
+        this[SyncPreferenceKeys.SYNCED_SHAPE_BASELINE] = syncedShapeBaseline
+    }
     SHAPE_REALTIME_SYNC_SUCCESS_KEYS_TO_CLEAR.forEach { key ->
         remove(key)
     }
@@ -114,6 +121,12 @@ internal fun encodeAccountSwitchShapeBaseline(shapeUpdatedAtById: Map<String, Lo
         .joinToString(prefix = "{", postfix = "}") { (id, updatedAt) ->
             "\"${id.escapeBaselineJsonKey()}\":$updatedAt"
         }
+}
+
+internal fun buildAccountSwitchShapeBaseline(shapes: List<ShapeModel>): Map<String, Long> {
+    return shapes
+        .filter { !it.isDeleted }
+        .associate { shape -> shape.id to shape.updatedAt }
 }
 
 internal fun decodeAccountSwitchShapeBaseline(encoded: String?): Map<String, Long>? {

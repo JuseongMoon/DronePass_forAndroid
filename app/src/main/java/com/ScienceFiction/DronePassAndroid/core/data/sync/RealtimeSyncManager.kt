@@ -342,8 +342,14 @@ class RealtimeSyncManager @Inject constructor(
 
             // 동기화 시각 업데이트
             lastShapeSyncTime = System.currentTimeMillis()
+            val syncedShapeBaseline = encodeAccountSwitchShapeBaseline(
+                buildAccountSwitchShapeBaseline(shapeRepository.getAllShapes().first()),
+            )
             dataStore.edit { preferences ->
-                preferences.recordShapeRealtimeSyncSuccess(lastShapeSyncTime)
+                preferences.recordShapeRealtimeSyncSuccess(
+                    syncTimeMillis = lastShapeSyncTime,
+                    syncedShapeBaseline = syncedShapeBaseline,
+                )
             }
             _lastSyncTime.value = lastShapeSyncTime
 

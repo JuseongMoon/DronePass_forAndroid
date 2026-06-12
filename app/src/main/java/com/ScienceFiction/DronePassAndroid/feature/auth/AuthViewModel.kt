@@ -16,6 +16,7 @@ import com.ScienceFiction.DronePassAndroid.core.data.repository.SketchRepository
 import com.ScienceFiction.DronePassAndroid.core.data.sync.AccountSwitchLocalChangeState
 import com.ScienceFiction.DronePassAndroid.core.data.sync.RealtimeSyncManager
 import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncPreferenceKeys
+import com.ScienceFiction.DronePassAndroid.core.data.sync.buildAccountSwitchShapeBaseline
 import com.ScienceFiction.DronePassAndroid.core.data.sync.buildAccountSwitchLocalChangeState
 import com.ScienceFiction.DronePassAndroid.core.data.sync.decodeAccountSwitchShapeBaseline
 import com.ScienceFiction.DronePassAndroid.core.data.sync.encodeAccountSwitchShapeBaseline
@@ -449,10 +450,9 @@ class AuthViewModel @Inject constructor(
     }
 
     private suspend fun saveSyncedShapeBaseline() {
-        val activeShapeUpdatedAtById = shapeRepository.getAllShapes()
-            .first()
-            .filter { !it.isDeleted }
-            .associate { shape -> shape.id to shape.updatedAt }
+        val activeShapeUpdatedAtById = buildAccountSwitchShapeBaseline(
+            shapeRepository.getAllShapes().first(),
+        )
         dataStore.edit { preferences ->
             preferences[SyncPreferenceKeys.SYNCED_SHAPE_BASELINE] =
                 encodeAccountSwitchShapeBaseline(activeShapeUpdatedAtById)

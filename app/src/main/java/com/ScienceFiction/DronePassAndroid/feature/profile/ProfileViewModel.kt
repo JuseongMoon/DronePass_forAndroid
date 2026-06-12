@@ -15,6 +15,7 @@ import com.ScienceFiction.DronePassAndroid.core.data.repository.SketchRepository
 import com.ScienceFiction.DronePassAndroid.core.data.sync.RealtimeSyncManager
 import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncPreferenceKeys
 import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncState
+import com.ScienceFiction.DronePassAndroid.core.data.sync.buildAccountSwitchShapeBaseline
 import com.ScienceFiction.DronePassAndroid.core.data.sync.encodeAccountSwitchShapeBaseline
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 import com.ScienceFiction.DronePassAndroid.feature.auth.AuthRepository
@@ -106,9 +107,7 @@ internal fun countExpiredProfileShapes(
 }
 
 internal fun buildProfileSyncedShapeBaseline(shapes: List<ShapeModel>): Map<String, Long> {
-    return shapes
-        .filter { !it.isDeleted }
-        .associate { shape -> shape.id to shape.updatedAt }
+    return buildAccountSwitchShapeBaseline(shapes)
 }
 
 /**

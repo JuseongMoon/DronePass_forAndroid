@@ -1,6 +1,7 @@
 package com.ScienceFiction.DronePassAndroid.core.data.sync
 
 import androidx.datastore.preferences.core.mutablePreferencesOf
+import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -49,6 +50,35 @@ class RealtimeSyncManagerTest {
         assertEquals(300L, preferences[SyncPreferenceKeys.LAST_SYNC_TIME])
         assertNull(preferences[SyncPreferenceKeys.LAST_LOCAL_MODIFICATION_TIME])
         assertNull(preferences[SyncPreferenceKeys.LAST_LOCAL_DRONE_MODIFICATION_TIME])
+    }
+
+    @Test
+    fun `shape drone sync success can update account switch baseline`() {
+        val preferences = mutablePreferencesOf(
+            SyncPreferenceKeys.LAST_LOCAL_MODIFICATION_TIME to 100L,
+            SyncPreferenceKeys.SYNCED_SHAPE_BASELINE to "{\"old\":1}",
+        )
+
+        preferences.recordShapeRealtimeSyncSuccess(
+            syncTimeMillis = 300L,
+            syncedShapeBaseline = "{\"new\":2}",
+        )
+
+        assertEquals(300L, preferences[SyncPreferenceKeys.LAST_SYNC_TIME])
+        assertEquals("{\"new\":2}", preferences[SyncPreferenceKeys.SYNCED_SHAPE_BASELINE])
+        assertNull(preferences[SyncPreferenceKeys.LAST_LOCAL_MODIFICATION_TIME])
+    }
+
+    @Test
+    fun `account switch baseline stores only active shape updated times`() {
+        val baseline = buildAccountSwitchShapeBaseline(
+            listOf(
+                ShapeModel(id = "active", updatedAt = 100L, deletedAt = null),
+                ShapeModel(id = "deleted", updatedAt = 200L, deletedAt = 300L),
+            ),
+        )
+
+        assertEquals(mapOf("active" to 100L), baseline)
     }
 
     @Test
