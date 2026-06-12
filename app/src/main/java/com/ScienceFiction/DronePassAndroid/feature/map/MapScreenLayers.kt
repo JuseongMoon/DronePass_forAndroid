@@ -32,6 +32,7 @@ import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.DroneZoneFeat
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.FlightZoneLayer
 import com.ScienceFiction.DronePassAndroid.domain.model.Coordinate
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
+import com.ScienceFiction.DronePassAndroid.domain.model.SketchModel
 import com.ScienceFiction.DronePassAndroid.feature.kp.KpForecastContent
 import com.ScienceFiction.DronePassAndroid.feature.kp.KpSheetHeader
 import com.ScienceFiction.DronePassAndroid.feature.kp.KpViewModel
@@ -96,6 +97,7 @@ internal fun MapOverlayEffects(
     val highlightedDroneIds by viewModel.highlightedDroneIds.collectAsStateWithLifecycle()
     val flightZones by viewModel.flightZones.collectAsStateWithLifecycle()
     val visibleLayers by viewModel.visibleLayers.collectAsStateWithLifecycle()
+    val currentMapBounds by viewModel.currentMapBounds.collectAsStateWithLifecycle()
 
     val isSketchMode by sketchViewModel.isSketchMode.collectAsStateWithLifecycle()
     val activeSketches by sketchViewModel.activeSketches.collectAsStateWithLifecycle()
@@ -159,9 +161,14 @@ internal fun MapOverlayEffects(
     }
 
     // 저장된 스케치 오버레이
-    LaunchedEffect(activeSketches, mapReady) {
+    LaunchedEffect(activeSketches, mapReady, currentMapBounds) {
         if (mapReady) {
-            sketchOverlayManager.updateOverlays(activeSketches)
+            sketchOverlayManager.updateOverlays(
+                visibleSketchesForMapBounds(
+                    sketches = activeSketches,
+                    bounds = currentMapBounds,
+                )
+            )
         }
     }
 
@@ -311,6 +318,31 @@ internal fun shouldFocusShapeAfterMapEditSave(
     editingShape: ShapeModel?,
     isDuplicateMode: Boolean,
 ): Boolean = editingShape == null || isDuplicateMode
+
+internal fun visibleSketchesForMapBounds(
+    sketches: List<SketchModel>,
+    bounds: MapViewportBounds?,
+): List<SketchModel> {
+    if (bounds == null) return sketches
+    return sketches.filter { sketch -> isSketchInMapBounds(sketch, bounds) }
+}
+
+internal fun isSketchInMapBounds(
+    sketch: SketchModel,
+    bounds: MapViewportBounds,
+): Boolean {
+    if (sketch.points.isEmpty()) return false
+
+    val minLatitude = sketch.points.minOf { it.latitude }
+    val maxLatitude = sketch.points.maxOf { it.latitude }
+    val minLongitude = sketch.points.minOf { it.longitude }
+    val maxLongitude = sketch.points.maxOf { it.longitude }
+
+    return !(maxLatitude < bounds.southWestLatitude ||
+        minLatitude > bounds.northEastLatitude ||
+        maxLongitude < bounds.southWestLongitude ||
+        minLongitude > bounds.northEastLongitude)
+}
 
 internal fun shouldRenderShapeOverlays(
     mapReady: Boolean,

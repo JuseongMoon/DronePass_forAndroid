@@ -5,6 +5,7 @@ import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.DroneZoneFeat
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.FlightZoneLayer
 import com.ScienceFiction.DronePassAndroid.domain.model.Coordinate
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
+import com.ScienceFiction.DronePassAndroid.domain.model.SketchModel
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -49,6 +50,62 @@ class MapScreenLayersTest {
         assertEquals(false, shouldRenderFlightZoneOverlays(mapReady = true, isSketchMode = true))
         assertEquals(true, shouldRenderFlightZoneOverlays(mapReady = true, isSketchMode = false))
         assertEquals(false, shouldRenderFlightZoneOverlays(mapReady = false, isSketchMode = false))
+    }
+
+    @Test
+    fun `스케치 오버레이는 iOS처럼 지도 bounds 와 겹치는 스케치만 렌더한다`() {
+        val bounds = MapViewportBounds(
+            southWestLatitude = 37.0,
+            southWestLongitude = 126.0,
+            northEastLatitude = 38.0,
+            northEastLongitude = 127.0,
+        )
+        val inside = sketch(
+            id = "inside",
+            points = listOf(
+                Coordinate(37.2, 126.2),
+                Coordinate(37.4, 126.4),
+            ),
+        )
+        val overlapping = sketch(
+            id = "overlap",
+            points = listOf(
+                Coordinate(36.9, 126.5),
+                Coordinate(37.1, 126.6),
+            ),
+        )
+        val outside = sketch(
+            id = "outside",
+            points = listOf(
+                Coordinate(38.2, 127.2),
+                Coordinate(38.3, 127.3),
+            ),
+        )
+        val empty = sketch(id = "empty", points = emptyList())
+
+        assertEquals(true, isSketchInMapBounds(inside, bounds))
+        assertEquals(true, isSketchInMapBounds(overlapping, bounds))
+        assertEquals(false, isSketchInMapBounds(outside, bounds))
+        assertEquals(false, isSketchInMapBounds(empty, bounds))
+        assertEquals(
+            listOf(inside, overlapping),
+            visibleSketchesForMapBounds(listOf(inside, overlapping, outside, empty), bounds),
+        )
+    }
+
+    @Test
+    fun `스케치 오버레이 bounds 가 아직 없으면 초기 표시를 위해 기존 목록을 유지한다`() {
+        val sketches = listOf(
+            sketch(
+                id = "pending-bounds",
+                points = listOf(
+                    Coordinate(37.2, 126.2),
+                    Coordinate(37.4, 126.4),
+                ),
+            ),
+        )
+
+        assertEquals(sketches, visibleSketchesForMapBounds(sketches, bounds = null))
     }
 
     @Test
@@ -240,6 +297,16 @@ class MapScreenLayersTest {
             displayedFlightZoneOverlayCount(
                 mapOf(FlightZoneLayer.PROHIBITED to listOf(multiPolygonZone))
             )
+        )
+    }
+
+    private fun sketch(
+        id: String,
+        points: List<Coordinate>,
+    ): SketchModel {
+        return SketchModel(
+            id = id,
+            points = points,
         )
     }
 }

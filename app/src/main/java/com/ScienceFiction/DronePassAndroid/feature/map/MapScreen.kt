@@ -378,23 +378,18 @@ fun MapScreen(
                             isCompassEnabled = true
                         }
                         map.setContentPadding(0, 0, 0, mapBottomPaddingPx)
+                        viewModel.updateCurrentBoundsFrom(map)
                         map.setOnSymbolClickListener {
                             // iOS NaverMapView.Coordinator.didTap symbol 과 동일하게 POI 라벨 탭을 소비한다.
                             shouldConsumeNaverMapSymbolTap()
                         }
 
                         val cameraListener = NaverMap.OnCameraIdleListener {
-                            val bounds = map.contentBounds
-                            viewModel.onMapBoundsChanged(
-                                southWestLat = bounds.southWest.latitude,
-                                southWestLon = bounds.southWest.longitude,
-                                northEastLat = bounds.northEast.latitude,
-                                northEastLon = bounds.northEast.longitude,
-                            )
+                            viewModel.updateCurrentBoundsFrom(map)
                             // iOS removeOverlaysOutsideViewport(buffer=0.2) 매핑:
                             // viewport 밖 폴리곤 가시성만 토글해 그리기 비용을 줄인다.
                             // 인스턴스는 캐시에 유지하므로 카메라 재진입 시 즉시 복원된다.
-                            flightZoneOverlayManager.setOutOfBoundsVisibility(bounds.expand(0.2))
+                            flightZoneOverlayManager.setOutOfBoundsVisibility(map.contentBounds.expand(0.2))
                         }
                         map.addOnCameraIdleListener(cameraListener)
                         cameraIdleListener = cameraListener
@@ -526,6 +521,16 @@ private fun offsetLatLng(
     val offsetPoint = PointF(point.x + offsetX, point.y + offsetY)
     val offsetCenter = map.projection.fromScreenLocation(offsetPoint)
     return if (offsetCenter.isValid) offsetCenter else center
+}
+
+private fun MapViewModel.updateCurrentBoundsFrom(map: NaverMap) {
+    val bounds = map.contentBounds
+    onMapBoundsChanged(
+        southWestLat = bounds.southWest.latitude,
+        southWestLon = bounds.southWest.longitude,
+        northEastLat = bounds.northEast.latitude,
+        northEastLon = bounds.northEast.longitude,
+    )
 }
 
 @SuppressLint("MissingPermission")

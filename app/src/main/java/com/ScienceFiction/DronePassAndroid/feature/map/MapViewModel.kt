@@ -72,6 +72,13 @@ internal const val ShapeFocusDefaultRadiusMeters = 100.0
 internal const val CameraEventReplay = 0
 internal const val MapHighlightClearEventReplay = 0
 
+internal data class MapViewportBounds(
+    val southWestLatitude: Double,
+    val southWestLongitude: Double,
+    val northEastLatitude: Double,
+    val northEastLongitude: Double,
+)
+
 internal fun calculateShapeFocusZoomLevel(radius: Double): Double {
     val minRadius = 100.0
     val maxRadius = 3000.0
@@ -995,12 +1002,8 @@ class MapViewModel @Inject constructor(
      * 가 채워져도 카메라 미이동 시 동일 bbox 가 `distinctUntilChanged` 에 차단돼 영원히
      * 재호출되지 않는 버그가 있었음. visibleLayers 와 bbox 를 함께 감시하도록 일원화한다.
      */
-    private val _currentMapBounds = MutableStateFlow<MapBounds?>(null)
-
-    private data class MapBounds(
-        val sw: Pair<Double, Double>,
-        val ne: Pair<Double, Double>,
-    )
+    private val _currentMapBounds = MutableStateFlow<MapViewportBounds?>(null)
+    internal val currentMapBounds: StateFlow<MapViewportBounds?> = _currentMapBounds.asStateFlow()
 
     @OptIn(FlowPreview::class)
     private val flightZoneLoadCollector: Job = viewModelScope.launch {
@@ -1010,10 +1013,10 @@ class MapViewModel @Inject constructor(
             .collectLatest { (layers, bounds) ->
                 if (bounds == null || layers.isEmpty()) return@collectLatest
                 loadFlightZones(
-                    southWestLat = bounds.sw.first,
-                    southWestLon = bounds.sw.second,
-                    northEastLat = bounds.ne.first,
-                    northEastLon = bounds.ne.second,
+                    southWestLat = bounds.southWestLatitude,
+                    southWestLon = bounds.southWestLongitude,
+                    northEastLat = bounds.northEastLatitude,
+                    northEastLon = bounds.northEastLongitude,
                 )
             }
     }
@@ -1109,9 +1112,11 @@ class MapViewModel @Inject constructor(
         northEastLat: Double,
         northEastLon: Double
     ) {
-        _currentMapBounds.value = MapBounds(
-            sw = southWestLat to southWestLon,
-            ne = northEastLat to northEastLon,
+        _currentMapBounds.value = MapViewportBounds(
+            southWestLatitude = southWestLat,
+            southWestLongitude = southWestLon,
+            northEastLatitude = northEastLat,
+            northEastLongitude = northEastLon,
         )
     }
 
