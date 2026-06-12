@@ -297,7 +297,7 @@ internal fun buildShapeEditSavedShape(
     )
     return baseShape.copy(
         id = if (isDuplicateMode) generatedId else (originalShape?.id ?: generatedId),
-        title = title.ifBlank { defaultTitle },
+        title = title.ifEmpty { defaultTitle },
         shapeType = geometry.shapeType,
         baseCoordinate = geometry.baseCoordinate,
         radius = geometry.radius,
@@ -477,7 +477,7 @@ internal fun resolveCoordinateAddressForSave(
     resolvedAddress: String,
     fallbackAddress: String,
 ): String {
-    return resolvedAddress.ifBlank { fallbackAddress }
+    return resolvedAddress.ifEmpty { fallbackAddress }
 }
 
 internal enum class ShapeEditSaveValidationError {

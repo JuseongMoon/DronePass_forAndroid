@@ -612,12 +612,12 @@ class ShapeEditDefaultsTest {
     }
 
     @Test
-    fun `도형 저장은 iOS처럼 공백 메모와 주소를 값으로 보존한다`() {
+    fun `도형 저장은 iOS처럼 공백 제목 메모 주소를 값으로 보존한다`() {
         val saved = buildShapeEditSavedShape(
             originalShape = null,
             isDuplicateMode = false,
             generatedId = "generated-shape",
-            title = "새 도형",
+            title = "   ",
             defaultTitle = "새 도형",
             coordinate = Coordinate(37.0, 127.0),
             address = "   ",
@@ -632,6 +632,7 @@ class ShapeEditDefaultsTest {
             now = 5_000L,
         )
 
+        assertEquals("   ", saved.title)
         assertEquals("   ", saved.memo)
         assertEquals("   ", saved.address)
     }
@@ -736,6 +737,17 @@ class ShapeEditDefaultsTest {
             "주소를 찾을 수 없습니다",
             resolveCoordinateAddressForSave(
                 resolvedAddress = "",
+                fallbackAddress = "주소를 찾을 수 없습니다",
+            ),
+        )
+    }
+
+    @Test
+    fun `좌표 입력 주소 저장은 iOS처럼 공백 주소를 값으로 보존한다`() {
+        assertEquals(
+            "   ",
+            resolveCoordinateAddressForSave(
+                resolvedAddress = "   ",
                 fallbackAddress = "주소를 찾을 수 없습니다",
             ),
         )
