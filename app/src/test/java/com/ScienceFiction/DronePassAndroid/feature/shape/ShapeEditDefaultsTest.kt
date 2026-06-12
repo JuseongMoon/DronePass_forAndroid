@@ -273,7 +273,7 @@ class ShapeEditDefaultsTest {
     }
 
     @Test
-    fun `제목이 비어 있는 임시 originalShape 는 iOS처럼 새 도형 드론 초기값을 사용한다`() {
+    fun `제목이 비어 있는 기존 도형의 드론 ID도 iOS처럼 보존한다`() {
         val drones = listOf(
             DroneModel(id = "shape-drone", name = "Shape Drone"),
             DroneModel(id = "recent-drone", name = "Recent"),
@@ -287,7 +287,7 @@ class ShapeEditDefaultsTest {
             fallbackSelectedDroneId = "fallback-drone",
         )
 
-        assertEquals("recent-drone", selectedDroneId)
+        assertEquals("shape-drone", selectedDroneId)
     }
 
     @Test
@@ -315,18 +315,29 @@ class ShapeEditDefaultsTest {
     }
 
     @Test
-    fun `제목이 비어 있는 임시 originalShape 는 iOS처럼 기존 편집 모드가 아니다`() {
-        val temporaryShape = ShapeModel(title = "")
+    fun `제목이 비어 있는 기존 도형도 iOS처럼 기존 편집 모드이다`() {
+        val emptyTitleShape = ShapeModel(title = "")
         val existingShape = ShapeModel(title = "Flight Area")
 
-        assertFalse(isExistingShapeEditMode(temporaryShape, isDuplicateMode = false))
+        assertTrue(isExistingShapeEditMode(emptyTitleShape, isDuplicateMode = false))
         assertFalse(isExistingShapeEditMode(existingShape, isDuplicateMode = true))
         assertTrue(isExistingShapeEditMode(existingShape, isDuplicateMode = false))
     }
 
     @Test
-    fun `제목이 비어 있는 임시 originalShape 는 iOS처럼 최근 반경과 고도를 우선 적용한다`() {
-        val temporaryShape = ShapeModel(
+    fun `새 도형은 iOS처럼 최근 반경과 고도를 우선 적용한다`() {
+        val defaults = ShapeEditDefaults(
+            radius = "150",
+            height = "60",
+        )
+
+        assertEquals("150", resolveInitialShapeEditRadius(null, defaults))
+        assertEquals("60", resolveInitialShapeEditHeight(null, defaults))
+    }
+
+    @Test
+    fun `제목이 비어 있는 기존 도형은 iOS처럼 최근 기본값보다 도형 반경과 고도를 우선한다`() {
+        val shape = ShapeModel(
             title = "",
             radius = 80.0,
             height = 20.0,
@@ -336,20 +347,8 @@ class ShapeEditDefaultsTest {
             height = "60",
         )
 
-        assertEquals("150", resolveInitialShapeEditRadius(temporaryShape, defaults))
-        assertEquals("60", resolveInitialShapeEditHeight(temporaryShape, defaults))
-    }
-
-    @Test
-    fun `제목이 비어 있는 임시 originalShape 는 최근 반경과 고도가 없으면 iOS처럼 임시 값을 유지한다`() {
-        val temporaryShape = ShapeModel(
-            title = "",
-            radius = 80.0,
-            height = 20.0,
-        )
-
-        assertEquals("80", resolveInitialShapeEditRadius(temporaryShape, ShapeEditDefaults()))
-        assertEquals("20", resolveInitialShapeEditHeight(temporaryShape, ShapeEditDefaults()))
+        assertEquals("80", resolveInitialShapeEditRadius(shape, defaults))
+        assertEquals("20", resolveInitialShapeEditHeight(shape, defaults))
     }
 
     @Test
@@ -369,8 +368,25 @@ class ShapeEditDefaultsTest {
     }
 
     @Test
-    fun `제목이 비어 있는 임시 originalShape 는 iOS처럼 최근 비행 기간을 우선 적용한다`() {
-        val temporaryShape = ShapeModel(
+    fun `새 도형은 iOS처럼 최근 비행 기간을 우선 적용한다`() {
+        val defaults = ShapeEditDefaults(
+            startDate = 100L,
+            endDate = 200L,
+        )
+
+        assertEquals(100L, resolveInitialShapeEditFlightStart(null, defaults, now = 1000L))
+        assertEquals(200L, resolveInitialShapeEditFlightEnd(null, defaults, now = 1000L))
+    }
+
+    @Test
+    fun `새 도형은 최근 비행 기간이 없으면 iOS처럼 현재 시각을 사용한다`() {
+        assertEquals(1000L, resolveInitialShapeEditFlightStart(null, ShapeEditDefaults(), now = 1000L))
+        assertEquals(1000L, resolveInitialShapeEditFlightEnd(null, ShapeEditDefaults(), now = 1000L))
+    }
+
+    @Test
+    fun `제목이 비어 있는 기존 도형은 iOS처럼 도형 비행 기간을 사용한다`() {
+        val shape = ShapeModel(
             title = "",
             flightStartDate = 10L,
             flightEndDate = 20L,
@@ -380,20 +396,8 @@ class ShapeEditDefaultsTest {
             endDate = 200L,
         )
 
-        assertEquals(100L, resolveInitialShapeEditFlightStart(temporaryShape, defaults, now = 1000L))
-        assertEquals(200L, resolveInitialShapeEditFlightEnd(temporaryShape, defaults, now = 1000L))
-    }
-
-    @Test
-    fun `제목이 비어 있는 임시 originalShape 는 최근 비행 기간이 없으면 iOS처럼 현재 시각을 사용한다`() {
-        val temporaryShape = ShapeModel(
-            title = "",
-            flightStartDate = 10L,
-            flightEndDate = 20L,
-        )
-
-        assertEquals(1000L, resolveInitialShapeEditFlightStart(temporaryShape, ShapeEditDefaults(), now = 1000L))
-        assertEquals(1000L, resolveInitialShapeEditFlightEnd(temporaryShape, ShapeEditDefaults(), now = 1000L))
+        assertEquals(10L, resolveInitialShapeEditFlightStart(shape, defaults, now = 1000L))
+        assertEquals(20L, resolveInitialShapeEditFlightEnd(shape, defaults, now = 1000L))
     }
 
     @Test

@@ -146,7 +146,7 @@ internal fun resolveInitialShapeEditDroneId(
     editDefaults: ShapeEditDefaults,
     fallbackSelectedDroneId: String?,
 ): String? {
-    if (shape != null && shape.title.isNotEmpty()) {
+    if (shape != null) {
         return shape.droneId ?: activeDrones.firstOrNull()?.id
     }
 
@@ -164,7 +164,7 @@ internal fun isExistingShapeEditMode(
     shape: ShapeModel?,
     isDuplicateMode: Boolean,
 ): Boolean {
-    return shape != null && shape.title.isNotEmpty() && !isDuplicateMode
+    return shape != null && !isDuplicateMode
 }
 
 internal fun resolveShapeEditNavigationTitle(isEditMode: Boolean): String {
@@ -176,7 +176,7 @@ internal fun resolveInitialShapeEditRadius(
     editDefaults: ShapeEditDefaults,
 ): String {
     val shapeRadius = shape?.radius?.let { String.format(Locale.US, "%.0f", it) }.orEmpty()
-    if (shape != null && shape.title.isNotEmpty()) return shapeRadius
+    if (shape != null) return shapeRadius
     return editDefaults.radius ?: shapeRadius
 }
 
@@ -185,7 +185,7 @@ internal fun resolveInitialShapeEditHeight(
     editDefaults: ShapeEditDefaults,
 ): String {
     val shapeHeight = shape?.height?.let { String.format(Locale.US, "%.0f", it) }.orEmpty()
-    if (shape != null && shape.title.isNotEmpty()) return shapeHeight
+    if (shape != null) return shapeHeight
     return editDefaults.height ?: shapeHeight
 }
 
@@ -194,7 +194,7 @@ internal fun resolveInitialShapeEditFlightStart(
     editDefaults: ShapeEditDefaults,
     now: Long,
 ): Long {
-    if (shape != null && shape.title.isNotEmpty()) return shape.flightStartDate
+    if (shape != null) return shape.flightStartDate
     return editDefaults.startDate ?: now
 }
 
@@ -203,7 +203,7 @@ internal fun resolveInitialShapeEditFlightEnd(
     editDefaults: ShapeEditDefaults,
     now: Long,
 ): Long {
-    if (shape != null && shape.title.isNotEmpty()) {
+    if (shape != null) {
         return shape.flightEndDate ?: now
     }
     return editDefaults.endDate ?: now
