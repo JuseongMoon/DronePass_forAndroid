@@ -495,7 +495,7 @@ internal fun MainScreen(
     }
 
     // iOS MainTabView 와 동일하게 ZStack(=Box) 구조. 자식 순서가 z-order:
-    // 1. NavHost (배경) → 2. FloatingTabBar → 3. SavedList/Settings 오버레이 (탭바 위)
+    // 1. NavHost (배경) → 2. SavedList/Settings 오버레이 → 3. FloatingTabBar
     Box(modifier = Modifier.fillMaxSize()) {
         DronePassNavGraph(
             navController = navController,
@@ -533,36 +533,6 @@ internal fun MainScreen(
                 showSavedListOverlay = true
             },
         )
-
-        // Floating tab bar — 오버레이가 떠 있으면 시각적으로 가려지지만 클릭 영역은 살아 있음.
-        // (iOS 의 .overlay() 가 탭바를 덮는 구조와 동등)
-        if (shouldShowFloatingTabBar(isLoginScreen = isLoginScreen, isSketchMode = isSketchMode)) {
-            FloatingTabBar(
-                tabs = tabScreens,
-                selectedRoute = selectedTabRoute,
-                onTabClick = { screen ->
-                    handleTabSelection(
-                        screen = screen,
-                        currentRoute = currentRoute,
-                        navController = navController,
-                        showSavedListOverlay = showSavedListOverlay,
-                        onSavedListOverlayChange = { isVisible ->
-                            if (isVisible) {
-                                showSavedListOverlay = true
-                            } else {
-                                dismissSavedListOverlay()
-                            }
-                        },
-                        showSettingsOverlay = showSettingsOverlay,
-                        onSettingsOverlayChange = { showSettingsOverlay = it },
-                    )
-                },
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .navigationBarsPadding()
-                    .padding(bottom = resolveTabBarBottomPadding(isTablet)),
-            )
-        }
 
         // SavedList 오버레이 — iOS 와 동일하게 태블릿은 좌측 패널, 폰은 하단 시트
         AnimatedVisibility(
@@ -609,6 +579,37 @@ internal fun MainScreen(
                 onAccountSessionEnded = {
                     mapViewModel.clearMapHighlightForAccountSessionEnd()
                 },
+            )
+        }
+
+        // Floating tab bar — 오버레이가 떠 있어도 탭 전환이 가능해야 하므로
+        // SavedList/Settings 오버레이 위에 둔다. 포그라운드 알림 팝업은 아래 블록에서
+        // 가장 위에 표시된다.
+        if (shouldShowFloatingTabBar(isLoginScreen = isLoginScreen, isSketchMode = isSketchMode)) {
+            FloatingTabBar(
+                tabs = tabScreens,
+                selectedRoute = selectedTabRoute,
+                onTabClick = { screen ->
+                    handleTabSelection(
+                        screen = screen,
+                        currentRoute = currentRoute,
+                        navController = navController,
+                        showSavedListOverlay = showSavedListOverlay,
+                        onSavedListOverlayChange = { isVisible ->
+                            if (isVisible) {
+                                showSavedListOverlay = true
+                            } else {
+                                dismissSavedListOverlay()
+                            }
+                        },
+                        showSettingsOverlay = showSettingsOverlay,
+                        onSettingsOverlayChange = { showSettingsOverlay = it },
+                    )
+                },
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .navigationBarsPadding()
+                    .padding(bottom = resolveTabBarBottomPadding(isTablet)),
             )
         }
 
