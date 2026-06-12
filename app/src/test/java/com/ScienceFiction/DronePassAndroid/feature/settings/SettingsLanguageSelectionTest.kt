@@ -29,4 +29,17 @@ class SettingsLanguageSelectionTest {
         assertNull(action.languageToApply)
         assertFalse(action.showRestartAlert)
     }
+
+    @Test
+    fun `첫 실행 앱 언어는 iOS처럼 시스템 언어가 한국어면 한국어다`() {
+        assertEquals(AppLanguage.Korean, initialAppLanguageForSystemTag("ko"))
+        assertEquals(AppLanguage.Korean, initialAppLanguageForSystemTag("ko-KR"))
+    }
+
+    @Test
+    fun `첫 실행 앱 언어는 iOS처럼 한국어가 아닌 시스템 언어면 영어다`() {
+        assertEquals(AppLanguage.English, initialAppLanguageForSystemTag("en"))
+        assertEquals(AppLanguage.English, initialAppLanguageForSystemTag("ja-JP"))
+        assertEquals(AppLanguage.English, initialAppLanguageForSystemTag(null))
+    }
 }

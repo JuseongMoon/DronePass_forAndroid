@@ -2,6 +2,7 @@ package com.ScienceFiction.DronePassAndroid.feature.settings
 
 import androidx.annotation.StringRes
 import com.ScienceFiction.DronePassAndroid.R
+import java.util.Locale
 
 /**
  * 앱 언어 선택 enum — iOS `AppLanguage` 정합.
@@ -21,8 +22,12 @@ enum class AppLanguage(val tag: String, @StringRes val displayNameRes: Int) {
          */
         fun fromTag(tag: String?): AppLanguage {
             if (tag.isNullOrBlank()) return English
-            val primary = tag.substringBefore('-').lowercase()
+            val primary = tag.substringBefore('-').lowercase(Locale.ROOT)
             return if (primary == Korean.tag) Korean else English
         }
     }
+}
+
+internal fun initialAppLanguageForSystemTag(systemLanguageTag: String?): AppLanguage {
+    return AppLanguage.fromTag(systemLanguageTag)
 }
