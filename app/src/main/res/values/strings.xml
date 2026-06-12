@@ -485,10 +485,10 @@
     <string name="shape_detail_drone_deleted">삭제된 드론</string>
     <string name="shape_detail_drone_unassigned">드론 미지정</string>
     <string name="shape_detail_navigation_message">아래 앱으로 길찾기를 시작합니다.</string>
-    <string name="shape_detail_open_naver_map">네이버 지도</string>
+    <string name="shape_detail_open_naver_map">네이버지도</string>
     <string name="shape_detail_open_kakao_map">카카오맵</string>
     <string name="shape_detail_open_tmap">티맵</string>
-    <string name="shape_detail_open_google_map">구글 지도</string>
+    <string name="shape_detail_open_google_map">구글맵</string>
     <string name="shape_detail_edit">수정하기</string>
     <string name="shape_detail_duplicate">복제하기</string>
     <string name="shape_detail_duplicated">도형이 복제되었습니다</string>
