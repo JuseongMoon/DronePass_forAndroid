@@ -11,7 +11,7 @@
 | 항목 | 값 |
 |---|---|
 | 워킹 트리 | clean |
-| 주요 검증 | `:app:testDebugUnitTest`, `:app:assembleDebug`, `:app:minifyReleaseWithR8` 통과 |
+| 주요 검증 | `:app:testDebugUnitTest`, `:app:assembleDebug`, `:app:minifyReleaseWithR8`, `:app:testDebugUnitTest --tests "*MainScreenStartDestinationTest"` 통과 |
 | Release signing | 실제 `keystore.properties` 없으면 `assembleRelease`/`bundleRelease`가 의도적으로 실패함을 재확인 |
 | 남은 성격 | 실기기 전체 회귀, 콘솔/스토어 운영 설정, 최종 iOS 동기화 검증 |
 
@@ -71,6 +71,7 @@
 - `0ac2093 fix: remove sync merge force unwraps`
 - `1a4ea43 fix: match ios forecast refresh toast`
 - `985412f fix: refresh sync baseline after realtime sync`
+- `69afe2d fix: keep main tabs above overlays`
 
 ## 2. 이번 라운드에서 확인한 내용
 
@@ -127,6 +128,7 @@
 - VWorld 비행구역 레이어 선택 시트의 통계 헤더를 iOS처럼 전체 폭 배경 밴드로 보정
 - KP/날씨 예보 새로고침 완료 메시지를 iOS `ToastMessageModifier`처럼 화면 내부 하단 토스트로 보정
 - 실시간/수동 Shape·Drone 동기화 성공 시 계정 전환 보호 기준선(`syncedShapeBaseline`)도 함께 갱신하도록 보정
+- 저장/설정 오버레이가 열린 상태에서도 메인 하단 탭이 실제 터치 가능한 최상위 레이어에 남도록 보정
 - Shape 읽기는 iOS 파서처럼 빈 문자열/공백 제목을 보존하고, 쓰기 검증은 공백 제목을 계속 거부
 - Drone 읽기는 iOS Codable 파서처럼 빈 문자열/공백 이름을 보존하고, 쓰기 검증은 공백 이름을 계속 거부
 - Shape 쓰기는 iOS `ShapeFirebaseStore`처럼 `memo`/`address`가 `null`이면 Firestore에 빈 문자열로 저장
@@ -217,6 +219,7 @@ iOS와 Android가 공유하는 `users/{uid}/shapes`, `users/{uid}/sketches`, `us
 - 지도, 현재 위치 점, 상단 드론 선택 버튼/드롭다운 원 정렬, KP/날씨 카드, 도형 생성 FAB, 하단 탭 렌더링 확인
 - KP 예보 시트와 차트 렌더링 확인
 - 저장 목록 오버레이와 설정 오버레이 렌더링 확인
+- 저장 목록 오버레이가 열린 상태에서 하단 설정 탭으로 전환되는지 실제 해상도 좌표 기준으로 확인
 - 위 경로에서 `AndroidRuntime` 치명 오류 없음, DronePass 프로세스 유지 확인
 - KP/날씨 새로고침 완료 토스트는 단위 테스트/빌드 경로로 검증했고, 실기기 캡처에서는 네트워크 완료 타이밍을 포착하지 못했음
 
