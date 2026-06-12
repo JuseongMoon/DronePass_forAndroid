@@ -282,14 +282,16 @@ fun VWorldZoneDetailSheet(
                         )
                         hasHeritageRow = true
                     }
-                    if (zone.designationYear != null && zone.designationNumber != null) {
+                    val designationYear = zone.designationYear
+                    val designationNumber = zone.designationNumber
+                    if (designationYear != null && designationNumber != null) {
                         if (hasHeritageRow) VWorldZoneDetailRowDivider()
                         DetailRow(
                             label = stringResource(R.string.zone_detail_heritage_designation),
                             value = stringResource(
                                 R.string.zone_detail_heritage_designation_format,
-                                zone.designationYear!!,
-                                zone.designationNumber!!
+                                designationYear,
+                                designationNumber
                             )
                         )
                     }

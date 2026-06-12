@@ -133,18 +133,19 @@ fun DroneListScreen(
     }
 
     // 드론 상세 시트
-    if (showDroneDetail && selectedDrone != null) {
+    val detailDrone = selectedDrone
+    if (showDroneDetail && detailDrone != null) {
         DroneDetailSheet(
-            drone = selectedDrone!!,
+            drone = detailDrone,
             activeDrones = drones,
             getShapeCount = { droneId ->
                 droneViewModel.getShapeCountForDrone(droneId)
             },
             onEdit = {
-                droneViewModel.showEditSheet(selectedDrone)
+                droneViewModel.showEditSheet(detailDrone)
             },
             onDelete = { handling ->
-                droneViewModel.deleteDrone(selectedDrone!!, handling)
+                droneViewModel.deleteDrone(detailDrone, handling)
             },
             onDismiss = {
                 droneViewModel.dismissDetailSheet()

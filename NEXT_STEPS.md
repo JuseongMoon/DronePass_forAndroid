@@ -113,6 +113,7 @@
 - 알림 탭/포그라운드 팝업 제목·본문을 iOS `PushNotificationManager`처럼 trim 없이 원문 그대로 복원하도록 보정
 - 지도 롱프레스 역지오코딩 결과를 iOS `MainView.handleLongPress`처럼 성공이면 빈 주소도 새 도형 확인 흐름으로 유지하도록 보정
 - 스케치 색상 슬라이더 외부 색상 동기화 조건을 iOS `ColorGradientSlider`처럼 hue 절대 차이 기준으로 보정
+- 드론 상세 콜백, 날씨 오류 화면, VWorld 지정번호, 알림 재예약의 nullable 경계에서 강제 언랩을 제거
 - 메인 저장/설정 오버레이 전환을 iOS처럼 이동과 opacity 결합 전환으로 보정
 - 스케치 오버레이를 iOS처럼 현재 지도 bounds와 겹치는 스케치만 렌더링하도록 보정
 - VWorld 상세 고도 행을 상한/하한 중 하나만 있어도 표시하도록 보정

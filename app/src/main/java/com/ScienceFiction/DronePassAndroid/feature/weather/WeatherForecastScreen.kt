@@ -189,18 +189,20 @@ fun WeatherForecastContent(
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             }
             error != null && weatherData == null -> {
-                Column(
-                    modifier = Modifier.align(Alignment.Center),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Text(
-                        text = stringResource(error!!.messageRes),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    OutlinedButton(onClick = { viewModel.refreshWeather() }) {
-                        Text(stringResource(R.string.common_retry))
+                error?.let { currentError ->
+                    Column(
+                        modifier = Modifier.align(Alignment.Center),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Text(
+                            text = stringResource(currentError.messageRes),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        OutlinedButton(onClick = { viewModel.refreshWeather() }) {
+                            Text(stringResource(R.string.common_retry))
+                        }
                     }
                 }
             }

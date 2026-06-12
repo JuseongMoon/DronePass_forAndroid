@@ -111,9 +111,10 @@ class NotificationScheduleRestorer @Inject constructor(
         shapeRepository.getActiveShapes().first()
             .filter { it.flightEndDate != null && !it.isExpired }
             .forEach { shape ->
+                val flightEndDate = shape.flightEndDate ?: return@forEach
                 notificationScheduler.scheduleEndDateAlarm(
                     shapeId = shape.id,
-                    flightEndDate = shape.flightEndDate!!,
+                    flightEndDate = flightEndDate,
                     shapeTitle = shape.title,
                 )
             }
