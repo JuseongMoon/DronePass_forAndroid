@@ -59,6 +59,7 @@
 - 메인 하단 탭/저장·설정 오버레이 탭 전환 흐름
 - Shape/Drone/Sketch Firestore 삭제·문서 ID·빈 tombstone 방지 경로
 - FCM/로컬 알림 payload 파싱, 포그라운드 팝업, 알림 클릭 후 도형 포커스 라우팅
+- `MIGRATION_PLAN.md`는 초기 계획의 역사 문서로 유지하고, 최신 상태 기준은 `README.md`와 이 문서로 고정
 
 수정 완료된 영역:
 
@@ -218,7 +219,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 1. 남은 실기기 회귀 시나리오를 돌리고 실패 항목을 코드 수정 단위로 커밋
 2. iOS ↔ Android Firestore 실제 계정 동기화 시나리오 검증
 3. Play Store 내부 테스트용 signing 구성 후 `bundleRelease` 검증
-4. `MIGRATION_PLAN.md`가 역사 문서로 남아 있어도 되는지 결정, 필요하면 README처럼 최신 상태 문서로 축약
+4. 실기기/실계정 검증 결과를 반영해 `NEXT_STEPS.md`의 잔여 항목을 줄이기
 
 ## 6. 주요 경로
 
