@@ -10,7 +10,7 @@
     <string name="common_delete">삭제</string>
     <string name="common_edit">편집</string>
     <string name="common_yes">예</string>
-    <string name="common_no">아니요</string>
+    <string name="common_no">아니오</string>
     <string name="common_retry">다시 시도</string>
     <string name="common_close">닫기</string>
     <string name="common_clear">지우기</string>

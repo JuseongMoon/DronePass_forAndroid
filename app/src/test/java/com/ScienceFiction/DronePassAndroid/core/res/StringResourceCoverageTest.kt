@@ -145,7 +145,7 @@ class StringResourceCoverageTest {
     @Test
     fun `map new shape alert strings match iOS localizations`() {
         assertEquals("예", stringResourceValue("values/strings.xml", "common_yes"))
-        assertEquals("아니요", stringResourceValue("values/strings.xml", "common_no"))
+        assertEquals("아니오", stringResourceValue("values/strings.xml", "common_no"))
         assertEquals("새 도형 만들기", stringResourceValue("values/strings.xml", "map_new_shape_alert_title"))
         assertEquals(
             "해당 위치에 새 도형을 만드시겠습니까?",
