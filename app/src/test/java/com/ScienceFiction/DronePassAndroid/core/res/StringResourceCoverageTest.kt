@@ -893,9 +893,9 @@ class StringResourceCoverageTest {
         assertEquals("내 드론 관리하기", stringResourceValue("values/strings.xml", "settings_drone_manage"))
         assertEquals("Manage My Drones", stringResourceValue("values-en/strings.xml", "settings_drone_manage"))
 
-        assertEquals("내 드론 관리하기", stringResourceValue("values/strings.xml", "drone_list_title"))
-        assertEquals("Manage My Drones", stringResourceValue("values-en/strings.xml", "drone_list_title"))
-        assertEquals("내 드론", stringResourceValue("values/strings.xml", "drone_list_section_my"))
+        assertEquals("드론 관리", stringResourceValue("values/strings.xml", "drone_list_title"))
+        assertEquals("Manage Drones", stringResourceValue("values-en/strings.xml", "drone_list_title"))
+        assertEquals("내 드론 목록", stringResourceValue("values/strings.xml", "drone_list_section_my"))
         assertEquals("My Drones", stringResourceValue("values-en/strings.xml", "drone_list_section_my"))
         assertEquals("새 드론 추가", stringResourceValue("values/strings.xml", "drone_list_add"))
         assertEquals("Add New Drone", stringResourceValue("values-en/strings.xml", "drone_list_add"))
