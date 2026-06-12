@@ -179,7 +179,7 @@ class StringResourceCoverageTest {
     @Test
     fun `shape detail labels match iOS localizations`() {
         assertEquals("상세 정보", stringResourceValue("values/strings.xml", "shape_detail_navigation_title"))
-        assertEquals("고도", stringResourceValue("values/strings.xml", "shape_detail_altitude"))
+        assertEquals("고도(m)", stringResourceValue("values/strings.xml", "shape_detail_altitude"))
         assertEquals("길찾기 앱 선택", stringResourceValue("values/strings.xml", "shape_detail_open_external_map"))
         assertEquals("네이버 지도", stringResourceValue("values/strings.xml", "shape_detail_open_naver_map"))
         assertEquals("티맵", stringResourceValue("values/strings.xml", "shape_detail_open_tmap"))
