@@ -19,7 +19,6 @@ import com.ScienceFiction.DronePassAndroid.core.data.repository.GeocodingReposit
 import com.ScienceFiction.DronePassAndroid.core.data.repository.ShapeRepository
 import com.ScienceFiction.DronePassAndroid.core.data.repository.VWorldRepository
 import com.ScienceFiction.DronePassAndroid.core.util.AnalyticsLogger
-import com.ScienceFiction.DronePassAndroid.core.util.DistanceCalculator
 import com.ScienceFiction.DronePassAndroid.core.util.FlightZoneCalculator
 import com.ScienceFiction.DronePassAndroid.domain.model.Coordinate
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
@@ -89,40 +88,12 @@ internal fun calculateShapeFocusZoomLevel(radius: Double): Double {
     return maxZoom - ((radius - minRadius) * (maxZoom - minZoom) / (maxRadius - minRadius))
 }
 
-internal fun shapeFocusCoordinates(shape: ShapeModel): List<Coordinate> {
-    return when (shape.shapeType) {
-        ShapeType.CIRCLE -> listOf(shape.baseCoordinate)
-        ShapeType.RECTANGLE -> listOfNotNull(shape.baseCoordinate, shape.secondCoordinate)
-        ShapeType.POLYGON -> shape.polygonCoordinates?.takeIf { it.isNotEmpty() } ?: listOf(shape.baseCoordinate)
-        ShapeType.POLYLINE -> shape.polylineCoordinates?.takeIf { it.isNotEmpty() } ?: listOf(shape.baseCoordinate)
-    }
-}
-
 internal fun calculateShapeFocusCoordinate(shape: ShapeModel): Coordinate {
-    if (shape.shapeType == ShapeType.CIRCLE) return shape.baseCoordinate
-
-    val coordinates = shapeFocusCoordinates(shape)
-    val minLatitude = coordinates.minOf { it.latitude }
-    val maxLatitude = coordinates.maxOf { it.latitude }
-    val minLongitude = coordinates.minOf { it.longitude }
-    val maxLongitude = coordinates.maxOf { it.longitude }
-    return Coordinate(
-        latitude = (minLatitude + maxLatitude) / 2.0,
-        longitude = (minLongitude + maxLongitude) / 2.0,
-    )
+    return shape.baseCoordinate
 }
 
 internal fun calculateShapeFocusRadiusMeters(shape: ShapeModel): Double {
-    if (shape.shapeType == ShapeType.CIRCLE) {
-        return shape.radius ?: ShapeFocusDefaultRadiusMeters
-    }
-
-    val center = calculateShapeFocusCoordinate(shape)
-    val radius = shapeFocusCoordinates(shape)
-        .maxOfOrNull { coordinate -> DistanceCalculator.haversine(center, coordinate) }
-        ?: ShapeFocusDefaultRadiusMeters
-
-    return radius.coerceAtLeast(ShapeFocusDefaultRadiusMeters)
+    return shape.radius ?: ShapeFocusDefaultRadiusMeters
 }
 
 internal fun shouldConsumeNaverMapSymbolTap(): Boolean = true

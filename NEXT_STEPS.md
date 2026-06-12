@@ -74,6 +74,7 @@
 - 드론 Firestore 삭제가 iOS hard delete 이후 재삭제될 때 missing document를 성공으로 처리하도록 보정
 - 저장 목록 주소 행 표시 조건을 iOS처럼 `address == nil` 기준으로 보정
 - 저장 목록 도형 포커스 중복 이동 생략 기준을 iOS처럼 도형 id가 아니라 baseCoordinate 기준으로 보정
+- 저장 목록/저장 직후 도형 포커스 좌표와 반경을 iOS `MoveToShapeNotification`처럼 `baseCoordinate`와 `radius ?? 100` 기준으로 보정
 - 메인 저장/설정 오버레이 전환을 iOS처럼 이동과 opacity 결합 전환으로 보정
 - 스케치 오버레이를 iOS처럼 현재 지도 bounds와 겹치는 스케치만 렌더링하도록 보정
 - VWorld 상세 고도 행을 상한/하한 중 하나만 있어도 표시하도록 보정

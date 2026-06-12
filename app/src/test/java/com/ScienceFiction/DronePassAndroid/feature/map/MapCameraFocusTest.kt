@@ -228,7 +228,7 @@ class MapCameraFocusTest {
     }
 
     @Test
-    fun `사각형 도형 포커스는 두 좌표의 중심과 geometry 반경을 사용한다`() {
+    fun `사각형 도형 포커스는 iOS처럼 baseCoordinate와 기본 반경을 사용한다`() {
         val target = shape(
             id = "rectangle",
             coordinate = Coordinate(37.0, 127.0),
@@ -242,13 +242,12 @@ class MapCameraFocusTest {
         val focusCoordinate = calculateShapeFocusCoordinate(target)
         val focusRadius = calculateShapeFocusRadiusMeters(target)
 
-        assertEquals(37.01, focusCoordinate.latitude, 0.000001)
-        assertEquals(127.02, focusCoordinate.longitude, 0.000001)
-        assertEquals(true, focusRadius > ShapeFocusDefaultRadiusMeters)
+        assertEquals(target.baseCoordinate, focusCoordinate)
+        assertEquals(ShapeFocusDefaultRadiusMeters, focusRadius, 0.0)
         assertEquals(
             CameraEvent.MoveToShape(
-                coordinate = focusCoordinate,
-                zoom = calculateShapeFocusZoomLevel(focusRadius),
+                coordinate = target.baseCoordinate,
+                zoom = calculateShapeFocusZoomLevel(ShapeFocusDefaultRadiusMeters),
             ),
             resolveShapeFocusCameraEvent(
                 currentSelectedShape = null,
@@ -259,7 +258,7 @@ class MapCameraFocusTest {
     }
 
     @Test
-    fun `다각형과 선 도형 포커스 반경은 실제 좌표 범위를 반영한다`() {
+    fun `다각형과 선 도형 포커스도 iOS처럼 baseCoordinate와 기본 반경을 사용한다`() {
         val polygon = shape(
             id = "polygon",
             coordinate = Coordinate(37.0, 127.0),
@@ -284,13 +283,11 @@ class MapCameraFocusTest {
         )
 
         val polygonFocusCoordinate = calculateShapeFocusCoordinate(polygon)
-        assertEquals(37.01, polygonFocusCoordinate.latitude, 0.000001)
-        assertEquals(127.02, polygonFocusCoordinate.longitude, 0.000001)
-        assertEquals(true, calculateShapeFocusRadiusMeters(polygon) > ShapeFocusDefaultRadiusMeters)
+        assertEquals(polygon.baseCoordinate, polygonFocusCoordinate)
+        assertEquals(ShapeFocusDefaultRadiusMeters, calculateShapeFocusRadiusMeters(polygon), 0.0)
         val polylineFocusCoordinate = calculateShapeFocusCoordinate(polyline)
-        assertEquals(37.0, polylineFocusCoordinate.latitude, 0.000001)
-        assertEquals(127.04, polylineFocusCoordinate.longitude, 0.000001)
-        assertEquals(true, calculateShapeFocusRadiusMeters(polyline) > calculateShapeFocusRadiusMeters(polygon))
+        assertEquals(polyline.baseCoordinate, polylineFocusCoordinate)
+        assertEquals(ShapeFocusDefaultRadiusMeters, calculateShapeFocusRadiusMeters(polyline), 0.0)
     }
 
     @Test
