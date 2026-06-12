@@ -612,6 +612,31 @@ class ShapeEditDefaultsTest {
     }
 
     @Test
+    fun `도형 저장은 iOS처럼 공백 메모와 주소를 값으로 보존한다`() {
+        val saved = buildShapeEditSavedShape(
+            originalShape = null,
+            isDuplicateMode = false,
+            generatedId = "generated-shape",
+            title = "새 도형",
+            defaultTitle = "새 도형",
+            coordinate = Coordinate(37.0, 127.0),
+            address = "   ",
+            noAddressFallback = "주소를 찾을 수 없습니다",
+            radius = "100",
+            height = "",
+            memo = "   ",
+            selectedColor = "#123456",
+            selectedDroneId = null,
+            flightStartDate = 3_000L,
+            flightEndDate = 4_000L,
+            now = 5_000L,
+        )
+
+        assertEquals("   ", saved.memo)
+        assertEquals("   ", saved.address)
+    }
+
+    @Test
     fun `기존 polygon 도형 저장은 좌표 변경량만큼 전체 geometry를 이동한다`() {
         val original = ShapeModel(
             id = "shape-polygon",
