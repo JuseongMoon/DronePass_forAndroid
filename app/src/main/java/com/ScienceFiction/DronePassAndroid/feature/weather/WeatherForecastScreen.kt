@@ -1,6 +1,5 @@
 package com.ScienceFiction.DronePassAndroid.feature.weather
 
-import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -33,12 +32,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -53,6 +52,9 @@ import com.ScienceFiction.DronePassAndroid.core.util.DroneCategory
 import com.ScienceFiction.DronePassAndroid.domain.model.HourlyWeatherData
 import com.ScienceFiction.DronePassAndroid.domain.model.WeatherData
 import com.ScienceFiction.DronePassAndroid.feature.settings.WeatherInfoGuideSheet
+import com.ScienceFiction.DronePassAndroid.ui.component.IosToastMessageDurationMs
+import com.ScienceFiction.DronePassAndroid.ui.component.IosToastMessageOverlay
+import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.ZoneId
@@ -161,7 +163,8 @@ fun WeatherForecastContent(
     val selectedCategory by viewModel.selectedCategory.collectAsStateWithLifecycle()
     val lastUpdateTime by viewModel.lastUpdateTime.collectAsStateWithLifecycle()
     val refreshMessage = stringResource(R.string.weather_refresh)
-    val context = LocalContext.current
+    var showRefreshToast by remember { mutableStateOf(false) }
+    var refreshToastGeneration by remember { mutableIntStateOf(0) }
 
     // 화면이 START 상태일 때만 3분 자동 갱신.
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -179,8 +182,16 @@ fun WeatherForecastContent(
 
     LaunchedEffect(viewModel, refreshMessage) {
         viewModel.refreshCompleted.collect {
-            Toast.makeText(context, refreshMessage, Toast.LENGTH_SHORT).show()
+            showRefreshToast = false
+            refreshToastGeneration += 1
+            showRefreshToast = true
         }
+    }
+
+    LaunchedEffect(refreshToastGeneration) {
+        if (refreshToastGeneration == 0) return@LaunchedEffect
+        delay(IosToastMessageDurationMs)
+        showRefreshToast = false
     }
 
     Box(modifier = modifier.fillMaxSize()) {
@@ -219,6 +230,12 @@ fun WeatherForecastContent(
                 }
             }
         }
+
+        IosToastMessageOverlay(
+            visible = showRefreshToast,
+            message = refreshMessage,
+            modifier = Modifier.align(Alignment.BottomCenter),
+        )
     }
 }
 

@@ -6,6 +6,13 @@ import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.core.util.DroneCategory
 import com.ScienceFiction.DronePassAndroid.core.util.GustDifferenceLevel
 import com.ScienceFiction.DronePassAndroid.domain.model.HourlyWeatherData
+import com.ScienceFiction.DronePassAndroid.ui.component.IosToastMessageAnimationDurationMs
+import com.ScienceFiction.DronePassAndroid.ui.component.IosToastMessageBackgroundAlpha
+import com.ScienceFiction.DronePassAndroid.ui.component.IosToastMessageBottomPadding
+import com.ScienceFiction.DronePassAndroid.ui.component.IosToastMessageCornerRadius
+import com.ScienceFiction.DronePassAndroid.ui.component.IosToastMessageDurationMs
+import com.ScienceFiction.DronePassAndroid.ui.component.IosToastMessageHorizontalPadding
+import com.ScienceFiction.DronePassAndroid.ui.component.IosToastMessageVerticalPadding
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -85,6 +92,17 @@ class WeatherForecastParityTest {
         assertEquals(250.dp, WeatherForecastChartHeight)
         assertEquals(WeatherForecastChartHeight, WeatherLineChartDefaultHeight)
         assertEquals(WeatherForecastChartHeight, WeatherPrecipitationBarChartHeight)
+    }
+
+    @Test
+    fun `forecast refresh toast matches iOS ToastMessageModifier`() {
+        assertEquals(2_000L, IosToastMessageDurationMs)
+        assertEquals(300, IosToastMessageAnimationDurationMs)
+        assertEquals(0.7f, IosToastMessageBackgroundAlpha, 0f)
+        assertEquals(100.dp, IosToastMessageBottomPadding)
+        assertEquals(12.dp, IosToastMessageCornerRadius)
+        assertEquals(16.dp, IosToastMessageHorizontalPadding)
+        assertEquals(10.dp, IosToastMessageVerticalPadding)
     }
 
     @Test

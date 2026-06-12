@@ -1,6 +1,5 @@
 package com.ScienceFiction.DronePassAndroid.feature.kp
 
-import android.widget.Toast
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -41,6 +40,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -48,7 +48,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -62,6 +61,9 @@ import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.domain.model.KpIndexData
 import com.ScienceFiction.DronePassAndroid.domain.model.KpLevel
 import com.ScienceFiction.DronePassAndroid.feature.settings.KpInfoGuideSheet
+import com.ScienceFiction.DronePassAndroid.ui.component.IosToastMessageDurationMs
+import com.ScienceFiction.DronePassAndroid.ui.component.IosToastMessageOverlay
+import kotlinx.coroutines.delay
 import java.util.Locale
 
 internal const val KpCurrentValueFontSizeSp = 60
@@ -194,7 +196,8 @@ fun KpForecastContent(
     val errorMessage by viewModel.errorMessage.collectAsStateWithLifecycle()
     val errorText = errorMessage?.let { stringResource(it.messageRes) }
     val refreshMessage = stringResource(R.string.weather_refresh)
-    val context = LocalContext.current
+    var showRefreshToast by remember { mutableStateOf(false) }
+    var refreshToastGeneration by remember { mutableIntStateOf(0) }
 
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
@@ -211,39 +214,55 @@ fun KpForecastContent(
 
     LaunchedEffect(viewModel, refreshMessage) {
         viewModel.refreshCompleted.collect {
-            Toast.makeText(context, refreshMessage, Toast.LENGTH_SHORT).show()
+            showRefreshToast = false
+            refreshToastGeneration += 1
+            showRefreshToast = true
         }
     }
 
-    LazyColumn(
-        modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        // ① 현재 Kp 지수 카드 (섹션 헤더 + 좌우 분할)
-        item {
-            CurrentKpSection(
-                currentKp = currentKp,
-                kpLevel = kpLevel,
-            )
+    LaunchedEffect(refreshToastGeneration) {
+        if (refreshToastGeneration == 0) return@LaunchedEffect
+        delay(IosToastMessageDurationMs)
+        showRefreshToast = false
+    }
+
+    Box(modifier = modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            // ① 현재 Kp 지수 카드 (섹션 헤더 + 좌우 분할)
+            item {
+                CurrentKpSection(
+                    currentKp = currentKp,
+                    kpLevel = kpLevel,
+                )
+            }
+
+            // ② 48시간 예보 차트
+            item {
+                KpForecastLineChart(
+                    forecastData = forecastData,
+                    isLoading = isLoading,
+                    errorMessage = errorText,
+                )
+            }
+
+            // ③ 27일 장기 예보 차트
+            item {
+                Kp27DayChart(
+                    longTermForecast = longTermForecast,
+                    isLoading = isLoading,
+                )
+            }
         }
 
-        // ② 48시간 예보 차트
-        item {
-            KpForecastLineChart(
-                forecastData = forecastData,
-                isLoading = isLoading,
-                errorMessage = errorText,
-            )
-        }
-
-        // ③ 27일 장기 예보 차트
-        item {
-            Kp27DayChart(
-                longTermForecast = longTermForecast,
-                isLoading = isLoading,
-            )
-        }
+        IosToastMessageOverlay(
+            visible = showRefreshToast,
+            message = refreshMessage,
+            modifier = Modifier.align(Alignment.BottomCenter),
+        )
     }
 }
 
