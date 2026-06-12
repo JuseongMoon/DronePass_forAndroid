@@ -279,6 +279,24 @@ internal fun notificationPopupExitTransition(): ExitTransition {
         )
 }
 
+internal fun mainOverlayEnterTransition(isTablet: Boolean): EnterTransition {
+    val moveTransition = if (isTablet) {
+        slideInHorizontally(initialOffsetX = { -it })
+    } else {
+        slideInVertically(initialOffsetY = { it })
+    }
+    return moveTransition + fadeIn()
+}
+
+internal fun mainOverlayExitTransition(isTablet: Boolean): ExitTransition {
+    val moveTransition = if (isTablet) {
+        slideOutHorizontally(targetOffsetX = { -it })
+    } else {
+        slideOutVertically(targetOffsetY = { it })
+    }
+    return moveTransition + fadeOut()
+}
+
 internal fun resolveSavedOverlayPhoneDragOffset(
     dragOffset: Dp,
     isDragging: Boolean,
@@ -549,16 +567,8 @@ internal fun MainScreen(
         // SavedList 오버레이 — iOS 와 동일하게 태블릿은 좌측 패널, 폰은 하단 시트
         AnimatedVisibility(
             visible = showSavedListOverlay,
-            enter = if (isTablet) {
-                slideInHorizontally(initialOffsetX = { -it })
-            } else {
-                slideInVertically(initialOffsetY = { it })
-            },
-            exit = if (isTablet) {
-                slideOutHorizontally(targetOffsetX = { -it })
-            } else {
-                slideOutVertically(targetOffsetY = { it })
-            },
+            enter = mainOverlayEnterTransition(isTablet),
+            exit = mainOverlayExitTransition(isTablet),
         ) {
             SavedListOverlay(
                 isTablet = isTablet,
@@ -590,16 +600,8 @@ internal fun MainScreen(
         // Settings 오버레이 — iOS 와 동일하게 태블릿은 좌측 패널, 폰은 50%/90% 하단 시트
         AnimatedVisibility(
             visible = showSettingsOverlay,
-            enter = if (isTablet) {
-                slideInHorizontally(initialOffsetX = { -it })
-            } else {
-                slideInVertically(initialOffsetY = { it })
-            },
-            exit = if (isTablet) {
-                slideOutHorizontally(targetOffsetX = { -it })
-            } else {
-                slideOutVertically(targetOffsetY = { it })
-            },
+            enter = mainOverlayEnterTransition(isTablet),
+            exit = mainOverlayExitTransition(isTablet),
         ) {
             SettingsOverlay(
                 isTablet = isTablet,
