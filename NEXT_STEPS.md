@@ -57,6 +57,8 @@
 - 주소 검색/좌표 입력/지도 롱프레스 도형 생성 흐름
 - 스케치 모드 제스처/툴바/undo·redo/지우개 동작
 - 메인 하단 탭/저장·설정 오버레이 탭 전환 흐름
+- Shape/Drone/Sketch Firestore 삭제·문서 ID·빈 tombstone 방지 경로
+- FCM/로컬 알림 payload 파싱, 포그라운드 팝업, 알림 클릭 후 도형 포커스 라우팅
 
 수정 완료된 영역:
 
@@ -104,6 +106,7 @@ iOS와 Android가 공유하는 `users/{uid}/shapes`, `users/{uid}/sketches`, `us
 - Shape: `shapeType` 쓰기 lowercase, 읽기 case-insensitive. 레거시 `CIRCLE` 문서 파싱 테스트 유지.
 - Drone: UUID id, `Timestamp`, hex color, optional 필드 보존/파싱 테스트 유지.
 - Sketch: `Timestamp`, Double 좌표 map 배열, opacity/좌표 반올림, UUID id 검증 테스트 유지.
+- 2026-06-12 재확인: Shape/Drone/Sketch 모두 문서 ID와 내부 `id` 불일치 시 skip하며, 원격 soft delete 헬퍼는 `update(deletedAt, updatedAt)` 기반이라 빈 tombstone 문서를 새로 만들지 않음.
 
 ## 3. 남은 필수 작업
 
