@@ -376,6 +376,10 @@ internal fun shouldDeleteSavedShapeOnSwipe(dismissValue: SwipeToDismissBoxValue)
     return dismissValue == SwipeToDismissBoxValue.EndToStart
 }
 
+internal fun shouldShowSavedShapeDeleteBackground(dismissDirection: SwipeToDismissBoxValue): Boolean {
+    return dismissDirection == SwipeToDismissBoxValue.EndToStart
+}
+
 /**
  * 스와이프하여 삭제 가능한 아이템 래퍼
  */
@@ -399,20 +403,29 @@ private fun SwipeToDeleteItem(
     SwipeToDismissBox(
         state = dismissState,
         backgroundContent = {
+            val showDeleteBackground = shouldShowSavedShapeDeleteBackground(dismissState.dismissDirection)
             // 삭제 배경 (오른쪽에서 왼쪽 스와이프 시 표시)
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.error)
+                    .background(
+                        if (showDeleteBackground) {
+                            MaterialTheme.colorScheme.error
+                        } else {
+                            Color.Transparent
+                        }
+                    )
                     .padding(horizontal = 20.dp),
                 contentAlignment = Alignment.CenterEnd
             ) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = stringResource(R.string.common_delete),
-                    tint = MaterialTheme.colorScheme.onError,
-                    modifier = Modifier.size(24.dp)
-                )
+                if (showDeleteBackground) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = stringResource(R.string.common_delete),
+                        tint = MaterialTheme.colorScheme.onError,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
             }
         },
         enableDismissFromStartToEnd = false,

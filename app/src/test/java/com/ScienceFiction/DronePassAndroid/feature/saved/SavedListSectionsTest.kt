@@ -400,6 +400,13 @@ class SavedListSectionsTest {
     }
 
     @Test
+    fun `저장 목록 삭제 배경은 스와이프 중일 때만 표시한다`() {
+        assertEquals(true, shouldShowSavedShapeDeleteBackground(SwipeToDismissBoxValue.EndToStart))
+        assertEquals(false, shouldShowSavedShapeDeleteBackground(SwipeToDismissBoxValue.StartToEnd))
+        assertEquals(false, shouldShowSavedShapeDeleteBackground(SwipeToDismissBoxValue.Settled))
+    }
+
+    @Test
     fun `저장 목록 빈 상태는 iOS처럼 전체 없음 드론 미선택 필터 결과 없음 순서로 판단한다`() {
         assertEquals(
             SavedListEmptyState.NO_SHAPES,
