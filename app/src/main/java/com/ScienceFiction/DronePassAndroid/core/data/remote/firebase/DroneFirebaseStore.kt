@@ -194,6 +194,10 @@ class DroneFirebaseStore @Inject constructor(
                 )
             ).await()
         } catch (e: Exception) {
+            if (isMissingFirestoreDocument(e)) {
+                Log.d(TAG, "드론 소프트 삭제 스킵: 서버 문서가 이미 없음 userId=$userId, droneId=$droneId")
+                return
+            }
             Log.e(TAG, "드론 소프트 삭제 실패: userId=$userId, droneId=$droneId", e)
             throw e
         }
