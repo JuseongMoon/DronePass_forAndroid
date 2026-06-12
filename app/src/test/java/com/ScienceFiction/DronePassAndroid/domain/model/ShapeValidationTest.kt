@@ -14,10 +14,24 @@ class ShapeValidationTest {
     }
 
     @Test
-    fun `iOS 와 같이 빈 제목은 유효하지 않다`() {
-        val shape = validCircle().copy(title = "   ")
+    fun `로컬 도형 저장은 빈 제목을 거부한다`() {
+        val shape = validCircle().copy(title = "")
 
         assertFalse(shape.isValidForLocalPersistence())
+    }
+
+    @Test
+    fun `로컬 도형 저장은 편집 UI 입력처럼 공백 제목을 보존한다`() {
+        val shape = validCircle().copy(title = "   ")
+
+        assertTrue(shape.isValidForLocalPersistence())
+    }
+
+    @Test
+    fun `도형 Firebase 저장은 iOS Firebase 검증처럼 공백 제목을 거부한다`() {
+        val shape = validCircle().copy(title = "   ")
+
+        assertFalse(shape.isValidForFirebasePersistence())
     }
 
     @Test

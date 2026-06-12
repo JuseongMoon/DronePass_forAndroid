@@ -22,6 +22,7 @@ fun ShapeModel.validateForLocalPersistence(): ShapeValidationResult {
         maxRadiusMeters = null,
         maxCoordinateCount = null,
         requireTypedGeometry = false,
+        requireNonBlankTitle = false,
     )
 }
 
@@ -33,6 +34,7 @@ fun ShapeModel.validateForFirebasePersistence(): ShapeValidationResult {
         maxRadiusMeters = MAX_FIREBASE_RADIUS_METERS,
         maxCoordinateCount = MAX_FIREBASE_COORDINATE_COUNT,
         requireTypedGeometry = true,
+        requireNonBlankTitle = true,
     )
 }
 
@@ -61,11 +63,12 @@ private fun ShapeModel.validateShape(
     maxRadiusMeters: Double?,
     maxCoordinateCount: Int?,
     requireTypedGeometry: Boolean,
+    requireNonBlankTitle: Boolean,
 ): ShapeValidationResult {
     if (id.isBlank()) {
         return ShapeValidationResult(isValid = false, reason = "blank id")
     }
-    if (title.isBlank()) {
+    if (title.isEmpty() || (requireNonBlankTitle && title.isBlank())) {
         return ShapeValidationResult(isValid = false, reason = "blank title")
     }
     if (!isValidFirebaseHexColor(color)) {
