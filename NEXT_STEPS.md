@@ -73,6 +73,7 @@
 - `985412f fix: refresh sync baseline after realtime sync`
 - `69afe2d fix: keep main tabs above overlays`
 - `d9fd6b8 fix: preserve empty-title shape edit state`
+- `c505636 fix: hide saved row delete background at rest`
 
 ## 2. 이번 라운드에서 확인한 내용
 
@@ -130,6 +131,7 @@
 - KP/날씨 예보 새로고침 완료 메시지를 iOS `ToastMessageModifier`처럼 화면 내부 하단 토스트로 보정
 - 실시간/수동 Shape·Drone 동기화 성공 시 계정 전환 보호 기준선(`syncedShapeBaseline`)도 함께 갱신하도록 보정
 - 저장/설정 오버레이가 열린 상태에서도 메인 하단 탭이 실제 터치 가능한 최상위 레이어에 남도록 보정
+- 저장 목록 행의 스와이프 삭제 빨간 배경/휴지통 아이콘이 평상시 노출되지 않고 end-to-start 스와이프 중에만 보이도록 보정
 - Shape 읽기는 iOS 파서처럼 빈 문자열/공백 제목을 보존하고, 쓰기 검증은 공백 제목을 계속 거부
 - 빈 제목 기존 Shape도 iOS처럼 기존 도형 편집으로 취급해 드론/반경/고도/비행 기간 초기값을 보존
 - Drone 읽기는 iOS Codable 파서처럼 빈 문자열/공백 이름을 보존하고, 쓰기 검증은 공백 이름을 계속 거부
@@ -235,6 +237,7 @@ iOS와 Android가 공유하는 `users/{uid}/shapes`, `users/{uid}/sketches`, `us
 - 최신 디버그 빌드 재설치 후 저장 오버레이 상태에서 설정 탭 터치 전환이 정상 동작함을 재확인
 - 로컬 임시 원형 도형 `Smoke0612` 생성, 저장 목록 표시, 상세 시트 렌더링, end-to-start 스와이프 삭제 확인. 삭제 후 목록에 임시 도형이 남지 않음
 - 기존 도형 상세 메뉴(`수정하기`/`복제하기`/`삭제`) 렌더링, 수정 편집 시트 진입 후 취소, 복제 편집 시트 진입 후 취소 확인. 데이터 변경 없음
+- 저장 목록 행 평상시 빨간 삭제 배경/휴지통 아이콘이 보이지 않고, 일반 상세 진입 chevron만 보임을 최신 APK 설치 후 재확인
 - 위 추가 smoke에서 `FATAL EXCEPTION` 없음. `AndroidRuntime` 로그는 `monkey` 명령 프로세스 시작/종료만 확인
 
 1. 지도 로드, 현재 위치 권한, 현재 위치 이동
@@ -321,6 +324,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 - 2026-06-12에 KP/날씨 예보 새로고침 토스트 정합 후 `:app:testDebugUnitTest --tests "*WeatherForecastParityTest" --tests "*KpChartsTest"`, `:app:testDebugUnitTest`, `:app:assembleDebug`, `:app:minifyReleaseWithR8`를 재실행해 통과 확인.
 - 2026-06-12에 동기화 기준선 갱신 보정 후 `:app:testDebugUnitTest --tests "*RealtimeSyncManagerTest" --tests "*AuthViewModelForegroundSyncTest" --tests "*ProfileViewModelTest"`, `:app:testDebugUnitTest`, `:app:assembleDebug`, `:app:minifyReleaseWithR8`를 재실행해 통과 확인.
 - 2026-06-12에 빈 제목 기존 도형 편집 상태 보존 보정 후 `:app:testDebugUnitTest --tests "*ShapeEditDefaultsTest"`, `:app:testDebugUnitTest --tests "*Shape*Test"`, `:app:assembleDebug`, `:app:testDebugUnitTest`를 재실행해 통과 확인.
+- 2026-06-12에 저장 목록 스와이프 삭제 배경 노출 보정 후 `:app:testDebugUnitTest --tests "*SavedListSectionsTest"`, `:app:testDebugUnitTest --tests "*Saved*Test"`, `:app:assembleDebug`, `:app:testDebugUnitTest`를 재실행해 통과 확인.
 - `:app:minifyReleaseWithR8`는 현재 성공합니다.
 - Naver Maps SDK와 Play Services Location에서 R8 warning이 여러 줄 출력될 수 있지만, 현재는 build failure가 아닙니다.
 - `assembleRelease`와 `bundleRelease`는 실제 release signing 설정 전까지 의도적으로 차단되며, 2026-06-12에 `assembleRelease` 실패 경로를 재확인했습니다.
