@@ -17,7 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
-- `e03c0b6 fix: ignore apple sign-in cancellation`
+- `5ba0df4 fix: ignore apple sign-in cancellation`
 - `8666ad1 fix: match iOS palette color labels`
 - `a0e1444 fix: match iOS map app labels`
 - `c18aaa7 docs: refresh android handoff status`
