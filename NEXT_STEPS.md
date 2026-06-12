@@ -72,6 +72,7 @@
 - `1a4ea43 fix: match ios forecast refresh toast`
 - `985412f fix: refresh sync baseline after realtime sync`
 - `69afe2d fix: keep main tabs above overlays`
+- `d9fd6b8 fix: preserve empty-title shape edit state`
 
 ## 2. 이번 라운드에서 확인한 내용
 
@@ -130,6 +131,7 @@
 - 실시간/수동 Shape·Drone 동기화 성공 시 계정 전환 보호 기준선(`syncedShapeBaseline`)도 함께 갱신하도록 보정
 - 저장/설정 오버레이가 열린 상태에서도 메인 하단 탭이 실제 터치 가능한 최상위 레이어에 남도록 보정
 - Shape 읽기는 iOS 파서처럼 빈 문자열/공백 제목을 보존하고, 쓰기 검증은 공백 제목을 계속 거부
+- 빈 제목 기존 Shape도 iOS처럼 기존 도형 편집으로 취급해 드론/반경/고도/비행 기간 초기값을 보존
 - Drone 읽기는 iOS Codable 파서처럼 빈 문자열/공백 이름을 보존하고, 쓰기 검증은 공백 이름을 계속 거부
 - Shape 쓰기는 iOS `ShapeFirebaseStore`처럼 `memo`/`address`가 `null`이면 Firestore에 빈 문자열로 저장
 - 메인 저장/설정 오버레이 전환을 iOS처럼 이동과 opacity 결합 전환으로 보정
@@ -181,6 +183,7 @@ iOS와 Android가 공유하는 `users/{uid}/shapes`, `users/{uid}/sketches`, `us
 - Sketch: `Timestamp`, Double 좌표 map 배열, opacity/좌표 반올림, UUID id 검증 테스트 유지.
 - 2026-06-12 추가 방어: Shape/Drone/Sketch 읽기에서 color 필드가 문자열이지만 `#RRGGBB`가 아니면 문서 전체를 버리지 않고 플랫폼 기본색으로 fallback. 쓰기는 계속 표준 hex만 허용.
 - 2026-06-12 추가 방어: Shape 읽기는 iOS 파서처럼 `title` 필드가 문자열이면 빈 문자열/공백 문자열도 보존한다. 쓰기 검증은 계속 공백 제목을 거부한다.
+- 2026-06-12 정합화: 빈 제목 Shape 문서도 `shape != null`이면 기존 도형 편집으로 취급해 Firestore 읽기 관대성 계약과 편집 UI 초기값 처리를 일치시킨다.
 - 2026-06-12 정합화: Shape 쓰기는 iOS `ShapeFirebaseStore`처럼 `memo`/`address`가 `null`이면 Firestore에 빈 문자열로 저장한다.
 - 2026-06-12 추가 방어: Drone 읽기는 iOS Codable 파서처럼 `name` 필드가 문자열이면 빈 문자열/공백 문자열도 보존한다. 쓰기 검증은 계속 공백 이름을 거부한다.
 - 2026-06-12 재확인: Shape/Drone/Sketch 모두 문서 ID와 내부 `id` 불일치 시 skip하며, 원격 soft delete 헬퍼는 `update(deletedAt, updatedAt)` 기반이라 빈 tombstone 문서를 새로 만들지 않음.
@@ -314,6 +317,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 - 2026-06-12에 저장 목록 행 제목 표시 보정 후 `:app:testDebugUnitTest --tests "*SavedShapeListItemTest"`, `:app:testDebugUnitTest`, `:app:assembleDebug`를 재실행해 통과 확인.
 - 2026-06-12에 KP/날씨 예보 새로고침 토스트 정합 후 `:app:testDebugUnitTest --tests "*WeatherForecastParityTest" --tests "*KpChartsTest"`, `:app:testDebugUnitTest`, `:app:assembleDebug`, `:app:minifyReleaseWithR8`를 재실행해 통과 확인.
 - 2026-06-12에 동기화 기준선 갱신 보정 후 `:app:testDebugUnitTest --tests "*RealtimeSyncManagerTest" --tests "*AuthViewModelForegroundSyncTest" --tests "*ProfileViewModelTest"`, `:app:testDebugUnitTest`, `:app:assembleDebug`, `:app:minifyReleaseWithR8`를 재실행해 통과 확인.
+- 2026-06-12에 빈 제목 기존 도형 편집 상태 보존 보정 후 `:app:testDebugUnitTest --tests "*ShapeEditDefaultsTest"`, `:app:testDebugUnitTest --tests "*Shape*Test"`, `:app:assembleDebug`, `:app:testDebugUnitTest`를 재실행해 통과 확인.
 - `:app:minifyReleaseWithR8`는 현재 성공합니다.
 - Naver Maps SDK와 Play Services Location에서 R8 warning이 여러 줄 출력될 수 있지만, 현재는 build failure가 아닙니다.
 - `assembleRelease`와 `bundleRelease`는 실제 release signing 설정 전까지 의도적으로 차단되며, 2026-06-12에 `assembleRelease` 실패 경로를 재확인했습니다.
