@@ -73,6 +73,8 @@
 - 알림 예약 로직과 부팅 후 재예약
 - 계정/로그인/로그아웃/계정삭제/실시간 동기화 흐름
 - Sketch Firestore 직렬화/파싱 계약
+- 저장 목록 도형 탭 → 지도 포커스/줌/하이라이트 흐름
+- Shape/Drone/Sketch Firestore 쓰기 표준과 레거시 읽기 방어 계약
 - 주소 검색/좌표 입력/지도 롱프레스 도형 생성 흐름
 - 스케치 모드 제스처/툴바/undo·redo/지우개 동작
 - 메인 하단 탭/저장·설정 오버레이 탭 전환 흐름
@@ -156,6 +158,7 @@ iOS와 Android가 공유하는 `users/{uid}/shapes`, `users/{uid}/sketches`, `us
 2026-06-12 확인:
 
 - `adb devices` 결과 연결된 기기 없음. 실기기 smoke는 진행하지 못함.
+- 추가 재확인에서도 연결된 기기 없음. 로컬 테스트/빌드 검증만 진행.
 
 2026-06-08 부분 확인:
 
@@ -249,6 +252,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 - 2026-06-12에 `:app:testDebugUnitTest --tests "*StringResourceCoverageTest"`, `:app:testDebugUnitTest`, `:app:assembleDebug`를 최신 iOS 문구 정합 커밋 후 재실행해 통과 확인.
 - 2026-06-12에 `:app:testDebugUnitTest --tests "*PaletteColorTest" --tests "*StringResourceCoverageTest"`, `:app:testDebugUnitTest`, `:app:assembleDebug`를 색상 표시명 정합 커밋 후 재실행해 통과 확인.
 - 2026-06-12에 `:app:minifyReleaseWithR8`를 재실행해 통과 확인.
+- 2026-06-12에 저장 목록 지도 포커스와 Firestore 계약 재확인 후 `:app:testDebugUnitTest --tests "*MapCameraFocusTest" --tests "*ShapeFirestoreParsingTest" --tests "*DroneFirestoreParsingTest" --tests "*SketchFirebaseStoreTest"`, `:app:testDebugUnitTest`, `:app:assembleDebug`를 재실행해 통과 확인.
 - `:app:minifyReleaseWithR8`는 현재 성공합니다.
 - Naver Maps SDK와 Play Services Location에서 R8 warning이 여러 줄 출력될 수 있지만, 현재는 build failure가 아닙니다.
 - `assembleRelease`와 `bundleRelease`는 실제 release signing 설정 전까지 의도적으로 차단되며, 2026-06-12에 `assembleRelease` 실패 경로를 재확인했습니다.
