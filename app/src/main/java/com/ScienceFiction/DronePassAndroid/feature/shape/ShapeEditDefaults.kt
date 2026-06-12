@@ -237,13 +237,19 @@ internal fun coordinateAddressSearchResultOrNull(
     coordinate: Coordinate,
     originalText: String,
 ): CoordinateAddressSearchResult? {
-    val address = resolvedAddress.takeIf { it.isNotBlank() } ?: return null
+    val address = resolvedAddress.takeIf { it.isNotEmpty() } ?: return null
     return CoordinateAddressSearchResult(
         address = address,
         coordinate = coordinate,
         originalText = originalText,
     )
 }
+
+internal fun shapeEditDisplayText(value: String, placeholder: String): String =
+    value.ifEmpty { placeholder }
+
+internal fun isShapeEditPlaceholder(value: String): Boolean =
+    value.isEmpty()
 
 internal fun canConfirmCoordinateInput(isCoordinateInvalid: Boolean): Boolean =
     !isCoordinateInvalid

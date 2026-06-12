@@ -111,6 +111,34 @@ class ShapeEditDefaultsTest {
     }
 
     @Test
+    fun `좌표 입력 주소 검색 결과는 iOS처럼 공백 주소를 값으로 보존한다`() {
+        val coordinate = Coordinate(latitude = 37.648611, longitude = 126.686667)
+        val result = coordinateAddressSearchResultOrNull(
+            resolvedAddress = "   ",
+            coordinate = coordinate,
+            originalText = "37.648611, 126.686667",
+        )
+
+        assertEquals(
+            CoordinateAddressSearchResult(
+                address = "   ",
+                coordinate = coordinate,
+                originalText = "37.648611, 126.686667",
+            ),
+            result,
+        )
+    }
+
+    @Test
+    fun `기본정보 행 placeholder는 iOS처럼 빈 문자열에만 적용한다`() {
+        assertEquals("좌표를 입력하세요", shapeEditDisplayText("", placeholder = "좌표를 입력하세요"))
+        assertTrue(isShapeEditPlaceholder(""))
+
+        assertEquals("   ", shapeEditDisplayText("   ", placeholder = "좌표를 입력하세요"))
+        assertFalse(isShapeEditPlaceholder("   "))
+    }
+
+    @Test
     fun `날짜 시간 선택 시트는 iOS처럼 한 화면에서 완료한다`() {
         assertTrue(ShapeDateTimeSelectionSkipPartiallyExpanded)
     }

@@ -220,7 +220,7 @@ fun ShapeEditScreen(
 
     // 역지오코딩 결과가 나중에 도착할 경우 주소 업데이트
     LaunchedEffect(reverseGeocodedAddress) {
-        if (!isEditMode && address.isBlank() && reverseGeocodedAddress != null) {
+        if (!isEditMode && address.isEmpty() && reverseGeocodedAddress != null) {
             address = reverseGeocodedAddress
         }
     }
@@ -498,10 +498,11 @@ fun ShapeEditScreen(
                 // 좌표 (인라인 편집 + Decimal/DMS 파싱)
                 EditFormClickableRow(
                     label = stringResource(R.string.shape_edit_coordinate_label),
-                    value = coordinateText.ifBlank {
-                        stringResource(R.string.shape_edit_coordinate_placeholder)
-                    },
-                    valueColor = if (coordinateText.isBlank()) {
+                    value = shapeEditDisplayText(
+                        value = coordinateText,
+                        placeholder = stringResource(R.string.shape_edit_coordinate_placeholder),
+                    ),
+                    valueColor = if (isShapeEditPlaceholder(coordinateText)) {
                         MaterialTheme.colorScheme.onSurfaceVariant
                     } else {
                         MaterialTheme.colorScheme.onSurface
@@ -519,10 +520,11 @@ fun ShapeEditScreen(
                 if (geocodingApi != null) {
                     EditFormClickableRow(
                         label = stringResource(R.string.shape_edit_label_address),
-                        value = address.ifBlank {
-                            stringResource(R.string.shape_edit_address_search_placeholder)
-                        },
-                        valueColor = if (address.isBlank()) {
+                        value = shapeEditDisplayText(
+                            value = address,
+                            placeholder = stringResource(R.string.shape_edit_address_search_placeholder),
+                        ),
+                        valueColor = if (isShapeEditPlaceholder(address)) {
                             MaterialTheme.colorScheme.onSurfaceVariant
                         } else {
                             MaterialTheme.colorScheme.onSurface
@@ -725,7 +727,7 @@ fun ShapeEditScreen(
                             if (requestId != coordinateResolveRequestId) return@launch
 
                             isResolvingCoordinateAddress = false
-                            if (resolvedAddress.isBlank()) {
+                            if (resolvedAddress.isEmpty()) {
                                 pendingCoordinateWithoutAddress = parsed
                             } else {
                                 coordinateAddressSearchResult = coordinateAddressSearchResultOrNull(
