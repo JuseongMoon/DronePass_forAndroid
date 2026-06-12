@@ -64,6 +64,13 @@ class SavedShapeListItemTest {
     }
 
     @Test
+    fun `저장 목록 제목은 iOS ShapeInfoContent처럼 빈 문자열도 원문 그대로 표시한다`() {
+        assertEquals("", savedShapeListTitleText(""))
+        assertEquals("   ", savedShapeListTitleText("   "))
+        assertEquals("Flight Area", savedShapeListTitleText("Flight Area"))
+    }
+
+    @Test
     fun `저장 목록 색상 인디케이터 그림자는 iOS radius 1 과 맞춘다`() {
         assertEquals(1f, SavedShapeColorIndicatorShadowElevation.value, 0f)
     }

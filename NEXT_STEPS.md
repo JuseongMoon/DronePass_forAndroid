@@ -108,6 +108,7 @@
 - 저장 목록 도형 포커스 중복 이동 생략 기준을 iOS처럼 도형 id가 아니라 baseCoordinate 기준으로 보정
 - 저장 목록/저장 직후 도형 포커스 좌표와 반경을 iOS `MoveToShapeNotification`처럼 `baseCoordinate`와 `radius ?? 100` 기준으로 보정
 - 저장 목록 만료 도형 경계값을 iOS `SavedTableListView`처럼 `flightEndDate <= now` 기준으로 보정
+- 저장 목록 행 제목 표시를 iOS `ShapeInfoContent`처럼 빈 문자열/공백도 원문 그대로 유지하도록 보정
 - 메인 저장/설정 오버레이 전환을 iOS처럼 이동과 opacity 결합 전환으로 보정
 - 스케치 오버레이를 iOS처럼 현재 지도 bounds와 겹치는 스케치만 렌더링하도록 보정
 - VWorld 상세 고도 행을 상한/하한 중 하나만 있어도 표시하도록 보정
@@ -265,6 +266,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 - 2026-06-12에 `:app:minifyReleaseWithR8`를 재실행해 통과 확인.
 - 2026-06-12에 저장 목록 지도 포커스와 Firestore 계약 재확인 후 `:app:testDebugUnitTest --tests "*MapCameraFocusTest" --tests "*ShapeFirestoreParsingTest" --tests "*DroneFirestoreParsingTest" --tests "*SketchFirebaseStoreTest"`, `:app:testDebugUnitTest`, `:app:assembleDebug`를 재실행해 통과 확인.
 - 2026-06-12에 저장 목록 만료 경계값을 iOS `SavedTableListView` 기준으로 정정한 뒤 `:app:testDebugUnitTest --tests "*SavedListSectionsTest" --tests "*SavedShapeListItemTest" --tests "*MapCameraFocusTest" --tests "*ShapeRepositoryTest"`, `:app:testDebugUnitTest`, `:app:assembleDebug`를 재실행해 통과 확인.
+- 2026-06-12에 저장 목록 행 제목 표시 보정 후 `:app:testDebugUnitTest --tests "*SavedShapeListItemTest"`, `:app:testDebugUnitTest`, `:app:assembleDebug`를 재실행해 통과 확인.
 - `:app:minifyReleaseWithR8`는 현재 성공합니다.
 - Naver Maps SDK와 Play Services Location에서 R8 warning이 여러 줄 출력될 수 있지만, 현재는 build failure가 아닙니다.
 - `assembleRelease`와 `bundleRelease`는 실제 release signing 설정 전까지 의도적으로 차단되며, 2026-06-12에 `assembleRelease` 실패 경로를 재확인했습니다.
