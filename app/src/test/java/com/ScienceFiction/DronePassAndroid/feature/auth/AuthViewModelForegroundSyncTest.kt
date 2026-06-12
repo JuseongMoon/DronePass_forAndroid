@@ -92,6 +92,26 @@ class AuthViewModelForegroundSyncTest {
     }
 
     @Test
+    fun `Apple login web cancellation is ignored like iOS user cancelled flow`() {
+        assertEquals(
+            true,
+            isAppleSignInCancellationErrorCode("ERROR_WEB_CONTEXT_CANCELED"),
+        )
+        assertEquals(
+            true,
+            isAppleSignInCancellationErrorCode("ERROR_WEB_CONTEXT_CANCELLED"),
+        )
+        assertEquals(
+            false,
+            isAppleSignInCancellationErrorCode("ERROR_WEB_NETWORK_REQUEST_FAILED"),
+        )
+        assertEquals(
+            false,
+            shouldSuppressAppleSignInFailure(IllegalStateException("network")),
+        )
+    }
+
+    @Test
     fun `account switch resets local data before iOS style login sync`() {
         assertEquals(
             true,

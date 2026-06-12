@@ -26,6 +26,7 @@ import com.ScienceFiction.DronePassAndroid.feature.profile.ProfilePreferenceKeys
 import com.ScienceFiction.DronePassAndroid.feature.profile.storedCloudBackupEnabled
 import com.ScienceFiction.DronePassAndroid.service.FcmService
 import com.ScienceFiction.DronePassAndroid.R
+import com.google.firebase.auth.FirebaseAuthWebException
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -69,6 +70,18 @@ internal fun resolveAuthProviderSignInAction(authState: AuthState): AuthProvider
 
 internal fun shouldSuppressGoogleSignInFailure(exception: Throwable): Boolean {
     return exception is GetCredentialCancellationException
+}
+
+internal fun isAppleSignInCancellationErrorCode(errorCode: String?): Boolean {
+    return errorCode in setOf(
+        "ERROR_WEB_CONTEXT_CANCELED",
+        "ERROR_WEB_CONTEXT_CANCELLED",
+    )
+}
+
+internal fun shouldSuppressAppleSignInFailure(exception: Throwable): Boolean {
+    if (exception !is FirebaseAuthWebException) return false
+    return isAppleSignInCancellationErrorCode(exception.errorCode)
 }
 
 internal fun shouldResetLocalDataForAccountChange(action: AuthAccountChangeAction): Boolean {
@@ -253,9 +266,13 @@ class AuthViewModel @Inject constructor(
                     )
                 },
                 onFailure = { exception ->
-                    _authState.value = AuthState.Error(
-                        exception.localizedMessage ?: appContext.getString(R.string.login_apple_error)
-                    )
+                    _authState.value = if (shouldSuppressAppleSignInFailure(exception)) {
+                        AuthState.LoggedOut
+                    } else {
+                        AuthState.Error(
+                            exception.localizedMessage ?: appContext.getString(R.string.login_apple_error)
+                        )
+                    }
                 }
             )
         }

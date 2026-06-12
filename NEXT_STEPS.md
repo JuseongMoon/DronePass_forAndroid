@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- `e03c0b6 fix: ignore apple sign-in cancellation`
 - `8666ad1 fix: match iOS palette color labels`
 - `a0e1444 fix: match iOS map app labels`
 - `c18aaa7 docs: refresh android handoff status`
@@ -107,6 +108,7 @@
 - KP 차트 축과 현재 날씨 CRI 표시 보정
 - 공용 `No` 버튼 한국어 문구를 iOS String Catalog 기준인 `아니오`로 보정
 - Apple 로그인 Activity context unwrap
+- Apple 로그인 웹 OAuth 사용자 취소를 iOS처럼 오류 알림 없이 무시
 - 로그인 약관/개인정보 시트 흐름
 - 한국어 도형 문구와 상세 라벨
 - iOS 기준 gust warning hysteresis
