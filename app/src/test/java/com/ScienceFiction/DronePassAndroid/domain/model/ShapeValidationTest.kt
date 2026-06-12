@@ -35,6 +35,13 @@ class ShapeValidationTest {
     }
 
     @Test
+    fun `도형 Firebase 읽기는 iOS 파서처럼 빈 제목 문자열을 허용한다`() {
+        assertTrue(validCircle().copy(title = "").isValidForFirebaseRead())
+        assertTrue(validCircle().copy(title = "   ").isValidForFirebaseRead())
+        assertFalse(validCircle().copy(id = "not-a-uuid").isValidForFirebaseRead())
+    }
+
+    @Test
     fun `iOS 와 같이 좌표 범위와 finite 값을 검증한다`() {
         assertFalse(validCircle().copy(baseCoordinate = Coordinate(91.0, 127.0)).isValidForLocalPersistence())
         assertFalse(validCircle().copy(baseCoordinate = Coordinate(37.0, Double.NaN)).isValidForLocalPersistence())

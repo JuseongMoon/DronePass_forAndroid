@@ -45,6 +45,15 @@ class ShapeFirestoreParsingTest {
     }
 
     @Test
+    fun `Firestore 파싱은 iOS처럼 빈 제목 문자열을 보존한다`() {
+        val emptyTitle = shapeFromFirestoreData(validDocument() + ("title" to ""))
+        val whitespaceTitle = shapeFromFirestoreData(validDocument() + ("title" to "   "))
+
+        assertEquals("", requireNotNull(emptyTitle).title)
+        assertEquals("   ", requireNotNull(whitespaceTitle).title)
+    }
+
+    @Test
     fun `Firestore 파싱은 Firebase 계약을 어긴 좌표 범위를 invalid 로 본다`() {
         val invalidBaseCoordinate = validDocument() + (
             "baseCoordinate" to mapOf(

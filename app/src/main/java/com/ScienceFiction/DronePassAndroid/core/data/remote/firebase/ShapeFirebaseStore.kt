@@ -4,6 +4,7 @@ import android.util.Log
 import com.ScienceFiction.DronePassAndroid.domain.model.Coordinate
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeType
+import com.ScienceFiction.DronePassAndroid.domain.model.isValidForFirebaseRead
 import com.ScienceFiction.DronePassAndroid.domain.model.isValidForFirebasePersistence
 import com.ScienceFiction.DronePassAndroid.domain.model.normalizeFirebaseHexColorForRead
 import com.ScienceFiction.DronePassAndroid.domain.model.normalizeFirebaseHexColorForWrite
@@ -152,7 +153,7 @@ internal fun shapeFromFirestoreData(data: Map<String, Any?>): ShapeModel? {
         flightStartDate = flightStartDate,
         flightEndDate = flightEndDate,
         deletedAt = deletedAt
-    ).takeIf { it.isValidForFirebasePersistence() }
+    ).takeIf { it.isValidForFirebaseRead() }
 }
 
 internal fun shapeFromFirestoreDocument(documentId: String, data: Map<String, Any?>): ShapeModel? {

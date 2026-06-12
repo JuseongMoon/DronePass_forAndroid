@@ -22,6 +22,7 @@ fun ShapeModel.validateForLocalPersistence(): ShapeValidationResult {
         maxRadiusMeters = null,
         maxCoordinateCount = null,
         requireTypedGeometry = false,
+        requireNonEmptyTitle = true,
         requireNonBlankTitle = false,
     )
 }
@@ -34,13 +35,29 @@ fun ShapeModel.validateForFirebasePersistence(): ShapeValidationResult {
         maxRadiusMeters = MAX_FIREBASE_RADIUS_METERS,
         maxCoordinateCount = MAX_FIREBASE_COORDINATE_COUNT,
         requireTypedGeometry = true,
+        requireNonEmptyTitle = true,
         requireNonBlankTitle = true,
+    )
+}
+
+fun ShapeModel.validateForFirebaseRead(): ShapeValidationResult {
+    if (!isValidFirebaseShapeId(id)) {
+        return ShapeValidationResult(isValid = false, reason = "invalid id")
+    }
+    return validateShape(
+        maxRadiusMeters = MAX_FIREBASE_RADIUS_METERS,
+        maxCoordinateCount = MAX_FIREBASE_COORDINATE_COUNT,
+        requireTypedGeometry = true,
+        requireNonEmptyTitle = false,
+        requireNonBlankTitle = false,
     )
 }
 
 fun ShapeModel.isValidForLocalPersistence(): Boolean = validateForLocalPersistence().isValid
 
 fun ShapeModel.isValidForFirebasePersistence(): Boolean = validateForFirebasePersistence().isValid
+
+fun ShapeModel.isValidForFirebaseRead(): Boolean = validateForFirebaseRead().isValid
 
 fun validateFirebaseShapeBatch(shapes: List<ShapeModel>): ShapeValidationResult {
     shapes.forEach { shape ->
@@ -63,12 +80,13 @@ private fun ShapeModel.validateShape(
     maxRadiusMeters: Double?,
     maxCoordinateCount: Int?,
     requireTypedGeometry: Boolean,
+    requireNonEmptyTitle: Boolean,
     requireNonBlankTitle: Boolean,
 ): ShapeValidationResult {
     if (id.isBlank()) {
         return ShapeValidationResult(isValid = false, reason = "blank id")
     }
-    if (title.isEmpty() || (requireNonBlankTitle && title.isBlank())) {
+    if ((requireNonEmptyTitle && title.isEmpty()) || (requireNonBlankTitle && title.isBlank())) {
         return ShapeValidationResult(isValid = false, reason = "blank title")
     }
     if (!isValidFirebaseHexColor(color)) {
