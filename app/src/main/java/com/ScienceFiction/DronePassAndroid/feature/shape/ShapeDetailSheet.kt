@@ -402,7 +402,7 @@ fun ShapeDetailSheet(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 MemoLinkifyView(
-                    text = shape.memo?.takeIf { it.isNotBlank() } ?: "-",
+                    text = formatShapeDetailMemo(shape.memo),
                     textColor = MaterialTheme.colorScheme.onSurfaceVariant.toArgb(),
                     onUrlClick = { url ->
                         when (resolveShapeDetailMemoLinkAction(url)) {
@@ -592,6 +592,10 @@ private fun formatMeters(value: Double): String = "${value.toInt()} m"
 
 internal fun formatShapeDetailAddress(address: String?): String {
     return address ?: "-"
+}
+
+internal fun formatShapeDetailMemo(memo: String?): String {
+    return memo ?: "-"
 }
 
 internal fun copyableShapeDetailAddress(address: String?): String? {

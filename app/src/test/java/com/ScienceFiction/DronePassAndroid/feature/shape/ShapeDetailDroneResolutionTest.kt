@@ -133,6 +133,14 @@ class ShapeDetailDroneResolutionTest {
     }
 
     @Test
+    fun `상세 메모 표시는 iOS처럼 nil 일 때만 대시로 대체한다`() {
+        assertEquals("-", formatShapeDetailMemo(null))
+        assertEquals("", formatShapeDetailMemo(""))
+        assertEquals("   ", formatShapeDetailMemo("   "))
+        assertEquals("메모", formatShapeDetailMemo("메모"))
+    }
+
+    @Test
     fun `상세 주소 복사는 iOS copyableText처럼 nil 과 빈 문자열만 제외한다`() {
         assertNull(copyableShapeDetailAddress(null))
         assertNull(copyableShapeDetailAddress(""))
