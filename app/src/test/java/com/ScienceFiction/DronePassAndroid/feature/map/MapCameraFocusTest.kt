@@ -76,7 +76,7 @@ class MapCameraFocusTest {
     }
 
     @Test
-    fun `이미 같은 도형이 선택되어 있으면 중복 포커스 이동을 생략한다`() {
+    fun `이미 같은 좌표의 도형이 선택되어 있으면 iOS처럼 중복 포커스 이동을 생략한다`() {
         val coordinate = Coordinate(37.0, 127.0)
         val selected = shape(
             id = "selected",
@@ -95,7 +95,7 @@ class MapCameraFocusTest {
     }
 
     @Test
-    fun `선택 도형이 없거나 대상 도형이 다르면 포커스 이동을 수행한다`() {
+    fun `선택 도형이 없거나 대상 좌표가 다르면 포커스 이동을 수행한다`() {
         val target = shape(
             id = "target",
             coordinate = Coordinate(37.0, 127.0),
@@ -109,7 +109,7 @@ class MapCameraFocusTest {
             shouldSkipShapeFocusMove(
                 currentSelectedShape = shape(
                     id = "selected",
-                    coordinate = target.baseCoordinate,
+                    coordinate = Coordinate(37.1, 127.1),
                     start = 1L,
                     end = 2L,
                 ),
@@ -138,7 +138,7 @@ class MapCameraFocusTest {
     }
 
     @Test
-    fun `같은 중심점의 다른 반경 도형은 크기에 맞춰 다시 포커스한다`() {
+    fun `같은 중심점의 다른 반경 도형은 iOS처럼 중복 포커스 이동을 생략한다`() {
         val coordinate = Coordinate(37.0, 127.0)
         val selected = shape(
             id = "selected",
@@ -153,11 +153,7 @@ class MapCameraFocusTest {
             end = 2L,
         ).copy(radius = 2_000.0)
 
-        assertEquals(
-            CameraEvent.MoveToShape(
-                coordinate = coordinate,
-                zoom = calculateShapeFocusZoomLevel(2_000.0),
-            ),
+        assertNull(
             resolveShapeFocusCameraEvent(
                 currentSelectedShape = selected,
                 targetShape = target,

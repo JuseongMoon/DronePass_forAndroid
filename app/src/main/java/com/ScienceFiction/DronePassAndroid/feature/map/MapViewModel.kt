@@ -131,7 +131,7 @@ internal fun shouldSkipShapeFocusMove(
     currentSelectedShape: ShapeModel?,
     targetShape: ShapeModel,
 ): Boolean {
-    return currentSelectedShape?.id == targetShape.id
+    return currentSelectedShape?.baseCoordinate == targetShape.baseCoordinate
 }
 
 internal fun resolveShapeFocusCameraEvent(
