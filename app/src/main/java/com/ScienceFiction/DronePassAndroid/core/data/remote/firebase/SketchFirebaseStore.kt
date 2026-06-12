@@ -5,6 +5,7 @@ import com.ScienceFiction.DronePassAndroid.domain.model.Coordinate
 import com.ScienceFiction.DronePassAndroid.domain.model.SketchModel
 import com.ScienceFiction.DronePassAndroid.domain.model.isValidForFirebasePersistence
 import com.ScienceFiction.DronePassAndroid.domain.model.isValidShapeCoordinate
+import com.ScienceFiction.DronePassAndroid.domain.model.normalizeFirebaseHexColorForRead
 import com.ScienceFiction.DronePassAndroid.domain.model.normalizeFirebaseHexColorForWrite
 import com.ScienceFiction.DronePassAndroid.domain.model.validateFirebaseSketchBatch
 import com.ScienceFiction.DronePassAndroid.domain.model.validateForFirebasePersistence
@@ -85,7 +86,9 @@ internal fun sketchFromFirestoreData(
     return SketchModel(
         id = id,
         points = points,
-        color = data["color"] as? String ?: "#FF0000",
+        color = (data["color"] as? String)
+            ?.let { normalizeFirebaseHexColorForRead(it, fallback = "#FF0000") }
+            ?: "#FF0000",
         strokeWidth = data["strokeWidth"]?.let { it as? Double ?: return null } ?: 3.0,
         opacity = data["opacity"]?.let { it as? Double ?: return null } ?: 1.0,
         createdAt = createdAt,

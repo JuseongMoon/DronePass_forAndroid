@@ -37,8 +37,15 @@ class ShapeFirestoreParsingTest {
     }
 
     @Test
-    fun `Firestore 파싱은 Firebase 계약을 어긴 색상과 좌표 범위를 invalid 로 본다`() {
-        val invalidColor = validDocument() + ("color" to "blue")
+    fun `Firestore 파싱은 iOS처럼 잘못된 색상 문자열을 기본색으로 살린다`() {
+        val shape = shapeFromFirestoreData(validDocument() + ("color" to "blue"))
+
+        requireNotNull(shape)
+        assertEquals("#007AFF", shape.color)
+    }
+
+    @Test
+    fun `Firestore 파싱은 Firebase 계약을 어긴 좌표 범위를 invalid 로 본다`() {
         val invalidBaseCoordinate = validDocument() + (
             "baseCoordinate" to mapOf(
                 "latitude" to 91.0,
@@ -52,7 +59,6 @@ class ShapeFirestoreParsingTest {
             )
         )
 
-        assertNull(shapeFromFirestoreData(invalidColor))
         assertNull(shapeFromFirestoreData(invalidBaseCoordinate))
         assertNull(shapeFromFirestoreData(nonFiniteBaseCoordinate))
     }

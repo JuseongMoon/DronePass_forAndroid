@@ -13,3 +13,10 @@ internal fun normalizeFirebaseHexColorForWrite(color: String): String =
     } else {
         color
     }
+
+internal fun normalizeFirebaseHexColorForRead(color: String, fallback: String): String =
+    if (isValidFirebaseHexColor(color)) {
+        color
+    } else {
+        fallback
+    }

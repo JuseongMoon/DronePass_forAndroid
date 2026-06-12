@@ -5,6 +5,7 @@ import com.ScienceFiction.DronePassAndroid.domain.model.Coordinate
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeType
 import com.ScienceFiction.DronePassAndroid.domain.model.isValidForFirebasePersistence
+import com.ScienceFiction.DronePassAndroid.domain.model.normalizeFirebaseHexColorForRead
 import com.ScienceFiction.DronePassAndroid.domain.model.normalizeFirebaseHexColorForWrite
 import com.ScienceFiction.DronePassAndroid.domain.model.validateFirebaseShapeBatch
 import com.ScienceFiction.DronePassAndroid.domain.model.validateForFirebasePersistence
@@ -92,7 +93,10 @@ internal fun shapeFromFirestoreData(data: Map<String, Any?>): ShapeModel? {
     val id = data["id"] as? String ?: return null
     if (!isValidShapeId(id)) return null
     val title = data["title"] as? String ?: return null
-    val color = data["color"] as? String ?: return null
+    val color = normalizeFirebaseHexColorForRead(
+        color = data["color"] as? String ?: return null,
+        fallback = "#007AFF",
+    )
     val shapeType = ShapeType.parseWireValue(data["shapeType"] as? String) ?: return null
 
     val flightStartDate = timestampMillis(data["flightStartDate"])

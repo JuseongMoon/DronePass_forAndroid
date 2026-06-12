@@ -124,8 +124,13 @@ class SketchFirebaseStoreTest {
     }
 
     @Test
-    fun `스케치 선택 필드가 존재하지만 Firebase 계약을 어기면 invalid 이다`() {
-        assertNull(sketchFromFirestoreData(validDocument() + ("color" to "red")))
+    fun `스케치 color 문자열이 Firebase 계약을 어기면 iOS처럼 기본 빨강으로 살린다`() {
+        assertEquals("#FF0000", sketchFromFirestoreData(validDocument() + ("color" to "red"))?.color)
+        assertEquals("#FF0000", sketchFromFirestoreData(validDocument() + ("color" to "#FF000080"))?.color)
+    }
+
+    @Test
+    fun `스케치 숫자 선택 필드가 존재하지만 Firebase 계약을 어기면 invalid 이다`() {
         assertNull(sketchFromFirestoreData(validDocument() + ("strokeWidth" to 5)))
         assertNull(sketchFromFirestoreData(validDocument() + ("strokeWidth" to 0.0)))
         assertNull(sketchFromFirestoreData(validDocument() + ("strokeWidth" to 50.1)))

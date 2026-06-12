@@ -3,6 +3,7 @@ package com.ScienceFiction.DronePassAndroid.core.data.remote.firebase
 import android.util.Log
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.isValidForFirebasePersistence
+import com.ScienceFiction.DronePassAndroid.domain.model.normalizeFirebaseHexColorForRead
 import com.ScienceFiction.DronePassAndroid.domain.model.normalizeFirebaseHexColorForWrite
 import com.ScienceFiction.DronePassAndroid.domain.model.validateFirebaseDroneBatch
 import com.ScienceFiction.DronePassAndroid.domain.model.validateForFirebasePersistence
@@ -46,7 +47,10 @@ internal fun droneFromFirestoreData(data: Map<String, Any?>): DroneModel? {
     val id = data["id"] as? String ?: return null
     if (!isValidDroneId(id)) return null
     val name = data["name"] as? String ?: return null
-    val color = data["color"] as? String ?: return null
+    val color = normalizeFirebaseHexColorForRead(
+        color = data["color"] as? String ?: return null,
+        fallback = "#007AFF",
+    )
     val createdAt = droneTimestampMillis(data["createdAt"]) ?: return null
     val updatedAt = droneTimestampMillis(data["updatedAt"]) ?: return null
     val deletedAt = droneTimestampMillis(data["deletedAt"])
