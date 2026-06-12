@@ -68,6 +68,8 @@
 - `ff26871 fix: tolerate iOS shape title reads`
 - `80bc4cf fix: tolerate iOS drone name reads`
 - `ad2f458 fix: match ios shape optional strings`
+- `0ac2093 fix: remove sync merge force unwraps`
+- `1a4ea43 fix: match ios forecast refresh toast`
 
 ## 2. 이번 라운드에서 확인한 내용
 
@@ -122,6 +124,7 @@
 - 드론 상세 콜백, 날씨 오류 화면, VWorld 지정번호, 알림 재예약의 nullable 경계에서 강제 언랩을 제거
 - 공용 LWW/드론 full-sync 병합 경로의 nullable 강제 언랩을 제거하고 서버 전용 드론 병합 회귀 테스트 추가
 - VWorld 비행구역 레이어 선택 시트의 통계 헤더를 iOS처럼 전체 폭 배경 밴드로 보정
+- KP/날씨 예보 새로고침 완료 메시지를 iOS `ToastMessageModifier`처럼 화면 내부 하단 토스트로 보정
 - Shape 읽기는 iOS 파서처럼 빈 문자열/공백 제목을 보존하고, 쓰기 검증은 공백 제목을 계속 거부
 - Drone 읽기는 iOS Codable 파서처럼 빈 문자열/공백 이름을 보존하고, 쓰기 검증은 공백 이름을 계속 거부
 - Shape 쓰기는 iOS `ShapeFirebaseStore`처럼 `memo`/`address`가 `null`이면 Firestore에 빈 문자열로 저장
@@ -286,6 +289,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 - 2026-06-12에 저장 목록 지도 포커스와 Firestore 계약 재확인 후 `:app:testDebugUnitTest --tests "*MapCameraFocusTest" --tests "*ShapeFirestoreParsingTest" --tests "*DroneFirestoreParsingTest" --tests "*SketchFirebaseStoreTest"`, `:app:testDebugUnitTest`, `:app:assembleDebug`를 재실행해 통과 확인.
 - 2026-06-12에 저장 목록 만료 경계값을 iOS `SavedTableListView` 기준으로 정정한 뒤 `:app:testDebugUnitTest --tests "*SavedListSectionsTest" --tests "*SavedShapeListItemTest" --tests "*MapCameraFocusTest" --tests "*ShapeRepositoryTest"`, `:app:testDebugUnitTest`, `:app:assembleDebug`를 재실행해 통과 확인.
 - 2026-06-12에 저장 목록 행 제목 표시 보정 후 `:app:testDebugUnitTest --tests "*SavedShapeListItemTest"`, `:app:testDebugUnitTest`, `:app:assembleDebug`를 재실행해 통과 확인.
+- 2026-06-12에 KP/날씨 예보 새로고침 토스트 정합 후 `:app:testDebugUnitTest --tests "*WeatherForecastParityTest" --tests "*KpChartsTest"`, `:app:testDebugUnitTest`, `:app:assembleDebug`, `:app:minifyReleaseWithR8`를 재실행해 통과 확인.
 - `:app:minifyReleaseWithR8`는 현재 성공합니다.
 - Naver Maps SDK와 Play Services Location에서 R8 warning이 여러 줄 출력될 수 있지만, 현재는 build failure가 아닙니다.
 - `assembleRelease`와 `bundleRelease`는 실제 release signing 설정 전까지 의도적으로 차단되며, 2026-06-12에 `assembleRelease` 실패 경로를 재확인했습니다.
