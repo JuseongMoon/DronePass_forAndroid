@@ -46,15 +46,14 @@ internal fun mergeDronesForFullSync(
         val local = localById[id]
         val server = serverById[id]
         when {
-            local == null -> server!!
-            server == null -> local.takeIf {
+            local != null && server != null -> if (server.updatedAt >= local.updatedAt) server else local
+            local != null -> local.takeIf {
                 shouldKeepLocalDroneMissingOnServer(
                     localDroneUpdatedAt = it.updatedAt,
                     lastSyncTime = lastSyncTime,
                 )
             }
-            server.updatedAt >= local.updatedAt -> server
-            else -> local
+            else -> server
         }
     }
 

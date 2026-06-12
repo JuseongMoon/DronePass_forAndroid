@@ -43,14 +43,15 @@ inline fun <T : Any> mergeLWW(
     val localById = local.associateBy(idOf)
     val allIds = serverById.keys + localById.keys
 
-    val merged = allIds.map { id ->
+    val merged = allIds.mapNotNull { id ->
         val localItem = localById[id]
         val serverItem = serverById[id]
         when {
-            localItem == null -> serverItem!!
-            serverItem == null -> localItem
-            updatedAtOf(serverItem) >= updatedAtOf(localItem) -> serverItem
-            else -> localItem
+            localItem != null && serverItem != null -> {
+                if (updatedAtOf(serverItem) >= updatedAtOf(localItem)) serverItem else localItem
+            }
+            localItem != null -> localItem
+            else -> serverItem
         }
     }
 

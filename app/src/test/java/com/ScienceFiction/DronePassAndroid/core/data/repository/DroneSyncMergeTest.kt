@@ -37,6 +37,20 @@ class DroneSyncMergeTest {
     }
 
     @Test
+    fun `서버에만 있는 드론은 유지하고 업로드하지 않는다`() {
+        val server = drone(id = "server-only", updatedAt = 20L)
+
+        val result = mergeDronesForFullSync(
+            localDrones = emptyList(),
+            serverDrones = listOf(server),
+            lastSyncTime = 30L,
+        )
+
+        assertEquals(listOf("server-only"), result.merged.map { it.id })
+        assertEquals(emptyList<DroneModel>(), result.toUpload)
+    }
+
+    @Test
     fun `마지막 동기화 이후 수정된 로컬 드론은 서버에 없어도 업로드한다`() {
         val local = drone(id = "offline-created", updatedAt = 40L)
 
