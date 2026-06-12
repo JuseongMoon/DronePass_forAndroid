@@ -264,7 +264,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 - 2026-06-12에 `:app:testDebugUnitTest --tests "*PaletteColorTest" --tests "*StringResourceCoverageTest"`, `:app:testDebugUnitTest`, `:app:assembleDebug`를 색상 표시명 정합 커밋 후 재실행해 통과 확인.
 - 2026-06-12에 `:app:minifyReleaseWithR8`를 재실행해 통과 확인.
 - 2026-06-12에 저장 목록 지도 포커스와 Firestore 계약 재확인 후 `:app:testDebugUnitTest --tests "*MapCameraFocusTest" --tests "*ShapeFirestoreParsingTest" --tests "*DroneFirestoreParsingTest" --tests "*SketchFirebaseStoreTest"`, `:app:testDebugUnitTest`, `:app:assembleDebug`를 재실행해 통과 확인.
-- 2026-06-12에 저장 목록 만료 경계값 보정 후 `:app:testDebugUnitTest --tests "*SavedListSectionsTest" --tests "*MapCameraFocusTest" --tests "*ShapeRepositoryTest"`, `:app:testDebugUnitTest`, `:app:assembleDebug`를 재실행해 통과 확인.
+- 2026-06-12에 저장 목록 만료 경계값 보정 후 `:app:testDebugUnitTest --tests "*SavedListSectionsTest" --tests "*SavedShapeListItemTest" --tests "*MapCameraFocusTest" --tests "*ShapeRepositoryTest"`, `:app:testDebugUnitTest`, `:app:assembleDebug`를 재실행해 통과 확인.
 - `:app:minifyReleaseWithR8`는 현재 성공합니다.
 - Naver Maps SDK와 Play Services Location에서 R8 warning이 여러 줄 출력될 수 있지만, 현재는 build failure가 아닙니다.
 - `assembleRelease`와 `bundleRelease`는 실제 release signing 설정 전까지 의도적으로 차단되며, 2026-06-12에 `assembleRelease` 실패 경로를 재확인했습니다.

@@ -91,8 +91,9 @@ class SavedShapeListItemTest {
     }
 
     @Test
-    fun `저장 목록 행 만료 색상 판정은 iOS처럼 종료 시각과 같아도 만료로 본다`() {
-        assertEquals(true, isSavedShapeListItemExpired(flightEndDateMillis = 1_000L, now = 1_000L))
+    fun `저장 목록 행 만료 색상 판정은 iOS처럼 종료 시각과 현재가 같으면 아직 만료가 아니다`() {
+        assertEquals(false, isSavedShapeListItemExpired(flightEndDateMillis = 1_000L, now = 1_000L))
+        assertEquals(true, isSavedShapeListItemExpired(flightEndDateMillis = 999L, now = 1_000L))
         assertEquals(false, isSavedShapeListItemExpired(flightEndDateMillis = 1_001L, now = 1_000L))
         assertEquals(false, isSavedShapeListItemExpired(flightEndDateMillis = null, now = 1_000L))
     }
