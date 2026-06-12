@@ -43,9 +43,9 @@ private fun firestoreMapToSketchPoint(value: Any?): Coordinate? {
         .takeIf { it.isValidShapeCoordinate() }
 }
 
-private fun firestoreListToSketchPoints(value: Any?): List<Coordinate>? {
-    val list = value as? List<*> ?: return null
-    return list.map { item -> firestoreMapToSketchPoint(item) ?: return null }
+private fun firestoreListToSketchPoints(value: Any?): List<Coordinate> {
+    val list = value as? List<*> ?: return emptyList()
+    return list.mapNotNull(::firestoreMapToSketchPoint)
 }
 
 internal class SketchFirebaseInvalidDataException(reason: String?) :
@@ -80,11 +80,7 @@ internal fun sketchFromFirestoreData(
     val updatedAt = sketchTimestampMillis(data["updatedAt"]) ?: createdAt
     val deletedAt = sketchTimestampMillis(data["deletedAt"])
 
-    val points = if (data.containsKey("points")) {
-        firestoreListToSketchPoints(data["points"]) ?: return null
-    } else {
-        emptyList()
-    }
+    val points = firestoreListToSketchPoints(data["points"])
 
     return SketchModel(
         id = id,
@@ -268,10 +264,8 @@ class SketchFirebaseStore @Inject constructor(
     /**
      * Firestore 문서 데이터 -> SketchModel로 변환.
      *
-     * Firestore SDK 가 반환하는 Map 은 Any 컨테이너이므로, 이전의
-     * `as? List<Map<String, Any>>` 는 erasure 후 List 만 확인하던 unchecked cast 였다.
-     * 각 원소를 단계별로 Map<*, *> → Number 로 안전 검사한다. points 필드가
-     * 존재하는데 원소 하나라도 손상되어 있으면 부분 손실을 만들지 않고 문서 전체를 스킵한다.
+     * iOS SketchFirebaseStore 는 points 배열 안에서 파싱 가능한 좌표만 compactMap 으로 살리고,
+     * points 필드가 없거나 배열이 아니면 빈 배열로 읽는다. Android도 같은 관대 파싱을 따른다.
      */
     fun firestoreDataToSketch(data: Map<String, Any?>): SketchModel? {
         return try {

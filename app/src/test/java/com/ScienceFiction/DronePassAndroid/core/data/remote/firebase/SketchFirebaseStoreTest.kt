@@ -135,44 +135,47 @@ class SketchFirebaseStoreTest {
     }
 
     @Test
-    fun `스케치 points 필드가 손상되면 부분 좌표를 버리지 않고 invalid 이다`() {
+    fun `스케치 points 필드가 배열이 아니면 iOS처럼 빈 배열로 파싱한다`() {
+        val sketch = sketchFromFirestoreData(
+            validDocument() + ("points" to "not-a-list"),
+        )
+
+        requireNotNull(sketch)
+        assertEquals(emptyList<Coordinate>(), sketch.points)
+    }
+
+    @Test
+    fun `스케치 points 배열의 손상된 원소는 iOS처럼 해당 좌표만 제외한다`() {
         val incompletePoint = listOf(
             mapOf("latitude" to 37.0, "longitude" to 127.0),
             mapOf("latitude" to 37.1),
         )
 
-        assertNull(
-            sketchFromFirestoreData(
-                validDocument() + ("points" to "not-a-list"),
-            ),
+        val sketch = sketchFromFirestoreData(
+            validDocument() + ("points" to incompletePoint),
         )
-        assertNull(
-            sketchFromFirestoreData(
-                validDocument() + ("points" to incompletePoint),
-            ),
-        )
+
+        requireNotNull(sketch)
+        assertEquals(listOf(Coordinate(37.0, 127.0)), sketch.points)
     }
 
     @Test
-    fun `스케치 points 좌표 값은 finite 범위 안의 Double map 이어야 한다`() {
+    fun `스케치 points 좌표 값이 Android 검증을 통과하지 못하면 해당 좌표만 제외한다`() {
         val outOfRangePoint = listOf(mapOf("latitude" to 91.0, "longitude" to 127.0))
         val nonFinitePoint = listOf(mapOf("latitude" to 37.0, "longitude" to Double.NaN))
         val integerPoint = listOf(mapOf("latitude" to 37, "longitude" to 127.0))
 
-        assertNull(
-            sketchFromFirestoreData(
-                validDocument() + ("points" to outOfRangePoint),
-            ),
+        assertEquals(
+            emptyList<Coordinate>(),
+            sketchFromFirestoreData(validDocument() + ("points" to outOfRangePoint))?.points,
         )
-        assertNull(
-            sketchFromFirestoreData(
-                validDocument() + ("points" to nonFinitePoint),
-            ),
+        assertEquals(
+            emptyList<Coordinate>(),
+            sketchFromFirestoreData(validDocument() + ("points" to nonFinitePoint))?.points,
         )
-        assertNull(
-            sketchFromFirestoreData(
-                validDocument() + ("points" to integerPoint),
-            ),
+        assertEquals(
+            emptyList<Coordinate>(),
+            sketchFromFirestoreData(validDocument() + ("points" to integerPoint))?.points,
         )
     }
 
