@@ -133,6 +133,13 @@ class ShapeDetailDroneResolutionTest {
     }
 
     @Test
+    fun `도형 제목 fallback은 iOS 저장 규칙처럼 빈 문자열에만 적용한다`() {
+        assertEquals("제목 없음", formatShapeTitle("", emptyFallback = "제목 없음"))
+        assertEquals("   ", formatShapeTitle("   ", emptyFallback = "제목 없음"))
+        assertEquals("Flight Area", formatShapeTitle("Flight Area", emptyFallback = "제목 없음"))
+    }
+
+    @Test
     fun `상세 메모 표시는 iOS처럼 nil 일 때만 대시로 대체한다`() {
         assertEquals("-", formatShapeDetailMemo(null))
         assertEquals("", formatShapeDetailMemo(""))

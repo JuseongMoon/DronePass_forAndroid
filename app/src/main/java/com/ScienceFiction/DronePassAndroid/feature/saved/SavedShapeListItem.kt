@@ -34,6 +34,7 @@ import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.core.util.parseIosOpaqueRgbHexColor
 import com.ScienceFiction.DronePassAndroid.domain.model.PaletteColor
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
+import com.ScienceFiction.DronePassAndroid.feature.shape.formatShapeTitle
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -96,7 +97,10 @@ fun SavedShapeListItem(
             verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically)
         ) {
             Text(
-                text = shape.title.ifBlank { stringResource(R.string.common_no_title) },
+                text = formatShapeTitle(
+                    title = shape.title,
+                    emptyFallback = stringResource(R.string.common_no_title),
+                ),
                 fontSize = 17.sp,
                 lineHeight = 20.sp,
                 fontWeight = FontWeight.SemiBold,

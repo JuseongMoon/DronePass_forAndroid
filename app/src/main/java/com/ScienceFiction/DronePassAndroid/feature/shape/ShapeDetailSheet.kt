@@ -294,7 +294,10 @@ fun ShapeDetailSheet(
                 // 제목
                 ShapeDetailRow(label = stringResource(R.string.shape_detail_title_label)) {
                     Text(
-                        text = shape.title.ifBlank { stringResource(R.string.common_no_title) },
+                        text = formatShapeTitle(
+                            title = shape.title,
+                            emptyFallback = stringResource(R.string.common_no_title),
+                        ),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -429,7 +432,15 @@ fun ShapeDetailSheet(
             onDismissRequest = { showDeleteConfirmDialog = false },
             title = { Text(stringResource(R.string.shape_detail_delete_title)) },
             text = {
-                Text(stringResource(R.string.shape_detail_delete_message, shape.title.ifBlank { stringResource(R.string.common_no_title) }))
+                Text(
+                    stringResource(
+                        R.string.shape_detail_delete_message,
+                        formatShapeTitle(
+                            title = shape.title,
+                            emptyFallback = stringResource(R.string.common_no_title),
+                        ),
+                    )
+                )
             },
             confirmButton = {
                 TextButton(
@@ -457,7 +468,10 @@ fun ShapeDetailSheet(
         ExternalMapActionSheet(
             latitude = shape.baseCoordinate.latitude,
             longitude = shape.baseCoordinate.longitude,
-            destinationName = shape.title.ifBlank { stringResource(R.string.common_no_title) },
+            destinationName = formatShapeTitle(
+                title = shape.title,
+                emptyFallback = stringResource(R.string.common_no_title),
+            ),
             koreaFeaturesEnabled = koreaFeaturesEnabled,
             onDismiss = { showExternalMapDialog = false }
         )
