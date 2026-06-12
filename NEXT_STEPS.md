@@ -17,6 +17,21 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- `0cbfa70 fix: match iOS shape detail altitude label`
+- `4fd7ffa fix: match iOS drone list localization`
+- `7ab941a fix: match iOS common no localization`
+- `8637f9b fix: preserve local whitespace shape titles`
+- `e4c7287 fix: tolerate invalid firestore colors`
+- `246641c fix: match iOS shape focus payload`
+- `3e15c37 fix: match iOS address search blank handling`
+- `6c06f99 fix: match iOS shape edit placeholder handling`
+- `08712ac fix: match iOS shape title fallback`
+- `4496256 fix: match iOS shape edit whitespace saving`
+- `8c177b6 fix: match iOS drone detail blank handling`
+- `16fc469 fix: match iOS shape edit blank handling`
+- `a3eb2e0 fix: ignore missing drone delete documents`
+- `d984060 fix: match iOS sketch point parsing`
+- `5e8a011 fix: match iOS shape detail memo handling`
 - `988b275 fix: match main overlay transitions with ios`
 - `0b771bd fix: limit sketch overlays to viewport`
 - `ae68a72 fix: show partial vworld altitude details`
@@ -65,11 +80,13 @@
 
 - 도형 상세 주소 표시/복사 조건을 iOS처럼 `nil`과 빈 문자열 기준으로 보정
 - 도형 상세 메모 표시 조건을 iOS처럼 `nil` 기준으로 보정
+- 도형 상세 한국어 고도 라벨을 iOS String Catalog처럼 `고도(m)`로 보정
 - 도형 제목 표시/삭제 문구/외부 지도 이름 fallback을 iOS 저장 규칙처럼 빈 문자열 기준으로 보정
 - 도형 편집 기본정보 좌표/주소 placeholder와 좌표 입력 주소 결과를 iOS처럼 빈 문자열 기준으로 보정
 - 주소 검색 선택/표시/건물명 판정을 iOS처럼 빈 문자열 기준으로 보정
-- 도형 편집 저장 시 공백 제목/메모/주소를 iOS처럼 실제 입력값으로 보존
+- 도형 편집 저장 시 공백 제목/메모/주소를 iOS처럼 실제 입력값으로 보존하고, Firebase 쓰기 검증은 공백 제목을 계속 거부
 - 드론 상세 선택 필드/메모 표시와 복사 조건을 iOS처럼 `nil`과 빈 문자열 기준으로 보정
+- 드론 목록 타이틀/섹션 문구를 최신 iOS String Catalog 기준으로 보정
 - 스케치 Firestore `points` 읽기를 iOS처럼 손상 좌표 원소만 제외하는 관대 파싱으로 보정
 - 드론 Firestore 삭제가 iOS hard delete 이후 재삭제될 때 missing document를 성공으로 처리하도록 보정
 - 저장 목록 주소 행 표시 조건을 iOS처럼 `address == nil` 기준으로 보정
@@ -83,6 +100,7 @@
 - 드론 재할당 삭제 흐름의 자기 자신 타겟 방어
 - 전경 FCM 팝업 표시 조건 보정
 - KP 차트 축과 현재 날씨 CRI 표시 보정
+- 공용 `No` 버튼 한국어 문구를 iOS String Catalog 기준인 `아니오`로 보정
 - Apple 로그인 Activity context unwrap
 - 로그인 약관/개인정보 시트 흐름
 - 한국어 도형 문구와 상세 라벨
@@ -221,6 +239,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 참고:
 
 - 2026-06-12에 `:app:testDebugUnitTest --tests "*MainScreenStartDestinationTest"`와 `:app:testDebugUnitTest`를 재실행해 통과 확인.
+- 2026-06-12에 `:app:testDebugUnitTest --tests "*StringResourceCoverageTest"`, `:app:testDebugUnitTest`, `:app:assembleDebug`를 최신 iOS 문구 정합 커밋 후 재실행해 통과 확인.
 - 2026-06-12에 `:app:minifyReleaseWithR8`를 재실행해 통과 확인.
 - `:app:minifyReleaseWithR8`는 현재 성공합니다.
 - Naver Maps SDK와 Play Services Location에서 R8 warning이 여러 줄 출력될 수 있지만, 현재는 build failure가 아닙니다.
