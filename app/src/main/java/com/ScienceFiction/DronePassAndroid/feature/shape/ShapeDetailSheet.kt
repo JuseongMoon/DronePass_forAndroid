@@ -294,10 +294,7 @@ fun ShapeDetailSheet(
                 // 제목
                 ShapeDetailRow(label = stringResource(R.string.shape_detail_title_label)) {
                     Text(
-                        text = formatShapeTitle(
-                            title = shape.title,
-                            emptyFallback = stringResource(R.string.common_no_title),
-                        ),
+                        text = shapeDetailTitleText(shape.title),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -435,10 +432,7 @@ fun ShapeDetailSheet(
                 Text(
                     stringResource(
                         R.string.shape_detail_delete_message,
-                        formatShapeTitle(
-                            title = shape.title,
-                            emptyFallback = stringResource(R.string.common_no_title),
-                        ),
+                        shapeDetailTitleText(shape.title),
                     )
                 )
             },
@@ -468,10 +462,7 @@ fun ShapeDetailSheet(
         ExternalMapActionSheet(
             latitude = shape.baseCoordinate.latitude,
             longitude = shape.baseCoordinate.longitude,
-            destinationName = formatShapeTitle(
-                title = shape.title,
-                emptyFallback = stringResource(R.string.common_no_title),
-            ),
+            destinationName = shapeDetailTitleText(shape.title),
             koreaFeaturesEnabled = koreaFeaturesEnabled,
             onDismiss = { showExternalMapDialog = false }
         )

@@ -133,10 +133,10 @@ class ShapeDetailDroneResolutionTest {
     }
 
     @Test
-    fun `도형 제목 fallback은 iOS 저장 규칙처럼 빈 문자열에만 적용한다`() {
-        assertEquals("제목 없음", formatShapeTitle("", emptyFallback = "제목 없음"))
-        assertEquals("   ", formatShapeTitle("   ", emptyFallback = "제목 없음"))
-        assertEquals("Flight Area", formatShapeTitle("Flight Area", emptyFallback = "제목 없음"))
+    fun `상세 제목은 iOS ShapeDetailView처럼 빈 문자열도 원문 그대로 표시한다`() {
+        assertEquals("", shapeDetailTitleText(""))
+        assertEquals("   ", shapeDetailTitleText("   "))
+        assertEquals("Flight Area", shapeDetailTitleText("Flight Area"))
     }
 
     @Test
