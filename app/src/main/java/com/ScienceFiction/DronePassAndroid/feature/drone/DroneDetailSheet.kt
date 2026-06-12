@@ -192,10 +192,12 @@ fun DroneDetailSheet(
                 HorizontalDivider()
                 DroneDetailBlockRow(
                     label = stringResource(R.string.drone_detail_serial_number),
-                    value = drone.serialNumber?.takeIf { it.isNotBlank() }
-                        ?: stringResource(R.string.drone_detail_not_entered),
+                    value = droneDetailOptionalText(
+                        drone.serialNumber,
+                        emptyFallback = stringResource(R.string.drone_detail_not_entered),
+                    ),
                     copyText = drone.serialNumber,
-                    isPlaceholder = drone.serialNumber.isNullOrBlank(),
+                    isPlaceholder = isDroneDetailPlaceholder(drone.serialNumber),
                     onCopy = ::copyAndShowToast,
                 )
 
@@ -203,30 +205,36 @@ fun DroneDetailSheet(
                 DroneDetailSectionHeader(text = stringResource(R.string.drone_detail_section_specs))
                 DroneDetailBlockRow(
                     label = stringResource(R.string.drone_detail_takeoff_weight),
-                    value = drone.takeoffWeight?.takeIf { it.isNotBlank() }
-                        ?: stringResource(R.string.drone_detail_not_entered),
+                    value = droneDetailOptionalText(
+                        drone.takeoffWeight,
+                        emptyFallback = stringResource(R.string.drone_detail_not_entered),
+                    ),
                     copyText = drone.takeoffWeight,
-                    isPlaceholder = drone.takeoffWeight.isNullOrBlank(),
+                    isPlaceholder = isDroneDetailPlaceholder(drone.takeoffWeight),
                     onCopy = ::copyAndShowToast,
                 )
                 HorizontalDivider()
                 DroneDetailBlockRow(
                     label = stringResource(R.string.drone_detail_size),
-                    value = drone.size?.takeIf { it.isNotBlank() }
-                        ?: stringResource(R.string.drone_detail_not_entered),
+                    value = droneDetailOptionalText(
+                        drone.size,
+                        emptyFallback = stringResource(R.string.drone_detail_not_entered),
+                    ),
                     copyText = drone.size,
-                    isPlaceholder = drone.size.isNullOrBlank(),
+                    isPlaceholder = isDroneDetailPlaceholder(drone.size),
                     onCopy = ::copyAndShowToast,
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
                 DroneDetailSectionHeader(text = stringResource(R.string.common_memo))
-                val memoText = drone.memo?.takeIf { it.isNotBlank() }
-                    ?: stringResource(R.string.drone_detail_memo_empty)
+                val memoText = droneDetailOptionalText(
+                    drone.memo,
+                    emptyFallback = stringResource(R.string.drone_detail_memo_empty),
+                )
                 Text(
                     text = memoText,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = if (drone.memo.isNullOrBlank()) {
+                    color = if (isDroneDetailPlaceholder(drone.memo)) {
                         MaterialTheme.colorScheme.onSurfaceVariant
                     } else {
                         MaterialTheme.colorScheme.onSurface
@@ -534,6 +542,14 @@ private fun DroneMoveTargetRow(
 
 internal fun shouldShowDroneMoveTargetColorIndicator(color: PaletteColor?): Boolean = color != null
 
+internal fun droneDetailOptionalText(value: String?, emptyFallback: String): String =
+    value ?: emptyFallback
+
+internal fun isDroneDetailPlaceholder(value: String?): Boolean = value == null
+
+internal fun copyableDroneDetailText(text: String?): String? =
+    text?.takeIf { it.isNotEmpty() }
+
 @Composable
 private fun DroneDetailSectionHeader(text: String) {
     Text(
@@ -655,7 +671,7 @@ private fun Modifier.copyOnLongPress(
     text: String?,
     onCopy: (String) -> Unit,
 ): Modifier {
-    val copyText = text?.takeIf { it.isNotBlank() } ?: return this
+    val copyText = copyableDroneDetailText(text) ?: return this
     return combinedClickable(
         onClick = {},
         onLongClick = { onCopy(copyText) },

@@ -179,4 +179,24 @@ class DroneDeleteValidationTest {
         assertTrue(shouldShowDroneMoveTargetColorIndicator(PaletteColor.BLUE))
         assertFalse(shouldShowDroneMoveTargetColorIndicator(null))
     }
+
+    @Test
+    fun `드론 상세 선택 필드는 iOS처럼 nil일 때만 placeholder로 표시한다`() {
+        assertEquals("미입력", droneDetailOptionalText(null, emptyFallback = "미입력"))
+        assertTrue(isDroneDetailPlaceholder(null))
+
+        assertEquals("", droneDetailOptionalText("", emptyFallback = "미입력"))
+        assertFalse(isDroneDetailPlaceholder(""))
+
+        assertEquals("   ", droneDetailOptionalText("   ", emptyFallback = "미입력"))
+        assertFalse(isDroneDetailPlaceholder("   "))
+    }
+
+    @Test
+    fun `드론 상세 복사는 iOS copyableText처럼 nil 과 빈 문자열만 제외한다`() {
+        assertNull(copyableDroneDetailText(null))
+        assertNull(copyableDroneDetailText(""))
+        assertEquals("   ", copyableDroneDetailText("   "))
+        assertEquals("SN-01", copyableDroneDetailText("SN-01"))
+    }
 }
