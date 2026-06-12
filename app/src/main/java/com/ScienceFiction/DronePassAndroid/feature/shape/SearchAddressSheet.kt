@@ -86,8 +86,8 @@ internal val SearchAddressGuideCardPadding = 16.dp
 internal val SearchAddressGuideCardVerticalSpacing = 8.dp
 
 internal fun resolveSelectedAddressForShapeEdit(address: GeocodingAddress): String =
-    address.jibunAddress?.takeIf { it.isNotBlank() }
-        ?: address.roadAddress?.takeIf { it.isNotBlank() }
+    address.jibunAddress?.takeIf { it.isNotEmpty() }
+        ?: address.roadAddress?.takeIf { it.isNotEmpty() }
         ?: ""
 
 internal enum class AddressDisplayType {
@@ -102,10 +102,10 @@ internal data class AddressDisplayRow(
 
 internal fun addressDisplayRows(address: GeocodingAddress): List<AddressDisplayRow> {
     return buildList {
-        address.jibunAddress?.takeIf { it.isNotBlank() }?.let { text ->
+        address.jibunAddress?.takeIf { it.isNotEmpty() }?.let { text ->
             add(AddressDisplayRow(AddressDisplayType.JIBUN, text))
         }
-        address.roadAddress?.takeIf { it.isNotBlank() }?.let { text ->
+        address.roadAddress?.takeIf { it.isNotEmpty() }?.let { text ->
             add(AddressDisplayRow(AddressDisplayType.ROAD, text))
         }
     }
@@ -115,7 +115,7 @@ internal fun addressBuildingName(address: GeocodingAddress): String? {
     return address.addressElements
         ?.firstOrNull { element -> element.types?.contains("BUILDING_NAME") == true }
         ?.longName
-        ?.takeIf { it.isNotBlank() }
+        ?.takeIf { it.isNotEmpty() }
 }
 
 internal fun shouldShowSearchAddressGuide(

@@ -97,6 +97,20 @@ class SearchAddressSheetTest {
     }
 
     @Test
+    fun `주소 검색 선택은 iOS처럼 공백 지번 주소도 값으로 저장한다`() {
+        val address = GeocodingAddress(
+            roadAddress = "서울특별시 서초구 서초대로78길 24",
+            jibunAddress = "   ",
+            englishAddress = null,
+            x = "127.027",
+            y = "37.497",
+            distance = null,
+        )
+
+        assertEquals("   ", resolveSelectedAddressForShapeEdit(address))
+    }
+
+    @Test
     fun `주소 검색 결과 카드는 iOS처럼 지번 다음 도로명 순서로 표시한다`() {
         val rows = addressDisplayRows(
             GeocodingAddress(
@@ -125,6 +139,34 @@ class SearchAddressSheetTest {
     }
 
     @Test
+    fun `주소 검색 결과 카드는 iOS처럼 공백 주소 행도 값으로 표시한다`() {
+        val rows = addressDisplayRows(
+            GeocodingAddress(
+                roadAddress = "도로명",
+                jibunAddress = "   ",
+                englishAddress = null,
+                x = "127.027",
+                y = "37.497",
+                distance = null,
+            ),
+        )
+
+        assertEquals(
+            listOf(
+                AddressDisplayRow(
+                    type = AddressDisplayType.JIBUN,
+                    text = "   ",
+                ),
+                AddressDisplayRow(
+                    type = AddressDisplayType.ROAD,
+                    text = "도로명",
+                ),
+            ),
+            rows,
+        )
+    }
+
+    @Test
     fun `주소 검색 결과 카드는 iOS처럼 BUILDING_NAME 주소 요소를 건물명으로 표시한다`() {
         val address = GeocodingAddress(
             roadAddress = "서울특별시 서초구 서초대로78길 24",
@@ -144,6 +186,28 @@ class SearchAddressSheetTest {
         )
 
         assertEquals("GT타워", addressBuildingName(address))
+    }
+
+    @Test
+    fun `주소 검색 결과 카드는 iOS처럼 공백 건물명도 값으로 표시한다`() {
+        val address = GeocodingAddress(
+            roadAddress = "서울특별시 서초구 서초대로78길 24",
+            jibunAddress = "서울특별시 서초구 서초동 1305-6",
+            englishAddress = null,
+            addressElements = listOf(
+                GeocodingAddressElement(
+                    types = listOf("BUILDING_NAME"),
+                    longName = "   ",
+                    shortName = "   ",
+                    code = "",
+                ),
+            ),
+            x = "127.027",
+            y = "37.497",
+            distance = null,
+        )
+
+        assertEquals("   ", addressBuildingName(address))
     }
 
     @Test
