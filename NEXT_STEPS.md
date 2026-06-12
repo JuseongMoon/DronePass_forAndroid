@@ -74,6 +74,7 @@
 - `69afe2d fix: keep main tabs above overlays`
 - `d9fd6b8 fix: preserve empty-title shape edit state`
 - `c505636 fix: hide saved row delete background at rest`
+- `aa2fa11 fix: align drone management strings`
 
 ## 2. 이번 라운드에서 확인한 내용
 
@@ -112,7 +113,7 @@
 - 주소 검색 선택/표시/건물명 판정을 iOS처럼 빈 문자열 기준으로 보정
 - 도형 편집 저장 시 공백 제목/메모/주소를 iOS처럼 실제 입력값으로 보존하고, Firebase 쓰기 검증은 공백 제목을 계속 거부
 - 드론 상세 선택 필드/메모 표시와 복사 조건을 iOS처럼 `nil`과 빈 문자열 기준으로 보정
-- 드론 목록 타이틀/섹션 문구를 최신 iOS String Catalog 기준으로 보정
+- 드론 목록/상세/편집/삭제 문구를 최신 iOS String Catalog 기준으로 보정
 - 드론/도형 색상 팔레트 표시명을 최신 iOS String Catalog 기준으로 보정
 - 스케치 Firestore `points` 읽기를 iOS처럼 손상 좌표 원소만 제외하는 관대 파싱으로 보정
 - 드론 Firestore 삭제가 iOS hard delete 이후 재삭제될 때 missing document를 성공으로 처리하도록 보정
@@ -325,6 +326,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 - 2026-06-12에 동기화 기준선 갱신 보정 후 `:app:testDebugUnitTest --tests "*RealtimeSyncManagerTest" --tests "*AuthViewModelForegroundSyncTest" --tests "*ProfileViewModelTest"`, `:app:testDebugUnitTest`, `:app:assembleDebug`, `:app:minifyReleaseWithR8`를 재실행해 통과 확인.
 - 2026-06-12에 빈 제목 기존 도형 편집 상태 보존 보정 후 `:app:testDebugUnitTest --tests "*ShapeEditDefaultsTest"`, `:app:testDebugUnitTest --tests "*Shape*Test"`, `:app:assembleDebug`, `:app:testDebugUnitTest`를 재실행해 통과 확인.
 - 2026-06-12에 저장 목록 스와이프 삭제 배경 노출 보정 후 `:app:testDebugUnitTest --tests "*SavedListSectionsTest"`, `:app:testDebugUnitTest --tests "*Saved*Test"`, `:app:assembleDebug`, `:app:testDebugUnitTest`를 재실행해 통과 확인.
+- 2026-06-12에 드론 관리/상세/편집 문구를 iOS String Catalog 기준으로 보정 후 `:app:testDebugUnitTest --tests "*StringResourceCoverageTest"`, `:app:testDebugUnitTest --tests "*Drone*Test"`, `:app:assembleDebug`, `:app:testDebugUnitTest`를 재실행해 통과 확인.
 - `:app:minifyReleaseWithR8`는 현재 성공합니다.
 - Naver Maps SDK와 Play Services Location에서 R8 warning이 여러 줄 출력될 수 있지만, 현재는 build failure가 아닙니다.
 - `assembleRelease`와 `bundleRelease`는 실제 release signing 설정 전까지 의도적으로 차단되며, 2026-06-12에 `assembleRelease` 실패 경로를 재확인했습니다.
