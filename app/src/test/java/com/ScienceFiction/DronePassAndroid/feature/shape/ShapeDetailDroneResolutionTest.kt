@@ -126,6 +126,21 @@ class ShapeDetailDroneResolutionTest {
     }
 
     @Test
+    fun `상세 주소 표시는 iOS처럼 nil 일 때만 대시로 대체한다`() {
+        assertEquals("-", formatShapeDetailAddress(null))
+        assertEquals("", formatShapeDetailAddress(""))
+        assertEquals("서울특별시 중구 세종대로 110", formatShapeDetailAddress("서울특별시 중구 세종대로 110"))
+    }
+
+    @Test
+    fun `상세 주소 복사는 iOS copyableText처럼 nil 과 빈 문자열만 제외한다`() {
+        assertNull(copyableShapeDetailAddress(null))
+        assertNull(copyableShapeDetailAddress(""))
+        assertEquals("   ", copyableShapeDetailAddress("   "))
+        assertEquals("서울특별시 중구 세종대로 110", copyableShapeDetailAddress("서울특별시 중구 세종대로 110"))
+    }
+
+    @Test
     fun `한국 기능이 켜져 있으면 외부 지도 앱은 iOS처럼 네이버 카카오 티맵 구글 순서이다`() {
         val targets = buildExternalMapTargets(
             latitude = 37.5,

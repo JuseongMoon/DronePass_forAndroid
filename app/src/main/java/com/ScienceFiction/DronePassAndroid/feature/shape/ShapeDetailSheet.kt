@@ -325,14 +325,14 @@ fun ShapeDetailSheet(
                     modifier = Modifier.combinedClickable(
                         onClick = { showExternalMapDialog = true },
                         onLongClick = {
-                            shape.address?.takeIf { it.isNotBlank() }?.let { address ->
+                            copyableShapeDetailAddress(shape.address)?.let { address ->
                                 copyAndShowToast(address)
                             }
                         },
                     ),
                 ) {
                     Text(
-                        text = shape.address?.takeIf { it.isNotBlank() } ?: "-",
+                        text = formatShapeDetailAddress(shape.address),
                         modifier = Modifier.fillMaxWidth(),
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color(0xFF007AFF), // iOS .blue 정합
@@ -589,6 +589,14 @@ private fun tryStartActivity(context: Context, intent: Intent): Boolean = try {
 }
 
 private fun formatMeters(value: Double): String = "${value.toInt()} m"
+
+internal fun formatShapeDetailAddress(address: String?): String {
+    return address ?: "-"
+}
+
+internal fun copyableShapeDetailAddress(address: String?): String? {
+    return address?.takeIf { it.isNotEmpty() }
+}
 
 internal const val ShapeDetailCopyToastDurationMs = 1_500L
 internal const val ShapeDetailCopyToastAnimationDurationMs = 300
