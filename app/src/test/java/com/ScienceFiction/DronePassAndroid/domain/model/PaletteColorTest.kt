@@ -34,6 +34,14 @@ class PaletteColorTest {
     }
 
     @Test
+    fun `팔레트 한국어 표시명은 iOS localizations 와 동일하다`() {
+        assertEquals(
+            listOf("빨강", "오렌지", "노랑", "초록", "청록", "파랑", "남색", "보라", "분홍", "회색"),
+            PaletteColor.entries.map { it.koreanName },
+        )
+    }
+
+    @Test
     fun `hex 파싱은 iOS처럼 대소문자를 무시한다`() {
         assertEquals(PaletteColor.BLUE, PaletteColor.fromHex("#007AFF"))
         assertEquals(PaletteColor.BLUE, PaletteColor.fromHex("#007aff"))

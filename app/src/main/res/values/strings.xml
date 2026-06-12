@@ -294,7 +294,7 @@
 
     <!-- Palette colors -->
     <string name="palette_color_red">빨강</string>
-    <string name="palette_color_orange">주황</string>
+    <string name="palette_color_orange">오렌지</string>
     <string name="palette_color_yellow">노랑</string>
     <string name="palette_color_green">초록</string>
     <string name="palette_color_teal">청록</string>

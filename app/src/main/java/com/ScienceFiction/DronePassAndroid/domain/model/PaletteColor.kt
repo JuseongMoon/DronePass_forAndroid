@@ -4,7 +4,7 @@ import androidx.compose.ui.graphics.Color
 
 enum class PaletteColor(val hex: String, val koreanName: String) {
     RED("#FF3B30", "빨강"),
-    ORANGE("#FF9500", "주황"),
+    ORANGE("#FF9500", "오렌지"),
     YELLOW("#FFCC00", "노랑"),
     GREEN("#34C759", "초록"),
     TEAL("#5AC8FA", "청록"),
