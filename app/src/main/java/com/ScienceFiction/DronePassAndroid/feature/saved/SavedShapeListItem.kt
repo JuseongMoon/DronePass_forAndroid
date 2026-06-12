@@ -104,9 +104,9 @@ fun SavedShapeListItem(
                 overflow = TextOverflow.Ellipsis
             )
 
-            if (!shape.address.isNullOrBlank()) {
+            if (shouldShowSavedShapeAddress(shape.address)) {
                 Text(
-                    text = shape.address,
+                    text = shape.address.orEmpty(),
                     fontSize = 11.sp,
                     lineHeight = 13.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -169,6 +169,10 @@ internal fun formatSavedShapeDateRange(
 internal fun resolveSavedShapeDisplayColor(colorHex: String): Color {
     PaletteColor.fromHex(colorHex)?.let { return it.composeColor }
     return parseIosOpaqueRgbHexColor(colorHex)?.let(::Color) ?: Color(0xFF007AFF)
+}
+
+internal fun shouldShowSavedShapeAddress(address: String?): Boolean {
+    return address != null
 }
 
 internal fun isSavedShapeListItemExpired(

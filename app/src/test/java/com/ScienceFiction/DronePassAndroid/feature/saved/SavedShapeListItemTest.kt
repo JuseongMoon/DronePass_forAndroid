@@ -57,6 +57,13 @@ class SavedShapeListItemTest {
     }
 
     @Test
+    fun `저장 목록 주소 행은 iOS처럼 nil 일 때만 숨기고 빈 문자열은 유지한다`() {
+        assertEquals(false, shouldShowSavedShapeAddress(null))
+        assertEquals(true, shouldShowSavedShapeAddress(""))
+        assertEquals(true, shouldShowSavedShapeAddress("서울특별시 중구 세종대로 110"))
+    }
+
+    @Test
     fun `저장 목록 색상 인디케이터 그림자는 iOS radius 1 과 맞춘다`() {
         assertEquals(1f, SavedShapeColorIndicatorShadowElevation.value, 0f)
     }
