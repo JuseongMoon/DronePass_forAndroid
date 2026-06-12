@@ -106,8 +106,8 @@ class SketchDefaultsTest {
     }
 
     @Test
-    fun `색상 슬라이더 hue 비교는 0도 경계를 감안한다`() {
-        assertEquals(false, shouldSyncSketchHueSlider(currentHue = 350f, newHue = 5f))
+    fun `색상 슬라이더 hue 비교는 iOS처럼 0도 경계도 단순 차이로 판단한다`() {
+        assertEquals(true, shouldSyncSketchHueSlider(currentHue = 350f, newHue = 5f))
         assertEquals(true, shouldSyncSketchHueSlider(currentHue = 350f, newHue = 40f))
     }
 

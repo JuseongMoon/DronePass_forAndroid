@@ -5,7 +5,6 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import com.ScienceFiction.DronePassAndroid.core.util.parseIosOpaqueRgbHexColor
 import java.util.Locale
 import kotlin.math.abs
-import kotlin.math.min
 
 internal const val DefaultSketchColor = "#FF0000"
 internal const val DefaultSketchStrokeWidth = 4.0
@@ -67,9 +66,7 @@ internal fun shouldSyncSketchHueSlider(
     newHue: Float,
     thresholdDegrees: Float = 18f,
 ): Boolean {
-    val diff = abs(normalizeSketchHue(currentHue) - normalizeSketchHue(newHue))
-    val shortestDiff = min(diff, 360f - diff)
-    return shortestDiff > thresholdDegrees
+    return abs(normalizeSketchHue(currentHue) - normalizeSketchHue(newHue)) > thresholdDegrees
 }
 
 private fun normalizeSketchHue(hue: Float): Float {
