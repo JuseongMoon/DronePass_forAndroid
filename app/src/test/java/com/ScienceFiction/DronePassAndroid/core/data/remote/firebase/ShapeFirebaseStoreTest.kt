@@ -48,6 +48,8 @@ class ShapeFirebaseStoreTest {
         assertEquals("circle", data["shapeType"])
         assertFalse(data["shapeType"] == ShapeType.CIRCLE.name)
         assertEquals("#007AFF", data["color"])
+        assertEquals("", data["memo"])
+        assertEquals("", data["address"])
         assertEquals(37.123457, baseCoordinate["latitude"])
         assertEquals(126.987654, baseCoordinate["longitude"])
         assertTrue(baseCoordinate["latitude"] is Double)

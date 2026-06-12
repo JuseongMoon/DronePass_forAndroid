@@ -78,8 +78,8 @@ internal fun shapeToFirestoreDocumentData(shape: ShapeModel): Map<String, Any?> 
             ?.takeIf { shape.shapeType == ShapeType.POLYLINE }
             ?.let(::coordinatesToFirestoreList),
         "height" to shape.height,
-        "memo" to shape.memo,
-        "address" to shape.address,
+        "memo" to shape.memo.orEmpty(),
+        "address" to shape.address.orEmpty(),
         "color" to normalizeFirebaseHexColorForWrite(shape.color),
         "droneId" to shape.droneId,
         "createdAt" to Timestamp(Date(shape.createdAt)),

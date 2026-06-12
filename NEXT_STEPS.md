@@ -166,6 +166,7 @@ iOS와 Android가 공유하는 `users/{uid}/shapes`, `users/{uid}/sketches`, `us
 - Sketch: `Timestamp`, Double 좌표 map 배열, opacity/좌표 반올림, UUID id 검증 테스트 유지.
 - 2026-06-12 추가 방어: Shape/Drone/Sketch 읽기에서 color 필드가 문자열이지만 `#RRGGBB`가 아니면 문서 전체를 버리지 않고 플랫폼 기본색으로 fallback. 쓰기는 계속 표준 hex만 허용.
 - 2026-06-12 추가 방어: Shape 읽기는 iOS 파서처럼 `title` 필드가 문자열이면 빈 문자열/공백 문자열도 보존한다. 쓰기 검증은 계속 공백 제목을 거부한다.
+- 2026-06-12 정합화: Shape 쓰기는 iOS `ShapeFirebaseStore`처럼 `memo`/`address`가 `null`이면 Firestore에 빈 문자열로 저장한다.
 - 2026-06-12 추가 방어: Drone 읽기는 iOS Codable 파서처럼 `name` 필드가 문자열이면 빈 문자열/공백 문자열도 보존한다. 쓰기 검증은 계속 공백 이름을 거부한다.
 - 2026-06-12 재확인: Shape/Drone/Sketch 모두 문서 ID와 내부 `id` 불일치 시 skip하며, 원격 soft delete 헬퍼는 `update(deletedAt, updatedAt)` 기반이라 빈 tombstone 문서를 새로 만들지 않음.
 - 2026-06-12 재확인: Sketch `color` 누락/손상 fallback(`#FF0000`)과 `points` 부분 파싱은 iOS `SketchFirebaseStore`와 동일하며, 쓰기 검증은 계속 표준 `#RRGGBB`만 허용.
