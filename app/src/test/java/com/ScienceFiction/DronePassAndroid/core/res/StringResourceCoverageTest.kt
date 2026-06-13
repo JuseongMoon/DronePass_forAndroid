@@ -31,6 +31,7 @@ class StringResourceCoverageTest {
         assertEquals("\\u0020동의하게 됩니다.", stringResourceValue("values/strings.xml", "login_terms_agree"))
         assertEquals("로그인 오류", stringResourceValue("values/strings.xml", "login_error_title"))
         assertEquals("알 수 없는 오류", stringResourceValue("values/strings.xml", "login_error_unknown"))
+        assertEquals("알 수 없는 오류가 발생했습니다.", stringResourceValue("values/strings.xml", "common_unknown_error"))
         assertEquals("Google 로그인 중 오류가 발생했습니다.", stringResourceValue("values/strings.xml", "login_google_error"))
         assertEquals(
             "Google 로그인 설정이 누락되었습니다. WEB_CLIENT_ID를 확인해주세요.",
@@ -53,6 +54,7 @@ class StringResourceCoverageTest {
         assertEquals("Google logo", stringResourceValue("values-en/strings.xml", "login_google_logo_description"))
         assertEquals("Login Error", stringResourceValue("values-en/strings.xml", "login_error_title"))
         assertEquals("Unknown error", stringResourceValue("values-en/strings.xml", "login_error_unknown"))
+        assertEquals("An unknown error occurred.", stringResourceValue("values-en/strings.xml", "common_unknown_error"))
         assertEquals(
             "An error occurred while signing in with Google.",
             stringResourceValue("values-en/strings.xml", "login_google_error"),

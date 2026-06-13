@@ -17,7 +17,7 @@
     <string name="common_search">Search</string>
     <string name="common_error">Error</string>
     <string name="common_loading">Loading…</string>
-    <string name="common_unknown_error">Unknown error</string>
+    <string name="common_unknown_error">An unknown error occurred.</string>
     <string name="common_no_title">No title</string>
     <string name="common_not_set">Not set</string>
     <string name="common_memo">Memo</string>

@@ -138,6 +138,7 @@
 - 도형 편집 기본정보 좌표/주소 placeholder와 좌표 입력 주소 결과를 iOS처럼 빈 문자열 기준으로 보정
 - 도형 편집 주소 fallback placeholder를 iOS `shape.edit.address.placeholder` 기준인 `주소를 검색하세요`로 보정
 - 도형 편집 날짜/시간 선택 완료 버튼을 iOS `dateTime.done` 기준인 `선택 완료`로 보정
+- 공용 알 수 없는 오류 fallback 문구를 iOS `common.error.unknown` 기준으로 보정
 - 주소 검색 선택/표시/건물명 판정을 iOS처럼 빈 문자열 기준으로 보정
 - 도형 편집 저장 시 공백 제목/메모/주소를 iOS처럼 실제 입력값으로 보존하고, Firebase 쓰기 검증은 공백 제목을 계속 거부
 - 드론 상세 선택 필드/메모 표시와 복사 조건을 iOS처럼 `nil`과 빈 문자열 기준으로 보정
