@@ -36,6 +36,11 @@ class AppInfoScreenTest {
     }
 
     @Test
+    fun `일출일몰 기능 아이콘은 iOS sunrise fill 의미와 맞는 수평선 해 아이콘을 사용한다`() {
+        assertEquals("Filled.WbTwilight", AppInfoSunriseSunsetIcon.name)
+    }
+
+    @Test
     fun `다중 드론 기능 아이콘은 iOS paperplane circle fill 의미와 맞는 종이비행기 아이콘을 사용한다`() {
         assertEquals("AutoMirrored.Filled.Send", AppInfoMultiDroneIcon.name)
     }

@@ -32,7 +32,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SettingsInputAntenna
 import androidx.compose.material.icons.filled.Tag
 import androidx.compose.material.icons.filled.WbCloudy
-import androidx.compose.material.icons.filled.WbSunny
+import androidx.compose.material.icons.filled.WbTwilight
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -66,6 +66,7 @@ internal val AppInfoFeatureHorizontalPadding = 16.dp
 internal val AppInfoMultiDroneIcon: ImageVector = Icons.AutoMirrored.Filled.Send
 internal val AppInfoWeatherIcon: ImageVector = Icons.Default.WbCloudy
 internal val AppInfoKpIndexIcon: ImageVector = Icons.Default.SettingsInputAntenna
+internal val AppInfoSunriseSunsetIcon: ImageVector = Icons.Default.WbTwilight
 internal val AppInfoShapeManagementIcon: ImageVector = Icons.Default.RadioButtonChecked
 
 internal fun appInfoVersionValue(versionName: String, versionCode: Int): String {
@@ -161,7 +162,7 @@ fun AppInfoScreen(
             )
             HorizontalDivider(modifier = Modifier.padding(start = 64.dp))
             FeatureRow(
-                icon = Icons.Default.WbSunny,
+                icon = AppInfoSunriseSunsetIcon,
                 iconColor = Color(0xFFFF2D55),
                 title = stringResource(R.string.app_info_feature_sunrise_sunset_title),
                 description = stringResource(R.string.app_info_feature_sunrise_sunset_desc),

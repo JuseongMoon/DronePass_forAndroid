@@ -147,6 +147,7 @@
 - 앱 정보 다중 드론 기능 아이콘을 iOS `paperplane.circle.fill` 의미와 맞는 종이비행기 아이콘으로 보정
 - 앱 정보 실시간 날씨 기능 아이콘을 iOS `cloud.sun.fill` 의미와 맞는 구름/날씨 아이콘으로 보정
 - 앱 정보 KP 지수 기능 아이콘을 iOS `antenna.radiowaves.left.and.right` 의미와 맞는 안테나 아이콘으로 보정
+- 앱 정보 일출/일몰 기능 아이콘을 iOS `sunrise.fill` 의미와 맞는 수평선 해 아이콘으로 보정
 - 앱 정보 도형 관리 기능 아이콘을 iOS `circle.circle.fill` 의미와 맞는 원형 아이콘으로 보정
 - Shape 읽기는 iOS 파서처럼 빈 문자열/공백 제목을 보존하고, 쓰기 검증은 공백 제목을 계속 거부
 - 빈 제목 기존 Shape도 iOS처럼 기존 도형 편집으로 취급해 드론/반경/고도/비행 기간 초기값을 보존
