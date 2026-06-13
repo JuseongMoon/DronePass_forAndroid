@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- `5a256fb fix: persist app language selection`
 - `3f620cb docs: record connected device smoke`
 - `3c84852 docs: record latest debug verification`
 - `10d5733 docs: record anonymized deletion parity check`
@@ -357,6 +358,8 @@ iOS와 Android가 공유하는 `users/{uid}/shapes`, `users/{uid}/sketches`, `us
 8. 언어 변경, 한국 현지 기능 ON/OFF, VWorld 레이어 해제
 9. 패치노트/약관/개인정보 문서 로드
 10. 앱 삭제 후 재설치 시 로그인/Firestore 동기화/FCM deviceId 재생성
+
+2026-06-13 현재 로컬/비파괴 실기기 경로 중 1-4, 8, 9는 최신 debug APK에서 재확인했습니다. 5-7과 10은 실제 OAuth 설정, 공유 Firestore 계정, FCM payload, 또는 앱 데이터 삭제/재설치가 필요하므로 외부 설정/데이터 백업 확인 후 진행합니다.
 
 ### 3.2 운영 콘솔 설정
 
