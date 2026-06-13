@@ -12,7 +12,7 @@
 |---|---|
 | 워킹 트리 | clean |
 | 주요 검증 | `:app:testDebugUnitTest`, `:app:assembleDebug`, `:app:minifyReleaseWithR8`, `:app:testDebugUnitTest --tests "*MainScreenStartDestinationTest"` 통과 |
-| Release signing | 실제 `keystore.properties` 없으면 `assembleRelease`/`bundleRelease`가 의도적으로 실패함을 재확인 |
+| Release readiness | 실제 `keystore.properties` 또는 `WEB_CLIENT_ID`가 없으면 `assembleRelease`/`bundleRelease`가 의도적으로 실패함을 재확인 |
 | 남은 성격 | 실기기 전체 회귀, 콘솔/스토어 운영 설정, 최종 iOS 동기화 검증 |
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
@@ -78,6 +78,7 @@
 - `feb914e fix: avoid resurrecting deleted sketches`
 - `11bd1f0 fix: avoid resurrecting deleted shapes`
 - `66d1139 fix: pin auth recovery collections`
+- `ecb9e0f fix: gate release on google sign-in config`
 
 ## 2. 이번 라운드에서 확인한 내용
 
@@ -156,6 +157,7 @@
 - Apple 로그인 Activity context unwrap
 - Apple 로그인 웹 OAuth 사용자 취소를 iOS처럼 오류 알림 없이 무시
 - 앱 첫 실행 언어를 iOS처럼 시스템 언어가 한국어면 한국어, 그 외 언어면 영어로 고정하고 AppCompat per-app language 저장 설정 추가
+- 실제 배포 산출물(`assembleRelease`/`bundleRelease`)은 release signing과 Google `WEB_CLIENT_ID`가 모두 설정된 경우에만 생성되도록 차단
 - 로그인 약관/개인정보 시트 흐름
 - 한국어 도형 문구와 상세 라벨
 - iOS 기준 gust warning hysteresis
@@ -298,6 +300,8 @@ iOS와 Android가 공유하는 `users/{uid}/shapes`, `users/{uid}/sketches`, `us
 - `local.properties`의 `WEB_CLIENT_ID`는 현재 비어 있음
   - Android Google 로그인은 이 값이 설정되어야 동작함
   - 값이 비어 있으면 앱은 Google 로그인 시 명시적인 설정 누락 오류를 표시하도록 보강됨
+- `app/google-services.json`의 Android client에는 현재 `oauth_client` 항목이 비어 있음
+  - Firebase Console에서 Android 앱 SHA-1/SHA-256 등록 후 `google-services.json`을 다시 내려받고, Web client ID를 `local.properties`의 `WEB_CLIENT_ID`에 설정해야 Google 로그인을 실계정으로 검증할 수 있음
 - 현재 로컬 debug keystore 지문
   - SHA-1: `30:C4:5A:F9:91:83:D9:6C:F7:6C:41:31:9E:DA:82:E7:59:8F:20:86`
   - SHA-256: `BC:5A:36:F1:68:B8:B9:F9:9A:95:14:D8:5F:35:00:37:40:90:B9:97:4C:88:27:28:7E:4A:0A:61:91:FB:B2:CB`
@@ -321,7 +325,7 @@ keyAlias=dronepass
 keyPassword=...
 ```
 
-서명 설정 전에는 다음 명령이 실패해야 정상입니다.
+서명 또는 Google Web client ID 설정 전에는 다음 명령이 실패해야 정상입니다.
 
 ```bash
 ./gradlew :app:assembleRelease
@@ -358,9 +362,10 @@ export PATH="$JAVA_HOME/bin:$PATH"
 - 2026-06-13에 Sketch 서버 누락 로컬 문서 재업로드 방지 보정 후 `:app:testDebugUnitTest --tests "*SketchRepositoryTest"`, `:app:testDebugUnitTest --tests "*Sketch*Test"`, `:app:assembleDebug`, `:app:testDebugUnitTest`를 재실행해 통과 확인.
 - 2026-06-13에 Shape 서버 누락 로컬 문서 재업로드 방지 보정 후 `:app:testDebugUnitTest --tests "*ShapeRepositoryTest"`, `:app:testDebugUnitTest --tests "*Shape*Test"`, `:app:assembleDebug`, `:app:testDebugUnitTest`, `:app:minifyReleaseWithR8`를 재실행해 통과 확인.
 - 2026-06-13에 provider 계정 복구 컬렉션 정책을 고정한 뒤 `:app:testDebugUnitTest --tests "*AuthRepositoryUserDocumentTest"`, `:app:testDebugUnitTest --tests "*Auth*Test"`, `:app:compileDebugKotlin`을 재실행해 통과 확인.
+- 2026-06-13에 release readiness gate를 signing + Google `WEB_CLIENT_ID`로 확장한 뒤 `:app:compileDebugKotlin`, `:app:testDebugUnitTest`, `:app:minifyReleaseWithR8`를 재실행해 통과 확인. `:app:assembleRelease`는 두 설정 누락을 함께 표시하며 의도적으로 실패함을 확인.
 - `:app:minifyReleaseWithR8`는 현재 성공합니다.
 - Naver Maps SDK와 Play Services Location에서 R8 warning이 여러 줄 출력될 수 있지만, 현재는 build failure가 아닙니다.
-- `assembleRelease`와 `bundleRelease`는 실제 release signing 설정 전까지 의도적으로 차단되며, 2026-06-12에 `assembleRelease` 실패 경로를 재확인했습니다.
+- `assembleRelease`와 `bundleRelease`는 실제 release signing과 `WEB_CLIENT_ID` 설정 전까지 의도적으로 차단되며, 2026-06-13에 `assembleRelease` 실패 경로를 재확인했습니다.
 - OS Auto Backup은 비활성화되어 있으며, 앱 데이터 백업/동기화는 Firebase 흐름 기준으로 검증합니다.
 
 ## 5. 다음에 바로 볼 후보
