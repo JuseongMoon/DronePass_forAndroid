@@ -335,6 +335,13 @@ iOS와 Android가 공유하는 `users/{uid}/shapes`, `users/{uid}/sketches`, `us
 - 앱 force-stop 후 `MainActivity` 재실행, 스케치 모드 재진입 시 삭제 배지 `1`이 복원되어 저장 후 재실행 복원 확인
 - 검증용 stroke는 `전체 삭제` 확인 다이얼로그(`모든 스케치 삭제`, `1개의 스케치를 모두 삭제하시겠습니까?`)에서 `삭제`로 정리하고 `완료` 종료. 최종 활성 스케치 count는 0으로 baseline 복귀, soft-delete row는 iOS와 같은 삭제 tombstone으로 1개 남음
 - 위 스케치 실제 입력/재실행 smoke에서 앱 PID 유지, `AndroidRuntime:E` 크래시 로그 없음
+- 저장 도형 lifecycle 실기기 smoke 진행: baseline 활성 도형 count 3에서 도형 추가 FAB로 기본 원형 도형을 저장하고, 저장 목록의 `활성화` 섹션 맨 위에 새 `새 도형` 행이 표시됨을 확인
+- 저장 직후 Room `shapes` 덤프에서 활성 count 4, 신규 id `8a91af9a-ef3f-40a4-8326-591ae3ce8db7`, `shapeType=circle`, `radius=200.0`, `address=해당 위치의 주소가 존재하지 않습니다` 저장 확인
+- 신규 도형 상세 시트에서 `상세 정보`, `드론`, `제목`, 좌표, 주소, `반경 200 m`, 시작일/종료일, 메모 `-` 렌더링 확인
+- 상세 더보기 메뉴에서 `수정하기`/`복제하기`/`삭제` 항목 렌더링 확인. 수정 편집 화면과 복제 편집 화면 모두 기존 값(`새 도형`, 드론 2, 좌표, 주소, 반경 200, 날짜)을 프리필하며, 저장 없이 취소해 추가 데이터 변경 없음
+- 삭제 확인 다이얼로그 `도형 삭제`, `'새 도형' 도형을 삭제하시겠습니까?`, `취소`/`삭제` 버튼 렌더링 확인 후 삭제 확정. 저장 목록에서는 임시 도형이 빠지고 기존 3개 행만 남음
+- 삭제 후 Room `shapes` 덤프에서 활성 count가 3으로 baseline 복귀했고, 임시 도형은 `deletedAt=1781345521781`로 soft delete 처리됨을 확인
+- 위 저장 도형 lifecycle smoke에서 앱 PID 유지, `AndroidRuntime:E` 크래시 로그 없음
 - 실계정 FCM/로컬 알림 수신, 앱 삭제 후 재설치 동기화는 아직 별도 실검증 항목으로 유지
 
 1. 지도 로드, 현재 위치 권한, 현재 위치 이동
@@ -453,6 +460,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 - 2026-06-13에 프로필 클라우드 동기화 섹션을 재확인했다. `cloudBackupEnabled`/`lastBackupTime` 키, 로그인 필요/비활성/동기화중/활성/대기 상태, 수동 백업 표시 조건, 가입일/로그인 제공자/계정 삭제 흐름은 iOS `ProfileView`와 맞춘다. Android 수동 백업은 현재 공유 Firestore 계약에 맞춰 Shape뿐 아니라 Sketch/Drone까지 `forceSyncNow()`로 보존한다. `:app:testDebugUnitTest --tests "*Profile*Test" --tests "*StringResourceCoverageTest"` 통과 확인.
 - 2026-06-13에 계정 탈퇴 익명화 데이터 경로를 재확인했다. Android는 iOS `AnalyticsDataGenerator`와 같은 사용자 통계 필드, Shape/Drone 원본 필드, 500개 batch 분할, 실패해도 Auth 계정 삭제를 계속하는 정책을 유지한다. `:app:testDebugUnitTest --tests "*AnonymizedDeletionDataTest" --tests "*ProfileViewModelTest"` 통과 확인.
 - 2026-06-13 알림/프로필/익명화 확인 누적 후 `:app:testDebugUnitTest`, `:app:assembleDebug` 재실행 통과 확인.
+- 2026-06-13에 저장 도형 생성/저장/상세/수정 진입/복제 진입/삭제를 실기기 `RFCW324TZ0Z`에서 재확인했다. Room DB 활성 도형 count는 3 -> 4 -> 3으로 복구됐고, 신규 도형은 `shapeType=circle` lowercase 저장과 soft delete `deletedAt` 갱신 계약을 지켰다. 코드 변경 없이 smoke/문서 기록만 수행했으므로 Gradle 재실행은 생략.
 - `:app:minifyReleaseWithR8`는 현재 성공합니다.
 - Naver Maps SDK와 Play Services Location에서 R8 warning이 여러 줄 출력될 수 있지만, 현재는 build failure가 아닙니다.
 - `assembleRelease`와 `bundleRelease`는 실제 release signing과 `WEB_CLIENT_ID` 설정 전까지 의도적으로 차단되며, 2026-06-13에 `assembleRelease` 실패 경로를 재확인했습니다.
