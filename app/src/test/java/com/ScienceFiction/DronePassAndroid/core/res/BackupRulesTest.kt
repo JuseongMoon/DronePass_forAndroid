@@ -18,6 +18,15 @@ class BackupRulesTest {
     }
 
     @Test
+    fun `Manifest는 방어적 백업 제외 규칙을 계속 참조한다`() {
+        val document = parseXml(resolveProjectFile("src/main/AndroidManifest.xml", "app/src/main/AndroidManifest.xml"))
+        val application = document.getElementsByTagName("application").item(0) as Element
+
+        assertEquals("@xml/backup_rules", application.getAttribute("android:fullBackupContent"))
+        assertEquals("@xml/data_extraction_rules", application.getAttribute("android:dataExtractionRules"))
+    }
+
+    @Test
     fun `API 30 이하 Auto Backup 규칙은 로컬 저장소 전체를 제외한다`() {
         val document = parseResXml("xml/backup_rules.xml")
 

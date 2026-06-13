@@ -486,6 +486,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 - 2026-06-13 주소 검색 빈 지번 처리 보정과 지도 생성 흐름 재확인 후 `:app:testDebugUnitTest`, `:app:assembleDebug`, `:app:minifyReleaseWithR8` 전체 회귀를 재실행해 통과 확인. R8는 기존과 같은 Naver Maps SDK stack map table 경고와 Play Services Location companion object 경고를 출력하지만 build failure는 아님.
 - 2026-06-13 최신 debug APK를 실기기 `RFCW324TZ0Z`에 `adb install -r`로 재설치 후 MainActivity 실행 smoke를 다시 완료했다. Window focus는 `com.ScienceFiction.DronePassAndroid/.MainActivity`, PID 유지, `AndroidRuntime:E` 크래시 로그 없음. UI dump에서 `지도`, Naver Map controls, 드론 선택 칩/chevron, 하단 `지도`/`저장`/`설정`, 스케치/KP/날씨/새 도형 플로팅 버튼 렌더링을 확인했다.
 - 2026-06-13에 FCM/로컬 알림 payload, 예약, 탭 복원 경로를 iOS `PushNotificationManager`/`SettingManager`와 다시 대조했다. Android는 `shapeId`/`shape_id` 포커스 대상 정규화, 제목/본문 원문 보존, 포그라운드 팝업, 종료일 7일 전 알림, 일출/일몰 다음 미래 후보 선택, 부팅/앱 시작 재예약 정책을 유지한다. 실서버 FCM 수신은 외부 payload가 필요하므로 잔여 실검증 항목으로 남긴다.
+- 2026-06-13에 앱 삭제/재설치 경계의 코드 방어를 재확인하고, Manifest가 `allowBackup=false`와 방어적 `backup_rules`/`data_extraction_rules` 참조를 계속 유지하도록 회귀 테스트를 보강했다. OS 백업으로 Firebase/Auth/FCM deviceId/Room 캐시가 복원되지 않는 정책은 유지되며, 실제 삭제 후 실계정 Firestore 복구 smoke는 외부 계정 설정 후 진행한다.
 - `:app:minifyReleaseWithR8`는 현재 성공합니다.
 - Naver Maps SDK와 Play Services Location에서 R8 warning이 여러 줄 출력될 수 있지만, 현재는 build failure가 아닙니다.
 - `assembleRelease`와 `bundleRelease`는 실제 release signing과 `WEB_CLIENT_ID` 설정 전까지 의도적으로 차단되며, 2026-06-13에 `assembleRelease` 실패 경로를 재확인했습니다.
