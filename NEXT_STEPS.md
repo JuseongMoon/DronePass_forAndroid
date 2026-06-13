@@ -17,6 +17,18 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- `3c84852 docs: record latest debug verification`
+- `10d5733 docs: record anonymized deletion parity check`
+- `4359d2e docs: record profile sync parity check`
+- `dd9cf74 test: cover notification permission gates`
+- `07a8ef1 docs: record notification parity check`
+- `6525dd9 docs: record weather kp parity check`
+- `9a51875 docs: record vworld parity check`
+- `83608be docs: record color profile parity check`
+- `ebdef32 docs: record sketch parity verification`
+- `33c8d37 docs: record login document device smoke`
+- `a4fcf29 docs: record firestore contract verification`
+- `4ccb31d docs: record app info device smoke`
 - `f5e6cd4 fix: initialize app language like ios`
 - `a9c1840 docs: refresh android parity handoff`
 - `a6da481 docs: refresh android handoff status`
@@ -305,9 +317,18 @@ iOS와 Android가 공유하는 `users/{uid}/shapes`, `users/{uid}/sketches`, `us
 - 로그인 시트의 `이용약관` 링크에서 `주식회사 싸이언스픽션 서비스 이용약관`, `제1장 총칙` 문서 로드 확인
 - 로그인 시트의 `개인정보 취급방침` 링크에서 `주식회사 싸이언스픽션 개인정보 처리방침`, `서문` 문서 로드 확인
 - 위 로그인/문서 smoke에서 앱 PID 유지, `AndroidRuntime:E` 로그 없음
+- 최신 누적 검증 APK를 Android 15(API 35) `SM-A346N` / `RFCW324TZ0Z`에 `adb install -r`로 데이터 유지 설치하고 런처 실행 확인
+- 메인 지도에서 Naver Map controls, 상단 `내 드론`/`드론 2` 선택 버튼, 드롭다운 원, `비행구역 레이어`, `스케치`, `KP`, 날씨 카드, `도형 추가`, 하단 `지도`/`저장`/`설정` 렌더링 확인
+- UIAutomator bounds 기준 상단 `내 드론` 버튼 `[401,195][657,285]`, `드론 2` 버튼 `[680,195][922,285]`, 드롭다운 원 `[945,195][1035,285]`로 y=195 시작과 높이 90이 모두 일치함을 재확인
+- 하단 `저장` 탭에서 `저장 목록`, 정렬 칩 `비행시작일순`/`내림차순`, `활성화` 섹션, 저장 도형 행 렌더링 확인
+- 하단 `설정` 탭에서 `설정`, `내 정보`, `로그인 / 회원가입`, `내 드론 관리하기`, `비행 환경`, `현재 KP 지수: 2.0`, `현재 날씨`, `알림` 섹션 진입 렌더링 확인
+- 설정 `로그인 / 회원가입` 시트 렌더링 후 `Google로 로그인` 버튼을 눌렀을 때 현재 로컬 `WEB_CLIENT_ID` 누락 상태에서 `로그인 오류` 다이얼로그와 `Google 로그인 설정이 누락되었습니다. WEB_CLIENT_ID를 확인해주세요.` 메시지 표시 확인
+- 설정 `내 드론 관리하기`에서 `내 드론 관리하기` 화면, 기존 `내 드론`/`드론 2` 목록, `새 드론 추가`, 사용법 문구 렌더링 확인. 데이터 변경 없음
+- `비행구역 레이어` 화면에서 `드론 비행 구역`, `선택된 레이어`, `0 / 13`, `전체 선택`, `전체 해제`, 주요 레이어 목록 렌더링 확인. smoke 중 임시 선택된 레이어는 `전체 해제` 후 홈 화면에서 배지가 사라진 상태로 복구
+- `스케치` 버튼 진입 후 하단 스케치 툴바, `지우개`, 되돌리기/다시 실행, `전체 삭제`, `완료` 컨트롤 렌더링과 완료 종료 확인. 새 스케치 저장 없음
+- 위 실기기 smoke 전 구간에서 앱 PID 유지, 최종 홈 화면 복귀, `AndroidRuntime:E` 크래시 로그 없음
 - 이어진 코드 대조에서 스케치 모드 툴바/제스처/Undo·Redo/지우개/완료 동기화 흐름과 도형 상세 외부지도/복사/메모 링크/드론 상태 표시가 iOS 구현과 맞는지 재확인
-- `adb devices` 결과 연결된 기기가 없어 스케치 그리기/지우기/undo·redo/저장 후 재실행 복원 실기기 회귀는 다음 연결 시점으로 보류
-- 이후 재확인에서도 `adb devices` 결과 연결된 기기가 없어 남은 실기기 회귀와 실계정 알림 수신 검증은 다음 연결 시점으로 유지
+- 스케치 실제 그리기/지우기/undo·redo/저장 후 재실행 복원, 실계정 FCM/로컬 알림 수신, 앱 삭제 후 재설치 동기화는 아직 별도 실검증 항목으로 유지
 
 1. 지도 로드, 현재 위치 권한, 현재 위치 이동
 2. 원형 도형 생성, 저장, 편집, 삭제, 복제
