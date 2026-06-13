@@ -49,6 +49,10 @@ import java.util.Date
 import java.util.Locale
 
 internal const val ProfileDocumentSheetSkipPartiallyExpanded = false
+internal val ProfileInfoSectionVerticalPadding = 12.dp
+internal val ProfileInfoRowSpacing = 8.dp
+internal val ProfileInfoDividerVerticalPadding = 2.dp
+internal val ProfileInfoValueLeadingSpacing = 16.dp
 internal val ProfileInfoToLogoutSectionSpacing = 10.dp
 internal val ProfileLogoutToSyncSectionSpacing = 16.dp
 
@@ -126,40 +130,15 @@ fun ProfileScreen(
         // ===== 1. 내 정보 섹션 =====
         SectionHeader(title = stringResource(R.string.profile_section_my_info))
 
-        ProfileInfoRow(
-            title = stringResource(R.string.profile_info_email),
-            value = profileEmail ?: stringResource(R.string.profile_info_email_hidden),
-        )
-        HorizontalDivider(modifier = Modifier.padding(start = 16.dp))
-        ProfileInfoRow(
-            title = stringResource(R.string.profile_info_login_method),
-            value = profileLoginProvider.displayText(),
-        )
-        HorizontalDivider(modifier = Modifier.padding(start = 16.dp))
-        ProfileInfoRow(
-            title = stringResource(R.string.profile_info_join_date),
-            value = joinDateMillis?.let(::formatJoinDate)
+        ProfileInfoSection(
+            email = profileEmail ?: stringResource(R.string.profile_info_email_hidden),
+            loginProvider = profileLoginProvider.displayText(),
+            joinDate = joinDateMillis?.let(::formatJoinDate)
                 ?: stringResource(R.string.profile_info_join_unknown),
-        )
-        HorizontalDivider(modifier = Modifier.padding(start = 16.dp))
-        ProfileInfoRow(
-            title = stringResource(R.string.profile_info_shapes),
-            value = stringResource(R.string.profile_info_count_unit, activeShapeCount),
-        )
-        HorizontalDivider(modifier = Modifier.padding(start = 16.dp))
-        ProfileInfoRow(
-            title = stringResource(R.string.profile_info_sketches),
-            value = stringResource(R.string.profile_info_count_unit, activeSketchCount),
-        )
-        HorizontalDivider(modifier = Modifier.padding(start = 16.dp))
-        ProfileInfoRow(
-            title = stringResource(R.string.profile_info_drones),
-            value = stringResource(R.string.profile_info_count_unit, activeDroneCount),
-        )
-        HorizontalDivider(modifier = Modifier.padding(start = 16.dp))
-        ProfileInfoRow(
-            title = stringResource(R.string.profile_info_expired_shapes),
-            value = stringResource(R.string.profile_info_count_unit, expiredShapeCount),
+            shapeCount = stringResource(R.string.profile_info_count_unit, activeShapeCount),
+            sketchCount = stringResource(R.string.profile_info_count_unit, activeSketchCount),
+            droneCount = stringResource(R.string.profile_info_count_unit, activeDroneCount),
+            expiredShapeCount = stringResource(R.string.profile_info_count_unit, expiredShapeCount),
         )
 
         // iOS ProfileView: 내 정보 카드와 로그아웃은 별도 Section이며 listSectionSpacing(10)을 둔다.
@@ -412,22 +391,78 @@ private data class ProfileResultDialog(
 )
 
 @Composable
+private fun ProfileInfoSection(
+    email: String,
+    loginProvider: String,
+    joinDate: String,
+    shapeCount: String,
+    sketchCount: String,
+    droneCount: String,
+    expiredShapeCount: String,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(
+                horizontal = 16.dp,
+                vertical = ProfileInfoSectionVerticalPadding,
+            ),
+        verticalArrangement = Arrangement.spacedBy(ProfileInfoRowSpacing),
+    ) {
+        ProfileInfoRow(
+            title = stringResource(R.string.profile_info_email),
+            value = email,
+        )
+        ProfileInfoRow(
+            title = stringResource(R.string.profile_info_login_method),
+            value = loginProvider,
+        )
+        ProfileInfoRow(
+            title = stringResource(R.string.profile_info_join_date),
+            value = joinDate,
+        )
+        ProfileInfoDivider()
+        ProfileInfoRow(
+            title = stringResource(R.string.profile_info_shapes),
+            value = shapeCount,
+        )
+        ProfileInfoRow(
+            title = stringResource(R.string.profile_info_sketches),
+            value = sketchCount,
+        )
+        ProfileInfoRow(
+            title = stringResource(R.string.profile_info_drones),
+            value = droneCount,
+        )
+        ProfileInfoRow(
+            title = stringResource(R.string.profile_info_expired_shapes),
+            value = expiredShapeCount,
+        )
+    }
+}
+
+@Composable
+private fun ProfileInfoDivider() {
+    HorizontalDivider(
+        modifier = Modifier.padding(vertical = ProfileInfoDividerVerticalPadding),
+    )
+}
+
+@Composable
 private fun ProfileInfoRow(
     title: String,
     value: String,
 ) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+        modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = title,
-            style = MaterialTheme.typography.bodyLarge,
+            style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.weight(1f),
         )
-        Spacer(modifier = Modifier.width(16.dp))
+        Spacer(modifier = Modifier.width(ProfileInfoValueLeadingSpacing))
         Text(
             text = value,
             style = MaterialTheme.typography.bodyMedium,

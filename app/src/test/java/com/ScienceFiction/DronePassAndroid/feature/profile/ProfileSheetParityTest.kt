@@ -17,4 +17,12 @@ class ProfileSheetParityTest {
         assertEquals(10.dp, ProfileInfoToLogoutSectionSpacing)
         assertEquals(16.dp, ProfileLogoutToSyncSectionSpacing)
     }
+
+    @Test
+    fun `내 정보 섹션은 iOS ProfileView처럼 컴팩트 묶음 간격을 사용한다`() {
+        assertEquals(12.dp, ProfileInfoSectionVerticalPadding)
+        assertEquals(8.dp, ProfileInfoRowSpacing)
+        assertEquals(2.dp, ProfileInfoDividerVerticalPadding)
+        assertEquals(16.dp, ProfileInfoValueLeadingSpacing)
+    }
 }
