@@ -333,7 +333,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 - 2026-06-12에 동기화 기준선 갱신 보정 후 `:app:testDebugUnitTest --tests "*RealtimeSyncManagerTest" --tests "*AuthViewModelForegroundSyncTest" --tests "*ProfileViewModelTest"`, `:app:testDebugUnitTest`, `:app:assembleDebug`, `:app:minifyReleaseWithR8`를 재실행해 통과 확인.
 - 2026-06-12에 빈 제목 기존 도형 편집 상태 보존 보정 후 `:app:testDebugUnitTest --tests "*ShapeEditDefaultsTest"`, `:app:testDebugUnitTest --tests "*Shape*Test"`, `:app:assembleDebug`, `:app:testDebugUnitTest`를 재실행해 통과 확인.
 - 2026-06-12에 저장 목록 스와이프 삭제 배경 노출 보정 후 `:app:testDebugUnitTest --tests "*SavedListSectionsTest"`, `:app:testDebugUnitTest --tests "*Saved*Test"`, `:app:assembleDebug`, `:app:testDebugUnitTest`를 재실행해 통과 확인.
-- 2026-06-12에 드론 관리/상세/편집 문구를 iOS String Catalog 기준으로 보정 후 `:app:testDebugUnitTest --tests "*StringResourceCoverageTest"`, `:app:testDebugUnitTest --tests "*Drone*Test"`, `:app:assembleDebug`, `:app:testDebugUnitTest`를 재실행해 통과 확인.
+- 2026-06-12에 드론 관리/상세/편집 문구를 iOS String Catalog 기준으로 보정 후 `:app:testDebugUnitTest --tests "*StringResourceCoverageTest"`, `:app:testDebugUnitTest --tests "*Drone*Test"`, `:app:assembleDebug`, `:app:testDebugUnitTest`, `:app:minifyReleaseWithR8`를 재실행해 통과 확인.
 - `:app:minifyReleaseWithR8`는 현재 성공합니다.
 - Naver Maps SDK와 Play Services Location에서 R8 warning이 여러 줄 출력될 수 있지만, 현재는 build failure가 아닙니다.
 - `assembleRelease`와 `bundleRelease`는 실제 release signing 설정 전까지 의도적으로 차단되며, 2026-06-12에 `assembleRelease` 실패 경로를 재확인했습니다.
