@@ -145,6 +145,7 @@
 - 저장 목록 행의 스와이프 삭제 빨간 배경/휴지통 아이콘이 평상시 노출되지 않고 end-to-start 스와이프 중에만 보이도록 보정
 - 프로필 내 정보 섹션을 iOS `ProfileView`처럼 컴팩트 묶음 행과 가입일 뒤 단일 divider 구조로 보정
 - 앱 정보 다중 드론 기능 아이콘을 iOS `paperplane.circle.fill` 의미와 맞는 종이비행기 아이콘으로 보정
+- 앱 정보 실시간 날씨 기능 아이콘을 iOS `cloud.sun.fill` 의미와 맞는 구름/날씨 아이콘으로 보정
 - 앱 정보 KP 지수 기능 아이콘을 iOS `antenna.radiowaves.left.and.right` 의미와 맞는 안테나 아이콘으로 보정
 - 앱 정보 도형 관리 기능 아이콘을 iOS `circle.circle.fill` 의미와 맞는 원형 아이콘으로 보정
 - Shape 읽기는 iOS 파서처럼 빈 문자열/공백 제목을 보존하고, 쓰기 검증은 공백 제목을 계속 거부

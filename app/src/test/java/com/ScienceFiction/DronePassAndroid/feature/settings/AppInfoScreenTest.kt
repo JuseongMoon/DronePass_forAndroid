@@ -41,6 +41,11 @@ class AppInfoScreenTest {
     }
 
     @Test
+    fun `실시간 날씨 기능 아이콘은 iOS cloud sun fill 의미와 맞는 구름 아이콘을 사용한다`() {
+        assertEquals("Filled.WbCloudy", AppInfoWeatherIcon.name)
+    }
+
+    @Test
     fun `도형 관리 기능 아이콘은 iOS circle circle fill 의미와 맞는 원형 아이콘을 사용한다`() {
         assertEquals("Filled.RadioButtonChecked", AppInfoShapeManagementIcon.name)
     }

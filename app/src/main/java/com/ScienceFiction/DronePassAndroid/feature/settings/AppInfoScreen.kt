@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.RadioButtonChecked
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SettingsInputAntenna
 import androidx.compose.material.icons.filled.Tag
+import androidx.compose.material.icons.filled.WbCloudy
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -63,6 +64,7 @@ internal val AppInfoFeatureTitleDescriptionSpacing = 4.dp
 internal val AppInfoFeatureVerticalPadding = 4.dp
 internal val AppInfoFeatureHorizontalPadding = 16.dp
 internal val AppInfoMultiDroneIcon: ImageVector = Icons.AutoMirrored.Filled.Send
+internal val AppInfoWeatherIcon: ImageVector = Icons.Default.WbCloudy
 internal val AppInfoKpIndexIcon: ImageVector = Icons.Default.SettingsInputAntenna
 internal val AppInfoShapeManagementIcon: ImageVector = Icons.Default.RadioButtonChecked
 
@@ -145,7 +147,7 @@ fun AppInfoScreen(
             Spacer(modifier = Modifier.height(16.dp))
             SectionHeader(title = stringResource(R.string.app_info_section_environmental_info))
             FeatureRow(
-                icon = Icons.Default.Cloud,
+                icon = AppInfoWeatherIcon,
                 iconColor = Color(0xFF5AC8FA),
                 title = stringResource(R.string.app_info_feature_weather_title),
                 description = stringResource(R.string.app_info_feature_weather_desc),
