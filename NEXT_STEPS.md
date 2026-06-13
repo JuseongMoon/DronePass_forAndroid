@@ -483,6 +483,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 - 2026-06-13에 좌표 입력 후 주소 역변환 실패 흐름을 iOS `CoordinateView`와 다시 대조했다. Android도 실패 시 `coordinate_alert_address_not_found_*` 알림을 띄우고, 확인하면 좌표는 유지하면서 `주소를 찾을 수 없습니다` fallback 주소로 저장한다. `ShapeEditDefaultsTest`와 `MapCameraFocusTest`의 관련 회귀 테스트가 이미 이 계약을 고정하고 있어 코드 변경은 하지 않았다.
 - 2026-06-13에 주소 검색 결과 선택/표시를 iOS `SearchAddressView`와 다시 대조했다. Android는 이제 지번 주소가 빈 문자열이면 도로명으로 즉시 대체하지 않고 iOS처럼 빈 값을 보존해 최종 저장 fallback으로 넘기며, 결과 카드도 빈 지번/도로명 행을 표시 대상으로 유지한다. `:app:testDebugUnitTest --tests "*SearchAddressSheetTest"` 통과 확인.
 - 2026-06-13에 지도 롱프레스 새 도형 생성 흐름을 iOS `MainView.handleLongPress`와 다시 대조했다. Android도 역지오코딩 성공/실패별 확인 알림, 실패 시 `mainView.address.notFound`와 같은 fallback 주소, 확인 후 도형 편집 시트 진입을 유지한다. `MapCameraFocusTest`와 `StringResourceCoverageTest`가 이 흐름과 문구를 이미 고정하고 있어 코드 변경은 하지 않았다.
+- 2026-06-13 주소 검색 빈 지번 처리 보정과 지도 생성 흐름 재확인 후 `:app:testDebugUnitTest`, `:app:assembleDebug`, `:app:minifyReleaseWithR8` 전체 회귀를 재실행해 통과 확인. R8는 기존과 같은 Naver Maps SDK stack map table 경고와 Play Services Location companion object 경고를 출력하지만 build failure는 아님.
 - `:app:minifyReleaseWithR8`는 현재 성공합니다.
 - Naver Maps SDK와 Play Services Location에서 R8 warning이 여러 줄 출력될 수 있지만, 현재는 build failure가 아닙니다.
 - `assembleRelease`와 `bundleRelease`는 실제 release signing과 `WEB_CLIENT_ID` 설정 전까지 의도적으로 차단되며, 2026-06-13에 `assembleRelease` 실패 경로를 재확인했습니다.
