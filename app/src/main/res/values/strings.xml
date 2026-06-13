@@ -78,7 +78,7 @@
     <!-- MapFloatingButtons -->
     <string name="map_fab_flight_zone_layer">비행구역 레이어</string>
     <string name="map_fab_sketch">스케치</string>
-    <string name="map_fab_add_shape">도형 추가</string>
+    <string name="map_fab_add_shape">새 도형 추가</string>
 
     <!-- DroneSelectionDropdown -->
     <string name="drone_dropdown_select">드론 선택</string>

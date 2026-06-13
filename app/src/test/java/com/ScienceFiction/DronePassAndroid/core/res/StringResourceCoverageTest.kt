@@ -149,6 +149,7 @@ class StringResourceCoverageTest {
         assertEquals("예", stringResourceValue("values/strings.xml", "common_yes"))
         assertEquals("아니오", stringResourceValue("values/strings.xml", "common_no"))
         assertEquals("새 도형 만들기", stringResourceValue("values/strings.xml", "map_new_shape_alert_title"))
+        assertEquals("새 도형 추가", stringResourceValue("values/strings.xml", "map_fab_add_shape"))
         assertEquals(
             "해당 위치에 새 도형을 만드시겠습니까?",
             stringResourceValue("values/strings.xml", "map_new_shape_alert_message"),
@@ -163,6 +164,7 @@ class StringResourceCoverageTest {
         assertEquals("Yes", stringResourceValue("values-en/strings.xml", "common_yes"))
         assertEquals("No", stringResourceValue("values-en/strings.xml", "common_no"))
         assertEquals("Create New Shape", stringResourceValue("values-en/strings.xml", "map_new_shape_alert_title"))
+        assertEquals("Add New Shape", stringResourceValue("values-en/strings.xml", "map_fab_add_shape"))
         assertEquals(
             "Would you like to create a new shape at this location?",
             stringResourceValue("values-en/strings.xml", "map_new_shape_alert_message"),
@@ -232,6 +234,7 @@ class StringResourceCoverageTest {
         assertEquals("Search address", stringResourceValue("values-en/strings.xml", "shape_edit_placeholder_address"))
         assertEquals("Altitude", stringResourceValue("values-en/strings.xml", "shape_edit_altitude_label"))
         assertEquals("Memo", stringResourceValue("values-en/strings.xml", "shape_edit_label_memo"))
+        assertEquals("Select Drone", stringResourceValue("values-en/strings.xml", "shape_edit_drone_label"))
         assertEquals("Select Start Date", stringResourceValue("values-en/strings.xml", "shape_edit_start_date_select"))
         assertEquals("Select End Date", stringResourceValue("values-en/strings.xml", "shape_edit_end_date_select"))
         assertEquals("Done", stringResourceValue("values-en/strings.xml", "date_time_done"))

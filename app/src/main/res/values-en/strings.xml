@@ -76,7 +76,7 @@
     <!-- MapFloatingButtons -->
     <string name="map_fab_flight_zone_layer">Flight zone layer</string>
     <string name="map_fab_sketch">Sketch</string>
-    <string name="map_fab_add_shape">Add shape</string>
+    <string name="map_fab_add_shape">Add New Shape</string>
 
     <!-- DroneSelectionDropdown -->
     <string name="drone_dropdown_select">Select drone</string>
@@ -202,7 +202,7 @@
     <string name="shape_edit_radius_placeholder">Enter radius</string>
     <string name="shape_edit_altitude_label">Altitude</string>
     <string name="shape_edit_altitude_placeholder">Enter altitude</string>
-    <string name="shape_edit_drone_label">Select drone</string>
+    <string name="shape_edit_drone_label">Select Drone</string>
     <string name="shape_edit_drone_placeholder">Select drone</string>
     <string name="coordinate_title">Enter Coordinates</string>
     <string name="coordinate_cancel">Cancel</string>
