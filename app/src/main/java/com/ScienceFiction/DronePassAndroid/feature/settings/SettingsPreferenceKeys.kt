@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.settings
 
+import android.content.Context
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
@@ -50,12 +51,20 @@ internal fun resolveCurrentAppLanguage(): AppLanguage {
     return AppLanguage.fromTag(tag)
 }
 
+internal fun resolveCurrentAppLanguage(context: Context): AppLanguage {
+    return resolvePersistedOrInitialAppLanguage(context)
+}
+
 internal fun defaultKoreaFeaturesEnabled(language: AppLanguage): Boolean {
     return language == AppLanguage.Korean
 }
 
 internal fun defaultKoreaFeaturesEnabled(): Boolean {
     return defaultKoreaFeaturesEnabled(resolveCurrentAppLanguage())
+}
+
+internal fun defaultKoreaFeaturesEnabled(context: Context): Boolean {
+    return defaultKoreaFeaturesEnabled(resolveCurrentAppLanguage(context))
 }
 
 internal fun resolveKoreaFeaturesEnabled(

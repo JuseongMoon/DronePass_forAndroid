@@ -185,6 +185,7 @@
 - Apple 로그인 웹 OAuth 사용자 취소를 iOS처럼 오류 알림 없이 무시
 - 로그인 화면 Google 버튼을 iOS `LoginView`처럼 흰 배경, 검은 텍스트, 동일 높이, 그림자 토큰으로 보정
 - 앱 첫 실행 언어를 iOS처럼 시스템 언어가 한국어면 한국어, 그 외 언어면 영어로 고정하고 AppCompat per-app language 저장 설정 추가
+- 앱 언어 변경이 `ComponentActivity`에서도 Android per-app language, 앱 자체 저장값, 런타임 리소스 locale에 함께 반영되어 재시작 후 유지되도록 보정
 - 실제 배포 산출물(`assembleRelease`/`bundleRelease`)은 release signing과 Google `WEB_CLIENT_ID`가 모두 설정된 경우에만 생성되도록 차단
 - 로그인 약관/개인정보 시트 흐름
 - 한국어 도형 문구와 상세 라벨
@@ -461,6 +462,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 - 2026-06-13에 계정 탈퇴 익명화 데이터 경로를 재확인했다. Android는 iOS `AnalyticsDataGenerator`와 같은 사용자 통계 필드, Shape/Drone 원본 필드, 500개 batch 분할, 실패해도 Auth 계정 삭제를 계속하는 정책을 유지한다. `:app:testDebugUnitTest --tests "*AnonymizedDeletionDataTest" --tests "*ProfileViewModelTest"` 통과 확인.
 - 2026-06-13 알림/프로필/익명화 확인 누적 후 `:app:testDebugUnitTest`, `:app:assembleDebug` 재실행 통과 확인.
 - 2026-06-13에 저장 도형 생성/저장/상세/수정 진입/복제 진입/삭제를 실기기 `RFCW324TZ0Z`에서 재확인했다. Room DB 활성 도형 count는 3 -> 4 -> 3으로 복구됐고, 신규 도형은 `shapeType=circle` lowercase 저장과 soft delete `deletedAt` 갱신 계약을 지켰다. 코드 변경 없이 smoke/문서 기록만 수행했으므로 Gradle 재실행은 생략.
+- 2026-06-13에 앱 언어 변경 지속성을 보정했다. 기존에는 English 선택 직후 현재 프로세스 표시만 바뀌고 `cmd locale get-app-locales com.ScienceFiction.DronePassAndroid`가 `[]`로 남아 재시작 시 한국어로 돌아갔으나, 보정 후 English 선택 시 `[en]`, 강제 종료/재실행 후 `Map`/`Saved`/`Settings` 영어 UI 유지를 확인했다. 이후 한국어로 되돌려 `[ko]`, 강제 종료/재실행 후 `지도`/`저장`/`설정` 한국어 UI 복귀를 확인했고, 최신 debug APK 재설치 후에도 `[ko]`와 한국어 UI가 유지됐다. `AndroidRuntime:E` 크래시 로그는 없음. `:app:testDebugUnitTest --tests "*SettingsLanguageSelectionTest" --tests "*SettingsPreferenceKeysTest" --tests "*DocumentRepositoryTest"`, `:app:assembleDebug` 통과 확인.
 - `:app:minifyReleaseWithR8`는 현재 성공합니다.
 - Naver Maps SDK와 Play Services Location에서 R8 warning이 여러 줄 출력될 수 있지만, 현재는 build failure가 아닙니다.
 - `assembleRelease`와 `bundleRelease`는 실제 release signing과 `WEB_CLIENT_ID` 설정 전까지 의도적으로 차단되며, 2026-06-13에 `assembleRelease` 실패 경로를 재확인했습니다.

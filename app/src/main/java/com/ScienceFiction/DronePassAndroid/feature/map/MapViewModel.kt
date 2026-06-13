@@ -841,13 +841,13 @@ class MapViewModel @Inject constructor(
         .map { preferences ->
             resolveKoreaFeaturesEnabled(
                 storedValue = storedKoreaFeaturesEnabled(preferences),
-                language = resolveCurrentAppLanguage(),
+                language = resolveCurrentAppLanguage(appContext),
             )
         }
         .stateIn(
             viewModelScope,
             SharingStarted.WhileSubscribed(5000),
-            defaultKoreaFeaturesEnabled(),
+            defaultKoreaFeaturesEnabled(appContext),
         )
 
     /**

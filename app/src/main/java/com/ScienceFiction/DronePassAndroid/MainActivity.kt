@@ -1,6 +1,7 @@
 package com.ScienceFiction.DronePassAndroid
 
 import android.Manifest
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
@@ -16,6 +17,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.lifecycle.lifecycleScope
 import com.ScienceFiction.DronePassAndroid.core.data.NotificationPreferenceKeys
 import com.ScienceFiction.DronePassAndroid.core.data.storedLaunchNotificationPermissionRequested
+import com.ScienceFiction.DronePassAndroid.feature.settings.localizedAppLanguageContext
 import com.ScienceFiction.DronePassAndroid.feature.settings.storedKeepScreenAwake
 import com.ScienceFiction.DronePassAndroid.service.AppForegroundState
 import com.ScienceFiction.DronePassAndroid.service.ForegroundNotification
@@ -38,6 +40,10 @@ class MainActivity : ComponentActivity() {
 
     private val notificationShapeId = mutableStateOf<String?>(null)
     private val notificationForPopup = mutableStateOf<ForegroundNotification?>(null)
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(localizedAppLanguageContext(newBase))
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

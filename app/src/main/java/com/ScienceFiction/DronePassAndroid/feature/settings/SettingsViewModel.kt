@@ -3,8 +3,6 @@ package com.ScienceFiction.DronePassAndroid.feature.settings
 import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log
-import androidx.appcompat.app.AppCompatDelegate
-import androidx.core.os.LocaleListCompat
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
@@ -116,9 +114,9 @@ class SettingsViewModel @Inject constructor(
 
     /**
      * 현재 앱 언어 (iOS UserDefaults `AppleLanguages` 정합).
-     * AppCompatDelegate.getApplicationLocales 기반.
+     * 앱 자체 저장값과 Android per-app language 를 함께 반영한다.
      */
-    private val _currentLanguage = MutableStateFlow(resolveCurrentAppLanguage())
+    private val _currentLanguage = MutableStateFlow(resolveCurrentAppLanguage(appContext))
     val currentLanguage: StateFlow<AppLanguage> = _currentLanguage.asStateFlow()
 
     /**
@@ -130,13 +128,13 @@ class SettingsViewModel @Inject constructor(
         .map { preferences ->
             resolveKoreaFeaturesEnabled(
                 storedValue = storedKoreaFeaturesEnabled(preferences),
-                language = resolveCurrentAppLanguage(),
+                language = resolveCurrentAppLanguage(appContext),
             )
         }
         .stateIn(
             viewModelScope,
             SharingStarted.WhileSubscribed(5000),
-            defaultKoreaFeaturesEnabled(),
+            defaultKoreaFeaturesEnabled(appContext),
         )
 
     init {
@@ -151,10 +149,11 @@ class SettingsViewModel @Inject constructor(
 
     /**
      * 앱 언어 변경 — iOS `UserDefaults.set(...)` + `AppleLanguages` 정합.
-     * AppCompatDelegate API 호출 → Activity 자동 재생성 → 전체 UI 언어 전환.
+     * 앱 자체 저장값과 Android per-app language 를 함께 갱신한다.
      */
     fun setLanguage(language: AppLanguage) {
-        AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(language.tag))
+        persistAppLanguage(appContext, language)
+        applyAppLanguageToRuntime(appContext, language)
         _currentLanguage.value = language
     }
 

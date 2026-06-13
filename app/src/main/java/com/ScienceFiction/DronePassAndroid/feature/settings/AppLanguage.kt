@@ -7,8 +7,8 @@ import java.util.Locale
 /**
  * 앱 언어 선택 enum — iOS `AppLanguage` 정합.
  *
- * AppCompatDelegate.setApplicationLocales 로 적용 (Per-app language).
- * iOS UserDefaults `AppleLanguages` 와 동등.
+ * 앱 자체 저장소와 Android runtime locale 에 함께 적용한다.
+ * iOS UserDefaults `AppleLanguages` 와 동등한 사용자 선택값이다.
  */
 enum class AppLanguage(val tag: String, @StringRes val displayNameRes: Int) {
     Korean("ko", R.string.settings_language_korean),

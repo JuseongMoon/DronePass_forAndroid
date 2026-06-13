@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.saved
 
+import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
@@ -27,6 +28,7 @@ import com.ScienceFiction.DronePassAndroid.feature.shape.storedShapeEditDefaults
 import com.ScienceFiction.DronePassAndroid.feature.shape.writeShapeEditDateOnlyMode
 import com.ScienceFiction.DronePassAndroid.feature.shape.writeShapeEditDefaults
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -169,6 +171,7 @@ class SavedListViewModel @Inject constructor(
     private val droneSelectionState: DroneSelectionState,
     private val dataStore: DataStore<Preferences>,
     val naverGeocodingApi: NaverGeocodingApi,
+    @ApplicationContext private val appContext: Context,
 ) : ViewModel() {
 
     /**
@@ -179,13 +182,13 @@ class SavedListViewModel @Inject constructor(
         .map { preferences ->
             resolveKoreaFeaturesEnabled(
                 storedValue = storedKoreaFeaturesEnabled(preferences),
-                language = resolveCurrentAppLanguage(),
+                language = resolveCurrentAppLanguage(appContext),
             )
         }
         .stateIn(
             viewModelScope,
             SharingStarted.WhileSubscribed(5000),
-            defaultKoreaFeaturesEnabled(),
+            defaultKoreaFeaturesEnabled(appContext),
         )
 
     private val activeShapes: StateFlow<List<ShapeModel>> = shapeRepository.getActiveShapes()

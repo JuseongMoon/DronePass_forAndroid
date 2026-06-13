@@ -1,11 +1,13 @@
 package com.ScienceFiction.DronePassAndroid.core.data.repository
 
+import android.content.Context
 import android.util.Log
-import androidx.appcompat.app.AppCompatDelegate
 import com.ScienceFiction.DronePassAndroid.core.data.remote.document.DocumentApi
 import com.ScienceFiction.DronePassAndroid.core.util.MarkdownParser
 import com.ScienceFiction.DronePassAndroid.domain.model.ParsedDocument
 import com.ScienceFiction.DronePassAndroid.domain.model.PatchNote
+import com.ScienceFiction.DronePassAndroid.feature.settings.resolveCurrentAppLanguage
+import dagger.hilt.android.qualifiers.ApplicationContext
 import java.util.Locale
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -25,6 +27,7 @@ import javax.inject.Singleton
 @Singleton
 class DocumentRepository @Inject constructor(
     private val documentApi: DocumentApi,
+    @ApplicationContext private val appContext: Context,
 ) {
     companion object {
         private const val TAG = "DocumentRepository"
@@ -41,13 +44,10 @@ class DocumentRepository @Inject constructor(
 
     /** 현재 앱 언어 기준 파일명 suffix 결정. `ko` → `.txt`, 그 외 → `_en.txt`. */
     private fun localizedPath(base: String): String {
-        val locales = AppCompatDelegate.getApplicationLocales()
-        val lang = if (!locales.isEmpty) {
-            locales.get(0)?.language
-        } else {
-            Locale.getDefault().language
-        }
-        return localizedDocumentPath(base = base, languageTag = lang)
+        return localizedDocumentPath(
+            base = base,
+            languageTag = resolveCurrentAppLanguage(appContext).tag,
+        )
     }
 
     suspend fun fetchTerms(): Result<ParsedDocument> = fetchCachedDocument(

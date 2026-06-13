@@ -42,4 +42,40 @@ class SettingsLanguageSelectionTest {
         assertEquals(AppLanguage.English, initialAppLanguageForSystemTag("ja-JP"))
         assertEquals(AppLanguage.English, initialAppLanguageForSystemTag(null))
     }
+
+    @Test
+    fun `저장된 앱 언어가 있으면 시스템 언어보다 우선한다`() {
+        assertEquals(
+            AppLanguage.English,
+            resolveAppLanguageForStoredOrSystemTag(
+                storedLanguageTag = "en",
+                systemLanguageTag = "ko-KR",
+            ),
+        )
+        assertEquals(
+            AppLanguage.Korean,
+            resolveAppLanguageForStoredOrSystemTag(
+                storedLanguageTag = "ko",
+                systemLanguageTag = "en-US",
+            ),
+        )
+    }
+
+    @Test
+    fun `저장된 앱 언어가 없으면 첫 실행 시스템 언어 정책을 사용한다`() {
+        assertEquals(
+            AppLanguage.Korean,
+            resolveAppLanguageForStoredOrSystemTag(
+                storedLanguageTag = null,
+                systemLanguageTag = "ko-KR",
+            ),
+        )
+        assertEquals(
+            AppLanguage.English,
+            resolveAppLanguageForStoredOrSystemTag(
+                storedLanguageTag = "",
+                systemLanguageTag = "ja-JP",
+            ),
+        )
+    }
 }

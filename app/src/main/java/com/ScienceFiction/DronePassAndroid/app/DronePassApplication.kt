@@ -1,7 +1,7 @@
 package com.ScienceFiction.DronePassAndroid.app
 
 import android.app.Application
-import com.ScienceFiction.DronePassAndroid.feature.settings.initializeAppLanguageIfUnset
+import com.ScienceFiction.DronePassAndroid.feature.settings.initializeAppLanguage
 import com.ScienceFiction.DronePassAndroid.service.FcmService
 import com.ScienceFiction.DronePassAndroid.service.NotificationScheduleRestorer
 import dagger.hilt.android.HiltAndroidApp
@@ -23,7 +23,7 @@ class DronePassApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        initializeAppLanguageIfUnset()
+        initializeAppLanguage(this)
         // 알림 채널 생성 (Android 8.0+)
         FcmService.createNotificationChannel(this)
         notificationScheduleRestorer.rescheduleEnabledAlarmsAsync("app_start")
