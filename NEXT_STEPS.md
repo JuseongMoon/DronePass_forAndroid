@@ -92,7 +92,7 @@
 - 설정/프로필/앱 정보/패치노트/문서 시트
 - 앱정보 화면 섹션/문구/버전 표시 구조
 - 로그인/프로필 약관·개인정보 시트 흐름
-- 앱 언어 초기값과 문서 URL 언어 분기
+- 앱 언어 초기값, 문서 URL 언어 분기, 문서 캐시 path 분리
 - 알림 예약 로직과 부팅 후 재예약
 - 계정/로그인/로그아웃/계정삭제/실시간 동기화 흐름
 - Sketch Firestore 직렬화/파싱 계약
@@ -376,6 +376,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 - 2026-06-13에 Shape 서버 누락 로컬 문서 재업로드 방지 보정 후 `:app:testDebugUnitTest --tests "*ShapeRepositoryTest"`, `:app:testDebugUnitTest --tests "*Shape*Test"`, `:app:assembleDebug`, `:app:testDebugUnitTest`, `:app:minifyReleaseWithR8`를 재실행해 통과 확인.
 - 2026-06-13에 provider 계정 복구 컬렉션 정책을 고정한 뒤 `:app:testDebugUnitTest --tests "*AuthRepositoryUserDocumentTest"`, `:app:testDebugUnitTest --tests "*Auth*Test"`, `:app:compileDebugKotlin`을 재실행해 통과 확인.
 - 2026-06-13에 release readiness gate를 signing + Google `WEB_CLIENT_ID`로 확장한 뒤 `:app:compileDebugKotlin`, `:app:testDebugUnitTest`, `:app:minifyReleaseWithR8`를 재실행해 통과 확인. `:app:assembleRelease`는 두 설정 누락을 함께 표시하며 의도적으로 실패함을 확인.
+- 2026-06-13에 문서/앱 정보 경로를 재확인했다. Terms/Privacy 캐시는 요청 path를 함께 저장해 언어별 파일이 섞이지 않고, 약관/개인정보 `Content` 재진입 시 자동 로드를 건너뛰는 동작은 iOS `FetchWebDocuments` 메모리 캐시 정책과 동일하게 유지한다. `:app:testDebugUnitTest --tests "*DocumentRepositoryTest" --tests "*DocumentEntryPolicyTest" --tests "*PatchNotesContentTest" --tests "*MarkdownParserTest" --tests "*AppInfoScreenTest" --tests "*StringResourceCoverageTest"` 통과 확인.
 - `:app:minifyReleaseWithR8`는 현재 성공합니다.
 - Naver Maps SDK와 Play Services Location에서 R8 warning이 여러 줄 출력될 수 있지만, 현재는 build failure가 아닙니다.
 - `assembleRelease`와 `bundleRelease`는 실제 release signing과 `WEB_CLIENT_ID` 설정 전까지 의도적으로 차단되며, 2026-06-13에 `assembleRelease` 실패 경로를 재확인했습니다.
