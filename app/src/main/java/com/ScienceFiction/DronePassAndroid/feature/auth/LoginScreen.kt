@@ -79,6 +79,7 @@ internal val LoginProviderIconSize = 18.dp
 internal val LoginProviderIconTextSpacing = 8.dp
 internal val LoginProviderTextSize = 19.sp
 internal val LoginGoogleButtonTopSpacing = 8.dp
+internal val LoginGoogleButtonShadowElevation = 3.dp
 internal val LoginTermsTopSpacing = 8.dp
 internal val LoginSkipButtonTopSpacing = 16.dp
 internal val LoginTermsLineSpacing = 2.dp
@@ -222,7 +223,7 @@ fun LoginScreen(
 
                 Spacer(modifier = Modifier.height(LoginGoogleButtonTopSpacing))
 
-                OutlinedButton(
+                Button(
                     onClick = { viewModel.signInWithGoogle(context) },
                     modifier = Modifier
                         .padding(horizontal = LoginButtonHorizontalPadding)
@@ -230,9 +231,15 @@ fun LoginScreen(
                         .fillMaxWidth()
                         .height(LoginButtonHeight),
                     shape = RoundedCornerShape(LoginButtonCornerRadius),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        containerColor = MaterialTheme.colorScheme.surface,
-                        contentColor = MaterialTheme.colorScheme.onSurface,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.White,
+                        contentColor = Color.Black,
+                    ),
+                    elevation = ButtonDefaults.buttonElevation(
+                        defaultElevation = LoginGoogleButtonShadowElevation,
+                        pressedElevation = LoginGoogleButtonShadowElevation,
+                        focusedElevation = LoginGoogleButtonShadowElevation,
+                        hoveredElevation = LoginGoogleButtonShadowElevation,
                     ),
                 ) {
                     Image(

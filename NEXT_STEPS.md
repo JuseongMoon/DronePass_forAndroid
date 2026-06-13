@@ -161,6 +161,7 @@
 - 공용 `No` 버튼 한국어 문구를 iOS String Catalog 기준인 `아니오`로 보정
 - Apple 로그인 Activity context unwrap
 - Apple 로그인 웹 OAuth 사용자 취소를 iOS처럼 오류 알림 없이 무시
+- 로그인 화면 Google 버튼을 iOS `LoginView`처럼 흰 배경, 검은 텍스트, 동일 높이, 그림자 토큰으로 보정
 - 앱 첫 실행 언어를 iOS처럼 시스템 언어가 한국어면 한국어, 그 외 언어면 영어로 고정하고 AppCompat per-app language 저장 설정 추가
 - 실제 배포 산출물(`assembleRelease`/`bundleRelease`)은 release signing과 Google `WEB_CLIENT_ID`가 모두 설정된 경우에만 생성되도록 차단
 - 로그인 약관/개인정보 시트 흐름
@@ -386,6 +387,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 - 2026-06-13에 드론 생성/수정/삭제와 도형 연결 경로를 재확인했다. 새 드론 추가는 iOS처럼 다중 필터 선택에만 자동 추가하고, 삭제 시 연결 도형 재할당/삭제는 soft delete와 `updatedAt` 갱신 계약을 유지한다. `:app:testDebugUnitTest --tests "*DroneDeleteValidationTest" --tests "*DroneEditSheetTest" --tests "*DroneListScreenTest" --tests "*DroneNameWidthLimitTest" --tests "*DroneNextColorTest" --tests "*DroneSelectionStateTest" --tests "*DroneSelectionDropdownTest" --tests "*DroneModelTest" --tests "*DroneValidationTest" --tests "*DroneFirestoreParsingTest" --tests "*DroneSyncMergeTest" --tests "*ShapeDetailDroneResolutionTest" --tests "*ShapeEditDefaultsTest" --tests "*ShapeRepositoryTest"` 통과 확인.
 - 2026-06-13에 스케치 모드 종료 직후 재진입 시 이전 완료 동기화와 새 세션 시작이 겹칠 수 있는 경로를 보정했다. `:app:testDebugUnitTest --tests "*SketchDefaultsTest" --tests "*SketchEraserSelectionTest" --tests "*SketchOverlayColorTest" --tests "*SketchTouchDecisionTest" --tests "*SketchRepositoryTest" --tests "*SketchFirebaseStoreTest" --tests "*SketchSmoothingAlgorithmTest" --tests "*SketchValidationTest"`, `:app:assembleDebug` 통과 확인.
 - 2026-06-13에 FCM data-only 알림 표시 제목/본문 추출을 공통 알림 키 정책으로 보정했다. `notification_title`/`notification_body`가 먼저 있으면 빈 문자열이어도 fallback하지 않고 보존한다. `:app:testDebugUnitTest --tests "*FcmServiceTest" --tests "*NotificationSchedulerTest" --tests "*NotificationPreferenceKeysTest" --tests "*UserLocationKeysTest" --tests "*MainScreenStartDestinationTest"`, `:app:assembleDebug` 통과 확인.
+- 2026-06-13에 로그인 화면 Google 버튼을 iOS `LoginView`의 흰 배경/검은 텍스트/그림자 버튼 톤으로 보정했다. `:app:testDebugUnitTest --tests "*Auth*Test" --tests "*StringResourceCoverageTest"`, `:app:assembleDebug` 통과 확인.
 - 2026-06-13 누적 수정 후 `:app:testDebugUnitTest`, `:app:assembleDebug`, `:app:minifyReleaseWithR8` 전체 회귀를 재실행해 통과 확인. R8는 Naver Maps SDK stack map table 경고와 Play Services Location companion object 경고를 출력하지만 현재 build failure는 아님.
 - 2026-06-13 누적 수정 debug APK를 실기기 `RFCW324TZ0Z`에 `adb install -r`로 설치 후 MainActivity 실행 smoke 완료. UI dump에서 `지도` 노드와 Naver Map controls 렌더링 확인, 앱 PID 유지, `AndroidRuntime:E` 크래시 로그 없음.
 - `:app:minifyReleaseWithR8`는 현재 성공합니다.
