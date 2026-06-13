@@ -441,10 +441,11 @@ class SketchViewModel @Inject constructor(
 
     private fun syncSketchesOnModeComplete() {
         val previousJob = latestSketchMutationJob
-        viewModelScope.launch {
+        val job = viewModelScope.launch {
             previousJob?.join()
             sketchRepository.syncToFirebaseOnComplete()
         }
+        latestSketchMutationJob = job
     }
 }
 
