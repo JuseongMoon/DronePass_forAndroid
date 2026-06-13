@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- `fix: match iOS teal palette label`
 - `fix: match iOS shape address placeholder`
 - `fix: match iOS drone detail strings`
 - `fix: match iOS drone list titles`

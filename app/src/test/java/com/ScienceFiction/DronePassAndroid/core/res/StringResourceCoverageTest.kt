@@ -908,7 +908,7 @@ class StringResourceCoverageTest {
         assertEquals("오렌지", stringResourceValue("values/strings.xml", "palette_color_orange"))
         assertEquals("청록", stringResourceValue("values/strings.xml", "palette_color_teal"))
         assertEquals("Orange", stringResourceValue("values-en/strings.xml", "palette_color_orange"))
-        assertEquals("Cyan", stringResourceValue("values-en/strings.xml", "palette_color_teal"))
+        assertEquals("Teal", stringResourceValue("values-en/strings.xml", "palette_color_teal"))
 
         assertEquals("제작 번호", stringResourceValue("values/strings.xml", "drone_detail_serial_number"))
         assertEquals("이륙 무게", stringResourceValue("values/strings.xml", "drone_detail_takeoff_weight"))
