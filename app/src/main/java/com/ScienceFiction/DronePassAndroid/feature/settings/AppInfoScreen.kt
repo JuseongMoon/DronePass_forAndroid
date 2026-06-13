@@ -20,7 +20,7 @@ import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.AirplanemodeActive
 import androidx.compose.material.icons.filled.Business
-import androidx.compose.material.icons.filled.Cloud
+import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Info
@@ -68,6 +68,7 @@ internal val AppInfoWeatherIcon: ImageVector = Icons.Default.WbCloudy
 internal val AppInfoKpIndexIcon: ImageVector = Icons.Default.SettingsInputAntenna
 internal val AppInfoSunriseSunsetIcon: ImageVector = Icons.Default.WbTwilight
 internal val AppInfoShapeManagementIcon: ImageVector = Icons.Default.RadioButtonChecked
+internal val AppInfoCloudSyncIcon: ImageVector = Icons.Default.CloudSync
 internal val AppInfoDroneOnestopIcon: ImageVector = Icons.Default.Verified
 
 internal fun appInfoVersionValue(versionName: String, versionCode: Int): String {
@@ -195,7 +196,7 @@ fun AppInfoScreen(
             Spacer(modifier = Modifier.height(16.dp))
             SectionHeader(title = stringResource(R.string.app_info_section_cloud_and_data))
             FeatureRow(
-                icon = Icons.Default.Cloud,
+                icon = AppInfoCloudSyncIcon,
                 iconColor = Color(0xFF007AFF),
                 title = stringResource(R.string.app_info_feature_cloud_sync_title),
                 description = stringResource(R.string.app_info_feature_cloud_sync_desc),

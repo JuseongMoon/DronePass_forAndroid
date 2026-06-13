@@ -56,6 +56,11 @@ class AppInfoScreenTest {
     }
 
     @Test
+    fun `클라우드 동기화 기능 아이콘은 iOS icloud fill 의미와 맞는 클라우드 동기화 아이콘을 사용한다`() {
+        assertEquals("Filled.CloudSync", AppInfoCloudSyncIcon.name)
+    }
+
+    @Test
     fun `드론 원스톱 기능 아이콘은 iOS checkmark seal fill 의미와 맞는 인증 배지 아이콘을 사용한다`() {
         assertEquals("Filled.Verified", AppInfoDroneOnestopIcon.name)
     }
