@@ -12,7 +12,9 @@ import com.ScienceFiction.DronePassAndroid.core.data.remote.firebase.ShapeFireba
 import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncPreferenceKeys
 import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncMergeResult
 import com.ScienceFiction.DronePassAndroid.core.data.sync.filterServerNewer
+import com.ScienceFiction.DronePassAndroid.core.data.sync.isCloudSyncEnabled
 import com.ScienceFiction.DronePassAndroid.core.data.sync.shouldUpdateServerMetadataAfterFullSync
+import com.ScienceFiction.DronePassAndroid.core.data.sync.shouldRunImmediateCloudSync
 import com.ScienceFiction.DronePassAndroid.core.data.storedEndDateAlarmEnabled
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 import com.ScienceFiction.DronePassAndroid.domain.model.validateForFirebasePersistence
@@ -143,7 +145,7 @@ class ShapeRepository @Inject constructor(
 
     /**
      * 새 도형 삽입 (동일 ID 존재 시 교체)
-     * 로그인 상태이면 Firestore에도 즉시 푸시한다.
+     * 로그인 + 클라우드 백업 ON 상태이면 Firestore에도 즉시 푸시한다.
      */
     suspend fun insertShape(shape: ShapeModel) {
         if (!shape.isValidForLocalWrite("insertShape")) return
@@ -156,7 +158,7 @@ class ShapeRepository @Inject constructor(
 
     /**
      * 도형 정보 업데이트
-     * 로그인 상태이면 Firestore에도 즉시 푸시한다.
+     * 로그인 + 클라우드 백업 ON 상태이면 Firestore에도 즉시 푸시한다.
      */
     suspend fun updateShape(shape: ShapeModel) {
         if (!shape.isValidForLocalWrite("updateShape")) return
@@ -170,7 +172,7 @@ class ShapeRepository @Inject constructor(
     /**
      * 도형 소프트 삭제 (deletedAt 타임스탬프 설정)
      * 실제로 DB에서 제거하지 않고 삭제 표시만 함.
-     * 로그인 상태이면 Firestore에도 즉시 푸시한다.
+     * 로그인 + 클라우드 백업 ON 상태이면 Firestore에도 즉시 푸시한다.
      */
     suspend fun softDeleteShape(shape: ShapeModel) {
         val deletedShape = shape.softDelete()
@@ -182,7 +184,7 @@ class ShapeRepository @Inject constructor(
 
     /**
      * 소프트 삭제된 도형 복원 (deletedAt을 null로 설정)
-     * 로그인 상태이면 Firestore에도 즉시 푸시한다.
+     * 로그인 + 클라우드 백업 ON 상태이면 Firestore에도 즉시 푸시한다.
      */
     suspend fun restoreShape(shape: ShapeModel) {
         val restoredShape = shape.restore()
@@ -204,7 +206,7 @@ class ShapeRepository @Inject constructor(
 
     /**
      * 만료된 활성 도형들을 모두 소프트 삭제
-     * 로그인 상태이면 Firestore에도 즉시 batch 푸시한다.
+     * 로그인 + 클라우드 백업 ON 상태이면 Firestore에도 즉시 batch 푸시한다.
      */
     suspend fun deleteExpiredShapes(): Int {
         val now = System.currentTimeMillis()
@@ -230,7 +232,7 @@ class ShapeRepository @Inject constructor(
 
     /**
      * 특정 드론에 연결된 활성 도형들을 다른 드론으로 재할당
-     * 로그인 상태이면 Firestore에도 즉시 batch 푸시한다.
+     * 로그인 + 클라우드 백업 ON 상태이면 Firestore에도 즉시 batch 푸시한다.
      */
     suspend fun reassignShapes(fromDroneId: String, toDroneId: String) {
         val shapes = shapeDao.getActiveShapesByDroneId(fromDroneId)
@@ -264,7 +266,7 @@ class ShapeRepository @Inject constructor(
 
     /**
      * 특정 드론에 연결된 활성 도형들을 모두 소프트 삭제
-     * 로그인 상태이면 Firestore에도 즉시 batch 푸시한다.
+     * 로그인 + 클라우드 백업 ON 상태이면 Firestore에도 즉시 batch 푸시한다.
      */
     suspend fun softDeleteShapesByDroneId(droneId: String) {
         val shapes = shapeDao.getActiveShapesByDroneId(droneId)
@@ -289,12 +291,11 @@ class ShapeRepository @Inject constructor(
 
     /**
      * 단일 도형을 Firestore에 즉시 푸시한다.
-     * 로그인 상태가 아니면 NO-OP. Firestore SDK의 offline persistence가 큐잉/재시도를 담당하므로
-     * 호출 자체는 보통 즉시 반환된다. 실패 시 로컬은 유지되며 다음 performFullSync 또는 재로그인 시
-     * LWW 머지로 보강된다.
+     * 로그인 + 클라우드 백업 ON 상태가 아니면 NO-OP. 실패 시 로컬은 유지되며
+     * 다음 performFullSync 또는 재로그인 시 LWW 머지로 보강된다.
      */
     private suspend fun syncShapeToFirebase(shape: ShapeModel) {
-        val userId = auth.currentUser?.uid ?: return
+        val userId = currentImmediateCloudSyncUserId("syncShapeToFirebase") ?: return
         if (!shape.isValidForFirebaseWrite("syncShapeToFirebase")) return
 
         try {
@@ -310,7 +311,7 @@ class ShapeRepository @Inject constructor(
      */
     private suspend fun syncShapesToFirebase(shapes: List<ShapeModel>) {
         if (shapes.isEmpty()) return
-        val userId = auth.currentUser?.uid ?: return
+        val userId = currentImmediateCloudSyncUserId("syncShapesToFirebase") ?: return
         val validShapes = shapes.filterValidForFirebaseWrite("syncShapesToFirebase")
         if (validShapes.isEmpty()) return
 
@@ -320,6 +321,18 @@ class ShapeRepository @Inject constructor(
         } catch (e: Exception) {
             Log.w(TAG, "Firebase batch 즉시 푸시 실패: count=${validShapes.size}", e)
         }
+    }
+
+    private suspend fun currentImmediateCloudSyncUserId(operation: String): String? {
+        val userId = auth.currentUser?.uid
+        val shouldSync = shouldRunImmediateCloudSync(
+            isLoggedIn = userId != null,
+            cloudSyncEnabled = dataStore.isCloudSyncEnabled(),
+        )
+        if (!shouldSync) {
+            Log.d(TAG, "$operation: 클라우드 백업 비활성화 또는 로그아웃 상태로 즉시 푸시 생략")
+        }
+        return userId?.takeIf { shouldSync }
     }
 
     // ===== Firebase 동기화 메서드 =====

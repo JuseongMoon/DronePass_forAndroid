@@ -13,7 +13,9 @@ import com.ScienceFiction.DronePassAndroid.core.data.remote.firebase.DroneFireba
 import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncPreferenceKeys
 import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncMergeResult
 import com.ScienceFiction.DronePassAndroid.core.data.sync.filterServerNewer
+import com.ScienceFiction.DronePassAndroid.core.data.sync.isCloudSyncEnabled
 import com.ScienceFiction.DronePassAndroid.core.data.sync.shouldUpdateServerMetadataAfterFullSync
+import com.ScienceFiction.DronePassAndroid.core.data.sync.shouldRunImmediateCloudSync
 import com.ScienceFiction.DronePassAndroid.core.util.compareIosLocalizedStandardStrings
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.validateForFirebasePersistence
@@ -124,7 +126,7 @@ class DroneRepository @Inject constructor(
 
     /**
      * 새 드론 삽입 (동일 ID 존재 시 교체)
-     * 로그인 상태이면 Firestore에도 즉시 푸시한다.
+     * 로그인 + 클라우드 백업 ON 상태이면 Firestore에도 즉시 푸시한다.
      */
     suspend fun insertDrone(drone: DroneModel) {
         droneDao.insertDrone(drone.toEntity())
@@ -134,7 +136,7 @@ class DroneRepository @Inject constructor(
 
     /**
      * 드론 정보 업데이트
-     * 로그인 상태이면 Firestore에도 즉시 푸시한다.
+     * 로그인 + 클라우드 백업 ON 상태이면 Firestore에도 즉시 푸시한다.
      */
     suspend fun updateDrone(drone: DroneModel) {
         droneDao.updateDrone(drone.toEntity())
@@ -144,7 +146,7 @@ class DroneRepository @Inject constructor(
 
     /**
      * 드론 소프트 삭제 (deletedAt 타임스탬프 설정)
-     * 로그인 상태이면 Firestore에도 즉시 푸시한다.
+     * 로그인 + 클라우드 백업 ON 상태이면 Firestore에도 즉시 푸시한다.
      */
     suspend fun softDeleteDrone(drone: DroneModel) {
         val deletedDrone = drone.softDelete()
@@ -155,7 +157,7 @@ class DroneRepository @Inject constructor(
 
     /**
      * 소프트 삭제된 드론 복원
-     * 로그인 상태이면 Firestore에도 즉시 푸시한다.
+     * 로그인 + 클라우드 백업 ON 상태이면 Firestore에도 즉시 푸시한다.
      */
     suspend fun restoreDrone(drone: DroneModel) {
         val restoredDrone = drone.restore()
@@ -180,10 +182,10 @@ class DroneRepository @Inject constructor(
 
     /**
      * 단일 드론을 Firestore에 즉시 푸시한다.
-     * 로그인 상태가 아니면 NO-OP. Firestore SDK의 offline persistence가 큐잉/재시도를 담당한다.
+     * 로그인 + 클라우드 백업 ON 상태가 아니면 NO-OP.
      */
     private suspend fun syncDroneToFirebase(drone: DroneModel) {
-        val userId = auth.currentUser?.uid ?: return
+        val userId = currentImmediateCloudSyncUserId("syncDroneToFirebase") ?: return
         if (!drone.isValidForFirebaseWrite("syncDroneToFirebase")) return
         try {
             droneFirebaseStore.saveDrone(userId, drone)
@@ -191,6 +193,18 @@ class DroneRepository @Inject constructor(
         } catch (e: Exception) {
             Log.w(TAG, "Firebase 즉시 푸시 실패: droneId=${drone.id}", e)
         }
+    }
+
+    private suspend fun currentImmediateCloudSyncUserId(operation: String): String? {
+        val userId = auth.currentUser?.uid
+        val shouldSync = shouldRunImmediateCloudSync(
+            isLoggedIn = userId != null,
+            cloudSyncEnabled = dataStore.isCloudSyncEnabled(),
+        )
+        if (!shouldSync) {
+            Log.d(TAG, "$operation: 클라우드 백업 비활성화 또는 로그아웃 상태로 즉시 푸시 생략")
+        }
+        return userId?.takeIf { shouldSync }
     }
 
     // ===== Firebase 동기화 메서드 =====

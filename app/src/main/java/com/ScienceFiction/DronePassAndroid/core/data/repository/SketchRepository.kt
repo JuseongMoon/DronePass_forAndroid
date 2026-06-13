@@ -11,7 +11,9 @@ import com.ScienceFiction.DronePassAndroid.core.data.remote.firebase.SketchFireb
 import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncPreferenceKeys
 import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncMergeResult
 import com.ScienceFiction.DronePassAndroid.core.data.sync.filterServerNewer
+import com.ScienceFiction.DronePassAndroid.core.data.sync.isCloudSyncEnabled
 import com.ScienceFiction.DronePassAndroid.core.data.sync.shouldUpdateServerMetadataAfterFullSync
+import com.ScienceFiction.DronePassAndroid.core.data.sync.shouldRunImmediateCloudSync
 import com.ScienceFiction.DronePassAndroid.domain.model.SketchModel
 import com.ScienceFiction.DronePassAndroid.domain.model.validateForFirebasePersistence
 import com.google.firebase.auth.FirebaseAuth
@@ -276,18 +278,24 @@ class SketchRepository @Inject constructor(
      * Firestore 에 푸시한다. Undo/Redo·지우개로 변경 빈도가 매우 높은 스케치 영역의
      * 네트워크/IO 부담을 줄인다 (중간 상태를 모두 송신하지 않고 최종 상태만 전송).
      *
-     * 로그인 상태가 아니면 보류 작업도 즉시 NO-OP. 보류 중 동일 id 의 새 변경이 오면
-     * 이전 작업을 취소하여 최신 변경만 살아남는다.
+     * 로그인 + 클라우드 백업 ON 상태가 아니면 보류 작업도 즉시 NO-OP.
+     * 보류 중 동일 id 의 새 변경이 오면 이전 작업을 취소하여 최신 변경만 살아남는다.
      */
     private suspend fun syncSketchToFirebase(sketch: SketchModel) {
         if (!sketch.isValidForFirebaseWrite("syncSketchToFirebase")) return
+        if (currentImmediateCloudSyncUserId("syncSketchToFirebase") == null) {
+            pendingSyncsMutex.withLock {
+                pendingSyncs.remove(sketch.id)?.job?.cancel()
+            }
+            return
+        }
 
         pendingSyncsMutex.withLock {
             pendingSyncs[sketch.id]?.job?.cancel()
             lateinit var syncJob: Job
             syncJob = debounceScope.launch {
                 delay(SYNC_DEBOUNCE_MS)
-                val userId = auth.currentUser?.uid ?: return@launch
+                val userId = currentImmediateCloudSyncUserId("syncSketchToFirebase") ?: return@launch
                 try {
                     sketchFirebaseStore.saveSketch(userId, sketch)
                     sketchFirebaseStore.updateServerMetadata(userId)
@@ -306,7 +314,7 @@ class SketchRepository @Inject constructor(
     }
 
     private suspend fun syncSketchesToFirebase(sketches: List<SketchModel>) {
-        val userId = auth.currentUser?.uid ?: return
+        val userId = currentImmediateCloudSyncUserId("syncSketchesToFirebase") ?: return
         val validSketches = sketches.filterValidForFirebaseWrite("syncSketchesToFirebase")
         if (validSketches.isEmpty()) return
 
@@ -372,7 +380,7 @@ class SketchRepository @Inject constructor(
     }
 
     private suspend fun syncSketchEditSessionToFirebase(plan: SketchEditSyncPlan) {
-        val userId = auth.currentUser?.uid ?: return
+        val userId = currentImmediateCloudSyncUserId("syncSketchEditSessionToFirebase") ?: return
         val validUpserts = plan.pendingUpserts.values
             .toList()
             .filterValidForFirebaseWrite("syncSketchEditSessionToFirebase/upsert")
@@ -393,6 +401,18 @@ class SketchRepository @Inject constructor(
                 e,
             )
         }
+    }
+
+    private suspend fun currentImmediateCloudSyncUserId(operation: String): String? {
+        val userId = auth.currentUser?.uid
+        val shouldSync = shouldRunImmediateCloudSync(
+            isLoggedIn = userId != null,
+            cloudSyncEnabled = dataStore.isCloudSyncEnabled(),
+        )
+        if (!shouldSync) {
+            Log.d(TAG, "$operation: 클라우드 백업 비활성화 또는 로그아웃 상태로 즉시 푸시 생략")
+        }
+        return userId?.takeIf { shouldSync }
     }
 
     /**
