@@ -113,6 +113,7 @@
 - 도형 상세 메모 표시 조건을 iOS처럼 `nil` 기준으로 보정
 - 도형 상세 한국어 고도 라벨을 iOS String Catalog처럼 `고도(m)`로 보정
 - 도형 상세 외부 지도 앱 한국어 표시명을 최신 iOS String Catalog 기준으로 보정
+- 지도 위치 권한을 Android의 대략적인 위치 선택처럼 `ACCESS_COARSE_LOCATION`만 허용된 경우에도 사용 가능하도록 보정
 - 도형 상세 제목/삭제 문구/외부 지도 목적지 이름을 iOS `ShapeDetailView`처럼 빈 문자열/공백도 원문 그대로 유지하도록 보정
 - 도형 편집 기본정보 좌표/주소 placeholder와 좌표 입력 주소 결과를 iOS처럼 빈 문자열 기준으로 보정
 - 주소 검색 선택/표시/건물명 판정을 iOS처럼 빈 문자열 기준으로 보정
@@ -377,6 +378,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 - 2026-06-13에 provider 계정 복구 컬렉션 정책을 고정한 뒤 `:app:testDebugUnitTest --tests "*AuthRepositoryUserDocumentTest"`, `:app:testDebugUnitTest --tests "*Auth*Test"`, `:app:compileDebugKotlin`을 재실행해 통과 확인.
 - 2026-06-13에 release readiness gate를 signing + Google `WEB_CLIENT_ID`로 확장한 뒤 `:app:compileDebugKotlin`, `:app:testDebugUnitTest`, `:app:minifyReleaseWithR8`를 재실행해 통과 확인. `:app:assembleRelease`는 두 설정 누락을 함께 표시하며 의도적으로 실패함을 확인.
 - 2026-06-13에 문서/앱 정보 경로를 재확인했다. Terms/Privacy 캐시는 요청 path를 함께 저장해 언어별 파일이 섞이지 않고, 약관/개인정보 `Content` 재진입 시 자동 로드를 건너뛰는 동작은 iOS `FetchWebDocuments` 메모리 캐시 정책과 동일하게 유지한다. `:app:testDebugUnitTest --tests "*DocumentRepositoryTest" --tests "*DocumentEntryPolicyTest" --tests "*PatchNotesContentTest" --tests "*MarkdownParserTest" --tests "*AppInfoScreenTest" --tests "*StringResourceCoverageTest"` 통과 확인.
+- 2026-06-13에 지도 위치 권한 판정을 `fine || coarse`로 보정한 뒤 `:app:testDebugUnitTest --tests "*MapCameraFocusTest"`, `:app:assembleDebug`를 재실행해 통과 확인.
 - `:app:minifyReleaseWithR8`는 현재 성공합니다.
 - Naver Maps SDK와 Play Services Location에서 R8 warning이 여러 줄 출력될 수 있지만, 현재는 build failure가 아닙니다.
 - `assembleRelease`와 `bundleRelease`는 실제 release signing과 `WEB_CLIENT_ID` 설정 전까지 의도적으로 차단되며, 2026-06-13에 `assembleRelease` 실패 경로를 재확인했습니다.

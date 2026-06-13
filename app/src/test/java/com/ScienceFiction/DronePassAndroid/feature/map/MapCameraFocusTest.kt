@@ -31,6 +31,39 @@ class MapCameraFocusTest {
     }
 
     @Test
+    fun `지도 위치 권한은 대략적인 위치만 허용되어도 사용 가능하다`() {
+        assertEquals(
+            true,
+            hasUsableMapLocationPermission(
+                fineLocationGranted = false,
+                coarseLocationGranted = true,
+            ),
+        )
+    }
+
+    @Test
+    fun `지도 위치 권한은 정확한 위치만 허용되어도 사용 가능하다`() {
+        assertEquals(
+            true,
+            hasUsableMapLocationPermission(
+                fineLocationGranted = true,
+                coarseLocationGranted = false,
+            ),
+        )
+    }
+
+    @Test
+    fun `지도 위치 권한은 fine 과 coarse 가 모두 없을 때만 거부 상태다`() {
+        assertEquals(
+            false,
+            hasUsableMapLocationPermission(
+                fineLocationGranted = false,
+                coarseLocationGranted = false,
+            ),
+        )
+    }
+
+    @Test
     fun `도형 포커스 기본 반경은 iOS처럼 100m 이다`() {
         assertEquals(100.0, ShapeFocusDefaultRadiusMeters, 0.0)
         assertEquals(14.0, calculateShapeFocusZoomLevel(ShapeFocusDefaultRadiusMeters), 0.0)

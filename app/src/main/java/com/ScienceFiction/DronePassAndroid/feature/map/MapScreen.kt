@@ -136,7 +136,18 @@ fun MapScreen(
             Manifest.permission.ACCESS_COARSE_LOCATION,
         ),
     )
-    val allPermissionsGranted = locationPermissionsState.permissions.all { it.status.isGranted }
+    val fineLocationGranted = locationPermissionsState.permissions
+        .firstOrNull { it.permission == Manifest.permission.ACCESS_FINE_LOCATION }
+        ?.status
+        ?.isGranted == true
+    val coarseLocationGranted = locationPermissionsState.permissions
+        .firstOrNull { it.permission == Manifest.permission.ACCESS_COARSE_LOCATION }
+        ?.status
+        ?.isGranted == true
+    val locationPermissionGranted = hasUsableMapLocationPermission(
+        fineLocationGranted = fineLocationGranted,
+        coarseLocationGranted = coarseLocationGranted,
+    )
     val snackbarHostState = remember { SnackbarHostState() }
     var showRationaleDialog by remember { mutableStateOf(false) }
 
@@ -157,7 +168,7 @@ fun MapScreen(
 
     // 권한 요청 (앱 초기 진입 시 1회)
     LaunchedEffect(Unit) {
-        if (!allPermissionsGranted) {
+        if (!locationPermissionGranted) {
             if (locationPermissionsState.permissions.any { it.status.shouldShowRationale }) {
                 showRationaleDialog = true
             } else {
@@ -232,8 +243,8 @@ fun MapScreen(
     }
 
     // 위치 추적 설정 — 권한과 mapReady 가 모두 충족된 시점에 단 1회.
-    LaunchedEffect(allPermissionsGranted, mapReady) {
-        if (allPermissionsGranted && mapReady) {
+    LaunchedEffect(locationPermissionGranted, mapReady) {
+        if (locationPermissionGranted && mapReady) {
             naverMap?.let { setupLocationTracking(it, context) }
         }
     }
@@ -420,7 +431,7 @@ fun MapScreen(
         }
 
         // 권한 거부 안내
-        if (!allPermissionsGranted) {
+        if (!locationPermissionGranted) {
             Column(
                 modifier = Modifier.align(Alignment.Center),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -531,6 +542,13 @@ private fun MapViewModel.updateCurrentBoundsFrom(map: NaverMap) {
         northEastLat = bounds.northEast.latitude,
         northEastLon = bounds.northEast.longitude,
     )
+}
+
+internal fun hasUsableMapLocationPermission(
+    fineLocationGranted: Boolean,
+    coarseLocationGranted: Boolean,
+): Boolean {
+    return fineLocationGranted || coarseLocationGranted
 }
 
 @SuppressLint("MissingPermission")
