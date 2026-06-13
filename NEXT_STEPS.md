@@ -270,6 +270,12 @@ iOS와 Android가 공유하는 `users/{uid}/shapes`, `users/{uid}/sketches`, `us
 - 하단 `설정` 탭 전환 후 `설정`, `내 정보`, `로그인 / 회원가입`, `내 드론 관리하기`, `비행 환경` 렌더링 확인
 - 앱 포커스가 `com.ScienceFiction.DronePassAndroid/.MainActivity`에 있고 프로세스가 유지됨을 확인
 - `FATAL EXCEPTION` 없음. `AndroidRuntime` 로그는 `monkey` 명령 프로세스 시작/종료만 확인
+- release readiness gate 적용 후 최신 `app-debug.apk`를 같은 Android 15(API 35) `SM-A346N`에 `adb install -r`로 데이터 유지 재설치하고 런처 실행 확인
+- 상단 드론 선택 버튼 높이와 오른쪽 드롭다운 원 지름, 두 요소의 상단 정렬이 캡처 기준으로 일치함을 재확인
+- 드롭다운을 열어 `내 드론`/`드론 2` 선택 목록 렌더링 확인, `드론 2` 선택 해제 후 상단 하이라이트가 `내 드론`만 남고 빨간 드론 반경 오버레이가 사라짐을 확인
+- 하단 `저장` 탭 전환 후 `저장 목록`, 정렬 칩, 저장 도형 행 렌더링 확인
+- 하단 `설정` 탭 전환 후 `설정`, `내 정보`, `로그인 / 회원가입`, `내 드론 관리하기`, `비행 환경`, KP/날씨 항목 렌더링 확인
+- 위 추가 smoke에서 앱 포커스가 `MainActivity`에 유지되고 `AndroidRuntime` 크래시 로그 없음
 
 1. 지도 로드, 현재 위치 권한, 현재 위치 이동
 2. 원형 도형 생성, 저장, 편집, 삭제, 복제
