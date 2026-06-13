@@ -300,8 +300,8 @@ class FcmService : FirebaseMessagingService() {
 
         // 데이터 페이로드가 있는 경우
         if (message.data.isNotEmpty()) {
-            val title = message.data["title"] ?: getString(R.string.app_name)
-            val body = message.data["body"] ?: ""
+            val title = extractNotificationTitle(message.data) ?: getString(R.string.app_name)
+            val body = extractNotificationBody(message.data) ?: ""
             if (message.notification == null) {
                 publishForegroundNotification(title = title, body = body, shapeId = shapeId)
                 showNotification(title = title, body = body, shapeId = shapeId)

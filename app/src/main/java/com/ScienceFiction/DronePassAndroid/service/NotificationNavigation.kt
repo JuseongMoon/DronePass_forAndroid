@@ -64,6 +64,12 @@ private fun extractNotificationText(
     return null
 }
 
+internal fun extractNotificationTitle(data: Map<String, String>): String? =
+    extractNotificationText(data, NotificationTitleExtraKeys)
+
+internal fun extractNotificationBody(data: Map<String, String>): String? =
+    extractNotificationText(data, NotificationBodyExtraKeys)
+
 private fun extractNotificationText(
     intent: Intent,
     keys: List<String>,
@@ -86,8 +92,8 @@ internal fun extractForegroundNotification(data: Map<String, String>): Foregroun
     return foregroundNotificationFromClickPayload(
         notificationClickPayload(
             shapeId = extractNotificationShapeId(data),
-            title = extractNotificationText(data, NotificationTitleExtraKeys),
-            body = extractNotificationText(data, NotificationBodyExtraKeys),
+            title = extractNotificationTitle(data),
+            body = extractNotificationBody(data),
         )
     )
 }

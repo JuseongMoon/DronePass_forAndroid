@@ -204,6 +204,32 @@ class FcmServiceTest {
     }
 
     @Test
+    fun `FCM data-only 표시 제목 본문은 로컬 extra 키도 iOS처럼 사용한다`() {
+        val data = mapOf(
+            NotificationScheduler.EXTRA_NOTIFICATION_TITLE to "도형 종료일 알림",
+            NotificationScheduler.EXTRA_NOTIFICATION_BODY to "도형이 곧 종료됩니다.",
+            "title" to "대체 제목",
+            "body" to "대체 본문",
+        )
+
+        assertEquals("도형 종료일 알림", extractNotificationTitle(data))
+        assertEquals("도형이 곧 종료됩니다.", extractNotificationBody(data))
+    }
+
+    @Test
+    fun `FCM data-only 표시 제목 본문도 첫 키가 빈 문자열이면 fallback 하지 않는다`() {
+        val data = mapOf(
+            NotificationScheduler.EXTRA_NOTIFICATION_TITLE to "",
+            NotificationScheduler.EXTRA_NOTIFICATION_BODY to " ",
+            "title" to "대체 제목",
+            "body" to "대체 본문",
+        )
+
+        assertEquals("", extractNotificationTitle(data))
+        assertEquals(" ", extractNotificationBody(data))
+    }
+
+    @Test
     fun `로컬 알림 extras 제목 본문도 iOS처럼 알림 탭 팝업 데이터로 복원한다`() {
         val notification = extractForegroundNotification(
             mapOf(

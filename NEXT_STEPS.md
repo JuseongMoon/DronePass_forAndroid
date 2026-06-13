@@ -116,6 +116,7 @@
 - 도형 상세 외부 지도 앱 한국어 표시명을 최신 iOS String Catalog 기준으로 보정
 - 지도 위치 권한을 Android의 대략적인 위치 선택처럼 `ACCESS_COARSE_LOCATION`만 허용된 경우에도 사용 가능하도록 보정
 - 스케치 모드 종료 완료 동기화 job을 다음 스케치 작업 체인에 포함해 종료 직후 재진입 시 세션 plan이 겹치지 않도록 보정
+- FCM data-only 알림 표시 경로가 `title`/`body`뿐 아니라 로컬 알림 extra와 같은 `notification_title`/`notification_body`도 읽도록 보정
 - 도형 상세 제목/삭제 문구/외부 지도 목적지 이름을 iOS `ShapeDetailView`처럼 빈 문자열/공백도 원문 그대로 유지하도록 보정
 - 도형 편집 기본정보 좌표/주소 placeholder와 좌표 입력 주소 결과를 iOS처럼 빈 문자열 기준으로 보정
 - 주소 검색 선택/표시/건물명 판정을 iOS처럼 빈 문자열 기준으로 보정
@@ -384,6 +385,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 - 2026-06-13에 도형 생성/편집/복제/삭제 경로를 재확인했다. Android 편집 취소 변경 감지에서 날짜 필드를 제외하는 동작은 iOS `ShapeEditViewModel.hasChanges()`와 동일하므로 유지한다. `:app:testDebugUnitTest --tests "*ShapeEditDefaultsTest" --tests "*MapCameraFocusTest" --tests "*SavedListSectionsTest" --tests "*SavedShapeListItemTest" --tests "*ShapeValidationTest" --tests "*ShapeRepositoryTest" --tests "*ShapeFirestoreParsingTest" --tests "*ShapeFirebaseStoreTest"` 통과 확인.
 - 2026-06-13에 드론 생성/수정/삭제와 도형 연결 경로를 재확인했다. 새 드론 추가는 iOS처럼 다중 필터 선택에만 자동 추가하고, 삭제 시 연결 도형 재할당/삭제는 soft delete와 `updatedAt` 갱신 계약을 유지한다. `:app:testDebugUnitTest --tests "*DroneDeleteValidationTest" --tests "*DroneEditSheetTest" --tests "*DroneListScreenTest" --tests "*DroneNameWidthLimitTest" --tests "*DroneNextColorTest" --tests "*DroneSelectionStateTest" --tests "*DroneSelectionDropdownTest" --tests "*DroneModelTest" --tests "*DroneValidationTest" --tests "*DroneFirestoreParsingTest" --tests "*DroneSyncMergeTest" --tests "*ShapeDetailDroneResolutionTest" --tests "*ShapeEditDefaultsTest" --tests "*ShapeRepositoryTest"` 통과 확인.
 - 2026-06-13에 스케치 모드 종료 직후 재진입 시 이전 완료 동기화와 새 세션 시작이 겹칠 수 있는 경로를 보정했다. `:app:testDebugUnitTest --tests "*SketchDefaultsTest" --tests "*SketchEraserSelectionTest" --tests "*SketchOverlayColorTest" --tests "*SketchTouchDecisionTest" --tests "*SketchRepositoryTest" --tests "*SketchFirebaseStoreTest" --tests "*SketchSmoothingAlgorithmTest" --tests "*SketchValidationTest"`, `:app:assembleDebug` 통과 확인.
+- 2026-06-13에 FCM data-only 알림 표시 제목/본문 추출을 공통 알림 키 정책으로 보정했다. `notification_title`/`notification_body`가 먼저 있으면 빈 문자열이어도 fallback하지 않고 보존한다. `:app:testDebugUnitTest --tests "*FcmServiceTest" --tests "*NotificationSchedulerTest" --tests "*NotificationPreferenceKeysTest" --tests "*UserLocationKeysTest" --tests "*MainScreenStartDestinationTest"`, `:app:assembleDebug` 통과 확인.
 - `:app:minifyReleaseWithR8`는 현재 성공합니다.
 - Naver Maps SDK와 Play Services Location에서 R8 warning이 여러 줄 출력될 수 있지만, 현재는 build failure가 아닙니다.
 - `assembleRelease`와 `bundleRelease`는 실제 release signing과 `WEB_CLIENT_ID` 설정 전까지 의도적으로 차단되며, 2026-06-13에 `assembleRelease` 실패 경로를 재확인했습니다.
