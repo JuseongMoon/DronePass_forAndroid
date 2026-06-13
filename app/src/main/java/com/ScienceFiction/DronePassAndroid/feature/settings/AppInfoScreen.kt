@@ -17,6 +17,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.AirplanemodeActive
 import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.CheckCircle
@@ -61,6 +62,7 @@ internal val AppInfoFeatureHorizontalSpacing = 12.dp
 internal val AppInfoFeatureTitleDescriptionSpacing = 4.dp
 internal val AppInfoFeatureVerticalPadding = 4.dp
 internal val AppInfoFeatureHorizontalPadding = 16.dp
+internal val AppInfoMultiDroneIcon: ImageVector = Icons.AutoMirrored.Filled.Send
 internal val AppInfoKpIndexIcon: ImageVector = Icons.Default.SettingsInputAntenna
 internal val AppInfoShapeManagementIcon: ImageVector = Icons.Default.RadioButtonChecked
 
@@ -120,7 +122,7 @@ fun AppInfoScreen(
             Spacer(modifier = Modifier.height(16.dp))
             SectionHeader(title = stringResource(R.string.app_info_section_drone_management))
             FeatureRow(
-                icon = Icons.Default.AirplanemodeActive,
+                icon = AppInfoMultiDroneIcon,
                 iconColor = Color(0xFF007AFF),
                 title = stringResource(R.string.app_info_feature_multi_drone_title),
                 description = stringResource(R.string.app_info_feature_multi_drone_desc),
