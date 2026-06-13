@@ -398,7 +398,8 @@ export PATH="$JAVA_HOME/bin:$PATH"
 - 2026-06-13에 로그인 화면 Google 버튼을 iOS `LoginView`의 흰 배경/검은 텍스트/그림자 버튼 톤으로 보정했다. `:app:testDebugUnitTest --tests "*Auth*Test" --tests "*StringResourceCoverageTest"`, `:app:assembleDebug` 통과 확인.
 - 2026-06-13에 프로필 내 정보 섹션을 iOS `ProfileView`의 컴팩트 `VStack(spacing: 8)` 구조와 가입일 뒤 단일 divider에 맞춰 보정했다. `:app:testDebugUnitTest --tests "*Profile*Test" --tests "*StringResourceCoverageTest"`, `:app:assembleDebug` 통과 확인.
 - 2026-06-13에 앱 정보 KP 지수 기능 아이콘을 iOS 안테나 아이콘 의미에 맞춰 보정했다. `:app:testDebugUnitTest --tests "*AppInfoScreenTest" --tests "*StringResourceCoverageTest"`, `:app:assembleDebug` 통과 확인.
-- 2026-06-13 누적 수정 후 `:app:testDebugUnitTest`, `:app:assembleDebug`, `:app:minifyReleaseWithR8` 전체 회귀를 재실행해 통과 확인. R8는 Naver Maps SDK stack map table 경고와 Play Services Location companion object 경고를 출력하지만 현재 build failure는 아님.
+- 2026-06-13에 앱 정보 기능 아이콘(다중 드론, 날씨, 일출/일몰, 도형 관리, 클라우드 동기화, 드론 원스톱)을 iOS SF Symbol 의미에 맞춰 보정했다. `:app:testDebugUnitTest --tests "*AppInfoScreenTest" --tests "*StringResourceCoverageTest"`, `:app:assembleDebug` 통과 확인.
+- 2026-06-13 최신 앱 정보 아이콘 누적 수정 후 `:app:testDebugUnitTest`, `:app:assembleDebug`, `:app:minifyReleaseWithR8` 전체 회귀를 재실행해 통과 확인. R8는 Naver Maps SDK stack map table 경고와 Play Services Location companion object 경고를 출력하지만 현재 build failure는 아님.
 - 2026-06-13 누적 수정 debug APK를 실기기 `RFCW324TZ0Z`에 `adb install -r`로 설치 후 MainActivity 실행 smoke 완료. UI dump에서 `지도` 노드와 Naver Map controls 렌더링 확인, 앱 PID 유지, `AndroidRuntime:E` 크래시 로그 없음.
 - `:app:minifyReleaseWithR8`는 현재 성공합니다.
 - Naver Maps SDK와 Play Services Location에서 R8 warning이 여러 줄 출력될 수 있지만, 현재는 build failure가 아닙니다.
