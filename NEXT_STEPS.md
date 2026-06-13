@@ -304,6 +304,8 @@ iOS와 Android가 공유하는 `users/{uid}/shapes`, `users/{uid}/sketches`, `us
 - 로그인 시트의 `이용약관` 링크에서 `주식회사 싸이언스픽션 서비스 이용약관`, `제1장 총칙` 문서 로드 확인
 - 로그인 시트의 `개인정보 취급방침` 링크에서 `주식회사 싸이언스픽션 개인정보 처리방침`, `서문` 문서 로드 확인
 - 위 로그인/문서 smoke에서 앱 PID 유지, `AndroidRuntime:E` 로그 없음
+- 이어진 코드 대조에서 스케치 모드 툴바/제스처/Undo·Redo/지우개/완료 동기화 흐름과 도형 상세 외부지도/복사/메모 링크/드론 상태 표시가 iOS 구현과 맞는지 재확인
+- `adb devices` 결과 연결된 기기가 없어 스케치 그리기/지우기/undo·redo/저장 후 재실행 복원 실기기 회귀는 다음 연결 시점으로 보류
 
 1. 지도 로드, 현재 위치 권한, 현재 위치 이동
 2. 원형 도형 생성, 저장, 편집, 삭제, 복제
@@ -411,6 +413,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 - 2026-06-13 최신 앱 정보 아이콘 누적 수정 후 `:app:testDebugUnitTest`, `:app:assembleDebug`, `:app:minifyReleaseWithR8` 전체 회귀를 재실행해 통과 확인. R8는 Naver Maps SDK stack map table 경고와 Play Services Location companion object 경고를 출력하지만 현재 build failure는 아님.
 - 2026-06-13 누적 수정 debug APK를 실기기 `RFCW324TZ0Z`에 `adb install -r`로 설치 후 MainActivity 실행 smoke 완료. UI dump에서 `지도` 노드와 Naver Map controls 렌더링 확인, 앱 PID 유지, `AndroidRuntime:E` 크래시 로그 없음.
 - 2026-06-13에 Firestore 크로스플랫폼 계약을 재확인했다. Shape/Sketch/Drone 쓰기는 소문자 `shapeType` rawValue, `Timestamp`, Double 좌표 map 계약을 유지하고, Shape 읽기는 레거시 대문자 `CIRCLE`을 계속 허용한다. `:app:testDebugUnitTest --tests "*ShapeTypeTest" --tests "*ShapeFirebaseStoreTest" --tests "*ShapeFirestoreParsingTest" --tests "*SketchFirebaseStoreTest" --tests "*DroneFirestoreParsingTest"` 통과 확인.
+- 2026-06-13에 스케치 모드와 도형 상세 시트 iOS 패리티를 재확인했다. `:app:testDebugUnitTest --tests "*Sketch*Test" --tests "*ShapeDetailDroneResolutionTest" --tests "*ExternalMapTargetTest"` 통과 확인.
 - `:app:minifyReleaseWithR8`는 현재 성공합니다.
 - Naver Maps SDK와 Play Services Location에서 R8 warning이 여러 줄 출력될 수 있지만, 현재는 build failure가 아닙니다.
 - `assembleRelease`와 `bundleRelease`는 실제 release signing과 `WEB_CLIENT_ID` 설정 전까지 의도적으로 차단되며, 2026-06-13에 `assembleRelease` 실패 경로를 재확인했습니다.
