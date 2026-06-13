@@ -100,6 +100,7 @@
 - 저장 목록 오버레이 헤더/정렬 칩 토큰, 아이콘, 문자열, 순환 동작
 - Shape/Drone/Sketch Firestore 쓰기 표준과 레거시 읽기 방어 계약
 - 주소 검색/좌표 입력/지도 롱프레스 도형 생성 흐름
+- 도형 생성/편집/복제/삭제 상태 전이와 편집 취소 변경 감지 정책
 - 스케치 모드 제스처/툴바/undo·redo/지우개 동작
 - 메인 하단 탭/저장·설정 오버레이 탭 전환 흐름
 - Shape/Drone/Sketch Firestore 삭제·문서 ID·빈 tombstone 방지 경로
@@ -379,6 +380,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 - 2026-06-13에 release readiness gate를 signing + Google `WEB_CLIENT_ID`로 확장한 뒤 `:app:compileDebugKotlin`, `:app:testDebugUnitTest`, `:app:minifyReleaseWithR8`를 재실행해 통과 확인. `:app:assembleRelease`는 두 설정 누락을 함께 표시하며 의도적으로 실패함을 확인.
 - 2026-06-13에 문서/앱 정보 경로를 재확인했다. Terms/Privacy 캐시는 요청 path를 함께 저장해 언어별 파일이 섞이지 않고, 약관/개인정보 `Content` 재진입 시 자동 로드를 건너뛰는 동작은 iOS `FetchWebDocuments` 메모리 캐시 정책과 동일하게 유지한다. `:app:testDebugUnitTest --tests "*DocumentRepositoryTest" --tests "*DocumentEntryPolicyTest" --tests "*PatchNotesContentTest" --tests "*MarkdownParserTest" --tests "*AppInfoScreenTest" --tests "*StringResourceCoverageTest"` 통과 확인.
 - 2026-06-13에 지도 위치 권한 판정을 `fine || coarse`로 보정한 뒤 `:app:testDebugUnitTest --tests "*MapCameraFocusTest"`, `:app:assembleDebug`를 재실행해 통과 확인.
+- 2026-06-13에 도형 생성/편집/복제/삭제 경로를 재확인했다. Android 편집 취소 변경 감지에서 날짜 필드를 제외하는 동작은 iOS `ShapeEditViewModel.hasChanges()`와 동일하므로 유지한다. `:app:testDebugUnitTest --tests "*ShapeEditDefaultsTest" --tests "*MapCameraFocusTest" --tests "*SavedListSectionsTest" --tests "*SavedShapeListItemTest" --tests "*ShapeValidationTest" --tests "*ShapeRepositoryTest" --tests "*ShapeFirestoreParsingTest" --tests "*ShapeFirebaseStoreTest"` 통과 확인.
 - `:app:minifyReleaseWithR8`는 현재 성공합니다.
 - Naver Maps SDK와 Play Services Location에서 R8 warning이 여러 줄 출력될 수 있지만, 현재는 build failure가 아닙니다.
 - `assembleRelease`와 `bundleRelease`는 실제 release signing과 `WEB_CLIENT_ID` 설정 전까지 의도적으로 차단되며, 2026-06-13에 `assembleRelease` 실패 경로를 재확인했습니다.
