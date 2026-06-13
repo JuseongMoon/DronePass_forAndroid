@@ -424,6 +424,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 - 2026-06-13에 알림 권한 요청 UX의 Android 12/13 경계 판정을 회귀 테스트로 고정했다. Android 13 미만 `POST_NOTIFICATIONS` 허용 취급, Android 12 미만 정확한 알람 허용 취급, 권한 카드 노출 조건과 설정 화면 이동 조건을 테스트한다. `:app:testDebugUnitTest --tests "*NotificationPermissionRequestTest" --tests "*NotificationPreferenceKeysTest" --tests "*MainActivityKeepScreenAwakeTest"` 통과 확인.
 - 2026-06-13에 프로필 클라우드 동기화 섹션을 재확인했다. `cloudBackupEnabled`/`lastBackupTime` 키, 로그인 필요/비활성/동기화중/활성/대기 상태, 수동 백업 표시 조건, 가입일/로그인 제공자/계정 삭제 흐름은 iOS `ProfileView`와 맞춘다. Android 수동 백업은 현재 공유 Firestore 계약에 맞춰 Shape뿐 아니라 Sketch/Drone까지 `forceSyncNow()`로 보존한다. `:app:testDebugUnitTest --tests "*Profile*Test" --tests "*StringResourceCoverageTest"` 통과 확인.
 - 2026-06-13에 계정 탈퇴 익명화 데이터 경로를 재확인했다. Android는 iOS `AnalyticsDataGenerator`와 같은 사용자 통계 필드, Shape/Drone 원본 필드, 500개 batch 분할, 실패해도 Auth 계정 삭제를 계속하는 정책을 유지한다. `:app:testDebugUnitTest --tests "*AnonymizedDeletionDataTest" --tests "*ProfileViewModelTest"` 통과 확인.
+- 2026-06-13 알림/프로필/익명화 확인 누적 후 `:app:testDebugUnitTest`, `:app:assembleDebug` 재실행 통과 확인.
 - `:app:minifyReleaseWithR8`는 현재 성공합니다.
 - Naver Maps SDK와 Play Services Location에서 R8 warning이 여러 줄 출력될 수 있지만, 현재는 build failure가 아닙니다.
 - `assembleRelease`와 `bundleRelease`는 실제 release signing과 `WEB_CLIENT_ID` 설정 전까지 의도적으로 차단되며, 2026-06-13에 `assembleRelease` 실패 경로를 재확인했습니다.
