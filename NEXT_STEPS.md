@@ -406,6 +406,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 - 2026-06-13에 앱 정보 기능 아이콘(다중 드론, 날씨, 일출/일몰, 도형 관리, 클라우드 동기화, 드론 원스톱)을 iOS SF Symbol 의미에 맞춰 보정했다. `:app:testDebugUnitTest --tests "*AppInfoScreenTest" --tests "*StringResourceCoverageTest"`, `:app:assembleDebug` 통과 확인.
 - 2026-06-13 최신 앱 정보 아이콘 누적 수정 후 `:app:testDebugUnitTest`, `:app:assembleDebug`, `:app:minifyReleaseWithR8` 전체 회귀를 재실행해 통과 확인. R8는 Naver Maps SDK stack map table 경고와 Play Services Location companion object 경고를 출력하지만 현재 build failure는 아님.
 - 2026-06-13 누적 수정 debug APK를 실기기 `RFCW324TZ0Z`에 `adb install -r`로 설치 후 MainActivity 실행 smoke 완료. UI dump에서 `지도` 노드와 Naver Map controls 렌더링 확인, 앱 PID 유지, `AndroidRuntime:E` 크래시 로그 없음.
+- 2026-06-13에 Firestore 크로스플랫폼 계약을 재확인했다. Shape/Sketch/Drone 쓰기는 소문자 `shapeType` rawValue, `Timestamp`, Double 좌표 map 계약을 유지하고, Shape 읽기는 레거시 대문자 `CIRCLE`을 계속 허용한다. `:app:testDebugUnitTest --tests "*ShapeTypeTest" --tests "*ShapeFirebaseStoreTest" --tests "*ShapeFirestoreParsingTest" --tests "*SketchFirebaseStoreTest" --tests "*DroneFirestoreParsingTest"` 통과 확인.
 - `:app:minifyReleaseWithR8`는 현재 성공합니다.
 - Naver Maps SDK와 Play Services Location에서 R8 warning이 여러 줄 출력될 수 있지만, 현재는 build failure가 아닙니다.
 - `assembleRelease`와 `bundleRelease`는 실제 release signing과 `WEB_CLIENT_ID` 설정 전까지 의도적으로 차단되며, 2026-06-13에 `assembleRelease` 실패 경로를 재확인했습니다.
