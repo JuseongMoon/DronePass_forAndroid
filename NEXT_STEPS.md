@@ -77,6 +77,7 @@
 - `aa2fa11 fix: align drone management strings`
 - `feb914e fix: avoid resurrecting deleted sketches`
 - `11bd1f0 fix: avoid resurrecting deleted shapes`
+- `66d1139 fix: pin auth recovery collections`
 
 ## 2. 이번 라운드에서 확인한 내용
 
@@ -102,6 +103,7 @@
 - 메인 하단 탭/저장·설정 오버레이 탭 전환 흐름
 - Shape/Drone/Sketch Firestore 삭제·문서 ID·빈 tombstone 방지 경로
 - FCM/로컬 알림 payload 파싱, 포그라운드 팝업, 알림 클릭 후 도형 포커스 라우팅
+- 계정 복구/탈퇴 사용자 문서와 익명화 데이터 필드
 - `MIGRATION_PLAN.md`는 초기 계획의 역사 문서로 유지하고, 최신 상태 기준은 `README.md`와 이 문서로 고정
 
 수정 완료된 영역:
@@ -146,6 +148,7 @@
 - 드론 선택 버튼 높이와 드롭다운 원 지름/상단 정렬 일치
 - Shape full-sync/download에서 마지막 Shape/Drone 동기화 이전에 서버에서 사라진 로컬 도형을 원격 삭제로 보고 재업로드/재노출하지 않도록 보정하고 종료일 알림을 재조정
 - Sketch full-sync/download에서 마지막 Sketch 동기화 이전에 서버에서 사라진 로컬 스케치를 원격 삭제로 보고 재업로드/재노출하지 않도록 보정
+- provider 계정 복구 시 `shapes`/`drones`/`sketches`/`metadata`를 함께 이전하고, 기기별 FCM `devices`는 새 로그인 기기 상태로 남기도록 회귀 테스트 고정
 - 드론 재할당 삭제 흐름의 자기 자신 타겟 방어
 - 전경 FCM 팝업 표시 조건 보정
 - KP 차트 축과 현재 날씨 CRI 표시 보정
@@ -198,6 +201,8 @@ iOS와 Android가 공유하는 `users/{uid}/shapes`, `users/{uid}/sketches`, `us
 - 2026-06-12 재확인: Drone optional 문자열(`serialNumber`/`takeoffWeight`/`size`/`memo`)은 iOS 편집 흐름처럼 공백뿐이면 `null`, 내용이 있으면 원문 공백을 보존한다.
 - 2026-06-13 추가 방어: Shape 서버에 없는 로컬 문서는 첫 동기화이거나 마지막 Shape/Drone 동기화 이후 수정된 경우만 업로드하고, 마지막 Shape/Drone 동기화 이전 문서는 원격 hard delete로 간주해 로컬에서 제거한다.
 - 2026-06-13 추가 방어: Sketch 서버에 없는 로컬 문서는 첫 동기화이거나 마지막 Sketch 동기화 이후 수정된 경우만 업로드하고, 마지막 Sketch 동기화 이전 문서는 원격 hard delete로 간주해 로컬에서 제거한다.
+- 2026-06-13 재확인: Android provider 계정 복구는 `sketches`까지 이전한다. 현재 iOS `AuthManager.migrateUserData`는 `shapes`/`drones`/`metadata`만 이전하므로, iOS도 Sketch 데이터 보존을 위해 추후 `sketches` 이전을 추가하는 것이 안전하다.
+- 2026-06-13 재확인: Android 계정 탈퇴 원격 삭제는 iOS 기본 삭제 대상(`shapes`/`drones`/`metadata`)에 더해 `sketches`와 Android FCM `devices`까지 삭제한다. 이는 잔여 원격 데이터 방어 목적이며, iOS도 Sketch/기기 토큰 정리 범위 재검토 후보.
 
 ## 3. 남은 필수 작업
 
@@ -352,6 +357,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 - 2026-06-12에 드론 관리/상세/편집 문구를 iOS String Catalog 기준으로 보정 후 `:app:testDebugUnitTest --tests "*StringResourceCoverageTest"`, `:app:testDebugUnitTest --tests "*Drone*Test"`, `:app:assembleDebug`, `:app:testDebugUnitTest`, `:app:minifyReleaseWithR8`를 재실행해 통과 확인.
 - 2026-06-13에 Sketch 서버 누락 로컬 문서 재업로드 방지 보정 후 `:app:testDebugUnitTest --tests "*SketchRepositoryTest"`, `:app:testDebugUnitTest --tests "*Sketch*Test"`, `:app:assembleDebug`, `:app:testDebugUnitTest`를 재실행해 통과 확인.
 - 2026-06-13에 Shape 서버 누락 로컬 문서 재업로드 방지 보정 후 `:app:testDebugUnitTest --tests "*ShapeRepositoryTest"`, `:app:testDebugUnitTest --tests "*Shape*Test"`, `:app:assembleDebug`, `:app:testDebugUnitTest`, `:app:minifyReleaseWithR8`를 재실행해 통과 확인.
+- 2026-06-13에 provider 계정 복구 컬렉션 정책을 고정한 뒤 `:app:testDebugUnitTest --tests "*AuthRepositoryUserDocumentTest"`, `:app:testDebugUnitTest --tests "*Auth*Test"`, `:app:compileDebugKotlin`을 재실행해 통과 확인.
 - `:app:minifyReleaseWithR8`는 현재 성공합니다.
 - Naver Maps SDK와 Play Services Location에서 R8 warning이 여러 줄 출력될 수 있지만, 현재는 build failure가 아닙니다.
 - `assembleRelease`와 `bundleRelease`는 실제 release signing 설정 전까지 의도적으로 차단되며, 2026-06-12에 `assembleRelease` 실패 경로를 재확인했습니다.
