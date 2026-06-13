@@ -306,6 +306,7 @@ iOS와 Android가 공유하는 `users/{uid}/shapes`, `users/{uid}/sketches`, `us
 - 위 로그인/문서 smoke에서 앱 PID 유지, `AndroidRuntime:E` 로그 없음
 - 이어진 코드 대조에서 스케치 모드 툴바/제스처/Undo·Redo/지우개/완료 동기화 흐름과 도형 상세 외부지도/복사/메모 링크/드론 상태 표시가 iOS 구현과 맞는지 재확인
 - `adb devices` 결과 연결된 기기가 없어 스케치 그리기/지우기/undo·redo/저장 후 재실행 복원 실기기 회귀는 다음 연결 시점으로 보류
+- 이후 재확인에서도 `adb devices` 결과 연결된 기기가 없어 남은 실기기 회귀와 실계정 알림 수신 검증은 다음 연결 시점으로 유지
 
 1. 지도 로드, 현재 위치 권한, 현재 위치 이동
 2. 원형 도형 생성, 저장, 편집, 삭제, 복제
@@ -339,6 +340,7 @@ iOS와 Android가 공유하는 `users/{uid}/shapes`, `users/{uid}/sketches`, `us
   - 2026-06-13 실기기에서 `Google로 로그인` 버튼 탭 시 위 설정 누락 오류 다이얼로그가 표시되고 크래시가 없음을 확인
 - `app/google-services.json`의 Android client에는 현재 `oauth_client` 항목이 비어 있음
   - Firebase Console에서 Android 앱 SHA-1/SHA-256 등록 후 `google-services.json`을 다시 내려받고, Web client ID를 `local.properties`의 `WEB_CLIENT_ID`에 설정해야 Google 로그인을 실계정으로 검증할 수 있음
+- 2026-06-13 재확인: `WEB_CLIENT_ID`는 여전히 비어 있고, 실제 `keystore.properties` 파일도 아직 없어 release artifact와 실계정 Google 로그인 검증은 외부 설정 후 진행 가능
 - 현재 로컬 debug keystore 지문
   - SHA-1: `30:C4:5A:F9:91:83:D9:6C:F7:6C:41:31:9E:DA:82:E7:59:8F:20:86`
   - SHA-256: `BC:5A:36:F1:68:B8:B9:F9:9A:95:14:D8:5F:35:00:37:40:90:B9:97:4C:88:27:28:7E:4A:0A:61:91:FB:B2:CB`
@@ -417,6 +419,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 - 2026-06-13에 색상 팔레트/도형 기본 색상/프로필 계정 흐름을 재확인했다. 드론 팔레트는 iOS처럼 회색 제외 순서와 사용 색상 추천을 유지하고, 도형 지도 색상은 양 플랫폼 모두 `shape.color`를 기준으로 렌더링한다. iOS의 레거시 전역 도형 색상 일괄 변경 로직은 현재 드론별 색상 모델과 충돌할 수 있어 Android에 추가하지 않고 기존 저장 계약을 유지한다. 프로필 탈퇴 문구는 로컬 데이터 유지 안내와 일치하며 Android는 원격 `shapes`/`drones`/`sketches`/`metadata`/`devices`만 삭제 대상으로 유지한다. `:app:testDebugUnitTest --tests "*PaletteColorTest" --tests "*DroneNextColorTest" --tests "*DroneEditSheetTest" --tests "*ShapeEditDefaultsTest" --tests "*Profile*Test" --tests "*StringResourceCoverageTest"` 통과 확인.
 - 2026-06-13에 VWorld 비행구역 상세/레이어 선택/연락처 흐름을 재확인했다. 상세 시트 detent 높이, row 높이, NOTAM 색상, 고도 포맷, 연락처 lookup(정확 일치 후 양방향 부분 일치), 레이어 가나다순 정렬과 마지막 separator는 iOS 실행 동작과 일치한다. iOS `VWorldContactManager` 주석은 15일 캐시라고 적혀 있지만 실제 `cacheValidDays` 실행값은 5일이므로 Android의 5일 캐시는 유지한다. `:app:testDebugUnitTest --tests "*VWorld*Test" --tests "*FlightZone*Test" --tests "*AltitudeFormatterTest" --tests "*StringResourceCoverageTest"` 통과 확인.
 - 2026-06-13에 날씨/KP 예보 화면을 재확인했다. 현재 날씨 카드 tap → 정보 시트 초기 섹션 이동, 드론 카테고리 메뉴, 차트 시간창/도메인, 데이터 출처/경고/토스트, KP 레벨/정보 가이드/NOAA 데이터 처리 흐름은 iOS 구현과 일치한다. `:app:testDebugUnitTest --tests "*Weather*Test" --tests "*Kp*Test" --tests "*InfoGuideSheetsTest" --tests "*StringResourceCoverageTest"` 통과 확인.
+- 2026-06-13에 알림 설정/예약/복구/표시 경로를 재확인했다. 설정 키는 iOS UserDefaults 이름을 유지하고, 일출/일몰은 오늘 값이 지났으면 다음 후보를 사용하며, 앱 시작/부팅 복구는 활성화된 알림만 재예약한다. FCM/로컬 알림 payload는 제목·본문 원문과 `shapeId` 포커스 대상을 보존한다. `:app:testDebugUnitTest --tests "*Notification*Test" --tests "*FcmServiceTest" --tests "*UserLocationKeysTest" --tests "*StringResourceCoverageTest"` 통과 확인.
 - `:app:minifyReleaseWithR8`는 현재 성공합니다.
 - Naver Maps SDK와 Play Services Location에서 R8 warning이 여러 줄 출력될 수 있지만, 현재는 build failure가 아닙니다.
 - `assembleRelease`와 `bundleRelease`는 실제 release signing과 `WEB_CLIENT_ID` 설정 전까지 의도적으로 차단되며, 2026-06-13에 `assembleRelease` 실패 경로를 재확인했습니다.
