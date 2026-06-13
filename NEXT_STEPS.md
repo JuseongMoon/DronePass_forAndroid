@@ -1,6 +1,6 @@
 # DronePass Android 작업 이어가기
 
-> 마지막 업데이트: 2026-06-12
+> 마지막 업데이트: 2026-06-13
 > 브랜치: `fix/critical-pri0-fixes`
 > 상태: iOS 동작 대조와 Android 출시 하드닝 진행 중
 
@@ -75,6 +75,7 @@
 - `d9fd6b8 fix: preserve empty-title shape edit state`
 - `c505636 fix: hide saved row delete background at rest`
 - `aa2fa11 fix: align drone management strings`
+- `feb914e fix: avoid resurrecting deleted sketches`
 
 ## 2. 이번 라운드에서 확인한 내용
 
@@ -142,6 +143,7 @@
 - VWorld 상세 고도 행을 상한/하한 중 하나만 있어도 표시하도록 보정
 - 일출/일몰 알림 재예약을 iOS처럼 실제 사용자 위치 기반 날씨에만 수행
 - 드론 선택 버튼 높이와 드롭다운 원 지름/상단 정렬 일치
+- Sketch full-sync/download에서 마지막 Sketch 동기화 이전에 서버에서 사라진 로컬 스케치를 원격 삭제로 보고 재업로드/재노출하지 않도록 보정
 - 드론 재할당 삭제 흐름의 자기 자신 타겟 방어
 - 전경 FCM 팝업 표시 조건 보정
 - KP 차트 축과 현재 날씨 CRI 표시 보정
@@ -192,6 +194,7 @@ iOS와 Android가 공유하는 `users/{uid}/shapes`, `users/{uid}/sketches`, `us
 - 2026-06-12 재확인: Shape/Drone/Sketch 모두 문서 ID와 내부 `id` 불일치 시 skip하며, 원격 soft delete 헬퍼는 `update(deletedAt, updatedAt)` 기반이라 빈 tombstone 문서를 새로 만들지 않음.
 - 2026-06-12 재확인: Sketch `color` 누락/손상 fallback(`#FF0000`)과 `points` 부분 파싱은 iOS `SketchFirebaseStore`와 동일하며, 쓰기 검증은 계속 표준 `#RRGGBB`만 허용.
 - 2026-06-12 재확인: Drone optional 문자열(`serialNumber`/`takeoffWeight`/`size`/`memo`)은 iOS 편집 흐름처럼 공백뿐이면 `null`, 내용이 있으면 원문 공백을 보존한다.
+- 2026-06-13 추가 방어: Sketch 서버에 없는 로컬 문서는 첫 동기화이거나 마지막 Sketch 동기화 이후 수정된 경우만 업로드하고, 마지막 Sketch 동기화 이전 문서는 원격 hard delete로 간주해 로컬에서 제거한다.
 
 ## 3. 남은 필수 작업
 
@@ -334,6 +337,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 - 2026-06-12에 빈 제목 기존 도형 편집 상태 보존 보정 후 `:app:testDebugUnitTest --tests "*ShapeEditDefaultsTest"`, `:app:testDebugUnitTest --tests "*Shape*Test"`, `:app:assembleDebug`, `:app:testDebugUnitTest`를 재실행해 통과 확인.
 - 2026-06-12에 저장 목록 스와이프 삭제 배경 노출 보정 후 `:app:testDebugUnitTest --tests "*SavedListSectionsTest"`, `:app:testDebugUnitTest --tests "*Saved*Test"`, `:app:assembleDebug`, `:app:testDebugUnitTest`를 재실행해 통과 확인.
 - 2026-06-12에 드론 관리/상세/편집 문구를 iOS String Catalog 기준으로 보정 후 `:app:testDebugUnitTest --tests "*StringResourceCoverageTest"`, `:app:testDebugUnitTest --tests "*Drone*Test"`, `:app:assembleDebug`, `:app:testDebugUnitTest`, `:app:minifyReleaseWithR8`를 재실행해 통과 확인.
+- 2026-06-13에 Sketch 서버 누락 로컬 문서 재업로드 방지 보정 후 `:app:testDebugUnitTest --tests "*SketchRepositoryTest"`, `:app:testDebugUnitTest --tests "*Sketch*Test"`, `:app:assembleDebug`, `:app:testDebugUnitTest`를 재실행해 통과 확인.
 - `:app:minifyReleaseWithR8`는 현재 성공합니다.
 - Naver Maps SDK와 Play Services Location에서 R8 warning이 여러 줄 출력될 수 있지만, 현재는 build failure가 아닙니다.
 - `assembleRelease`와 `bundleRelease`는 실제 release signing 설정 전까지 의도적으로 차단되며, 2026-06-12에 `assembleRelease` 실패 경로를 재확인했습니다.
