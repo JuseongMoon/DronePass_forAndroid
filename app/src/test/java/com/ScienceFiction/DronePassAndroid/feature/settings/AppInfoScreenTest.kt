@@ -54,4 +54,9 @@ class AppInfoScreenTest {
     fun `도형 관리 기능 아이콘은 iOS circle circle fill 의미와 맞는 원형 아이콘을 사용한다`() {
         assertEquals("Filled.RadioButtonChecked", AppInfoShapeManagementIcon.name)
     }
+
+    @Test
+    fun `드론 원스톱 기능 아이콘은 iOS checkmark seal fill 의미와 맞는 인증 배지 아이콘을 사용한다`() {
+        assertEquals("Filled.Verified", AppInfoDroneOnestopIcon.name)
+    }
 }

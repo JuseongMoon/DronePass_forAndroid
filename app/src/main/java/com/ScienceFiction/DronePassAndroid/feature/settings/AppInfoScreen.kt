@@ -20,7 +20,6 @@ import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.AirplanemodeActive
 import androidx.compose.material.icons.filled.Business
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Email
@@ -31,6 +30,7 @@ import androidx.compose.material.icons.filled.RadioButtonChecked
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SettingsInputAntenna
 import androidx.compose.material.icons.filled.Tag
+import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material.icons.filled.WbCloudy
 import androidx.compose.material.icons.filled.WbTwilight
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -68,6 +68,7 @@ internal val AppInfoWeatherIcon: ImageVector = Icons.Default.WbCloudy
 internal val AppInfoKpIndexIcon: ImageVector = Icons.Default.SettingsInputAntenna
 internal val AppInfoSunriseSunsetIcon: ImageVector = Icons.Default.WbTwilight
 internal val AppInfoShapeManagementIcon: ImageVector = Icons.Default.RadioButtonChecked
+internal val AppInfoDroneOnestopIcon: ImageVector = Icons.Default.Verified
 
 internal fun appInfoVersionValue(versionName: String, versionCode: Int): String {
     return "$versionName ($versionCode)"
@@ -201,7 +202,7 @@ fun AppInfoScreen(
             )
             HorizontalDivider(modifier = Modifier.padding(start = 64.dp))
             FeatureRow(
-                icon = Icons.Default.CheckCircle,
+                icon = AppInfoDroneOnestopIcon,
                 iconColor = Color(0xFF34C759),
                 title = stringResource(R.string.app_info_feature_drone_onestop_title),
                 description = stringResource(R.string.app_info_feature_drone_onestop_desc),
