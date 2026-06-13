@@ -18,6 +18,7 @@ val localProperties = Properties().apply {
         load(localPropertiesFile.inputStream())
     }
 }
+val webClientId = localProperties.getProperty("WEB_CLIENT_ID")?.trim().orEmpty()
 
 // keystore.properties 에서 Release 서명 정보 로드 (CI/로컬 모두 지원)
 val keystoreProperties = Properties().apply {
@@ -47,6 +48,14 @@ val hasReleaseSigningConfig = releaseStoreFile?.exists() == true &&
 val releaseSigningErrorMessage =
     "Release signing is not configured. Copy keystore.properties.example to " +
         "keystore.properties, fill the real signing values, and make sure storeFile exists."
+val releaseWebClientIdErrorMessage =
+    "Google sign-in WEB_CLIENT_ID is not configured. Set WEB_CLIENT_ID in " +
+        "local.properties to the Firebase Web client ID before building release artifacts."
+val releaseReadinessErrorMessage: String?
+    get() = listOfNotNull(
+        releaseSigningErrorMessage.takeUnless { hasReleaseSigningConfig },
+        releaseWebClientIdErrorMessage.takeUnless { webClientId.isNotBlank() },
+    ).takeIf { it.isNotEmpty() }?.joinToString(separator = "\n")
 
 android {
     namespace = "com.ScienceFiction.DronePassAndroid"
@@ -70,7 +79,7 @@ android {
         buildConfigField("String", "NAVER_MAP_CLIENT_ID", "\"${localProperties.getProperty("NAVER_MAP_CLIENT_ID", "")}\"")
         buildConfigField("String", "NAVER_MAP_CLIENT_SECRET", "\"${localProperties.getProperty("NAVER_MAP_CLIENT_SECRET", "")}\"")
         buildConfigField("String", "VWORLD_API_KEY", "\"${localProperties.getProperty("VWORLD_API_KEY", "")}\"")
-        buildConfigField("String", "WEB_CLIENT_ID", "\"${localProperties.getProperty("WEB_CLIENT_ID", "")}\"")
+        buildConfigField("String", "WEB_CLIENT_ID", "\"$webClientId\"")
     }
 
     signingConfigs {
@@ -197,21 +206,23 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 }
 
-val validateReleaseSigning by tasks.registering {
+val validateReleaseReadiness by tasks.registering {
     doLast {
-        if (!hasReleaseSigningConfig) {
-            throw GradleException(releaseSigningErrorMessage)
+        releaseReadinessErrorMessage?.let { errorMessage ->
+            throw GradleException(errorMessage)
         }
     }
 }
 
 tasks.matching { it.name == "assembleRelease" || it.name == "bundleRelease" }
     .configureEach {
-        dependsOn(validateReleaseSigning)
+        dependsOn(validateReleaseReadiness)
     }
 
 gradle.taskGraph.whenReady {
-    if (!hasReleaseSigningConfig && allTasks.any { it.name == "assembleRelease" || it.name == "bundleRelease" }) {
-        throw GradleException(releaseSigningErrorMessage)
+    if (allTasks.any { it.name == "assembleRelease" || it.name == "bundleRelease" }) {
+        releaseReadinessErrorMessage?.let { errorMessage ->
+            throw GradleException(errorMessage)
+        }
     }
 }
