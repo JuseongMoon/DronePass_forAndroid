@@ -73,7 +73,7 @@ internal fun resolveLanguageSelectionAction(
  * 설정 화면.
  *
  * iOS `SettingView` 와 동일하게 드론 관리, 앱 정보, 패치노트는 설정 목록을 push 하지 않고
- * 각각 sheet 로 표시한다. 약관/개인정보/위치약관은 ProfileView 시트 안의 두 번째
+ * 각각 sheet 로 표시한다. 약관/개인정보는 ProfileView 시트 안의 두 번째
  * ModalBottomSheet 에서 처리한다.
  */
 @OptIn(ExperimentalMaterial3Api::class)

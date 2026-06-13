@@ -3,7 +3,7 @@ package com.ScienceFiction.DronePassAndroid.feature.document
 import com.ScienceFiction.DronePassAndroid.domain.model.ParsedDocument
 import com.ScienceFiction.DronePassAndroid.domain.model.PatchNote
 
-/** 약관/개인정보/위치약관 화면 상태 — iOS TermsOfServiceView 의 isLoading/error/empty 분기 정합. */
+/** 약관/개인정보 화면 상태 — iOS TermsOfServiceView 의 isLoading/error/empty 분기 정합. */
 sealed class ParsedDocumentUiState {
     data object Loading : ParsedDocumentUiState()
     data class Content(val document: ParsedDocument) : ParsedDocumentUiState()

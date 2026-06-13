@@ -363,7 +363,7 @@ fun ProfileScreen(
         )
     }
 
-    // 약관/개인정보/위치약관 두 번째 시트 (iOS `.sheet(showTerms)` 정합)
+    // 약관/개인정보 두 번째 시트 (iOS `.sheet(showTerms)` 정합)
     // 자체 서버(sciencefiction.co.kr) 에서 마크다운 fetch → 자체 렌더링.
     webDocTarget?.let { target ->
         ModalBottomSheet(
