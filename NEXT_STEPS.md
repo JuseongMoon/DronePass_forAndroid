@@ -259,6 +259,8 @@ iOS와 Android가 공유하는 `users/{uid}/shapes`, `users/{uid}/sketches`, `us
 - Android 15(API 35) `SM-A346N`에 Shape/Sketch 동기화 hard delete 방어 적용 후 최신 `app-debug.apk`를 `adb install -r`로 데이터 유지 설치
 - 런처 실행 후 메인 지도 화면, 상단 `내 드론` 선택 버튼/드롭다운, KP 카드, 날씨 카드, 도형 추가 FAB, 하단 `지도`/`저장`/`설정` 탭 렌더링 확인
 - UIAutomator XML에서 `내 드론`, `KP`, `지도`, `저장`, `설정`, 온도/일출 시각 텍스트 확인
+- 하단 `저장` 탭 전환 후 `저장 목록`, 정렬 칩, 만료 섹션, 저장 도형 행 렌더링 확인
+- 하단 `설정` 탭 전환 후 `설정`, `내 정보`, `로그인 / 회원가입`, `내 드론 관리하기`, `비행 환경` 렌더링 확인
 - 앱 포커스가 `com.ScienceFiction.DronePassAndroid/.MainActivity`에 있고 프로세스가 유지됨을 확인
 - `FATAL EXCEPTION` 없음. `AndroidRuntime` 로그는 `monkey` 명령 프로세스 시작/종료만 확인
 
