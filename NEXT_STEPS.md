@@ -133,6 +133,7 @@
 - 저장 목록 행 제목 표시를 iOS `ShapeInfoContent`처럼 빈 문자열/공백도 원문 그대로 유지하도록 보정
 - 종료일 알림 본문을 iOS `SettingManager.scheduleEndDateAlarm`처럼 빈 문자열/공백 제목도 그대로 포함하도록 보정
 - 알림 탭/포그라운드 팝업 제목·본문을 iOS `PushNotificationManager`처럼 trim 없이 원문 그대로 복원하도록 보정
+- 알림 권한 안내 카드/정확한 알람 설정 이동의 Android 12/13 경계 판정을 테스트 가능한 헬퍼로 분리하고 회귀 테스트 추가
 - 지도 롱프레스 역지오코딩 결과를 iOS `MainView.handleLongPress`처럼 성공이면 빈 주소도 새 도형 확인 흐름으로 유지하도록 보정
 - 스케치 색상 슬라이더 외부 색상 동기화 조건을 iOS `ColorGradientSlider`처럼 hue 절대 차이 기준으로 보정
 - 드론 상세 콜백, 날씨 오류 화면, VWorld 지정번호, 알림 재예약의 nullable 경계에서 강제 언랩을 제거
@@ -420,6 +421,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 - 2026-06-13에 VWorld 비행구역 상세/레이어 선택/연락처 흐름을 재확인했다. 상세 시트 detent 높이, row 높이, NOTAM 색상, 고도 포맷, 연락처 lookup(정확 일치 후 양방향 부분 일치), 레이어 가나다순 정렬과 마지막 separator는 iOS 실행 동작과 일치한다. iOS `VWorldContactManager` 주석은 15일 캐시라고 적혀 있지만 실제 `cacheValidDays` 실행값은 5일이므로 Android의 5일 캐시는 유지한다. `:app:testDebugUnitTest --tests "*VWorld*Test" --tests "*FlightZone*Test" --tests "*AltitudeFormatterTest" --tests "*StringResourceCoverageTest"` 통과 확인.
 - 2026-06-13에 날씨/KP 예보 화면을 재확인했다. 현재 날씨 카드 tap → 정보 시트 초기 섹션 이동, 드론 카테고리 메뉴, 차트 시간창/도메인, 데이터 출처/경고/토스트, KP 레벨/정보 가이드/NOAA 데이터 처리 흐름은 iOS 구현과 일치한다. `:app:testDebugUnitTest --tests "*Weather*Test" --tests "*Kp*Test" --tests "*InfoGuideSheetsTest" --tests "*StringResourceCoverageTest"` 통과 확인.
 - 2026-06-13에 알림 설정/예약/복구/표시 경로를 재확인했다. 설정 키는 iOS UserDefaults 이름을 유지하고, 일출/일몰은 오늘 값이 지났으면 다음 후보를 사용하며, 앱 시작/부팅 복구는 활성화된 알림만 재예약한다. FCM/로컬 알림 payload는 제목·본문 원문과 `shapeId` 포커스 대상을 보존한다. `:app:testDebugUnitTest --tests "*Notification*Test" --tests "*FcmServiceTest" --tests "*UserLocationKeysTest" --tests "*StringResourceCoverageTest"` 통과 확인.
+- 2026-06-13에 알림 권한 요청 UX의 Android 12/13 경계 판정을 회귀 테스트로 고정했다. Android 13 미만 `POST_NOTIFICATIONS` 허용 취급, Android 12 미만 정확한 알람 허용 취급, 권한 카드 노출 조건과 설정 화면 이동 조건을 테스트한다. `:app:testDebugUnitTest --tests "*NotificationPermissionRequestTest" --tests "*NotificationPreferenceKeysTest" --tests "*MainActivityKeepScreenAwakeTest"` 통과 확인.
 - `:app:minifyReleaseWithR8`는 현재 성공합니다.
 - Naver Maps SDK와 Play Services Location에서 R8 warning이 여러 줄 출력될 수 있지만, 현재는 build failure가 아닙니다.
 - `assembleRelease`와 `bundleRelease`는 실제 release signing과 `WEB_CLIENT_ID` 설정 전까지 의도적으로 차단되며, 2026-06-13에 `assembleRelease` 실패 경로를 재확인했습니다.

@@ -91,7 +91,7 @@ fun NotificationPermissionRequest(
     }
 
     // 두 권한 모두 OK 면 카드 자체를 그리지 않음
-    if (notificationPermissionGranted && exactAlarmGranted) return
+    if (!shouldRenderNotificationPermissionRequest(notificationPermissionGranted, exactAlarmGranted)) return
 
     Column(modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
         if (!notificationPermissionGranted) {
@@ -169,27 +169,62 @@ private fun PermissionCard(
 
 /** Android 13+ 에서 POST_NOTIFICATIONS 권한 보유 여부. 이전 버전은 항상 true. */
 private fun hasNotificationPermission(context: Context): Boolean {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return true
-    return ContextCompat.checkSelfPermission(
+    val permissionGranted = ContextCompat.checkSelfPermission(
         context,
         Manifest.permission.POST_NOTIFICATIONS
     ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+    return resolveNotificationPermissionGranted(
+        sdkInt = Build.VERSION.SDK_INT,
+        permissionGranted = permissionGranted,
+    )
 }
 
 /** Android 12+ 에서 SCHEDULE_EXACT_ALARM 권한 부여 여부. 이전 버전은 항상 true. */
 private fun canScheduleExactAlarms(context: Context): Boolean {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return true
     val am = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager
-        ?: return false
-    return am.canScheduleExactAlarms()
+    val canScheduleExactAlarms =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            am?.canScheduleExactAlarms()
+        } else {
+            null
+        }
+    return resolveExactAlarmPermissionGranted(
+        sdkInt = Build.VERSION.SDK_INT,
+        canScheduleExactAlarms = canScheduleExactAlarms,
+    )
 }
 
 /** 시스템의 "정확한 알람 권한" 설정 화면으로 이동. */
 private fun openExactAlarmSettings(context: Context) {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return
+    if (!shouldOpenExactAlarmSettings(Build.VERSION.SDK_INT)) return
     val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
         data = Uri.parse("package:${context.packageName}")
         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     }
     runCatching { context.startActivity(intent) }
+}
+
+internal fun resolveNotificationPermissionGranted(
+    sdkInt: Int,
+    permissionGranted: Boolean,
+): Boolean {
+    return sdkInt < Build.VERSION_CODES.TIRAMISU || permissionGranted
+}
+
+internal fun resolveExactAlarmPermissionGranted(
+    sdkInt: Int,
+    canScheduleExactAlarms: Boolean?,
+): Boolean {
+    return sdkInt < Build.VERSION_CODES.S || canScheduleExactAlarms == true
+}
+
+internal fun shouldRenderNotificationPermissionRequest(
+    notificationPermissionGranted: Boolean,
+    exactAlarmGranted: Boolean,
+): Boolean {
+    return !notificationPermissionGranted || !exactAlarmGranted
+}
+
+internal fun shouldOpenExactAlarmSettings(sdkInt: Int): Boolean {
+    return sdkInt >= Build.VERSION_CODES.S
 }
