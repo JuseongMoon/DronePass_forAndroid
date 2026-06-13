@@ -201,7 +201,7 @@ class StringResourceCoverageTest {
         assertEquals("반경(m)", stringResourceValue("values/strings.xml", "shape_edit_radius_label"))
         assertEquals("고도(m)", stringResourceValue("values/strings.xml", "shape_edit_altitude_label"))
         assertEquals("주소를 검색하세요", stringResourceValue("values/strings.xml", "shape_edit_address_search_placeholder"))
-        assertEquals("주소 검색", stringResourceValue("values/strings.xml", "shape_edit_placeholder_address"))
+        assertEquals("주소를 검색하세요", stringResourceValue("values/strings.xml", "shape_edit_placeholder_address"))
         assertEquals("제목을 입력하세요", stringResourceValue("values/strings.xml", "shape_edit_title_placeholder"))
         assertEquals("좌표를 입력하세요", stringResourceValue("values/strings.xml", "shape_edit_coordinate_placeholder"))
         assertEquals("반경을 입력하세요", stringResourceValue("values/strings.xml", "shape_edit_radius_placeholder"))

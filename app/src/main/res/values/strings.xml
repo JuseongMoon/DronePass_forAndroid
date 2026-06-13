@@ -175,7 +175,7 @@
     <string name="shape_edit_label_title">제목</string>
     <string name="shape_edit_label_coordinate">좌표</string>
     <string name="shape_edit_label_address">주소</string>
-    <string name="shape_edit_placeholder_address">주소 검색</string>
+    <string name="shape_edit_placeholder_address">주소를 검색하세요</string>
     <string name="shape_edit_label_radius">반경(m)</string>
     <string name="shape_edit_label_altitude">고도(m)</string>
     <string name="shape_edit_section_flight_period">비행 기간</string>

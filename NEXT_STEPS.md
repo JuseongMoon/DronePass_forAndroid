@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- `fix: match iOS shape address placeholder`
 - `fix: match iOS drone detail strings`
 - `fix: match iOS drone list titles`
 - `5a256fb fix: persist app language selection`
@@ -135,6 +136,7 @@
 - FCM data-only 알림 표시 경로가 `title`/`body`뿐 아니라 로컬 알림 extra와 같은 `notification_title`/`notification_body`도 읽도록 보정
 - 도형 상세 제목/삭제 문구/외부 지도 목적지 이름을 iOS `ShapeDetailView`처럼 빈 문자열/공백도 원문 그대로 유지하도록 보정
 - 도형 편집 기본정보 좌표/주소 placeholder와 좌표 입력 주소 결과를 iOS처럼 빈 문자열 기준으로 보정
+- 도형 편집 주소 fallback placeholder를 iOS `shape.edit.address.placeholder` 기준인 `주소를 검색하세요`로 보정
 - 주소 검색 선택/표시/건물명 판정을 iOS처럼 빈 문자열 기준으로 보정
 - 도형 편집 저장 시 공백 제목/메모/주소를 iOS처럼 실제 입력값으로 보존하고, Firebase 쓰기 검증은 공백 제목을 계속 거부
 - 드론 상세 선택 필드/메모 표시와 복사 조건을 iOS처럼 `nil`과 빈 문자열 기준으로 보정
@@ -472,6 +474,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 - 2026-06-13에 앱 언어 변경 지속성을 보정했다. 기존에는 English 선택 직후 현재 프로세스 표시만 바뀌고 `cmd locale get-app-locales com.ScienceFiction.DronePassAndroid`가 `[]`로 남아 재시작 시 한국어로 돌아갔으나, 보정 후 English 선택 시 `[en]`, 강제 종료/재실행 후 `Map`/`Saved`/`Settings` 영어 UI 유지를 확인했다. 이후 한국어로 되돌려 `[ko]`, 강제 종료/재실행 후 `지도`/`저장`/`설정` 한국어 UI 복귀를 확인했고, 최신 debug APK 재설치 후에도 `[ko]`와 한국어 UI가 유지됐다. `AndroidRuntime:E` 크래시 로그는 없음. `:app:testDebugUnitTest --tests "*SettingsLanguageSelectionTest" --tests "*SettingsPreferenceKeysTest" --tests "*DocumentRepositoryTest"`, `:app:assembleDebug` 통과 확인.
 - 2026-06-13에 드론 목록 화면 title/section header를 iOS `drone.list.title`/`drone.list.section.my`와 다시 대조해 `드론 관리`/`내 드론 목록`, English `Manage Drones`/`My Drones`로 보정했다. 설정 진입 행은 iOS `settings.drone.manage` 기준인 `내 드론 관리하기`/`Manage My Drones`가 맞으므로 유지했다. `:app:testDebugUnitTest --tests "*StringResourceCoverageTest" --tests "*DroneListScreenTest"` 통과 확인.
 - 2026-06-13에 드론 상세/편집 한국어 문자열을 iOS `drone.detail.*`/`drone.edit.*`와 다시 대조해 `제작 번호`, `이륙 무게`, `메모가 없습니다`, 삭제 확인/연결 도형 처리 문구, 입력 footer, 중복 이름 오류 문구를 보정했다. `:app:testDebugUnitTest --tests "*StringResourceCoverageTest" --tests "*DroneDeleteValidationTest" --tests "*DroneEditSheetTest" --tests "*DroneListScreenTest"` 통과 확인.
+- 2026-06-13에 도형 편집 주소 fallback placeholder를 iOS `shape.edit.address.placeholder`와 다시 대조해 `주소를 검색하세요`로 보정했다. `:app:testDebugUnitTest --tests "*StringResourceCoverageTest" --tests "*ShapeEditDefaultsTest"` 통과 확인.
 - `:app:minifyReleaseWithR8`는 현재 성공합니다.
 - Naver Maps SDK와 Play Services Location에서 R8 warning이 여러 줄 출력될 수 있지만, 현재는 build failure가 아닙니다.
 - `assembleRelease`와 `bundleRelease`는 실제 release signing과 `WEB_CLIENT_ID` 설정 전까지 의도적으로 차단되며, 2026-06-13에 `assembleRelease` 실패 경로를 재확인했습니다.
