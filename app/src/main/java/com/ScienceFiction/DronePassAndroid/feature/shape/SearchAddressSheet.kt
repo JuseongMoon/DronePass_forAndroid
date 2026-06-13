@@ -86,7 +86,7 @@ internal val SearchAddressGuideCardPadding = 16.dp
 internal val SearchAddressGuideCardVerticalSpacing = 8.dp
 
 internal fun resolveSelectedAddressForShapeEdit(address: GeocodingAddress): String =
-    address.jibunAddress?.takeIf { it.isNotEmpty() }
+    address.jibunAddress
         ?: address.roadAddress?.takeIf { it.isNotEmpty() }
         ?: ""
 
@@ -102,10 +102,10 @@ internal data class AddressDisplayRow(
 
 internal fun addressDisplayRows(address: GeocodingAddress): List<AddressDisplayRow> {
     return buildList {
-        address.jibunAddress?.takeIf { it.isNotEmpty() }?.let { text ->
+        address.jibunAddress?.let { text ->
             add(AddressDisplayRow(AddressDisplayType.JIBUN, text))
         }
-        address.roadAddress?.takeIf { it.isNotEmpty() }?.let { text ->
+        address.roadAddress?.let { text ->
             add(AddressDisplayRow(AddressDisplayType.ROAD, text))
         }
     }
