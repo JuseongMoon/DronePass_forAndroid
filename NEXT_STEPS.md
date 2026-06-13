@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- `fix: match iOS drone list titles` (current commit)
 - `5a256fb fix: persist app language selection`
 - `3f620cb docs: record connected device smoke`
 - `3c84852 docs: record latest debug verification`
@@ -137,6 +138,7 @@
 - 도형 편집 저장 시 공백 제목/메모/주소를 iOS처럼 실제 입력값으로 보존하고, Firebase 쓰기 검증은 공백 제목을 계속 거부
 - 드론 상세 선택 필드/메모 표시와 복사 조건을 iOS처럼 `nil`과 빈 문자열 기준으로 보정
 - 드론 목록/상세/편집/삭제 문구를 최신 iOS String Catalog 기준으로 보정
+- 드론 목록 화면 title/section header를 최신 iOS String Catalog 기준인 `드론 관리`/`내 드론 목록`으로 보정
 - 드론/도형 색상 팔레트 표시명을 최신 iOS String Catalog 기준으로 보정
 - 스케치 Firestore `points` 읽기를 iOS처럼 손상 좌표 원소만 제외하는 관대 파싱으로 보정
 - 드론 Firestore 삭제가 iOS hard delete 이후 재삭제될 때 missing document를 성공으로 처리하도록 보정
@@ -466,6 +468,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 - 2026-06-13 알림/프로필/익명화 확인 누적 후 `:app:testDebugUnitTest`, `:app:assembleDebug` 재실행 통과 확인.
 - 2026-06-13에 저장 도형 생성/저장/상세/수정 진입/복제 진입/삭제를 실기기 `RFCW324TZ0Z`에서 재확인했다. Room DB 활성 도형 count는 3 -> 4 -> 3으로 복구됐고, 신규 도형은 `shapeType=circle` lowercase 저장과 soft delete `deletedAt` 갱신 계약을 지켰다. 코드 변경 없이 smoke/문서 기록만 수행했으므로 Gradle 재실행은 생략.
 - 2026-06-13에 앱 언어 변경 지속성을 보정했다. 기존에는 English 선택 직후 현재 프로세스 표시만 바뀌고 `cmd locale get-app-locales com.ScienceFiction.DronePassAndroid`가 `[]`로 남아 재시작 시 한국어로 돌아갔으나, 보정 후 English 선택 시 `[en]`, 강제 종료/재실행 후 `Map`/`Saved`/`Settings` 영어 UI 유지를 확인했다. 이후 한국어로 되돌려 `[ko]`, 강제 종료/재실행 후 `지도`/`저장`/`설정` 한국어 UI 복귀를 확인했고, 최신 debug APK 재설치 후에도 `[ko]`와 한국어 UI가 유지됐다. `AndroidRuntime:E` 크래시 로그는 없음. `:app:testDebugUnitTest --tests "*SettingsLanguageSelectionTest" --tests "*SettingsPreferenceKeysTest" --tests "*DocumentRepositoryTest"`, `:app:assembleDebug` 통과 확인.
+- 2026-06-13에 드론 목록 화면 title/section header를 iOS `drone.list.title`/`drone.list.section.my`와 다시 대조해 `드론 관리`/`내 드론 목록`, English `Manage Drones`/`My Drones`로 보정했다. 설정 진입 행은 iOS `settings.drone.manage` 기준인 `내 드론 관리하기`/`Manage My Drones`가 맞으므로 유지했다. `:app:testDebugUnitTest --tests "*StringResourceCoverageTest" --tests "*DroneListScreenTest"` 통과 확인.
 - `:app:minifyReleaseWithR8`는 현재 성공합니다.
 - Naver Maps SDK와 Play Services Location에서 R8 warning이 여러 줄 출력될 수 있지만, 현재는 build failure가 아닙니다.
 - `assembleRelease`와 `bundleRelease`는 실제 release signing과 `WEB_CLIENT_ID` 설정 전까지 의도적으로 차단되며, 2026-06-13에 `assembleRelease` 실패 경로를 재확인했습니다.
