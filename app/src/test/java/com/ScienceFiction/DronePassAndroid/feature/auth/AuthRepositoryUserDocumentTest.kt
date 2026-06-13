@@ -10,6 +10,19 @@ import java.util.Date
 class AuthRepositoryUserDocumentTest {
 
     @Test
+    fun `provider 계정 복구는 도형 드론 스케치와 동기화 메타데이터를 함께 이전한다`() {
+        assertEquals(
+            listOf("shapes", "drones", "sketches", "metadata"),
+            AUTH_PROVIDER_RECOVERY_COLLECTIONS,
+        )
+    }
+
+    @Test
+    fun `provider 계정 복구는 기기별 FCM devices 컬렉션을 이전하지 않는다`() {
+        assertFalse(AUTH_PROVIDER_RECOVERY_COLLECTIONS.contains("devices"))
+    }
+
+    @Test
     fun `새 사용자 문서는 iOS AuthManager 와 같은 루트 필드를 만든다`() {
         val data = buildNewUserDocumentData(
             userId = "uid-1",

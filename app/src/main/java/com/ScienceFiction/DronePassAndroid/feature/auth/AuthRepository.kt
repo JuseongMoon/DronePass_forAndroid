@@ -26,6 +26,8 @@ import javax.inject.Singleton
 private const val APPLE_USER_ID_FIELD = "appleUserID"
 private const val GOOGLE_USER_ID_FIELD = "googleUserID"
 
+internal val AUTH_PROVIDER_RECOVERY_COLLECTIONS = listOf("shapes", "drones", "sketches", "metadata")
+
 internal enum class AuthAccountChangeAction {
     KEEP_LOCAL_DATA,
     RESET_LOCAL_DATA,
@@ -204,7 +206,6 @@ class AuthRepository @Inject constructor(
         private const val APPLE_PROVIDER_ID = "apple.com"
         private const val USERS_COLLECTION = "users"
         private const val FIRESTORE_BATCH_LIMIT = 450
-        private val PROVIDER_RECOVERY_COLLECTIONS = listOf("shapes", "drones", "sketches", "metadata")
     }
 
     /** 현재 로그인된 Firebase 사용자 */
@@ -522,7 +523,7 @@ class AuthRepository @Inject constructor(
                 )
             ).await()
 
-            PROVIDER_RECOVERY_COLLECTIONS.forEach { collectionName ->
+            AUTH_PROVIDER_RECOVERY_COLLECTIONS.forEach { collectionName ->
                 migrateUserSubcollection(
                     fromUserId = fromUserId,
                     toUserId = toUserId,
