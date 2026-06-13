@@ -276,6 +276,7 @@ iOS와 Android가 공유하는 `users/{uid}/shapes`, `users/{uid}/sketches`, `us
 - 하단 `저장` 탭 전환 후 `저장 목록`, 정렬 칩, 저장 도형 행 렌더링 확인
 - 하단 `설정` 탭 전환 후 `설정`, `내 정보`, `로그인 / 회원가입`, `내 드론 관리하기`, `비행 환경`, KP/날씨 항목 렌더링 확인
 - 위 추가 smoke에서 앱 포커스가 `MainActivity`에 유지되고 `AndroidRuntime` 크래시 로그 없음
+- 로그인/회원가입 시트에서 `Google로 로그인`을 눌렀을 때, 현재 로컬 `WEB_CLIENT_ID` 누락 상태에서는 OAuth 화면으로 진입하지 않고 `Google 로그인 설정이 누락되었습니다. WEB_CLIENT_ID를 확인해주세요.` 오류 다이얼로그가 표시됨을 확인
 
 1. 지도 로드, 현재 위치 권한, 현재 위치 이동
 2. 원형 도형 생성, 저장, 편집, 삭제, 복제
@@ -306,6 +307,7 @@ iOS와 Android가 공유하는 `users/{uid}/shapes`, `users/{uid}/sketches`, `us
 - `local.properties`의 `WEB_CLIENT_ID`는 현재 비어 있음
   - Android Google 로그인은 이 값이 설정되어야 동작함
   - 값이 비어 있으면 앱은 Google 로그인 시 명시적인 설정 누락 오류를 표시하도록 보강됨
+  - 2026-06-13 실기기에서 `Google로 로그인` 버튼 탭 시 위 설정 누락 오류 다이얼로그가 표시되고 크래시가 없음을 확인
 - `app/google-services.json`의 Android client에는 현재 `oauth_client` 항목이 비어 있음
   - Firebase Console에서 Android 앱 SHA-1/SHA-256 등록 후 `google-services.json`을 다시 내려받고, Web client ID를 `local.properties`의 `WEB_CLIENT_ID`에 설정해야 Google 로그인을 실계정으로 검증할 수 있음
 - 현재 로컬 debug keystore 지문
