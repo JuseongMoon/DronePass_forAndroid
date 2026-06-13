@@ -84,7 +84,7 @@
 
 코드 대조 후 수정 없이 통과한 영역:
 
-- 드론 목록/상세/편집/삭제/선택 상태
+- 드론 목록/상세/생성/편집/삭제/선택 상태와 연결 도형 재할당/삭제 처리
 - 저장 도형 목록, 편집/복제 진입, 날짜 기본값
 - 지도 기본 위치, 현재 위치 이동 줌, 플로팅 컨트롤
 - 기상 예보, KP 예보, 차트 현재 시각 표시
@@ -381,6 +381,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 - 2026-06-13에 문서/앱 정보 경로를 재확인했다. Terms/Privacy 캐시는 요청 path를 함께 저장해 언어별 파일이 섞이지 않고, 약관/개인정보 `Content` 재진입 시 자동 로드를 건너뛰는 동작은 iOS `FetchWebDocuments` 메모리 캐시 정책과 동일하게 유지한다. `:app:testDebugUnitTest --tests "*DocumentRepositoryTest" --tests "*DocumentEntryPolicyTest" --tests "*PatchNotesContentTest" --tests "*MarkdownParserTest" --tests "*AppInfoScreenTest" --tests "*StringResourceCoverageTest"` 통과 확인.
 - 2026-06-13에 지도 위치 권한 판정을 `fine || coarse`로 보정한 뒤 `:app:testDebugUnitTest --tests "*MapCameraFocusTest"`, `:app:assembleDebug`를 재실행해 통과 확인.
 - 2026-06-13에 도형 생성/편집/복제/삭제 경로를 재확인했다. Android 편집 취소 변경 감지에서 날짜 필드를 제외하는 동작은 iOS `ShapeEditViewModel.hasChanges()`와 동일하므로 유지한다. `:app:testDebugUnitTest --tests "*ShapeEditDefaultsTest" --tests "*MapCameraFocusTest" --tests "*SavedListSectionsTest" --tests "*SavedShapeListItemTest" --tests "*ShapeValidationTest" --tests "*ShapeRepositoryTest" --tests "*ShapeFirestoreParsingTest" --tests "*ShapeFirebaseStoreTest"` 통과 확인.
+- 2026-06-13에 드론 생성/수정/삭제와 도형 연결 경로를 재확인했다. 새 드론 추가는 iOS처럼 다중 필터 선택에만 자동 추가하고, 삭제 시 연결 도형 재할당/삭제는 soft delete와 `updatedAt` 갱신 계약을 유지한다. `:app:testDebugUnitTest --tests "*DroneDeleteValidationTest" --tests "*DroneEditSheetTest" --tests "*DroneListScreenTest" --tests "*DroneNameWidthLimitTest" --tests "*DroneNextColorTest" --tests "*DroneSelectionStateTest" --tests "*DroneSelectionDropdownTest" --tests "*DroneModelTest" --tests "*DroneValidationTest" --tests "*DroneFirestoreParsingTest" --tests "*DroneSyncMergeTest" --tests "*ShapeDetailDroneResolutionTest" --tests "*ShapeEditDefaultsTest" --tests "*ShapeRepositoryTest"` 통과 확인.
 - `:app:minifyReleaseWithR8`는 현재 성공합니다.
 - Naver Maps SDK와 Play Services Location에서 R8 warning이 여러 줄 출력될 수 있지만, 현재는 build failure가 아닙니다.
 - `assembleRelease`와 `bundleRelease`는 실제 release signing과 `WEB_CLIENT_ID` 설정 전까지 의도적으로 차단되며, 2026-06-13에 `assembleRelease` 실패 경로를 재확인했습니다.
