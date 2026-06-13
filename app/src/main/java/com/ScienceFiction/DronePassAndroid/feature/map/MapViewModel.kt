@@ -858,19 +858,6 @@ class MapViewModel @Inject constructor(
         .map(::storedShapeEditDefaults)
         .stateIn(viewModelScope, SharingStarted.Eagerly, ShapeEditDefaults())
 
-    // koreaFeaturesEnabled 선언 직후에 위치해야 한다. 첫 번째 init 블록은 클래스 상단에 있어
-    // 그 시점엔 koreaFeaturesEnabled 가 아직 초기화되지 않아 NullPointerException 이 발생한다.
-    // 두 번째 init 으로 분리하여 property 초기화 순서를 보장.
-    init {
-        viewModelScope.launch { loadVisibleLayersFromStorage() }
-        viewModelScope.launch {
-            koreaFeaturesEnabled
-                .drop(1)
-                .distinctUntilChanged()
-                .collect { hideAllLayers() }
-        }
-    }
-
     /**
      * 60초 간격 tick. 시간이 흘러 isExpired/isNotStarted 가 바뀌어도 filteredShapes 가
      * 즉시 재평가되도록 한다. (이전: shapes/설정 변경 시에만 재평가되어 만료 시각이
@@ -975,6 +962,17 @@ class MapViewModel @Inject constructor(
     private val _currentMapBounds = MutableStateFlow<MapViewportBounds?>(null)
     internal val currentMapBounds: StateFlow<MapViewportBounds?> = _currentMapBounds.asStateFlow()
 
+    // koreaFeaturesEnabled 와 FlightZone 상태 Flow 들이 모두 초기화된 뒤 시작한다.
+    init {
+        viewModelScope.launch { loadVisibleLayersFromStorage() }
+        viewModelScope.launch {
+            koreaFeaturesEnabled
+                .drop(1)
+                .distinctUntilChanged()
+                .collect { clearFlightZoneUiForKoreaFeatureChange() }
+        }
+    }
+
     @OptIn(FlowPreview::class)
     private val flightZoneLoadCollector: Job = viewModelScope.launch {
         combine(_visibleLayers, _currentMapBounds) { layers, bounds -> layers to bounds }
@@ -1016,6 +1014,13 @@ class MapViewModel @Inject constructor(
      */
     fun hideAllLayers() {
         setVisibleLayers(emptySet())
+    }
+
+    private fun clearFlightZoneUiForKoreaFeatureChange() {
+        hideAllLayers()
+        _showLayerSelector.value = false
+        _selectedZone.value = null
+        _showZoneDetail.value = false
     }
 
     private fun setVisibleLayers(layers: Set<FlightZoneLayer>) {

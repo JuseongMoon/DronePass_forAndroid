@@ -11,7 +11,7 @@
 | 항목 | 값 |
 |---|---|
 | 워킹 트리 | clean |
-| 주요 검증 | `:app:testDebugUnitTest`, `:app:assembleDebug`, `:app:minifyReleaseWithR8`, `:app:testDebugUnitTest --tests "*MainScreenStartDestinationTest"` 통과 |
+| 주요 검증 | `:app:testDebugUnitTest`, `:app:assembleDebug`, `:app:minifyReleaseWithR8`, `:app:testDebugUnitTest --tests "*MainScreenStartDestinationTest"`, `:app:testDebugUnitTest --tests "*MapScreenLayersTest" --tests "*SettingsPreferenceKeysTest"` 통과 |
 | Release readiness | 실제 `keystore.properties` 또는 `WEB_CLIENT_ID`가 없으면 `assembleRelease`/`bundleRelease`가 의도적으로 실패함을 재확인 |
 | 남은 성격 | 실기기 전체 회귀, 콘솔/스토어 운영 설정, 최종 iOS 동기화 검증 |
 
@@ -134,6 +134,7 @@
 - 드론 상세 콜백, 날씨 오류 화면, VWorld 지정번호, 알림 재예약의 nullable 경계에서 강제 언랩을 제거
 - 공용 LWW/드론 full-sync 병합 경로의 nullable 강제 언랩을 제거하고 서버 전용 드론 병합 회귀 테스트 추가
 - VWorld 비행구역 레이어 선택 시트의 통계 헤더를 iOS처럼 전체 폭 배경 밴드로 보정
+- 한국 특화 기능 ON/OFF 전환 시 VWorld 레이어 캐시와 열린 레이어/상세 시트를 함께 정리하도록 보정
 - KP/날씨 예보 새로고침 완료 메시지를 iOS `ToastMessageModifier`처럼 화면 내부 하단 토스트로 보정
 - 실시간/수동 Shape·Drone 동기화 성공 시 계정 전환 보호 기준선(`syncedShapeBaseline`)도 함께 갱신하도록 보정
 - 저장/설정 오버레이가 열린 상태에서도 메인 하단 탭이 실제 터치 가능한 최상위 레이어에 남도록 보정

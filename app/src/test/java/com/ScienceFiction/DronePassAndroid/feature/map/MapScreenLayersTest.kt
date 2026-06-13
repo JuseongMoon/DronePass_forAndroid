@@ -53,6 +53,38 @@ class MapScreenLayersTest {
     }
 
     @Test
+    fun `한국 특화 기능이 꺼져 있으면 VWorld 시트를 렌더하지 않는다`() {
+        assertEquals(
+            false,
+            shouldShowFlightZoneLayerSelector(
+                koreaFeaturesEnabled = false,
+                showLayerSelector = true,
+            ),
+        )
+        assertEquals(
+            false,
+            shouldShowFlightZoneDetail(
+                koreaFeaturesEnabled = false,
+                showZoneDetail = true,
+            ),
+        )
+        assertEquals(
+            true,
+            shouldShowFlightZoneLayerSelector(
+                koreaFeaturesEnabled = true,
+                showLayerSelector = true,
+            ),
+        )
+        assertEquals(
+            true,
+            shouldShowFlightZoneDetail(
+                koreaFeaturesEnabled = true,
+                showZoneDetail = true,
+            ),
+        )
+    }
+
+    @Test
     fun `스케치 오버레이는 iOS처럼 지도 bounds 와 겹치는 스케치만 렌더한다`() {
         val bounds = MapViewportBounds(
             southWestLatitude = 37.0,

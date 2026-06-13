@@ -354,6 +354,16 @@ internal fun shouldRenderFlightZoneOverlays(
     isSketchMode: Boolean,
 ): Boolean = mapReady && !isSketchMode
 
+internal fun shouldShowFlightZoneLayerSelector(
+    koreaFeaturesEnabled: Boolean,
+    showLayerSelector: Boolean,
+): Boolean = koreaFeaturesEnabled && showLayerSelector
+
+internal fun shouldShowFlightZoneDetail(
+    koreaFeaturesEnabled: Boolean,
+    showZoneDetail: Boolean,
+): Boolean = koreaFeaturesEnabled && showZoneDetail
+
 internal fun visibleFlightZoneLayersForRender(
     visibleLayers: Set<FlightZoneLayer>,
     mapReady: Boolean,
@@ -708,7 +718,12 @@ internal fun MapBottomSheets(
     }
 
     // 비행구역 레이어 선택
-    if (showLayerSelector) {
+    if (
+        shouldShowFlightZoneLayerSelector(
+            koreaFeaturesEnabled = koreaFeaturesEnabled,
+            showLayerSelector = showLayerSelector,
+        )
+    ) {
         FlightZoneLayerSelector(
             visibleLayers = visibleLayers,
             displayedZoneCount = displayedFlightZoneOverlayCount(flightZones),
@@ -720,7 +735,12 @@ internal fun MapBottomSheets(
     }
 
     // 비행구역 상세
-    if (showZoneDetail) {
+    if (
+        shouldShowFlightZoneDetail(
+            koreaFeaturesEnabled = koreaFeaturesEnabled,
+            showZoneDetail = showZoneDetail,
+        )
+    ) {
         selectedZone?.let { zone ->
             VWorldZoneDetailSheet(
                 zone = zone,
