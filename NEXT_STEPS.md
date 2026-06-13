@@ -489,6 +489,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 - 2026-06-13에 앱 삭제/재설치 경계의 코드 방어를 재확인하고, Manifest가 `allowBackup=false`와 방어적 `backup_rules`/`data_extraction_rules` 참조를 계속 유지하도록 회귀 테스트를 보강했다. OS 백업으로 Firebase/Auth/FCM deviceId/Room 캐시가 복원되지 않는 정책은 유지되며, 실제 삭제 후 실계정 Firestore 복구 smoke는 외부 계정 설정 후 진행한다.
 - 2026-06-13 백업 규칙 회귀 테스트 보강 후 `:app:testDebugUnitTest --tests "*BackupRulesTest" --tests "*FcmServiceTest" --tests "*SettingsLanguageSelectionTest"`와 `:app:testDebugUnitTest` 전체 단위 테스트 통과 확인.
 - 2026-06-13에 Room v1→v3 직접 마이그레이션 계약을 재확인하고 회귀 테스트를 추가했다. v1/v3 스키마는 `shapes`/`drones`/`sketches` 테이블과 iOS geometry 컬럼(`secondLatitude`, `secondLongitude`, `polygonCoordinates`, `polylineCoordinates`)을 유지하고, v2만 geometry 컬럼이 빠져 있으므로 직접 1→3 경로를 보존해야 한다. `:app:testDebugUnitTest --tests "*DronePassDatabaseMigrationContractTest"`와 `:app:testDebugUnitTest` 통과 확인.
+- 2026-06-13에 일반 약관/개인정보 Markdown parser를 iOS `FetchWebDocuments.parseMarkdown`와 다시 대조하고, 헤더/단락/표/구분선/대시·불릿 리스트/단일 pipe 단락 처리를 회귀 테스트로 보강했다. `:app:testDebugUnitTest --tests "*MarkdownParserTest" --tests "*MarkdownInlineTextTest" --tests "*DocumentRepositoryTest"`와 `:app:testDebugUnitTest` 통과 확인.
 - `:app:minifyReleaseWithR8`는 현재 성공합니다.
 - Naver Maps SDK와 Play Services Location에서 R8 warning이 여러 줄 출력될 수 있지만, 현재는 build failure가 아닙니다.
 - `assembleRelease`와 `bundleRelease`는 실제 release signing과 `WEB_CLIENT_ID` 설정 전까지 의도적으로 차단되며, 2026-06-13에 `assembleRelease` 실패 경로를 재확인했습니다.

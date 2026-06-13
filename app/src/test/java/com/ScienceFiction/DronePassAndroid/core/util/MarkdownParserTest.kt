@@ -1,10 +1,67 @@
 package com.ScienceFiction.DronePassAndroid.core.util
 
+import com.ScienceFiction.DronePassAndroid.domain.model.MarkdownElementType
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class MarkdownParserTest {
+
+    @Test
+    fun parseMarkdownPreservesIosDocumentElementStructure() {
+        val content = """
+            # Title
+            Paragraph with **bold** text
+            | Header A | Header B |
+            |---|---|
+            | Value A | Value B |
+            | Only A |
+            ---
+            - Dash item
+            • Bullet item
+        """.trimIndent()
+
+        val parsed = MarkdownParser.parseMarkdown(content)
+
+        assertEquals(
+            listOf(
+                MarkdownElementType.Header,
+                MarkdownElementType.Paragraph,
+                MarkdownElementType.Table,
+                MarkdownElementType.Separator,
+                MarkdownElementType.ListItem,
+                MarkdownElementType.ListItem,
+            ),
+            parsed.elements.map { it.type },
+        )
+        assertEquals("Title", parsed.elements[0].content)
+        assertEquals(1, parsed.elements[0].level)
+        assertEquals("Paragraph with **bold** text", parsed.elements[1].content)
+        assertEquals(parsed.tables.single().id, parsed.elements[2].content)
+        assertEquals("Dash item", parsed.elements[4].content)
+        assertEquals("Bullet item", parsed.elements[5].content)
+
+        val table = parsed.tables.single()
+        assertEquals(listOf("Header A", "Header B"), table.headers)
+        assertEquals(
+            listOf(
+                listOf("Value A", "Value B"),
+                listOf("Only A"),
+            ),
+            table.rows,
+        )
+    }
+
+    @Test
+    fun parseMarkdownTreatsSinglePipeLineAsParagraphLikeIos() {
+        val parsed = MarkdownParser.parseMarkdown("Use A | B as text")
+
+        assertEquals(1, parsed.elements.size)
+        assertEquals(MarkdownElementType.Paragraph, parsed.elements.single().type)
+        assertEquals("Use A | B as text", parsed.elements.single().content)
+        assertTrue(parsed.tables.isEmpty())
+    }
 
     @Test
     fun parsePatchNotesPreservesIosFeatureStructure() {
