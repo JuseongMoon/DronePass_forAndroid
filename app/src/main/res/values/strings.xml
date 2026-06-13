@@ -185,7 +185,7 @@
     <string name="shape_edit_end_date_select">종료일 선택</string>
     <string name="shape_edit_date_only_mode">일단위 입력</string>
     <string name="shape_edit_select_time">시간 선택</string>
-    <string name="date_time_done">완료</string>
+    <string name="date_time_done">선택 완료</string>
     <string name="shape_edit_section_memo">메모</string>
     <string name="shape_edit_label_memo">메모</string>
     <string name="shape_edit_placeholder_memo">메모를 입력하세요</string>

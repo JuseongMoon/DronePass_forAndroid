@@ -216,7 +216,7 @@ class StringResourceCoverageTest {
         )
         assertEquals("지원하는 좌표 형식:", stringResourceValue("values/strings.xml", "coordinate_format_title"))
         assertEquals("일단위 입력", stringResourceValue("values/strings.xml", "shape_edit_date_only_mode"))
-        assertEquals("완료", stringResourceValue("values/strings.xml", "date_time_done"))
+        assertEquals("선택 완료", stringResourceValue("values/strings.xml", "date_time_done"))
         assertEquals("좌표를 입력해주세요", stringResourceValue("values/strings.xml", "coordinate_placeholder"))
         assertEquals("잘못된 좌표 형식입니다", stringResourceValue("values/strings.xml", "coordinate_validation_invalid"))
         assertEquals("주소 검색", stringResourceValue("values/strings.xml", "search_address_title"))
