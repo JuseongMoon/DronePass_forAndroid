@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.RadioButtonChecked
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SettingsInputAntenna
 import androidx.compose.material.icons.filled.Tag
@@ -61,6 +62,7 @@ internal val AppInfoFeatureTitleDescriptionSpacing = 4.dp
 internal val AppInfoFeatureVerticalPadding = 4.dp
 internal val AppInfoFeatureHorizontalPadding = 16.dp
 internal val AppInfoKpIndexIcon: ImageVector = Icons.Default.SettingsInputAntenna
+internal val AppInfoShapeManagementIcon: ImageVector = Icons.Default.RadioButtonChecked
 
 internal fun appInfoVersionValue(versionName: String, versionCode: Int): String {
     return "$versionName ($versionCode)"
@@ -164,7 +166,7 @@ fun AppInfoScreen(
             Spacer(modifier = Modifier.height(16.dp))
             SectionHeader(title = stringResource(R.string.app_info_section_shapes_and_map))
             FeatureRow(
-                icon = Icons.Default.CheckCircle,
+                icon = AppInfoShapeManagementIcon,
                 iconColor = Color(0xFF5856D6),
                 title = stringResource(R.string.app_info_feature_shape_management_title),
                 description = stringResource(R.string.app_info_feature_shape_management_desc),

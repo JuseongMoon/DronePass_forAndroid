@@ -34,4 +34,9 @@ class AppInfoScreenTest {
     fun `KP 지수 기능 아이콘은 iOS antenna radiowaves 의미와 맞는 안테나 아이콘을 사용한다`() {
         assertEquals("Filled.SettingsInputAntenna", AppInfoKpIndexIcon.name)
     }
+
+    @Test
+    fun `도형 관리 기능 아이콘은 iOS circle circle fill 의미와 맞는 원형 아이콘을 사용한다`() {
+        assertEquals("Filled.RadioButtonChecked", AppInfoShapeManagementIcon.name)
+    }
 }
