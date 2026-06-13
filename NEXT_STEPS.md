@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- `3f620cb docs: record connected device smoke`
 - `3c84852 docs: record latest debug verification`
 - `10d5733 docs: record anonymized deletion parity check`
 - `4359d2e docs: record profile sync parity check`
@@ -328,7 +329,13 @@ iOS와 Android가 공유하는 `users/{uid}/shapes`, `users/{uid}/sketches`, `us
 - `스케치` 버튼 진입 후 하단 스케치 툴바, `지우개`, 되돌리기/다시 실행, `전체 삭제`, `완료` 컨트롤 렌더링과 완료 종료 확인. 새 스케치 저장 없음
 - 위 실기기 smoke 전 구간에서 앱 PID 유지, 최종 홈 화면 복귀, `AndroidRuntime:E` 크래시 로그 없음
 - 이어진 코드 대조에서 스케치 모드 툴바/제스처/Undo·Redo/지우개/완료 동기화 흐름과 도형 상세 외부지도/복사/메모 링크/드론 상태 표시가 iOS 구현과 맞는지 재확인
-- 스케치 실제 그리기/지우기/undo·redo/저장 후 재실행 복원, 실계정 FCM/로컬 알림 수신, 앱 삭제 후 재설치 동기화는 아직 별도 실검증 항목으로 유지
+- 스케치 실기기 실제 입력 smoke 진행: baseline 활성 스케치 0개에서 지도 위 stroke 1개 그리기, 삭제 배지 `1` 표시, undo 후 배지 제거, redo 후 배지 복원 확인
+- 같은 stroke에서 지우개 모드 삭제 후 배지 제거, undo 복원 후 배지 `1` 재표시 확인
+- `완료` 저장 후 Room `sketches where deletedAt is null` count가 1이고 points payload가 저장됨을 로컬 DB 덤프로 확인
+- 앱 force-stop 후 `MainActivity` 재실행, 스케치 모드 재진입 시 삭제 배지 `1`이 복원되어 저장 후 재실행 복원 확인
+- 검증용 stroke는 `전체 삭제` 확인 다이얼로그(`모든 스케치 삭제`, `1개의 스케치를 모두 삭제하시겠습니까?`)에서 `삭제`로 정리하고 `완료` 종료. 최종 활성 스케치 count는 0으로 baseline 복귀, soft-delete row는 iOS와 같은 삭제 tombstone으로 1개 남음
+- 위 스케치 실제 입력/재실행 smoke에서 앱 PID 유지, `AndroidRuntime:E` 크래시 로그 없음
+- 실계정 FCM/로컬 알림 수신, 앱 삭제 후 재설치 동기화는 아직 별도 실검증 항목으로 유지
 
 1. 지도 로드, 현재 위치 권한, 현재 위치 이동
 2. 원형 도형 생성, 저장, 편집, 삭제, 복제
