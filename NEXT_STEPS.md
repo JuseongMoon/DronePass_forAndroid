@@ -144,6 +144,7 @@
 - 저장/설정 오버레이가 열린 상태에서도 메인 하단 탭이 실제 터치 가능한 최상위 레이어에 남도록 보정
 - 저장 목록 행의 스와이프 삭제 빨간 배경/휴지통 아이콘이 평상시 노출되지 않고 end-to-start 스와이프 중에만 보이도록 보정
 - 프로필 내 정보 섹션을 iOS `ProfileView`처럼 컴팩트 묶음 행과 가입일 뒤 단일 divider 구조로 보정
+- 앱 정보 KP 지수 기능 아이콘을 iOS `antenna.radiowaves.left.and.right` 의미와 맞는 안테나 아이콘으로 보정
 - Shape 읽기는 iOS 파서처럼 빈 문자열/공백 제목을 보존하고, 쓰기 검증은 공백 제목을 계속 거부
 - 빈 제목 기존 Shape도 iOS처럼 기존 도형 편집으로 취급해 드론/반경/고도/비행 기간 초기값을 보존
 - Drone 읽기는 iOS Codable 파서처럼 빈 문자열/공백 이름을 보존하고, 쓰기 검증은 공백 이름을 계속 거부
@@ -390,6 +391,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 - 2026-06-13에 FCM data-only 알림 표시 제목/본문 추출을 공통 알림 키 정책으로 보정했다. `notification_title`/`notification_body`가 먼저 있으면 빈 문자열이어도 fallback하지 않고 보존한다. `:app:testDebugUnitTest --tests "*FcmServiceTest" --tests "*NotificationSchedulerTest" --tests "*NotificationPreferenceKeysTest" --tests "*UserLocationKeysTest" --tests "*MainScreenStartDestinationTest"`, `:app:assembleDebug` 통과 확인.
 - 2026-06-13에 로그인 화면 Google 버튼을 iOS `LoginView`의 흰 배경/검은 텍스트/그림자 버튼 톤으로 보정했다. `:app:testDebugUnitTest --tests "*Auth*Test" --tests "*StringResourceCoverageTest"`, `:app:assembleDebug` 통과 확인.
 - 2026-06-13에 프로필 내 정보 섹션을 iOS `ProfileView`의 컴팩트 `VStack(spacing: 8)` 구조와 가입일 뒤 단일 divider에 맞춰 보정했다. `:app:testDebugUnitTest --tests "*Profile*Test" --tests "*StringResourceCoverageTest"`, `:app:assembleDebug` 통과 확인.
+- 2026-06-13에 앱 정보 KP 지수 기능 아이콘을 iOS 안테나 아이콘 의미에 맞춰 보정했다. `:app:testDebugUnitTest --tests "*AppInfoScreenTest" --tests "*StringResourceCoverageTest"`, `:app:assembleDebug` 통과 확인.
 - 2026-06-13 누적 수정 후 `:app:testDebugUnitTest`, `:app:assembleDebug`, `:app:minifyReleaseWithR8` 전체 회귀를 재실행해 통과 확인. R8는 Naver Maps SDK stack map table 경고와 Play Services Location companion object 경고를 출력하지만 현재 build failure는 아님.
 - 2026-06-13 누적 수정 debug APK를 실기기 `RFCW324TZ0Z`에 `adb install -r`로 설치 후 MainActivity 실행 smoke 완료. UI dump에서 `지도` 노드와 Naver Map controls 렌더링 확인, 앱 PID 유지, `AndroidRuntime:E` 크래시 로그 없음.
 - `:app:minifyReleaseWithR8`는 현재 성공합니다.

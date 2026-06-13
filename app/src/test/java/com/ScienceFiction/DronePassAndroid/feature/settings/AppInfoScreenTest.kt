@@ -29,4 +29,9 @@ class AppInfoScreenTest {
         assertEquals(4.dp, AppInfoFeatureVerticalPadding)
         assertEquals(16.dp, AppInfoFeatureHorizontalPadding)
     }
+
+    @Test
+    fun `KP 지수 기능 아이콘은 iOS antenna radiowaves 의미와 맞는 안테나 아이콘을 사용한다`() {
+        assertEquals("Filled.SettingsInputAntenna", AppInfoKpIndexIcon.name)
+    }
 }

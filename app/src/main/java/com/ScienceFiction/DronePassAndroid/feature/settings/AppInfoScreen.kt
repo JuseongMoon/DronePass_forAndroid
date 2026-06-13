@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.SettingsInputAntenna
 import androidx.compose.material.icons.filled.Tag
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -59,6 +60,7 @@ internal val AppInfoFeatureHorizontalSpacing = 12.dp
 internal val AppInfoFeatureTitleDescriptionSpacing = 4.dp
 internal val AppInfoFeatureVerticalPadding = 4.dp
 internal val AppInfoFeatureHorizontalPadding = 16.dp
+internal val AppInfoKpIndexIcon: ImageVector = Icons.Default.SettingsInputAntenna
 
 internal fun appInfoVersionValue(versionName: String, versionCode: Int): String {
     return "$versionName ($versionCode)"
@@ -146,7 +148,7 @@ fun AppInfoScreen(
             )
             HorizontalDivider(modifier = Modifier.padding(start = 64.dp))
             FeatureRow(
-                icon = Icons.Default.AirplanemodeActive,
+                icon = AppInfoKpIndexIcon,
                 iconColor = Color(0xFFAF52DE),
                 title = stringResource(R.string.app_info_feature_kp_index_title),
                 description = stringResource(R.string.app_info_feature_kp_index_desc),
