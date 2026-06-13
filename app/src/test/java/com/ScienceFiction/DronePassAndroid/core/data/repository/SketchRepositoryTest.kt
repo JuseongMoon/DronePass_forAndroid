@@ -106,6 +106,63 @@ class SketchRepositoryTest {
         assertTrue(afterRestore.pendingDeleteIds.isEmpty())
     }
 
+    @Test
+    fun `첫 동기화의 서버 누락 로컬 스케치는 업로드 대상으로 유지한다`() {
+        val local = sketchModel(id = "local", deletedAt = null, updatedAt = 1L)
+
+        val result = mergeSketchesForFullSync(
+            localSketches = listOf(local),
+            serverSketches = emptyList(),
+            lastSyncTime = null,
+        )
+
+        assertEquals(listOf("local"), result.merged.map { it.id })
+        assertEquals(listOf("local"), result.toUpload.map { it.id })
+    }
+
+    @Test
+    fun `이전 동기화 이후 서버에서 사라진 로컬 스케치는 되살리지 않는다`() {
+        val local = sketchModel(id = "stale", deletedAt = null, updatedAt = 100L)
+
+        val result = mergeSketchesForFullSync(
+            localSketches = listOf(local),
+            serverSketches = emptyList(),
+            lastSyncTime = 200L,
+        )
+
+        assertTrue(result.merged.isEmpty())
+        assertTrue(result.toUpload.isEmpty())
+    }
+
+    @Test
+    fun `마지막 동기화 이후 수정된 로컬 스케치는 서버에 없어도 업로드한다`() {
+        val local = sketchModel(id = "newer", deletedAt = null, updatedAt = 300L)
+
+        val result = mergeSketchesForFullSync(
+            localSketches = listOf(local),
+            serverSketches = emptyList(),
+            lastSyncTime = 200L,
+        )
+
+        assertEquals(listOf("newer"), result.merged.map { it.id })
+        assertEquals(listOf("newer"), result.toUpload.map { it.id })
+    }
+
+    @Test
+    fun `서버 소프트 삭제가 더 최신이면 로컬 활성 스케치보다 우선한다`() {
+        val local = sketchModel(id = "same", deletedAt = null, updatedAt = 100L)
+        val serverDeleted = sketchModel(id = "same", deletedAt = 200L, updatedAt = 200L)
+
+        val result = mergeSketchesForFullSync(
+            localSketches = listOf(local),
+            serverSketches = listOf(serverDeleted),
+            lastSyncTime = 150L,
+        )
+
+        assertEquals(serverDeleted, result.merged.single())
+        assertTrue(result.toUpload.isEmpty())
+    }
+
     private fun sketchModel(
         id: String,
         deletedAt: Long?,

@@ -36,6 +36,9 @@ interface SketchDao {
     @Delete
     suspend fun deleteSketch(sketch: SketchEntity)
 
+    @Query("DELETE FROM sketches WHERE id IN (:ids)")
+    suspend fun deleteSketchesByIds(ids: List<String>)
+
     @Query("DELETE FROM sketches")
     suspend fun deleteAllSketches()
 }

@@ -9,8 +9,8 @@ import com.ScienceFiction.DronePassAndroid.core.data.local.room.mapper.toDomain
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.mapper.toEntity
 import com.ScienceFiction.DronePassAndroid.core.data.remote.firebase.SketchFirebaseStore
 import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncPreferenceKeys
+import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncMergeResult
 import com.ScienceFiction.DronePassAndroid.core.data.sync.filterServerNewer
-import com.ScienceFiction.DronePassAndroid.core.data.sync.mergeLWW
 import com.ScienceFiction.DronePassAndroid.core.data.sync.shouldUpdateServerMetadataAfterFullSync
 import com.ScienceFiction.DronePassAndroid.domain.model.SketchModel
 import com.ScienceFiction.DronePassAndroid.domain.model.validateForFirebasePersistence
@@ -21,6 +21,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -66,6 +67,45 @@ internal fun trackSketchDeleteForEditSession(
             pendingDeleteIds = plan.pendingDeleteIds - sketchId,
         )
     }
+}
+
+internal fun shouldKeepLocalSketchMissingOnServer(
+    localSketchUpdatedAt: Long,
+    lastSyncTime: Long?,
+): Boolean {
+    return lastSyncTime == null || localSketchUpdatedAt > lastSyncTime
+}
+
+internal fun mergeSketchesForFullSync(
+    localSketches: List<SketchModel>,
+    serverSketches: List<SketchModel>,
+    lastSyncTime: Long?,
+): SyncMergeResult<SketchModel> {
+    val serverById = serverSketches.associateBy { it.id }
+    val localById = localSketches.associateBy { it.id }
+    val allIds = serverById.keys + localById.keys
+
+    val merged = allIds.mapNotNull { id ->
+        val local = localById[id]
+        val server = serverById[id]
+        when {
+            local != null && server != null -> if (server.updatedAt >= local.updatedAt) server else local
+            local != null -> local.takeIf {
+                shouldKeepLocalSketchMissingOnServer(
+                    localSketchUpdatedAt = it.updatedAt,
+                    lastSyncTime = lastSyncTime,
+                )
+            }
+            else -> server
+        }
+    }
+
+    val toUpload = merged.filter { sketch ->
+        val server = serverById[sketch.id]
+        server == null || sketch.updatedAt > server.updatedAt
+    }
+
+    return SyncMergeResult(merged, toUpload)
 }
 
 @Singleton
@@ -393,12 +433,26 @@ class SketchRepository @Inject constructor(
                 .getOrThrow()
                 .filterValidForFirebaseWrite("syncFromFirebase/server")
             val localSketches = sketchDao.getAllSketchesOnce().map { it.toDomain() }
+            val lastSyncTime = dataStore.data.first()[SyncPreferenceKeys.LAST_SKETCH_SYNC_TIME]
+            val serverIds = serverSketches.mapTo(mutableSetOf()) { it.id }
+            val staleLocalIds = localSketches
+                .filter { it.id !in serverIds }
+                .filterNot {
+                    shouldKeepLocalSketchMissingOnServer(
+                        localSketchUpdatedAt = it.updatedAt,
+                        lastSyncTime = lastSyncTime,
+                    )
+                }
+                .map { it.id }
             val toApply = filterServerNewer(
                 local = localSketches,
                 server = serverSketches,
                 idOf = { it.id },
                 updatedAtOf = { it.updatedAt },
             )
+            if (staleLocalIds.isNotEmpty()) {
+                sketchDao.deleteSketchesByIds(staleLocalIds)
+            }
             if (toApply.isNotEmpty()) {
                 sketchDao.insertSketches(toApply.map { it.toEntity() })
             }
@@ -410,7 +464,11 @@ class SketchRepository @Inject constructor(
     }
 
     /**
-     * 양방향 동기화 (LWW 충돌 해결). [mergeLWW] 헬퍼 사용.
+     * 양방향 동기화 (LWW 충돌 해결).
+     *
+     * 서버에 없는 로컬 스케치는 상대 플랫폼/계정 정리/레거시 hard delete 등으로
+     * 문서가 실제 삭제된 경우일 수 있다. 마지막 Sketch 동기화 시각 이전 항목이면
+     * 원격 삭제로 보고 재업로드하지 않는다.
      */
     suspend fun performFullSync() {
         val userId = auth.currentUser?.uid ?: run {
@@ -425,14 +483,21 @@ class SketchRepository @Inject constructor(
             val serverSketches = sketchFirebaseStore.loadAllSketchesIncludingDeleted(userId)
                 .getOrThrow()
                 .filterValidForFirebaseWrite("performFullSync/server")
+            val lastSyncTime = dataStore.data.first()[SyncPreferenceKeys.LAST_SKETCH_SYNC_TIME]
 
-            val result = mergeLWW(
-                local = localSketches,
-                server = serverSketches,
-                idOf = { it.id },
-                updatedAtOf = { it.updatedAt },
+            val result = mergeSketchesForFullSync(
+                localSketches = localSketches,
+                serverSketches = serverSketches,
+                lastSyncTime = lastSyncTime,
             )
 
+            val mergedIds = result.merged.mapTo(mutableSetOf()) { it.id }
+            val staleLocalIds = localSketches
+                .map { it.id }
+                .filter { it !in mergedIds }
+            if (staleLocalIds.isNotEmpty()) {
+                sketchDao.deleteSketchesByIds(staleLocalIds)
+            }
             if (result.merged.isNotEmpty()) {
                 sketchDao.insertSketches(result.merged.map { it.toEntity() })
             }
