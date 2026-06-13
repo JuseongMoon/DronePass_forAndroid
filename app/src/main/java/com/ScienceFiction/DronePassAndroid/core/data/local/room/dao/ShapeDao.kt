@@ -36,6 +36,9 @@ interface ShapeDao {
     @Delete
     suspend fun deleteShape(shape: ShapeEntity)
 
+    @Query("DELETE FROM shapes WHERE id IN (:ids)")
+    suspend fun deleteShapesByIds(ids: List<String>)
+
     @Query("DELETE FROM shapes")
     suspend fun deleteAllShapes()
 

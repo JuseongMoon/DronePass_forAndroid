@@ -10,8 +10,8 @@ import com.ScienceFiction.DronePassAndroid.core.data.local.room.mapper.toDomain
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.mapper.toEntity
 import com.ScienceFiction.DronePassAndroid.core.data.remote.firebase.ShapeFirebaseStore
 import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncPreferenceKeys
+import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncMergeResult
 import com.ScienceFiction.DronePassAndroid.core.data.sync.filterServerNewer
-import com.ScienceFiction.DronePassAndroid.core.data.sync.mergeLWW
 import com.ScienceFiction.DronePassAndroid.core.data.sync.shouldUpdateServerMetadataAfterFullSync
 import com.ScienceFiction.DronePassAndroid.core.data.storedEndDateAlarmEnabled
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
@@ -61,6 +61,45 @@ internal fun softDeleteExpiredShapeEntities(
                 updatedAt = now,
             )
         }
+}
+
+internal fun shouldKeepLocalShapeMissingOnServer(
+    localShapeUpdatedAt: Long,
+    lastSyncTime: Long?,
+): Boolean {
+    return lastSyncTime == null || localShapeUpdatedAt > lastSyncTime
+}
+
+internal fun mergeShapesForFullSync(
+    localShapes: List<ShapeModel>,
+    serverShapes: List<ShapeModel>,
+    lastSyncTime: Long?,
+): SyncMergeResult<ShapeModel> {
+    val serverById = serverShapes.associateBy { it.id }
+    val localById = localShapes.associateBy { it.id }
+    val allIds = serverById.keys + localById.keys
+
+    val merged = allIds.mapNotNull { id ->
+        val local = localById[id]
+        val server = serverById[id]
+        when {
+            local != null && server != null -> if (server.updatedAt >= local.updatedAt) server else local
+            local != null -> local.takeIf {
+                shouldKeepLocalShapeMissingOnServer(
+                    localShapeUpdatedAt = it.updatedAt,
+                    lastSyncTime = lastSyncTime,
+                )
+            }
+            else -> server
+        }
+    }
+
+    val toUpload = merged.filter { shape ->
+        val server = serverById[shape.id]
+        server == null || shape.updatedAt > server.updatedAt
+    }
+
+    return SyncMergeResult(merged, toUpload)
 }
 
 @Singleton
@@ -325,14 +364,33 @@ class ShapeRepository @Inject constructor(
                 .getOrThrow()
                 .filterValidForFirebaseWrite("syncFromFirebase/server")
             val localShapes = shapeDao.getAllShapesOnce().map { it.toDomain() }
+            val lastSyncTime = dataStore.data.first()[SyncPreferenceKeys.LAST_SYNC_TIME]
+            val serverIds = serverShapes.mapTo(mutableSetOf()) { it.id }
+            val staleLocalIds = localShapes
+                .filter { it.id !in serverIds }
+                .filterNot {
+                    shouldKeepLocalShapeMissingOnServer(
+                        localShapeUpdatedAt = it.updatedAt,
+                        lastSyncTime = lastSyncTime,
+                    )
+                }
+                .map { it.id }
             val toApply = filterServerNewer(
                 local = localShapes,
                 server = serverShapes,
                 idOf = { it.id },
                 updatedAtOf = { it.updatedAt },
             )
+            var shouldReconcileAlarms = false
+            if (staleLocalIds.isNotEmpty()) {
+                shapeDao.deleteShapesByIds(staleLocalIds)
+                shouldReconcileAlarms = true
+            }
             if (toApply.isNotEmpty()) {
                 shapeDao.insertShapes(toApply.map { it.toEntity() })
+                shouldReconcileAlarms = true
+            }
+            if (shouldReconcileAlarms) {
                 reconcileEndDateAlarmsWithLocalShapes()
             }
             Log.d(TAG, "syncFromFirebase: 서버=${serverShapes.size}, LWW 통과=${toApply.size}")
@@ -343,7 +401,11 @@ class ShapeRepository @Inject constructor(
     }
 
     /**
-     * 양방향 동기화 (LWW 충돌 해결). [mergeLWW] 헬퍼 사용.
+     * 양방향 동기화 (LWW 충돌 해결).
+     *
+     * 서버에 없는 로컬 도형은 상대 플랫폼/계정 정리/레거시 hard delete 등으로
+     * 문서가 실제 삭제된 경우일 수 있다. 마지막 Shape/Drone 동기화 시각 이전
+     * 항목이면 원격 삭제로 보고 재업로드하지 않는다.
      */
     suspend fun performFullSync() {
         val userId = auth.currentUser?.uid ?: run {
@@ -358,17 +420,28 @@ class ShapeRepository @Inject constructor(
             val serverShapes = shapeFirebaseStore.loadAllShapesIncludingDeleted(userId)
                 .getOrThrow()
                 .filterValidForFirebaseWrite("performFullSync/server")
+            val lastSyncTime = dataStore.data.first()[SyncPreferenceKeys.LAST_SYNC_TIME]
 
-            val result = mergeLWW(
-                local = localShapes,
-                server = serverShapes,
-                idOf = { it.id },
-                updatedAtOf = { it.updatedAt },
+            val result = mergeShapesForFullSync(
+                localShapes = localShapes,
+                serverShapes = serverShapes,
+                lastSyncTime = lastSyncTime,
             )
 
-            // Room: 머지 결과 배치 저장
+            val mergedIds = result.merged.mapTo(mutableSetOf()) { it.id }
+            val staleLocalIds = localShapes
+                .map { it.id }
+                .filter { it !in mergedIds }
+            var shouldReconcileAlarms = false
+            if (staleLocalIds.isNotEmpty()) {
+                shapeDao.deleteShapesByIds(staleLocalIds)
+                shouldReconcileAlarms = true
+            }
             if (result.merged.isNotEmpty()) {
                 shapeDao.insertShapes(result.merged.map { it.toEntity() })
+                shouldReconcileAlarms = true
+            }
+            if (shouldReconcileAlarms) {
                 reconcileEndDateAlarmsWithLocalShapes()
             }
 
