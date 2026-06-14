@@ -10,27 +10,28 @@ internal fun reverseGeocodingResultsToAddress(results: List<ReverseGeocodingResu
     val roadAddress = results
         .firstOrNull { it.name == "roadaddr" }
         ?.let(::buildRoadAddress)
-        ?.takeIf { it.isNotBlank() }
+        ?.takeIf { it.isNotEmpty() }
     if (roadAddress != null) return roadAddress
 
     return results
         .firstOrNull { it.name == "addr" }
         ?.let(::buildJibunAddress)
-        ?.takeIf { it.isNotBlank() }
+        ?.takeIf { it.isNotEmpty() }
         ?: ""
 }
 
 private fun buildRoadAddress(result: ReverseGeocodingResult): String {
     val parts = mutableListOf<String>()
 
-    result.region.area1?.name?.takeIf { it.isNotBlank() }?.let { parts.add(it) }
-    result.region.area2?.name?.takeIf { it.isNotBlank() }?.let { parts.add(it) }
-    result.region.area3?.name?.takeIf { it.isNotBlank() }?.let { parts.add(it) }
+    result.region.area1?.name?.let { parts.add(it) }
+    result.region.area2?.name?.let { parts.add(it) }
+    result.region.area3?.name?.let { parts.add(it) }
 
     result.land?.let { land ->
-        land.name?.takeIf { it.isNotBlank() }?.let { parts.add(it) }
-        land.number1?.takeIf { it.isNotBlank() }?.let { number1 ->
-            val number = if (!land.number2.isNullOrBlank()) {
+        land.name?.let { roadName ->
+            parts.add(roadName)
+            val number1 = land.number1.orEmpty()
+            val number = if (!land.number2.isNullOrEmpty()) {
                 "$number1-${land.number2}"
             } else {
                 number1
@@ -40,7 +41,7 @@ private fun buildRoadAddress(result: ReverseGeocodingResult): String {
         land.addition0
             ?.takeIf { it.type == "building" }
             ?.value
-            ?.takeIf { it.isNotBlank() }
+            ?.takeIf { it.isNotEmpty() }
             ?.let { parts.add("($it)") }
     }
 
@@ -50,13 +51,13 @@ private fun buildRoadAddress(result: ReverseGeocodingResult): String {
 private fun buildJibunAddress(result: ReverseGeocodingResult): String {
     val parts = mutableListOf<String>()
 
-    result.region.area1?.name?.takeIf { it.isNotBlank() }?.let { parts.add(it) }
-    result.region.area2?.name?.takeIf { it.isNotBlank() }?.let { parts.add(it) }
-    result.region.area3?.name?.takeIf { it.isNotBlank() }?.let { parts.add(it) }
+    result.region.area1?.name?.let { parts.add(it) }
+    result.region.area2?.name?.let { parts.add(it) }
+    result.region.area3?.name?.let { parts.add(it) }
 
     result.land?.let { land ->
-        land.number1?.takeIf { it.isNotBlank() }?.let { number1 ->
-            val number = if (!land.number2.isNullOrBlank()) {
+        land.number1?.takeIf { it.isNotEmpty() }?.let { number1 ->
+            val number = if (!land.number2.isNullOrEmpty()) {
                 "$number1-${land.number2}"
             } else {
                 number1

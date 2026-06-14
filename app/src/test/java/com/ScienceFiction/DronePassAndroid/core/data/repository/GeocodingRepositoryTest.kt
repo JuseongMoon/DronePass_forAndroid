@@ -70,6 +70,63 @@ class GeocodingRepositoryTest {
         assertEquals("", address)
     }
 
+    @Test
+    fun `도로명 주소 빈 문자열 구성 요소도 iOS처럼 제거하지 않는다`() {
+        val address = reverseGeocodingResultsToAddress(
+            listOf(
+                result(
+                    name = "roadaddr",
+                    region = region(area1 = "", area2 = " ", area3 = "역삼동"),
+                    land = land(name = "", number1 = "12", number2 = " "),
+                ),
+            ),
+        )
+
+        assertEquals("   역삼동  12- ", address)
+    }
+
+    @Test
+    fun `도로명이 nil 이면 iOS처럼 도로명 건물번호를 붙이지 않는다`() {
+        val address = reverseGeocodingResultsToAddress(
+            listOf(
+                result(
+                    name = "roadaddr",
+                    land = land(name = null, number1 = "12", number2 = "3"),
+                ),
+            ),
+        )
+
+        assertEquals("서울특별시 강남구 역삼동", address)
+    }
+
+    @Test
+    fun `도로명 건물명은 iOS처럼 빈 문자열만 제외하고 공백은 보존한다`() {
+        val address = reverseGeocodingResultsToAddress(
+            listOf(
+                result(
+                    name = "roadaddr",
+                    land = land(name = "테헤란로", number1 = "1", buildingName = " "),
+                ),
+            ),
+        )
+
+        assertEquals("서울특별시 강남구 역삼동 테헤란로 1 ( )", address)
+    }
+
+    @Test
+    fun `지번 주소도 iOS처럼 빈 문자열이 아닌 공백 지번을 보존한다`() {
+        val address = reverseGeocodingResultsToAddress(
+            listOf(
+                result(
+                    name = "addr",
+                    land = land(number1 = " ", number2 = "2"),
+                ),
+            ),
+        )
+
+        assertEquals("서울특별시 강남구 역삼동  -2", address)
+    }
+
     private fun result(
         name: String,
         region: ReverseGeocodingRegion = region(),
@@ -83,12 +140,16 @@ class GeocodingRepositoryTest {
         )
     }
 
-    private fun region(): ReverseGeocodingRegion {
+    private fun region(
+        area1: String = "서울특별시",
+        area2: String = "강남구",
+        area3: String = "역삼동",
+    ): ReverseGeocodingRegion {
         return ReverseGeocodingRegion(
             area0 = null,
-            area1 = RegionArea(name = "서울특별시", coords = null),
-            area2 = RegionArea(name = "강남구", coords = null),
-            area3 = RegionArea(name = "역삼동", coords = null),
+            area1 = RegionArea(name = area1, coords = null),
+            area2 = RegionArea(name = area2, coords = null),
+            area3 = RegionArea(name = area3, coords = null),
             area4 = null,
         )
     }
