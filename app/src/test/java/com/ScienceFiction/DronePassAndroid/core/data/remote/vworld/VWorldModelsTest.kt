@@ -173,6 +173,26 @@ class VWorldModelsTest {
     }
 
     @Test
+    fun `구역 코드 문자열 파싱은 iOS as String 처럼 빈 문자열을 보존하고 숫자를 거부한다`() {
+        assertEquals(
+            "",
+            FlightZoneLayer.ULTRALIGHT.resolveZoneCode(
+                featureId = "lt_c_aisuac.1",
+                properties = mapOf(
+                    "uac_lbl_1" to "",
+                    "name_txt" to "fallback name",
+                )
+            )
+        )
+        assertNull(
+            FlightZoneLayer.PROHIBITED.resolveZoneCode(
+                featureId = "lt_c_aisprhc.1",
+                properties = mapOf("prh_lbl_1" to 73)
+            )
+        )
+    }
+
+    @Test
     fun `국립공원은 iOS처럼 Feature ID로 이름을 매핑한다`() {
         assertEquals(
             "북한산국립공원사무소",

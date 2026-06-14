@@ -19,6 +19,12 @@ import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
 import javax.inject.Singleton
 
+internal fun resolveParsedVWorldZoneCode(
+    layer: FlightZoneLayer,
+    featureId: String?,
+    properties: Map<String, Any?>,
+): String? = layer.resolveZoneCode(featureId, properties)
+
 /**
  * VWorld 비행구역 데이터 Repository
  *
@@ -196,9 +202,7 @@ class VWorldRepository @Inject constructor(
 
         val props = feature.properties ?: emptyMap()
 
-        val zoneCode = layer.resolveZoneCode(feature.id, props)
-            ?: props.stringProp("code")
-            ?: props.stringProp("zoneCode")
+        val zoneCode = resolveParsedVWorldZoneCode(layer, feature.id, props)
         val zoneName = props.stringProp("name")
             ?: props.stringProp("zoneName")
             ?: props.stringProp("kor_nm")

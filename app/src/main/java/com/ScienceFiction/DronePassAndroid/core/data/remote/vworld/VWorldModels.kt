@@ -73,9 +73,9 @@ data class DroneZoneFeature(
     val polygonRings: List<List<List<Pair<Double, Double>>>> = polygons.map { listOf(it) }
 )
 
-/** properties Map 에서 String 값을 안전하게 꺼낸다 (Any? → trimmed String? 또는 null). */
+/** properties Map 에서 iOS `as? String` 과 같이 String 값만 그대로 꺼낸다. */
 internal fun Map<String, Any?>.stringProp(key: String): String? =
-    this[key]?.toString()?.takeIf { it.isNotBlank() }
+    this[key] as? String
 
 /**
  * iOS `DroneZoneFeature.zoneCode` 와 동일한 레이어별 대표 코드/이름 매핑.
