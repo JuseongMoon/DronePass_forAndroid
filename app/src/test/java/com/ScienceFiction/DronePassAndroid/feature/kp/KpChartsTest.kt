@@ -109,6 +109,11 @@ class KpChartsTest {
     }
 
     @Test
+    fun `auto refresh interval matches iOS KP forecast five minute loop`() {
+        assertEquals(5 * 60 * 1000L, KpAutoRefreshIntervalMs)
+    }
+
+    @Test
     fun `current KP card level name uses iOS localizedName resources`() {
         assertEquals(R.string.kp_info_level_normal_name, kpLevelNameRes(KpLevel.NORMAL))
         assertEquals(R.string.kp_info_level_g1_name, kpLevelNameRes(KpLevel.G1))

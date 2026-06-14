@@ -38,6 +38,8 @@ internal data class KpDataLoadPlan(
     val forceRefresh: Boolean,
 )
 
+internal const val KpAutoRefreshIntervalMs = 5 * 60 * 1000L
+
 internal fun resolveKpDataLoadPlan(
     trigger: KpDataLoadTrigger,
     hasCurrentKp: Boolean,
@@ -65,10 +67,6 @@ class KpViewModel @Inject constructor(
     private val kpRepository: KpIndexRepository,
     private val analyticsLogger: AnalyticsLogger
 ) : ViewModel() {
-
-    companion object {
-        private const val AUTO_REFRESH_INTERVAL_MS = 5 * 60 * 1000L // 5분
-    }
 
     private val _currentKp = MutableStateFlow<KpIndexData?>(null)
     val currentKp: StateFlow<KpIndexData?> = _currentKp.asStateFlow()
@@ -204,7 +202,7 @@ class KpViewModel @Inject constructor(
         if (autoRefreshJob?.isActive == true) return
         autoRefreshJob = viewModelScope.launch {
             while (isActive) {
-                delay(AUTO_REFRESH_INTERVAL_MS)
+                delay(KpAutoRefreshIntervalMs)
                 loadKpData(trigger = KpDataLoadTrigger.AutoRefresh, showRefreshMessage = true)
             }
         }
