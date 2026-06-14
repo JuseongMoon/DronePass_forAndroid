@@ -22,9 +22,9 @@ import com.ScienceFiction.DronePassAndroid.core.data.storedSunriseAlarmEnabled
 import com.ScienceFiction.DronePassAndroid.core.data.storedSunsetAlarmEnabled
 import com.ScienceFiction.DronePassAndroid.feature.auth.AuthRepository
 import com.ScienceFiction.DronePassAndroid.feature.auth.AuthState
-import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 import com.ScienceFiction.DronePassAndroid.service.FcmService
 import com.ScienceFiction.DronePassAndroid.service.NotificationScheduler
+import com.ScienceFiction.DronePassAndroid.service.buildEndDateAlarmReconcilePlan
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
@@ -43,20 +43,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
-
-internal data class EndDateAlarmReconcilePlan(
-    val cancelShapeIds: List<String>,
-    val shapesToSchedule: List<ShapeModel>,
-)
-
-internal fun buildEndDateAlarmReconcilePlan(shapes: List<ShapeModel>): EndDateAlarmReconcilePlan {
-    return EndDateAlarmReconcilePlan(
-        cancelShapeIds = shapes.map { it.id },
-        shapesToSchedule = shapes.filter { shape ->
-            !shape.isDeleted && !shape.isExpired && shape.flightEndDate != null
-        },
-    )
-}
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(

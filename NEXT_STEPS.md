@@ -11,7 +11,7 @@
 | 항목 | 값 |
 |---|---|
 | 워킹 트리 | clean |
-| 주요 검증 | `:app:testDebugUnitTest`, `:app:assembleDebug`, `:app:minifyReleaseWithR8`, `:app:testDebugUnitTest --tests "*MainScreenStartDestinationTest"`, `:app:testDebugUnitTest --tests "*MapScreenLayersTest" --tests "*SettingsPreferenceKeysTest"` 통과 |
+| 주요 검증 | `:app:testDebugUnitTest`, `:app:assembleDebug`, `:app:minifyReleaseWithR8`, `:app:testDebugUnitTest --tests "*MainScreenStartDestinationTest"`, `:app:testDebugUnitTest --tests "*MapScreenLayersTest" --tests "*SettingsPreferenceKeysTest"`, `:app:testDebugUnitTest --tests "*SettingsPreferenceKeysTest" --tests "*NotificationPreferenceKeysTest" --tests "*SettingsEndDateAlarmPlanTest" --tests "*MainActivityKeepScreenAwakeTest"` 통과 |
 | Release readiness | 2026-06-14에 실제 `keystore.properties` 또는 `WEB_CLIENT_ID`가 없으면 `assembleRelease`/`bundleRelease`가 의도적으로 실패함을 재확인 |
 | 남은 성격 | 실기기 전체 회귀, 콘솔/스토어 운영 설정, 최종 iOS 동기화 검증 |
 
@@ -112,7 +112,6 @@
 - 앱정보 화면 섹션/문구/버전 표시 구조
 - 로그인/프로필 약관·개인정보 시트 흐름
 - 앱 언어 초기값, 문서 URL 언어 분기, 문서 캐시 path 분리
-- 알림 예약 로직과 부팅 후 재예약
 - 계정/로그인/로그아웃/계정삭제/실시간 동기화 흐름
 - Sketch Firestore 직렬화/파싱 계약
 - 저장 목록 도형 탭 → 지도 포커스/줌/하이라이트 흐름
@@ -184,6 +183,7 @@
 - 스케치 오버레이를 iOS처럼 현재 지도 bounds와 겹치는 스케치만 렌더링하도록 보정
 - VWorld 상세 고도 행을 상한/하한 중 하나만 있어도 표시하도록 보정
 - 일출/일몰 알림 재예약을 iOS처럼 실제 사용자 위치 기반 날씨에만 수행
+- 앱 시작/부팅 후 종료일 알림 복원을 iOS `SettingManager.restoreNotificationSchedules`처럼 기존 도형별 알림을 먼저 취소한 뒤 활성 미래 도형만 다시 예약하도록 보정
 - 드론 선택 버튼 높이와 드롭다운 원 지름/상단 정렬 일치
 - Shape full-sync/download에서 마지막 Shape/Drone 동기화 이전에 서버에서 사라진 로컬 도형을 원격 삭제로 보고 재업로드/재노출하지 않도록 보정하고 종료일 알림을 재조정
 - Sketch full-sync/download에서 마지막 Sketch 동기화 이전에 서버에서 사라진 로컬 스케치를 원격 삭제로 보고 재업로드/재노출하지 않도록 보정

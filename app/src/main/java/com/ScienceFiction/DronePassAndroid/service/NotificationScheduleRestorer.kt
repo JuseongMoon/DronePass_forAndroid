@@ -108,15 +108,17 @@ class NotificationScheduleRestorer @Inject constructor(
     }
 
     private suspend fun rescheduleEndDateAlarms() {
-        shapeRepository.getActiveShapes().first()
-            .filter { it.flightEndDate != null && !it.isExpired }
-            .forEach { shape ->
-                val flightEndDate = shape.flightEndDate ?: return@forEach
-                notificationScheduler.scheduleEndDateAlarm(
-                    shapeId = shape.id,
-                    flightEndDate = flightEndDate,
-                    shapeTitle = shape.title,
-                )
-            }
+        val plan = buildEndDateAlarmReconcilePlan(shapeRepository.getAllShapes().first())
+        plan.cancelShapeIds.forEach { shapeId ->
+            notificationScheduler.cancelEndDateAlarm(shapeId)
+        }
+        plan.shapesToSchedule.forEach { shape ->
+            val flightEndDate = shape.flightEndDate ?: return@forEach
+            notificationScheduler.scheduleEndDateAlarm(
+                shapeId = shape.id,
+                flightEndDate = flightEndDate,
+                shapeTitle = shape.title,
+            )
+        }
     }
 }

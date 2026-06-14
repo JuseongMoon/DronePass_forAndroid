@@ -1,6 +1,7 @@
 package com.ScienceFiction.DronePassAndroid.feature.settings
 
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
+import com.ScienceFiction.DronePassAndroid.service.buildEndDateAlarmReconcilePlan
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
