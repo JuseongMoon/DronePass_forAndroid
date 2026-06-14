@@ -104,8 +104,8 @@
     <string name="weather_gust_warning">Local gust risk</string>
 
     <!-- KpForecastScreen -->
-    <string name="kp_title">KP Index</string>
-    <string name="kp_current">Current KP Index</string>
+    <string name="kp_title" tools:ignore="UnusedResources">KP Index</string>
+    <string name="kp_current" tools:ignore="UnusedResources">Current KP Index</string>
     <string name="kp_no_data">No data available</string>
 
     <!-- SavedListScreen -->
@@ -132,7 +132,7 @@
     <string name="shape_detail_copied">Copied</string>
 
     <!-- ShapeEditScreen -->
-    <string name="shape_edit_label_coordinate">Coordinates</string>
+    <string name="shape_edit_label_coordinate" tools:ignore="UnusedResources">Coordinates</string>
     <string name="shape_edit_label_address">Address</string>
     <string name="shape_edit_placeholder_address">Search address</string>
     <string name="shape_edit_section_flight_period">Flight period</string>
@@ -268,10 +268,10 @@
     <string name="settings_keep_screen_awake">Keep screen on</string>
     <string name="settings_keep_screen_awake_subtitle">Screen won\'t turn off automatically while using the app.</string>
     <string name="settings_section_app_info">App</string>
-    <string name="settings_delete_account">Delete Account</string>
-    <string name="settings_delete_account_subtitle">Only the account will be deleted. Local data will remain available.</string>
-    <string name="settings_delete_account_confirm">Your account will be deleted and cloud sync will stop.\n\nShapes and drones saved on this device will remain available.\n\nAre you sure you want to delete your account?</string>
-    <string name="settings_delete_account_button">Delete</string>
+    <string name="settings_delete_account" tools:ignore="UnusedResources">Delete Account</string>
+    <string name="settings_delete_account_subtitle" tools:ignore="UnusedResources">Only the account will be deleted. Local data will remain available.</string>
+    <string name="settings_delete_account_confirm" tools:ignore="UnusedResources">Your account will be deleted and cloud sync will stop.\n\nShapes and drones saved on this device will remain available.\n\nAre you sure you want to delete your account?</string>
+    <string name="settings_delete_account_button" tools:ignore="UnusedResources">Delete</string>
     <string name="settings_section_notifications">Notifications</string>
     <string name="settings_sunrise_alarm">Sunrise notifications</string>
     <string name="settings_sunrise_alarm_subtitle">Receive notifications 30 and 10 minutes before sunrise.</string>

@@ -105,8 +105,8 @@
     <string name="weather_gust_warning">국지 돌풍 위험</string>
 
     <!-- KpForecastScreen -->
-    <string name="kp_title">KP 지수</string>
-    <string name="kp_current">현재 KP 지수</string>
+    <string name="kp_title" tools:ignore="UnusedResources">KP 지수</string>
+    <string name="kp_current" tools:ignore="UnusedResources">현재 KP 지수</string>
     <string name="kp_no_data">데이터가 없습니다</string>
 
     <!-- SavedListScreen -->
@@ -133,7 +133,7 @@
     <string name="shape_detail_copied">복사되었습니다</string>
 
     <!-- ShapeEditScreen -->
-    <string name="shape_edit_label_coordinate">좌표</string>
+    <string name="shape_edit_label_coordinate" tools:ignore="UnusedResources">좌표</string>
     <string name="shape_edit_label_address">주소</string>
     <string name="shape_edit_placeholder_address">주소를 검색하세요</string>
     <string name="shape_edit_section_flight_period">비행 기간</string>
@@ -270,10 +270,10 @@
     <string name="settings_keep_screen_awake">화면 항상 켜놓기</string>
     <string name="settings_keep_screen_awake_subtitle">앱 사용 중 화면이 자동으로 꺼지지 않습니다.</string>
     <string name="settings_section_app_info">앱</string>
-    <string name="settings_delete_account">회원 탈퇴</string>
-    <string name="settings_delete_account_subtitle">탈퇴 시 계정만 삭제되며, 로컬 데이터는 계속 사용할 수 있습니다.</string>
-    <string name="settings_delete_account_confirm">계정이 삭제되고\n클라우드 동기화가 중단됩니다.\n\n기기에 저장된 도형과 드론은\n계속 사용할 수 있습니다.\n\n정말 탈퇴하시겠습니까?</string>
-    <string name="settings_delete_account_button">탈퇴하기</string>
+    <string name="settings_delete_account" tools:ignore="UnusedResources">회원 탈퇴</string>
+    <string name="settings_delete_account_subtitle" tools:ignore="UnusedResources">탈퇴 시 계정만 삭제되며, 로컬 데이터는 계속 사용할 수 있습니다.</string>
+    <string name="settings_delete_account_confirm" tools:ignore="UnusedResources">계정이 삭제되고\n클라우드 동기화가 중단됩니다.\n\n기기에 저장된 도형과 드론은\n계속 사용할 수 있습니다.\n\n정말 탈퇴하시겠습니까?</string>
+    <string name="settings_delete_account_button" tools:ignore="UnusedResources">탈퇴하기</string>
     <string name="settings_section_flight_environment">비행 환경</string>
     <string name="settings_section_notifications">알림</string>
     <string name="settings_sunrise_alarm">일출 알림</string>
