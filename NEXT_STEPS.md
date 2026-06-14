@@ -200,7 +200,6 @@
 - 실제 배포 산출물(`assembleRelease`/`bundleRelease`)은 release signing과 Google `WEB_CLIENT_ID`가 모두 설정된 경우에만 생성되도록 차단
 - 로그인 약관/개인정보 시트 흐름
 - 한국어 도형 문구와 상세 라벨
-- iOS 기준 gust warning hysteresis
 - UUID shape id 강제
 - 실시간 sync trigger timing
 - 계정 전환 전 로컬 reset 순서
@@ -491,6 +490,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 - 2026-06-13에 Room v1→v3 직접 마이그레이션 계약을 재확인하고 회귀 테스트를 추가했다. v1/v3 스키마는 `shapes`/`drones`/`sketches` 테이블과 iOS geometry 컬럼(`secondLatitude`, `secondLongitude`, `polygonCoordinates`, `polylineCoordinates`)을 유지하고, v2만 geometry 컬럼이 빠져 있으므로 직접 1→3 경로를 보존해야 한다. `:app:testDebugUnitTest --tests "*DronePassDatabaseMigrationContractTest"`와 `:app:testDebugUnitTest` 통과 확인.
 - 2026-06-13에 일반 약관/개인정보 Markdown parser를 iOS `FetchWebDocuments.parseMarkdown`와 다시 대조하고, 헤더/단락/표/구분선/대시·불릿 리스트/단일 pipe 단락 처리를 회귀 테스트로 보강했다. `:app:testDebugUnitTest --tests "*MarkdownParserTest" --tests "*MarkdownInlineTextTest" --tests "*DocumentRepositoryTest"`와 `:app:testDebugUnitTest` 통과 확인.
 - 2026-06-14에 도형 편집/상세 날짜 표시를 iOS `DateSection`/`localizedDateTime`와 다시 대조했다. Android도 편집 날짜 전용은 medium date, 편집/상세 날짜시간은 medium date + short time 계약을 공통 헬퍼로 유지하며, 저장 목록의 `yyyy-MM-dd` 행 표시와 정렬 tie-breaker는 기존 테스트로 계속 고정한다. `:app:testDebugUnitTest --tests "*ShapeDateFormatsTest" --tests "*ShapeEditDefaultsTest" --tests "*ShapeDetailDroneResolutionTest" --tests "*SavedListSectionsTest" --tests "*SavedShapeListItemTest"`와 `:app:testDebugUnitTest` 통과 확인.
+- 2026-06-14에 돌풍 경고 hysteresis를 iOS `WeatherManager.GustDifferenceCalculator`와 다시 대조했다. Android 계산식은 iOS와 동일해 유지하고, class3 국지 돌풍 1표 해제, toy 국지 돌풍 0표 해제, danger→caution 하향 조건을 회귀 테스트로 보강했다. `:app:testDebugUnitTest --tests "*GustDifferenceCalculatorTest"`와 `:app:testDebugUnitTest` 통과 확인.
 - `:app:minifyReleaseWithR8`는 현재 성공합니다.
 - Naver Maps SDK와 Play Services Location에서 R8 warning이 여러 줄 출력될 수 있지만, 현재는 build failure가 아닙니다.
 - `assembleRelease`와 `bundleRelease`는 실제 release signing과 `WEB_CLIENT_ID` 설정 전까지 의도적으로 차단되며, 2026-06-13에 `assembleRelease` 실패 경로를 재확인했습니다.
