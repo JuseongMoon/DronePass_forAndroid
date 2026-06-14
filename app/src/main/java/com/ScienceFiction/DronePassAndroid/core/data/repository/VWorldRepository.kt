@@ -289,7 +289,7 @@ internal fun parseFlightZoneGeometry(
 private fun parsePolygonRings(rings: List<*>): List<List<Pair<Double, Double>>>? {
     val parsedRings = rings.mapNotNull { ring ->
         parseCoordinateRing(ring as? List<*> ?: return@mapNotNull null)
-            .takeIf { it.isNotEmpty() }
+            .takeIf { it.size >= 3 }
     }
     return parsedRings.takeIf { it.isNotEmpty() }
 }

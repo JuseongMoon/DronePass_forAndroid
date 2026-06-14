@@ -81,4 +81,40 @@ class VWorldGeometryParserTest {
         assertEquals(2, parsed.polygonRings[1].size)
         assertEquals(listOf(35.2 to 128.2, 35.2 to 128.4, 35.4 to 128.4, 35.2 to 128.2), parsed.polygonRings[1][1])
     }
+
+    @Test
+    fun `Polygon parser drops rings with fewer than three points like iOS overlays`() {
+        val invalidRing = listOf(
+            listOf(126.0, 37.0),
+            listOf(127.0, 37.0),
+        )
+
+        assertEquals(null, parseFlightZoneGeometry("Polygon", listOf(invalidRing)))
+    }
+
+    @Test
+    fun `MultiPolygon parser keeps valid polygons after dropping invalid rings`() {
+        val invalidRing = listOf(
+            listOf(126.0, 37.0),
+            listOf(127.0, 37.0),
+        )
+        val validRing = listOf(
+            listOf(128.0, 35.0),
+            listOf(129.0, 35.0),
+            listOf(129.0, 36.0),
+        )
+
+        val parsed = requireNotNull(
+            parseFlightZoneGeometry(
+                "MultiPolygon",
+                listOf(
+                    listOf(invalidRing),
+                    listOf(validRing),
+                ),
+            ),
+        )
+
+        assertEquals(1, parsed.polygons.size)
+        assertEquals(listOf(35.0 to 128.0, 35.0 to 129.0, 36.0 to 129.0), parsed.polygons.single())
+    }
 }
