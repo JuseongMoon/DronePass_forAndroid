@@ -306,6 +306,25 @@ class AuthViewModelForegroundSyncTest {
     }
 
     @Test
+    fun `account switch malformed shape baseline falls back to current active shape count`() {
+        val decodedBaseline = decodeAccountSwitchShapeBaseline("{\"shape-a\":not-a-timestamp}")
+        val state = buildAccountSwitchLocalChangeState(
+            currentShapeUpdatedAtById = mapOf(
+                "shape-a" to 100,
+                "shape-b" to 200,
+            ),
+            syncedShapeBaseline = decodedBaseline,
+            sketchCount = 0,
+            lastLocalSketchModificationTime = null,
+            lastSketchSyncTime = null,
+        )
+
+        assertEquals(null, decodedBaseline)
+        assertEquals(true, state.hasUnsyncedLocalChanges)
+        assertEquals(2, state.atRiskCount)
+    }
+
+    @Test
     fun `account switch shape baseline ignores timestamp differences within iOS one second tolerance`() {
         assertEquals(
             0,
