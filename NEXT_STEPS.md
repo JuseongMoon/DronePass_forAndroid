@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- `22efc0d test: cover manifest notification contracts`
 - `e7cdcea fix: reconcile restored end date alarms`
 - `fix: match iOS add shape labels`
 - `fix: match iOS teal palette label`
@@ -529,6 +530,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 - 2026-06-14에 푸시/로컬 알림 팝업과 클릭 라우팅을 현재 iOS `PushNotificationManager`/`MainTabView`/`SettingManager` 기준으로 다시 대조했다. Android 팝업은 iOS처럼 제목/본문 원문, 빈 문자열, dim 배경 탭 dismiss, 카드 내부 탭 consume, 320/400dp 폭, 250ms scale/fade 전환을 유지한다. Android의 `shapeId`/`shape_id` 포커스 라우팅은 기존 Android 릴리즈 계약으로 보존하며, 현재 iOS 알림 payload에는 shape userInfo가 없어 iOS follow-up 후보로만 남긴다. `:app:testDebugUnitTest --tests "*FcmServiceTest" --tests "*MainScreenStartDestinationTest" --tests "*AndroidManifestContractTest" --tests "*MainActivityKeepScreenAwakeTest"` 통과 확인.
 - 2026-06-14에 스케치 툴바/제스처/Undo·Redo/지우개/완료 동기화와 도형 상세 외부지도/복사/메모 링크/드론 상태 표시를 현재 iOS `SketchToolbarView`/`SketchManager`/`ShapeDetailView`/`CopyableTextModifier` 기준으로 다시 대조했다. Android는 펜·지우개 버튼 토글, 전체 삭제 1회 undo 복구, 완료 시 Firebase 동기화, 상세 0.8 detent, 지도 앱 순서, copy toast, memo web link in-app sheet, 삭제된/레거시 드론 표시 계약을 유지한다. `:app:testDebugUnitTest --tests "*SketchDefaultsTest" --tests "*SketchEraserSelectionTest" --tests "*SketchTouchDecisionTest" --tests "*SketchRepositoryTest" --tests "*ShapeDetailDroneResolutionTest" --tests "*ExternalMapTargetTest"` 통과 확인.
 - 2026-06-14에 남은 강제 접근/빈 컬렉션 런타임 후보를 재확인했다. Weather chart `first/last`는 size guard 뒤에서만 실행되고, VWorld geometry 좌표 인덱싱은 length/type check 후 수행되며, KP fallback `first()`는 NOAA 결과 non-empty 조건 안에 있다. 자연 정렬 빈 문자열과 드론 선택 초기화도 가드/테스트가 유지된다. `:app:testDebugUnitTest --tests "*WeatherForecastParityTest" --tests "*KpChartsTest" --tests "*VWorldGeometryParserTest" --tests "*VWorld*Test" --tests "*DroneSelectionStateTest" --tests "*DroneSelectionDropdownTest"` 통과 확인.
+- 2026-06-14에 Manifest 출시/알림 계약을 회귀 테스트로 보강했다. `INTERNET`, fine/coarse location, `POST_NOTIFICATIONS`, `SCHEDULE_EXACT_ALARM`, `RECEIVE_BOOT_COMPLETED`, `MainActivity singleTop/exported`, FCM service와 local notification receiver 비공개, boot receiver exported/action 계약을 고정했다. `:app:testDebugUnitTest --tests "*AndroidManifestContractTest" --tests "*BackupRulesTest" --tests "*NotificationPermissionRequestTest" --tests "*NotificationPreferenceKeysTest"`와 `:app:minifyReleaseWithR8` 통과 확인. R8는 기존 Naver Maps/Play Services 경고를 유지하지만 실패하지 않는다.
 - 2026-06-14 최신 감사 커밋 누적 후 `:app:testDebugUnitTest`, `:app:assembleDebug`를 재실행해 통과 확인.
 - `:app:minifyReleaseWithR8`는 현재 성공합니다.
 - Naver Maps SDK와 Play Services Location에서 R8 warning이 여러 줄 출력될 수 있지만, 현재는 build failure가 아닙니다.
