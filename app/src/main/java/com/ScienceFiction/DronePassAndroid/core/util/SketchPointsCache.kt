@@ -62,12 +62,15 @@ object SketchPointsCache {
      *
      * 캐시에 존재하면 캐시된 결과를 반환하고,
      * 미스 시 [SketchSmoothingAlgorithm.smoothUsingCatmullRom]을 호출하여 계산 후 캐시에 저장한다.
+     * iOS `SketchPointsCache`처럼 포인트가 2개 미만이면 스무딩과 캐싱 없이 원본을 반환한다.
      * 동일 키에 대한 동시 호출은 단 1번만 계산하고 나머지는 그 결과를 공유받는다.
      *
      * @param sketch 스무딩할 스케치 모델
      * @return 스무딩된 좌표 리스트
      */
     suspend fun getSmoothedPoints(sketch: SketchModel): List<Coordinate> {
+        if (sketch.points.size < 2) return sketch.points
+
         val cacheKey = "${sketch.id}:${sketch.updatedAt}"
 
         val lookup = mutex.withLock {
