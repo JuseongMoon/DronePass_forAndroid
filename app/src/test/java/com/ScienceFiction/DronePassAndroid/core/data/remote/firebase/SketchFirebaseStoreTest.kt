@@ -130,11 +130,23 @@ class SketchFirebaseStoreTest {
     }
 
     @Test
-    fun `스케치 숫자 선택 필드가 존재하지만 Firebase 계약을 어기면 invalid 이다`() {
-        assertNull(sketchFromFirestoreData(validDocument() + ("strokeWidth" to 5)))
+    fun `스케치 숫자 선택 필드 타입 불일치는 iOS처럼 기본값으로 파싱한다`() {
+        val sketch = sketchFromFirestoreData(
+            validDocument() + mapOf(
+                "strokeWidth" to 5,
+                "opacity" to "1.0",
+            ),
+        )
+
+        requireNotNull(sketch)
+        assertEquals(3.0, sketch.strokeWidth, 0.0)
+        assertEquals(1.0, sketch.opacity, 0.0)
+    }
+
+    @Test
+    fun `스케치 숫자 선택 필드가 Firebase 저장 검증 범위를 어기면 invalid 이다`() {
         assertNull(sketchFromFirestoreData(validDocument() + ("strokeWidth" to 0.0)))
         assertNull(sketchFromFirestoreData(validDocument() + ("strokeWidth" to 50.1)))
-        assertNull(sketchFromFirestoreData(validDocument() + ("opacity" to 1)))
         assertNull(sketchFromFirestoreData(validDocument() + ("opacity" to -0.1)))
         assertNull(sketchFromFirestoreData(validDocument() + ("opacity" to Double.NaN)))
     }

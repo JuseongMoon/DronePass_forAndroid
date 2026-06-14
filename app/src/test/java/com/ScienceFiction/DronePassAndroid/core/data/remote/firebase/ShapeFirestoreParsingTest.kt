@@ -73,15 +73,13 @@ class ShapeFirestoreParsingTest {
     }
 
     @Test
-    fun `Firestore 파싱은 좌표와 숫자 필드의 정수 타입을 invalid 로 본다`() {
+    fun `Firestore 파싱은 필수 좌표 타입 불일치와 non-finite 숫자를 invalid 로 본다`() {
         val integerBaseCoordinate = validDocument() + (
             "baseCoordinate" to mapOf(
                 "latitude" to 37,
                 "longitude" to 127.0,
             )
         )
-        val integerRadius = validDocument() + ("radius" to 100)
-        val integerHeight = validDocument() + ("height" to 120)
         val nonFiniteHeight = validDocument() + ("height" to Double.NaN)
         val integerRectangleCoordinate = validDocument() + mapOf(
             "shapeType" to "rectangle",
@@ -89,10 +87,22 @@ class ShapeFirestoreParsingTest {
         )
 
         assertNull(shapeFromFirestoreData(integerBaseCoordinate))
-        assertNull(shapeFromFirestoreData(integerRadius))
-        assertNull(shapeFromFirestoreData(integerHeight))
         assertNull(shapeFromFirestoreData(nonFiniteHeight))
         assertNull(shapeFromFirestoreData(integerRectangleCoordinate))
+    }
+
+    @Test
+    fun `Firestore 파싱은 iOS처럼 optional 숫자 타입 불일치를 누락값으로 본다`() {
+        val shape = shapeFromFirestoreData(
+            validDocument() + mapOf(
+                "radius" to 100,
+                "height" to "120",
+            ),
+        )
+
+        requireNotNull(shape)
+        assertNull(shape.radius)
+        assertNull(shape.height)
     }
 
     @Test

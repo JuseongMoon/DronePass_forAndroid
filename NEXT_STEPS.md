@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- Shape/Sketch Firestore optional 숫자 읽기를 iOS처럼 관대하게 보정
 - `5f2990a fix: tolerate partial shape coordinate arrays`
 - `3abc1d7 fix: filter invalid vworld geometry rings`
 - `6a6ab97 fix: tolerate invalid sun alarm offsets`
@@ -253,6 +254,7 @@ iOS와 Android가 공유하는 `users/{uid}/shapes`, `users/{uid}/sketches`, `us
 - 2026-06-13 재확인: Android 계정 탈퇴 원격 삭제는 iOS 기본 삭제 대상(`shapes`/`drones`/`metadata`)에 더해 `sketches`와 Android FCM `devices`까지 삭제한다. 이는 잔여 원격 데이터 방어 목적이며, iOS도 Sketch/기기 토큰 정리 범위 재검토 후보.
 - 2026-06-14 추가 고정: Shape 파싱은 표준 `flightStartDate`가 있으면 레거시 `startedAt`보다 우선하고, 시작일이 `Long`/문자열이면 invalid로 skip한다. Shape 쓰기는 `deletedAt`까지 `Timestamp`로 직렬화하며 `startedAt`/`expireDate` 키를 생성하지 않는 회귀 테스트를 유지한다.
 - 2026-06-14 추가 방어: Shape `polygonCoordinates`/`polylineCoordinates` 읽기는 iOS `compactMap` 파서처럼 손상 좌표 원소만 제외한다. 제외 후 polygon 3점 미만, polyline 2점 미만이면 문서 전체를 skip한다. 쓰기는 계속 표준 Double 좌표 map 배열만 허용한다.
+- 2026-06-14 추가 방어: Shape optional 숫자(`radius`, `height`) 읽기는 iOS `as? Double` 동작처럼 타입 불일치 값을 문서 전체 invalid가 아니라 `nil`로 처리한다. Sketch optional 숫자(`strokeWidth`, `opacity`)도 타입 불일치 시 iOS 기본값 `3.0`/`1.0`으로 fallback한다. 쓰기 검증은 계속 표준 Double과 범위 제한을 유지한다.
 
 ## 3. 남은 필수 작업
 
@@ -590,6 +592,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 - 2026-06-14에 iOS `SettingManager.registerSunriseAlarms`/`registerSunsetAlarms`와 Android 일출/일몰 알림 content helper를 다시 대조했다. Android도 정상 경로는 iOS처럼 30분/10분 전 리소스만 사용하고, 손상된 offset 값이 들어와도 알림 재예약 중 앱을 중단하지 않도록 30분 리소스로 fallback한다. `:app:testDebugUnitTest --tests "*NotificationSchedulerTest"`와 `:app:testDebugUnitTest --tests "*NotificationSchedulerTest" --tests "*NotificationPreferenceKeysTest" --tests "*SettingsEndDateAlarmPlanTest" --tests "*MainActivityKeepScreenAwakeTest"` 통과 확인.
 - 2026-06-14에 VWorld GeoJSON parser를 iOS `FlightZoneOverlayManager`/`FlightZoneCalculator` 기준으로 보강했다. 3점 미만 ring은 parser 단계에서 제외해 불완전 polygon이 모델에 남지 않으며, MultiPolygon은 invalid ring을 버린 뒤 유효 polygon을 계속 보존한다. `:app:testDebugUnitTest --tests "*VWorldGeometryParserTest" --tests "*FlightZoneCalculatorTest" --tests "*VWorldZoneDetailSheetTest"` 통과 확인.
 - 2026-06-14에 Shape Firestore polygon/polyline 좌표 배열 파싱을 iOS `compactMap` 동작과 맞춰 손상 좌표 원소만 제외하도록 보정했다. 제외 후 polygon 3점 미만, polyline 2점 미만이면 기존처럼 문서 전체를 skip한다. 이어서 배열 안 좌표가 위경도 범위/finite 검증을 통과하지 못하면 문서 invalid로 유지되는 회귀 테스트를 추가했다. `:app:testDebugUnitTest --tests "*ShapeFirestoreParsingTest" --tests "*ShapeFirebaseStoreTest" --tests "*ShapeTypeTest"`, `:app:testDebugUnitTest`, `:app:assembleDebug`, `:app:minifyReleaseWithR8` 통과 확인. R8는 기존 Naver Maps/Play Services warning만 출력하고 build failure는 없음.
+- 2026-06-14에 Shape/Sketch Firestore optional 숫자 읽기를 iOS parser와 맞췄다. Shape `radius`/`height` 타입 불일치는 `nil`, Sketch `strokeWidth`/`opacity` 타입 불일치는 기본값으로 복구하며, 좌표/날짜/id/shapeType 필수 계약과 쓰기 검증은 엄격하게 유지한다. `:app:testDebugUnitTest --tests "*ShapeFirestoreParsingTest" --tests "*ShapeFirebaseStoreTest" --tests "*ShapeValidationTest" --tests "*SketchFirebaseStoreTest" --tests "*SketchValidationTest"`, `:app:testDebugUnitTest`, `:app:assembleDebug`, `:app:minifyReleaseWithR8` 통과 확인. R8는 기존 Naver Maps/Play Services warning만 출력하고 build failure는 없음.
 - 2026-06-14 최신 debug APK를 실기기 `RFCW324TZ0Z`에 데이터 유지 재설치 후 cold launch smoke를 다시 완료했다. `LaunchState: COLD`, `TotalTime: 1875`, PID `20173`, focus `com.ScienceFiction.DronePassAndroid/.MainActivity` 유지. 앱 PID 로그에서 Firebase 초기화와 `NaverMapDebug: 네이버 지도 준비 완료`를 확인했고, UIAutomator XML에서 Naver Map controls, 현위치/줌/NAVER logo, 상단 `내 드론`/`드론 2`/드롭다운 원, `비행구역 레이어`, `스케치`, `KP`, 날씨 카드, `새 도형 추가`, 하단 `지도`/`저장`/`설정` 렌더링을 확인했다. `AndroidRuntime:E` fatal 로그 없음.
 - `:app:minifyReleaseWithR8`는 현재 성공합니다.
 - Naver Maps SDK와 Play Services Location에서 R8 warning이 여러 줄 출력될 수 있지만, 현재는 build failure가 아닙니다.

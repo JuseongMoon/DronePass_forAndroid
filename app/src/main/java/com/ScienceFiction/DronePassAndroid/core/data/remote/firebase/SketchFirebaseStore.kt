@@ -89,8 +89,8 @@ internal fun sketchFromFirestoreData(
         color = (data["color"] as? String)
             ?.let { normalizeFirebaseHexColorForRead(it, fallback = "#FF0000") }
             ?: "#FF0000",
-        strokeWidth = data["strokeWidth"]?.let { it as? Double ?: return null } ?: 3.0,
-        opacity = data["opacity"]?.let { it as? Double ?: return null } ?: 1.0,
+        strokeWidth = data["strokeWidth"] as? Double ?: 3.0,
+        opacity = data["opacity"] as? Double ?: 1.0,
         createdAt = createdAt,
         updatedAt = updatedAt,
         deletedAt = deletedAt
