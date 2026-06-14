@@ -476,7 +476,7 @@ private fun WeatherDataCell(
     subText: String? = null,
     onClick: (() -> Unit)? = null,
 ) {
-    val hasSubText = !subText.isNullOrBlank()
+    val hasSubText = weatherDataCellHasSubText(subText)
     Card(
         modifier = modifier.then(
             if (onClick != null) {
@@ -551,6 +551,8 @@ private fun WeatherDataCell(
         }
     }
 }
+
+internal fun weatherDataCellHasSubText(subText: String?): Boolean = subText != null
 
 internal fun formatIosTemperatureDegrees(temperatureC: Double): String =
     "%.0f°".format(Locale.ROOT, temperatureC)

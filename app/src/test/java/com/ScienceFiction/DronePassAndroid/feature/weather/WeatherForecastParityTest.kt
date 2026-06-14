@@ -210,6 +210,14 @@ class WeatherForecastParityTest {
     }
 
     @Test
+    fun `weather data cell treats blank subtext as present like iOS`() {
+        assertFalse(weatherDataCellHasSubText(null))
+        assertTrue(weatherDataCellHasSubText(""))
+        assertTrue(weatherDataCellHasSubText(" "))
+        assertTrue(weatherDataCellHasSubText("국지 돌풍"))
+    }
+
+    @Test
     fun `weather charts use iOS drone category thresholds`() {
         assertEquals(7.0 to 9.0, iosWindSpeedThresholds(DroneCategory.TOY))
         assertEquals(12.0 to 15.0, iosWindSpeedThresholds(DroneCategory.CLASS2))
