@@ -321,9 +321,25 @@ class SearchAddressSheetTest {
             ),
         )
         assertEquals(
-            "주소 검색 중 오류가 발생했습니다",
+            "검색 중 오류가 발생했습니다: ",
             formatSearchAddressErrorMessage(
                 causeMessage = "",
+                prefix = "검색 중 오류가 발생했습니다",
+                fallback = "주소 검색 중 오류가 발생했습니다",
+            ),
+        )
+        assertEquals(
+            "검색 중 오류가 발생했습니다:  ",
+            formatSearchAddressErrorMessage(
+                causeMessage = " ",
+                prefix = "검색 중 오류가 발생했습니다",
+                fallback = "주소 검색 중 오류가 발생했습니다",
+            ),
+        )
+        assertEquals(
+            "주소 검색 중 오류가 발생했습니다",
+            formatSearchAddressErrorMessage(
+                causeMessage = null,
                 prefix = "검색 중 오류가 발생했습니다",
                 fallback = "주소 검색 중 오류가 발생했습니다",
             ),

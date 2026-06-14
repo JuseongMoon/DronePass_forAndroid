@@ -131,7 +131,7 @@ internal fun formatSearchAddressErrorMessage(
     prefix: String,
     fallback: String,
 ): String {
-    val detail = causeMessage?.takeIf { it.isNotBlank() } ?: return fallback
+    val detail = causeMessage ?: return fallback
     return "$prefix: $detail"
 }
 
