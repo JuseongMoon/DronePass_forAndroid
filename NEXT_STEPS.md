@@ -427,6 +427,7 @@ iOS와 Android가 공유하는 `users/{uid}/shapes`, `users/{uid}/sketches`, `us
   - Firebase Console에서 Android 앱 SHA-1/SHA-256 등록 후 `google-services.json`을 다시 내려받고, Web client ID를 `local.properties`의 `WEB_CLIENT_ID`에 설정해야 Google 로그인을 실계정으로 검증할 수 있음
 - 2026-06-13 재확인: `WEB_CLIENT_ID`는 여전히 비어 있고, 실제 `keystore.properties` 파일도 아직 없어 release artifact와 실계정 Google 로그인 검증은 외부 설정 후 진행 가능
 - 2026-06-14 재확인: `WEB_CLIENT_ID`는 여전히 비어 있고, `keystore.properties` 파일도 없어 `:app:assembleRelease`와 `:app:bundleRelease`가 signing + Google Web client ID 누락 메시지와 함께 의도적으로 실패함
+- 2026-06-15 재확인: `WEB_CLIENT_ID`는 여전히 비어 있고, `keystore.properties` 파일은 없으며, `app/google-services.json`의 Android `oauth_client`는 빈 배열이다. 실제 Google 로그인, release artifact, Play Console SHA 지문 산출은 외부 운영 설정 후 진행 가능
 - 현재 로컬 debug keystore 지문
   - SHA-1: `30:C4:5A:F9:91:83:D9:6C:F7:6C:41:31:9E:DA:82:E7:59:8F:20:86`
   - SHA-256: `BC:5A:36:F1:68:B8:B9:F9:9A:95:14:D8:5F:35:00:37:40:90:B9:97:4C:88:27:28:7E:4A:0A:61:91:FB:B2:CB`
