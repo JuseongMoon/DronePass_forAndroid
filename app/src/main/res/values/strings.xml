@@ -149,22 +149,13 @@
     <string name="saved_empty_no_matching_shapes_hint">다른 드론을 선택하거나 새로운 도형을 추가해보세요.</string>
     <string name="shape_delete_confirm_message">\'%s\' 도형을 삭제하시겠습니까?</string>
 
-    <!-- SavedShapeListItem -->
-    <string name="saved_item_status_expired">만료</string>
-    <string name="saved_item_status_waiting">대기</string>
-    <string name="saved_item_status_active">활성</string>
-
     <!-- ShapeDetailSheet -->
     <string name="shape_detail_coordinate">좌표</string>
-    <string name="shape_detail_copy_coordinate">좌표 복사</string>
     <string name="shape_detail_address">주소</string>
     <string name="shape_detail_radius">반경</string>
     <string name="shape_detail_altitude">고도(m)</string>
     <string name="shape_detail_flight_start">시작일</string>
     <string name="shape_detail_flight_end">종료일</string>
-    <string name="shape_detail_status_expired">만료됨</string>
-    <string name="shape_detail_status_not_started">시작 전</string>
-    <string name="shape_detail_status_active">진행중</string>
     <string name="shape_detail_delete_title">도형 삭제</string>
     <string name="shape_detail_delete_message">\'%s\' 도형을 삭제하시겠습니까?</string>
     <string name="shape_detail_clipboard_label">좌표</string>
@@ -498,9 +489,7 @@
     <string name="shape_detail_open_google_map">구글맵</string>
     <string name="shape_detail_edit">수정하기</string>
     <string name="shape_detail_duplicate">복제하기</string>
-    <string name="shape_detail_duplicated">도형이 복제되었습니다</string>
     <string name="shape_detail_drone_connected">드론</string>
-    <string name="shape_detail_no_drone">없음</string>
     <string name="login_terms">이용약관</string>
     <string name="login_privacy">개인정보 처리방침</string>
     <string name="saved_drone_filter_all">전체</string>
