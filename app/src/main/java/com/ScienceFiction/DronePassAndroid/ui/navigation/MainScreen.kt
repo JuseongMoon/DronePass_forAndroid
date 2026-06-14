@@ -165,6 +165,8 @@ internal val NotificationPopupButtonTopPadding = 4.dp
 internal val NotificationPopupButtonVerticalPadding = 14.dp
 internal val NotificationPopupCornerRadius = 20.dp
 internal val NotificationPopupButtonCornerRadius = 12.dp
+internal const val NotificationPopupDimAlpha = 0.4f
+internal val NotificationPopupShadowElevation = 20.dp
 internal const val NotificationPopupAnimationDurationMs = 250
 internal const val NotificationPopupInitialScale = 0.9f
 private val TabletOverlayCornerRadius = 16.dp
@@ -659,7 +661,7 @@ private fun PushNotificationOverlay(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.4f))
+            .background(Color.Black.copy(alpha = NotificationPopupDimAlpha))
             .clickable(
                 indication = null,
                 interactionSource = remember { MutableInteractionSource() },
@@ -679,7 +681,7 @@ private fun PushNotificationOverlay(
                 ),
             shape = RoundedCornerShape(NotificationPopupCornerRadius),
             color = MaterialTheme.colorScheme.surface,
-            shadowElevation = 20.dp,
+            shadowElevation = NotificationPopupShadowElevation,
         ) {
             Column(
                 modifier = Modifier.padding(NotificationPopupContentPadding),

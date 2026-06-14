@@ -245,6 +245,8 @@ class MainScreenStartDestinationTest {
         assertEquals(14.dp, NotificationPopupButtonVerticalPadding)
         assertEquals(20.dp, NotificationPopupCornerRadius)
         assertEquals(12.dp, NotificationPopupButtonCornerRadius)
+        assertEquals(0.4f, NotificationPopupDimAlpha, 0f)
+        assertEquals(20.dp, NotificationPopupShadowElevation)
         assertEquals(250, NotificationPopupAnimationDurationMs)
         assertEquals(0.9f, NotificationPopupInitialScale)
     }
