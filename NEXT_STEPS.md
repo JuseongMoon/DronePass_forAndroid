@@ -364,6 +364,7 @@ iOS와 Android가 공유하는 `users/{uid}/shapes`, `users/{uid}/sketches`, `us
 - 메인 지도에서 `KP` 버튼 탭 시 `KP 지수 예보` 시트가 열리고, Android 뒤로가기로 시트가 닫히며 메인 지도 UI로 복귀함을 확인
 - 메인 지도에서 날씨 카드를 탭하면 `현위치 기반 정보` 시트가 열리고, Android 뒤로가기로 시트가 닫히며 메인 지도 UI로 복귀함을 확인
 - `dumpsys window` 기준 포커스는 `com.ScienceFiction.DronePassAndroid/.MainActivity`, 앱 프로세스 PID `18005` 유지. `AndroidRuntime` 로그는 `uiautomator`/`monkey` 실행/종료만 있고 앱 fatal crash 없음
+- 현재 HEAD 기준 `:app:testDebugUnitTest`와 `:app:assembleDebug` 성공 확인
 
 1. 지도 로드, 현재 위치 권한, 현재 위치 이동
 2. 원형 도형 생성, 저장, 편집, 삭제, 복제
