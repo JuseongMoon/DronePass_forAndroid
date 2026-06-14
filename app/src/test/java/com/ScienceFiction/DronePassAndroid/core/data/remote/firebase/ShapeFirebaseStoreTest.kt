@@ -45,6 +45,7 @@ class ShapeFirebaseStoreTest {
         val data = shapeToFirestoreDocumentData(shape)
         val baseCoordinate = data["baseCoordinate"] as Map<*, *>
 
+        assertEquals(shape.id, data["id"])
         assertEquals("circle", data["shapeType"])
         assertFalse(data["shapeType"] == ShapeType.CIRCLE.name)
         assertEquals("#007AFF", data["color"])
