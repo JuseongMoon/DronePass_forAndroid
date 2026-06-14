@@ -602,6 +602,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 - 2026-06-14 리소스 정리 커밋 `0853b04` 이후 새 HEAD 기준으로 `:app:minifyReleaseWithR8`를 재실행해 통과 확인했다. R8는 기존 Naver Maps SDK stack map table warning과 Play Services Location companion object warning만 출력하며 build failure는 아니다.
 - 2026-06-14에 현재 UI/테스트에서 참조하지 않는 legacy common/login/settings/web document/patch notes 문자열을 추가 제거했다. `:app:testDebugUnitTest --tests "*StringResourceCoverageTest"`, `:app:lintDebug`, `:app:assembleDebug` 통과 확인. 최신 lint report의 `UnusedResources`는 122개에서 111개로 감소했다.
 - 2026-06-14에 현재 UI/테스트에서 참조하지 않는 legacy weather summary/status 문자열을 제거했다. `:app:testDebugUnitTest --tests "*StringResourceCoverageTest" --tests "*WeatherForecastParityTest"`, `:app:lintDebug`, `:app:assembleDebug` 통과 확인. 최신 lint report의 `UnusedResources`는 111개에서 99개로 감소했다.
+- 2026-06-14에 현재 UI/테스트에서 참조하지 않는 legacy KP guide/chart 문자열을 제거했다. `:app:testDebugUnitTest --tests "*StringResourceCoverageTest" --tests "*KpChartsTest"`, `:app:lintDebug`, `:app:assembleDebug` 통과 확인. 최신 lint report의 `UnusedResources`는 99개에서 92개로 감소했다.
 - `:app:minifyReleaseWithR8`는 현재 성공합니다.
 - Naver Maps SDK와 Play Services Location에서 R8 warning이 여러 줄 출력될 수 있지만, 현재는 build failure가 아닙니다.
 - `assembleRelease`와 `bundleRelease`는 실제 release signing과 `WEB_CLIENT_ID` 설정 전까지 의도적으로 차단되며, 2026-06-14에 두 실패 경로를 모두 재확인했습니다.

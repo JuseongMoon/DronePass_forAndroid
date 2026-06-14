@@ -108,13 +108,6 @@
     <string name="kp_title">KP 지수</string>
     <string name="kp_current">현재 KP 지수</string>
     <string name="kp_no_data">데이터가 없습니다</string>
-    <string name="kp_last_updated">마지막 업데이트: %s</string>
-    <string name="kp_level_guide">Kp 레벨 가이드</string>
-    <string name="kp_forecast_data">예보 데이터</string>
-    <string name="kp_48hour_chart_title">48시간 예보</string>
-    <string name="kp_27day_chart_title">27일 장기 예보</string>
-    <string name="kp_27day_forecast">27일 장기예보</string>
-    <string name="kp_27day_ap_value">Ap %d</string>
 
     <!-- SavedListScreen -->
     <string name="saved_search_placeholder">제목, 주소, 메모 검색</string>

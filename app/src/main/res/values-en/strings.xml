@@ -107,11 +107,6 @@
     <string name="kp_title">KP Index</string>
     <string name="kp_current">Current KP Index</string>
     <string name="kp_no_data">No data available</string>
-    <string name="kp_last_updated">Last updated: %s</string>
-    <string name="kp_level_guide">Kp Level Guide</string>
-    <string name="kp_forecast_data">Forecast data</string>
-    <string name="kp_27day_forecast">27-day forecast</string>
-    <string name="kp_27day_ap_value">Ap %d</string>
 
     <!-- SavedListScreen -->
     <string name="saved_search_placeholder">Search title, address, memo</string>
@@ -826,8 +821,6 @@
     <string name="kp_error_load_failed">Unable to load Kp index</string>
     <string name="kp_error_forecast_failed">Unable to load Kp forecast</string>
     <string name="kp_error_unknown">An error occurred while processing Kp index</string>
-    <string name="kp_48hour_chart_title">48-hour Forecast</string>
-    <string name="kp_27day_chart_title">27-day Forecast</string>
 
     <string name="saved_sort_title">By Title</string>
     <string name="saved_sort_date_created">By Date Created</string>
