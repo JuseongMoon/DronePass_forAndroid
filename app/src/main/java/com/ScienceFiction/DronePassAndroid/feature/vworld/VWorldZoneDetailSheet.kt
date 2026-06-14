@@ -90,7 +90,7 @@ internal fun shouldShowAltitudeRow(upper: String?, lower: String?): Boolean =
     upper != null || lower != null
 
 internal fun resolvePublicContactLookupName(zone: DroneZoneFeature): String? =
-    zone.zoneCode ?: zone.zoneName ?: zone.heritageName
+    zone.zoneCode ?: zone.layer.displayName
 
 internal val VWorldZoneDetailRowMinHeight = 44.dp
 internal val VWorldZoneDetailRowDividerThickness = 0.5.dp

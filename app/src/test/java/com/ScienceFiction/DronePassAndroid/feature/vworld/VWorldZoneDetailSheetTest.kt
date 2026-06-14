@@ -81,7 +81,7 @@ class VWorldZoneDetailSheetTest {
     }
 
     @Test
-    fun `public contact lookup falls back to zone name when zoneCode is missing`() {
+    fun `public contact lookup falls back to layer display name when zoneCode is missing like iOS`() {
         val zone = DroneZoneFeature(
             id = "zone.2",
             layer = FlightZoneLayer.ATZ,
@@ -89,7 +89,7 @@ class VWorldZoneDetailSheetTest {
             zoneCode = null,
             upperAltitude = null,
             lowerAltitude = null,
-            zoneName = "비행장교통구역"
+            zoneName = "VWorld 개별 구역명"
         )
 
         assertEquals("비행장교통구역", resolvePublicContactLookupName(zone))
