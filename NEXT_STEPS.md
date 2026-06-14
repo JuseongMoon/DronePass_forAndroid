@@ -573,6 +573,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 - 2026-06-14에 직접 문자열로 남아 있던 appcompat, Compose material icons, Naver Map, Play Services Location, coroutines play-services, accompanist permissions 의존성을 version catalog로 이동했다. `:app:assembleDebug`, `:app:lintDebug` 통과 확인. 최신 lint report에서 `UseTomlInstead` 경고가 사라졌고, 남은 Gradle 계열 항목은 의존성/AGP/Gradle 업데이트 권고뿐이다.
 - 2026-06-14에 수량이 들어가는 로그인 계정 전환, 드론 삭제 연결 도형, 프로필 동기화 성공, 스케치 전체 삭제, VWorld NOTAM 남은 일수 문구를 Android plural resource로 전환했다. 실제 사용처가 없는 legacy `flight_zone_layer_count` 키는 제거했다. `:app:testDebugUnitTest --tests "*StringResourceCoverageTest"`, `:app:lintDebug`, `:app:assembleDebug` 통과 확인. 최신 lint report에서 `PluralsCandidate` 경고가 사라졌다.
 - 2026-06-14에 로딩/동기화 문자열의 ASCII `...`를 Android typography 권장 ellipsis 문자로 통일했다. `:app:testDebugUnitTest --tests "*StringResourceCoverageTest"`, `:app:lintDebug`, `:app:assembleDebug` 통과 확인. 최신 lint report에서 `TypographyEllipsis` 경고가 사라졌다.
+- 2026-06-14에 날씨/KP 범위 문자열의 ASCII hyphen을 en dash로, CRI 수식의 빼기 표기를 minus sign으로 정리했다. 지번 주소 예시의 hyphen은 주소 체계 일부라 `tools:ignore="TypographyDashes"`로 제한 예외 처리했다. `:app:testDebugUnitTest --tests "*StringResourceCoverageTest"`, `:app:lintDebug`, `:app:assembleDebug` 통과 확인. 최신 lint report에서 `TypographyDashes` 경고가 사라졌다.
 - `:app:minifyReleaseWithR8`는 현재 성공합니다.
 - Naver Maps SDK와 Play Services Location에서 R8 warning이 여러 줄 출력될 수 있지만, 현재는 build failure가 아닙니다.
 - `assembleRelease`와 `bundleRelease`는 실제 release signing과 `WEB_CLIENT_ID` 설정 전까지 의도적으로 차단되며, 2026-06-14에 두 실패 경로를 모두 재확인했습니다.
