@@ -6,6 +6,7 @@ import android.content.res.Configuration
 import android.os.Build
 import android.os.LocaleList
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.content.edit
 import androidx.core.os.LocaleListCompat
 import java.util.Locale
 
@@ -83,9 +84,9 @@ private fun selectedRuntimeAppLanguageTag(context: Context): String? {
 internal fun persistAppLanguage(context: Context, language: AppLanguage) {
     context
         .getSharedPreferences(APP_LANGUAGE_PREFS, Context.MODE_PRIVATE)
-        .edit()
-        .putString(KEY_APP_LANGUAGE_TAG, language.tag)
-        .apply()
+        .edit {
+            putString(KEY_APP_LANGUAGE_TAG, language.tag)
+        }
 }
 
 internal fun applyAppLanguageToRuntime(context: Context, language: AppLanguage) {

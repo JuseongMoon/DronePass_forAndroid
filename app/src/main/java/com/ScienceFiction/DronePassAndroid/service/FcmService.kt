@@ -8,6 +8,7 @@ import android.content.SharedPreferences
 import android.content.pm.PackageInfo
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import androidx.core.content.edit
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.core.data.local.EncryptedPrefsHelper
 import com.google.firebase.auth.FirebaseAuth
@@ -190,7 +191,9 @@ class FcmService : FirebaseMessagingService() {
             if (existing != null) return existing
 
             val deviceId = UUID.randomUUID().toString()
-            prefs.edit().putString(FCM_DEVICE_ID_PREFERENCE_KEY, deviceId).apply()
+            prefs.edit {
+                putString(FCM_DEVICE_ID_PREFERENCE_KEY, deviceId)
+            }
             Log.d(TAG, fcmDeviceIdCreatedLogMessage(deviceId))
             return deviceId
         }
@@ -200,10 +203,10 @@ class FcmService : FirebaseMessagingService() {
             val legacy = prefs.getString(LEGACY_FCM_DEVICE_ID_PREFERENCE_KEY, null)
             val selected = selectStoredFcmDeviceId(primary, legacy) ?: return null
             if (shouldMigrateLegacyFcmDeviceId(primary, legacy)) {
-                prefs.edit()
-                    .putString(FCM_DEVICE_ID_PREFERENCE_KEY, selected)
-                    .remove(LEGACY_FCM_DEVICE_ID_PREFERENCE_KEY)
-                    .apply()
+                prefs.edit {
+                    putString(FCM_DEVICE_ID_PREFERENCE_KEY, selected)
+                    remove(LEGACY_FCM_DEVICE_ID_PREFERENCE_KEY)
+                }
             }
             return selected
         }

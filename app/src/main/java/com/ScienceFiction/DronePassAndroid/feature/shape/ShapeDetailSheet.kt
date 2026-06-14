@@ -5,7 +5,6 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.text.SpannableString
 import android.text.Spanned
 import android.text.method.LinkMovementMethod
@@ -84,6 +83,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.core.net.toUri
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.core.ui.currentWindowSizeDp
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
@@ -564,16 +564,16 @@ private fun openExternalMap(
     context: Context,
     target: ExternalMapTarget,
 ) {
-    val appIntent = Intent(Intent.ACTION_VIEW, Uri.parse(target.appUri)).apply {
+    val appIntent = Intent(Intent.ACTION_VIEW, target.appUri.toUri()).apply {
         setPackage(target.packageName)
     }
     if (tryStartActivity(context, appIntent)) return
 
-    if (tryStartActivity(context, Intent(Intent.ACTION_VIEW, Uri.parse(target.marketUri)))) return
-    if (tryStartActivity(context, Intent(Intent.ACTION_VIEW, Uri.parse(target.playStoreUri)))) return
+    if (tryStartActivity(context, Intent(Intent.ACTION_VIEW, target.marketUri.toUri()))) return
+    if (tryStartActivity(context, Intent(Intent.ACTION_VIEW, target.playStoreUri.toUri()))) return
 
     target.webFallbackUri?.let { fallback ->
-        tryStartActivity(context, Intent(Intent.ACTION_VIEW, Uri.parse(fallback)))
+        tryStartActivity(context, Intent(Intent.ACTION_VIEW, fallback.toUri()))
     }
 }
 
@@ -812,7 +812,7 @@ private fun buildShapeDetailMemoLinkText(
 }
 
 private fun openMemoSystemLink(context: Context, url: String) {
-    tryStartActivity(context, Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+    tryStartActivity(context, Intent(Intent.ACTION_VIEW, url.toUri()))
 }
 
 /**

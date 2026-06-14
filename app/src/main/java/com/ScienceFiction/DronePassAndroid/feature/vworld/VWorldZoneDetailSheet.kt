@@ -3,7 +3,7 @@ package com.ScienceFiction.DronePassAndroid.feature.vworld
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
+import androidx.core.net.toUri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -525,7 +525,7 @@ private fun PhoneNumberRow(label: String, phone: String) {
 }
 
 internal fun buildVWorldPhoneDialIntent(phone: String): Intent {
-    return Intent(Intent.ACTION_DIAL, Uri.parse(buildVWorldPhoneDialUriString(phone)))
+    return Intent(Intent.ACTION_DIAL, buildVWorldPhoneDialUriString(phone).toUri())
 }
 
 internal fun buildVWorldPhoneDialUriString(phone: String): String =

@@ -3,6 +3,7 @@ package com.ScienceFiction.DronePassAndroid.core.data.local
 import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
+import androidx.core.content.edit
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -92,15 +93,21 @@ class EncryptedPrefsHelper @Inject constructor(
      * Firebase UID를 암호화하여 저장
      */
     fun saveFirebaseUid(uid: String) {
-        sharedPreferences.edit().putString(KEY_FIREBASE_UID, uid).apply()
+        sharedPreferences.edit {
+            putString(KEY_FIREBASE_UID, uid)
+        }
     }
 
     fun saveAppleUserId(appleUserId: String) {
-        sharedPreferences.edit().putString(KEY_APPLE_USER_ID, appleUserId).apply()
+        sharedPreferences.edit {
+            putString(KEY_APPLE_USER_ID, appleUserId)
+        }
     }
 
     fun saveGoogleUserId(googleUserId: String) {
-        sharedPreferences.edit().putString(KEY_GOOGLE_USER_ID, googleUserId).apply()
+        sharedPreferences.edit {
+            putString(KEY_GOOGLE_USER_ID, googleUserId)
+        }
     }
 
     /**
@@ -124,6 +131,8 @@ class EncryptedPrefsHelper @Inject constructor(
      * 계정 삭제 시 호출. 로그아웃 시에는 계정 복구용 UID/provider User ID를 유지한다.
      */
     fun clearAll() {
-        sharedPreferences.edit().clear().apply()
+        sharedPreferences.edit {
+            clear()
+        }
     }
 }
