@@ -139,7 +139,7 @@ ksp {
 dependencies {
     // appcompat 1.7.0 — AppCompatDelegate.setApplicationLocales / LocaleListCompat 사용 (Phase 3 언어 변경).
     // iOS UserDefaults `AppleLanguages` 대응. minSdk 28 호환.
-    implementation("androidx.appcompat:appcompat:1.7.0")
+    implementation(libs.androidx.appcompat)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)
@@ -149,19 +149,19 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
-    implementation("androidx.compose.material:material-icons-extended")
+    implementation(libs.androidx.compose.material.icons.extended)
 
     // 네이버 Maps SDK
-    implementation("com.naver.maps:map-sdk:3.23.1")
+    implementation(libs.naver.map)
 
     // Google Play Services - Location
-    implementation("com.google.android.gms:play-services-location:21.3.0")
+    implementation(libs.play.services.location)
 
     // Coroutines Play Services (await() for Task)
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
+    implementation(libs.kotlinx.coroutines.play.services)
 
     // Accompanist Permissions (권한 처리)
-    implementation("com.google.accompanist:accompanist-permissions:0.36.0")
+    implementation(libs.accompanist.permissions)
 
     // Hilt DI
     implementation(libs.hilt.android)
