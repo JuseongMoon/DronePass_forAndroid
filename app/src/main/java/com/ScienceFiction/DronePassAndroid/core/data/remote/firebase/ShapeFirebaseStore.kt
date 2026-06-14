@@ -47,7 +47,7 @@ private fun coordinatesToFirestoreList(coordinates: List<Coordinate>): List<Map<
 
 private fun firestoreListToCoordinates(value: Any?): List<Coordinate>? {
     val list = value as? List<*> ?: return null
-    return list.map { item -> firestoreMapToCoordinate(item) ?: return null }
+    return list.mapNotNull(::firestoreMapToCoordinate)
 }
 
 private fun timestampMillis(value: Any?): Long? {

@@ -100,6 +100,7 @@
 - `11bd1f0 fix: avoid resurrecting deleted shapes`
 - `66d1139 fix: pin auth recovery collections`
 - `ecb9e0f fix: gate release on google sign-in config`
+- Shape Firestore polygon/polyline 읽기를 iOS 파서처럼 손상 좌표 원소만 제외하고, 남은 좌표가 타입별 최소 개수 미달이면 skip하도록 보정
 
 ## 2. 이번 라운드에서 확인한 내용
 
@@ -247,6 +248,7 @@ iOS와 Android가 공유하는 `users/{uid}/shapes`, `users/{uid}/sketches`, `us
 - 2026-06-13 재확인: Android provider 계정 복구는 `sketches`까지 이전한다. 현재 iOS `AuthManager.migrateUserData`는 `shapes`/`drones`/`metadata`만 이전하므로, iOS도 Sketch 데이터 보존을 위해 추후 `sketches` 이전을 추가하는 것이 안전하다.
 - 2026-06-13 재확인: Android 계정 탈퇴 원격 삭제는 iOS 기본 삭제 대상(`shapes`/`drones`/`metadata`)에 더해 `sketches`와 Android FCM `devices`까지 삭제한다. 이는 잔여 원격 데이터 방어 목적이며, iOS도 Sketch/기기 토큰 정리 범위 재검토 후보.
 - 2026-06-14 추가 고정: Shape 파싱은 표준 `flightStartDate`가 있으면 레거시 `startedAt`보다 우선하고, 시작일이 `Long`/문자열이면 invalid로 skip한다. Shape 쓰기는 `deletedAt`까지 `Timestamp`로 직렬화하며 `startedAt`/`expireDate` 키를 생성하지 않는 회귀 테스트를 유지한다.
+- 2026-06-14 추가 방어: Shape `polygonCoordinates`/`polylineCoordinates` 읽기는 iOS `compactMap` 파서처럼 손상 좌표 원소만 제외한다. 제외 후 polygon 3점 미만, polyline 2점 미만이면 문서 전체를 skip한다. 쓰기는 계속 표준 Double 좌표 map 배열만 허용한다.
 
 ## 3. 남은 필수 작업
 

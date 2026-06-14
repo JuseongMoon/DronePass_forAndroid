@@ -210,7 +210,34 @@ class ShapeFirestoreParsingTest {
     }
 
     @Test
-    fun `Firestore 파싱은 타입별 필수 geometry 누락과 손상된 좌표를 invalid 로 본다`() {
+    fun `Firestore 파싱은 polygon polyline 손상 좌표 원소만 iOS처럼 제외한다`() {
+        val polygonWithOneBrokenPoint = validDocument() + mapOf(
+            "shapeType" to "polygon",
+            "polygonCoordinates" to listOf(
+                mapOf("latitude" to 37.0, "longitude" to 127.0),
+                mapOf("latitude" to "37.1", "longitude" to 127.1),
+                mapOf("latitude" to 37.2, "longitude" to 127.2),
+                mapOf("latitude" to 37.3, "longitude" to 127.3),
+            ),
+        )
+        val polylineWithOneBrokenPoint = validDocument() + mapOf(
+            "shapeType" to "polyline",
+            "polylineCoordinates" to listOf(
+                mapOf("latitude" to 37.0, "longitude" to 127.0),
+                mapOf("latitude" to "37.1", "longitude" to 127.1),
+                mapOf("latitude" to 37.2, "longitude" to 127.2),
+            ),
+        )
+
+        val polygon = shapeFromFirestoreData(polygonWithOneBrokenPoint)
+        val polyline = shapeFromFirestoreData(polylineWithOneBrokenPoint)
+
+        assertEquals(3, requireNotNull(polygon).polygonCoordinates?.size)
+        assertEquals(2, requireNotNull(polyline).polylineCoordinates?.size)
+    }
+
+    @Test
+    fun `Firestore 파싱은 타입별 필수 geometry 누락과 복구 불가능한 좌표를 invalid 로 본다`() {
         val rectangleMissingSecond = validDocument() + ("shapeType" to "rectangle")
         val polygonMissingCoordinates = validDocument() + ("shapeType" to "polygon")
         val polygonBelowMinimum = validDocument() + mapOf(
