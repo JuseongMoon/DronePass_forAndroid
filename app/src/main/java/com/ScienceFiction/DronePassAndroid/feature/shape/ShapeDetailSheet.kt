@@ -89,9 +89,7 @@ import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.PaletteColor
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
-import java.text.DateFormat
 import java.util.Date
-import java.util.Locale
 
 internal enum class ExternalMapProvider(@StringRes val labelRes: Int) {
     NAVER(R.string.shape_detail_open_naver_map),
@@ -180,9 +178,7 @@ fun ShapeDetailSheet(
     var memoWebUrl by remember { mutableStateOf<String?>(null) }
     val copiedMessage = stringResource(R.string.shape_detail_copied)
 
-    val dateFormat = remember {
-        DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT, Locale.getDefault())
-    }
+    val dateFormat = remember { localizedShapeDateTimeFormat() }
     val detailDrone = resolveShapeDetailDrone(
         shapeDroneId = shape.droneId,
         matchedDrone = drone,

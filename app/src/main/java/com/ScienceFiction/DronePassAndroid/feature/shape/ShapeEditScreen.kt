@@ -83,10 +83,8 @@ import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.PaletteColor
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 
-import java.text.DateFormat
 import java.util.Calendar
 import java.util.Date
-import java.util.Locale
 import kotlinx.coroutines.launch
 
 internal const val CoordinateInputSheetSkipPartiallyExpanded = false
@@ -245,12 +243,8 @@ fun ShapeEditScreen(
     }
     val showRadiusField = shouldRequireShapeEditRadius(shape)
 
-    val dateFormat = remember {
-        DateFormat.getDateInstance(DateFormat.MEDIUM, Locale.getDefault())
-    }
-    val dateTimeFormat = remember {
-        DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT, Locale.getDefault())
-    }
+    val dateFormat = remember { shapeEditDateOnlyFormat() }
+    val dateTimeFormat = remember { localizedShapeDateTimeFormat() }
 
     // ===== hasChanges 계산 (iOS ShapeEditViewModel.hasChanges 정합) =====
     val hasChanges = hasShapeEditContentChanges(
