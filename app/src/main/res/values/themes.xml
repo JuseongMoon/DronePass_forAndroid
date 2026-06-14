@@ -2,15 +2,17 @@
 <resources>
     <!--
         Compose Material3 앱 베이스 테마.
-        ActionBar 없이 Compose 가 모든 UI 를 그리므로 NoActionBar 변형 사용.
+        Naver Map SDK 의 AppCompat 위젯 inflation 과 호환되도록 AppCompat NoActionBar 변형 사용.
         iOS DronePass(UIUserInterfaceStyle=Light) 와 동일한 시각 정체성을 위해
         시스템 다크 모드 여부와 무관하게 라이트 베이스 테마만 사용한다.
         statusBar/navigationBar 외관은 Theme.kt 의 WindowInsetsController 가 라이트로 강제한다.
     -->
-    <style name="Theme.DronePassAndroid" parent="android:Theme.Material.Light.NoActionBar">
+    <style name="Theme.DronePassAndroid" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:windowBackground">@android:color/white</item>
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
     </style>
 </resources>

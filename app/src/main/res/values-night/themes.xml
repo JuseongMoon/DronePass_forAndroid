@@ -3,13 +3,14 @@
     <!--
         다크 모드 환경에서도 iOS 와 동일한 화이트 톤을 유지하기 위해 라이트 테마를 강제.
         Theme.kt 의 LightColorScheme 만 사용되므로 시스템 inflation 단계에서도
-        Material.Light NoActionBar 베이스를 사용하고 windowLightStatusBar=true 로 두어
-        statusBar 아이콘이 라이트 배경 위에서 잘 보이도록 한다.
+        AppCompat Light NoActionBar 베이스를 사용해 Naver Map SDK 위젯과 호환되도록 한다.
     -->
-    <style name="Theme.DronePassAndroid" parent="android:Theme.Material.Light.NoActionBar">
+    <style name="Theme.DronePassAndroid" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:windowBackground">@android:color/white</item>
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
     </style>
 </resources>
