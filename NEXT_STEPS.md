@@ -575,6 +575,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 - 2026-06-14에 로딩/동기화 문자열의 ASCII `...`를 Android typography 권장 ellipsis 문자로 통일했다. `:app:testDebugUnitTest --tests "*StringResourceCoverageTest"`, `:app:lintDebug`, `:app:assembleDebug` 통과 확인. 최신 lint report에서 `TypographyEllipsis` 경고가 사라졌다.
 - 2026-06-14에 날씨/KP 범위 문자열의 ASCII hyphen을 en dash로, CRI 수식의 빼기 표기를 minus sign으로 정리했다. 지번 주소 예시의 hyphen은 주소 체계 일부라 `tools:ignore="TypographyDashes"`로 제한 예외 처리했다. `:app:testDebugUnitTest --tests "*StringResourceCoverageTest"`, `:app:lintDebug`, `:app:assembleDebug` 통과 확인. 최신 lint report에서 `TypographyDashes` 경고가 사라졌다.
 - 2026-06-14에 Android 13 themed icon용 monochrome launcher vector를 추가하고 adaptive icon/round icon에 연결했다. `:app:assembleDebug`, `:app:lintDebug` 통과 확인. 최신 lint report에서 `MonochromeLauncherIcon` 경고가 사라졌다.
+- 2026-06-14에 minSdk 28 기준 더 이상 필요하지 않은 legacy density launcher PNG(`ic_launcher.png`, `ic_launcher_round.png`)를 제거하고 adaptive icon 경로만 유지했다. foreground PNG는 adaptive icon foreground로 계속 유지한다. `:app:assembleDebug`, `:app:lintDebug` 통과 확인. 최신 lint report에서 `IconXmlAndPng`, `IconLauncherShape`, `IconDuplicates` 경고가 사라졌다.
 - `:app:minifyReleaseWithR8`는 현재 성공합니다.
 - Naver Maps SDK와 Play Services Location에서 R8 warning이 여러 줄 출력될 수 있지만, 현재는 build failure가 아닙니다.
 - `assembleRelease`와 `bundleRelease`는 실제 release signing과 `WEB_CLIENT_ID` 설정 전까지 의도적으로 차단되며, 2026-06-14에 두 실패 경로를 모두 재확인했습니다.
