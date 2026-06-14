@@ -69,6 +69,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -985,7 +986,12 @@ private fun SavedListOverlay(
                         start = TabletOverlayLeadingMargin,
                         top = TabletOverlayTopMargin,
                     )
-                    .offset(x = animatedHorizontalOffset)
+                    .offset {
+                        IntOffset(
+                            x = with(density) { animatedHorizontalOffset.roundToPx() },
+                            y = 0,
+                        )
+                    }
                     .width(tabletPanelWidth)
                     .height(tabletPanelHeight)
             } else {
@@ -997,7 +1003,12 @@ private fun SavedListOverlay(
                         end = OverlaySideMargin,
                         bottom = OverlayBottomMargin,
                     )
-                    .offset(y = animatedVerticalOffset)
+                    .offset {
+                        IntOffset(
+                            x = 0,
+                            y = with(density) { animatedVerticalOffset.roundToPx() },
+                        )
+                    }
                     .fillMaxWidth()
                     .height(baseHeight)
             },
@@ -1149,7 +1160,12 @@ private fun SettingsOverlay(
                         start = TabletOverlayLeadingMargin,
                         top = TabletOverlayTopMargin,
                     )
-                    .offset(x = animatedHorizontalOffset)
+                    .offset {
+                        IntOffset(
+                            x = with(density) { animatedHorizontalOffset.roundToPx() },
+                            y = 0,
+                        )
+                    }
                     .width(tabletPanelWidth)
                     .height(tabletPanelHeight)
             } else {
