@@ -204,8 +204,6 @@
     <string name="drone_detail_serial_number">Serial Number</string>
     <string name="drone_detail_takeoff_weight">Takeoff Weight</string>
     <string name="drone_detail_size">Size</string>
-    <string name="drone_detail_delete_impossible_title">Cannot delete</string>
-    <string name="drone_detail_delete_impossible_message">At least one drone is required.\nThe last drone cannot be deleted.</string>
     <string name="drone_detail_delete_last_drone_error">The last drone cannot be deleted.</string>
     <string name="drone_detail_target_drone_not_found_error">Target drone not found.</string>
     <string name="drone_detail_delete_title">Delete Drone</string>
@@ -242,7 +240,6 @@
     <string name="drone_edit_section_specs_footer">Enter drone\'s takeoff weight and size</string>
     <string name="drone_edit_section_memo">Memo</string>
     <string name="drone_edit_section_memo_footer">Write notes about your drone freely</string>
-    <string name="drone_edit_memo_placeholder">Enter memo</string>
     <string name="drone_edit_color_selected">%s selected</string>
     <string name="drone_edit_alert_save_failed">Save Failed</string>
     <string name="drone_edit_alert_name_required">Please enter a drone name.</string>
@@ -262,13 +259,7 @@
 
     <!-- SettingsScreen -->
     <string name="settings_section_my_info">My Info</string>
-    <string name="settings_profile">Profile</string>
-    <string name="settings_profile_logged_in">Signed in</string>
-    <string name="settings_profile_logged_out">Not signed in</string>
-    <string name="settings_profile_loading">Checking\u2026</string>
-    <string name="settings_profile_error">Error</string>
     <string name="settings_drone_manage">Manage My Drones</string>
-    <string name="settings_drone_manage_subtitle">Add, edit, or delete drones</string>
     <string name="settings_section_map_display">Map Display</string>
     <string name="settings_hide_expired">Hide expired shapes</string>
     <string name="settings_hide_expired_subtitle">Hide expired shapes from list and map.</string>
@@ -277,11 +268,6 @@
     <string name="settings_keep_screen_awake">Keep screen on</string>
     <string name="settings_keep_screen_awake_subtitle">Screen won\'t turn off automatically while using the app.</string>
     <string name="settings_section_app_info">App</string>
-    <string name="settings_app_version">App version</string>
-    <string name="settings_section_account">Account</string>
-    <string name="settings_sign_out">Sign out</string>
-    <string name="settings_sign_out_confirm">Do you want to sign out?</string>
-    <string name="settings_sign_out_success">Signed out successfully</string>
     <string name="settings_delete_account">Delete Account</string>
     <string name="settings_delete_account_subtitle">Only the account will be deleted. Local data will remain available.</string>
     <string name="settings_delete_account_confirm">Your account will be deleted and cloud sync will stop.\n\nShapes and drones saved on this device will remain available.\n\nAre you sure you want to delete your account?</string>
@@ -543,10 +529,6 @@
     <string name="search_address_error_network">A network error occurred</string>
 
     <string name="settings_section_flight_environment">Flight Environment</string>
-    <string name="settings_kp_index">Kp Index</string>
-    <string name="settings_kp_subtitle">Check how solar activity affects GPS accuracy</string>
-    <string name="settings_weather_info">Weather Information</string>
-    <string name="settings_weather_subtitle">Check weather conditions for your flight area on the map</string>
     <string name="settings_app_intro">App Info</string>
     <string name="settings_patch_notes">Patch Notes</string>
 

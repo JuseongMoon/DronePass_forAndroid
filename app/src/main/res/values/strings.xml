@@ -207,8 +207,6 @@
     <string name="drone_detail_serial_number">제작 번호</string>
     <string name="drone_detail_takeoff_weight">이륙 무게</string>
     <string name="drone_detail_size">크기</string>
-    <string name="drone_detail_delete_impossible_title">삭제 불가</string>
-    <string name="drone_detail_delete_impossible_message">최소 하나의 드론이 필요합니다.\n마지막 드론은 삭제할 수 없습니다.</string>
     <string name="drone_detail_delete_last_drone_error">마지막 드론은 삭제할 수 없습니다.</string>
     <string name="drone_detail_target_drone_not_found_error">대상 드론을 찾을 수 없습니다.</string>
     <string name="drone_detail_delete_title">드론 삭제</string>
@@ -244,7 +242,6 @@
     <string name="drone_edit_section_specs_footer">드론의 이륙 무게와 크기를 입력하세요</string>
     <string name="drone_edit_section_memo">메모</string>
     <string name="drone_edit_section_memo_footer">드론에 대한 메모를 자유롭게 작성하세요</string>
-    <string name="drone_edit_memo_placeholder">메모를 입력하세요</string>
     <string name="drone_edit_color_selected">%s 선택됨</string>
     <string name="drone_edit_alert_save_failed">저장 실패</string>
     <string name="drone_edit_alert_name_required">드론 이름을 입력해주세요.</string>
@@ -264,13 +261,7 @@
 
     <!-- SettingsScreen -->
     <string name="settings_section_my_info">내 정보</string>
-    <string name="settings_profile">프로필</string>
-    <string name="settings_profile_logged_in">로그인됨</string>
-    <string name="settings_profile_logged_out">로그인하지 않음</string>
-    <string name="settings_profile_loading">확인 중…</string>
-    <string name="settings_profile_error">오류</string>
     <string name="settings_drone_manage">내 드론 관리하기</string>
-    <string name="settings_drone_manage_subtitle">드론 추가, 편집, 삭제</string>
     <string name="settings_section_map_display">지도 표시</string>
     <string name="settings_hide_expired">만료된 도형 숨기기</string>
     <string name="settings_hide_expired_subtitle">만료된 도형을 목록과 지도에서 숨깁니다.</string>
@@ -279,20 +270,11 @@
     <string name="settings_keep_screen_awake">화면 항상 켜놓기</string>
     <string name="settings_keep_screen_awake_subtitle">앱 사용 중 화면이 자동으로 꺼지지 않습니다.</string>
     <string name="settings_section_app_info">앱</string>
-    <string name="settings_app_version">앱 버전</string>
-    <string name="settings_section_account">계정</string>
-    <string name="settings_sign_out">로그아웃</string>
-    <string name="settings_sign_out_confirm">로그아웃 하시겠습니까?</string>
-    <string name="settings_sign_out_success">로그아웃 되었습니다</string>
     <string name="settings_delete_account">회원 탈퇴</string>
     <string name="settings_delete_account_subtitle">탈퇴 시 계정만 삭제되며, 로컬 데이터는 계속 사용할 수 있습니다.</string>
     <string name="settings_delete_account_confirm">계정이 삭제되고\n클라우드 동기화가 중단됩니다.\n\n기기에 저장된 도형과 드론은\n계속 사용할 수 있습니다.\n\n정말 탈퇴하시겠습니까?</string>
     <string name="settings_delete_account_button">탈퇴하기</string>
     <string name="settings_section_flight_environment">비행 환경</string>
-    <string name="settings_kp_index">Kp 지수</string>
-    <string name="settings_kp_subtitle">태양 활동이 GPS 정확도에 미치는 영향을 확인합니다</string>
-    <string name="settings_weather_info">날씨 정보</string>
-    <string name="settings_weather_subtitle">비행 지역의 기상 상태를 지도에서 확인합니다</string>
     <string name="settings_section_notifications">알림</string>
     <string name="settings_sunrise_alarm">일출 알림</string>
     <string name="settings_sunrise_alarm_subtitle">일출 30분전, 10분전 알림을 받습니다.</string>
