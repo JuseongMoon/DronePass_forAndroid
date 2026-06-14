@@ -54,6 +54,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ScienceFiction.DronePassAndroid.BuildConfig
 import com.ScienceFiction.DronePassAndroid.R
+import com.ScienceFiction.DronePassAndroid.core.util.openUriSafely
 
 internal val AppInfoIntroIconSize = 60.dp
 internal val AppInfoIntroSymbolSize = 36.dp
@@ -345,7 +346,7 @@ private fun ContactEmailRow(email: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { uriHandler.openUri("mailto:$email") }
+            .clickable { openUriSafely(uriHandler, "mailto:$email") }
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

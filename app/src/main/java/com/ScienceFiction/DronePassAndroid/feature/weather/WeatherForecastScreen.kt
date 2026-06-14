@@ -49,6 +49,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.core.util.DroneCategory
+import com.ScienceFiction.DronePassAndroid.core.util.openUriSafely
 import com.ScienceFiction.DronePassAndroid.domain.model.HourlyWeatherData
 import com.ScienceFiction.DronePassAndroid.domain.model.WeatherData
 import com.ScienceFiction.DronePassAndroid.feature.settings.WeatherInfoGuideSheet
@@ -324,7 +325,7 @@ private fun WeatherForecastBody(
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.clickable {
-                        uriHandler.openUri(WeatherDataSourceUrl)
+                        openUriSafely(uriHandler, WeatherDataSourceUrl)
                     },
                 )
             }

@@ -22,7 +22,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -38,6 +37,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ScienceFiction.DronePassAndroid.core.util.openUriSafely
 import com.ScienceFiction.DronePassAndroid.domain.model.MarkdownElement
 import com.ScienceFiction.DronePassAndroid.domain.model.MarkdownElementType
 import com.ScienceFiction.DronePassAndroid.domain.model.TableData
@@ -296,17 +296,11 @@ private fun InlineMarkdownText(
                 annotatedText
                     .getStringAnnotations(MarkdownUrlAnnotationTag, offset, offset)
                     .firstOrNull()
-                    ?.let { openMarkdownUriSafely(uriHandler, it.item) }
+                    ?.let { openUriSafely(uriHandler, it.item) }
             }
         },
         onTextLayout = { textLayoutResult.value = it },
     )
-}
-
-internal fun openMarkdownUriSafely(uriHandler: UriHandler, uri: String): Boolean {
-    return runCatching {
-        uriHandler.openUri(uri)
-    }.isSuccess
 }
 
 internal fun parseInlineMarkdown(text: String, linkColor: Color): AnnotatedString {

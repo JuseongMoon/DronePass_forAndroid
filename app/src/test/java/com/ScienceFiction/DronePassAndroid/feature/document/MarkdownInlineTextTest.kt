@@ -1,9 +1,7 @@
 package com.ScienceFiction.DronePassAndroid.feature.document
 
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.UriHandler
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -40,29 +38,5 @@ class MarkdownInlineTextTest {
                 end = text.length,
             ).isEmpty(),
         )
-    }
-
-    @Test
-    fun `markdown uri open failure is ignored without crashing`() {
-        val uriHandler = object : UriHandler {
-            override fun openUri(uri: String) {
-                throw IllegalArgumentException("bad uri")
-            }
-        }
-
-        assertFalse(openMarkdownUriSafely(uriHandler, "bad://url"))
-    }
-
-    @Test
-    fun `markdown uri open success returns true`() {
-        var openedUri: String? = null
-        val uriHandler = object : UriHandler {
-            override fun openUri(uri: String) {
-                openedUri = uri
-            }
-        }
-
-        assertTrue(openMarkdownUriSafely(uriHandler, "https://example.com"))
-        assertEquals("https://example.com", openedUri)
     }
 }
