@@ -98,7 +98,10 @@ class FcmService : FirebaseMessagingService() {
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
 
             val notificationManager =
-                context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: run {
+                    Log.w(TAG, "NotificationManager를 가져올 수 없어 알림 채널 생성을 건너뜁니다.")
+                    return
+                }
 
             val defaultChannel = NotificationChannel(
                 CHANNEL_ID,
@@ -335,7 +338,10 @@ class FcmService : FirebaseMessagingService() {
             .build()
 
         val notificationManager =
-            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: run {
+                Log.w(TAG, "NotificationManager를 가져올 수 없어 FCM 알림 표시를 건너뜁니다.")
+                return
+            }
         notificationManager.notify(notificationId, notification)
     }
 

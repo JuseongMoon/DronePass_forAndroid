@@ -929,7 +929,8 @@ internal const val ShapeDetailMemoAutoLinkMask =
     Linkify.WEB_URLS or Linkify.PHONE_NUMBERS or Linkify.EMAIL_ADDRESSES
 
 private fun copyToClipboard(context: Context, text: String) {
-    val clipboardManager = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+    val clipboardManager = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+        ?: return
     val clip = ClipData.newPlainText(context.getString(R.string.shape_detail_clipboard_label), text)
     clipboardManager.setPrimaryClip(clip)
 }

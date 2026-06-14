@@ -39,7 +39,10 @@ class NotificationReceiver : BroadcastReceiver() {
         FcmService.createNotificationChannel(context)
 
         val notificationManager =
-            context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: run {
+                Log.w(TAG, "NotificationManager를 가져올 수 없어 알림 표시를 건너뜁니다.")
+                return
+            }
 
         val notificationId = when (type) {
             NotificationScheduler.TYPE_SUNRISE -> 1001

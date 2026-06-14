@@ -177,8 +177,8 @@ class NotificationScheduler @Inject constructor(
         const val TYPE_END_DATE = "end_date"
     }
 
-    private val alarmManager: AlarmManager =
-        context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+    private val alarmManager: AlarmManager? =
+        context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager
 
     // ===== 일출 알림 =====
 
@@ -388,6 +388,10 @@ class NotificationScheduler @Inject constructor(
         shapeId: String? = null,
         zoneId: ZoneId = ZoneId.systemDefault(),
     ) {
+        val alarmManager = alarmManager ?: run {
+            Log.w(TAG, "AlarmManager를 가져올 수 없어 알림 예약을 건너뜁니다.")
+            return
+        }
         val intent = Intent(context, NotificationReceiver::class.java).apply {
             if (type == TYPE_END_DATE && shapeId != null) {
                 action = endDateNotificationAction(shapeId)
@@ -449,6 +453,10 @@ class NotificationScheduler @Inject constructor(
      * 예약된 알림 취소
      */
     private fun cancelAlarm(requestCode: Int, action: String? = null) {
+        val alarmManager = alarmManager ?: run {
+            Log.w(TAG, "AlarmManager를 가져올 수 없어 알림 취소를 건너뜁니다.")
+            return
+        }
         val intent = Intent(context, NotificationReceiver::class.java).apply {
             this.action = action
         }

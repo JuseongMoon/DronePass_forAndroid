@@ -718,7 +718,8 @@ private fun DroneDetailCopyToast(
 }
 
 private fun copyToClipboard(context: Context, text: String) {
-    val clipboardManager = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+    val clipboardManager = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+        ?: return
     val clip = ClipData.newPlainText(context.getString(R.string.drone_detail_clipboard_label), text)
     clipboardManager.setPrimaryClip(clip)
 }
