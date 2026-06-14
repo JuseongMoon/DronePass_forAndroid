@@ -217,6 +217,7 @@
 
 iOS와 Android가 공유하는 `users/{uid}/shapes`, `users/{uid}/sketches`, `users/{uid}/drones` 컬렉션은 다음 원칙을 유지합니다.
 
+- 2026-06-14 사건 메모: Android 초기 버전이 `shapeType`을 Kotlin enum `name`인 `CIRCLE`로 저장해 iOS에서 해당 Shape 문서 파싱이 실패하고 목록/지도에서 조용히 누락될 수 있었다. 재발 방지를 위해 쓰기는 소문자 raw value만 허용하고, 읽기는 대소문자 무시로 레거시 데이터를 복구한다.
 - 쓰기는 표준 형식만 사용하고, 읽기는 레거시 값을 관대하게 허용한다.
 - `shapeType` 등 enum류 필드는 쓰기 시 소문자 raw value만 사용한다. 읽기 시에는 대소문자를 무시한다.
 - 날짜는 Firestore `Timestamp`만 사용한다. epoch `Long`, ISO 문자열, Unix 초는 쓰지 않는다.
@@ -229,6 +230,7 @@ iOS와 Android가 공유하는 `users/{uid}/shapes`, `users/{uid}/sketches`, `us
 현재 Android 상태:
 
 - Shape: `shapeType` 쓰기 lowercase, 읽기 case-insensitive. 레거시 `CIRCLE` 문서 파싱 테스트 유지.
+- Shape 날짜: 쓰기는 `flightStartDate`/`flightEndDate`만 사용하고 레거시 `startedAt`/`expireDate`를 새로 쓰지 않는다. 읽기는 `flightStartDate`가 없을 때만 `startedAt`을, `flightEndDate`가 없을 때만 `expireDate`를 fallback으로 허용한다.
 - Drone: UUID id, `Timestamp`, hex color, optional 필드 보존/파싱 테스트 유지.
 - Sketch: `Timestamp`, Double 좌표 map 배열, opacity/좌표 반올림, UUID id 검증 테스트 유지.
 - 2026-06-12 추가 방어: Shape/Drone/Sketch 읽기에서 color 필드가 문자열이지만 `#RRGGBB`가 아니면 문서 전체를 버리지 않고 플랫폼 기본색으로 fallback. 쓰기는 계속 표준 hex만 허용.
@@ -243,6 +245,7 @@ iOS와 Android가 공유하는 `users/{uid}/shapes`, `users/{uid}/sketches`, `us
 - 2026-06-13 추가 방어: Sketch 서버에 없는 로컬 문서는 첫 동기화이거나 마지막 Sketch 동기화 이후 수정된 경우만 업로드하고, 마지막 Sketch 동기화 이전 문서는 원격 hard delete로 간주해 로컬에서 제거한다.
 - 2026-06-13 재확인: Android provider 계정 복구는 `sketches`까지 이전한다. 현재 iOS `AuthManager.migrateUserData`는 `shapes`/`drones`/`metadata`만 이전하므로, iOS도 Sketch 데이터 보존을 위해 추후 `sketches` 이전을 추가하는 것이 안전하다.
 - 2026-06-13 재확인: Android 계정 탈퇴 원격 삭제는 iOS 기본 삭제 대상(`shapes`/`drones`/`metadata`)에 더해 `sketches`와 Android FCM `devices`까지 삭제한다. 이는 잔여 원격 데이터 방어 목적이며, iOS도 Sketch/기기 토큰 정리 범위 재검토 후보.
+- 2026-06-14 추가 고정: Shape 파싱은 표준 `flightStartDate`가 있으면 레거시 `startedAt`보다 우선하고, 시작일이 `Long`/문자열이면 invalid로 skip한다. Shape 쓰기는 `deletedAt`까지 `Timestamp`로 직렬화하며 `startedAt`/`expireDate` 키를 생성하지 않는 회귀 테스트를 유지한다.
 
 ## 3. 남은 필수 작업
 

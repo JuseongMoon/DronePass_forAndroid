@@ -40,6 +40,7 @@ class ShapeFirebaseStoreTest {
             updatedAt = 1_700_000_123_000L,
             flightStartDate = 1_700_000_456_000L,
             flightEndDate = 1_700_000_789_000L,
+            deletedAt = 1_700_000_999_000L,
         )
 
         val data = shapeToFirestoreDocumentData(shape)
@@ -59,6 +60,9 @@ class ShapeFirebaseStoreTest {
         assertTrue(data["updatedAt"] is Timestamp)
         assertTrue(data["flightStartDate"] is Timestamp)
         assertTrue(data["flightEndDate"] is Timestamp)
+        assertTrue(data["deletedAt"] is Timestamp)
+        assertFalse(data.containsKey("startedAt"))
+        assertFalse(data.containsKey("expireDate"))
     }
 
     @Test

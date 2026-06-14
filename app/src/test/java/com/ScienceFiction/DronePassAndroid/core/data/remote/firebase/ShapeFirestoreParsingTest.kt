@@ -115,6 +115,31 @@ class ShapeFirestoreParsingTest {
     }
 
     @Test
+    fun `표준 flightStartDate 가 있으면 레거시 startedAt 보다 우선한다`() {
+        val document = validDocument()
+            .plus("flightStartDate" to Timestamp(Date(1_700_000_222_000L)))
+            .plus("startedAt" to Timestamp(Date(1_700_000_111_000L)))
+
+        val shape = shapeFromFirestoreData(document)
+
+        requireNotNull(shape)
+        assertEquals(1_700_000_222_000L, shape.flightStartDate)
+    }
+
+    @Test
+    fun `Firestore 파싱은 시작일 Long 과 문자열을 invalid 로 본다`() {
+        assertNull(shapeFromFirestoreData(validDocument() + ("flightStartDate" to 1_700_000_000_000L)))
+        assertNull(shapeFromFirestoreData(validDocument() + ("flightStartDate" to "2026-06-14T00:00:00Z")))
+        assertNull(
+            shapeFromFirestoreData(
+                validDocument()
+                    .minus("flightStartDate")
+                    .plus("startedAt" to 1_700_000_000_000L),
+            ),
+        )
+    }
+
+    @Test
     fun `expireDate 는 iOS 레거시 fallback 으로 flightEndDate 를 대체한다`() {
         val document = validDocument()
             .plus("expireDate" to Timestamp(Date(1_700_000_456_000L)))
