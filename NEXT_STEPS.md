@@ -119,6 +119,7 @@
 - 저장 목록 도형 탭 → 지도 포커스/줌/하이라이트 흐름
 - 저장 목록 오버레이 헤더/정렬 칩 토큰, 아이콘, 문자열, 순환 동작
 - Shape/Drone/Sketch Firestore 쓰기 표준과 레거시 읽기 방어 계약
+- 실시간 Sketch 동기화 상태는 iOS처럼 공용 `lastSyncTime`이 아니라 별도 `lastSketchSyncTime`만 갱신하는 분리 모델
 - 주소 검색/좌표 입력/지도 롱프레스 도형 생성 흐름
 - 도형 생성/편집/복제/삭제 상태 전이와 편집 취소 변경 감지 정책
 - 스케치 모드 제스처/툴바/undo·redo/지우개 동작
@@ -372,6 +373,12 @@ iOS와 Android가 공유하는 `users/{uid}/shapes`, `users/{uid}/sketches`, `us
 - 현재 HEAD 기준 `:app:testDebugUnitTest`와 `:app:assembleDebug` 성공 확인
 - 최신 Shape Firestore 계약 고정 커밋 후 `RFCW324TZ0Z`에 `adb install -r`로 debug APK를 데이터 유지 재설치하고 `MainActivity` cold launch를 재확인했다. `LaunchState: COLD`, `TotalTime: 1926`, PID `20368`, focus `com.ScienceFiction.DronePassAndroid/.MainActivity` 유지. 홈 UIAutomator XML에서 Naver Map, 현위치, 상단 `내 드론`/`드론 2`, 드롭다운 원, `비행구역 레이어`, `스케치`, `KP`, `새 도형 추가`, 하단 `지도`/`저장`/`설정` 렌더링을 확인했고, 상단 드론 선택 요소 bounds는 `[401,195][657,285]`, `[680,195][922,285]`, `[945,195][1035,285]`로 y와 높이가 일치했다.
 - 같은 최신 APK에서 하단 `저장` 탭 진입 시 `저장 목록`, `비행시작일순`, `내림차순`, `활성화`가 렌더링됐고, `설정` 탭 진입 시 `설정`, `내 정보`, `로그인 / 회원가입`, `내 드론 관리하기`, `비행 환경`, `현재 KP 지수`, `현재 날씨`, `알림` 섹션이 렌더링됐다. 탭 전환 후 PID `20368` 유지, `AndroidRuntime:E` fatal 로그 없음 확인.
+- 2026-06-14 재개 라운드에서 iOS `RealtimeSyncManager`와 Android `RealtimeSyncManager`를 다시 대조했다. iOS는 Sketch 성공 시 `lastSketchSyncTime`만 갱신하고 공용 `lastSyncTime`/`syncInProgress`는 Shape 경로 전용으로 유지하므로, Android의 `LAST_SKETCH_SYNC_TIME` 분리 저장도 그대로 유지한다.
+- 현재 HEAD 기준 `:app:testDebugUnitTest`와 `:app:assembleDebug` 재통과 후 `RFCW324TZ0Z`에 `adb install -r app/build/outputs/apk/debug/app-debug.apk`로 데이터 유지 설치 성공.
+- `MainActivity` cold launch 재확인: `LaunchState: COLD`, `TotalTime: 1969`, PID `30795`, window focus `com.ScienceFiction.DronePassAndroid/.MainActivity` 유지.
+- 홈 UIAutomator XML에서 Naver Map controls, 현위치/줌/NAVER logo, 상단 `내 드론`/`드론 2`/드롭다운 원, `비행구역 레이어`, `스케치`, `KP`, 날씨 카드, `새 도형 추가`, 하단 `지도`/`저장`/`설정` 렌더링 확인.
+- 상단 드론 선택 요소 bounds는 `내 드론` `[401,195][657,285]`, `드론 2` `[680,195][922,285]`, 드롭다운 원 `[945,195][1035,285]`로 y=195 시작과 높이 90이 모두 일치함을 다시 확인.
+- 실행 직후 `AndroidRuntime` 로그에는 `uiautomator` 종료 로그만 있고 앱 fatal crash 없음. 앱 PID 로그에서도 Naver Map surface first frame, `NaverMapDebug: 네이버 지도 준비 완료`, GPU 로그 확인 후 PID `30795` 유지.
 
 1. 지도 로드, 현재 위치 권한, 현재 위치 이동
 2. 원형 도형 생성, 저장, 편집, 삭제, 복제
