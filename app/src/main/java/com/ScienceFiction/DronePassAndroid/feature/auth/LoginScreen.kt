@@ -95,6 +95,8 @@ internal fun resolveLoginTopSpacer(isTablet: Boolean) =
 internal fun resolveLoginTermsBottomPadding(isTablet: Boolean) =
     if (isTablet) LoginTermsBottomPaddingTablet else LoginTermsBottomPaddingPhone
 
+internal fun loginErrorDialogText(message: String): String = message
+
 /**
  * 로그인 화면 Composable.
  * iOS LoginView 의 로고/타이틀/약관 흐름을 기준으로 Apple, Google 로그인을 제공한다.
@@ -314,7 +316,7 @@ fun LoginScreen(
                 Text(text = stringResource(R.string.login_error_title))
             },
             text = {
-                Text(text = message.ifBlank { stringResource(R.string.login_error_unknown) })
+                Text(text = loginErrorDialogText(message))
             },
             confirmButton = {
                 TextButton(onClick = { loginErrorMessage = null }) {

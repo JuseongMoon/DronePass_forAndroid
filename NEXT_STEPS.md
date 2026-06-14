@@ -29,6 +29,7 @@
 - 주소 검색 오류 메시지를 iOS `SearchAddressViewModel`처럼 원인 메시지가 빈 문자열/공백 문자열이어도 prefix 뒤에 그대로 표시하도록 보정. `:app:testDebugUnitTest --tests "*SearchAddressSheetTest" --tests "*ShapeEditDefaultsTest"` 및 `:app:assembleDebug` 통과.
 - 드론 삭제 실패 알림도 iOS `DroneDetailView`처럼 오류 description 문자열을 공백 포함 원문 그대로 표시하도록 보정. `:app:testDebugUnitTest --tests "*DroneListScreenTest" --tests "*DroneDeleteValidationTest"` 및 `:app:assembleDebug` 통과.
 - 날씨 데이터 카드 보조 텍스트 표시 조건을 iOS `weatherDataCard`처럼 null 여부만 보도록 보정해 빈 문자열/공백 문자열도 subText가 있는 상태로 렌더링한다. `:app:testDebugUnitTest --tests "*WeatherForecastParityTest" --tests "*WeatherOverlayCardTest"` 및 `:app:assembleDebug` 통과.
+- 로그인 오류 다이얼로그 본문도 iOS `LoginView`의 `localizedDescription ?? unknown` 동작처럼 빈 문자열/공백 문자열을 fallback으로 대체하지 않고 그대로 표시하도록 보정. `:app:testDebugUnitTest --tests "*AuthViewModelForegroundSyncTest"` 및 `:app:assembleDebug` 통과.
 - `FlightPermissionResult.details`를 iOS처럼 금지/승인필요/주의 결과에는 `레이어명: zoneCode 또는 레이어명` 목록으로 채우고, 비행 가능 결과에는 빈 목록을 유지하도록 보정. `:app:testDebugUnitTest --tests "*FlightZoneCalculatorTest" --tests "*VWorld*Test" --tests "*FlightZone*Test"` 및 `:app:assembleDebug` 통과.
 - Shape/Sketch Firestore optional 숫자 읽기를 iOS처럼 관대하게 보정
 - 스케치 전체 삭제 영어 확인 메시지의 단수 분기도 iOS와 같은 문장으로 보정
@@ -652,6 +653,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 - 2026-06-15에 주소 검색 오류 메시지 fallback을 iOS `SearchAddressViewModel.searchAddress`와 맞췄다. Android는 `Exception.message`가 빈 문자열/공백 문자열이면 일반 fallback 문구로 대체했지만, iOS는 `검색 중 오류가 발생했습니다: \(error.localizedDescription)` 형태로 원문 description을 항상 붙이므로 Android도 null이 아닌 cause message는 그대로 표시한다. `:app:testDebugUnitTest --tests "*SearchAddressSheetTest" --tests "*ShapeEditDefaultsTest"`, `:app:assembleDebug` 통과 확인.
 - 2026-06-15에 드론 삭제 실패 alert 메시지를 iOS `DroneDetailView.deleteConfirmed`와 맞췄다. Android는 실패 메시지가 빈 문자열/공백 문자열이면 `common_unknown_error`로 대체했지만, iOS는 `error.localizedDescription`을 그대로 alert 본문에 넣으므로 Android도 `DroneDeleteError.Failure.message`를 원문 그대로 표시한다. `:app:testDebugUnitTest --tests "*DroneListScreenTest" --tests "*DroneDeleteValidationTest"`, `:app:assembleDebug` 통과 확인.
 - 2026-06-15에 날씨 데이터 카드의 subText 표시 조건을 iOS `WeatherForecastView.weatherDataCard`와 맞췄다. iOS는 `subText != nil`이면 빈 문자열이어도 작은 라벨/본문 스타일과 subText 행을 적용하므로, Android도 `subText.isNullOrBlank()`가 아니라 null 여부만 보도록 변경했다. `:app:testDebugUnitTest --tests "*WeatherForecastParityTest" --tests "*WeatherOverlayCardTest"`, `:app:assembleDebug` 통과 확인.
+- 2026-06-15에 로그인 오류 다이얼로그 본문 표시를 iOS `LoginView`와 맞췄다. Android는 `AuthState.Error.message`가 빈 문자열/공백 문자열이면 `login_error_unknown`으로 대체했지만, iOS는 `loginError?.localizedDescription ?? unknown`이라 description 문자열이 존재하면 빈 값도 그대로 표시한다. Android도 표시 단계에서 `ifBlank` fallback을 제거하고 원문 메시지를 보존한다. `:app:testDebugUnitTest --tests "*AuthViewModelForegroundSyncTest"`, `:app:assembleDebug` 통과 확인.
 - `:app:minifyReleaseWithR8`는 현재 성공합니다.
 - Naver Maps SDK와 Play Services Location에서 R8 warning이 여러 줄 출력될 수 있지만, 현재는 build failure가 아닙니다.
 - `assembleRelease`와 `bundleRelease`는 실제 release signing과 `WEB_CLIENT_ID` 설정 전까지 의도적으로 차단되며, 2026-06-15에 두 실패 경로를 모두 재확인했습니다.

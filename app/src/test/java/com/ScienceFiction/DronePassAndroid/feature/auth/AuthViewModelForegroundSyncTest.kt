@@ -117,6 +117,13 @@ class AuthViewModelForegroundSyncTest {
     }
 
     @Test
+    fun `login error dialog preserves empty and whitespace messages like iOS localizedDescription`() {
+        assertEquals("", loginErrorDialogText(""))
+        assertEquals("   ", loginErrorDialogText("   "))
+        assertEquals("Firebase 인증 실패", loginErrorDialogText("Firebase 인증 실패"))
+    }
+
+    @Test
     fun `account switch resets local data before iOS style login sync`() {
         assertEquals(
             true,
