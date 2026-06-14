@@ -544,6 +544,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 - 2026-06-14에 저장 목록/계정 전환 baseline/시스템 서비스 방어 누적 변경 후 `:app:testDebugUnitTest`, `:app:assembleDebug`, `:app:minifyReleaseWithR8`를 재실행해 통과 확인. R8는 기존 Naver Maps SDK stack map table 경고와 Play Services Location companion object 경고를 출력하지만 build failure는 아님.
 - 2026-06-14 최신 감사 커밋 누적 후 `:app:testDebugUnitTest`, `:app:assembleDebug`를 재실행해 통과 확인.
 - 2026-06-14 최신 debug APK를 실기기 `RFCW324TZ0Z`에 데이터 유지 재설치 후 cold launch smoke를 다시 수행했다. `LaunchState: COLD`, `TotalTime: 1901`, PID `22843`, task size `1`, focus `com.ScienceFiction.DronePassAndroid/.MainActivity` 유지. 홈에서 Naver Map, 드론 선택 버튼/드롭다운 원, KP/날씨 카드, `비행구역 레이어`, `스케치`, `새 도형 추가`, 하단 `지도`/`저장`/`설정`을 확인했고, 드론 선택 버튼 bounds `[401,195][657,285]`, `[680,195][922,285]`와 드롭다운 원 `[945,195][1035,285]`는 y=195·height=90으로 일치했다. 저장 탭은 `저장 목록`/정렬 칩/`활성화` 섹션/저장 행, 설정 탭은 `설정`/`내 정보`/`로그인 / 회원가입`/`내 드론 관리하기`/KP·날씨 섹션 렌더링을 확인했으며 `AndroidRuntime:E` fatal 로그는 없었다.
+- 2026-06-14 같은 실기기에서 위치 권한/현위치 버튼 smoke를 추가했다. `ACCESS_FINE_LOCATION`/`ACCESS_COARSE_LOCATION` runtime permission은 granted, appops는 `FINE_LOCATION: allow`와 foreground location mode였고 GPS/monitor location op가 running 상태였다. 지도 탭 복귀 후 Naver 현위치 버튼을 탭해도 홈 지도 UI가 유지되고 PID `22843`, task size `1`, focus가 유지됐으며 `AndroidRuntime:E` fatal 로그는 없었다.
 - `:app:minifyReleaseWithR8`는 현재 성공합니다.
 - Naver Maps SDK와 Play Services Location에서 R8 warning이 여러 줄 출력될 수 있지만, 현재는 build failure가 아닙니다.
 - `assembleRelease`와 `bundleRelease`는 실제 release signing과 `WEB_CLIENT_ID` 설정 전까지 의도적으로 차단되며, 2026-06-14에 두 실패 경로를 모두 재확인했습니다.
