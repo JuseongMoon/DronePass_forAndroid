@@ -49,7 +49,10 @@
     <string name="login_apple_error">An error occurred while signing in with Apple.</string>
     <string name="login_sync_failed">Data sync failed. Please check your network connection.</string>
     <string name="login_account_switch_title">Switch to a different account?</string>
-    <string name="login_account_switch_message">There are %1$d local item(s) not saved to the cloud. Continuing will permanently delete them with no way to recover. Log in again with the previous account to keep them.</string>
+    <plurals name="login_account_switch_message">
+        <item quantity="one">There is %1$d local item not saved to the cloud. Continuing will permanently delete it with no way to recover. Log in again with the previous account to keep it.</item>
+        <item quantity="other">There are %1$d local items not saved to the cloud. Continuing will permanently delete them with no way to recover. Log in again with the previous account to keep them.</item>
+    </plurals>
     <string name="login_account_switch_confirm">Continue (Discard)</string>
     <string name="login_skip">Continue without login</string>
     <string name="login_terms_intro">By signing in/up, you agree to</string>
@@ -252,7 +255,10 @@
     <string name="drone_detail_delete_message">Are you sure you want to delete \'%s\'?</string>
     <string name="drone_detail_shape_count_loading">Checking linked shapes…</string>
     <string name="drone_detail_shape_handling_title">Handle Connected Shapes</string>
-    <string name="drone_detail_delete_with_shapes_message">How would you like to handle %2$d shapes connected to \'%1$s\'?</string>
+    <plurals name="drone_detail_delete_with_shapes_message">
+        <item quantity="one">How would you like to handle %2$d shape connected to \'%1$s\'?</item>
+        <item quantity="other">How would you like to handle %2$d shapes connected to \'%1$s\'?</item>
+    </plurals>
     <string name="drone_detail_reassign">Move to another drone (%d)</string>
     <string name="drone_detail_delete_all_shapes">Delete shapes too (%d)</string>
     <string name="drone_select_title">Select Drone</string>
@@ -478,7 +484,10 @@
     <string name="profile_backup_manual">Manual backup</string>
     <string name="profile_backup_last_backup">Last backup: %1$s</string>
     <string name="profile_sync_alert_title">Real-time Cloud Sync</string>
-    <string name="profile_sync_success">Sync completed for %1$d shapes.</string>
+    <plurals name="profile_sync_success">
+        <item quantity="one">Sync completed for %1$d shape.</item>
+        <item quantity="other">Sync completed for %1$d shapes.</item>
+    </plurals>
     <string name="profile_sync_failed">Sync failed: %1$s</string>
 
     <string name="profile_terms_service">Terms of Service</string>
@@ -521,10 +530,12 @@
     <string name="date_time_done">Done</string>
 
     <string name="sketch_delete_all_title">Delete All Sketches</string>
-    <string name="sketch_delete_all_confirm">Are you sure you want to delete all %d sketches?</string>
+    <plurals name="sketch_delete_all_confirm">
+        <item quantity="one">Are you sure you want to delete %d sketch?</item>
+        <item quantity="other">Are you sure you want to delete all %d sketches?</item>
+    </plurals>
 
     <string name="flight_zone_legal_disclaimer">This service provides information based on the Korean government\'s Digital Twin National Land data. Users are responsible for actual flight permits and safety.</string>
-    <string name="flight_zone_layer_count">Selected: %1$d / %2$d layers</string>
     <string name="flight_zone_navigation_title">Drone Flight Zones</string>
     <string name="flight_zone_navigation_done">Done</string>
     <string name="flight_zone_stats_selected">Selected layers</string>
@@ -553,7 +564,10 @@
     <string name="zone_detail_notam_start">Start</string>
     <string name="zone_detail_notam_end">End</string>
     <string name="zone_detail_notam_remaining">Remaining Period</string>
-    <string name="zone_detail_notam_days">%ddays</string>
+    <plurals name="zone_detail_notam_days">
+        <item quantity="one">%d day</item>
+        <item quantity="other">%d days</item>
+    </plurals>
     <string name="zone_detail_notam_status_active">Active</string>
     <string name="zone_detail_notam_status_expired">Expired</string>
     <string name="zone_detail_notam_status_scheduled">Scheduled</string>

@@ -61,6 +61,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -376,7 +377,12 @@ private fun DroneDeleteWithShapesActionSheet(
                 modifier = Modifier.padding(bottom = 8.dp),
             )
             Text(
-                text = stringResource(R.string.drone_detail_delete_with_shapes_message, drone.name, shapeCount),
+                text = pluralStringResource(
+                    R.plurals.drone_detail_delete_with_shapes_message,
+                    shapeCount,
+                    drone.name,
+                    shapeCount,
+                ),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(bottom = 12.dp),

@@ -21,6 +21,18 @@ class StringResourceCoverageTest {
     }
 
     @Test
+    fun `English plural resources cover the default plural keys`() {
+        val defaultNames = pluralResourceNames("values/strings.xml")
+        val englishNames = pluralResourceNames("values-en/strings.xml")
+        val missingNames = defaultNames - englishNames
+
+        assertTrue(
+            "values-en/strings.xml is missing plurals: ${missingNames.sorted().joinToString()}",
+            missingNames.isEmpty(),
+        )
+    }
+
+    @Test
     fun `login strings match iOS localizations`() {
         assertEquals("로그인 / 회원가입", stringResourceValue("values/strings.xml", "login_title"))
         assertEquals("Apple로 계속하기", stringResourceValue("values/strings.xml", "login_apple"))
@@ -45,7 +57,7 @@ class StringResourceCoverageTest {
         assertEquals("다른 계정으로 전환할까요?", stringResourceValue("values/strings.xml", "login_account_switch_title"))
         assertEquals(
             "클라우드에 저장되지 않은 로컬 항목 %1\$d개가 있습니다. 계속하면 영구 삭제되어 복구할 수 없습니다. 기존 계정으로 다시 로그인하면 보존됩니다.",
-            stringResourceValue("values/strings.xml", "login_account_switch_message"),
+            pluralResourceValue("values/strings.xml", "login_account_switch_message", "other"),
         )
         assertEquals("계속(삭제)", stringResourceValue("values/strings.xml", "login_account_switch_confirm"))
         assertEquals("Google 로고", stringResourceValue("values/strings.xml", "login_google_logo_description"))
@@ -73,8 +85,12 @@ class StringResourceCoverageTest {
         )
         assertEquals("Switch to a different account?", stringResourceValue("values-en/strings.xml", "login_account_switch_title"))
         assertEquals(
-            "There are %1\$d local item(s) not saved to the cloud. Continuing will permanently delete them with no way to recover. Log in again with the previous account to keep them.",
-            stringResourceValue("values-en/strings.xml", "login_account_switch_message"),
+            "There is %1\$d local item not saved to the cloud. Continuing will permanently delete it with no way to recover. Log in again with the previous account to keep it.",
+            pluralResourceValue("values-en/strings.xml", "login_account_switch_message", "one"),
+        )
+        assertEquals(
+            "There are %1\$d local items not saved to the cloud. Continuing will permanently delete them with no way to recover. Log in again with the previous account to keep them.",
+            pluralResourceValue("values-en/strings.xml", "login_account_switch_message", "other"),
         )
         assertEquals("Continue (Discard)", stringResourceValue("values-en/strings.xml", "login_account_switch_confirm"))
     }
@@ -494,12 +510,14 @@ class StringResourceCoverageTest {
         assertEquals("남은 기간", stringResourceValue("values/strings.xml", "zone_detail_notam_remaining"))
         assertEquals("활성", stringResourceValue("values/strings.xml", "zone_detail_notam_status_active"))
         assertEquals("만료됨", stringResourceValue("values/strings.xml", "zone_detail_notam_status_expired"))
+        assertEquals("%d일", pluralResourceValue("values/strings.xml", "zone_detail_notam_days", "other"))
 
         assertEquals("Zone Details", stringResourceValue("values-en/strings.xml", "zone_detail_navigation_title"))
         assertEquals("Zone Type", stringResourceValue("values-en/strings.xml", "zone_detail_zone_type"))
         assertEquals("Zone Code", stringResourceValue("values-en/strings.xml", "zone_detail_code"))
         assertEquals("Remaining Period", stringResourceValue("values-en/strings.xml", "zone_detail_notam_remaining"))
-        assertEquals("%ddays", stringResourceValue("values-en/strings.xml", "zone_detail_notam_days"))
+        assertEquals("%d day", pluralResourceValue("values-en/strings.xml", "zone_detail_notam_days", "one"))
+        assertEquals("%d days", pluralResourceValue("values-en/strings.xml", "zone_detail_notam_days", "other"))
         assertEquals("Managing Authority", stringResourceValue("values-en/strings.xml", "zone_detail_authority_title"))
         assertEquals("Organization Name", stringResourceValue("values-en/strings.xml", "zone_detail_authority_name"))
         assertEquals("Administrative District", stringResourceValue("values-en/strings.xml", "zone_detail_heritage_address"))
@@ -527,7 +545,10 @@ class StringResourceCoverageTest {
         assertEquals("활성화 - 실시간 동기화 대기중", stringResourceValue("values/strings.xml", "profile_sync_waiting"))
         assertEquals("동기화 기록이 없습니다.", stringResourceValue("values/strings.xml", "profile_sync_no_history"))
         assertEquals("수동 백업하기", stringResourceValue("values/strings.xml", "profile_backup_manual"))
-        assertEquals("%1\$d개 도형의 동기화가 완료되었습니다.", stringResourceValue("values/strings.xml", "profile_sync_success"))
+        assertEquals(
+            "%1\$d개 도형의 동기화가 완료되었습니다.",
+            pluralResourceValue("values/strings.xml", "profile_sync_success", "other"),
+        )
         assertEquals("실시간 클라우드 동기화에 실패했습니다: %1\$s", stringResourceValue("values/strings.xml", "profile_sync_failed"))
         assertEquals(
             "실시간 클라우드 동기화를 사용하려면 먼저 로그인해주세요.",
@@ -572,7 +593,8 @@ class StringResourceCoverageTest {
         assertEquals("Login required", stringResourceValue("values-en/strings.xml", "profile_sync_login_required"))
         assertEquals("No sync history", stringResourceValue("values-en/strings.xml", "profile_sync_no_history"))
         assertEquals("Manual backup", stringResourceValue("values-en/strings.xml", "profile_backup_manual"))
-        assertEquals("Sync completed for %1\$d shapes.", stringResourceValue("values-en/strings.xml", "profile_sync_success"))
+        assertEquals("Sync completed for %1\$d shape.", pluralResourceValue("values-en/strings.xml", "profile_sync_success", "one"))
+        assertEquals("Sync completed for %1\$d shapes.", pluralResourceValue("values-en/strings.xml", "profile_sync_success", "other"))
         assertEquals(
             "Please log in to use real-time cloud sync.",
             stringResourceValue("values-en/strings.xml", "profile_sync_footer_login_required"),
@@ -922,7 +944,7 @@ class StringResourceCoverageTest {
         )
         assertEquals(
             "'%1\$s'에 연결된 %2\$d개의 도형을 어떻게 처리하시겠습니까?",
-            androidDisplayStringResourceValue("values/strings.xml", "drone_detail_delete_with_shapes_message"),
+            androidDisplayPluralResourceValue("values/strings.xml", "drone_detail_delete_with_shapes_message", "other"),
         )
 
         assertEquals("한 줄을 넘어가지 않도록 입력해주세요", stringResourceValue("values/strings.xml", "drone_edit_section_basic_footer"))
@@ -939,6 +961,14 @@ class StringResourceCoverageTest {
         assertEquals("Serial Number", stringResourceValue("values-en/strings.xml", "drone_detail_serial_number"))
         assertEquals("Takeoff Weight", stringResourceValue("values-en/strings.xml", "drone_detail_takeoff_weight"))
         assertEquals("Not entered", stringResourceValue("values-en/strings.xml", "drone_detail_not_entered"))
+        assertEquals(
+            "How would you like to handle %2\$d shape connected to '%1\$s'?",
+            androidDisplayPluralResourceValue("values-en/strings.xml", "drone_detail_delete_with_shapes_message", "one"),
+        )
+        assertEquals(
+            "How would you like to handle %2\$d shapes connected to '%1\$s'?",
+            androidDisplayPluralResourceValue("values-en/strings.xml", "drone_detail_delete_with_shapes_message", "other"),
+        )
         assertEquals("My Drone", stringResourceValue("values-en/strings.xml", "drone_edit_default_name_first"))
         assertEquals("Save Failed", stringResourceValue("values-en/strings.xml", "drone_edit_alert_save_failed"))
         assertEquals("This drone name already exists.", stringResourceValue("values-en/strings.xml", "drone_edit_alert_name_duplicate"))
@@ -986,6 +1016,23 @@ class StringResourceCoverageTest {
         }
     }
 
+    private fun pluralResourceNames(relativePath: String): Set<String> {
+        val document = parseXml(relativePath)
+        val nodes = document.getElementsByTagName("plurals")
+
+        return buildSet {
+            for (index in 0 until nodes.length) {
+                val node = nodes.item(index)
+                val attributes = node.attributes
+                val translatable = attributes.getNamedItem("translatable")?.nodeValue
+                val name = requireNotNull(attributes.getNamedItem("name")?.nodeValue)
+                if (translatable != "false") {
+                    add(name)
+                }
+            }
+        }
+    }
+
     private fun stringResourceValue(relativePath: String, name: String): String {
         val document = parseXml(relativePath)
         val nodes = document.getElementsByTagName("string")
@@ -1002,6 +1049,34 @@ class StringResourceCoverageTest {
 
     private fun androidDisplayStringResourceValue(relativePath: String, name: String): String {
         return stringResourceValue(relativePath, name)
+            .replace("\\'", "'")
+    }
+
+    private fun pluralResourceValue(relativePath: String, name: String, quantity: String): String {
+        val document = parseXml(relativePath)
+        val nodes = document.getElementsByTagName("plurals")
+
+        for (index in 0 until nodes.length) {
+            val node = nodes.item(index)
+            val nodeName = node.attributes.getNamedItem("name")?.nodeValue
+            if (nodeName != name) {
+                continue
+            }
+
+            val items = node.childNodes
+            for (itemIndex in 0 until items.length) {
+                val item = items.item(itemIndex)
+                val itemQuantity = item.attributes?.getNamedItem("quantity")?.nodeValue
+                if (itemQuantity == quantity) {
+                    return item.textContent
+                }
+            }
+        }
+        error("Plural resource not found: $name/$quantity")
+    }
+
+    private fun androidDisplayPluralResourceValue(relativePath: String, name: String, quantity: String): String {
+        return pluralResourceValue(relativePath, name, quantity)
             .replace("\\'", "'")
     }
 

@@ -62,6 +62,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.sp
 import com.ScienceFiction.DronePassAndroid.R
@@ -343,7 +344,15 @@ fun SketchToolbar(
             AlertDialog(
                 onDismissRequest = { showDeleteAllConfirmDialog = false },
                 title = { Text(stringResource(R.string.sketch_delete_all_title)) },
-                text = { Text(stringResource(R.string.sketch_delete_all_confirm, sketchCount)) },
+                text = {
+                    Text(
+                        pluralStringResource(
+                            R.plurals.sketch_delete_all_confirm,
+                            sketchCount,
+                            sketchCount,
+                        )
+                    )
+                },
                 confirmButton = {
                     TextButton(
                         onClick = {

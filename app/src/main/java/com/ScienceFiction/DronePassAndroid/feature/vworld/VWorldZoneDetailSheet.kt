@@ -39,6 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -213,7 +214,11 @@ fun VWorldZoneDetailSheet(
                         VWorldZoneDetailRowDivider()
                         DetailRow(
                             label = stringResource(R.string.zone_detail_notam_remaining),
-                            value = stringResource(R.string.zone_detail_notam_days, days),
+                            value = pluralStringResource(
+                                R.plurals.zone_detail_notam_days,
+                                days,
+                                days,
+                            ),
                             valueColor = if (days <= 7) NotamRemainingWarningColor else null
                         )
                     }

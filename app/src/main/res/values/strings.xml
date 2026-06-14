@@ -51,7 +51,9 @@
     <string name="login_apple_error">Apple 로그인 중 오류가 발생했습니다.</string>
     <string name="login_sync_failed">데이터 동기화에 실패했습니다. 네트워크 상태를 확인해주세요.</string>
     <string name="login_account_switch_title">다른 계정으로 전환할까요?</string>
-    <string name="login_account_switch_message">클라우드에 저장되지 않은 로컬 항목 %1$d개가 있습니다. 계속하면 영구 삭제되어 복구할 수 없습니다. 기존 계정으로 다시 로그인하면 보존됩니다.</string>
+    <plurals name="login_account_switch_message">
+        <item quantity="other">클라우드에 저장되지 않은 로컬 항목 %1$d개가 있습니다. 계속하면 영구 삭제되어 복구할 수 없습니다. 기존 계정으로 다시 로그인하면 보존됩니다.</item>
+    </plurals>
     <string name="login_account_switch_confirm">계속(삭제)</string>
     <string name="login_skip">로그인 없이 시작</string>
     <string name="login_terms_intro">로그인 / 회원가입 시</string>
@@ -259,7 +261,9 @@
     <string name="drone_detail_delete_message">정말로 \'%s\'을(를) 삭제하시겠습니까?</string>
     <string name="drone_detail_shape_count_loading">연결된 도형을 확인 중…</string>
     <string name="drone_detail_shape_handling_title">연결된 도형 처리</string>
-    <string name="drone_detail_delete_with_shapes_message">\'%1$s\'에 연결된 %2$d개의 도형을 어떻게 처리하시겠습니까?</string>
+    <plurals name="drone_detail_delete_with_shapes_message">
+        <item quantity="other">\'%1$s\'에 연결된 %2$d개의 도형을 어떻게 처리하시겠습니까?</item>
+    </plurals>
     <string name="drone_detail_reassign">다른 드론으로 이동 (%d개)</string>
     <string name="drone_detail_delete_all_shapes">도형도 함께 삭제 (%d개)</string>
     <string name="drone_select_title">드론 선택</string>
@@ -364,14 +368,15 @@
     <string name="sketch_stroke_width">두께</string>
     <string name="sketch_opacity">투명도 %d%%</string>
     <string name="sketch_delete_all_title">모든 스케치 삭제</string>
-    <string name="sketch_delete_all_confirm">%d개의 스케치를 모두 삭제하시겠습니까?</string>
+    <plurals name="sketch_delete_all_confirm">
+        <item quantity="other">%d개의 스케치를 모두 삭제하시겠습니까?</item>
+    </plurals>
 
     <!-- FlightZoneLayerSelector -->
     <string name="flight_zone_layer_title">비행구역 레이어</string>
     <string name="flight_zone_select_all">전체 선택</string>
     <string name="flight_zone_deselect_all">전체 해제</string>
     <string name="flight_zone_legal_disclaimer">본 서비스는 국토교통부 디지털트윈국토 정보를 기반으로 제공하며, 실제 비행 허가 및 안전에 대한 책임은 사용자에게 있습니다.</string>
-    <string name="flight_zone_layer_count">선택: %1$d / %2$d개 레이어</string>
     <!-- FlightZoneLayerSelector - iOS 정합 신규 키 -->
     <string name="flight_zone_navigation_title">드론 비행 구역</string>
     <string name="flight_zone_navigation_done">완료</string>
@@ -429,7 +434,9 @@
     <string name="zone_detail_notam_start">시작</string>
     <string name="zone_detail_notam_end">종료</string>
     <string name="zone_detail_notam_remaining">남은 기간</string>
-    <string name="zone_detail_notam_days">%d일</string>
+    <plurals name="zone_detail_notam_days">
+        <item quantity="other">%d일</item>
+    </plurals>
     <string name="zone_detail_notam_status_active">활성</string>
     <string name="zone_detail_notam_status_expired">만료됨</string>
     <string name="zone_detail_notam_status_scheduled">예정됨</string>
@@ -836,7 +843,9 @@
     <string name="profile_backup_manual">수동 백업하기</string>
     <string name="profile_backup_last_backup">마지막 백업: %1$s</string>
     <string name="profile_sync_alert_title">실시간 클라우드 동기화</string>
-    <string name="profile_sync_success">%1$d개 도형의 동기화가 완료되었습니다.</string>
+    <plurals name="profile_sync_success">
+        <item quantity="other">%1$d개 도형의 동기화가 완료되었습니다.</item>
+    </plurals>
     <string name="profile_sync_failed">실시간 클라우드 동기화에 실패했습니다: %1$s</string>
 
     <string name="profile_terms_service">이용약관</string>
