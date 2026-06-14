@@ -62,6 +62,8 @@ internal fun shouldScheduleDroneCollectionSync(hasPendingWrites: Boolean): Boole
     return !hasPendingWrites
 }
 
+internal const val RealtimeSyncRestartDelayMs = 500L
+
 /**
  * Firestore 실시간 동기화 매니저
  *
@@ -514,7 +516,7 @@ class RealtimeSyncManager @Inject constructor(
 
     /**
      * iOS `resetAndRestartRealtimeSync()` 정합 — 현재 리스닝 중인 userId 또는
-     * 로그인 userId 로 stopListening → 100ms 후 startListening 재시작.
+     * 로그인 userId 로 stopListening → 500ms 후 startListening 재시작.
      * 동기화 토글 ON 시 fresh listener 보장.
      */
     suspend fun resetAndRestartRealtimeSync() {
@@ -523,7 +525,7 @@ class RealtimeSyncManager @Inject constructor(
             currentAuthUserId = auth.currentUser?.uid,
         ) ?: return
         stopListening()
-        delay(100L)
+        delay(RealtimeSyncRestartDelayMs)
         startListening(userId)
     }
 }

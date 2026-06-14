@@ -177,4 +177,9 @@ class RealtimeSyncManagerTest {
             ),
         )
     }
+
+    @Test
+    fun `realtime sync restart delay matches iOS half second timing`() {
+        assertEquals(500L, RealtimeSyncRestartDelayMs)
+    }
 }
