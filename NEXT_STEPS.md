@@ -11,7 +11,7 @@
 | 항목 | 값 |
 |---|---|
 | 워킹 트리 | clean |
-| 주요 검증 | `:app:testDebugUnitTest`, `:app:assembleDebug`, `:app:minifyReleaseWithR8`, `:app:testDebugUnitTest --tests "*MainScreenStartDestinationTest"`, `:app:testDebugUnitTest --tests "*MapScreenLayersTest" --tests "*SettingsPreferenceKeysTest"`, `:app:testDebugUnitTest --tests "*SettingsPreferenceKeysTest" --tests "*NotificationPreferenceKeysTest" --tests "*SettingsEndDateAlarmPlanTest" --tests "*MainActivityKeepScreenAwakeTest"` 통과 |
+| 주요 검증 | `:app:testDebugUnitTest`, `:app:assembleDebug`, `:app:minifyReleaseWithR8`, `:app:testDebugUnitTest --tests "*MainScreenStartDestinationTest"`, `:app:testDebugUnitTest --tests "*MapScreenLayersTest"`, `:app:testDebugUnitTest --tests "*SettingsPreferenceKeysTest"`, `:app:testDebugUnitTest --tests "*SettingsPreferenceKeysTest" --tests "*NotificationPreferenceKeysTest" --tests "*SettingsEndDateAlarmPlanTest" --tests "*MainActivityKeepScreenAwakeTest"`, `:app:testDebugUnitTest --tests "*Auth*Test" --tests "*StringResourceCoverageTest"` 통과 |
 | Release readiness | 2026-06-15에 실제 `keystore.properties` 또는 `WEB_CLIENT_ID`가 없으면 `assembleRelease`/`bundleRelease`가 의도적으로 실패함을 재확인 |
 | 남은 성격 | 실기기 전체 회귀, 콘솔/스토어 운영 설정, 최종 iOS 동기화 검증 |
 
@@ -19,6 +19,7 @@
 
 - 최신 debug APK를 Android 15 실기기 `RFCW324TZ0Z`에 데이터 유지 재설치하고 cold launch smoke 재확인. 홈 UI, 상단 드론 선택 버튼/드롭다운 원 정렬, Naver Map 준비, 무크래시 로그 확인.
 - 스케치 모드 종료 중 진행 중인 선 저장을 iOS처럼 일반 생성 액션과 동일하게 undo 기록 대상으로 보정. `:app:testDebugUnitTest --tests "*SketchDefaultsTest"`, `:app:testDebugUnitTest --tests "*Sketch*Test"`, `:app:assembleDebug` 통과.
+- 로그인/Auth 흐름을 iOS `LoginView`/`AuthManager`/`GoogleLoginManager`/`AppleLoginManager`와 재대조. Android는 provider 취소 무시, 사용자 문서 `appleUserID`/`googleUserID`/`lastLogin`, 계정 전환 reset-before-finalize, 로그인 후 cloud backup 활성화 + realtime/full sync + FCM 요청 순서를 유지한다. provider 계정 복구에서 Android가 `sketches`까지 이전하는 것은 데이터 보존 목적의 방어이며, iOS `AuthManager.migrateUserData`의 `sketches` 미이전은 별도 iOS 보강 후보로 계속 남긴다.
 - `FlightPermissionResult.details`를 iOS처럼 금지/승인필요/주의 결과에는 `레이어명: zoneCode 또는 레이어명` 목록으로 채우고, 비행 가능 결과에는 빈 목록을 유지하도록 보정. `:app:testDebugUnitTest --tests "*FlightZoneCalculatorTest" --tests "*VWorld*Test" --tests "*FlightZone*Test"` 및 `:app:assembleDebug` 통과.
 - Shape/Sketch Firestore optional 숫자 읽기를 iOS처럼 관대하게 보정
 - 스케치 전체 삭제 영어 확인 메시지의 단수 분기도 iOS와 같은 문장으로 보정
@@ -629,6 +630,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 - 2026-06-15에 VWorld 문자열 property 파싱을 iOS `as? String` 동작과 맞췄다. Android는 `toString()`으로 숫자 값을 문자열처럼 표시하고 blank 문자열은 `null`로 낮출 수 있었지만, 이제 String 타입만 그대로 읽어 빈 문자열은 보존하고 숫자/불일치 타입은 `null`로 처리한다. 또한 parser의 generic `code`/`zoneCode` fallback을 제거해 레이어별 iOS 필드만 `zoneCode`로 사용한다. `:app:testDebugUnitTest --tests "*VWorldModelsTest" --tests "*VWorldRepositoryTest" --tests "*VWorldZoneDetailSheetTest"`, `:app:testDebugUnitTest --tests "*VWorld*Test" --tests "*FlightZone*Test"`, `:app:assembleDebug` 통과 확인.
 - 2026-06-15에 스케치 모드 종료 중 진행 중인 선을 저장할 때도 iOS `SketchManager.exitSketchMode()`처럼 일반 `finishDrawing()` 경로의 undo 기록을 남기도록 보정했다. `:app:testDebugUnitTest --tests "*SketchDefaultsTest"`, `:app:testDebugUnitTest --tests "*Sketch*Test"`, `:app:assembleDebug` 통과 확인.
 - 2026-06-15 최신 debug APK를 실기기 `RFCW324TZ0Z`에 `adb install -r`로 데이터 유지 재설치 후 cold launch smoke를 완료했다. `LaunchState: COLD`, `TotalTime: 1920`, PID `10832`, focus `com.ScienceFiction.DronePassAndroid/.MainActivity` 유지. UIAutomator XML에서 Naver Map controls, 현위치/확대·축소/NAVER logo, 상단 `내 드론`/`드론 2` 선택 버튼과 드롭다운 원, `비행구역 레이어`, `스케치`, KP/날씨 카드, `새 도형 추가`, 하단 `지도`/`저장`/`설정` 렌더링을 확인했다. 상단 드론 선택 요소 bounds는 `[401,195][657,285]`, `[680,195][922,285]`, `[945,195][1035,285]`로 y=195·height=90이 일치했다. 필터 로그에는 `NaverMapDebug: 네이버 지도 준비 완료`가 있고, `AndroidRuntime` 항목은 UIAutomator 프로세스뿐이며 `FATAL EXCEPTION`/`ThemeUtils` 앱 오류는 없었다.
+- 2026-06-15에 로그인/Auth 흐름을 iOS `LoginView`/`AuthManager`/`GoogleLoginManager`/`AppleLoginManager` 기준으로 재감사했다. Android `LoginScreen`의 버튼/문서 시트 토큰, Google/Apple 취소 무시, 계정 전환 확인/취소, reset-before-finalize, 사용자 루트 문서 필드, provider 계정 복구, 로그인 후 cloud backup/realtime/full sync/FCM 순서는 현재 계약과 맞다. Android provider 복구는 `sketches`도 옮기므로 iOS보다 데이터 보존 범위가 넓고, iOS `sketches` 미이전은 별도 iOS 보강 후보로 유지한다. `:app:testDebugUnitTest --tests "*Auth*Test" --tests "*StringResourceCoverageTest"` 통과 확인.
 - `:app:minifyReleaseWithR8`는 현재 성공합니다.
 - Naver Maps SDK와 Play Services Location에서 R8 warning이 여러 줄 출력될 수 있지만, 현재는 build failure가 아닙니다.
 - `assembleRelease`와 `bundleRelease`는 실제 release signing과 `WEB_CLIENT_ID` 설정 전까지 의도적으로 차단되며, 2026-06-15에 두 실패 경로를 모두 재확인했습니다.
