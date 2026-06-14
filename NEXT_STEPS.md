@@ -579,6 +579,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 - 2026-06-14에 프로필 동기화 결과 다이얼로그의 수량 문자열 생성을 `LocalContext.current.resources`에서 Compose `LocalResources.current`로 바꿨다. `:app:assembleDebug`, `:app:lintDebug` 통과 확인. 최신 lint report에서 `LocalContextResourcesRead` 경고가 사라졌다.
 - 2026-06-14에 참조되지 않는 기본 색상 리소스 `R.color.white`/`black`만 담고 있던 `colors.xml`을 제거했다. `:app:assembleDebug`, `:app:lintDebug` 통과 확인. 최신 lint report에서 해당 `UnusedResources` 경고가 사라졌고, lint는 `0 errors, 165 warnings` 상태다.
 - 2026-06-14에 최신 리소스/아이콘/lint 정리 누적 후 전체 `:app:testDebugUnitTest`와 `:app:minifyReleaseWithR8`를 재실행해 통과 확인. R8 warning은 기존 Naver Maps SDK stack map table 및 Play Services Location companion object 경고만 남고 build failure는 아니다.
+- 2026-06-14 최신 debug APK를 실기기 `RFCW324TZ0Z`에 데이터 유지 재설치 후 cold launch smoke를 다시 완료했다. `LaunchState: COLD`, `TotalTime: 1896`, task size `1`, focus `com.ScienceFiction.DronePassAndroid/.MainActivity` 유지. UIAutomator XML에서 Naver Map controls, 상단 `내 드론`/`드론 2`/드롭다운 원, `비행구역 레이어`, `스케치`, `KP`, 날씨 카드, `새 도형 추가`, 하단 `지도`/`저장`/`설정` 렌더링을 확인했고, 상단 드론 선택 요소 bounds는 `[401,195][657,285]`, `[680,195][922,285]`, `[945,195][1035,285]`로 y=195·height=90이 일치했다. `AndroidRuntime:E` fatal 로그 없음.
 - `:app:minifyReleaseWithR8`는 현재 성공합니다.
 - Naver Maps SDK와 Play Services Location에서 R8 warning이 여러 줄 출력될 수 있지만, 현재는 build failure가 아닙니다.
 - `assembleRelease`와 `bundleRelease`는 실제 release signing과 `WEB_CLIENT_ID` 설정 전까지 의도적으로 차단되며, 2026-06-14에 두 실패 경로를 모두 재확인했습니다.
