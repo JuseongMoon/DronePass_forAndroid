@@ -124,25 +124,29 @@ object FlightZoneCalculator {
                 canFly = false,
                 level = FlightRestrictionLevel.PROHIBITED,
                 zones = prohibitedZones,
-                message = "${prohibitedZones.layerNames()} 구역입니다. 비행이 금지되어 있습니다."
+                message = "${prohibitedZones.layerNames()} 구역입니다. 비행이 금지되어 있습니다.",
+                details = prohibitedZones.permissionDetails(),
             )
             restrictedZones.isNotEmpty() -> FlightPermissionResult(
                 canFly = false,
                 level = FlightRestrictionLevel.RESTRICTED,
                 zones = restrictedZones,
-                message = "${restrictedZones.layerNames()} 구역입니다. 비행 승인이 필요합니다."
+                message = "${restrictedZones.layerNames()} 구역입니다. 비행 승인이 필요합니다.",
+                details = restrictedZones.permissionDetails(),
             )
             advisoryZones.isNotEmpty() -> FlightPermissionResult(
                 canFly = true,
                 level = FlightRestrictionLevel.ADVISORY,
                 zones = advisoryZones,
-                message = "비행 가능하나 주의가 필요한 지역입니다."
+                message = "비행 가능하나 주의가 필요한 지역입니다.",
+                details = advisoryZones.permissionDetails(),
             )
             else -> FlightPermissionResult(
                 canFly = true,
                 level = FlightRestrictionLevel.ADVISORY,
                 zones = emptyList(),
-                message = "해당 지역은 비행 가능합니다."
+                message = "해당 지역은 비행 가능합니다.",
+                details = emptyList(),
             )
         }
     }
@@ -194,6 +198,9 @@ object FlightZoneCalculator {
 private fun List<DroneZoneFeature>.layerNames(): String =
     joinToString(separator = ", ") { it.layer.displayName }
 
+private fun List<DroneZoneFeature>.permissionDetails(): List<String> =
+    map { zone -> "${zone.layer.displayName}: ${zone.zoneCode ?: zone.layer.displayName}" }
+
 /**
  * 비행 가능 여부 판정 결과
  */
@@ -201,5 +208,6 @@ data class FlightPermissionResult(
     val canFly: Boolean,
     val level: FlightRestrictionLevel?,
     val zones: List<DroneZoneFeature>,
-    val message: String
+    val message: String,
+    val details: List<String> = emptyList(),
 )

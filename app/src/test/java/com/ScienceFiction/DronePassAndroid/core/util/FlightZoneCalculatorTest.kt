@@ -293,6 +293,7 @@ class FlightZoneCalculatorTest {
         assertFalse(result.canFly)
         assertEquals(FlightRestrictionLevel.RESTRICTED, result.level)
         assertEquals("경계구역 구역입니다. 비행 승인이 필요합니다.", result.message)
+        assertEquals(listOf("경계구역: A1"), result.details)
     }
 
     @Test
@@ -316,6 +317,45 @@ class FlightZoneCalculatorTest {
         assertFalse(result.canFly)
         assertEquals(FlightRestrictionLevel.RESTRICTED, result.level)
         assertEquals("사전협의구역 구역입니다. 비행 승인이 필요합니다.", result.message)
+        assertEquals(listOf("사전협의구역: 서울지방항공청"), result.details)
+    }
+
+    @Test
+    fun `비행 가능 판정 details 는 iOS처럼 비어 있다`() {
+        val result = FlightZoneCalculator.checkFlightPermission(
+            lat = 39.0,
+            lon = 126.5,
+            zones = emptyList(),
+        )
+
+        assertTrue(result.canFly)
+        assertEquals(FlightRestrictionLevel.ADVISORY, result.level)
+        assertEquals("해당 지역은 비행 가능합니다.", result.message)
+        assertEquals(emptyList<String>(), result.details)
+    }
+
+    @Test
+    fun `주의 구역 details 는 iOS처럼 레이어명과 zoneCode fallback 이름을 포함한다`() {
+        val zone = DroneZoneFeature(
+            id = "park-zone",
+            layer = FlightZoneLayer.NATIONAL_PARK,
+            polygons = listOf(unitSquare),
+            zoneCode = null,
+            upperAltitude = null,
+            lowerAltitude = null,
+            zoneName = "VWorld 개별 공원명",
+        )
+
+        val result = FlightZoneCalculator.checkFlightPermission(
+            lat = 37.5,
+            lon = 126.5,
+            zones = listOf(zone),
+        )
+
+        assertTrue(result.canFly)
+        assertEquals(FlightRestrictionLevel.ADVISORY, result.level)
+        assertEquals("비행 가능하나 주의가 필요한 지역입니다.", result.message)
+        assertEquals(listOf("국립자연공원: 국립자연공원"), result.details)
     }
 
     // endregion
