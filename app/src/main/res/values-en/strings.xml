@@ -16,10 +16,7 @@
     <string name="common_clear">Clear</string>
     <string name="common_search">Search</string>
     <string name="common_error">Error</string>
-    <string name="common_loading">Loading…</string>
     <string name="common_unknown_error">An unknown error occurred.</string>
-    <string name="common_no_title">No title</string>
-    <string name="common_not_set">Not set</string>
     <string name="common_memo">Memo</string>
 
     <!-- Navigation / Screen titles -->
@@ -36,7 +33,6 @@
     <!-- LoginScreen -->
     <string name="login_logo_description">DronePass logo</string>
     <string name="login_title">Sign In / Sign Up</string>
-    <string name="login_subtitle">Drone flight zone visualization</string>
     <string name="login_loading">Signing in\u2026</string>
     <string name="login_apple">Continue with Apple</string>
     <string name="login_apple_logo_description">Apple logo</string>
@@ -417,8 +413,6 @@
     <string name="shape_detail_edit">Edit</string>
     <string name="shape_detail_duplicate">Duplicate</string>
     <string name="shape_detail_drone_connected">Drone</string>
-    <string name="login_terms">Terms of Service</string>
-    <string name="login_privacy">Privacy Policy</string>
     <string name="saved_drone_filter_all">All</string>
     <string name="saved_drone_filter_no_drone">Unlinked</string>
     <string name="settings_delete_expired_shapes">Delete all expired shapes</string>
@@ -508,7 +502,6 @@
     <string name="patch_notes_loading">Loading…</string>
     <string name="patch_notes_error_title">Failed to load patch notes.</string>
     <string name="patch_notes_error_message">Please try again later.</string>
-    <string name="patch_notes_empty">No patch notes</string>
 
     <!-- Resource parity backfill -->
     <string name="screen_kp_forecast">KP Index</string>
@@ -587,8 +580,6 @@
     <string name="settings_weather_subtitle">Check weather conditions for your flight area on the map</string>
     <string name="settings_app_intro">App Info</string>
     <string name="settings_patch_notes">Patch Notes</string>
-    <string name="settings_terms">Terms of Service</string>
-    <string name="settings_privacy">Privacy Policy</string>
 
     <string name="app_info_title">App Info</string>
     <string name="app_info_description">DronePass is\nan integrated management app\nthat provides all the information you need for drone flight.\n\nCheck flight zones, real-time weather, KP index,\nand sunrise/sunset times all at once.</string>
@@ -626,8 +617,6 @@
     <string name="app_info_contact_company">Science Fiction Inc.</string>
     <string name="app_info_contact_message">Please feel free to contact us with any questions.</string>
     <string name="app_info_contact_email">support@sciencefiction.co.kr</string>
-    <string name="web_document_loading">Loading…</string>
-    <string name="web_document_error">Unable to load page</string>
     <string name="patch_notes_title">Patch Notes</string>
 
     <string name="weather_overlay_sunrise">Sunrise</string>

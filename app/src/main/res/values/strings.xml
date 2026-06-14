@@ -16,10 +16,7 @@
     <string name="common_clear">지우기</string>
     <string name="common_search">검색</string>
     <string name="common_error">오류</string>
-    <string name="common_loading">로딩 중…</string>
     <string name="common_unknown_error">알 수 없는 오류가 발생했습니다.</string>
-    <string name="common_no_title">제목 없음</string>
-    <string name="common_not_set">미설정</string>
     <string name="common_memo">메모</string>
 
     <!-- Navigation / Screen titles -->
@@ -38,7 +35,6 @@
     <!-- LoginScreen -->
     <string name="login_logo_description">DronePass 로고</string>
     <string name="login_title">로그인 / 회원가입</string>
-    <string name="login_subtitle">드론 비행 허가지 시각화</string>
     <string name="login_loading">로그인 중…</string>
     <string name="login_google">Google로 로그인</string>
     <string name="login_google_logo_description">Google 로고</string>
@@ -490,8 +486,6 @@
     <string name="shape_detail_edit">수정하기</string>
     <string name="shape_detail_duplicate">복제하기</string>
     <string name="shape_detail_drone_connected">드론</string>
-    <string name="login_terms">이용약관</string>
-    <string name="login_privacy">개인정보 처리방침</string>
     <string name="saved_drone_filter_all">전체</string>
     <string name="saved_drone_filter_no_drone">미연결</string>
     <string name="settings_delete_expired_shapes">만료된 도형 전부 삭제</string>
@@ -503,8 +497,6 @@
     <!-- Phase 10-A: Settings sub-screens -->
     <string name="settings_app_intro">앱 정보</string>
     <string name="settings_patch_notes">패치노트</string>
-    <string name="settings_terms">이용약관</string>
-    <string name="settings_privacy">개인정보 처리방침</string>
     <string name="app_info_title">앱 정보</string>
     <string name="app_info_description">DronePass는\n드론 비행에 필요한 모든 정보를 제공하는\n통합 관리 어플입니다.\n\n비행 허가지 시각화부터 실시간 날씨, KP 지수,\n일출/일몰 정보까지 한 번에 확인하세요.</string>
     <string name="app_info_section_intro">앱 소개</string>
@@ -541,8 +533,6 @@
     <string name="app_info_contact_company">Science Fiction Inc.</string>
     <string name="app_info_contact_message">문의사항이 있으시면 언제든지 연락해주세요.</string>
     <string name="app_info_contact_email">support@sciencefiction.co.kr</string>
-    <string name="web_document_loading">로딩 중…</string>
-    <string name="web_document_error">페이지를 불러올 수 없습니다</string>
     <string name="patch_notes_title">패치노트</string>
 
     <!-- Phase 10-B: UX Improvements -->
@@ -866,5 +856,4 @@
     <string name="patch_notes_loading">불러오는 중…</string>
     <string name="patch_notes_error_title">패치노트를 불러올 수 없습니다.</string>
     <string name="patch_notes_error_message">잠시 후 다시 시도해주세요.</string>
-    <string name="patch_notes_empty">패치노트가 없습니다</string>
 </resources>
