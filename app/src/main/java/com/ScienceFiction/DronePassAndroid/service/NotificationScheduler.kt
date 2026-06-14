@@ -122,7 +122,10 @@ internal fun sunriseNotificationContentResources(minutesBefore: Int): Notificati
             title = R.string.notification_sunrise_10min_title,
             body = R.string.notification_sunrise_10min_body,
         )
-        else -> error("Unsupported sunrise notification offset: $minutesBefore")
+        else -> NotificationContentResourceIds(
+            title = R.string.notification_sunrise_30min_title,
+            body = R.string.notification_sunrise_30min_body,
+        )
     }
 }
 
@@ -136,7 +139,10 @@ internal fun sunsetNotificationContentResources(minutesBefore: Int): Notificatio
             title = R.string.notification_sunset_10min_title,
             body = R.string.notification_sunset_10min_body,
         )
-        else -> error("Unsupported sunset notification offset: $minutesBefore")
+        else -> NotificationContentResourceIds(
+            title = R.string.notification_sunset_30min_title,
+            body = R.string.notification_sunset_30min_body,
+        )
     }
 }
 

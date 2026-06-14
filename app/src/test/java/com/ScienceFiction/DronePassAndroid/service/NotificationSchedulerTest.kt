@@ -162,6 +162,17 @@ class NotificationSchedulerTest {
     }
 
     @Test
+    fun `일출 알림 offset 이 깨져도 앱을 중단하지 않고 30분 리소스로 fallback 한다`() {
+        assertEquals(
+            NotificationContentResourceIds(
+                title = R.string.notification_sunrise_30min_title,
+                body = R.string.notification_sunrise_30min_body,
+            ),
+            sunriseNotificationContentResources(minutesBefore = 15),
+        )
+    }
+
+    @Test
     fun `일몰 알림 제목과 본문은 iOS처럼 30분 10분 리소스를 구분한다`() {
         assertEquals(
             NotificationContentResourceIds(
@@ -176,6 +187,17 @@ class NotificationSchedulerTest {
                 body = R.string.notification_sunset_10min_body,
             ),
             sunsetNotificationContentResources(minutesBefore = 10),
+        )
+    }
+
+    @Test
+    fun `일몰 알림 offset 이 깨져도 앱을 중단하지 않고 30분 리소스로 fallback 한다`() {
+        assertEquals(
+            NotificationContentResourceIds(
+                title = R.string.notification_sunset_30min_title,
+                body = R.string.notification_sunset_30min_body,
+            ),
+            sunsetNotificationContentResources(minutesBefore = 15),
         )
     }
 }
