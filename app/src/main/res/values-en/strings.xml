@@ -296,23 +296,16 @@
     <string name="sketch_redo">Redo</string>
     <string name="sketch_delete_all">Delete all</string>
     <string name="sketch_done">Done</string>
-    <string name="sketch_pen">Pen</string>
-    <string name="sketch_color">Color</string>
-    <string name="sketch_stroke_width">Stroke width</string>
-    <string name="sketch_opacity">Opacity %d%%</string>
 
     <!-- FlightZoneLayerSelector -->
-    <string name="flight_zone_layer_title">Flight zone layers</string>
     <string name="flight_zone_select_all">Select all</string>
     <string name="flight_zone_deselect_all">Deselect all</string>
 
     <!-- Notification -->
-    <string name="notification_sunrise_title">Sunrise alarm</string>
     <string name="notification_sunrise_30min_title">30 minutes before sunrise</string>
     <string name="notification_sunrise_30min_body">30 minutes until sunrise.</string>
     <string name="notification_sunrise_10min_title">10 minutes before sunrise</string>
     <string name="notification_sunrise_10min_body">10 minutes until sunrise.</string>
-    <string name="notification_sunset_title">Sunset alarm</string>
     <string name="notification_sunset_30min_title">30 minutes before sunset</string>
     <string name="notification_sunset_30min_body">30 minutes until sunset.</string>
     <string name="notification_sunset_10min_title">10 minutes before sunset</string>
@@ -323,21 +316,8 @@
 
     <!-- VWorldZoneDetailSheet -->
     <string name="zone_detail_code">Zone Code</string>
-    <string name="zone_detail_altitude_range">Altitude range</string>
-    <string name="zone_detail_surface">Surface</string>
-    <string name="zone_detail_unlimited">Unlimited</string>
-    <string name="zone_detail_restriction_level">Restriction level</string>
-    <string name="zone_detail_prohibited">No-fly zone - Flight is strictly prohibited</string>
-    <string name="zone_detail_restricted">Restricted - Flight not allowed without authorization</string>
-    <string name="zone_detail_consultation">Consultation required - Coordination with authorities needed</string>
-    <string name="zone_detail_advisory">Advisory - Caution is advised during flight</string>
 
     <!-- Phase 9-A: Map & Shape Edit enhancements -->
-    <string name="shape_edit_section_drone">Select drone</string>
-    <string name="shape_edit_no_drone">Not linked</string>
-    <string name="shape_edit_section_color">Color</string>
-    <string name="shape_edit_coordinate_hint">Enter coordinates (e.g. 37.5665, 126.9780)</string>
-    <string name="shape_edit_coordinate_invalid">Invalid coordinate format</string>
     <string name="shape_edit_search_address">Search address</string>
     <string name="search_address_title">Search Address</string>
     <string name="search_address_placeholder">Search by road or lot address</string>
@@ -347,12 +327,10 @@
     <string name="search_address_example_jibun_1" tools:ignore="TypographyDashes">• 서초동 1305-6 (지번)</string>
     <string name="search_address_example_road_2">• 테헤란로 322 (도로명)</string>
     <string name="search_address_example_jibun_2" tools:ignore="TypographyDashes">• 역삼동 679-4 (지번)</string>
-    <string name="search_address_no_result">No results found</string>
     <string name="search_address_road">Road</string>
     <string name="search_address_jibun">Lot</string>
     <string name="search_address_error_prefix">Error searching address</string>
     <string name="search_address_error">Error searching address</string>
-    <string name="map_long_press_hint">Long press on the map to add a shape</string>
 
     <!-- Phase 9-B/C: Detail & List enhancements -->
     <string name="shape_detail_open_external_map">Choose Navigation App</string>
@@ -369,13 +347,9 @@
     <string name="shape_detail_edit">Edit</string>
     <string name="shape_detail_duplicate">Duplicate</string>
     <string name="shape_detail_drone_connected">Drone</string>
-    <string name="saved_drone_filter_all">All</string>
-    <string name="saved_drone_filter_no_drone">Unlinked</string>
     <string name="settings_delete_expired_shapes">Delete all expired shapes</string>
-    <string name="settings_delete_expired_shapes_subtitle">Delete all shapes past their flight end date</string>
     <string name="settings_delete_expired_alert_title">Delete all expired shapes?</string>
     <string name="settings_delete_expired_alert_message">All shapes past their end date will be deleted. This action cannot be undone.</string>
-    <string name="settings_section_data_management">Data management</string>
 
     <!-- Phase 2: KP/Weather sheet entry rows -->
     <string name="settings_kp_index_current">Current KP Index: %1$s</string>
@@ -523,10 +497,6 @@
     <string name="zone_detail_altitude_upper">Upper</string>
     <string name="zone_detail_altitude_lower">Lower</string>
 
-    <string name="geocoding_address_not_found">Address not found</string>
-    <string name="search_address_error_empty">Please enter a search term</string>
-    <string name="search_address_error_no_results">No results found</string>
-    <string name="search_address_error_network">A network error occurred</string>
 
     <string name="settings_section_flight_environment">Flight Environment</string>
     <string name="settings_app_intro">App Info</string>
@@ -570,13 +540,6 @@
     <string name="app_info_contact_email">support@sciencefiction.co.kr</string>
     <string name="patch_notes_title">Patch Notes</string>
 
-    <string name="weather_overlay_sunrise">Sunrise</string>
-    <string name="weather_overlay_sunset">Sunset</string>
-    <string name="weather_flight_suitability">Flight suitability</string>
-    <string name="weather_suitability_safe">Safe</string>
-    <string name="weather_suitability_caution">Caution</string>
-    <string name="weather_suitability_danger">Danger</string>
-    <string name="weather_wind_compass">Wind compass</string>
     <string name="weather_direction_n">N</string>
     <string name="weather_direction_ne">NE</string>
     <string name="weather_direction_e">E</string>
@@ -591,7 +554,6 @@
     <string name="weather_chart_precipitation">Precipitation Forecast (3 Days)</string>
     <string name="weather_chart_visibility">Visibility Forecast (3 Days)</string>
     <string name="weather_chart_cri">CRI Forecast (3 Days)</string>
-    <string name="weather_sun_timeline">Sunrise/Sunset</string>
     <string name="weather_navigation_title">Location-based Information</string>
     <string name="weather_section_sunrise_sunset">Sunrise/Sunset</string>
     <string name="weather_section_current">Current Weather</string>
@@ -623,7 +585,6 @@
     <string name="weather_info_elements_title">Key Weather Elements</string>
     <string name="weather_info_element_safe_range">Safe Range: %1$s</string>
     <string name="weather_info_element_note">Note</string>
-    <string name="weather_info_wind_body">Safe wind thresholds vary by drone weight class. Sustained wind near the threshold can increase aircraft shake and battery use.</string>
     <string name="weather_info_wind_title">Wind Speed</string>
     <string name="weather_info_wind_safe_range">0-%1$.1f m/s (Safe)</string>
     <string name="weather_info_wind_range_safe">0-%1$.1f m/s</string>
@@ -636,7 +597,6 @@
     <string name="weather_info_wind_danger_desc">Uncontrollable, risk of aircraft rollover</string>
     <string name="weather_info_wind_danger_advice">Avoid flight</string>
     <string name="weather_info_wind_note">Wind speed is the most important factor for drone flight.\n\nThe currently selected %1$s drone can resist wind speeds up to %2$.1fm/s. However, for safety, it is recommended to avoid flying in wind speeds above %3$.1fm/s.\n\nLighter drones are more affected by wind, so caution is needed even at lower wind speeds.</string>
-    <string name="weather_info_gust_body">Sudden gusts can disturb attitude control and return paths. Even with low average wind, large gust increases require caution.</string>
     <string name="weather_info_gust_title">Gust Difference</string>
     <string name="weather_info_gust_safe_range">0-%1$.1f m/s (Good)</string>
     <string name="weather_info_gust_range_safe">0-%1$.1f m/s</string>
@@ -649,7 +609,6 @@
     <string name="weather_info_gust_danger_desc">Sudden wind changes create high risk of attitude loss and collision</string>
     <string name="weather_info_gust_danger_advice">Stop or postpone flight immediately. If emergency landing needed, descend very slowly</string>
     <string name="weather_info_gust_note">Gust difference uses DronePass\'s proprietary calculation formula\n\n① Basic Calculation\nMaximum gust speed - Average wind speed = Difference\nExample: Gust 10m/s, Average 6m/s → Difference 4m/s\n\n② 4-Axis Simultaneous Evaluation\n• Axis A: Gust difference (delta value)\n• Axis B: Gust ratio (gust÷average)\n• Axis C: Absolute wind speed (average, gust separately)\n• Axis D: Aircraft spec limits\n\n③ Customized Thresholds by Drone Weight\nCurrently selected %1$s drone:\n• Caution: %2$.1fm/s or more\n• Danger: %3$.1fm/s or more\n\n④ Voting System\nFinal rating determined by votes from 4 axes\n• 2+ danger votes → Danger\n• 2+ caution votes → Caution\n\n⑤ Localized Gust Detection\nIf average wind is very weak (&lt;2.5m/s) but gusts are strong → 🟡 &quot;Localized gust risk&quot; indicator\n→ Terrain effects: between buildings, valleys, cliffs\n→ Response: Move location or fly only at low altitude (&lt;10m) and short range\n\n⚠️ Special Caution:\n• Even if average wind is safe, large difference creates sudden attitude loss risk\n• Most dangerous during takeoff/landing (low altitude, possible ground obstacle collision)\n• Rapid battery drain (maintaining attitude against strong wind)\n• Gusts during high-speed maneuvers can cause path deviation</string>
-    <string name="weather_info_precipitation_body">Most drones are vulnerable to precipitation. Even light rain can affect motors, sensors, and batteries, so avoid flying in rain.</string>
     <string name="weather_info_precipitation_title">Precipitation</string>
     <string name="weather_info_precipitation_safe_range">0 mm (Dry)</string>
     <string name="weather_info_precipitation_range_safe">0 mm</string>
@@ -662,7 +621,6 @@
     <string name="weather_info_precipitation_danger_desc">Risk of motor and electronics damage, poor visibility</string>
     <string name="weather_info_precipitation_danger_advice">Avoid flight (including waterproof drones)</string>
     <string name="weather_info_precipitation_note">Most drones are not waterproof. When it rains, the risk of electronic damage is very high, so flight should be avoided.</string>
-    <string name="weather_info_visibility_body">Visibility is important for tracking the aircraft by sight and checking obstacles. In low visibility, consider only short-range flight.</string>
     <string name="weather_info_visibility_title">Visibility</string>
     <string name="weather_info_visibility_safe_range">%1$d km or more (Good)</string>
     <string name="weather_info_visibility_range_safe">%1$d km or more</string>
@@ -675,7 +633,6 @@
     <string name="weather_info_visibility_danger_desc">Cannot secure visibility, difficult to identify obstacles</string>
     <string name="weather_info_visibility_danger_advice">Avoid flight</string>
     <string name="weather_info_visibility_note">Visibility is essential for visually confirming the drone and obstacles. Flight should be avoided during fog or yellow dust.</string>
-    <string name="weather_info_temperature_body">Low temperature reduces battery performance, while high temperature increases heat risk. Use conservative flight times in extreme temperatures.</string>
     <string name="weather_info_temperature_title">Temperature</string>
     <string name="weather_info_temperature_safe_range">0-%1$d°C (Appropriate)</string>
     <string name="weather_info_temperature_range_safe">0-%1$d°C</string>
@@ -688,7 +645,6 @@
     <string name="weather_info_temperature_danger_desc">Rapid battery performance degradation, risk of aircraft damage</string>
     <string name="weather_info_temperature_danger_advice">Avoid flight</string>
     <string name="weather_info_temperature_note">Lithium batteries are sensitive to temperature. In extreme temperatures, battery performance degrades rapidly, creating unexpected crash risk.</string>
-    <string name="weather_info_cri_body">CRI indicates condensation risk. High humidity and a small temperature-dew point gap increase the chance of condensation on lenses, sensors, and electronics.</string>
     <string name="weather_info_cri_title">CRI (Condensation Risk Index)</string>
     <string name="weather_info_cri_safe_range">1–39 (Safe)</string>
     <string name="weather_info_cri_range_safe">1–39</string>
@@ -710,15 +666,6 @@
     <string name="weather_error_location_permission">Location permission is required</string>
     <string name="weather_error_location_unavailable">Unable to get location</string>
 
-    <string name="kp_gauge_label">Current Kp</string>
-    <string name="kp_level_stable">Stable</string>
-    <string name="kp_level_unstable">Unstable</string>
-    <string name="kp_level_storm">Storm</string>
-    <string name="kp_level_extreme">Extreme storm</string>
-    <string name="kp_desc_stable">GPS normal, suitable for drone flight</string>
-    <string name="kp_desc_unstable">GPS error may increase, caution needed</string>
-    <string name="kp_desc_storm">GPS disruption possible, avoid flying</string>
-    <string name="kp_desc_extreme">Flight not recommended</string>
     <string name="kp_navigation_title">KP Index Forecast</string>
     <string name="kp_section_current">Current KP Index</string>
     <string name="kp_section_forecast48">48-Hour Forecast</string>

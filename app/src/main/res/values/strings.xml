@@ -299,17 +299,12 @@
     <string name="sketch_redo">다시 실행</string>
     <string name="sketch_delete_all">전체 삭제</string>
     <string name="sketch_done">완료</string>
-    <string name="sketch_pen">펜</string>
-    <string name="sketch_color">색상</string>
-    <string name="sketch_stroke_width">두께</string>
-    <string name="sketch_opacity">투명도 %d%%</string>
     <string name="sketch_delete_all_title">모든 스케치 삭제</string>
     <plurals name="sketch_delete_all_confirm">
         <item quantity="other">%d개의 스케치를 모두 삭제하시겠습니까?</item>
     </plurals>
 
     <!-- FlightZoneLayerSelector -->
-    <string name="flight_zone_layer_title">비행구역 레이어</string>
     <string name="flight_zone_select_all">전체 선택</string>
     <string name="flight_zone_deselect_all">전체 해제</string>
     <string name="flight_zone_legal_disclaimer">본 서비스는 국토교통부 디지털트윈국토 정보를 기반으로 제공하며, 실제 비행 허가 및 안전에 대한 책임은 사용자에게 있습니다.</string>
@@ -339,12 +334,10 @@
     <string name="zone_detail_altitude_limit">고도 제한</string>
 
     <!-- Notification -->
-    <string name="notification_sunrise_title">일출 알림</string>
     <string name="notification_sunrise_30min_title">일출 30분 전</string>
     <string name="notification_sunrise_30min_body">일출까지 30분 남았습니다.</string>
     <string name="notification_sunrise_10min_title">일출 10분 전</string>
     <string name="notification_sunrise_10min_body">일출까지 10분 남았습니다.</string>
-    <string name="notification_sunset_title">일몰 알림</string>
     <string name="notification_sunset_30min_title">일몰 30분 전</string>
     <string name="notification_sunset_30min_body">일몰까지 30분 남았습니다.</string>
     <string name="notification_sunset_10min_title">일몰 10분 전</string>
@@ -355,14 +348,6 @@
 
     <!-- VWorldZoneDetailSheet -->
     <string name="zone_detail_code">구역 코드</string>
-    <string name="zone_detail_altitude_range">고도 범위</string>
-    <string name="zone_detail_surface">지표</string>
-    <string name="zone_detail_unlimited">무제한</string>
-    <string name="zone_detail_restriction_level">제한 수준</string>
-    <string name="zone_detail_prohibited">비행금지 - 비행이 절대 불가합니다</string>
-    <string name="zone_detail_restricted">비행제한 - 허가 없이 비행할 수 없습니다</string>
-    <string name="zone_detail_consultation">사전협의 - 관할기관 협의가 필요합니다</string>
-    <string name="zone_detail_advisory">주의 - 비행 시 주의가 필요합니다</string>
 
     <!-- VWorld Zone Detail - NOTAM -->
     <string name="zone_detail_notam_title">NOTAM 정보</string>
@@ -398,11 +383,6 @@
     <string name="zone_detail_altitude_lower">하한</string>
 
     <!-- Phase 9-A: Map & Shape Edit enhancements -->
-    <string name="shape_edit_section_drone">드론 선택</string>
-    <string name="shape_edit_no_drone">연결 안 함</string>
-    <string name="shape_edit_section_color">색상</string>
-    <string name="shape_edit_coordinate_hint">좌표를 입력하세요 (예: 37.5665, 126.9780)</string>
-    <string name="shape_edit_coordinate_invalid">유효하지 않은 좌표 형식입니다</string>
     <string name="shape_edit_search_address">주소 검색</string>
     <string name="search_address_title">주소 검색</string>
     <string name="search_address_placeholder">도로명 또는 지번 주소로 검색</string>
@@ -412,13 +392,10 @@
     <string name="search_address_example_jibun_1" tools:ignore="TypographyDashes">• 서초동 1305-6 (지번)</string>
     <string name="search_address_example_road_2">• 테헤란로 322 (도로명)</string>
     <string name="search_address_example_jibun_2" tools:ignore="TypographyDashes">• 역삼동 679-4 (지번)</string>
-    <string name="search_address_no_result">검색 결과가 없습니다</string>
     <string name="search_address_road">도로명</string>
     <string name="search_address_jibun">지번</string>
     <string name="search_address_error_prefix">검색 중 오류가 발생했습니다</string>
     <string name="search_address_error">주소 검색 중 오류가 발생했습니다</string>
-    <string name="geocoding_address_not_found">주소를 찾을 수 없습니다</string>
-    <string name="map_long_press_hint">지도를 길게 눌러 도형을 추가할 수 있습니다</string>
 
     <!-- Phase 9-B/C: Detail & List enhancements -->
     <string name="shape_detail_open_external_map">길찾기 앱 선택</string>
@@ -435,13 +412,9 @@
     <string name="shape_detail_edit">수정하기</string>
     <string name="shape_detail_duplicate">복제하기</string>
     <string name="shape_detail_drone_connected">드론</string>
-    <string name="saved_drone_filter_all">전체</string>
-    <string name="saved_drone_filter_no_drone">미연결</string>
     <string name="settings_delete_expired_shapes">만료된 도형 전부 삭제</string>
-    <string name="settings_delete_expired_shapes_subtitle">비행 종료일이 지난 모든 도형을 삭제합니다</string>
     <string name="settings_delete_expired_alert_title">만료된 도형을 모두 삭제할까요?</string>
     <string name="settings_delete_expired_alert_message">종료일이 지난 도형을 모두 삭제합니다. 이 작업은 되돌릴 수 없습니다.</string>
-    <string name="settings_section_data_management">데이터 관리</string>
 
     <!-- Phase 10-A: Settings sub-screens -->
     <string name="settings_app_intro">앱 정보</string>
@@ -485,22 +458,6 @@
     <string name="patch_notes_title">패치노트</string>
 
     <!-- Phase 10-B: UX Improvements -->
-    <string name="weather_overlay_sunrise">일출</string>
-    <string name="weather_overlay_sunset">일몰</string>
-    <string name="kp_gauge_label">현재 Kp</string>
-    <string name="kp_level_stable">안정</string>
-    <string name="kp_level_unstable">불안정</string>
-    <string name="kp_level_storm">폭풍</string>
-    <string name="kp_level_extreme">극심한 폭풍</string>
-    <string name="kp_desc_stable">GPS 정상, 드론 비행 적합</string>
-    <string name="kp_desc_unstable">GPS 오차 증가 가능, 주의 필요</string>
-    <string name="kp_desc_storm">GPS 장애 가능, 비행 자제 권장</string>
-    <string name="kp_desc_extreme">비행 금지 권장</string>
-    <string name="weather_flight_suitability">비행 적합도</string>
-    <string name="weather_suitability_safe">안전</string>
-    <string name="weather_suitability_caution">주의</string>
-    <string name="weather_suitability_danger">위험</string>
-    <string name="weather_wind_compass">풍향 나침반</string>
     <string name="weather_direction_n">북</string>
     <string name="weather_direction_ne">북동</string>
     <string name="weather_direction_e">동</string>
@@ -517,7 +474,6 @@
     <string name="weather_chart_precipitation">강수량 예보 (3일)</string>
     <string name="weather_chart_visibility">가시거리 예보 (3일)</string>
     <string name="weather_chart_cri">결로위험지수 예보 (3일)</string>
-    <string name="weather_sun_timeline">일출/일몰</string>
 
     <!-- Weather Sheet (iOS WeatherForecastView 정합) -->
     <string name="weather_navigation_title">현위치 기반 정보</string>
@@ -551,7 +507,6 @@
     <string name="weather_info_elements_title">주요 날씨 요소</string>
     <string name="weather_info_element_safe_range">안전 범위: %1$s</string>
     <string name="weather_info_element_note">참고</string>
-    <string name="weather_info_wind_body">드론 무게 등급에 따라 안전 풍속 기준이 다릅니다. 지속 풍속이 기준에 가까우면 기체 흔들림과 배터리 소모가 커질 수 있습니다.</string>
     <string name="weather_info_wind_title">풍속</string>
     <string name="weather_info_wind_safe_range">0-%1$.1f m/s (안전)</string>
     <string name="weather_info_wind_range_safe">0-%1$.1f m/s</string>
@@ -564,7 +519,6 @@
     <string name="weather_info_wind_danger_desc">제어 불가능, 기체 전복 위험</string>
     <string name="weather_info_wind_danger_advice">비행 자제</string>
     <string name="weather_info_wind_note">풍속은 드론 비행에 가장 중요한 요소입니다.\n\n현재 선택된 %1$s 드론은 최대 %2$.1fm/s의 풍속까지 저항할 수 있습니다. 그러나 안전을 위해 %3$.1fm/s 이상의 풍속에서는 비행을 자제하는 것이 좋습니다.\n\n드론 무게가 가벼울수록 바람의 영향을 더 많이 받으므로, 더 낮은 풍속에서도 주의가 필요합니다.</string>
-    <string name="weather_info_gust_body">순간 돌풍은 짧은 시간에 자세 제어와 복귀 경로를 흔들 수 있습니다. 평균 풍속이 낮아도 돌풍 증가량이 크면 주의가 필요합니다.</string>
     <string name="weather_info_gust_title">순간 풍속 증가량</string>
     <string name="weather_info_gust_safe_range">0-%1$.1f m/s (양호)</string>
     <string name="weather_info_gust_range_safe">0-%1$.1f m/s</string>
@@ -577,7 +531,6 @@
     <string name="weather_info_gust_danger_desc">급격한 바람 변화로 자세 이탈 및 충돌 위험이 높습니다</string>
     <string name="weather_info_gust_danger_advice">비행 즉시 중단 또는 연기. 긴급 착륙 필요 시 매우 천천히 하강</string>
     <string name="weather_info_gust_note">순간풍속증가량은 드론패스 자체 계산식을 사용합니다\n\n① 기본 계산\n순간최대풍속(돌풍) - 평균풍속 = 증가량\n예: 돌풍 10m/s, 평균 6m/s → 증가량 4m/s\n\n② 4개 축 동시 평가\n• 축A: 순간 풍속 증가량 (차이값)\n• 축B: 돌풍 비율 (돌풍÷평균풍)\n• 축C: 절대 풍속 (평균풍, 돌풍 각각)\n• 축D: 기체 스펙 한계\n\n③ 드론 무게별 맞춤 임계값\n현재 선택된 %1$s 드론:\n• 주의: %2$.1fm/s 이상\n• 위험: %3$.1fm/s 이상\n\n④ 투표 시스템\n4개 축에서 투표하여 최종 등급 결정\n• 위험 2표 이상 → 위험\n• 주의 2표 이상 → 주의\n\n⑤ 국지 돌풍 감지\n평균풍이 매우 약한데(2.5m/s 미만) 돌풍만 강하면 🟡 &quot;국지 돌풍 위험&quot; 표시\n→ 건물 사이, 계곡, 절벽 등 지형 영향\n→ 대응: 장소 이동 또는 저고도(10m 이하) 근거리만 비행\n\n⚠️ 특히 주의:\n• 평균풍이 안전해도 증가량이 크면 갑작스런 자세 이탈 위험\n• 이착륙 시 가장 위험 (고도 낮아 지면 장애물 충돌 가능)\n• 배터리 소모 급증 (강한 바람에 대항하며 자세 유지)\n• 고속 기동 중 돌풍 만나면 경로 이탈 가능</string>
-    <string name="weather_info_precipitation_body">대부분의 드론은 강수에 취약합니다. 약한 비라도 모터, 센서, 배터리에 영향을 줄 수 있으므로 비행을 피하세요.</string>
     <string name="weather_info_precipitation_title">강수량</string>
     <string name="weather_info_precipitation_safe_range">0 mm (건조)</string>
     <string name="weather_info_precipitation_range_safe">0 mm</string>
@@ -590,7 +543,6 @@
     <string name="weather_info_precipitation_danger_desc">모터 및 전자기기 손상 위험, 시야 불량</string>
     <string name="weather_info_precipitation_danger_advice">비행 자제 (방수 드론 포함)</string>
     <string name="weather_info_precipitation_note">대부분의 드론은 방수 기능이 없습니다. 비가 올 경우 전자기기 손상 위험이 매우 높으므로 비행을 삼가야 합니다.</string>
-    <string name="weather_info_visibility_body">가시거리는 기체를 육안으로 추적하고 장애물을 확인하는 데 중요합니다. 낮은 가시거리에서는 근거리 비행만 고려하세요.</string>
     <string name="weather_info_visibility_title">가시거리</string>
     <string name="weather_info_visibility_safe_range">%1$d km 이상 (양호)</string>
     <string name="weather_info_visibility_range_safe">%1$d km 이상</string>
@@ -603,7 +555,6 @@
     <string name="weather_info_visibility_danger_desc">시야 확보 불가, 장애물 식별 어려움</string>
     <string name="weather_info_visibility_danger_advice">비행 자제</string>
     <string name="weather_info_visibility_note">가시거리는 드론과 장애물을 육안으로 확인하는 데 필수적입니다. 안개나 황사 시 비행을 자제해야 합니다.</string>
-    <string name="weather_info_temperature_body">낮은 기온은 배터리 성능을 줄이고 높은 기온은 발열 위험을 키웁니다. 극한 온도에서는 비행 시간을 보수적으로 잡으세요.</string>
     <string name="weather_info_temperature_title">기온</string>
     <string name="weather_info_temperature_safe_range">0-%1$d°C (적정)</string>
     <string name="weather_info_temperature_range_safe">0-%1$d°C</string>
@@ -616,7 +567,6 @@
     <string name="weather_info_temperature_danger_desc">배터리 급격한 성능 저하, 기체 손상 위험</string>
     <string name="weather_info_temperature_danger_advice">비행 자제</string>
     <string name="weather_info_temperature_note">리튬 배터리는 온도에 민감합니다. 극한 온도에서는 배터리 성능이 급격히 저하되어 예상치 못한 추락 위험이 있습니다.</string>
-    <string name="weather_info_cri_body">CRI는 결로 위험을 나타냅니다. 습도가 높고 이슬점과 기온 차이가 작으면 렌즈, 센서, 전장부 결로 가능성이 커집니다.</string>
     <string name="weather_info_cri_title">결로위험지수</string>
     <string name="weather_info_cri_safe_range">1–39 (안전)</string>
     <string name="weather_info_cri_range_safe">1–39</string>
@@ -643,9 +593,6 @@
     <string name="saved_sort_descending">내림차순</string>
 
     <!-- SearchAddressSheet (D-M8 다국어화) -->
-    <string name="search_address_error_empty">검색어를 입력해 주세요</string>
-    <string name="search_address_error_no_results">검색 결과가 없습니다</string>
-    <string name="search_address_error_network">네트워크 오류가 발생했습니다</string>
 
     <!-- Weather / Kp error (D-M9 다국어화) -->
     <string name="weather_error_load_failed">날씨 데이터를 불러올 수 없습니다</string>
