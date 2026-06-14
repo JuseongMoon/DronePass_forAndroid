@@ -22,6 +22,7 @@ import com.ScienceFiction.DronePassAndroid.core.data.storedSunriseAlarmEnabled
 import com.ScienceFiction.DronePassAndroid.core.data.storedSunsetAlarmEnabled
 import com.ScienceFiction.DronePassAndroid.feature.auth.AuthRepository
 import com.ScienceFiction.DronePassAndroid.feature.auth.AuthState
+import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 import com.ScienceFiction.DronePassAndroid.service.FcmService
 import com.ScienceFiction.DronePassAndroid.service.NotificationScheduler
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -42,6 +43,20 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
+
+internal data class EndDateAlarmReconcilePlan(
+    val cancelShapeIds: List<String>,
+    val shapesToSchedule: List<ShapeModel>,
+)
+
+internal fun buildEndDateAlarmReconcilePlan(shapes: List<ShapeModel>): EndDateAlarmReconcilePlan {
+    return EndDateAlarmReconcilePlan(
+        cancelShapeIds = shapes.map { it.id },
+        shapesToSchedule = shapes.filter { shape ->
+            !shape.isDeleted && !shape.isExpired && shape.flightEndDate != null
+        },
+    )
+}
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
@@ -363,16 +378,17 @@ class SettingsViewModel @Inject constructor(
      */
     private suspend fun rescheduleAllEndDateAlarms() {
         try {
-            val shapes = shapeRepository.getActiveShapes().first()
-            shapes.forEach { shape ->
-                val endDate = shape.flightEndDate
-                if (endDate != null && !shape.isExpired) {
-                    notificationScheduler.scheduleEndDateAlarm(
-                        shapeId = shape.id,
-                        flightEndDate = endDate,
-                        shapeTitle = shape.title,
-                    )
-                }
+            val plan = buildEndDateAlarmReconcilePlan(shapeRepository.getAllShapes().first())
+            plan.cancelShapeIds.forEach { shapeId ->
+                notificationScheduler.cancelEndDateAlarm(shapeId)
+            }
+            plan.shapesToSchedule.forEach { shape ->
+                val flightEndDate = shape.flightEndDate ?: return@forEach
+                notificationScheduler.scheduleEndDateAlarm(
+                    shapeId = shape.id,
+                    flightEndDate = flightEndDate,
+                    shapeTitle = shape.title,
+                )
             }
         } catch (e: Exception) {
             // 실패 시 무시
