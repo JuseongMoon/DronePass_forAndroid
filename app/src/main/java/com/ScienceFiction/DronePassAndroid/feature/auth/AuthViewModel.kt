@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.util.Log
 import androidx.credentials.exceptions.GetCredentialCancellationException
+import androidx.credentials.exceptions.NoCredentialException
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
@@ -75,7 +76,8 @@ internal fun resolveAuthProviderSignInAction(authState: AuthState): AuthProvider
 }
 
 internal fun shouldSuppressGoogleSignInFailure(exception: Throwable): Boolean {
-    return exception is GetCredentialCancellationException
+    return exception is GetCredentialCancellationException ||
+        exception is NoCredentialException
 }
 
 internal fun isAppleSignInCancellationErrorCode(errorCode: String?): Boolean {

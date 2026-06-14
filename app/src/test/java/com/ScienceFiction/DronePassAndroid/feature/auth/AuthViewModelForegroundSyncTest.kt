@@ -1,6 +1,7 @@
 package com.ScienceFiction.DronePassAndroid.feature.auth
 
 import androidx.credentials.exceptions.GetCredentialCancellationException
+import androidx.credentials.exceptions.NoCredentialException
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncPreferenceKeys
@@ -84,6 +85,10 @@ class AuthViewModelForegroundSyncTest {
         assertEquals(
             true,
             shouldSuppressGoogleSignInFailure(GetCredentialCancellationException()),
+        )
+        assertEquals(
+            true,
+            shouldSuppressGoogleSignInFailure(NoCredentialException()),
         )
         assertEquals(
             false,

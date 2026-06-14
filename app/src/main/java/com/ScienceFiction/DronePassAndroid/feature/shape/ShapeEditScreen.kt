@@ -58,6 +58,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -203,8 +204,8 @@ fun ShapeEditScreen(
     var radiusText by remember(editKey, initialRadius) { mutableStateOf(initialRadius) }
     var heightText by remember(editKey, initialHeight) { mutableStateOf(initialHeight) }
     var memo by remember(editKey) { mutableStateOf(initialMemo) }
-    var flightStartDate by remember(editKey, initialFlightStart) { mutableStateOf(initialFlightStart) }
-    var flightEndDate by remember(editKey, initialFlightEnd) { mutableStateOf(initialFlightEnd) }
+    var flightStartDate by remember(editKey, initialFlightStart) { mutableLongStateOf(initialFlightStart) }
+    var flightEndDate by remember(editKey, initialFlightEnd) { mutableLongStateOf(initialFlightEnd) }
     var coordinate by remember(editKey) { mutableStateOf(initialCoord) }
     var coordinateText by remember(editKey) {
         mutableStateOf(initialCoord?.let { formatShapeEditCoordinateText(it) }.orEmpty())

@@ -169,14 +169,12 @@ private fun PermissionCard(
 
 /** Android 13+ 에서 POST_NOTIFICATIONS 권한 보유 여부. 이전 버전은 항상 true. */
 private fun hasNotificationPermission(context: Context): Boolean {
-    val permissionGranted = ContextCompat.checkSelfPermission(
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return true
+
+    return ContextCompat.checkSelfPermission(
         context,
-        Manifest.permission.POST_NOTIFICATIONS
+        Manifest.permission.POST_NOTIFICATIONS,
     ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-    return resolveNotificationPermissionGranted(
-        sdkInt = Build.VERSION.SDK_INT,
-        permissionGranted = permissionGranted,
-    )
 }
 
 /** Android 12+ 에서 SCHEDULE_EXACT_ALARM 권한 부여 여부. 이전 버전은 항상 true. */
@@ -196,7 +194,8 @@ private fun canScheduleExactAlarms(context: Context): Boolean {
 
 /** 시스템의 "정확한 알람 권한" 설정 화면으로 이동. */
 private fun openExactAlarmSettings(context: Context) {
-    if (!shouldOpenExactAlarmSettings(Build.VERSION.SDK_INT)) return
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return
+
     val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
         data = Uri.parse("package:${context.packageName}")
         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)

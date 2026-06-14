@@ -39,6 +39,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -85,7 +86,7 @@ fun DroneSelectionDropdown(
     modifier: Modifier = Modifier
 ) {
     var showDropdown by remember { mutableStateOf(false) }
-    var triggerHeight by remember { mutableStateOf(0) }
+    var triggerHeight by remember { mutableIntStateOf(0) }
     val density = LocalDensity.current
 
     val selectedDrones = selectedDronesForIosDropdown(activeDrones, selectedDroneIds)

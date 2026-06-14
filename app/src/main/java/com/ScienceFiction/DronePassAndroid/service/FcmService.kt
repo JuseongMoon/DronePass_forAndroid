@@ -6,7 +6,6 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.SharedPreferences
 import android.content.pm.PackageInfo
-import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.ScienceFiction.DronePassAndroid.R
@@ -95,8 +94,6 @@ class FcmService : FirebaseMessagingService() {
          *  - CHANNEL_ID_TIME_SENSITIVE: 시간 민감 (IMPORTANCE_HIGH + sound/vibration)
          */
         fun createNotificationChannel(context: Context) {
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
-
             val notificationManager =
                 context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: run {
                     Log.w(TAG, "NotificationManager를 가져올 수 없어 알림 채널 생성을 건너뜁니다.")
@@ -251,13 +248,8 @@ class FcmService : FirebaseMessagingService() {
             )
         }
 
-        @Suppress("DEPRECATION")
         private fun packageVersionCode(packageInfo: PackageInfo): Long {
-            return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                packageInfo.longVersionCode
-            } else {
-                packageInfo.versionCode.toLong()
-            }
+            return packageInfo.longVersionCode
         }
     }
 

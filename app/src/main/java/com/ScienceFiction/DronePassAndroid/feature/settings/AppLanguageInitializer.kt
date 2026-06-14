@@ -34,9 +34,7 @@ internal fun localizedAppLanguageContext(base: Context): Context {
 
     val configuration = Configuration(base.resources.configuration)
     configuration.setLocale(locale)
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-        configuration.setLocales(LocaleList(locale))
-    }
+    configuration.setLocales(LocaleList(locale))
     return base.createConfigurationContext(configuration)
 }
 

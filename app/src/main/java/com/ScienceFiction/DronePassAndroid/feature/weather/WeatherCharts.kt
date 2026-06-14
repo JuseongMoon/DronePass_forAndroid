@@ -608,7 +608,7 @@ fun TemperatureChart(
                 lineColor = Color(0xFFFF6B35),
                 fillAlpha = 0.15f,
                 yAxisLabel = "\u00B0C",
-                formatValue = { String.format("%.0f\u00B0", it) },
+                formatValue = { String.format(Locale.ROOT, "%.0f\u00B0", it) },
                 xLabelIntervalMs = IosWeatherChartXLabelIntervalMs,
                 currentTimeMs = resolveWeatherChartCurrentTimeMarkerMs(dataPoints, nowMillis),
             )

@@ -121,8 +121,8 @@ class ShapeDetailDroneResolutionTest {
     }
 
     @Test
-    fun `메모 웹 링크 WebView는 임의 URL에 대한 로컬 접근과 혼합 콘텐츠를 차단한다`() {
-        assertTrue(ShapeDetailMemoWebJavaScriptEnabled)
+    fun `메모 웹 링크 WebView는 임의 URL에 대한 JavaScript 로컬 접근과 혼합 콘텐츠를 차단한다`() {
+        assertFalse(ShapeDetailMemoWebJavaScriptEnabled)
         assertTrue(ShapeDetailMemoWebDomStorageEnabled)
         assertFalse(ShapeDetailMemoWebJavaScriptCanOpenWindowsAutomatically)
         assertFalse(ShapeDetailMemoWebAllowFileAccess)

@@ -41,6 +41,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -65,6 +66,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.sp
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.core.util.parseIosOpaqueRgbHexColor
+import java.util.Locale
 
 internal val SketchToolbarButtonSize = 32.dp
 internal val SketchToolbarIconSize = 18.dp
@@ -614,7 +616,7 @@ private fun ColorSelector(
     // currentColor 가 외부에서 변경되어도 sliderPosition 을 강제 동기화하지 않는다.
     // 이전 `remember(currentColor)` 방식은 onColorChanged → currentColor 갱신 →
     // hexToHue 재계산 round-trip 으로 부동소수점 오차가 누적되어 thumb 가 미세하게 점프했다.
-    var sliderPosition by remember { mutableStateOf(hexToHue(currentColor)) }
+    var sliderPosition by remember { mutableFloatStateOf(hexToHue(currentColor)) }
 
     LaunchedEffect(currentColor) {
         val newPosition = hexToHue(currentColor)
@@ -872,7 +874,7 @@ private fun hexToHue(hex: String): Float {
  */
 private fun hueToHex(hue: Float): String {
     val color = android.graphics.Color.HSVToColor(floatArrayOf(hue, 0.85f, 0.9f))
-    return String.format("#%06X", 0xFFFFFF and color)
+    return String.format(Locale.ROOT, "#%06X", 0xFFFFFF and color)
 }
 
 private fun parseSketchColor(color: String): Color {

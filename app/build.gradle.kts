@@ -82,6 +82,12 @@ android {
         buildConfigField("String", "WEB_CLIENT_ID", "\"$webClientId\"")
     }
 
+    bundle {
+        language {
+            enableSplit = false
+        }
+    }
+
     signingConfigs {
         // Release 서명 설정. keystore.properties + 키스토어 파일이 완전할 때만 생성한다.
         if (hasReleaseSigningConfig) {

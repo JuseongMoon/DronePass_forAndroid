@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.core.util
 
+import java.util.Locale
 import kotlin.math.roundToInt
 
 /**
@@ -227,9 +228,9 @@ object AltitudeFormatter {
      */
     private fun formatMetersIos(meters: Double): String {
         return if (meters % 1.0 == 0.0) {
-            String.format("%.0f", meters)
+            String.format(Locale.ROOT, "%.0f", meters)
         } else {
-            String.format("%.1f", meters)
+            String.format(Locale.ROOT, "%.1f", meters)
         }
     }
 

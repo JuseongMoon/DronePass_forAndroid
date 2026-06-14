@@ -5,6 +5,7 @@ import android.content.Context
 import android.util.Log
 import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
+import androidx.credentials.exceptions.NoCredentialException
 import com.ScienceFiction.DronePassAndroid.BuildConfig
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.core.data.local.EncryptedPrefsHelper
@@ -273,6 +274,8 @@ class AuthRepository @Inject constructor(
                     providerUserId = googleUserId,
                 )
             )
+        } catch (e: NoCredentialException) {
+            Result.failure(e)
         } catch (e: Exception) {
             Result.failure(e)
         }
