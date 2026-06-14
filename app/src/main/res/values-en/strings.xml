@@ -83,13 +83,8 @@
     <string name="drone_dropdown_collapse">Close drone list</string>
 
     <!-- WeatherForecastScreen -->
-    <string name="weather_title">Weather Info</string>
     <string name="weather_wind_speed">Wind speed</string>
     <string name="weather_wind_direction">Wind direction</string>
-    <string name="weather_gust">Gust</string>
-    <string name="weather_sunrise">Sunrise</string>
-    <string name="weather_sunset">Sunset</string>
-    <string name="weather_drone_category">Drone category</string>
     <string name="weather_drone_category_toy">≤250g</string>
     <string name="weather_drone_category_toy_description">Mini Series\nNo License Required</string>
     <string name="weather_drone_category_toy_examples">Mini 2, Mini 3 Pro, Mini 4 Pro</string>
@@ -106,14 +101,7 @@
     <string name="weather_gust_difference">Gust difference</string>
     <string name="weather_precipitation">Precipitation</string>
     <string name="weather_cri">Condensation Risk (CRI)</string>
-    <string name="weather_hourly_forecast">Hourly forecast</string>
-    <string name="weather_hourly_precipitation">Precip.</string>
-    <string name="weather_flight_safety_level">Flight safety level: %s</string>
-    <string name="weather_gust_safe">Current wind conditions are safe</string>
-    <string name="weather_gust_localized">Beware of localized gusts</string>
     <string name="weather_gust_warning">Local gust risk</string>
-    <string name="weather_gust_caution">Strong wind. Caution is advised</string>
-    <string name="weather_gust_danger">Dangerous wind conditions for flight</string>
 
     <!-- KpForecastScreen -->
     <string name="kp_title">KP Index</string>

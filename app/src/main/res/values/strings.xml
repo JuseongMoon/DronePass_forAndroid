@@ -84,13 +84,8 @@
     <string name="drone_dropdown_collapse">드론 목록 닫기</string>
 
     <!-- WeatherForecastScreen -->
-    <string name="weather_title">날씨 정보</string>
     <string name="weather_wind_speed">풍속</string>
     <string name="weather_wind_direction">풍향</string>
-    <string name="weather_gust">돌풍</string>
-    <string name="weather_sunrise">일출</string>
-    <string name="weather_sunset">일몰</string>
-    <string name="weather_drone_category">드론 카테고리</string>
     <string name="weather_drone_category_toy">250g 이하</string>
     <string name="weather_drone_category_toy_description">Mini 시리즈\n자격증 불필요</string>
     <string name="weather_drone_category_toy_examples">Mini 2, Mini 3 Pro, Mini 4 Pro</string>
@@ -107,14 +102,7 @@
     <string name="weather_gust_difference">돌풍 차이</string>
     <string name="weather_precipitation">강수량</string>
     <string name="weather_cri">결로 위험 (CRI)</string>
-    <string name="weather_hourly_forecast">시간별 예보</string>
-    <string name="weather_hourly_precipitation">강수</string>
-    <string name="weather_flight_safety_level">비행 안전 등급: %s</string>
-    <string name="weather_gust_safe">현재 바람 상태가 안전합니다</string>
-    <string name="weather_gust_localized">국지적 돌풍에 주의하세요</string>
     <string name="weather_gust_warning">국지 돌풍 위험</string>
-    <string name="weather_gust_caution">바람이 강합니다. 주의가 필요합니다</string>
-    <string name="weather_gust_danger">비행에 위험한 바람 상태입니다</string>
 
     <!-- KpForecastScreen -->
     <string name="kp_title">KP 지수</string>
