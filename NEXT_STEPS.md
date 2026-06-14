@@ -379,6 +379,7 @@ iOS와 Android가 공유하는 `users/{uid}/shapes`, `users/{uid}/sketches`, `us
 - 홈 UIAutomator XML에서 Naver Map controls, 현위치/줌/NAVER logo, 상단 `내 드론`/`드론 2`/드롭다운 원, `비행구역 레이어`, `스케치`, `KP`, 날씨 카드, `새 도형 추가`, 하단 `지도`/`저장`/`설정` 렌더링 확인.
 - 상단 드론 선택 요소 bounds는 `내 드론` `[401,195][657,285]`, `드론 2` `[680,195][922,285]`, 드롭다운 원 `[945,195][1035,285]`로 y=195 시작과 높이 90이 모두 일치함을 다시 확인.
 - 실행 직후 `AndroidRuntime` 로그에는 `uiautomator` 종료 로그만 있고 앱 fatal crash 없음. 앱 PID 로그에서도 Naver Map surface first frame, `NaverMapDebug: 네이버 지도 준비 완료`, GPU 로그 확인 후 PID `30795` 유지.
+- 이어서 `:app:minifyReleaseWithR8` 재실행 성공. Naver Map SDK/Play Services Location의 기존 R8 warning은 남지만 빌드는 성공하며, 실제 `assembleRelease`/`bundleRelease`는 signing + `WEB_CLIENT_ID` 설정 전 실패해야 정상인 상태를 유지한다.
 
 1. 지도 로드, 현재 위치 권한, 현재 위치 이동
 2. 원형 도형 생성, 저장, 편집, 삭제, 복제
