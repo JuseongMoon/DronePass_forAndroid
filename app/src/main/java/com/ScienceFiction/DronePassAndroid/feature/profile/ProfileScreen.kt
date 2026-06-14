@@ -33,7 +33,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -68,7 +68,7 @@ fun ProfileScreen(
     onAccountSessionEnded: () -> Unit = {},
     viewModel: ProfileViewModel = hiltViewModel(),
 ) {
-    val context = LocalContext.current
+    val resources = LocalResources.current
     val isLoggedIn by viewModel.isLoggedIn.collectAsStateWithLifecycle()
     val isCloudBackupEnabled by viewModel.isCloudBackupEnabled.collectAsStateWithLifecycle()
     val isSyncing by viewModel.isSyncing.collectAsStateWithLifecycle()
@@ -91,17 +91,17 @@ fun ProfileScreen(
     var resultDialog by remember { mutableStateOf<ProfileResultDialog?>(null) }
 
     // 동기화 결과 알림 — iOS ProfileView showSyncResult alert 정합.
-    LaunchedEffect(viewModel) {
+    LaunchedEffect(viewModel, resources) {
         viewModel.syncResultMessage.collect { result ->
             val message = when (result) {
                 is ProfileViewModel.SyncResult.Success ->
-                    context.resources.getQuantityString(
+                    resources.getQuantityString(
                         R.plurals.profile_sync_success,
                         result.shapeCount,
                         result.shapeCount,
                     )
                 is ProfileViewModel.SyncResult.Failure ->
-                    context.getString(R.string.profile_sync_failed, result.message)
+                    resources.getString(R.string.profile_sync_failed, result.message)
             }
             resultDialog = ProfileResultDialog(
                 titleRes = R.string.profile_sync_alert_title,
