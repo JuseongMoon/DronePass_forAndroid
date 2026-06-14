@@ -613,6 +613,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 - 2026-06-14 리소스 lint suppress 커밋 `334fcf5` 이후 최신 HEAD 기준으로 `:app:minifyReleaseWithR8`를 재실행해 통과 확인했다. R8는 기존 Naver Maps SDK stack map table warning과 Play Services Location companion object warning만 출력하며 build failure는 아니다.
 - 2026-06-14 최신 debug APK를 실기기 `RFCW324TZ0Z`에 데이터 유지 재설치 후 cold launch smoke를 재수행했다. `LaunchState: COLD`, `TotalTime: 1844`, PID `30700`, focus `com.ScienceFiction.DronePassAndroid/.MainActivity` 유지. 홈 UIAutomator XML에서 Naver Map controls, 현위치/줌/NAVER logo, 상단 `내 드론`/`드론 2`/드롭다운 원, `비행구역 레이어`, `스케치`, `KP`, `새 도형 추가`, 하단 `지도`/`저장`/`설정` 렌더링을 확인했다. 상단 드론 선택 요소 bounds는 `[401,195][657,285]`, `[680,195][922,285]`, `[945,195][1035,285]`로 y=195·height=90이 일치했다. 저장 탭은 `저장 목록`/`비행시작일순`/`내림차순`/`활성화`, 설정 탭은 `설정`/`내 정보`/`로그인 / 회원가입`/`내 드론 관리하기`/`비행 환경`/`현재 KP 지수`/`현재 날씨`/`알림` 렌더링을 확인했고, `AndroidRuntime:E` fatal 로그 없음.
 - 2026-06-14 최신 실기기 smoke 기록 커밋 `4ea14f6` 이후 최신 HEAD 기준으로 전체 `:app:testDebugUnitTest`를 재실행해 통과 확인했다.
+- 2026-06-15 최신 HEAD 기준으로 `:app:assembleRelease`와 `:app:bundleRelease` release readiness gate를 재확인했다. `keystore.properties`/서명 파일과 `WEB_CLIENT_ID`가 없는 현재 로컬 상태에서는 두 명령 모두 release signing 설정 누락과 Google sign-in Web client ID 누락 메시지를 함께 출력하며 의도적으로 실패한다.
 - `:app:minifyReleaseWithR8`는 현재 성공합니다.
 - Naver Maps SDK와 Play Services Location에서 R8 warning이 여러 줄 출력될 수 있지만, 현재는 build failure가 아닙니다.
 - `assembleRelease`와 `bundleRelease`는 실제 release signing과 `WEB_CLIENT_ID` 설정 전까지 의도적으로 차단되며, 2026-06-14에 두 실패 경로를 모두 재확인했습니다.
