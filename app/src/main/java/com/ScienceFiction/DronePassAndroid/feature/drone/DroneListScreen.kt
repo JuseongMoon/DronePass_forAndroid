@@ -204,7 +204,7 @@ fun DroneListScreen(
                 }
             }
             is DroneDeleteError.Failure -> {
-                error.message.takeIf { it.isNotBlank() } ?: stringResource(R.string.common_unknown_error)
+                droneDeleteFailureMessage(error.message)
             }
         }
         AlertDialog(
@@ -263,6 +263,8 @@ private fun DroneListItem(
 }
 
 internal fun shouldShowDroneListColorIndicator(color: PaletteColor?): Boolean = color != null
+
+internal fun droneDeleteFailureMessage(message: String): String = message
 
 @Composable
 private fun DroneAddItem(onClick: () -> Unit) {
