@@ -18,6 +18,20 @@ import org.junit.Test
  */
 class FlightZoneCalculatorTest {
 
+    @Test
+    fun `비행구역 거리 계산은 iOS FlightZoneCalculator WGS84 반지름을 유지한다`() {
+        assertEquals(
+            111.31949079327357,
+            FlightZoneCalculator.distance(
+                lat1 = 37.0,
+                lon1 = 127.0,
+                lat2 = 37.001,
+                lon2 = 127.0,
+            ),
+            0.000001,
+        )
+    }
+
     // region 정사각형 폴리곤 (위도 37~38, 경도 126~127) ─ 가장 단순한 경계 검증
 
     /** 정사각형 4꼭짓점: (lat, lon) = (37,126), (37,127), (38,127), (38,126) */

@@ -3,8 +3,6 @@ package com.ScienceFiction.DronePassAndroid.core.util
 import com.ScienceFiction.DronePassAndroid.domain.model.Coordinate
 import kotlin.math.atan2
 import kotlin.math.cos
-import kotlin.math.max
-import kotlin.math.min
 import kotlin.math.sin
 import kotlin.math.sqrt
 
@@ -20,11 +18,12 @@ import kotlin.math.sqrt
 object DistanceCalculator {
 
     /**
-     * WGS-84 적도 반지름 (미터).
-     * iOS 원본(FlightZoneCalculator.swift)과 동일한 값을 사용하여
-     * 크로스 플랫폼 거리 계산 결과를 일치시킨다.
+     * iOS DistanceCalculator.swift 와 동일한 평균 지구 반지름 (미터).
+     *
+     * 이 유틸리티는 스케치 샘플링/지우개 거리 계산에 쓰인다. VWorld 비행구역 계산은
+     * iOS FlightZoneCalculator.swift 와 별도로 WGS-84 반지름을 사용한다.
      */
-    private const val EARTH_RADIUS = 6_378_137.0
+    private const val EARTH_RADIUS = 6_371_000.0
 
     // ──────────────────────────────────────────────
     // Haversine 공식 (정확한 거리)
@@ -137,39 +136,30 @@ object DistanceCalculator {
             return haversine(point, segmentStart)
         }
 
-        // 평면 근사를 위해 라디안 변환
-        val pointLat = Math.toRadians(point.latitude)
-        val pointLon = Math.toRadians(point.longitude)
-        val startLat = Math.toRadians(segmentStart.latitude)
-        val startLon = Math.toRadians(segmentStart.longitude)
-        val endLat = Math.toRadians(segmentEnd.latitude)
-        val endLon = Math.toRadians(segmentEnd.longitude)
+        // iOS DistanceCalculator.toSegment 와 동일하게 위도/경도 degree 평면에서 투영한다.
+        val pointX = point.longitude
+        val pointY = point.latitude
+        val startX = segmentStart.longitude
+        val startY = segmentStart.latitude
+        val endX = segmentEnd.longitude
+        val endY = segmentEnd.latitude
 
-        // 위도 중심에서의 경도 보정 계수
-        val cosLat = cos((startLat + endLat) / 2)
-
-        // 선분 벡터 (평면 근사)
-        val dx = (endLon - startLon) * cosLat
-        val dy = endLat - startLat
+        val dx = endX - startX
+        val dy = endY - startY
 
         // 선분의 제곱 길이
         val segmentLengthSq = dx * dx + dy * dy
 
         // 점에서 선분 시작점까지의 벡터
-        val px = (pointLon - startLon) * cosLat
-        val py = pointLat - startLat
+        val px = pointX - startX
+        val py = pointY - startY
 
         // 선분 위의 투영 비율 (0..1 범위로 클램프)
-        val t = max(0.0, min(1.0, (px * dx + py * dy) / segmentLengthSq))
+        val t = ((px * dx + py * dy) / segmentLengthSq).coerceIn(0.0, 1.0)
 
-        // 투영점의 라디안 좌표
-        val projLat = startLat + t * (endLat - startLat)
-        val projLon = startLon + t * (endLon - startLon)
+        val closestLon = startX + t * dx
+        val closestLat = startY + t * dy
 
-        // 투영점을 도 단위로 변환하여 Haversine 계산
-        val projLatDeg = Math.toDegrees(projLat)
-        val projLonDeg = Math.toDegrees(projLon)
-
-        return haversine(point.latitude, point.longitude, projLatDeg, projLonDeg)
+        return haversine(point.latitude, point.longitude, closestLat, closestLon)
     }
 }
