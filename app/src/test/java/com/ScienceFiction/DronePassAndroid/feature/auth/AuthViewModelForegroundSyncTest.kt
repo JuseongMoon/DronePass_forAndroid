@@ -148,6 +148,21 @@ class AuthViewModelForegroundSyncTest {
     }
 
     @Test
+    fun `account switch resets local data before finalizing provider recovery keys like iOS`() {
+        assertEquals(
+            listOf(
+                ProviderLoginPreparationStep.RESET_LOCAL_DATA,
+                ProviderLoginPreparationStep.FINALIZE_SIGN_IN,
+            ),
+            resolveProviderLoginPreparationSteps(prepareAccountSwitchBeforeNavigation = true),
+        )
+        assertEquals(
+            listOf(ProviderLoginPreparationStep.FINALIZE_SIGN_IN),
+            resolveProviderLoginPreparationSteps(prepareAccountSwitchBeforeNavigation = false),
+        )
+    }
+
+    @Test
     fun `account switch dirty check compares local modification time with last sync time`() {
         assertEquals(
             true,

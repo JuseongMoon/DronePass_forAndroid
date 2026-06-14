@@ -201,7 +201,6 @@
 - 로그인 약관/개인정보 시트 흐름
 - 한국어 도형 문구와 상세 라벨
 - 실시간 sync trigger timing
-- 계정 전환 전 로컬 reset 순서
 - KP forecast auto refresh
 - Weather chart current markers
 - Weather info category selected 표시
@@ -491,6 +490,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 - 2026-06-14에 도형 편집/상세 날짜 표시를 iOS `DateSection`/`localizedDateTime`와 다시 대조했다. Android도 편집 날짜 전용은 medium date, 편집/상세 날짜시간은 medium date + short time 계약을 공통 헬퍼로 유지하며, 저장 목록의 `yyyy-MM-dd` 행 표시와 정렬 tie-breaker는 기존 테스트로 계속 고정한다. `:app:testDebugUnitTest --tests "*ShapeDateFormatsTest" --tests "*ShapeEditDefaultsTest" --tests "*ShapeDetailDroneResolutionTest" --tests "*SavedListSectionsTest" --tests "*SavedShapeListItemTest"`와 `:app:testDebugUnitTest` 통과 확인.
 - 2026-06-14에 돌풍 경고 hysteresis를 iOS `WeatherManager.GustDifferenceCalculator`와 다시 대조했다. Android 계산식은 iOS와 동일해 유지하고, class3 국지 돌풍 1표 해제, toy 국지 돌풍 0표 해제, danger→caution 하향 조건을 회귀 테스트로 보강했다. `:app:testDebugUnitTest --tests "*GustDifferenceCalculatorTest"`와 `:app:testDebugUnitTest` 통과 확인.
 - 2026-06-14에 Shape ID 계약을 다시 확인했다. Android 새 도형은 UUID를 생성하고, Firebase 저장 전 UUID 검증을 통과한 도형만 `users/{uid}/shapes/{shape.id}`로 쓰며, payload `id`도 같은 값을 유지한다. 읽기는 iOS처럼 UUID가 아니거나 문서 ID와 `id` 필드가 다르면 skip한다. `:app:testDebugUnitTest --tests "*ShapeFirebaseStoreTest" --tests "*ShapeFirestoreParsingTest" --tests "*ShapeValidationTest"`와 `:app:testDebugUnitTest` 통과 확인.
+- 2026-06-14에 계정 전환 순서를 iOS `AuthManager.handleLoginSuccess`와 다시 대조해 Android도 로컬 reset을 `finalizeSuccessfulSignIn`의 복구용 UID/provider 저장보다 먼저 수행하도록 보정했다. 계정 전환 취소는 방금 인증된 세션만 로그아웃하고 로컬/복구 키를 보존하며, 진행 시에는 reset 이후 새 계정 sync가 실행된다. `:app:testDebugUnitTest --tests "*AuthViewModelForegroundSyncTest" --tests "*AuthRepositoryUserDocumentTest" --tests "*ProfileViewModelTest"`와 `:app:testDebugUnitTest` 통과 확인.
 - `:app:minifyReleaseWithR8`는 현재 성공합니다.
 - Naver Maps SDK와 Play Services Location에서 R8 warning이 여러 줄 출력될 수 있지만, 현재는 build failure가 아닙니다.
 - `assembleRelease`와 `bundleRelease`는 실제 release signing과 `WEB_CLIENT_ID` 설정 전까지 의도적으로 차단되며, 2026-06-13에 `assembleRelease` 실패 경로를 재확인했습니다.

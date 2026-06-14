@@ -50,6 +50,11 @@ internal enum class AuthProviderSignInAction {
     IGNORE,
 }
 
+internal enum class ProviderLoginPreparationStep {
+    RESET_LOCAL_DATA,
+    FINALIZE_SIGN_IN,
+}
+
 data class AccountSwitchConfirmationRequest(
     val localDataCount: Int,
 )
@@ -95,6 +100,19 @@ internal fun shouldRequestAccountSwitchConfirmation(hasUnsyncedLocalChanges: Boo
 
 internal fun shouldPrepareAccountSwitchBeforeNavigation(action: AuthAccountChangeAction): Boolean {
     return shouldResetLocalDataForAccountChange(action)
+}
+
+internal fun resolveProviderLoginPreparationSteps(
+    prepareAccountSwitchBeforeNavigation: Boolean,
+): List<ProviderLoginPreparationStep> {
+    return if (prepareAccountSwitchBeforeNavigation) {
+        listOf(
+            ProviderLoginPreparationStep.RESET_LOCAL_DATA,
+            ProviderLoginPreparationStep.FINALIZE_SIGN_IN,
+        )
+    } else {
+        listOf(ProviderLoginPreparationStep.FINALIZE_SIGN_IN)
+    }
 }
 
 internal fun resolveForegroundCloudSyncAction(
@@ -370,9 +388,17 @@ class AuthViewModel @Inject constructor(
         selectAllDronesAfterSync: Boolean,
         prepareAccountSwitchBeforeNavigation: Boolean,
     ) {
-        authRepository.finalizeSuccessfulSignIn(result)
+        resolveProviderLoginPreparationSteps(prepareAccountSwitchBeforeNavigation).forEach { step ->
+            when (step) {
+                ProviderLoginPreparationStep.RESET_LOCAL_DATA -> resetLocalDataForAccountSwitch()
+                ProviderLoginPreparationStep.FINALIZE_SIGN_IN -> {
+                    authRepository.finalizeSuccessfulSignIn(result)
+                }
+            }
+        }
         if (prepareAccountSwitchBeforeNavigation) {
-            prepareCloudSyncAfterLogin(result.accountChangeAction)
+            enableCloudBackupForLogin()
+            startRealtimeSync()
             _authState.value = AuthState.LoggedIn(result.user)
             viewModelScope.launch {
                 performFullSync(selectAllDronesAfterSync)
