@@ -237,6 +237,28 @@ class ShapeFirestoreParsingTest {
     }
 
     @Test
+    fun `Firestore 파싱은 배열 좌표 값이 Firebase 범위를 벗어나면 invalid 로 본다`() {
+        val polygonWithOutOfRangePoint = validDocument() + mapOf(
+            "shapeType" to "polygon",
+            "polygonCoordinates" to listOf(
+                mapOf("latitude" to 37.0, "longitude" to 127.0),
+                mapOf("latitude" to 37.1, "longitude" to 127.1),
+                mapOf("latitude" to 91.0, "longitude" to 127.2),
+            ),
+        )
+        val polylineWithNonFinitePoint = validDocument() + mapOf(
+            "shapeType" to "polyline",
+            "polylineCoordinates" to listOf(
+                mapOf("latitude" to 37.0, "longitude" to 127.0),
+                mapOf("latitude" to 37.1, "longitude" to Double.NaN),
+            ),
+        )
+
+        assertNull(shapeFromFirestoreData(polygonWithOutOfRangePoint))
+        assertNull(shapeFromFirestoreData(polylineWithNonFinitePoint))
+    }
+
+    @Test
     fun `Firestore 파싱은 타입별 필수 geometry 누락과 복구 불가능한 좌표를 invalid 로 본다`() {
         val rectangleMissingSecond = validDocument() + ("shapeType" to "rectangle")
         val polygonMissingCoordinates = validDocument() + ("shapeType" to "polygon")
