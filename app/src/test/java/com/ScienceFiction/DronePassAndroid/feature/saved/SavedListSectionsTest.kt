@@ -177,6 +177,44 @@ class SavedListSectionsTest {
     }
 
     @Test
+    fun `저장 목록 종료일순 내림차순은 iOS Date distantFuture처럼 종료일 없는 도형을 먼저 정렬한다`() {
+        val now = System.currentTimeMillis()
+        val sorted = sortSavedShapes(
+            shapes = listOf(
+                shape(id = "soon", title = "Soon", address = null, start = now, end = now + 10_000),
+                shape(id = "no-end", title = "No End", address = null, start = now, end = null),
+                shape(id = "later", title = "Later", address = null, start = now, end = now + 20_000),
+            ),
+            option = SortOption.FLIGHT_END,
+            direction = SortDirection.DESCENDING,
+        )
+
+        assertEquals(
+            listOf("no-end", "later", "soon"),
+            sorted.map { it.id },
+        )
+    }
+
+    @Test
+    fun `저장 목록 날짜순 내림차순은 iOS처럼 제목과 주소 보조 정렬도 같은 방향을 따른다`() {
+        val now = System.currentTimeMillis()
+        val sorted = sortSavedShapes(
+            shapes = listOf(
+                shape(id = "title-a-address-a", title = "Area", address = "A", start = now + 10_000, end = now + 30_000),
+                shape(id = "title-a-address-b", title = "Area", address = "B", start = now + 10_000, end = now + 30_000),
+                shape(id = "title-b", title = "Zone", address = "A", start = now + 10_000, end = now + 30_000),
+            ),
+            option = SortOption.FLIGHT_START,
+            direction = SortDirection.DESCENDING,
+        )
+
+        assertEquals(
+            listOf("title-b", "title-a-address-b", "title-a-address-a"),
+            sorted.map { it.id },
+        )
+    }
+
+    @Test
     fun `저장 목록 정렬 rawValue 기본값은 iOS처럼 제목순과 오름차순이다`() {
         assertEquals(SortOption.TITLE, SortOption.fromRawValue(null))
         assertEquals(SortDirection.ASCENDING, SortDirection.fromRawValue(null))
