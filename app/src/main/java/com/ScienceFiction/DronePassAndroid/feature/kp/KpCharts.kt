@@ -76,9 +76,9 @@ internal fun kpDataSourceUrl(source: KpDataSource): String = when (source) {
 @Composable
 fun KpForecastLineChart(
     forecastData: List<KpIndexData>,
+    modifier: Modifier = Modifier,
     isLoading: Boolean = false,
     errorMessage: String? = null,
-    modifier: Modifier = Modifier,
 ) {
     val parsed = remember(forecastData) { filterKpNext48HoursForecast(forecastData) }
 
@@ -179,8 +179,8 @@ internal fun parseKpForecastUtcMillis(timeTag: String): Long? {
 @Composable
 fun Kp27DayChart(
     longTermForecast: List<Kp27DayForecast>,
-    isLoading: Boolean = false,
     modifier: Modifier = Modifier,
+    isLoading: Boolean = false,
 ) {
     KpChartCard(
         sectionTitle = stringResource(R.string.kp_section_long_term),

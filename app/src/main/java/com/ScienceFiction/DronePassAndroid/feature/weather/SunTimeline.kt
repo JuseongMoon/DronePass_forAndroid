@@ -65,10 +65,10 @@ private val NighttimeGradientColors = listOf(
 fun SunTimeline(
     sunrise: String?,
     sunset: String?,
+    modifier: Modifier = Modifier,
     sunriseTimes: List<String> = sunrise?.let(::listOf) ?: emptyList(),
     sunsetTimes: List<String> = sunset?.let(::listOf) ?: emptyList(),
     utcOffsetSeconds: Int? = null,
-    modifier: Modifier = Modifier,
 ) {
     val nowDateTime = rememberSunEventNow(utcOffsetSeconds)
     val timelineState = remember(sunrise, sunset, sunriseTimes, sunsetTimes, utcOffsetSeconds, nowDateTime) {

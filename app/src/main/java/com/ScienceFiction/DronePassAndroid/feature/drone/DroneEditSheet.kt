@@ -308,9 +308,9 @@ private fun DroneEditInputField(
     onValueChange: (String) -> Unit,
     placeholder: String?,
     singleLine: Boolean,
+    modifier: Modifier = Modifier,
     minLines: Int = 1,
     textStyle: TextStyle = MaterialTheme.typography.bodyLarge,
-    modifier: Modifier = Modifier,
 ) {
     val placeholderText = resolveDroneEditPlaceholderText(placeholder)
     TextField(

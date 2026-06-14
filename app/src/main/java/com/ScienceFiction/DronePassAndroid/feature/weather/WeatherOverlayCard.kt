@@ -83,11 +83,11 @@ fun WeatherOverlayCard(
     currentWeather: CurrentWeatherData?,
     sunrise: String?,
     sunset: String?,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
     sunriseTimes: List<String> = sunrise?.let(::listOf) ?: emptyList(),
     sunsetTimes: List<String> = sunset?.let(::listOf) ?: emptyList(),
-    onClick: () -> Unit,
     utcOffsetSeconds: Int? = null,
-    modifier: Modifier = Modifier,
 ) {
     val now = rememberSunEventNow(utcOffsetSeconds)
     val sunEvent = nextSunEvent(

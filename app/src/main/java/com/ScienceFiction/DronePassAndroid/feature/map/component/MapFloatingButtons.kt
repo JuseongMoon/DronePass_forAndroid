@@ -104,6 +104,7 @@ internal fun formatMapKpValue(currentKpValue: Double?): String =
 fun MapFloatingButtons(
     onCreateShape: () -> Unit,
     onEnterSketchMode: () -> Unit,
+    modifier: Modifier = Modifier,
     onShowFlightZoneLayers: () -> Unit = {},
     flightZoneVisibleLayerCount: Int = 0,
     koreaFeaturesEnabled: Boolean = true,
@@ -118,7 +119,6 @@ fun MapFloatingButtons(
     weatherUtcOffsetSeconds: Int? = null,
     onWeatherClick: () -> Unit = {},
     isTabletLayout: Boolean = false,
-    modifier: Modifier = Modifier
 ) {
     val paddings = remember(isTabletLayout) {
         resolveMapFloatingButtonPaddings(isTablet = isTabletLayout)
