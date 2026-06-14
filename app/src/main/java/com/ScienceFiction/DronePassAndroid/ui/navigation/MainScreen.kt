@@ -263,6 +263,18 @@ internal fun resolveSavedOverlayPhoneBaseHeight(screenHeight: Dp): Dp {
     return minOf(screenHeight * SheetFractionDefault, SavedOverlayPhoneMaxHeight)
 }
 
+internal fun resolveTabletOverlayWidth(screenWidth: Dp): Dp {
+    return minOf(screenWidth * TabletOverlayWidthFraction, TabletOverlayMaxWidth)
+}
+
+internal fun resolveTabletOverlayHeight(screenHeight: Dp): Dp {
+    return screenHeight * TabletOverlayHeightFraction
+}
+
+internal fun resolveMainOverlayCornerRadius(isTablet: Boolean): Dp {
+    return if (isTablet) TabletOverlayCornerRadius else OverlayCornerRadius
+}
+
 internal fun notificationPopupEnterTransition(): EnterTransition {
     return fadeIn(animationSpec = tween(durationMillis = NotificationPopupAnimationDurationMs)) +
         scaleIn(
@@ -913,10 +925,8 @@ private fun SavedListOverlay(
     val density = LocalDensity.current
     val screenHeight = configuration.screenHeightDp.dp
     val baseHeight = resolveSavedOverlayPhoneBaseHeight(screenHeight)
-    val tabletPanelWidth = (configuration.screenWidthDp * TabletOverlayWidthFraction)
-        .dp
-        .coerceAtMost(TabletOverlayMaxWidth)
-    val tabletPanelHeight = screenHeight * TabletOverlayHeightFraction
+    val tabletPanelWidth = resolveTabletOverlayWidth(configuration.screenWidthDp.dp)
+    val tabletPanelHeight = resolveTabletOverlayHeight(screenHeight)
     val dismissThresholdPx = with(density) { DismissDragThreshold.toPx() }
 
     var dragOffsetPx by remember { mutableFloatStateOf(0f) }
@@ -989,9 +999,7 @@ private fun SavedListOverlay(
                     .fillMaxWidth()
                     .height(baseHeight)
             },
-            shape = RoundedCornerShape(
-                if (isTablet) TabletOverlayCornerRadius else OverlayCornerRadius
-            ),
+            shape = RoundedCornerShape(resolveMainOverlayCornerRadius(isTablet)),
             color = OverlayBackgroundColor,
             shadowElevation = OverlayShadowElevation,
         ) {
@@ -1094,10 +1102,8 @@ private fun SettingsOverlay(
     val configuration = LocalConfiguration.current
     val density = LocalDensity.current
     val screenHeight = configuration.screenHeightDp.dp
-    val tabletPanelWidth = (configuration.screenWidthDp * TabletOverlayWidthFraction)
-        .dp
-        .coerceAtMost(TabletOverlayMaxWidth)
-    val tabletPanelHeight = screenHeight * TabletOverlayHeightFraction
+    val tabletPanelWidth = resolveTabletOverlayWidth(configuration.screenWidthDp.dp)
+    val tabletPanelHeight = resolveTabletOverlayHeight(screenHeight)
     val dismissThresholdPx = with(density) { DismissDragThreshold.toPx() }
     val expandThresholdPx = with(density) { ExpandDragThreshold.toPx() }
 
@@ -1156,9 +1162,7 @@ private fun SettingsOverlay(
                     .fillMaxWidth()
                     .height(animatedHeight)
             },
-            shape = RoundedCornerShape(
-                if (isTablet) TabletOverlayCornerRadius else OverlayCornerRadius
-            ),
+            shape = RoundedCornerShape(resolveMainOverlayCornerRadius(isTablet)),
             color = OverlayBackgroundColor,
             shadowElevation = OverlayShadowElevation,
         ) {

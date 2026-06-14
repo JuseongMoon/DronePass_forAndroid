@@ -131,6 +131,19 @@ class MainScreenStartDestinationTest {
     }
 
     @Test
+    fun `저장과 설정 태블릿 오버레이 크기는 iOS처럼 폭 40퍼센트 최대 400dp 높이 80퍼센트이다`() {
+        assertEquals(320.dp, resolveTabletOverlayWidth(800.dp))
+        assertEquals(400.dp, resolveTabletOverlayWidth(1_200.dp))
+        assertEquals(640.dp, resolveTabletOverlayHeight(800.dp))
+    }
+
+    @Test
+    fun `저장과 설정 오버레이 모서리는 iOS처럼 phone 40dp tablet 16dp 이다`() {
+        assertEquals(40.dp, resolveMainOverlayCornerRadius(isTablet = false))
+        assertEquals(16.dp, resolveMainOverlayCornerRadius(isTablet = true))
+    }
+
+    @Test
     fun `저장 목록 폰 오버레이는 iOS처럼 드래그 중 높이를 줄이지 않고 아래로 이동한다`() {
         assertEquals(120.dp, resolveSavedOverlayPhoneDragOffset(120.dp, isDragging = true))
         assertEquals(0.dp, resolveSavedOverlayPhoneDragOffset((-40).dp, isDragging = true))
