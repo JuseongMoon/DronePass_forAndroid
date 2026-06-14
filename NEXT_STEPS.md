@@ -1,6 +1,6 @@
 # DronePass Android 작업 이어가기
 
-> 마지막 업데이트: 2026-06-13
+> 마지막 업데이트: 2026-06-14
 > 브랜치: `fix/critical-pri0-fixes`
 > 상태: iOS 동작 대조와 Android 출시 하드닝 진행 중
 
@@ -12,7 +12,7 @@
 |---|---|
 | 워킹 트리 | clean |
 | 주요 검증 | `:app:testDebugUnitTest`, `:app:assembleDebug`, `:app:minifyReleaseWithR8`, `:app:testDebugUnitTest --tests "*MainScreenStartDestinationTest"`, `:app:testDebugUnitTest --tests "*MapScreenLayersTest" --tests "*SettingsPreferenceKeysTest"` 통과 |
-| Release readiness | 실제 `keystore.properties` 또는 `WEB_CLIENT_ID`가 없으면 `assembleRelease`/`bundleRelease`가 의도적으로 실패함을 재확인 |
+| Release readiness | 2026-06-14에 실제 `keystore.properties` 또는 `WEB_CLIENT_ID`가 없으면 `assembleRelease`/`bundleRelease`가 의도적으로 실패함을 재확인 |
 | 남은 성격 | 실기기 전체 회귀, 콘솔/스토어 운영 설정, 최종 iOS 동기화 검증 |
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
@@ -394,6 +394,7 @@ iOS와 Android가 공유하는 `users/{uid}/shapes`, `users/{uid}/sketches`, `us
 - `app/google-services.json`의 Android client에는 현재 `oauth_client` 항목이 비어 있음
   - Firebase Console에서 Android 앱 SHA-1/SHA-256 등록 후 `google-services.json`을 다시 내려받고, Web client ID를 `local.properties`의 `WEB_CLIENT_ID`에 설정해야 Google 로그인을 실계정으로 검증할 수 있음
 - 2026-06-13 재확인: `WEB_CLIENT_ID`는 여전히 비어 있고, 실제 `keystore.properties` 파일도 아직 없어 release artifact와 실계정 Google 로그인 검증은 외부 설정 후 진행 가능
+- 2026-06-14 재확인: `WEB_CLIENT_ID`는 여전히 비어 있고, `keystore.properties` 파일도 없어 `:app:assembleRelease`와 `:app:bundleRelease`가 signing + Google Web client ID 누락 메시지와 함께 의도적으로 실패함
 - 현재 로컬 debug keystore 지문
   - SHA-1: `30:C4:5A:F9:91:83:D9:6C:F7:6C:41:31:9E:DA:82:E7:59:8F:20:86`
   - SHA-256: `BC:5A:36:F1:68:B8:B9:F9:9A:95:14:D8:5F:35:00:37:40:90:B9:97:4C:88:27:28:7E:4A:0A:61:91:FB:B2:CB`
@@ -500,9 +501,10 @@ export PATH="$JAVA_HOME/bin:$PATH"
 - 2026-06-14에 실시간 sync trigger timing을 iOS `RealtimeSyncManager`와 다시 대조했다. Android는 iOS 드론-only 변경을 받기 위한 drones 컬렉션 리스너와 Sketch 포함 수동 백업은 유지하고, `resetAndRestartRealtimeSync`의 stop→restart 지연을 iOS와 같은 0.5초로 맞췄다. `:app:testDebugUnitTest --tests "*RealtimeSyncManagerTest" --tests "*AuthViewModelForegroundSyncTest" --tests "*ProfileViewModelTest"`와 `:app:testDebugUnitTest` 통과 확인.
 - 2026-06-14에 KP forecast auto refresh를 iOS `KPForecastView` 기준으로 다시 고정했다. Android 자동 갱신은 5분 간격으로 실행하고, 수동/자동 갱신 모두 현재 KP(GFZ)를 다시 요청하지 않고 NOAA 48시간/27일 예보만 강제 갱신한다. `:app:testDebugUnitTest --tests "*KpChartsTest"`와 `:app:testDebugUnitTest` 통과 확인.
 - 2026-06-14에 Firestore 크로스플랫폼 계약을 재감사했다. Shape 쓰기는 `shapeType.rawValue` 소문자와 `Timestamp`, `{latitude, longitude}` Double map을 유지하고, 읽기는 `ShapeType.parseWireValue`로 레거시 대문자 `CIRCLE`을 허용한다. Drone/Sketch도 UUID, `Timestamp`, hex color, Double 좌표 map 계약을 유지한다. `:app:testDebugUnitTest --tests "*ShapeFirebaseStoreTest" --tests "*ShapeFirestoreParsingTest" --tests "*ShapeTypeTest" --tests "*ShapeValidationTest" --tests "*DroneFirestoreParsingTest" --tests "*DroneValidationTest" --tests "*SketchFirebaseStoreTest" --tests "*SketchValidationTest"`와 `:app:testDebugUnitTest` 통과 확인.
+- 2026-06-14에 release readiness gate를 재확인했다. `keystore.properties`와 Google `WEB_CLIENT_ID`가 없는 현재 로컬 상태에서 `:app:assembleRelease`와 `:app:bundleRelease`는 release signing 설정 누락과 Google sign-in Web client ID 누락을 함께 표시하며 의도적으로 실패한다.
 - `:app:minifyReleaseWithR8`는 현재 성공합니다.
 - Naver Maps SDK와 Play Services Location에서 R8 warning이 여러 줄 출력될 수 있지만, 현재는 build failure가 아닙니다.
-- `assembleRelease`와 `bundleRelease`는 실제 release signing과 `WEB_CLIENT_ID` 설정 전까지 의도적으로 차단되며, 2026-06-13에 `assembleRelease` 실패 경로를 재확인했습니다.
+- `assembleRelease`와 `bundleRelease`는 실제 release signing과 `WEB_CLIENT_ID` 설정 전까지 의도적으로 차단되며, 2026-06-14에 두 실패 경로를 모두 재확인했습니다.
 - OS Auto Backup은 비활성화되어 있으며, 앱 데이터 백업/동기화는 Firebase 흐름 기준으로 검증합니다.
 
 ## 5. 다음에 바로 볼 후보
