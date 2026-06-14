@@ -1,6 +1,6 @@
 # DronePass Android 작업 이어가기
 
-> 마지막 업데이트: 2026-06-14
+> 마지막 업데이트: 2026-06-15
 > 브랜치: `fix/critical-pri0-fixes`
 > 상태: iOS 동작 대조와 Android 출시 하드닝 진행 중
 
@@ -129,6 +129,7 @@
 - 실시간 Sketch 동기화 상태는 iOS처럼 공용 `lastSyncTime`이 아니라 별도 `lastSketchSyncTime`만 갱신하는 분리 모델
 - 주소 검색/좌표 입력/지도 롱프레스 도형 생성 흐름
 - 도형 생성/편집/복제/삭제 상태 전이와 편집 취소 변경 감지 정책
+- 도형 편집 좌표 placeholder는 iOS 빌드 리소스에 포함된 `Localizable.xcstrings` 기준 `좌표를 입력하세요`가 최신 값이며, Android `shape_edit_coordinate_placeholder`와 일치함
 - 스케치 모드 제스처/툴바/undo·redo/지우개 동작
 - 메인 하단 탭/저장·설정 오버레이 탭 전환 흐름
 - Shape/Drone/Sketch Firestore 삭제·문서 ID·빈 tombstone 방지 경로
@@ -558,6 +559,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 - 2026-06-14에 Manifest 출시/알림 계약을 회귀 테스트로 보강했다. `INTERNET`, fine/coarse location, `POST_NOTIFICATIONS`, `SCHEDULE_EXACT_ALARM`, `RECEIVE_BOOT_COMPLETED`, `MainActivity singleTop/exported`, FCM service와 local notification receiver 비공개, boot receiver exported/action 계약을 고정했다. `:app:testDebugUnitTest --tests "*AndroidManifestContractTest" --tests "*BackupRulesTest" --tests "*NotificationPermissionRequestTest" --tests "*NotificationPreferenceKeysTest"`와 `:app:minifyReleaseWithR8` 통과 확인. R8는 기존 Naver Maps/Play Services 경고를 유지하지만 실패하지 않는다.
 - 2026-06-14에 Shape Firestore 호환성 사건 메모를 반영해 레거시 `startedAt` 우선순위/잘못된 날짜 타입 거부/쓰기 레거시 키 미생성 테스트를 추가했다. `:app:testDebugUnitTest --tests "*ShapeFirebaseStoreTest" --tests "*ShapeFirestoreParsingTest" --tests "*ShapeTypeTest" --tests "*ShapeValidationTest"`, `:app:testDebugUnitTest --tests "*DroneFirestoreParsingTest" --tests "*DroneValidationTest" --tests "*SketchFirebaseStoreTest" --tests "*SketchValidationTest"`, `:app:testDebugUnitTest`, `:app:assembleDebug`, `:app:minifyReleaseWithR8` 통과 확인.
 - 2026-06-14에 저장 목록 정렬 계약을 다시 고정했다. 종료일 없는 도형은 iOS `Date.distantFuture`처럼 종료일 오름차순에서 마지막, 내림차순에서 첫 번째로 정렬되며, 날짜순 내림차순 tie-breaker도 제목/주소 모두 같은 방향을 따른다. `:app:testDebugUnitTest --tests "*SavedListSectionsTest"` 통과 확인.
+- 2026-06-15에 도형 편집 좌표 placeholder를 iOS `Localizable.xcstrings`와 다시 대조했다. iOS 빌드에 포함된 String Catalog의 `shape.edit.coordinate.placeholder` 한국어 값은 `좌표를 입력하세요`이고, Android `shape_edit_coordinate_placeholder`와 일치한다. 이전 `.strings` 파일의 `좌표 입력` 값은 Xcode project resource 참조가 없어 현재 기준 수정 대상이 아니다. `:app:testDebugUnitTest --tests "*StringResourceCoverageTest" --tests "*ShapeEditDefaultsTest"` 통과 확인.
 - 2026-06-14에 저장 목록/계정 전환 baseline/시스템 서비스 방어 누적 변경 후 `:app:testDebugUnitTest`, `:app:assembleDebug`, `:app:minifyReleaseWithR8`를 재실행해 통과 확인. R8는 기존 Naver Maps SDK stack map table 경고와 Play Services Location companion object 경고를 출력하지만 build failure는 아님.
 - 2026-06-14 최신 감사 커밋 누적 후 `:app:testDebugUnitTest`, `:app:assembleDebug`를 재실행해 통과 확인.
 - 2026-06-14 최신 debug APK를 실기기 `RFCW324TZ0Z`에 데이터 유지 재설치 후 cold launch smoke를 다시 수행했다. `LaunchState: COLD`, `TotalTime: 1901`, PID `22843`, task size `1`, focus `com.ScienceFiction.DronePassAndroid/.MainActivity` 유지. 홈에서 Naver Map, 드론 선택 버튼/드롭다운 원, KP/날씨 카드, `비행구역 레이어`, `스케치`, `새 도형 추가`, 하단 `지도`/`저장`/`설정`을 확인했고, 드론 선택 버튼 bounds `[401,195][657,285]`, `[680,195][922,285]`와 드롭다운 원 `[945,195][1035,285]`는 y=195·height=90으로 일치했다. 저장 탭은 `저장 목록`/정렬 칩/`활성화` 섹션/저장 행, 설정 탭은 `설정`/`내 정보`/`로그인 / 회원가입`/`내 드론 관리하기`/KP·날씨 섹션 렌더링을 확인했으며 `AndroidRuntime:E` fatal 로그는 없었다.
