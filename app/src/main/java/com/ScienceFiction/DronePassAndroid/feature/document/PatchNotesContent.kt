@@ -34,6 +34,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.domain.model.PatchNote
+import com.ScienceFiction.DronePassAndroid.domain.model.PatchNoteFeature
 
 internal val PatchNoteSectionHorizontalPadding = 16.dp
 internal val PatchNoteSectionVerticalPadding = 4.dp
@@ -100,6 +101,14 @@ internal fun shouldAutoLoadPatchNotesOnEnter(state: PatchNotesUiState): Boolean 
     }
 }
 
+internal fun shouldShowPatchNoteFeatures(features: List<PatchNoteFeature>): Boolean {
+    return !features.all { it.title.isEmpty() }
+}
+
+internal fun shouldShowPatchNoteFeatureDescription(description: String?): Boolean {
+    return description != null && description.isNotEmpty()
+}
+
 @Composable
 private fun PatchNoteSection(note: PatchNote) {
     Surface(
@@ -119,10 +128,9 @@ private fun PatchNoteSection(note: PatchNote) {
         ) {
             PatchNoteHeader(note = note)
 
-            if (!note.features.all { it.title.isBlank() }) {
+            if (shouldShowPatchNoteFeatures(note.features)) {
                 Column(verticalArrangement = Arrangement.spacedBy(PatchNoteFeatureGroupSpacing)) {
                     note.features.forEach { feature ->
-                        if (feature.title.isBlank()) return@forEach
                         Column(verticalArrangement = Arrangement.spacedBy(PatchNoteFeatureItemSpacing)) {
                             FeatureTitleRow(title = feature.title)
                             FeatureDescription(description = feature.description)
@@ -191,7 +199,7 @@ private fun FeatureTitleRow(title: String) {
 @Composable
 private fun FeatureDescription(description: String?) {
     description
-        ?.takeIf { it.isNotBlank() }
+        ?.takeIf(::shouldShowPatchNoteFeatureDescription)
         ?.split("\n")
         ?.forEach { line ->
             Row(

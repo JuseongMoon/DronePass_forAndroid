@@ -21,6 +21,7 @@
 - 같은 설치 상태에서 하단 `저장`/`설정` 탭 비파괴 회귀 재확인. 저장 목록 헤더/정렬 칩/활성화 섹션, 설정 헤더/내 정보/로그인 진입점/드론 관리/KP·날씨/알림 섹션이 렌더링되고 지도 탭 복귀 후 PID와 focus가 유지됨.
 - 스케치 모드 종료 중 진행 중인 선 저장을 iOS처럼 일반 생성 액션과 동일하게 undo 기록 대상으로 보정. `:app:testDebugUnitTest --tests "*SketchDefaultsTest"`, `:app:testDebugUnitTest --tests "*Sketch*Test"`, `:app:assembleDebug` 통과.
 - 로그인/Auth 흐름을 iOS `LoginView`/`AuthManager`/`GoogleLoginManager`/`AppleLoginManager`와 재대조. Android는 provider 취소 무시, 사용자 문서 `appleUserID`/`googleUserID`/`lastLogin`, 계정 전환 reset-before-finalize, 로그인 후 cloud backup 활성화 + realtime/full sync + FCM 요청 순서를 유지한다. provider 계정 복구에서 Android가 `sketches`까지 이전하는 것은 데이터 보존 목적의 방어이며, iOS `AuthManager.migrateUserData`의 `sketches` 미이전은 별도 iOS 보강 후보로 계속 남긴다.
+- 앱 정보/패치노트 화면을 iOS `AppInfoView`/`PatchNotesView` 기준으로 재대조하고, 패치노트 feature title/description 표시 조건을 Swift `isEmpty` 의미와 맞게 보정. `:app:testDebugUnitTest --tests "*PatchNotesContentTest" --tests "*MarkdownParserTest" --tests "*DocumentEntryPolicyTest"` 및 `:app:assembleDebug` 통과.
 - `FlightPermissionResult.details`를 iOS처럼 금지/승인필요/주의 결과에는 `레이어명: zoneCode 또는 레이어명` 목록으로 채우고, 비행 가능 결과에는 빈 목록을 유지하도록 보정. `:app:testDebugUnitTest --tests "*FlightZoneCalculatorTest" --tests "*VWorld*Test" --tests "*FlightZone*Test"` 및 `:app:assembleDebug` 통과.
 - Shape/Sketch Firestore optional 숫자 읽기를 iOS처럼 관대하게 보정
 - 스케치 전체 삭제 영어 확인 메시지의 단수 분기도 iOS와 같은 문장으로 보정
@@ -191,6 +192,7 @@
 - 앱 정보 도형 관리 기능 아이콘을 iOS `circle.circle.fill` 의미와 맞는 원형 아이콘으로 보정
 - 앱 정보 클라우드 동기화 기능 아이콘을 iOS `icloud.fill` 의미와 맞는 클라우드 동기화 아이콘으로 보정
 - 앱 정보 드론 원스톱 기능 아이콘을 iOS `checkmark.seal.fill` 의미와 맞는 인증 배지 아이콘으로 보정
+- 패치노트 feature title/description 표시 조건을 iOS처럼 공백 문자열을 빈 값으로 취급하지 않는 `isEmpty` 기준으로 보정
 - Shape 읽기는 iOS 파서처럼 빈 문자열/공백 제목을 보존하고, 쓰기 검증은 공백 제목을 계속 거부
 - 빈 제목 기존 Shape도 iOS처럼 기존 도형 편집으로 취급해 드론/반경/고도/비행 기간 초기값을 보존
 - Drone 읽기는 iOS Codable 파서처럼 빈 문자열/공백 이름을 보존하고, 쓰기 검증은 공백 이름을 계속 거부
@@ -633,6 +635,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 - 2026-06-15 최신 debug APK를 실기기 `RFCW324TZ0Z`에 `adb install -r`로 데이터 유지 재설치 후 cold launch smoke를 완료했다. `LaunchState: COLD`, `TotalTime: 1920`, PID `10832`, focus `com.ScienceFiction.DronePassAndroid/.MainActivity` 유지. UIAutomator XML에서 Naver Map controls, 현위치/확대·축소/NAVER logo, 상단 `내 드론`/`드론 2` 선택 버튼과 드롭다운 원, `비행구역 레이어`, `스케치`, KP/날씨 카드, `새 도형 추가`, 하단 `지도`/`저장`/`설정` 렌더링을 확인했다. 상단 드론 선택 요소 bounds는 `[401,195][657,285]`, `[680,195][922,285]`, `[945,195][1035,285]`로 y=195·height=90이 일치했다. 필터 로그에는 `NaverMapDebug: 네이버 지도 준비 완료`가 있고, `AndroidRuntime` 항목은 UIAutomator 프로세스뿐이며 `FATAL EXCEPTION`/`ThemeUtils` 앱 오류는 없었다.
 - 2026-06-15에 로그인/Auth 흐름을 iOS `LoginView`/`AuthManager`/`GoogleLoginManager`/`AppleLoginManager` 기준으로 재감사했다. Android `LoginScreen`의 버튼/문서 시트 토큰, Google/Apple 취소 무시, 계정 전환 확인/취소, reset-before-finalize, 사용자 루트 문서 필드, provider 계정 복구, 로그인 후 cloud backup/realtime/full sync/FCM 순서는 현재 계약과 맞다. Android provider 복구는 `sketches`도 옮기므로 iOS보다 데이터 보존 범위가 넓고, iOS `sketches` 미이전은 별도 iOS 보강 후보로 유지한다. `:app:testDebugUnitTest --tests "*Auth*Test" --tests "*StringResourceCoverageTest"` 통과 확인.
 - 2026-06-15 같은 실기기/PID `10832`에서 하단 `저장`/`설정` 탭 비파괴 회귀를 재확인했다. `저장` 오버레이는 `저장 목록`, `비행시작일순`, `내림차순`, `활성화`와 3개 활성 행을 렌더링했고, `설정` 오버레이는 `설정`, `내 정보`, `로그인 / 회원가입`, `내 드론 관리하기`, `비행 환경`, `현재 KP 지수`, `현재 날씨`, `알림`을 렌더링했다. 지도 탭 복귀 후 `비행구역 레이어`, `스케치`, `새 도형 추가`가 다시 보이고 PID `10832`가 유지됐으며, logcat에는 UIAutomator `AndroidRuntime` 실행 흔적 외 앱 `FATAL EXCEPTION`/`ThemeUtils` 오류가 없었다.
+- 2026-06-15에 앱 정보/패치노트 화면을 iOS `AppInfoView`/`PatchNotesView`와 다시 대조했다. 앱 정보 섹션/버전 구조와 패치노트 자동 재로드 정책은 유지하고, 패치노트 feature title/description 표시 조건은 iOS Swift `isEmpty` 동작처럼 공백 문자열을 표시 대상으로 보존하도록 보정했다. `:app:testDebugUnitTest --tests "*PatchNotesContentTest" --tests "*MarkdownParserTest" --tests "*DocumentEntryPolicyTest"`, `:app:assembleDebug` 통과 확인.
 - `:app:minifyReleaseWithR8`는 현재 성공합니다.
 - Naver Maps SDK와 Play Services Location에서 R8 warning이 여러 줄 출력될 수 있지만, 현재는 build failure가 아닙니다.
 - `assembleRelease`와 `bundleRelease`는 실제 release signing과 `WEB_CLIENT_ID` 설정 전까지 의도적으로 차단되며, 2026-06-15에 두 실패 경로를 모두 재확인했습니다.
