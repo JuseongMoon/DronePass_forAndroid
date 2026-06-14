@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.map
 
+import android.annotation.SuppressLint
 import android.graphics.PointF
 import android.view.MotionEvent
 import android.view.View
@@ -412,7 +413,10 @@ private const val MapTabletBreakpointDp = 600
 /**
  * 스케치 모드 진입 시에만 표시되는 터치 인터셉터 + 하단 툴바.
  * isSketchMode = false 면 nothing-rendered (caller 가 if 분기로 호출하지 않아도 안전).
+ * 이때 MapView 는 지도 클릭 대상이 아니라 펜/지우개 입력 surface 로 동작하므로
+ * View.performClick() 으로 지도 클릭 semantics 를 섞지 않는다.
  */
+@SuppressLint("ClickableViewAccessibility")
 @Composable
 internal fun MapSketchInput(
     mapView: MapView,
