@@ -577,6 +577,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 - 2026-06-14에 Android 13 themed icon용 monochrome launcher vector를 추가하고 adaptive icon/round icon에 연결했다. `:app:assembleDebug`, `:app:lintDebug` 통과 확인. 최신 lint report에서 `MonochromeLauncherIcon` 경고가 사라졌다.
 - 2026-06-14에 minSdk 28 기준 더 이상 필요하지 않은 legacy density launcher PNG(`ic_launcher.png`, `ic_launcher_round.png`)를 제거하고 adaptive icon 경로만 유지했다. foreground PNG는 adaptive icon foreground로 계속 유지한다. `:app:assembleDebug`, `:app:lintDebug` 통과 확인. 최신 lint report에서 `IconXmlAndPng`, `IconLauncherShape`, `IconDuplicates` 경고가 사라졌다.
 - 2026-06-14에 프로필 동기화 결과 다이얼로그의 수량 문자열 생성을 `LocalContext.current.resources`에서 Compose `LocalResources.current`로 바꿨다. `:app:assembleDebug`, `:app:lintDebug` 통과 확인. 최신 lint report에서 `LocalContextResourcesRead` 경고가 사라졌다.
+- 2026-06-14에 참조되지 않는 기본 색상 리소스 `R.color.white`/`black`만 담고 있던 `colors.xml`을 제거했다. `:app:assembleDebug`, `:app:lintDebug` 통과 확인. 최신 lint report에서 해당 `UnusedResources` 경고가 사라졌고, lint는 `0 errors, 165 warnings` 상태다.
 - `:app:minifyReleaseWithR8`는 현재 성공합니다.
 - Naver Maps SDK와 Play Services Location에서 R8 warning이 여러 줄 출력될 수 있지만, 현재는 build failure가 아닙니다.
 - `assembleRelease`와 `bundleRelease`는 실제 release signing과 `WEB_CLIENT_ID` 설정 전까지 의도적으로 차단되며, 2026-06-14에 두 실패 경로를 모두 재확인했습니다.
