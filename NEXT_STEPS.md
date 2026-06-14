@@ -357,7 +357,11 @@ iOS와 Android가 공유하는 `users/{uid}/shapes`, `users/{uid}/sketches`, `us
 - 최신 `cfbfdfc` 기준 `:app:assembleDebug` 성공 후 Android 15(API 35) `SM-A346N` / `RFCW324TZ0Z`에 `adb install -r app/build/outputs/apk/debug/app-debug.apk`로 데이터 유지 설치 확인
 - `MainActivity` 실행 후 앱 프로세스 `com.ScienceFiction.DronePassAndroid`가 PID `18005`로 유지됨을 확인
 - logcat에서 `AndroidRuntime` fatal crash는 없고, 앱 PID 로그에서 Firebase 초기화, Naver Map `SurfaceView` 생성, 첫 frame available, `NaverMap` GPU 로그까지 확인
-- 기기가 secure keyguard/NotificationShade 상태를 유지해 ADB `wm dismiss-keyguard`/unlock gesture만으로는 실제 홈 UI XML·스크린샷 검증까지 진행하지 못함. 최신 커밋의 전체 시각 smoke는 잠금 해제된 기기에서 재진행 필요
+- 최초 확인 시 기기가 secure keyguard/NotificationShade 상태를 유지해 ADB `wm dismiss-keyguard`/unlock gesture만으로는 실제 홈 UI XML·스크린샷 검증까지 진행하지 못함
+- 이후 기기가 잠금 해제된 상태에서 `monkey -p com.ScienceFiction.DronePassAndroid -c android.intent.category.LAUNCHER 1`로 `MainActivity`를 다시 전면 실행하고 메인 지도 UI XML smoke를 완료
+- UIAutomator XML에서 Naver Map controls, 현위치 버튼, 줌 컨트롤, Naver logo, 상단 `내 드론`/`드론 2` 선택 버튼, 드롭다운 원, `비행구역 레이어`, `스케치`, `KP`, 날씨 카드, `새 도형 추가`, 하단 `지도`/`저장`/`설정` 탭 렌더링 확인
+- 상단 드론 선택 버튼 bounds는 `내 드론` `[401,195][657,285]`, `드론 2` `[680,195][922,285]`, 드롭다운 원 `[945,195][1035,285]`로 y=195 시작과 높이 90이 모두 일치함을 재확인
+- `dumpsys window` 기준 포커스는 `com.ScienceFiction.DronePassAndroid/.MainActivity`, 앱 프로세스 PID `18005` 유지. `AndroidRuntime` 로그는 `uiautomator`/`monkey` 실행/종료만 있고 앱 fatal crash 없음
 
 1. 지도 로드, 현재 위치 권한, 현재 위치 이동
 2. 원형 도형 생성, 저장, 편집, 삭제, 복제
@@ -372,7 +376,7 @@ iOS와 Android가 공유하는 `users/{uid}/shapes`, `users/{uid}/sketches`, `us
 9. 패치노트/약관/개인정보 문서 로드
 10. 앱 삭제 후 재설치 시 로그인/Firestore 동기화/FCM deviceId 재생성
 
-2026-06-13 현재 로컬/비파괴 실기기 경로 중 1-4, 8, 9는 최신 debug APK에서 재확인했습니다. 2026-06-14 최신 커밋은 설치/실행/로그 무크래시까지 재확인했고, 전체 UI smoke는 기기 잠금 해제 후 이어서 진행합니다. 5-7과 10은 실제 OAuth 설정, 공유 Firestore 계정, FCM payload, 또는 앱 데이터 삭제/재설치가 필요하므로 외부 설정/데이터 백업 확인 후 진행합니다.
+2026-06-13 현재 로컬/비파괴 실기기 경로 중 1-4, 8, 9는 최신 debug APK에서 재확인했습니다. 2026-06-14에는 설치/실행/로그 무크래시와 잠금 해제 후 메인 지도 UI XML smoke까지 재확인했습니다. 5-7과 10은 실제 OAuth 설정, 공유 Firestore 계정, FCM payload, 또는 앱 데이터 삭제/재설치가 필요하므로 외부 설정/데이터 백업 확인 후 진행합니다.
 
 ### 3.2 운영 콘솔 설정
 
