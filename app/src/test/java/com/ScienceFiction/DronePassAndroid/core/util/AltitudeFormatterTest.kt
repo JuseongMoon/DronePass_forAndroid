@@ -45,6 +45,20 @@ class AltitudeFormatterTest {
     }
 
     @Test
+    fun `빈 고도 문자열은 iOS format 실패 경로처럼 원문을 반환한다`() {
+        assertEquals("", AltitudeFormatter.format(""))
+        assertEquals("   ", AltitudeFormatter.format("   "))
+        assertEquals("\n", AltitudeFormatter.format("\n"))
+    }
+
+    @Test
+    fun `숫자 추출은 iOS처럼 일반 공백만 제거하고 탭과 개행은 파싱하지 않는다`() {
+        assertEquals("3\t000 AGL", AltitudeFormatter.format("3\t000 AGL"))
+        assertEquals("3\n000 AGL", AltitudeFormatter.format("3\n000 AGL"))
+        assertEquals("FL150 (4572m, 비행고도층)", AltitudeFormatter.format("  FL150  "))
+    }
+
+    @Test
     fun `VWorld 고도 확장은 iOS AltitudeFormatter 결과를 그대로 사용한다`() {
         val zone = DroneZoneFeature(
             id = "zone.1",
@@ -62,5 +76,25 @@ class AltitudeFormatterTest {
 
         assertEquals("UNL (제한없음)", zone.formattedUpperAltitude)
         assertEquals("GND (지상)", zone.formattedLowerAltitude)
+    }
+
+    @Test
+    fun `VWorld 빈 고도 값도 iOS처럼 null 로 낮추지 않고 원문을 보존한다`() {
+        val zone = DroneZoneFeature(
+            id = "zone.2",
+            layer = FlightZoneLayer.PROHIBITED,
+            polygons = emptyList(),
+            zoneCode = "RK P73B",
+            upperAltitude = null,
+            lowerAltitude = null,
+            zoneName = null,
+            properties = mapOf(
+                "prh_lbl_2" to "",
+                "prh_lbl_3" to "   ",
+            ),
+        )
+
+        assertEquals("", zone.formattedUpperAltitude)
+        assertEquals("   ", zone.formattedLowerAltitude)
     }
 }

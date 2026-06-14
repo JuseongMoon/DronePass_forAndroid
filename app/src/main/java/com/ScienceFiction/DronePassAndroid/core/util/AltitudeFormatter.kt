@@ -63,9 +63,6 @@ object AltitudeFormatter {
     /** 1피트 = 0.3048미터 */
     private const val FEET_TO_METERS = 0.3048
 
-    /** 공백 제거 패턴 — 매 호출 컴파일 회피용 캐시 */
-    private val WHITESPACE_PATTERN = Regex("\\s")
-
     /**
      * 고도 문자열을 파싱하여 ParsedAltitude를 반환합니다.
      *
@@ -73,7 +70,10 @@ object AltitudeFormatter {
      * @return ParsedAltitude, 입력이 null이거나 빈 문자열이면 null
      */
     fun parse(altitudeString: String?): ParsedAltitude? {
-        val original = altitudeString?.trim()?.takeIf { it.isNotBlank() } ?: return null
+        val original = altitudeString
+            ?.trimIosWhitespaces()
+            ?.takeIf { it.isNotEmpty() }
+            ?: return null
 
         val upperValue = original.uppercase()
 
@@ -144,8 +144,8 @@ object AltitudeFormatter {
         }
 
         val cleanedNumeric = numericPart
-            .replace(WHITESPACE_PATTERN, "")
-            .trim()
+            .replace(" ", "")
+            .trimIosWhitespaces()
         cleanedNumeric.toDoubleOrNull()?.let { numericValue ->
             return ParsedAltitude(
                 rawValue = original,
@@ -178,7 +178,7 @@ object AltitudeFormatter {
      * - "SFC" -> "SFC (표면)"
      */
     fun format(altitudeString: String?): String? {
-        val parsed = parse(altitudeString) ?: return null
+        val parsed = parse(altitudeString) ?: return altitudeString
 
         return when (parsed.unit) {
             AltitudeUnit.UNL, AltitudeUnit.GND, AltitudeUnit.SFC ->
@@ -241,5 +241,9 @@ object AltitudeFormatter {
         val abs = kotlin.math.abs(value)
         val formatted = abs.toString().reversed().chunked(3).joinToString(" ").reversed()
         return if (value < 0) "-$formatted" else formatted
+    }
+
+    private fun String.trimIosWhitespaces(): String {
+        return trim { it == ' ' || it == '\t' }
     }
 }
