@@ -28,18 +28,14 @@ internal const val LEGACY_FCM_DEVICE_ID_PREFERENCE_KEY = "fcm_device_id"
 internal fun buildFcmDeviceData(
     token: String,
     appVersion: String,
-    includeCreatedAt: Boolean,
 ): HashMap<String, Any> = hashMapOf<String, Any>(
     "fcmToken" to token,
     "platform" to "android",
     "appVersion" to appVersion,
     "isActive" to true,
+    "createdAt" to FieldValue.serverTimestamp(),
     "updatedAt" to FieldValue.serverTimestamp(),
-).apply {
-    if (includeCreatedAt) {
-        put("createdAt", FieldValue.serverTimestamp())
-    }
-}
+)
 
 internal fun buildFcmDeactivateData(): HashMap<String, Any> = hashMapOf(
     "isActive" to false,
@@ -227,23 +223,16 @@ class FcmService : FirebaseMessagingService() {
                 .collection("devices")
                 .document(deviceId)
 
-            deviceRef.get()
-                .addOnSuccessListener { document ->
-                    val deviceData = buildFcmDeviceData(
-                        token = token,
-                        appVersion = appVersion,
-                        includeCreatedAt = !document.exists(),
-                    )
-                    deviceRef.set(deviceData, SetOptions.merge())
-                        .addOnSuccessListener {
-                            Log.d(TAG, fcmTokenStoredLogMessage(deviceId))
-                        }
-                        .addOnFailureListener { e ->
-                            Log.e(TAG, "FCM 토큰 저장 실패", e)
-                        }
+            val deviceData = buildFcmDeviceData(
+                token = token,
+                appVersion = appVersion,
+            )
+            deviceRef.set(deviceData, SetOptions.merge())
+                .addOnSuccessListener {
+                    Log.d(TAG, fcmTokenStoredLogMessage(deviceId))
                 }
                 .addOnFailureListener { e ->
-                    Log.e(TAG, "디바이스 문서 확인 실패", e)
+                    Log.e(TAG, "FCM 토큰 저장 실패", e)
                 }
         }
 

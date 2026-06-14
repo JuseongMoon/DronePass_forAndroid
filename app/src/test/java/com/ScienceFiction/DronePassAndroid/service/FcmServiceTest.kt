@@ -14,7 +14,6 @@ class FcmServiceTest {
         val data = buildFcmDeviceData(
             token = "token-1",
             appVersion = "1.0",
-            includeCreatedAt = true,
         )
 
         assertEquals("token-1", data["fcmToken"])
@@ -27,14 +26,13 @@ class FcmServiceTest {
     }
 
     @Test
-    fun `기존 device 문서 갱신 시 createdAt 은 덮어쓰지 않는다`() {
+    fun `FCM device data 는 iOS 처럼 매 저장마다 createdAt 과 updatedAt 을 함께 쓴다`() {
         val data = buildFcmDeviceData(
             token = "token-1",
             appVersion = "1.0",
-            includeCreatedAt = false,
         )
 
-        assertFalse(data.containsKey("createdAt"))
+        assertTrue(data["createdAt"] is FieldValue)
         assertTrue(data["updatedAt"] is FieldValue)
     }
 
