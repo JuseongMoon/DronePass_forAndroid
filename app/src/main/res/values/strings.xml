@@ -831,7 +831,7 @@
     <string name="profile_info_count_unit">%1$d개</string>
 
     <string name="profile_sync_cloud">실시간 클라우드 동기화</string>
-    <string name="profile_sync_in_progress">동기화 중...</string>
+    <string name="profile_sync_in_progress">동기화 중…</string>
     <string name="profile_sync_login_required">로그인이 필요합니다</string>
     <string name="profile_sync_disabled">비활성화됨</string>
     <string name="profile_sync_active">활성화 - 실시간 동기화중</string>
@@ -869,12 +869,12 @@
     <string name="document_loading">불러오는 중…</string>
     <string name="document_error_title">문서를 불러올 수 없습니다</string>
     <string name="document_error_message">잠시 후 다시 시도해 주세요.</string>
-    <string name="document_terms_loading">불러오는 중...</string>
+    <string name="document_terms_loading">불러오는 중…</string>
     <string name="document_terms_service_error_title">약관을 불러올 수 없습니다.</string>
     <string name="document_terms_service_error_message">잠시 후 다시 시도해주세요.</string>
     <string name="document_terms_privacy_error_title">개인정보 취급방침을 불러올 수 없습니다.</string>
     <string name="document_terms_privacy_error_message">잠시 후 다시 시도해주세요.</string>
-    <string name="patch_notes_loading">불러오는 중...</string>
+    <string name="patch_notes_loading">불러오는 중…</string>
     <string name="patch_notes_error_title">패치노트를 불러올 수 없습니다.</string>
     <string name="patch_notes_error_message">잠시 후 다시 시도해주세요.</string>
     <string name="patch_notes_empty">패치노트가 없습니다</string>

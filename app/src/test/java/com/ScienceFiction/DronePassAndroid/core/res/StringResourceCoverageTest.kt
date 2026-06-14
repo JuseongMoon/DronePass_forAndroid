@@ -539,7 +539,7 @@ class StringResourceCoverageTest {
         assertEquals("만료된 도형", stringResourceValue("values/strings.xml", "profile_info_expired_shapes"))
         assertEquals("%1\$d개", stringResourceValue("values/strings.xml", "profile_info_count_unit"))
         assertEquals("실시간 클라우드 동기화", stringResourceValue("values/strings.xml", "profile_sync_cloud"))
-        assertEquals("동기화 중...", stringResourceValue("values/strings.xml", "profile_sync_in_progress"))
+        assertEquals("동기화 중…", stringResourceValue("values/strings.xml", "profile_sync_in_progress"))
         assertEquals("로그인이 필요합니다", stringResourceValue("values/strings.xml", "profile_sync_login_required"))
         assertEquals("활성화 - 실시간 동기화중", stringResourceValue("values/strings.xml", "profile_sync_active"))
         assertEquals("활성화 - 실시간 동기화 대기중", stringResourceValue("values/strings.xml", "profile_sync_waiting"))
@@ -589,7 +589,7 @@ class StringResourceCoverageTest {
         assertEquals("Expired Shapes", stringResourceValue("values-en/strings.xml", "profile_info_expired_shapes"))
         assertEquals("%1\$d", stringResourceValue("values-en/strings.xml", "profile_info_count_unit"))
         assertEquals("Real-time cloud sync", stringResourceValue("values-en/strings.xml", "profile_sync_cloud"))
-        assertEquals("Syncing...", stringResourceValue("values-en/strings.xml", "profile_sync_in_progress"))
+        assertEquals("Syncing…", stringResourceValue("values-en/strings.xml", "profile_sync_in_progress"))
         assertEquals("Login required", stringResourceValue("values-en/strings.xml", "profile_sync_login_required"))
         assertEquals("No sync history", stringResourceValue("values-en/strings.xml", "profile_sync_no_history"))
         assertEquals("Manual backup", stringResourceValue("values-en/strings.xml", "profile_backup_manual"))
@@ -978,7 +978,7 @@ class StringResourceCoverageTest {
     fun `document and terms strings match iOS localizations`() {
         assertEquals("개인정보 취급방침", stringResourceValue("values/strings.xml", "login_terms_privacy"))
         assertEquals("개인정보 취급방침", stringResourceValue("values/strings.xml", "profile_terms_privacy"))
-        assertEquals("불러오는 중...", stringResourceValue("values/strings.xml", "document_terms_loading"))
+        assertEquals("불러오는 중…", stringResourceValue("values/strings.xml", "document_terms_loading"))
         assertEquals("약관을 불러올 수 없습니다.", stringResourceValue("values/strings.xml", "document_terms_service_error_title"))
         assertEquals("잠시 후 다시 시도해주세요.", stringResourceValue("values/strings.xml", "document_terms_service_error_message"))
         assertEquals(
@@ -989,7 +989,7 @@ class StringResourceCoverageTest {
 
         assertEquals("Privacy Policy", stringResourceValue("values-en/strings.xml", "login_terms_privacy"))
         assertEquals("Privacy Policy", stringResourceValue("values-en/strings.xml", "profile_terms_privacy"))
-        assertEquals("Loading...", stringResourceValue("values-en/strings.xml", "document_terms_loading"))
+        assertEquals("Loading…", stringResourceValue("values-en/strings.xml", "document_terms_loading"))
         assertEquals("Unable to load terms", stringResourceValue("values-en/strings.xml", "document_terms_service_error_title"))
         assertEquals("Please try again later", stringResourceValue("values-en/strings.xml", "document_terms_service_error_message"))
         assertEquals(

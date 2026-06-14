@@ -472,7 +472,7 @@
     <string name="profile_info_count_unit">%1$d</string>
 
     <string name="profile_sync_cloud">Real-time cloud sync</string>
-    <string name="profile_sync_in_progress">Syncing...</string>
+    <string name="profile_sync_in_progress">Syncing…</string>
     <string name="profile_sync_login_required">Login required</string>
     <string name="profile_sync_disabled">Disabled</string>
     <string name="profile_sync_active">Active - Real-time syncing</string>
@@ -511,12 +511,12 @@
     <string name="document_loading">Loading…</string>
     <string name="document_error_title">Unable to load document</string>
     <string name="document_error_message">Please try again later.</string>
-    <string name="document_terms_loading">Loading...</string>
+    <string name="document_terms_loading">Loading…</string>
     <string name="document_terms_service_error_title">Unable to load terms</string>
     <string name="document_terms_service_error_message">Please try again later</string>
     <string name="document_terms_privacy_error_title">Unable to load privacy policy</string>
     <string name="document_terms_privacy_error_message">Please try again later</string>
-    <string name="patch_notes_loading">Loading...</string>
+    <string name="patch_notes_loading">Loading…</string>
     <string name="patch_notes_error_title">Failed to load patch notes.</string>
     <string name="patch_notes_error_message">Please try again later.</string>
     <string name="patch_notes_empty">No patch notes</string>
