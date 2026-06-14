@@ -96,6 +96,11 @@ class SketchDefaultsTest {
     }
 
     @Test
+    fun `스케치 모드 종료 중 저장된 선은 iOS처럼 undo 액션으로 기록한다`() {
+        assertEquals(true, RecordSketchUndoWhenExitingMode)
+    }
+
+    @Test
     fun `색상 슬라이더는 iOS처럼 작은 hue 차이는 동기화하지 않는다`() {
         assertEquals(false, shouldSyncSketchHueSlider(currentHue = 10f, newHue = 20f))
     }

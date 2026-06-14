@@ -172,7 +172,7 @@ class SketchViewModel @Inject constructor(
         if (!transition.shouldTransition) return
 
         if (drawingBuffer.isNotEmpty()) {
-            finishDrawing(recordUndo = false)
+            finishDrawing(recordUndo = RecordSketchUndoWhenExitingMode)
         } else {
             _currentDrawingPoints.value = emptyList()
         }

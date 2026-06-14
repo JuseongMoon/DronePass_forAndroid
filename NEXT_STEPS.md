@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 스케치 모드 종료 중 진행 중인 선 저장을 iOS처럼 일반 생성 액션과 동일하게 undo 기록 대상으로 보정. `:app:testDebugUnitTest --tests "*SketchDefaultsTest"`, `:app:testDebugUnitTest --tests "*Sketch*Test"`, `:app:assembleDebug` 통과.
 - `FlightPermissionResult.details`를 iOS처럼 금지/승인필요/주의 결과에는 `레이어명: zoneCode 또는 레이어명` 목록으로 채우고, 비행 가능 결과에는 빈 목록을 유지하도록 보정. `:app:testDebugUnitTest --tests "*FlightZoneCalculatorTest" --tests "*VWorld*Test" --tests "*FlightZone*Test"` 및 `:app:assembleDebug` 통과.
 - Shape/Sketch Firestore optional 숫자 읽기를 iOS처럼 관대하게 보정
 - 스케치 전체 삭제 영어 확인 메시지의 단수 분기도 iOS와 같은 문장으로 보정
@@ -625,6 +626,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 - 2026-06-15에 VWorld 상세 시트의 공공기관 연락처 fallback을 iOS `DroneZoneFeature.publicContact`와 맞췄다. Android는 코드가 없는 ATZ/이착륙장/장애물 구역에서 `zoneName`을 우선해 연락처를 찾을 수 있었지만, iOS는 `zoneCode ?? layer.displayName`으로만 lookup하므로 Android도 같은 기준으로 보정했다. `:app:testDebugUnitTest --tests "*VWorldZoneDetailSheetTest"`, `:app:testDebugUnitTest --tests "*VWorld*Test" --tests "*FlightZone*Test"`, `:app:assembleDebug` 통과 확인.
 - 2026-06-15에 VWorld 상세 시트의 고도 행 표시 조건도 iOS `feature.altitudeInfo != nil`와 맞췄다. Android는 상한/하한 중 하나만 있어도 고도 행을 보여줄 수 있었지만, iOS는 상한과 하한이 모두 있을 때만 해당 행을 렌더링하므로 Android도 둘 다 있을 때만 표시한다. `:app:testDebugUnitTest --tests "*VWorldZoneDetailSheetTest"`, `:app:testDebugUnitTest --tests "*VWorld*Test" --tests "*FlightZone*Test"`, `:app:assembleDebug` 통과 확인.
 - 2026-06-15에 VWorld 문자열 property 파싱을 iOS `as? String` 동작과 맞췄다. Android는 `toString()`으로 숫자 값을 문자열처럼 표시하고 blank 문자열은 `null`로 낮출 수 있었지만, 이제 String 타입만 그대로 읽어 빈 문자열은 보존하고 숫자/불일치 타입은 `null`로 처리한다. 또한 parser의 generic `code`/`zoneCode` fallback을 제거해 레이어별 iOS 필드만 `zoneCode`로 사용한다. `:app:testDebugUnitTest --tests "*VWorldModelsTest" --tests "*VWorldRepositoryTest" --tests "*VWorldZoneDetailSheetTest"`, `:app:testDebugUnitTest --tests "*VWorld*Test" --tests "*FlightZone*Test"`, `:app:assembleDebug` 통과 확인.
+- 2026-06-15에 스케치 모드 종료 중 진행 중인 선을 저장할 때도 iOS `SketchManager.exitSketchMode()`처럼 일반 `finishDrawing()` 경로의 undo 기록을 남기도록 보정했다. `:app:testDebugUnitTest --tests "*SketchDefaultsTest"`, `:app:testDebugUnitTest --tests "*Sketch*Test"`, `:app:assembleDebug` 통과 확인.
 - `:app:minifyReleaseWithR8`는 현재 성공합니다.
 - Naver Maps SDK와 Play Services Location에서 R8 warning이 여러 줄 출력될 수 있지만, 현재는 build failure가 아닙니다.
 - `assembleRelease`와 `bundleRelease`는 실제 release signing과 `WEB_CLIENT_ID` 설정 전까지 의도적으로 차단되며, 2026-06-15에 두 실패 경로를 모두 재확인했습니다.
