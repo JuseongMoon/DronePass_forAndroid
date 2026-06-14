@@ -361,6 +361,8 @@ iOS와 Android가 공유하는 `users/{uid}/shapes`, `users/{uid}/sketches`, `us
 - 이후 기기가 잠금 해제된 상태에서 `monkey -p com.ScienceFiction.DronePassAndroid -c android.intent.category.LAUNCHER 1`로 `MainActivity`를 다시 전면 실행하고 메인 지도 UI XML smoke를 완료
 - UIAutomator XML에서 Naver Map controls, 현위치 버튼, 줌 컨트롤, Naver logo, 상단 `내 드론`/`드론 2` 선택 버튼, 드롭다운 원, `비행구역 레이어`, `스케치`, `KP`, 날씨 카드, `새 도형 추가`, 하단 `지도`/`저장`/`설정` 탭 렌더링 확인
 - 상단 드론 선택 버튼 bounds는 `내 드론` `[401,195][657,285]`, `드론 2` `[680,195][922,285]`, 드롭다운 원 `[945,195][1035,285]`로 y=195 시작과 높이 90이 모두 일치함을 재확인
+- 메인 지도에서 `KP` 버튼 탭 시 `KP 지수 예보` 시트가 열리고, Android 뒤로가기로 시트가 닫히며 메인 지도 UI로 복귀함을 확인
+- 메인 지도에서 날씨 카드를 탭하면 `현위치 기반 정보` 시트가 열리고, Android 뒤로가기로 시트가 닫히며 메인 지도 UI로 복귀함을 확인
 - `dumpsys window` 기준 포커스는 `com.ScienceFiction.DronePassAndroid/.MainActivity`, 앱 프로세스 PID `18005` 유지. `AndroidRuntime` 로그는 `uiautomator`/`monkey` 실행/종료만 있고 앱 fatal crash 없음
 
 1. 지도 로드, 현재 위치 권한, 현재 위치 이동
