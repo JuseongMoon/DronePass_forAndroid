@@ -1,5 +1,7 @@
 package com.ScienceFiction.DronePassAndroid.feature.vworld
 
+import android.content.ActivityNotFoundException
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.background
@@ -516,12 +518,24 @@ private fun PhoneNumberRow(label: String, phone: String) {
             style = MaterialTheme.typography.bodyMedium,
             color = PhoneLinkColor,
             modifier = Modifier.clickable {
-                val intent = Intent(
-                    Intent.ACTION_DIAL,
-                    Uri.parse("tel:${phone.replace("-", "")}")
-                )
-                context.startActivity(intent)
+                openVWorldPhoneDialer(context, phone)
             }
         )
     }
+}
+
+internal fun buildVWorldPhoneDialIntent(phone: String): Intent {
+    return Intent(Intent.ACTION_DIAL, Uri.parse(buildVWorldPhoneDialUriString(phone)))
+}
+
+internal fun buildVWorldPhoneDialUriString(phone: String): String =
+    "tel:${phone.filterNot { it == '-' || it.isWhitespace() }}"
+
+private fun openVWorldPhoneDialer(context: Context, phone: String): Boolean = try {
+    context.startActivity(buildVWorldPhoneDialIntent(phone))
+    true
+} catch (_: ActivityNotFoundException) {
+    false
+} catch (_: SecurityException) {
+    false
 }

@@ -94,4 +94,9 @@ class VWorldZoneDetailSheetTest {
 
         assertEquals("비행장교통구역", resolvePublicContactLookupName(zone))
     }
+
+    @Test
+    fun `phone row uses safe dial intent with sanitized tel uri`() {
+        assertEquals("tel:0312909221", buildVWorldPhoneDialUriString("031-290 9221"))
+    }
 }

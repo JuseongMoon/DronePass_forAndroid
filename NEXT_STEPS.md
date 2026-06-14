@@ -558,6 +558,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 - 2026-06-14 도형 상세 드론 표시 방어 커밋 후 `:app:testDebugUnitTest`와 `:app:assembleDebug`를 다시 실행해 통과 확인.
 - 2026-06-14 최신 HEAD 기준 `:app:minifyReleaseWithR8`를 재실행해 통과 확인. 기존 Naver Maps SDK stack map table warning과 Play Services Location companion object warning은 남지만 build failure는 아님.
 - 2026-06-14 최신 debug APK를 실기기 `RFCW324TZ0Z`에 데이터 유지 재설치 후 cold launch smoke를 다시 완료했다. `LaunchState: COLD`, `TotalTime: 1925`, PID `1056`, task size `1`, focus `com.ScienceFiction.DronePassAndroid/.MainActivity` 유지. UIAutomator XML에서 Naver Map/현위치/확대·축소, 상단 `내 드론`/`드론 2` 선택 버튼과 드롭다운 원, `비행구역 레이어`, `스케치`, `KP`, 날씨 카드, `새 도형 추가`, 하단 `지도`/`저장`/`설정` 렌더링을 확인했다. 상단 드론 선택 요소 bounds는 `[401,195][657,285]`, `[680,195][922,285]`, `[945,195][1035,285]`로 y=195·height=90이 일치했고, `AndroidRuntime:E` fatal 로그는 없었다.
+- 2026-06-14에 VWorld 상세 전화번호 행의 외부 다이얼러 실행을 안전하게 보강했다. 다이얼러가 없거나 제한된 프로필에서 `ACTION_DIAL` 실행이 실패해도 시트가 크래시하지 않고 무시하며, 전화번호 dial URI는 하이픈/공백을 제거한 `tel:` 값으로 고정한다. `:app:testDebugUnitTest --tests "*VWorldZoneDetailSheetTest"`, `:app:testDebugUnitTest --tests "*VWorld*Test" --tests "*FlightZone*Test"`, `:app:testDebugUnitTest`, `:app:assembleDebug` 통과 확인.
 - `:app:minifyReleaseWithR8`는 현재 성공합니다.
 - Naver Maps SDK와 Play Services Location에서 R8 warning이 여러 줄 출력될 수 있지만, 현재는 build failure가 아닙니다.
 - `assembleRelease`와 `bundleRelease`는 실제 release signing과 `WEB_CLIENT_ID` 설정 전까지 의도적으로 차단되며, 2026-06-14에 두 실패 경로를 모두 재확인했습니다.
