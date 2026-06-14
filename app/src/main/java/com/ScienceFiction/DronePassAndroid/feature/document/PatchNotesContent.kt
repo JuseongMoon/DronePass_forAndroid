@@ -109,6 +109,10 @@ internal fun shouldShowPatchNoteFeatureDescription(description: String?): Boolea
     return description != null && description.isNotEmpty()
 }
 
+internal fun shouldShowPatchNoteTitle(title: String): Boolean {
+    return title.isNotEmpty()
+}
+
 @Composable
 private fun PatchNoteSection(note: PatchNote) {
     Surface(
@@ -165,7 +169,7 @@ private fun PatchNoteHeader(note: PatchNote) {
                 modifier = Modifier.padding(end = PatchNoteDateTrailingPadding),
             )
         }
-        if (note.title.isNotBlank()) {
+        if (shouldShowPatchNoteTitle(note.title)) {
             Text(
                 text = note.title,
                 style = MaterialTheme.typography.titleMedium,

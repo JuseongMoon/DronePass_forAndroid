@@ -59,4 +59,11 @@ class PatchNotesContentTest {
         assertTrue(shouldShowPatchNoteFeatureDescription(" "))
         assertTrue(shouldShowPatchNoteFeatureDescription("description"))
     }
+
+    @Test
+    fun `패치노트 title 표시 여부도 iOS처럼 isEmpty 기준을 사용한다`() {
+        assertFalse(shouldShowPatchNoteTitle(""))
+        assertTrue(shouldShowPatchNoteTitle(" "))
+        assertTrue(shouldShowPatchNoteTitle("Release title"))
+    }
 }
