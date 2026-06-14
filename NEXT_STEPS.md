@@ -17,6 +17,9 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- `5f2990a fix: tolerate partial shape coordinate arrays`
+- `3abc1d7 fix: filter invalid vworld geometry rings`
+- `6a6ab97 fix: tolerate invalid sun alarm offsets`
 - `22efc0d test: cover manifest notification contracts`
 - `e7cdcea fix: reconcile restored end date alarms`
 - `fix: match iOS add shape labels`
@@ -585,6 +588,8 @@ export PATH="$JAVA_HOME/bin:$PATH"
 - 2026-06-14 실기기 하단 탭 회귀를 추가 확인했다. `저장` 탭에서는 `저장 목록`, `비행시작일순`, `내림차순`, `활성화`와 활성 도형 3개가 렌더링됐고, `설정` 탭에서는 `내 정보`, `로그인 / 회원가입`, `내 드론 관리하기`, `비행 환경`, `현재 KP 지수: 2.0`, `현재 날씨`, `알림` 섹션이 렌더링됐다. 탭 전환 후에도 task size `1`, focus `com.ScienceFiction.DronePassAndroid/.MainActivity`를 유지했고 `AndroidRuntime:E` fatal 로그는 없었다.
 - 2026-06-14에 iOS `SettingManager.registerSunriseAlarms`/`registerSunsetAlarms`와 Android 일출/일몰 알림 content helper를 다시 대조했다. Android도 정상 경로는 iOS처럼 30분/10분 전 리소스만 사용하고, 손상된 offset 값이 들어와도 알림 재예약 중 앱을 중단하지 않도록 30분 리소스로 fallback한다. `:app:testDebugUnitTest --tests "*NotificationSchedulerTest"`와 `:app:testDebugUnitTest --tests "*NotificationSchedulerTest" --tests "*NotificationPreferenceKeysTest" --tests "*SettingsEndDateAlarmPlanTest" --tests "*MainActivityKeepScreenAwakeTest"` 통과 확인.
 - 2026-06-14에 VWorld GeoJSON parser를 iOS `FlightZoneOverlayManager`/`FlightZoneCalculator` 기준으로 보강했다. 3점 미만 ring은 parser 단계에서 제외해 불완전 polygon이 모델에 남지 않으며, MultiPolygon은 invalid ring을 버린 뒤 유효 polygon을 계속 보존한다. `:app:testDebugUnitTest --tests "*VWorldGeometryParserTest" --tests "*FlightZoneCalculatorTest" --tests "*VWorldZoneDetailSheetTest"` 통과 확인.
+- 2026-06-14에 Shape Firestore polygon/polyline 좌표 배열 파싱을 iOS `compactMap` 동작과 맞춰 손상 좌표 원소만 제외하도록 보정했다. 제외 후 polygon 3점 미만, polyline 2점 미만이면 기존처럼 문서 전체를 skip한다. `:app:testDebugUnitTest --tests "*ShapeFirestoreParsingTest" --tests "*ShapeFirebaseStoreTest" --tests "*ShapeTypeTest"`, `:app:testDebugUnitTest`, `:app:assembleDebug`, `:app:minifyReleaseWithR8` 통과 확인. R8는 기존 Naver Maps/Play Services warning만 출력하고 build failure는 없음.
+- 2026-06-14 최신 debug APK를 실기기 `RFCW324TZ0Z`에 데이터 유지 재설치 후 cold launch smoke를 다시 완료했다. `LaunchState: COLD`, `TotalTime: 1875`, PID `20173`, focus `com.ScienceFiction.DronePassAndroid/.MainActivity` 유지. 앱 PID 로그에서 Firebase 초기화와 `NaverMapDebug: 네이버 지도 준비 완료`를 확인했고, UIAutomator XML에서 Naver Map controls, 현위치/줌/NAVER logo, 상단 `내 드론`/`드론 2`/드롭다운 원, `비행구역 레이어`, `스케치`, `KP`, 날씨 카드, `새 도형 추가`, 하단 `지도`/`저장`/`설정` 렌더링을 확인했다. `AndroidRuntime:E` fatal 로그 없음.
 - `:app:minifyReleaseWithR8`는 현재 성공합니다.
 - Naver Maps SDK와 Play Services Location에서 R8 warning이 여러 줄 출력될 수 있지만, 현재는 build failure가 아닙니다.
 - `assembleRelease`와 `bundleRelease`는 실제 release signing과 `WEB_CLIENT_ID` 설정 전까지 의도적으로 차단되며, 2026-06-14에 두 실패 경로를 모두 재확인했습니다.
