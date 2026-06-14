@@ -662,8 +662,11 @@ internal fun resolveShapeDetailDrone(
     matchedDrone: DroneModel?,
     activeDrones: List<DroneModel>,
 ): DroneModel? {
-    if (matchedDrone != null) return matchedDrone
-    return if (shapeDroneId == null) activeDrones.firstOrNull() else null
+    return if (shapeDroneId == null) {
+        activeDrones.firstOrNull()
+    } else {
+        matchedDrone?.takeIf { it.id == shapeDroneId }
+    }
 }
 
 /**

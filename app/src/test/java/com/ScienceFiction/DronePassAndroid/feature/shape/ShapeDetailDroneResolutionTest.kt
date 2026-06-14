@@ -54,6 +54,29 @@ class ShapeDetailDroneResolutionTest {
     }
 
     @Test
+    fun `droneId 와 다른 드론이 전달되면 iOS처럼 연결된 드론으로 표시하지 않는다`() {
+        val result = resolveShapeDetailDrone(
+            shapeDroneId = "drone-a",
+            matchedDrone = DroneModel(id = "drone-b", name = "Wrong"),
+            activeDrones = listOf(DroneModel(id = "drone-a", name = "Fallback")),
+        )
+
+        assertNull(result)
+    }
+
+    @Test
+    fun `droneId 가 없는 레거시 도형은 전달된 드론보다 첫 번째 활성 드론을 우선한다`() {
+        val firstDrone = DroneModel(id = "drone-first", name = "First")
+        val result = resolveShapeDetailDrone(
+            shapeDroneId = null,
+            matchedDrone = DroneModel(id = "drone-passed", name = "Passed"),
+            activeDrones = listOf(firstDrone),
+        )
+
+        assertEquals(firstDrone, result)
+    }
+
+    @Test
     fun `복사 토스트는 iOS CopyToastOverlay 표시 타이밍과 위치를 따른다`() {
         assertEquals(1_500L, ShapeDetailCopyToastDurationMs)
         assertEquals(300, ShapeDetailCopyToastAnimationDurationMs)
