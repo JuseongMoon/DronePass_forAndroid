@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 로그인 오류 보정 커밋 이후 최신 debug APK를 Android 15 실기기 `RFCW324TZ0Z`에 데이터 유지 재설치하고 cold launch + 하단 탭 smoke 재확인. `LaunchState: COLD`, `TotalTime: 1920`, PID `15369`, MainActivity focus 유지. 홈 UI, 상단 드론 선택 버튼/드롭다운 원 시각 bounds 정렬, 저장/설정 오버레이, Naver Map 준비, 무크래시 로그 확인.
 - 최신 debug APK를 Android 15 실기기 `RFCW324TZ0Z`에 데이터 유지 재설치하고 cold launch smoke 재확인. 홈 UI, 상단 드론 선택 버튼/드롭다운 원 정렬, Naver Map 준비, 무크래시 로그 확인.
 - 패치노트 렌더링 보정 커밋 이후 최신 debug APK를 같은 실기기 `RFCW324TZ0Z`에 데이터 유지 재설치하고 cold launch smoke 재확인. LaunchState `COLD`, `TotalTime: 1924`, PID `12627`, MainActivity focus, 홈 UI와 Naver Map 준비, `FATAL EXCEPTION` 없음.
 - 같은 설치 상태에서 하단 `저장`/`설정` 탭 비파괴 회귀 재확인. 저장 목록 헤더/정렬 칩/활성화 섹션, 설정 헤더/내 정보/로그인 진입점/드론 관리/KP·날씨/알림 섹션이 렌더링되고 지도 탭 복귀 후 PID와 focus가 유지됨.
@@ -654,6 +655,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 - 2026-06-15에 드론 삭제 실패 alert 메시지를 iOS `DroneDetailView.deleteConfirmed`와 맞췄다. Android는 실패 메시지가 빈 문자열/공백 문자열이면 `common_unknown_error`로 대체했지만, iOS는 `error.localizedDescription`을 그대로 alert 본문에 넣으므로 Android도 `DroneDeleteError.Failure.message`를 원문 그대로 표시한다. `:app:testDebugUnitTest --tests "*DroneListScreenTest" --tests "*DroneDeleteValidationTest"`, `:app:assembleDebug` 통과 확인.
 - 2026-06-15에 날씨 데이터 카드의 subText 표시 조건을 iOS `WeatherForecastView.weatherDataCard`와 맞췄다. iOS는 `subText != nil`이면 빈 문자열이어도 작은 라벨/본문 스타일과 subText 행을 적용하므로, Android도 `subText.isNullOrBlank()`가 아니라 null 여부만 보도록 변경했다. `:app:testDebugUnitTest --tests "*WeatherForecastParityTest" --tests "*WeatherOverlayCardTest"`, `:app:assembleDebug` 통과 확인.
 - 2026-06-15에 로그인 오류 다이얼로그 본문 표시를 iOS `LoginView`와 맞췄다. Android는 `AuthState.Error.message`가 빈 문자열/공백 문자열이면 `login_error_unknown`으로 대체했지만, iOS는 `loginError?.localizedDescription ?? unknown`이라 description 문자열이 존재하면 빈 값도 그대로 표시한다. Android도 표시 단계에서 `ifBlank` fallback을 제거하고 원문 메시지를 보존한다. `:app:testDebugUnitTest --tests "*AuthViewModelForegroundSyncTest"`, `:app:assembleDebug` 통과 확인.
+- 2026-06-15 로그인 오류 보정 커밋 `6ebf3e5` 이후 최신 debug APK를 실기기 `RFCW324TZ0Z`에 `adb install -r`로 데이터 유지 재설치 후 cold launch와 하단 탭 smoke를 재수행했다. `LaunchState: COLD`, `TotalTime: 1920`, PID `15369`, focus `com.ScienceFiction.DronePassAndroid/.MainActivity` 유지. 홈 XML에서 Naver Map controls, 현위치/확대·축소/NAVER logo, 상단 `내 드론`/`드론 2` 선택 버튼과 드롭다운 원, `비행구역 레이어`, `스케치`, KP/날씨 카드, `새 도형 추가`, 하단 `지도`/`저장`/`설정` 렌더링을 확인했다. 상단 드론 선택 요소 시각 bounds는 `[401,195][657,285]`, `[680,195][922,285]`, `[945,195][1035,285]`로 y=195·height=90이 일치했다. 저장 탭은 `저장 목록`/`비행시작일순`/`내림차순`/`활성화`, 설정 탭은 `설정`/`내 정보`/`로그인 / 회원가입`/`내 드론 관리하기`/`비행 환경`/`현재 KP 지수: 1.3`/`현재 날씨`/`알림`을 렌더링했고, 지도 탭 복귀 후 PID와 focus가 유지됐다. logcat에는 `NaverMapDebug: 네이버 지도 준비 완료`가 있고, `AndroidRuntime` 항목은 UIAutomator 실행 흔적뿐이며 `FATAL EXCEPTION`/`ThemeUtils` 앱 오류는 없었다.
 - `:app:minifyReleaseWithR8`는 현재 성공합니다.
 - Naver Maps SDK와 Play Services Location에서 R8 warning이 여러 줄 출력될 수 있지만, 현재는 build failure가 아닙니다.
 - `assembleRelease`와 `bundleRelease`는 실제 release signing과 `WEB_CLIENT_ID` 설정 전까지 의도적으로 차단되며, 2026-06-15에 두 실패 경로를 모두 재확인했습니다.
