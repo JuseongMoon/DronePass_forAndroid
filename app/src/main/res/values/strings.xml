@@ -110,21 +110,15 @@
     <string name="kp_no_data">데이터가 없습니다</string>
 
     <!-- SavedListScreen -->
-    <string name="saved_search_placeholder">제목, 주소, 메모 검색</string>
-    <string name="saved_search_icon">검색</string>
-    <string name="saved_clear_search">검색어 삭제</string>
-    <string name="saved_total_count">총 %d개</string>
     <string name="saved_section_active">활성화</string>
     <string name="saved_section_not_started">시작 전</string>
     <string name="saved_section_expired">만료됨</string>
     <string name="saved_empty_no_search">저장된 도형이 없습니다.</string>
-    <string name="saved_empty_with_search">검색 결과가 없습니다</string>
     <string name="saved_empty_hint">지도에서 + 버튼을 누르거나 지도를 길게 눌러서 새로운 도형을 추가해보세요.</string>
     <string name="saved_empty_no_drone_selected">드론을 선택하면 도형이 표시됩니다.</string>
     <string name="saved_empty_no_drone_selected_hint">우측 상단의 드론 선택 메뉴에서 드론을 선택해주세요.</string>
     <string name="saved_empty_no_matching_shapes">선택한 드론에 해당하는 도형이 없습니다.</string>
     <string name="saved_empty_no_matching_shapes_hint">다른 드론을 선택하거나 새로운 도형을 추가해보세요.</string>
-    <string name="shape_delete_confirm_message">\'%s\' 도형을 삭제하시겠습니까?</string>
 
     <!-- ShapeDetailSheet -->
     <string name="shape_detail_coordinate">좌표</string>
@@ -139,24 +133,16 @@
     <string name="shape_detail_copied">복사되었습니다</string>
 
     <!-- ShapeEditScreen -->
-    <string name="shape_edit_title_edit">도형 편집</string>
-    <string name="shape_edit_title_create">새 도형 생성</string>
-    <string name="shape_edit_section_basic">기본 정보</string>
-    <string name="shape_edit_label_title">제목</string>
     <string name="shape_edit_label_coordinate">좌표</string>
     <string name="shape_edit_label_address">주소</string>
     <string name="shape_edit_placeholder_address">주소를 검색하세요</string>
-    <string name="shape_edit_label_radius">반경(m)</string>
-    <string name="shape_edit_label_altitude">고도(m)</string>
     <string name="shape_edit_section_flight_period">비행 기간</string>
     <string name="shape_edit_start_date">시작일</string>
     <string name="shape_edit_end_date">종료일</string>
     <string name="shape_edit_start_date_select">시작일 선택</string>
     <string name="shape_edit_end_date_select">종료일 선택</string>
     <string name="shape_edit_date_only_mode">일단위 입력</string>
-    <string name="shape_edit_select_time">시간 선택</string>
     <string name="date_time_done">선택 완료</string>
-    <string name="shape_edit_section_memo">메모</string>
     <string name="shape_edit_label_memo">메모</string>
     <string name="shape_edit_placeholder_memo">메모를 입력하세요</string>
     <string name="shape_edit_default_title">새 도형</string>

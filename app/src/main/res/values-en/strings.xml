@@ -109,21 +109,15 @@
     <string name="kp_no_data">No data available</string>
 
     <!-- SavedListScreen -->
-    <string name="saved_search_placeholder">Search title, address, memo</string>
-    <string name="saved_search_icon">Search</string>
-    <string name="saved_clear_search">Clear search</string>
-    <string name="saved_total_count">Total %d</string>
     <string name="saved_section_active">Active</string>
     <string name="saved_section_not_started">Not Started</string>
     <string name="saved_section_expired">Expired</string>
     <string name="saved_empty_no_search">No saved shapes</string>
-    <string name="saved_empty_with_search">No search results</string>
     <string name="saved_empty_hint">Tap + button or long press on map to add shapes</string>
     <string name="saved_empty_no_drone_selected">Select a drone to view shapes</string>
     <string name="saved_empty_no_drone_selected_hint">Select a drone from the menu</string>
     <string name="saved_empty_no_matching_shapes">No shapes for selected drone</string>
     <string name="saved_empty_no_matching_shapes_hint">Select another drone or add new shapes</string>
-    <string name="shape_delete_confirm_message">Delete shape \'%s\'?</string>
 
     <!-- ShapeDetailSheet -->
     <string name="shape_detail_coordinate">Coordinates</string>
@@ -138,21 +132,14 @@
     <string name="shape_detail_copied">Copied</string>
 
     <!-- ShapeEditScreen -->
-    <string name="shape_edit_title_edit">Edit shape</string>
-    <string name="shape_edit_title_create">Create new shape</string>
-    <string name="shape_edit_section_basic">Basic info</string>
-    <string name="shape_edit_label_title">Title</string>
     <string name="shape_edit_label_coordinate">Coordinates</string>
     <string name="shape_edit_label_address">Address</string>
     <string name="shape_edit_placeholder_address">Search address</string>
-    <string name="shape_edit_label_radius">Radius (m)</string>
-    <string name="shape_edit_label_altitude">Altitude</string>
     <string name="shape_edit_section_flight_period">Flight period</string>
     <string name="shape_edit_start_date">Start Date</string>
     <string name="shape_edit_end_date">End Date</string>
     <string name="shape_edit_start_date_select">Select Start Date</string>
     <string name="shape_edit_end_date_select">Select End Date</string>
-    <string name="shape_edit_section_memo">Memo</string>
     <string name="shape_edit_label_memo">Memo</string>
     <string name="shape_edit_placeholder_memo">Enter memo</string>
     <string name="shape_edit_default_title">New Shape</string>
@@ -491,7 +478,6 @@
     <string name="screen_weather">Weather</string>
 
     <string name="shape_edit_date_only_mode">Day mode</string>
-    <string name="shape_edit_select_time">Select time</string>
     <string name="date_time_done">Done</string>
 
     <string name="sketch_delete_all_title">Delete All Sketches</string>
