@@ -531,7 +531,7 @@
 
     <string name="sketch_delete_all_title">Delete All Sketches</string>
     <plurals name="sketch_delete_all_confirm">
-        <item quantity="one">Are you sure you want to delete %d sketch?</item>
+        <item quantity="one">Are you sure you want to delete all %d sketches?</item>
         <item quantity="other">Are you sure you want to delete all %d sketches?</item>
     </plurals>
 

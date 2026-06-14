@@ -526,6 +526,27 @@ class StringResourceCoverageTest {
     }
 
     @Test
+    fun `sketch toolbar strings match iOS localizations`() {
+        assertEquals("완료", stringResourceValue("values/strings.xml", "sketch_done"))
+        assertEquals("모든 스케치 삭제", stringResourceValue("values/strings.xml", "sketch_delete_all_title"))
+        assertEquals(
+            "%d개의 스케치를 모두 삭제하시겠습니까?",
+            pluralResourceValue("values/strings.xml", "sketch_delete_all_confirm", "other"),
+        )
+
+        assertEquals("Done", stringResourceValue("values-en/strings.xml", "sketch_done"))
+        assertEquals("Delete All Sketches", stringResourceValue("values-en/strings.xml", "sketch_delete_all_title"))
+        assertEquals(
+            "Are you sure you want to delete all %d sketches?",
+            pluralResourceValue("values-en/strings.xml", "sketch_delete_all_confirm", "one"),
+        )
+        assertEquals(
+            "Are you sure you want to delete all %d sketches?",
+            pluralResourceValue("values-en/strings.xml", "sketch_delete_all_confirm", "other"),
+        )
+    }
+
+    @Test
     fun `profile sync and account strings match iOS localizations`() {
         assertEquals("내 정보", stringResourceValue("values/strings.xml", "profile_section_my_info"))
         assertEquals("이메일", stringResourceValue("values/strings.xml", "profile_info_email"))

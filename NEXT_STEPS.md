@@ -18,6 +18,7 @@
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
 - Shape/Sketch Firestore optional 숫자 읽기를 iOS처럼 관대하게 보정
+- 스케치 전체 삭제 영어 확인 메시지의 단수 분기도 iOS와 같은 문장으로 보정
 - `5f2990a fix: tolerate partial shape coordinate arrays`
 - `3abc1d7 fix: filter invalid vworld geometry rings`
 - `6a6ab97 fix: tolerate invalid sun alarm offsets`
@@ -595,6 +596,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 - 2026-06-14에 Shape/Sketch Firestore optional 숫자 읽기를 iOS parser와 맞췄다. Shape `radius`/`height` 타입 불일치는 `nil`, Sketch `strokeWidth`/`opacity` 타입 불일치는 기본값으로 복구하며, 좌표/날짜/id/shapeType 필수 계약과 쓰기 검증은 엄격하게 유지한다. `:app:testDebugUnitTest --tests "*ShapeFirestoreParsingTest" --tests "*ShapeFirebaseStoreTest" --tests "*ShapeValidationTest" --tests "*SketchFirebaseStoreTest" --tests "*SketchValidationTest"`, `:app:testDebugUnitTest`, `:app:assembleDebug`, `:app:minifyReleaseWithR8` 통과 확인. R8는 기존 Naver Maps/Play Services warning만 출력하고 build failure는 없음.
 - 2026-06-14 최신 debug APK를 실기기 `RFCW324TZ0Z`에 데이터 유지 재설치 후 cold launch smoke를 다시 완료했다. `LaunchState: COLD`, `TotalTime: 1875`, PID `20173`, focus `com.ScienceFiction.DronePassAndroid/.MainActivity` 유지. 앱 PID 로그에서 Firebase 초기화와 `NaverMapDebug: 네이버 지도 준비 완료`를 확인했고, UIAutomator XML에서 Naver Map controls, 현위치/줌/NAVER logo, 상단 `내 드론`/`드론 2`/드롭다운 원, `비행구역 레이어`, `스케치`, `KP`, 날씨 카드, `새 도형 추가`, 하단 `지도`/`저장`/`설정` 렌더링을 확인했다. `AndroidRuntime:E` fatal 로그 없음.
 - 2026-06-14에 앱 베이스 테마를 `Theme.AppCompat.Light.NoActionBar`로 바꿔 Naver Map SDK 내부 AppCompat 위젯 inflation 경고(`ThemeUtils: ... AppCompat theme`)를 제거했다. Compose Material3 UI와 iOS 라이트 톤은 유지한다. `:app:assembleDebug` 통과 후 debug APK를 실기기 `RFCW324TZ0Z`에 데이터 유지 재설치했고, cold launch `LaunchState: COLD`, `TotalTime: 1893`, PID `23478`, focus `com.ScienceFiction.DronePassAndroid/.MainActivity` 유지 확인. 필터 로그에는 `NaverMapDebug: 네이버 지도 준비 완료`만 남고 `ThemeUtils`/`AndroidRuntime`/`FATAL EXCEPTION`은 없었다. UIAutomator XML에서 지도, 상단 `내 드론`/`드론 2`/드롭다운 원, `비행구역 레이어`, `스케치`, `KP`, 날씨 카드, `새 도형 추가`, 하단 `지도`/`저장`/`설정` 렌더링을 재확인했다.
+- 2026-06-14에 스케치 전체 삭제 영어 확인 메시지의 `one` 분기를 iOS `sketch.alert.deleteAll.message`와 같게 `Are you sure you want to delete all %d sketches?`로 보정했다. Android plural 분기로 1개일 때만 iOS와 다른 문장이 뜨던 차이를 제거했고, `StringResourceCoverageTest`에 한국어/영어 스케치 툴바 핵심 문자열 회귀 테스트를 추가했다. `:app:testDebugUnitTest --tests "*StringResourceCoverageTest" --tests "*SketchDefaultsTest"`, `:app:testDebugUnitTest` 통과 확인.
 - `:app:minifyReleaseWithR8`는 현재 성공합니다.
 - Naver Maps SDK와 Play Services Location에서 R8 warning이 여러 줄 출력될 수 있지만, 현재는 build failure가 아닙니다.
 - `assembleRelease`와 `bundleRelease`는 실제 release signing과 `WEB_CLIENT_ID` 설정 전까지 의도적으로 차단되며, 2026-06-14에 두 실패 경로를 모두 재확인했습니다.
