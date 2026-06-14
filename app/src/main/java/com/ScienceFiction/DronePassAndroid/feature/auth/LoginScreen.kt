@@ -43,7 +43,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -54,6 +53,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ScienceFiction.DronePassAndroid.R
+import com.ScienceFiction.DronePassAndroid.core.ui.currentWindowSizeDp
 import com.ScienceFiction.DronePassAndroid.feature.document.PrivacyPolicyScreen
 import com.ScienceFiction.DronePassAndroid.feature.document.TermsOfServiceScreen
 
@@ -113,8 +113,8 @@ fun LoginScreen(
     val authState by viewModel.authState.collectAsStateWithLifecycle()
     val accountSwitchConfirmation by viewModel.accountSwitchConfirmation.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    val configuration = LocalConfiguration.current
-    val isTablet = configuration.screenWidthDp >= LoginTabletBreakpointDp
+    val windowSize = currentWindowSizeDp()
+    val isTablet = windowSize.width >= LoginTabletBreakpointDp.dp
     val topSpacer = resolveLoginTopSpacer(isTablet)
     val termsBottomPadding = resolveLoginTermsBottomPadding(isTablet)
     var docTarget by remember { mutableStateOf<LoginDocTarget?>(null) }

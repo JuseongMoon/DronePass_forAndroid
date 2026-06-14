@@ -18,7 +18,7 @@ class MapScreenLayersTest {
         assertEquals(
             30.dp,
             resolveDroneDropdownTopPadding(
-                screenHeightDp = 1_024,
+                screenHeight = 1_024.dp,
                 isTablet = true,
             ),
         )
@@ -26,10 +26,10 @@ class MapScreenLayersTest {
 
     @Test
     fun `드론 드롭다운 상단 패딩은 iOS처럼 폰 높이별 값을 사용한다`() {
-        assertEquals(60.dp, resolveDroneDropdownTopPadding(screenHeightDp = 901, isTablet = false))
-        assertEquals(50.dp, resolveDroneDropdownTopPadding(screenHeightDp = 851, isTablet = false))
-        assertEquals(40.dp, resolveDroneDropdownTopPadding(screenHeightDp = 850, isTablet = false))
-        assertEquals(40.dp, resolveDroneDropdownTopPadding(screenHeightDp = 800, isTablet = false))
+        assertEquals(60.dp, resolveDroneDropdownTopPadding(screenHeight = 901.dp, isTablet = false))
+        assertEquals(50.dp, resolveDroneDropdownTopPadding(screenHeight = 851.dp, isTablet = false))
+        assertEquals(40.dp, resolveDroneDropdownTopPadding(screenHeight = 850.dp, isTablet = false))
+        assertEquals(40.dp, resolveDroneDropdownTopPadding(screenHeight = 800.dp, isTablet = false))
     }
 
     @Test

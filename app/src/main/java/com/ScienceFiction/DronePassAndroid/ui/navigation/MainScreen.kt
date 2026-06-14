@@ -64,7 +64,6 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -83,6 +82,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.ScienceFiction.DronePassAndroid.R
+import com.ScienceFiction.DronePassAndroid.core.ui.currentWindowSizeDp
 import com.ScienceFiction.DronePassAndroid.feature.auth.AuthState
 import com.ScienceFiction.DronePassAndroid.feature.auth.AuthViewModel
 import com.ScienceFiction.DronePassAndroid.feature.map.MapViewModel
@@ -400,8 +400,8 @@ internal fun MainScreen(
     val tabScreens = listOf(Screen.Map, Screen.SavedList, Screen.Settings)
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
-    val configuration = LocalConfiguration.current
-    val isTablet = configuration.screenWidthDp >= TabletBreakpointDp
+    val windowSize = currentWindowSizeDp()
+    val isTablet = windowSize.width >= TabletBreakpointDp.dp
     val lifecycleOwner = LocalLifecycleOwner.current
 
     val isLoginScreen = currentRoute == Screen.Login.route
@@ -924,11 +924,11 @@ private fun SavedListOverlay(
     onNavigateToMapForEdit: (String) -> Unit = {},
     onNavigateToMapForDuplicate: (String) -> Unit = {},
 ) {
-    val configuration = LocalConfiguration.current
+    val windowSize = currentWindowSizeDp()
     val density = LocalDensity.current
-    val screenHeight = configuration.screenHeightDp.dp
+    val screenHeight = windowSize.height
     val baseHeight = resolveSavedOverlayPhoneBaseHeight(screenHeight)
-    val tabletPanelWidth = resolveTabletOverlayWidth(configuration.screenWidthDp.dp)
+    val tabletPanelWidth = resolveTabletOverlayWidth(windowSize.width)
     val tabletPanelHeight = resolveTabletOverlayHeight(screenHeight)
     val dismissThresholdPx = with(density) { DismissDragThreshold.toPx() }
 
@@ -1112,10 +1112,10 @@ private fun SettingsOverlay(
     onDismiss: () -> Unit,
     onAccountSessionEnded: () -> Unit = {},
 ) {
-    val configuration = LocalConfiguration.current
+    val windowSize = currentWindowSizeDp()
     val density = LocalDensity.current
-    val screenHeight = configuration.screenHeightDp.dp
-    val tabletPanelWidth = resolveTabletOverlayWidth(configuration.screenWidthDp.dp)
+    val screenHeight = windowSize.height
+    val tabletPanelWidth = resolveTabletOverlayWidth(windowSize.width)
     val tabletPanelHeight = resolveTabletOverlayHeight(screenHeight)
     val dismissThresholdPx = with(density) { DismissDragThreshold.toPx() }
     val expandThresholdPx = with(density) { ExpandDragThreshold.toPx() }

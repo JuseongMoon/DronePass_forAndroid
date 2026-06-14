@@ -25,10 +25,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.ScienceFiction.DronePassAndroid.core.ui.currentWindowSizeDp
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.DroneZoneFeature
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.FlightZoneLayer
 import com.ScienceFiction.DronePassAndroid.domain.model.Coordinate
@@ -230,10 +230,10 @@ internal fun MapFloatingControls(
     val currentKp by kpViewModel.currentKp.collectAsStateWithLifecycle()
     val kpLevel by kpViewModel.kpLevel.collectAsStateWithLifecycle()
     val weatherData by weatherViewModel.weatherData.collectAsStateWithLifecycle()
-    val configuration = LocalConfiguration.current
-    val isTabletLayout = configuration.screenWidthDp >= MapTabletBreakpointDp
+    val windowSize = currentWindowSizeDp()
+    val isTabletLayout = windowSize.width >= MapTabletBreakpointDp.dp
     val droneDropdownTopPadding = resolveDroneDropdownTopPadding(
-        screenHeightDp = configuration.screenHeightDp,
+        screenHeight = windowSize.height,
         isTablet = isTabletLayout,
     )
 
@@ -388,14 +388,14 @@ internal fun displayedFlightZoneOverlayCount(
 }
 
 internal fun resolveDroneDropdownTopPadding(
-    screenHeightDp: Int,
+    screenHeight: Dp,
     isTablet: Boolean,
 ): Dp {
     if (isTablet) return 30.dp
 
     return when {
-        screenHeightDp > 900 -> 60.dp
-        screenHeightDp > 850 -> 50.dp
+        screenHeight > 900.dp -> 60.dp
+        screenHeight > 850.dp -> 50.dp
         else -> 40.dp
     }
 }
@@ -432,8 +432,8 @@ internal fun MapSketchInput(
     val canUndo by sketchViewModel.canUndo.collectAsStateWithLifecycle()
     val canRedo by sketchViewModel.canRedo.collectAsStateWithLifecycle()
     val activeSketches by sketchViewModel.activeSketches.collectAsStateWithLifecycle()
-    val configuration = LocalConfiguration.current
-    val isTabletLayout = configuration.screenWidthDp >= MapTabletBreakpointDp
+    val windowSize = currentWindowSizeDp()
+    val isTabletLayout = windowSize.width >= MapTabletBreakpointDp.dp
 
     if (!isSketchMode) return
 

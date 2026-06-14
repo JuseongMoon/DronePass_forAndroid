@@ -66,7 +66,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
@@ -86,6 +85,7 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import com.ScienceFiction.DronePassAndroid.R
+import com.ScienceFiction.DronePassAndroid.core.ui.currentWindowSizeDp
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.PaletteColor
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
@@ -163,10 +163,7 @@ fun ShapeDetailSheet(
 ) {
     val context = LocalContext.current
     val hapticFeedback = LocalHapticFeedback.current
-    val configuration = LocalConfiguration.current
-    val sheetHeight = remember(configuration.orientation, configuration.screenHeightDp) {
-        (configuration.screenHeightDp * ShapeDetailSheetHeightFraction).dp
-    }
+    val sheetHeight = currentWindowSizeDp().height * ShapeDetailSheetHeightFraction
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val coroutineScope = rememberCoroutineScope()
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
@@ -712,10 +709,7 @@ private fun ShapeDetailMemoWebSheet(
     url: String,
     onDismiss: () -> Unit,
 ) {
-    val configuration = LocalConfiguration.current
-    val sheetHeight = remember(configuration.orientation, configuration.screenHeightDp) {
-        (configuration.screenHeightDp * ShapeDetailMemoWebSheetHeightFraction).dp
-    }
+    val sheetHeight = currentWindowSizeDp().height * ShapeDetailMemoWebSheetHeightFraction
     val sheetState = rememberModalBottomSheetState(
         skipPartiallyExpanded = ShapeDetailMemoWebSheetSkipPartiallyExpanded,
     )
