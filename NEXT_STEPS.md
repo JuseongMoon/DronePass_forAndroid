@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 현재 날씨 카드의 빈 시간별 예보 상태를 iOS `WeatherForecastView.currentWeatherCard` 분기와 맞췄다. `hourlyForecast.isEmpty && isLoading`이면 카드 내부 200dp 로딩 상태를 표시하고, `hourlyForecast.isEmpty && error != null`이면 카드 내부 경고 아이콘/에러 문구를 표시하며, 기존 hourly forecast가 있으면 iOS처럼 로딩/에러 중에도 기존 데이터 카드를 유지한다. `:app:testDebugUnitTest --tests "*WeatherForecastParityTest"` 및 `:app:assembleDebug` 통과.
 - 현재 날씨 카드의 재로딩 인디케이터를 iOS `WeatherForecastView`처럼 기존 hourly forecast가 있을 때만 표시하도록 보정했다. Android의 단순 `isLoading` 조건을 `isLoading && hourlyForecast.isNotEmpty()`로 바꾸고, 8dp padding/8dp corner/`secondarySystemBackground` 0.9 alpha 배경/16dp spinner/2dp stroke 토큰을 회귀 테스트로 고정했다. `:app:testDebugUnitTest --tests "*WeatherForecastParityTest"` 및 `:app:assembleDebug` 통과.
 - 날씨 화면의 일출/일몰 카드와 현재 날씨 카드도 iOS `WeatherForecastView`의 공통 카드 토큰(`secondarySystemBackground`, 16pt radius, 16pt padding, 12pt spacing)으로 보정했다. `IosWeatherForecastCard*` 공통 상수를 추가하고 차트 카드도 이 값을 참조하게 정리해 날씨 화면 카드들이 같은 iOS 배경/간격 기준을 공유한다. 최초 샌드박스 테스트는 Gradle wrapper lock 권한으로 실패했지만 외부 권한 재실행은 통과했고, `:app:testDebugUnitTest --tests "*WeatherForecastParityTest" --tests "*SunTimelineStateTest"` 및 `:app:assembleDebug` 통과.
 - KP 48시간/27일 예보 차트 카드도 iOS `KPForecastView`의 `secondarySystemBackground`/16pt radius/16pt padding/12pt spacing 기준으로 보정했다. 기존 Android의 `surfaceVariant.copy(alpha = 0.4f)` 배경을 `#F2F2F7` 고정색으로 바꾸고 카드 토큰을 상수화해 회귀 테스트로 고정했다. `:app:testDebugUnitTest --tests "*KpChartsTest"` 및 `:app:assembleDebug` 통과.
