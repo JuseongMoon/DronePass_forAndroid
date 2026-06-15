@@ -387,7 +387,7 @@
     <string name="profile_info_count_unit">%1$d</string>
 
     <string name="profile_sync_cloud">Real-time cloud sync</string>
-    <string name="profile_sync_in_progress">Syncing…</string>
+    <string name="profile_sync_in_progress">Syncing...</string>
     <string name="profile_sync_login_required">Login required</string>
     <string name="profile_sync_disabled">Disabled</string>
     <string name="profile_sync_active">Active - Real-time syncing</string>
@@ -401,7 +401,7 @@
     <string name="profile_sync_alert_title">Real-time Cloud Sync</string>
     <string name="sync_alert_detected_title">Changes Detected</string>
     <string name="sync_alert_detected_message">Changes detected from another device.\nUpdating shape data.</string>
-    <string name="sync_loading_title">Syncing…</string>
+    <string name="sync_loading_title">Syncing...</string>
     <string name="sync_loading_message">Fetching latest data.</string>
     <string name="sync_complete_title">Sync Complete</string>
     <string name="sync_complete_message">Shape data has been updated.</string>

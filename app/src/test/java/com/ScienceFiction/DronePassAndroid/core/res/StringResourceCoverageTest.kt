@@ -102,7 +102,7 @@ class StringResourceCoverageTest {
             "다른 기기에서 변경사항이 감지되었습니다.\\n도형 정보를 최신화합니다.",
             stringResourceValue("values/strings.xml", "sync_alert_detected_message"),
         )
-        assertEquals("동기화 중…", stringResourceValue("values/strings.xml", "sync_loading_title"))
+        assertEquals("동기화 중...", stringResourceValue("values/strings.xml", "sync_loading_title"))
         assertEquals("최신 데이터를 가져오는 중입니다.", stringResourceValue("values/strings.xml", "sync_loading_message"))
         assertEquals("동기화 완료", stringResourceValue("values/strings.xml", "sync_complete_title"))
         assertEquals("도형 정보가 최신화되었습니다.", stringResourceValue("values/strings.xml", "sync_complete_message"))
@@ -116,7 +116,7 @@ class StringResourceCoverageTest {
             "Changes detected from another device.\\nUpdating shape data.",
             stringResourceValue("values-en/strings.xml", "sync_alert_detected_message"),
         )
-        assertEquals("Syncing…", stringResourceValue("values-en/strings.xml", "sync_loading_title"))
+        assertEquals("Syncing...", stringResourceValue("values-en/strings.xml", "sync_loading_title"))
         assertEquals("Fetching latest data.", stringResourceValue("values-en/strings.xml", "sync_loading_message"))
         assertEquals("Sync Complete", stringResourceValue("values-en/strings.xml", "sync_complete_title"))
         assertEquals("Shape data has been updated.", stringResourceValue("values-en/strings.xml", "sync_complete_message"))
@@ -596,7 +596,7 @@ class StringResourceCoverageTest {
         assertEquals("만료된 도형", stringResourceValue("values/strings.xml", "profile_info_expired_shapes"))
         assertEquals("%1\$d개", stringResourceValue("values/strings.xml", "profile_info_count_unit"))
         assertEquals("실시간 클라우드 동기화", stringResourceValue("values/strings.xml", "profile_sync_cloud"))
-        assertEquals("동기화 중…", stringResourceValue("values/strings.xml", "profile_sync_in_progress"))
+        assertEquals("동기화 중...", stringResourceValue("values/strings.xml", "profile_sync_in_progress"))
         assertEquals("로그인이 필요합니다", stringResourceValue("values/strings.xml", "profile_sync_login_required"))
         assertEquals("비활성화됨", stringResourceValue("values/strings.xml", "profile_sync_disabled"))
         assertEquals("활성화 - 실시간 동기화중", stringResourceValue("values/strings.xml", "profile_sync_active"))
@@ -649,7 +649,7 @@ class StringResourceCoverageTest {
         assertEquals("Expired Shapes", stringResourceValue("values-en/strings.xml", "profile_info_expired_shapes"))
         assertEquals("%1\$d", stringResourceValue("values-en/strings.xml", "profile_info_count_unit"))
         assertEquals("Real-time cloud sync", stringResourceValue("values-en/strings.xml", "profile_sync_cloud"))
-        assertEquals("Syncing…", stringResourceValue("values-en/strings.xml", "profile_sync_in_progress"))
+        assertEquals("Syncing...", stringResourceValue("values-en/strings.xml", "profile_sync_in_progress"))
         assertEquals("Login required", stringResourceValue("values-en/strings.xml", "profile_sync_login_required"))
         assertEquals("Disabled", stringResourceValue("values-en/strings.xml", "profile_sync_disabled"))
         assertEquals("Active - Real-time syncing", stringResourceValue("values-en/strings.xml", "profile_sync_active"))

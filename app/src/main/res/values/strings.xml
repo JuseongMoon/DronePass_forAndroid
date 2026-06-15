@@ -709,7 +709,7 @@
     <string name="profile_info_count_unit">%1$d개</string>
 
     <string name="profile_sync_cloud">실시간 클라우드 동기화</string>
-    <string name="profile_sync_in_progress">동기화 중…</string>
+    <string name="profile_sync_in_progress">동기화 중...</string>
     <string name="profile_sync_login_required">로그인이 필요합니다</string>
     <string name="profile_sync_disabled">비활성화됨</string>
     <string name="profile_sync_active">활성화 - 실시간 동기화중</string>
@@ -723,7 +723,7 @@
     <string name="profile_sync_alert_title">실시간 클라우드 동기화</string>
     <string name="sync_alert_detected_title">변경사항 감지</string>
     <string name="sync_alert_detected_message">다른 기기에서 변경사항이 감지되었습니다.\n도형 정보를 최신화합니다.</string>
-    <string name="sync_loading_title">동기화 중…</string>
+    <string name="sync_loading_title">동기화 중...</string>
     <string name="sync_loading_message">최신 데이터를 가져오는 중입니다.</string>
     <string name="sync_complete_title">동기화 완료</string>
     <string name="sync_complete_message">도형 정보가 최신화되었습니다.</string>

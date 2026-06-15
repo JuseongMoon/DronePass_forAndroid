@@ -9,7 +9,7 @@ import com.ScienceFiction.DronePassAndroid.R
  * ProfileViewModel 가 발행, ProfileScreen 이 stringResource + Color 로 매핑.
  */
 enum class ProfileSyncStatus(@StringRes val labelRes: Int, val color: Color) {
-    /** "Syncing…" — 동기화 진행 중. */
+    /** "Syncing..." — 동기화 진행 중. */
     Syncing(R.string.profile_sync_in_progress, Color(0xFF007AFF)),
 
     /** "Login required" — 비로그인 상태. */

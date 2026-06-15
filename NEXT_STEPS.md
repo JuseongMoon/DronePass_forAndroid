@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 동기화 진행 제목과 프로필 동기화 진행 상태 문구를 iOS String Catalog처럼 단일 말줄임표가 아닌 `...` 표기로 보정. `:app:testDebugUnitTest --tests "*StringResourceCoverageTest" --tests "*ProfileViewModelTest" --tests "*AuthViewModelForegroundSyncTest"` 및 `:app:assembleDebug` 통과.
 - iOS 실제 빌드 리소스가 `Localization/Localizable.xcstrings`임을 재확인하고, 직전 `.strings` 기준 문자열 보정을 String Catalog 기준으로 재정렬. 도형 상세/도형 편집/드론 목록·상세·편집 라벨은 `고도(m)`, `수정하기`, `복제하기`, `좌표를 입력하세요`, `주소를 검색하세요`, `드론 관리`, `내 드론 목록`, `제작 번호`, `이륙 무게` 등 `.xcstrings` 값을 따른다. `:app:testDebugUnitTest --tests "*StringResourceCoverageTest" --tests "*ShapeDetailDroneResolutionTest" --tests "*ShapeEditDefaultsTest" --tests "*DroneListScreenTest" --tests "*DroneDeleteValidationTest"` 및 `:app:assembleDebug` 통과.
 - 저장 목록 swipe 삭제를 iOS `SavedTableListView`처럼 목록 선택/상세 상태를 건드리지 않고 soft delete만 수행하도록 보정하고, 상세 시트 삭제만 selection/detail/edit state를 정리하도록 분리. `:app:testDebugUnitTest --tests "*SavedListSectionsTest" --tests "*MapCameraFocusTest" --tests "*MainScreenStartDestinationTest"` 및 `:app:assembleDebug` 통과.
 - 로컬 알림 수신 로그가 알림 제목과 `shapeId` 원문을 남기지 않도록 보정. 알림 표시/클릭 payload는 기존처럼 원문을 보존하고, 로그에는 제목 길이와 shapeId 존재 여부만 남긴다. `:app:testDebugUnitTest --tests "*FcmServiceTest"`, `:app:assembleDebug`, `:app:lintDebug` 통과.
