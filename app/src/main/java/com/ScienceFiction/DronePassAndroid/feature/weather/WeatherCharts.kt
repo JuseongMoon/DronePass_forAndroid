@@ -43,6 +43,7 @@ import com.ScienceFiction.DronePassAndroid.domain.model.HourlyWeatherData
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
 import kotlin.math.ceil
 
 // ─── 공통 Line Chart ────────────────────────────────────────────
@@ -219,8 +220,6 @@ internal fun WeatherLineChart(
             isAntiAlias = true
         }
         val intervalMs = xLabelIntervalMs ?: (3 * 60 * 60 * 1000L)
-        val timeFormat = SimpleDateFormat("HH", Locale.getDefault())
-        val dateFormat = SimpleDateFormat("MM/dd", Locale.getDefault())
         val labelTimes = resolveTimeChartLabelTimes(
             dataStartMs = dataPoints.first().first,
             dataEndMs = dataPoints.last().first,
@@ -230,11 +229,8 @@ internal fun WeatherLineChart(
         for (labelTime in labelTimes) {
             val x = toScreenX(labelTime)
             if (x >= leftPadding && x <= size.width - rightPadding) {
-                // 자정(00시)이면 날짜 라벨로 대체 — KP 처럼 다일에 걸친 차트 가독성 향상.
-                val hour = timeFormat.format(Date(labelTime))
-                val label = if (hour == "00") dateFormat.format(Date(labelTime)) else hour
                 drawContext.canvas.nativeCanvas.drawText(
-                    label,
+                    formatIosTimeChartAxisLabel(labelTime),
                     x,
                     size.height - 2f,
                     xLabelPaint
@@ -389,6 +385,22 @@ internal fun resolveTimeChartLabelTimes(
     return labelTimes
 }
 
+internal fun formatIosTimeChartAxisLabel(
+    timeMillis: Long,
+    timeZone: TimeZone = TimeZone.getDefault(),
+    locale: Locale = Locale.getDefault(),
+): String {
+    val timeFormat = SimpleDateFormat("HH", locale).apply {
+        this.timeZone = timeZone
+    }
+    val hour = timeFormat.format(Date(timeMillis))
+    if (hour != "00") return hour
+
+    return SimpleDateFormat("MM/dd", locale).apply {
+        this.timeZone = timeZone
+    }.format(Date(timeMillis))
+}
+
 @Composable
 internal fun ScrollableTimeChartViewport(
     dataPoints: List<Pair<Long, Double>>,
@@ -498,7 +510,6 @@ private fun PrecipitationBarChart(
             textAlign = Paint.Align.CENTER
             isAntiAlias = true
         }
-        val timeFormat = SimpleDateFormat("HH", Locale.getDefault())
         val intervalMs = xLabelIntervalMs
         val firstTime = dataPoints.first().first
         val startLabel = ((firstTime / intervalMs) + 1) * intervalMs
@@ -507,7 +518,7 @@ private fun PrecipitationBarChart(
             val x = toScreenX(labelTime)
             if (x >= leftPadding && x <= size.width - rightPadding) {
                 drawContext.canvas.nativeCanvas.drawText(
-                    timeFormat.format(Date(labelTime)),
+                    formatIosTimeChartAxisLabel(labelTime),
                     x,
                     size.height - 2f,
                     xLabelPaint

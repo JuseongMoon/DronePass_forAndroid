@@ -18,6 +18,8 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.util.Locale
+import java.util.TimeZone
 import java.time.ZoneOffset
 
 class WeatherForecastParityTest {
@@ -130,6 +132,28 @@ class WeatherForecastParityTest {
                 visibleDomainMs = IosWeatherChartVisibleDomainMs,
             ).toDouble(),
             0.0,
+        )
+    }
+
+    @Test
+    fun `forecast chart axis labels use iOS date label at midnight`() {
+        val utc = TimeZone.getTimeZone("UTC")
+
+        assertEquals(
+            "01/02",
+            formatIosTimeChartAxisLabel(
+                timeMillis = 24 * HourMs,
+                timeZone = utc,
+                locale = Locale.US,
+            ),
+        )
+        assertEquals(
+            "13",
+            formatIosTimeChartAxisLabel(
+                timeMillis = 13 * HourMs,
+                timeZone = utc,
+                locale = Locale.US,
+            ),
         )
     }
 
