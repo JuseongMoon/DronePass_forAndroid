@@ -162,7 +162,7 @@
     <string name="shape_edit_address_search_placeholder">Search address</string>
     <string name="shape_edit_radius_label">Radius (m)</string>
     <string name="shape_edit_radius_placeholder">Enter radius</string>
-    <string name="shape_edit_altitude_label">Altitude (m)</string>
+    <string name="shape_edit_altitude_label">Altitude</string>
     <string name="shape_edit_altitude_placeholder">Enter altitude</string>
     <string name="shape_edit_drone_label">Select Drone</string>
     <string name="shape_edit_drone_placeholder">Select drone</string>
@@ -183,7 +183,7 @@
     <string name="coordinate_alert_address_not_found_fallback">Address not found</string>
 
     <!-- DroneListScreen -->
-    <string name="drone_list_title">Manage My Drones</string>
+    <string name="drone_list_title">Manage Drones</string>
     <string name="drone_list_back">Back</string>
     <string name="drone_list_add">Add New Drone</string>
     <string name="drone_list_section_my">My Drones</string>
@@ -213,7 +213,7 @@
     <string name="drone_detail_shape_count_loading">Checking linked shapes…</string>
     <string name="drone_detail_shape_handling_title">Handle Connected Shapes</string>
     <plurals name="drone_detail_delete_with_shapes_message">
-        <item quantity="one">How would you like to handle %2$d shapes connected to \'%1$s\'?</item>
+        <item quantity="one">How would you like to handle %2$d shape connected to \'%1$s\'?</item>
         <item quantity="other">How would you like to handle %2$d shapes connected to \'%1$s\'?</item>
     </plurals>
     <string name="drone_detail_reassign">Move to another drone (%d)</string>
