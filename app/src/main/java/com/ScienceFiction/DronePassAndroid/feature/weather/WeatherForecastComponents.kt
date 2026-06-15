@@ -81,6 +81,11 @@ internal val IosWeatherForecastCardPadding = 16.dp
 internal val IosWeatherForecastCardSpacing = 12.dp
 internal val IosWeatherForecastCardContainerColor = Color(0xFFF2F2F7)
 internal val IosCurrentWeatherEmptyStateHeight = 200.dp
+internal val IosCurrentWeatherPreviewCornerRadius = 12.dp
+internal val IosCurrentWeatherPreviewPadding = 16.dp
+internal val IosCurrentWeatherPreviewIconSize = 64.dp
+internal val IosCurrentWeatherPreviewIconSlotWidth = 94.dp
+internal val IosCurrentWeatherPreviewContainerColor = Color(0xFFFFFFFF)
 internal val IosWeatherReloadingIndicatorCornerRadius = 8.dp
 internal val IosWeatherReloadingIndicatorPadding = 8.dp
 internal val IosWeatherReloadingIndicatorSize = 16.dp
@@ -515,22 +520,29 @@ private fun PreviewBlock(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        shape = RoundedCornerShape(IosCurrentWeatherPreviewCornerRadius),
+        colors = CardDefaults.cardColors(containerColor = IosCurrentWeatherPreviewContainerColor),
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(IosCurrentWeatherPreviewPadding),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalAlignment = Alignment.Top,
         ) {
-            Icon(
-                imageVector = weatherIcon,
-                contentDescription = conditionText,
-                tint = WeatherIconBlue,
-                modifier = Modifier.size(64.dp),
-            )
+            Box(
+                modifier = Modifier
+                    .width(IosCurrentWeatherPreviewIconSlotWidth)
+                    .height(IosCurrentWeatherPreviewIconSize),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = weatherIcon,
+                    contentDescription = conditionText,
+                    tint = WeatherIconBlue,
+                    modifier = Modifier.size(IosCurrentWeatherPreviewIconSize),
+                )
+            }
             Column(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
