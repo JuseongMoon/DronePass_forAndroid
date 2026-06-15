@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 날씨 예보 차트 카드 배경을 iOS light `UIColor.secondarySystemBackground` 값인 `#F2F2F7`로 명시했다. Material3 Card 기본색에 맡기지 않고 `CardDefaults.cardColors(containerColor = IosWeatherChartCardContainerColor)`를 사용하며, ARGB 값을 회귀 테스트로 고정했다. `:app:testDebugUnitTest --tests "*WeatherForecastParityTest"` 및 `:app:assembleDebug` 통과.
 - 날씨 예보 차트 카드의 시각 토큰을 iOS `WeatherForecastView`의 `VStack(spacing: 12).padding().cornerRadius(16)` 기준으로 보정했다. Android `ChartCard`의 corner radius를 16dp로 올리고, 내부 padding 16dp와 헤더-차트 spacing 12dp를 상수화해 회귀 테스트로 고정했다. `:app:testDebugUnitTest --tests "*WeatherForecastParityTest"` 및 `:app:assembleDebug` 통과.
 - 날씨 예보 차트 제목을 iOS `WeatherForecastView`의 dynamic title 경로와 맞췄다. Android의 고정 `온도 예보 (3일)` 문자열을 `온도 예보 (%1$s)` + `weather_forecast_days`/`weather_forecast_hours` 조합으로 바꾸고, `WeatherForecastDays = 3`, `WeatherForecastChartHours = 72` 상수를 iOS `FORECAST_DAYS` 기준으로 고정했다. `:app:testDebugUnitTest --tests "*WeatherForecastParityTest" --tests "*StringResourceCoverageTest"` 및 `:app:assembleDebug` 통과.
 - 날씨 예보 차트 헤더의 우측 단위 표기를 iOS `WeatherForecastView`처럼 추가했다. `ChartCard`가 선택적 `unitLabel`을 받아 제목 오른쪽에 보조 텍스트로 표시하고, 온도/풍속/순간풍속/강수량/가시거리/CRI 차트가 iOS String Catalog의 `weather.unit.celsius`/`mps`/`mmph`/`km`/`custom` 값(`단위: °C`, `단위: 자체단위사용` 등)을 사용한다. `:app:testDebugUnitTest --tests "*WeatherForecastParityTest" --tests "*StringResourceCoverageTest"` 및 `:app:assembleDebug` 통과.
