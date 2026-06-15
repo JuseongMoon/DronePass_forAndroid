@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 날씨 예보 차트 헤더의 우측 단위 표기를 iOS `WeatherForecastView`처럼 추가했다. `ChartCard`가 선택적 `unitLabel`을 받아 제목 오른쪽에 보조 텍스트로 표시하고, 온도/풍속/순간풍속/강수량/가시거리/CRI 차트가 iOS String Catalog의 `weather.unit.celsius`/`mps`/`mmph`/`km`/`custom` 값(`단위: °C`, `단위: 자체단위사용` 등)을 사용한다. `:app:testDebugUnitTest --tests "*WeatherForecastParityTest" --tests "*StringResourceCoverageTest"` 및 `:app:assembleDebug` 통과.
 - 날씨 예보 차트의 기준선 범례를 iOS `WeatherForecastView`처럼 차트 아래에 추가했다. 온도/풍속/순간풍속/가시거리/CRI 차트가 16x8 색상 스와치와 iOS String Catalog 기준 문구(`저온 ≤ -10°C`, `주의 ≥ %.1fm/s`, `위험 ≤ 2km` 등)를 표시하며, 강수량 차트는 iOS처럼 별도 범례 없이 유지한다. `:app:testDebugUnitTest --tests "*WeatherForecastParityTest" --tests "*StringResourceCoverageTest"` 및 `:app:assembleDebug` 통과.
 - 날씨 예보 차트의 기준선을 iOS `WeatherForecastView`의 `RuleMark` 색상/두께에 맞춰 보정했다. 공용 차트에 값별 색상을 받는 `WeatherThresholdLine`을 추가하고, 온도 차트에는 저온 파랑/고온 주황 점선, 풍속·순간풍속에는 주의 주황/위험 빨강 점선, 가시거리에는 위험 빨강/양호 초록 점선, CRI에는 주의 노랑/경고 빨강 점선을 사용한다. 기존 `warningThreshold`/`dangerThreshold` 경로는 KP 등 기존 호출을 위해 유지한다. `:app:testDebugUnitTest --tests "*WeatherForecastParityTest"` 및 `:app:assembleDebug` 통과.
 - 날씨 CRI 예보 차트의 Y축 범위를 iOS `WeatherForecastView`의 `.chartYScale(domain: 0...100)`처럼 0..100 고정 범위로 보정했다. 다른 날씨 차트의 자동 범위는 유지하고 CRI 차트만 iOS 전용 범위를 명시한다. `:app:testDebugUnitTest --tests "*WeatherForecastParityTest"` 및 `:app:assembleDebug` 통과.
