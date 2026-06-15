@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.settings
 
+import androidx.compose.ui.unit.dp
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.core.util.DroneCategory
 import com.ScienceFiction.DronePassAndroid.domain.model.KpLevel
@@ -104,6 +105,13 @@ class InfoGuideSheetsTest {
                 selected = DroneCategory.CLASS3,
             ),
         )
+    }
+
+    @Test
+    fun `weather guide category menu uses iOS compact selector tokens`() {
+        assertEquals(8.dp, WeatherGuideCategoryMenuHorizontalPadding)
+        assertEquals(4.dp, WeatherGuideCategoryMenuVerticalPadding)
+        assertEquals(12.dp, WeatherGuideCategoryMenuIconSize)
     }
 
     @Test

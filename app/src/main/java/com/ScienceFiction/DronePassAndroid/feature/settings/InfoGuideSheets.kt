@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Air
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Opacity
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Storm
@@ -52,6 +53,10 @@ import com.ScienceFiction.DronePassAndroid.core.util.DroneCategory
 import com.ScienceFiction.DronePassAndroid.domain.model.KpLevel
 import com.ScienceFiction.DronePassAndroid.feature.weather.WeatherInfoTopic
 import kotlinx.coroutines.delay
+
+internal val WeatherGuideCategoryMenuHorizontalPadding = 8.dp
+internal val WeatherGuideCategoryMenuVerticalPadding = 4.dp
+internal val WeatherGuideCategoryMenuIconSize = 12.dp
 
 @Composable
 internal fun KpInfoGuideSheet(onDismiss: () -> Unit) {
@@ -492,7 +497,10 @@ private fun WeatherCategoryMenu(
                     shape = RoundedCornerShape(8.dp),
                 )
                 .clickable { expanded = true }
-                .padding(horizontal = 8.dp, vertical = 6.dp),
+                .padding(
+                    horizontal = WeatherGuideCategoryMenuHorizontalPadding,
+                    vertical = WeatherGuideCategoryMenuVerticalPadding,
+                ),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -501,10 +509,11 @@ private fun WeatherCategoryMenu(
                 style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.Medium,
             )
-            Text(
-                text = "⌄",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            Icon(
+                imageVector = Icons.Default.ExpandMore,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(WeatherGuideCategoryMenuIconSize),
             )
         }
 
