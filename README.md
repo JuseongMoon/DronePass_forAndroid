@@ -159,6 +159,7 @@ Release 빌드가 실패하는 경우:
 - UI는 Jetpack Compose로 작성합니다.
 - iOS DronePass와의 동작/문구/상태 전이를 기준으로 Android 구현을 대조합니다.
 - 사용자 데이터 id는 Firestore 동기화를 고려해 UUID 형식을 유지합니다.
+- iOS/Android 공유 Firestore wire format은 `FIRESTORE_CONTRACT.md`를 기준으로 유지합니다.
 - 민감한 토큰, 서명 정보, API 키는 로그와 Git 커밋에 남기지 않습니다.
 
 ## 라이선스

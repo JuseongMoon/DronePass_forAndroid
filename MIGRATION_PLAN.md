@@ -656,9 +656,12 @@ iOS와 Android가 **동일 Firestore**를 공유하므로 가장 중요한 QA �
 
 ### Firestore 레거시 필드 호환
 
+최신 상세 계약은 `FIRESTORE_CONTRACT.md`를 기준으로 한다. 핵심은 쓰기는 표준 iOS wire format으로 엄격하게, 읽기는 Android 초기 레거시 값까지 관대하게 처리하는 것이다.
+
 ```
 startedAt → createdAt + flightStartDate (폴백)
 expireDate → flightEndDate (폴백)
+shapeType: circle/rectangle/polygon/polyline 로 쓰기, CIRCLE 같은 Android 레거시는 대소문자 무시 읽기
 ```
 
 ---
