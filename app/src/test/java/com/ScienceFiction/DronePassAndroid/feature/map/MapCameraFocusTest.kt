@@ -229,6 +229,7 @@ class MapCameraFocusTest {
             CameraEvent.MoveToShape(
                 coordinate = target.baseCoordinate,
                 zoom = calculateShapeFocusZoomLevel(500.0),
+                highlightShapeId = target.id,
             ),
             resolveShapeFocusCameraEvent(
                 currentSelectedShape = null,
@@ -251,6 +252,7 @@ class MapCameraFocusTest {
             CameraEvent.MoveToShape(
                 coordinate = target.baseCoordinate,
                 zoom = calculateShapeFocusZoomLevel(ShapeFocusDefaultRadiusMeters),
+                highlightShapeId = target.id,
             ),
             resolveShapeFocusCameraEvent(
                 currentSelectedShape = null,
@@ -281,6 +283,7 @@ class MapCameraFocusTest {
             CameraEvent.MoveToShape(
                 coordinate = target.baseCoordinate,
                 zoom = calculateShapeFocusZoomLevel(ShapeFocusDefaultRadiusMeters),
+                highlightShapeId = target.id,
             ),
             resolveShapeFocusCameraEvent(
                 currentSelectedShape = null,

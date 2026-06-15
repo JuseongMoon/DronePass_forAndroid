@@ -203,7 +203,6 @@ fun MapScreen(
             val shape = resolvePendingMapShapeRequestTarget(focusShapeId, visibleShapes)
             if (shape != null) {
                 viewModel.moveCameraToShape(shape, skipIfAlreadyFocused = true)
-                viewModel.selectShapeForMapFocus(shape.id)
                 onFocusConsumed()
             } else if (shouldConsumeMissingMapShapeRequest(activeShapesForPendingRequests)) {
                 onFocusConsumed()
@@ -269,6 +268,7 @@ fun MapScreen(
                         map.moveCamera(zoomUpdate)
 
                         delay(ShapeFocusSecondStepDelayMs)
+                        event.highlightShapeId?.let(viewModel::selectShapeForMapFocus)
 
                         val offsetCenter = offsetLatLng(
                             center = center,

@@ -122,6 +122,7 @@ internal fun resolveShapeFocusCameraEvent(
     return CameraEvent.MoveToShape(
         coordinate = focusCoordinate,
         zoom = calculateShapeFocusZoomLevel(calculateShapeFocusRadiusMeters(targetShape)),
+        highlightShapeId = targetShape.id,
     )
 }
 
@@ -707,6 +708,7 @@ class MapViewModel @Inject constructor(
                             CameraEvent.MoveToShape(
                                 coordinate = calculateShapeFocusCoordinate(updatedShape),
                                 zoom = calculateShapeFocusZoomLevel(calculateShapeFocusRadiusMeters(updatedShape)),
+                                highlightShapeId = updatedShape.id,
                             ),
                         )
                     }

@@ -19,10 +19,12 @@ sealed class CameraEvent {
     /**
      * iOS MoveToShapeNotification 과 같은 2단계 이동.
      * 먼저 현재 중심에서 목표 줌으로 맞춘 뒤, 지도 projection 기준 오프셋 중심으로 이동한다.
+     * 도형 하이라이트는 iOS MapViewModel 처럼 첫 번째 줌 단계 이후 적용한다.
      */
     data class MoveToShape(
         val coordinate: Coordinate,
-        val zoom: Double
+        val zoom: Double,
+        val highlightShapeId: String? = null,
     ) : CameraEvent()
 
     /**
