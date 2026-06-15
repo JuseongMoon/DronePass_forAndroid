@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- Firestore optional 필드 보강 커밋 `7efb38c` 이후 전체 `:app:testDebugUnitTest` 재통과. 최신 debug APK를 Android 15 실기기 `RFCW324TZ0Z`에 `adb install -r`로 데이터 유지 재설치하고 cold launch smoke를 수행했다. `LaunchState: COLD`, `TotalTime: 1904`, `WaitTime: 1907`, PID `14723`, focus `com.ScienceFiction.DronePassAndroid/.MainActivity` 유지. 홈 UIAutomator XML에서 Naver Map controls, 현위치/확대·축소/NAVER logo, 상단 `내 드론`/`드론 2`/드롭다운 원, `비행구역 레이어`, `스케치`, KP/날씨 카드, `새 도형 추가`, 하단 `지도`/`저장`/`설정` 렌더링을 확인했다. 상단 드론 선택 요소 bounds는 `[401,195][657,285]`, `[680,195][922,285]`, `[945,195][1035,285]`로 y=195·height=90이 일치했다. 앱 PID 로그에 `NaverMapDebug: 네이버 지도 준비 완료`가 있으며 앱 `FATAL EXCEPTION`/`ThemeUtils` 오류는 없었다.
 - Shape/Sketch/Drone Firestore 쓰기에서 선택 필드가 null로 저장되지 않도록 표준 문서 데이터와 merge 저장 payload를 분리했다. 문서 데이터는 iOS처럼 값이 있는 필드만 포함하고, Android merge 저장 시에는 누락된 선택 필드를 `FieldValue.delete()`로 정리해 기존 null/stale 필드가 남지 않도록 보정. `shapeType` 소문자 쓰기/대소문자 무시 읽기 계약은 유지. `:app:testDebugUnitTest --tests "*ShapeFirebaseStoreTest" --tests "*SketchFirebaseStoreTest" --tests "*DroneFirestoreParsingTest" --tests "*ShapeFirestoreParsingTest" --tests "*ShapeValidationTest"` 및 `:app:assembleDebug` 통과.
 - 포그라운드 복귀 변경 감지 프롬프트의 확인 버튼도 iOS `ChangeDetectionManager.performSync()`처럼 Shape 동기화 결과만 완료/실패 다이얼로그에 반영하도록 분리했다. Android 실시간 리스너 복구는 유지하지만, `도형 정보` 프롬프트가 Drone/Sketch 전체 동기화 실패에 막히지 않도록 보정. `:app:testDebugUnitTest --tests "*RealtimeSyncManagerTest" --tests "*AuthViewModelForegroundSyncTest"` 및 `:app:assembleDebug` 통과.
 - 포그라운드 복귀 fallback 변경 감지 프롬프트를 iOS `ChangeDetectionManager`처럼 Shape `metadata/server` 기준으로 제한했다. Android 실시간 리스너와 수동/로그인 동기화의 Sketch 처리 경로는 유지하되, `sync.alert.detected.message`가 "도형 정보"를 안내하는 프롬프트는 sketch-only metadata 변경으로 뜨지 않도록 보정. `:app:testDebugUnitTest --tests "*RealtimeSyncManagerTest" --tests "*AuthViewModelForegroundSyncTest"` 및 `:app:assembleDebug` 통과.
@@ -290,6 +291,7 @@ iOS와 Android가 공유하는 `users/{uid}/shapes`, `users/{uid}/sketches`, `us
 - 2026-06-14 추가 고정: Shape 파싱은 표준 `flightStartDate`가 있으면 레거시 `startedAt`보다 우선하고, 시작일이 `Long`/문자열이면 invalid로 skip한다. Shape 쓰기는 `deletedAt`까지 `Timestamp`로 직렬화하며 `startedAt`/`expireDate` 키를 생성하지 않는 회귀 테스트를 유지한다.
 - 2026-06-14 추가 방어: Shape `polygonCoordinates`/`polylineCoordinates` 읽기는 iOS `compactMap` 파서처럼 손상 좌표 원소만 제외한다. 제외 후 polygon 3점 미만, polyline 2점 미만이면 문서 전체를 skip한다. 쓰기는 계속 표준 Double 좌표 map 배열만 허용한다.
 - 2026-06-14 추가 방어: Shape optional 숫자(`radius`, `height`) 읽기는 iOS `as? Double` 동작처럼 타입 불일치 값을 문서 전체 invalid가 아니라 `nil`로 처리한다. Sketch optional 숫자(`strokeWidth`, `opacity`)도 타입 불일치 시 iOS 기본값 `3.0`/`1.0`으로 fallback한다. 쓰기 검증은 계속 표준 Double과 범위 제한을 유지한다.
+- 2026-06-15 추가 방어: Shape/Sketch/Drone 쓰기에서 선택 필드 값이 없을 때 Firestore 문서에 `null`을 저장하지 않는다. 표준 문서 데이터는 iOS처럼 값이 있는 optional 필드만 포함하고, Android의 merge 저장 payload에는 해당 필드 `FieldValue.delete()`를 넣어 기존 null/stale 값을 정리한다.
 
 ## 3. 남은 필수 작업
 
