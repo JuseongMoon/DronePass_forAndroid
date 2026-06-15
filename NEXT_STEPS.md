@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- iOS `ShapeFirebaseStore`와 Android `ShapeFirebaseStore`의 타입별 geometry 파싱을 재대조했다. iOS 실제 파서는 rectangle/polygon/polyline geometry가 없으면 nil로 둔 뒤 "있으면 검증"하는 관대한 상태지만, 공유 Firestore 계약은 타입별 geometry를 필수로 둔다. Android는 계약대로 rectangle `secondCoordinate`, polygon/polyline 좌표 최소 개수를 엄격히 유지하며, 이 차이는 Android 완화가 아니라 iOS 파서/검증 보강 후보로 기록한다.
 - 최신 문서 커밋 `9dd4d95` 이후 `:app:minifyReleaseWithR8`를 재실행해 통과 확인. R8는 기존과 같은 Naver Maps SDK stack map table warning과 Play Services Location companion warning을 출력하지만 build failure는 아니다.
 - Firestore optional 필드 보강 커밋 `7efb38c` 이후 전체 `:app:testDebugUnitTest` 재통과. 최신 debug APK를 Android 15 실기기 `RFCW324TZ0Z`에 `adb install -r`로 데이터 유지 재설치하고 cold launch smoke를 수행했다. `LaunchState: COLD`, `TotalTime: 1904`, `WaitTime: 1907`, PID `14723`, focus `com.ScienceFiction.DronePassAndroid/.MainActivity` 유지. 홈 UIAutomator XML에서 Naver Map controls, 현위치/확대·축소/NAVER logo, 상단 `내 드론`/`드론 2`/드롭다운 원, `비행구역 레이어`, `스케치`, KP/날씨 카드, `새 도형 추가`, 하단 `지도`/`저장`/`설정` 렌더링을 확인했다. 상단 드론 선택 요소 bounds는 `[401,195][657,285]`, `[680,195][922,285]`, `[945,195][1035,285]`로 y=195·height=90이 일치했다. 이어서 같은 PID에서 하단 `저장`/`설정` 탭 비파괴 smoke를 수행했다. 저장 탭 XML에서 `저장 목록`, 정렬 칩 `비행시작일순`/`내림차순`, `활성화` 섹션, visible saved rows, 선택된 `저장` 탭을 확인했고, 설정 탭 XML에서 `설정`, `내 정보`, `로그인 / 회원가입`, `내 드론 관리하기`, `비행 환경`, `현재 KP 지수: 0.7`, `현재 날씨`, `알림`, 선택된 `설정` 탭을 확인했다. 지도 탭 복귀 후 PID/focus가 유지됐고 ANR은 없었다. 앱 PID 로그에 `NaverMapDebug: 네이버 지도 준비 완료`가 있으며 앱 `FATAL EXCEPTION`/`ThemeUtils` 오류는 없었다.
 - Shape/Sketch/Drone Firestore 쓰기에서 선택 필드가 null로 저장되지 않도록 표준 문서 데이터와 merge 저장 payload를 분리했다. 문서 데이터는 iOS처럼 값이 있는 필드만 포함하고, Android merge 저장 시에는 누락된 선택 필드를 `FieldValue.delete()`로 정리해 기존 null/stale 필드가 남지 않도록 보정. `shapeType` 소문자 쓰기/대소문자 무시 읽기 계약은 유지. `:app:testDebugUnitTest --tests "*ShapeFirebaseStoreTest" --tests "*SketchFirebaseStoreTest" --tests "*DroneFirestoreParsingTest" --tests "*ShapeFirestoreParsingTest" --tests "*ShapeValidationTest"` 및 `:app:assembleDebug` 통과.
@@ -293,6 +294,7 @@ iOS와 Android가 공유하는 `users/{uid}/shapes`, `users/{uid}/sketches`, `us
 - 2026-06-14 추가 방어: Shape `polygonCoordinates`/`polylineCoordinates` 읽기는 iOS `compactMap` 파서처럼 손상 좌표 원소만 제외한다. 제외 후 polygon 3점 미만, polyline 2점 미만이면 문서 전체를 skip한다. 쓰기는 계속 표준 Double 좌표 map 배열만 허용한다.
 - 2026-06-14 추가 방어: Shape optional 숫자(`radius`, `height`) 읽기는 iOS `as? Double` 동작처럼 타입 불일치 값을 문서 전체 invalid가 아니라 `nil`로 처리한다. Sketch optional 숫자(`strokeWidth`, `opacity`)도 타입 불일치 시 iOS 기본값 `3.0`/`1.0`으로 fallback한다. 쓰기 검증은 계속 표준 Double과 범위 제한을 유지한다.
 - 2026-06-15 추가 방어: Shape/Sketch/Drone 쓰기에서 선택 필드 값이 없을 때 Firestore 문서에 `null`을 저장하지 않는다. 표준 문서 데이터는 iOS처럼 값이 있는 optional 필드만 포함하고, Android의 merge 저장 payload에는 해당 필드 `FieldValue.delete()`를 넣어 기존 null/stale 값을 정리한다.
+- 2026-06-15 재확인: Android Shape 읽기는 공유 계약에 맞춰 rectangle `secondCoordinate`, polygon 3점 이상, polyline 2점 이상을 필수로 유지한다. iOS 현재 파서는 해당 geometry 누락을 nil로 통과시킬 수 있으므로, 플랫폼을 더 맞추려면 Android 완화가 아니라 iOS 검증 강화가 안전하다.
 
 ## 3. 남은 필수 작업
 
