@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 날씨 화면의 일출/일몰 카드와 현재 날씨 카드도 iOS `WeatherForecastView`의 공통 카드 토큰(`secondarySystemBackground`, 16pt radius, 16pt padding, 12pt spacing)으로 보정했다. `IosWeatherForecastCard*` 공통 상수를 추가하고 차트 카드도 이 값을 참조하게 정리해 날씨 화면 카드들이 같은 iOS 배경/간격 기준을 공유한다. 최초 샌드박스 테스트는 Gradle wrapper lock 권한으로 실패했지만 외부 권한 재실행은 통과했고, `:app:testDebugUnitTest --tests "*WeatherForecastParityTest" --tests "*SunTimelineStateTest"` 및 `:app:assembleDebug` 통과.
 - KP 48시간/27일 예보 차트 카드도 iOS `KPForecastView`의 `secondarySystemBackground`/16pt radius/16pt padding/12pt spacing 기준으로 보정했다. 기존 Android의 `surfaceVariant.copy(alpha = 0.4f)` 배경을 `#F2F2F7` 고정색으로 바꾸고 카드 토큰을 상수화해 회귀 테스트로 고정했다. `:app:testDebugUnitTest --tests "*KpChartsTest"` 및 `:app:assembleDebug` 통과.
 - 날씨 예보 차트 카드 배경을 iOS light `UIColor.secondarySystemBackground` 값인 `#F2F2F7`로 명시했다. Material3 Card 기본색에 맡기지 않고 `CardDefaults.cardColors(containerColor = IosWeatherChartCardContainerColor)`를 사용하며, ARGB 값을 회귀 테스트로 고정했다. `:app:testDebugUnitTest --tests "*WeatherForecastParityTest"` 및 `:app:assembleDebug` 통과.
 - 날씨 예보 차트 카드의 시각 토큰을 iOS `WeatherForecastView`의 `VStack(spacing: 12).padding().cornerRadius(16)` 기준으로 보정했다. Android `ChartCard`의 corner radius를 16dp로 올리고, 내부 padding 16dp와 헤더-차트 spacing 12dp를 상수화해 회귀 테스트로 고정했다. `:app:testDebugUnitTest --tests "*WeatherForecastParityTest"` 및 `:app:assembleDebug` 통과.
