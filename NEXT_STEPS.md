@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 날씨 온도 예보 차트의 Y축 범위를 iOS `WeatherForecastView.calculateTemperatureYRange()`처럼 데이터 최저/최고값에 각각 5도 여백을 주고 5도 단위로 내림/올림한 뒤 `-30...50` 범위로 제한하도록 보정했다. Android 공용 차트의 10% 자동 패딩 대신 온도 차트만 iOS 전용 범위를 명시한다. `:app:testDebugUnitTest --tests "*WeatherForecastParityTest"` 및 `:app:assembleDebug` 통과.
 - 날씨 예보 차트의 현재 시각 표시를 iOS `WeatherForecastView`의 `RuleMark.annotation`처럼 빨간 수직선 + 상단 `현재`/`Now` 배지로 보정했다. KP 차트는 iOS처럼 라벨 없는 현재 시각 선을 유지하고, 날씨 차트에서만 `weather.chart.current` 대응 리소스를 사용한다. `:app:testDebugUnitTest --tests "*WeatherForecastParityTest" --tests "*StringResourceCoverageTest"` 및 `:app:assembleDebug` 통과.
 - 날씨 예보 차트의 `PointMark`/색상/강수량 표시를 iOS `WeatherForecastView`에 더 가깝게 보정했다. 온도/풍속/순간풍속/강수량/가시거리/CRI 라인 차트에 포인트 표시를 추가하고, 풍속 green·순간풍속 indigo·강수량 blue·가시거리 purple·CRI cyan 기준으로 색상을 맞췄다. 강수량은 Android 전용 bar chart 대신 iOS처럼 area/line/point 차트와 `0...max(10, ceil(max*1.2))` Y축 범위를 사용한다. `:app:testDebugUnitTest --tests "*WeatherForecastParityTest" --tests "*KpChartsTest"` 및 `:app:assembleDebug` 통과.
 - KP 48시간/27일 예보 차트의 라인 색상을 iOS `LineMark.foregroundStyle(KPLevel.level(...).color)`처럼 KP 레벨별 세그먼트 색상으로 보정했다. 일반 날씨 차트의 기존 단일 smooth line 동작은 유지하고, KP처럼 색상 목록이 명시된 경우만 segment line으로 그린다. `:app:testDebugUnitTest --tests "*KpChartsTest" --tests "*WeatherForecastParityTest"` 및 `:app:assembleDebug` 통과.
