@@ -399,6 +399,8 @@
     <string name="profile_backup_manual">Manual backup</string>
     <string name="profile_backup_last_backup">Last backup: %1$s</string>
     <string name="profile_sync_alert_title">Real-time Cloud Sync</string>
+    <string name="sync_alert_detected_title">Changes Detected</string>
+    <string name="sync_alert_detected_message">Changes detected from another device.\nUpdating shape data.</string>
     <plurals name="profile_sync_success">
         <item quantity="one">Sync completed for %1$d shape.</item>
         <item quantity="other">Sync completed for %1$d shapes.</item>

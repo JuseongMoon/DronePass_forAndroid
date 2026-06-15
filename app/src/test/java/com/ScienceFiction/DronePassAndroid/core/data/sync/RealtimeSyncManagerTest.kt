@@ -120,6 +120,58 @@ class RealtimeSyncManagerTest {
     }
 
     @Test
+    fun `foreground change prompt requires a remote timestamp`() {
+        assertEquals(
+            false,
+            hasRealtimeRemoteChanges(
+                serverLastModified = null,
+                lastSyncTime = 200L,
+                lastLocalModificationTime = null,
+            ),
+        )
+    }
+
+    @Test
+    fun `foreground change prompt appears only for remote changes newer than sync baseline`() {
+        assertEquals(
+            true,
+            hasRealtimeRemoteChanges(
+                serverLastModified = 300L,
+                lastSyncTime = 200L,
+                lastLocalModificationTime = null,
+            ),
+        )
+        assertEquals(
+            false,
+            hasRealtimeRemoteChanges(
+                serverLastModified = 200L,
+                lastSyncTime = 200L,
+                lastLocalModificationTime = null,
+            ),
+        )
+    }
+
+    @Test
+    fun `foreground change prompt ignores remote timestamps already covered by local edits`() {
+        assertEquals(
+            false,
+            hasRealtimeRemoteChanges(
+                serverLastModified = 200L,
+                lastSyncTime = 100L,
+                lastLocalModificationTime = 200L,
+            ),
+        )
+        assertEquals(
+            true,
+            hasRealtimeRemoteChanges(
+                serverLastModified = 300L,
+                lastSyncTime = 100L,
+                lastLocalModificationTime = 200L,
+            ),
+        )
+    }
+
+    @Test
     fun `realtime listener skips server timestamps covered by local modification like iOS`() {
         assertEquals(
             false,

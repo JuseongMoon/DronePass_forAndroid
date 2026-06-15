@@ -721,6 +721,8 @@
     <string name="profile_backup_manual">수동 백업하기</string>
     <string name="profile_backup_last_backup">마지막 백업: %1$s</string>
     <string name="profile_sync_alert_title">실시간 클라우드 동기화</string>
+    <string name="sync_alert_detected_title">변경사항 감지</string>
+    <string name="sync_alert_detected_message">다른 기기에서 변경사항이 감지되었습니다.\n도형 정보를 최신화합니다.</string>
     <plurals name="profile_sync_success">
         <item quantity="other">%1$d개 도형의 동기화가 완료되었습니다.</item>
     </plurals>

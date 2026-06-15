@@ -43,12 +43,14 @@ import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.SwapVert
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -419,6 +421,7 @@ internal fun MainScreen(
     var showSettingsOverlay by remember { mutableStateOf(false) }
     var foregroundNotification by remember { mutableStateOf<ForegroundNotification?>(null) }
     var displayedForegroundNotification by remember { mutableStateOf<ForegroundNotification?>(null) }
+    var showForegroundSyncConfirmation by remember { mutableStateOf(false) }
 
     fun dismissSavedListOverlay() {
         showSavedListOverlay = false
@@ -488,6 +491,12 @@ internal fun MainScreen(
     LaunchedEffect(Unit) {
         ForegroundNotificationBus.events.collect { notification ->
             foregroundNotification = notification
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        authViewModel.foregroundSyncConfirmation.collect {
+            showForegroundSyncConfirmation = true
         }
     }
 
@@ -640,6 +649,29 @@ internal fun MainScreen(
                     onDismiss = { foregroundNotification = null },
                 )
             }
+        }
+
+        if (showForegroundSyncConfirmation && !isLoginScreen) {
+            AlertDialog(
+                onDismissRequest = { showForegroundSyncConfirmation = false },
+                title = { Text(stringResource(R.string.sync_alert_detected_title)) },
+                text = { Text(stringResource(R.string.sync_alert_detected_message)) },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showForegroundSyncConfirmation = false
+                            authViewModel.confirmForegroundCloudSync()
+                        },
+                    ) {
+                        Text(stringResource(R.string.common_confirm))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showForegroundSyncConfirmation = false }) {
+                        Text(stringResource(R.string.common_cancel))
+                    }
+                },
+            )
         }
     }
 }

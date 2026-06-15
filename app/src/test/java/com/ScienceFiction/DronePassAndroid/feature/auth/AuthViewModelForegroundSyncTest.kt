@@ -17,9 +17,9 @@ import org.junit.Test
 class AuthViewModelForegroundSyncTest {
 
     @Test
-    fun `foreground resume starts sync only when logged in cloud backup is enabled and realtime listener is off`() {
+    fun `foreground resume requests confirmation only when logged in cloud backup is enabled and realtime listener is off`() {
         assertEquals(
-            ForegroundCloudSyncAction.START_REALTIME_AND_SYNC,
+            ForegroundCloudSyncAction.REQUEST_USER_CONFIRMATION,
             resolveForegroundCloudSyncAction(
                 isLoggedIn = true,
                 cloudBackupEnabled = true,

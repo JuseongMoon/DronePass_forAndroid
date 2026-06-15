@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -60,6 +61,19 @@ internal fun shouldScheduleRealtimeSync(
 
 internal fun shouldScheduleDroneCollectionSync(hasPendingWrites: Boolean): Boolean {
     return !hasPendingWrites
+}
+
+internal fun hasRealtimeRemoteChanges(
+    serverLastModified: Long?,
+    lastSyncTime: Long?,
+    lastLocalModificationTime: Long?,
+): Boolean {
+    return serverLastModified != null &&
+        shouldScheduleRealtimeSync(
+            serverLastModified = serverLastModified,
+            lastSyncTime = lastSyncTime,
+            lastLocalModificationTime = lastLocalModificationTime,
+        )
 }
 
 internal const val RealtimeSyncRestartDelayMs = 500L
@@ -527,5 +541,40 @@ class RealtimeSyncManager @Inject constructor(
         stopListening()
         delay(RealtimeSyncRestartDelayMs)
         startListening(userId)
+    }
+
+    suspend fun hasRemoteChanges(): Boolean {
+        val userId = auth.currentUser?.uid ?: return false
+        val preferences = dataStore.data.first()
+        val shapeServerLastModified = fetchMetadataLastModified(
+            userId = userId,
+            documentId = "server",
+        )
+        val sketchServerLastModified = fetchMetadataLastModified(
+            userId = userId,
+            documentId = "sketchServer",
+        )
+        return hasRealtimeRemoteChanges(
+            serverLastModified = shapeServerLastModified,
+            lastSyncTime = preferences[SyncPreferenceKeys.LAST_SYNC_TIME],
+            lastLocalModificationTime = preferences[SyncPreferenceKeys.LAST_LOCAL_MODIFICATION_TIME],
+        ) || hasRealtimeRemoteChanges(
+            serverLastModified = sketchServerLastModified,
+            lastSyncTime = preferences[SyncPreferenceKeys.LAST_SKETCH_SYNC_TIME],
+            lastLocalModificationTime = preferences[SyncPreferenceKeys.LAST_LOCAL_SKETCH_MODIFICATION_TIME],
+        )
+    }
+
+    private suspend fun fetchMetadataLastModified(userId: String, documentId: String): Long? {
+        val snapshot = firestore
+            .collection("users")
+            .document(userId)
+            .collection("metadata")
+            .document(documentId)
+            .get()
+            .await()
+        if (!snapshot.exists()) return null
+        return snapshot.getTimestamp("lastModified")?.toDate()?.time
+            ?: snapshot.getLong("lastModified")
     }
 }

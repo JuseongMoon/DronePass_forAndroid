@@ -96,6 +96,20 @@ class StringResourceCoverageTest {
     }
 
     @Test
+    fun `foreground sync prompt strings match iOS localizations`() {
+        assertEquals("변경사항 감지", stringResourceValue("values/strings.xml", "sync_alert_detected_title"))
+        assertEquals(
+            "다른 기기에서 변경사항이 감지되었습니다.\\n도형 정보를 최신화합니다.",
+            stringResourceValue("values/strings.xml", "sync_alert_detected_message"),
+        )
+        assertEquals("Changes Detected", stringResourceValue("values-en/strings.xml", "sync_alert_detected_title"))
+        assertEquals(
+            "Changes detected from another device.\\nUpdating shape data.",
+            stringResourceValue("values-en/strings.xml", "sync_alert_detected_message"),
+        )
+    }
+
+    @Test
     fun `saved list section and sort labels match iOS localizations`() {
         assertEquals("저장 목록", stringResourceValue("values/strings.xml", "screen_saved_list"))
         assertEquals("활성화", stringResourceValue("values/strings.xml", "saved_section_active"))

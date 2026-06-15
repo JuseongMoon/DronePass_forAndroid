@@ -43,7 +43,7 @@ import javax.inject.Inject
 
 internal enum class ForegroundCloudSyncAction {
     NO_OP,
-    START_REALTIME_AND_SYNC,
+    REQUEST_USER_CONFIRMATION,
 }
 
 internal enum class AuthProviderSignInAction {
@@ -123,7 +123,7 @@ internal fun resolveForegroundCloudSyncAction(
     realtimeSyncEnabled: Boolean,
 ): ForegroundCloudSyncAction {
     return if (isLoggedIn && cloudBackupEnabled && !realtimeSyncEnabled) {
-        ForegroundCloudSyncAction.START_REALTIME_AND_SYNC
+        ForegroundCloudSyncAction.REQUEST_USER_CONFIRMATION
     } else {
         ForegroundCloudSyncAction.NO_OP
     }
@@ -171,6 +171,12 @@ class AuthViewModel @Inject constructor(
     )
     val syncMessage: SharedFlow<String> = _syncMessage.asSharedFlow()
 
+    private val _foregroundSyncConfirmation = MutableSharedFlow<Unit>(
+        replay = 0,
+        extraBufferCapacity = 1,
+    )
+    val foregroundSyncConfirmation: SharedFlow<Unit> = _foregroundSyncConfirmation.asSharedFlow()
+
     private val _accountSwitchConfirmation = MutableStateFlow<AccountSwitchConfirmationRequest?>(null)
     val accountSwitchConfirmation: StateFlow<AccountSwitchConfirmationRequest?> =
         _accountSwitchConfirmation.asStateFlow()
@@ -212,6 +218,26 @@ class AuthViewModel @Inject constructor(
      * 앱 복귀 시 실시간 동기화 리스너가 꺼져 있으면 변경사항 확인/동기화 경로를 복구한다.
      */
     fun ensureCloudSyncActiveOnForeground() {
+        authRepository.currentUser ?: return
+        viewModelScope.launch {
+            val cloudBackupEnabled = storedCloudBackupEnabled(dataStore.data.first())
+            val action = resolveForegroundCloudSyncAction(
+                isLoggedIn = true,
+                cloudBackupEnabled = cloudBackupEnabled,
+                realtimeSyncEnabled = realtimeSyncManager.isRealtimeSyncEnabled.value,
+            )
+            if (action == ForegroundCloudSyncAction.REQUEST_USER_CONFIRMATION) {
+                val hasRemoteChanges = runCatching { realtimeSyncManager.hasRemoteChanges() }
+                    .onFailure { Log.w(TAG, "포그라운드 원격 변경 확인 실패", it) }
+                    .getOrDefault(false)
+                if (hasRemoteChanges) {
+                    _foregroundSyncConfirmation.tryEmit(Unit)
+                }
+            }
+        }
+    }
+
+    fun confirmForegroundCloudSync() {
         val user = authRepository.currentUser ?: return
         viewModelScope.launch {
             val cloudBackupEnabled = storedCloudBackupEnabled(dataStore.data.first())
@@ -220,8 +246,8 @@ class AuthViewModel @Inject constructor(
                 cloudBackupEnabled = cloudBackupEnabled,
                 realtimeSyncEnabled = realtimeSyncManager.isRealtimeSyncEnabled.value,
             )
-            if (action == ForegroundCloudSyncAction.START_REALTIME_AND_SYNC) {
-                Log.d(TAG, "포그라운드 복귀: 실시간 동기화 리스너 복구 userId=${user.uid}")
+            if (action == ForegroundCloudSyncAction.REQUEST_USER_CONFIRMATION) {
+                Log.d(TAG, "포그라운드 복귀: 사용자 확인 후 실시간 동기화 리스너 복구 userId=${user.uid}")
                 realtimeSyncManager.startListening(user.uid)
                 performFullSync(selectAllDronesAfterSync = false)
             }
