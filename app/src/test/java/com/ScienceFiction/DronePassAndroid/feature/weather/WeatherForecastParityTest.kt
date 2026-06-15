@@ -101,6 +101,13 @@ class WeatherForecastParityTest {
     }
 
     @Test
+    fun `forecast chart card tokens match iOS WeatherForecastView`() {
+        assertEquals(16.dp, IosWeatherChartCardCornerRadius)
+        assertEquals(16.dp, IosWeatherChartCardPadding)
+        assertEquals(12.dp, IosWeatherChartCardSpacing)
+    }
+
+    @Test
     fun `forecast refresh toast matches iOS ToastMessageModifier`() {
         assertEquals(2_000L, IosToastMessageDurationMs)
         assertEquals(300, IosToastMessageAnimationDurationMs)
