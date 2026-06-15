@@ -66,6 +66,34 @@ class GustDifferenceCalculatorTest {
     }
 
     @Test
+    fun `observed gust difference keeps iOS hourly forecast fallback without estimation`() {
+        assertEquals(
+            0.0,
+            GustDifferenceCalculator.calculateObservedGustDifference(
+                sustainedWind = 5.0,
+                gustWind = null,
+            ),
+            0.0,
+        )
+        assertEquals(
+            0.0,
+            GustDifferenceCalculator.calculateObservedGustDifference(
+                sustainedWind = 5.0,
+                gustWind = 4.0,
+            ),
+            0.0,
+        )
+        assertEquals(
+            2.0,
+            GustDifferenceCalculator.calculateObservedGustDifference(
+                sustainedWind = 5.0,
+                gustWind = 7.0,
+            ),
+            0.0,
+        )
+    }
+
+    @Test
     fun `caution level uses iOS hysteresis before returning to safe`() {
         assertEquals(
             GustDifferenceLevel.CAUTION,

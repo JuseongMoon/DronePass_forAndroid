@@ -73,6 +73,45 @@ class WeatherRepositoryTest {
         )
     }
 
+    @Test
+    fun `hourly gust difference uses iOS observed gust fallback without estimated gust`() = runBlocking {
+        val withoutObservedGust = WeatherRepository(
+            FakeWeatherApi(
+                weatherResponse(
+                    hourly = hourlyWeather(
+                        windSpeed = 5.0,
+                        windGusts = null,
+                    ),
+                ),
+            ),
+        )
+
+        val noGustData = withoutObservedGust.fetchWeather(latitude = 37.0, longitude = 127.0).getOrThrow()
+        assertEquals(0.0, noGustData.hourlyForecast.single().gustDifference, 0.0)
+
+        val withObservedGusts = WeatherRepository(
+            FakeWeatherApi(
+                weatherResponse(
+                    hourly = HourlyWeather(
+                        time = listOf("2026-01-01T00:00", "2026-01-01T01:00"),
+                        temperature = listOf(20.0, 20.0),
+                        dewPoint = listOf(10.0, 10.0),
+                        windSpeed = listOf(5.0, 5.0),
+                        windDirection = listOf(0.0, 0.0),
+                        windGusts = listOf(4.0, 7.0),
+                        precipitation = listOf(0.0, 0.0),
+                        visibility = listOf(10000.0, 10000.0),
+                        weatherCode = listOf(0, 0),
+                    ),
+                ),
+            ),
+        )
+        val observedData = withObservedGusts.fetchWeather(latitude = 37.0, longitude = 127.0).getOrThrow()
+
+        assertEquals(0.0, observedData.hourlyForecast[0].gustDifference, 0.0)
+        assertEquals(2.0, observedData.hourlyForecast[1].gustDifference, 0.0)
+    }
+
     private fun weatherResponse(
         current: CurrentWeather? = null,
         hourly: HourlyWeather? = null,
@@ -98,16 +137,17 @@ class WeatherRepositoryTest {
     )
 
     private fun hourlyWeather(
-        temperature: Double,
-        dewPoint: Double,
-        windSpeed: Double,
+        temperature: Double = 20.0,
+        dewPoint: Double = 10.0,
+        windSpeed: Double = 0.0,
+        windGusts: List<Double>? = null,
     ): HourlyWeather = HourlyWeather(
         time = listOf("2026-01-01T00:00"),
         temperature = listOf(temperature),
         dewPoint = listOf(dewPoint),
         windSpeed = listOf(windSpeed),
         windDirection = listOf(0.0),
-        windGusts = null,
+        windGusts = windGusts,
         precipitation = listOf(0.0),
         visibility = listOf(10000.0),
         weatherCode = listOf(0),

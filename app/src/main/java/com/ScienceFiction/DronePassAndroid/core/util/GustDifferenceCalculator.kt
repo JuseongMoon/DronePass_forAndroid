@@ -225,6 +225,14 @@ object GustDifferenceCalculator {
         return (effectiveGust - safeSustained).coerceAtLeast(0.0)
     }
 
+    fun calculateObservedGustDifference(sustainedWind: Double, gustWind: Double?): Double {
+        if (!sustainedWind.isFinite()) return 0.0
+        if (gustWind != null && !gustWind.isFinite()) return 0.0
+        val safeSustained = sustainedWind.coerceAtLeast(0.0)
+        val effectiveGust = gustWind?.coerceAtLeast(safeSustained) ?: safeSustained
+        return (effectiveGust - safeSustained).coerceAtLeast(0.0)
+    }
+
     private fun calculateGustFactor(sustainedWind: Double, gustWind: Double): Double =
         if (sustainedWind >= MIN_MEAN_FOR_GF) {
             (gustWind / sustainedWind).coerceAtMost(GF_CAP)

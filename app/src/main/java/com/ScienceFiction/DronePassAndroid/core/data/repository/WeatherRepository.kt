@@ -167,7 +167,7 @@ class WeatherRepository @Inject constructor(
                     windSpeed = wind,
                     windDirection = hourly.windDirection?.getOrNull(i) ?: 0.0,
                     windGusts = gusts,
-                    gustDifference = GustDifferenceCalculator.calculateGustDifference(wind, gusts),
+                    gustDifference = GustDifferenceCalculator.calculateObservedGustDifference(wind, gusts),
                     precipitation = hourly.precipitation?.getOrNull(i) ?: 0.0,
                     visibility = visibilityMeters / 1000.0, // m -> km
                     dewPoint = dewPt,
