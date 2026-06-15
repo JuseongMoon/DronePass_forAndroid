@@ -35,6 +35,12 @@ import androidx.compose.runtime.getValue
 import com.ScienceFiction.DronePassAndroid.R
 
 internal val DocumentErrorIcon = Icons.Outlined.FindInPage
+internal val DocumentHeaderHorizontalPadding = 16.dp
+internal val DocumentHeaderVerticalPadding = 16.dp
+internal val DocumentDividerThickness = 0.5.dp
+internal val DocumentErrorIconSize = 50.dp
+internal val DocumentEmptyStateSpacing = 12.dp
+internal val DocumentErrorRetryTopSpacing = 20.dp
 
 /**
  * iOS `TermsOfServiceView` / `PrivacyPolicyView` 정합 공통 시트 콘텐츠.
@@ -62,7 +68,10 @@ fun DocumentScreen(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .padding(
+                    horizontal = DocumentHeaderHorizontalPadding,
+                    vertical = DocumentHeaderVerticalPadding,
+                ),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
@@ -76,7 +85,7 @@ fun DocumentScreen(
             }
         }
         HorizontalDivider(
-            thickness = 0.5.dp,
+            thickness = DocumentDividerThickness,
             color = MaterialTheme.colorScheme.outlineVariant,
         )
 
@@ -118,7 +127,7 @@ private fun LoadingContent(@StringRes loadingTextResId: Int) {
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         CircularProgressIndicator()
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(DocumentEmptyStateSpacing))
         Text(
             text = stringResource(loadingTextResId),
             style = MaterialTheme.typography.bodyMedium,
@@ -144,21 +153,21 @@ private fun ErrorContent(
             imageVector = DocumentErrorIcon,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(48.dp),
+            modifier = Modifier.size(DocumentErrorIconSize),
         )
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(DocumentEmptyStateSpacing))
         Text(
             text = stringResource(titleResId),
             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-            color = MaterialTheme.colorScheme.onSurface,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Spacer(modifier = Modifier.height(6.dp))
+        Spacer(modifier = Modifier.height(DocumentEmptyStateSpacing))
         Text(
             text = stringResource(messageResId),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(DocumentErrorRetryTopSpacing))
         OutlinedButton(onClick = onRetry) {
             Text(stringResource(R.string.common_retry))
         }

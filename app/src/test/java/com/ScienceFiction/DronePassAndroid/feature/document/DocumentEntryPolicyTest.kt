@@ -2,6 +2,7 @@ package com.ScienceFiction.DronePassAndroid.feature.document
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.FindInPage
+import androidx.compose.ui.unit.dp
 import com.ScienceFiction.DronePassAndroid.domain.model.ParsedDocument
 import com.ScienceFiction.DronePassAndroid.domain.model.PatchNote
 import org.junit.Assert.assertEquals
@@ -36,6 +37,16 @@ class DocumentEntryPolicyTest {
     @Test
     fun `약관 오류 아이콘은 iOS doc text magnifyingglass 처럼 문서 검색 아이콘을 사용한다`() {
         assertEquals(Icons.Outlined.FindInPage, DocumentErrorIcon)
+    }
+
+    @Test
+    fun `약관 문서 시트 헤더와 상태 토큰은 iOS Terms views 와 맞춘다`() {
+        assertEquals(16.dp, DocumentHeaderHorizontalPadding)
+        assertEquals(16.dp, DocumentHeaderVerticalPadding)
+        assertEquals(0.5.dp, DocumentDividerThickness)
+        assertEquals(50.dp, DocumentErrorIconSize)
+        assertEquals(12.dp, DocumentEmptyStateSpacing)
+        assertEquals(20.dp, DocumentErrorRetryTopSpacing)
     }
 
     @Test
