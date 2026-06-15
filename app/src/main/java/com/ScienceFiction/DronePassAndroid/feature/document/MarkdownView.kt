@@ -306,59 +306,63 @@ private fun InlineMarkdownText(
 internal fun parseInlineMarkdown(text: String, linkColor: Color): AnnotatedString {
     if (text.isEmpty()) return AnnotatedString("")
 
+    return buildAnnotatedString {
+        appendInlineMarkdown(text, linkColor)
+    }
+}
+
+private fun AnnotatedString.Builder.appendInlineMarkdown(text: String, linkColor: Color) {
     val boldPattern = Regex("""\*\*(.+?)\*\*""")
     val italicPattern = Regex("""(?<!\*)\*([^*\n]+?)\*(?!\*)""")
     val linkPattern = Regex("""\[([^]]+)]\(([^)]+)\)""")
 
-    return buildAnnotatedString {
-        var remaining = text
-        while (remaining.isNotEmpty()) {
-            val boldMatch = boldPattern.find(remaining)
-            val italicMatch = italicPattern.find(remaining)
-            val linkMatch = linkPattern.find(remaining)
+    var remaining = text
+    while (remaining.isNotEmpty()) {
+        val boldMatch = boldPattern.find(remaining)
+        val italicMatch = italicPattern.find(remaining)
+        val linkMatch = linkPattern.find(remaining)
 
-            // 가장 먼저 등장하는 매치 선택
-            val nearest = listOfNotNull(boldMatch, italicMatch, linkMatch)
-                .minByOrNull { it.range.first }
+        // 가장 먼저 등장하는 매치 선택
+        val nearest = listOfNotNull(boldMatch, italicMatch, linkMatch)
+            .minByOrNull { it.range.first }
 
-            if (nearest == null) {
-                append(remaining)
-                break
-            }
-
-            // 매치 이전 일반 텍스트
-            if (nearest.range.first > 0) {
-                append(remaining.substring(0, nearest.range.first))
-            }
-
-            when (nearest) {
-                boldMatch -> {
-                    pushStyle(SpanStyle(fontWeight = FontWeight.Bold))
-                    append(nearest.groupValues[1])
-                    pop()
-                }
-                italicMatch -> {
-                    pushStyle(SpanStyle(fontStyle = FontStyle.Italic))
-                    append(nearest.groupValues[1])
-                    pop()
-                }
-                linkMatch -> {
-                    val linkText = nearest.groupValues[1]
-                    val url = nearest.groupValues[2]
-                    pushStringAnnotation(tag = MarkdownUrlAnnotationTag, annotation = url)
-                    pushStyle(
-                        SpanStyle(
-                            color = linkColor,
-                            textDecoration = TextDecoration.Underline,
-                        ),
-                    )
-                    append(linkText)
-                    pop()
-                    pop()
-                }
-            }
-
-            remaining = remaining.substring(nearest.range.last + 1)
+        if (nearest == null) {
+            append(remaining)
+            break
         }
+
+        // 매치 이전 일반 텍스트
+        if (nearest.range.first > 0) {
+            append(remaining.substring(0, nearest.range.first))
+        }
+
+        when (nearest) {
+            boldMatch -> {
+                pushStyle(SpanStyle(fontWeight = FontWeight.Bold))
+                appendInlineMarkdown(nearest.groupValues[1], linkColor)
+                pop()
+            }
+            italicMatch -> {
+                pushStyle(SpanStyle(fontStyle = FontStyle.Italic))
+                appendInlineMarkdown(nearest.groupValues[1], linkColor)
+                pop()
+            }
+            linkMatch -> {
+                val linkText = nearest.groupValues[1]
+                val url = nearest.groupValues[2]
+                pushStringAnnotation(tag = MarkdownUrlAnnotationTag, annotation = url)
+                pushStyle(
+                    SpanStyle(
+                        color = linkColor,
+                        textDecoration = TextDecoration.Underline,
+                    ),
+                )
+                appendInlineMarkdown(linkText, linkColor)
+                pop()
+                pop()
+            }
+        }
+
+        remaining = remaining.substring(nearest.range.last + 1)
     }
 }
