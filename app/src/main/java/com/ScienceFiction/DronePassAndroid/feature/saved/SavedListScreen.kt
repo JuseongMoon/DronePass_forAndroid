@@ -183,7 +183,7 @@ fun SavedListScreen(
                     // IllegalStateException("Key was already used") 으로 크래시하는 것을 방지.
                     items(notStartedShapes, key = { "notStarted-${it.id}" }) { shape ->
                         SwipeToDeleteItem(
-                            onDelete = { viewModel.deleteShape(shape) }
+                            onDelete = { viewModel.deleteShapeFromList(shape) }
                         ) {
                             SavedShapeListItem(
                                 shape = shape,
@@ -210,7 +210,7 @@ fun SavedListScreen(
                     }
                     items(activeShapes, key = { "active-${it.id}" }) { shape ->
                         SwipeToDeleteItem(
-                            onDelete = { viewModel.deleteShape(shape) }
+                            onDelete = { viewModel.deleteShapeFromList(shape) }
                         ) {
                             SavedShapeListItem(
                                 shape = shape,
@@ -237,7 +237,7 @@ fun SavedListScreen(
                     }
                     items(expiredShapes, key = { "expired-${it.id}" }) { shape ->
                         SwipeToDeleteItem(
-                            onDelete = { viewModel.deleteShape(shape) }
+                            onDelete = { viewModel.deleteShapeFromList(shape) }
                         ) {
                             SavedShapeListItem(
                                 shape = shape,
@@ -264,7 +264,7 @@ fun SavedListScreen(
                     viewModel.onEditShapeRequested(shape)
                 },
                 onDelete = {
-                    viewModel.deleteShape(shape)
+                    viewModel.deleteShapeFromDetail(shape)
                 },
                 onDismiss = {
                     viewModel.dismissShapeDetail()

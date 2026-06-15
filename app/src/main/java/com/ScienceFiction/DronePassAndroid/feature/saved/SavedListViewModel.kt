@@ -73,6 +73,23 @@ internal enum class SavedDetailEditPostSaveAction {
     FOCUS_SAVED_LIST,
 }
 
+internal enum class SavedShapeDeleteSource {
+    LIST,
+    DETAIL,
+}
+
+internal data class SavedShapeDeletePresentationUpdate(
+    val dismissDetailAndClearSelection: Boolean,
+)
+
+internal fun resolveSavedShapeDeletePresentationUpdate(
+    source: SavedShapeDeleteSource,
+): SavedShapeDeletePresentationUpdate {
+    return SavedShapeDeletePresentationUpdate(
+        dismissDetailAndClearSelection = source == SavedShapeDeleteSource.DETAIL,
+    )
+}
+
 internal fun resolveSavedDetailEditPostSaveAction(
     isDuplicate: Boolean,
 ): SavedDetailEditPostSaveAction {
@@ -469,12 +486,23 @@ class SavedListViewModel @Inject constructor(
         }
     }
 
-    fun deleteShape(shape: ShapeModel) {
+    fun deleteShapeFromList(shape: ShapeModel) {
+        deleteShape(shape, source = SavedShapeDeleteSource.LIST)
+    }
+
+    fun deleteShapeFromDetail(shape: ShapeModel) {
+        deleteShape(shape, source = SavedShapeDeleteSource.DETAIL)
+    }
+
+    private fun deleteShape(shape: ShapeModel, source: SavedShapeDeleteSource) {
         viewModelScope.launch {
             shapeRepository.softDeleteShape(shape)
-            _showShapeEdit.value = false
-            _isDuplicateMode.value = false
-            dismissShapeDetail()
+            val presentationUpdate = resolveSavedShapeDeletePresentationUpdate(source)
+            if (presentationUpdate.dismissDetailAndClearSelection) {
+                _showShapeEdit.value = false
+                _isDuplicateMode.value = false
+                dismissShapeDetail()
+            }
         }
     }
 

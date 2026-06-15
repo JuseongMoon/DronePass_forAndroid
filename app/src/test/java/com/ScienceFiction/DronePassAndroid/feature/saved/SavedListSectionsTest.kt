@@ -431,6 +431,22 @@ class SavedListSectionsTest {
     }
 
     @Test
+    fun `저장 목록 스와이프 삭제는 iOS처럼 선택과 상세 표시를 유지한다`() {
+        assertEquals(
+            SavedShapeDeletePresentationUpdate(dismissDetailAndClearSelection = false),
+            resolveSavedShapeDeletePresentationUpdate(SavedShapeDeleteSource.LIST),
+        )
+    }
+
+    @Test
+    fun `저장 목록 상세 시트 삭제는 상세와 선택 상태를 정리한다`() {
+        assertEquals(
+            SavedShapeDeletePresentationUpdate(dismissDetailAndClearSelection = true),
+            resolveSavedShapeDeletePresentationUpdate(SavedShapeDeleteSource.DETAIL),
+        )
+    }
+
+    @Test
     fun `저장 목록 스와이프 삭제는 iOS처럼 오른쪽에서 왼쪽 방향만 삭제한다`() {
         assertEquals(true, shouldDeleteSavedShapeOnSwipe(SwipeToDismissBoxValue.EndToStart))
         assertEquals(false, shouldDeleteSavedShapeOnSwipe(SwipeToDismissBoxValue.StartToEnd))
