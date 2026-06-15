@@ -2,7 +2,9 @@ package com.ScienceFiction.DronePassAndroid.core.data.remote.firebase
 
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.google.firebase.Timestamp
+import com.google.firebase.firestore.FieldValue
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -32,6 +34,36 @@ class DroneFirestoreParsingTest {
         assertTrue(data["createdAt"] is Timestamp)
         assertTrue(data["updatedAt"] is Timestamp)
         assertTrue(data["deletedAt"] is Timestamp)
+    }
+
+    @Test
+    fun `Drone Firestore 문서 데이터는 null 선택 필드를 쓰지 않고 merge 쓰기는 delete sentinel 로 정리한다`() {
+        val drone = DroneModel(
+            id = "00000000-0000-0000-0000-000000000002",
+            name = "Drone",
+            color = "#007AFF",
+            serialNumber = null,
+            takeoffWeight = null,
+            size = null,
+            memo = null,
+            createdAt = 1_700_000_000_000L,
+            updatedAt = 1_700_000_123_000L,
+            deletedAt = null,
+        )
+
+        val documentData = droneToFirestoreDocumentData(drone)
+        val mergeData = droneToFirestoreMergeData(drone)
+
+        assertFalse(documentData.containsKey("serialNumber"))
+        assertFalse(documentData.containsKey("takeoffWeight"))
+        assertFalse(documentData.containsKey("size"))
+        assertFalse(documentData.containsKey("memo"))
+        assertFalse(documentData.containsKey("deletedAt"))
+        assertTrue(mergeData["serialNumber"] is FieldValue)
+        assertTrue(mergeData["takeoffWeight"] is FieldValue)
+        assertTrue(mergeData["size"] is FieldValue)
+        assertTrue(mergeData["memo"] is FieldValue)
+        assertTrue(mergeData["deletedAt"] is FieldValue)
     }
 
     @Test

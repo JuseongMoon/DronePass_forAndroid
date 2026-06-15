@@ -62,33 +62,59 @@ private fun isValidShapeId(id: String): Boolean {
 internal class ShapeFirebaseInvalidDataException(reason: String?) :
     IllegalStateException("Invalid shape data: ${reason ?: "unknown"}")
 
-internal fun shapeToFirestoreDocumentData(shape: ShapeModel): Map<String, Any?> {
-    return mapOf(
+private val SHAPE_OPTIONAL_FIRESTORE_FIELDS = listOf(
+    "radius",
+    "secondCoordinate",
+    "polygonCoordinates",
+    "polylineCoordinates",
+    "height",
+    "droneId",
+    "flightEndDate",
+    "deletedAt",
+)
+
+internal fun shapeToFirestoreDocumentData(shape: ShapeModel): Map<String, Any> {
+    val data = mutableMapOf<String, Any>(
         "id" to shape.id,
         "title" to shape.title,
         "shapeType" to shape.shapeType.rawValue,
         "baseCoordinate" to coordinateToFirestoreMap(shape.baseCoordinate),
-        "radius" to shape.radius.takeIf { shape.shapeType == ShapeType.CIRCLE },
-        "secondCoordinate" to shape.secondCoordinate
-            ?.takeIf { shape.shapeType == ShapeType.RECTANGLE }
-            ?.let(::coordinateToFirestoreMap),
-        "polygonCoordinates" to shape.polygonCoordinates
-            ?.takeIf { shape.shapeType == ShapeType.POLYGON }
-            ?.let(::coordinatesToFirestoreList),
-        "polylineCoordinates" to shape.polylineCoordinates
-            ?.takeIf { shape.shapeType == ShapeType.POLYLINE }
-            ?.let(::coordinatesToFirestoreList),
-        "height" to shape.height,
         "memo" to shape.memo.orEmpty(),
         "address" to shape.address.orEmpty(),
         "color" to normalizeFirebaseHexColorForWrite(shape.color),
-        "droneId" to shape.droneId,
         "createdAt" to Timestamp(Date(shape.createdAt)),
         "updatedAt" to Timestamp(Date(shape.updatedAt)),
         "flightStartDate" to Timestamp(Date(shape.flightStartDate)),
-        "flightEndDate" to shape.flightEndDate?.let { Timestamp(Date(it)) },
-        "deletedAt" to shape.deletedAt?.let { Timestamp(Date(it)) }
     )
+
+    shape.radius
+        ?.takeIf { shape.shapeType == ShapeType.CIRCLE }
+        ?.let { data["radius"] = it }
+    shape.secondCoordinate
+        ?.takeIf { shape.shapeType == ShapeType.RECTANGLE }
+        ?.let { data["secondCoordinate"] = coordinateToFirestoreMap(it) }
+    shape.polygonCoordinates
+        ?.takeIf { shape.shapeType == ShapeType.POLYGON }
+        ?.let { data["polygonCoordinates"] = coordinatesToFirestoreList(it) }
+    shape.polylineCoordinates
+        ?.takeIf { shape.shapeType == ShapeType.POLYLINE }
+        ?.let { data["polylineCoordinates"] = coordinatesToFirestoreList(it) }
+    shape.height?.let { data["height"] = it }
+    shape.droneId?.let { data["droneId"] = it }
+    shape.flightEndDate?.let { data["flightEndDate"] = Timestamp(Date(it)) }
+    shape.deletedAt?.let { data["deletedAt"] = Timestamp(Date(it)) }
+
+    return data
+}
+
+internal fun shapeToFirestoreMergeData(shape: ShapeModel): Map<String, Any> {
+    val data = shapeToFirestoreDocumentData(shape).toMutableMap()
+    SHAPE_OPTIONAL_FIRESTORE_FIELDS.forEach { field ->
+        if (!data.containsKey(field)) {
+            data[field] = FieldValue.delete()
+        }
+    }
+    return data
 }
 
 internal fun shapeFromFirestoreData(data: Map<String, Any?>): ShapeModel? {
@@ -327,8 +353,8 @@ class ShapeFirebaseStore @Inject constructor(
     /**
      * ShapeModel -> Firestore 문서 데이터로 변환
      */
-    fun shapeToFirestoreData(shape: ShapeModel): Map<String, Any?> {
-        return shapeToFirestoreDocumentData(shape)
+    fun shapeToFirestoreData(shape: ShapeModel): Map<String, Any> {
+        return shapeToFirestoreMergeData(shape)
     }
 
     /**

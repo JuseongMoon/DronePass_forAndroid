@@ -29,19 +29,38 @@ private fun isValidDroneId(id: String): Boolean {
 internal class DroneFirebaseInvalidDataException(reason: String?) :
     IllegalStateException("Invalid drone data: ${reason ?: "unknown"}")
 
-internal fun droneToFirestoreDocumentData(drone: DroneModel): Map<String, Any?> {
-    return mapOf(
+private val DRONE_OPTIONAL_FIRESTORE_FIELDS = listOf(
+    "serialNumber",
+    "takeoffWeight",
+    "size",
+    "memo",
+    "deletedAt",
+)
+
+internal fun droneToFirestoreDocumentData(drone: DroneModel): Map<String, Any> {
+    val data = mutableMapOf<String, Any>(
         "id" to drone.id,
         "name" to drone.name,
         "color" to normalizeFirebaseHexColorForWrite(drone.color),
-        "serialNumber" to drone.serialNumber,
-        "takeoffWeight" to drone.takeoffWeight,
-        "size" to drone.size,
-        "memo" to drone.memo,
         "createdAt" to Timestamp(Date(drone.createdAt)),
         "updatedAt" to Timestamp(Date(drone.updatedAt)),
-        "deletedAt" to drone.deletedAt?.let { Timestamp(Date(it)) }
     )
+    drone.serialNumber?.let { data["serialNumber"] = it }
+    drone.takeoffWeight?.let { data["takeoffWeight"] = it }
+    drone.size?.let { data["size"] = it }
+    drone.memo?.let { data["memo"] = it }
+    drone.deletedAt?.let { data["deletedAt"] = Timestamp(Date(it)) }
+    return data
+}
+
+internal fun droneToFirestoreMergeData(drone: DroneModel): Map<String, Any> {
+    val data = droneToFirestoreDocumentData(drone).toMutableMap()
+    DRONE_OPTIONAL_FIRESTORE_FIELDS.forEach { field ->
+        if (!data.containsKey(field)) {
+            data[field] = FieldValue.delete()
+        }
+    }
+    return data
 }
 
 internal fun droneFromFirestoreData(data: Map<String, Any?>): DroneModel? {
@@ -230,8 +249,8 @@ class DroneFirebaseStore @Inject constructor(
     /**
      * DroneModel -> Firestore 문서 데이터로 변환
      */
-    fun droneToFirestoreData(drone: DroneModel): Map<String, Any?> {
-        return droneToFirestoreDocumentData(drone)
+    fun droneToFirestoreData(drone: DroneModel): Map<String, Any> {
+        return droneToFirestoreMergeData(drone)
     }
 
     /**

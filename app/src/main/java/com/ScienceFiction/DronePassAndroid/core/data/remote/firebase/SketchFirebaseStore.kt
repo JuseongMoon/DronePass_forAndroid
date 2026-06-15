@@ -52,8 +52,12 @@ private fun firestoreListToSketchPoints(value: Any?): List<Coordinate> {
 internal class SketchFirebaseInvalidDataException(reason: String?) :
     IllegalStateException("Invalid sketch data: ${reason ?: "unknown"}")
 
-internal fun sketchToFirestoreDocumentData(sketch: SketchModel): Map<String, Any?> {
-    return mapOf(
+private val SKETCH_OPTIONAL_FIRESTORE_FIELDS = listOf(
+    "deletedAt",
+)
+
+internal fun sketchToFirestoreDocumentData(sketch: SketchModel): Map<String, Any> {
+    val data = mutableMapOf<String, Any>(
         "id" to sketch.id,
         "points" to sketch.points.map { point ->
             mapOf(
@@ -66,8 +70,19 @@ internal fun sketchToFirestoreDocumentData(sketch: SketchModel): Map<String, Any
         "opacity" to roundSketchOpacityForFirestore(sketch.opacity),
         "createdAt" to Timestamp(Date(sketch.createdAt)),
         "updatedAt" to Timestamp(Date(sketch.updatedAt)),
-        "deletedAt" to sketch.deletedAt?.let { Timestamp(Date(it)) }
     )
+    sketch.deletedAt?.let { data["deletedAt"] = Timestamp(Date(it)) }
+    return data
+}
+
+internal fun sketchToFirestoreMergeData(sketch: SketchModel): Map<String, Any> {
+    val data = sketchToFirestoreDocumentData(sketch).toMutableMap()
+    SKETCH_OPTIONAL_FIRESTORE_FIELDS.forEach { field ->
+        if (!data.containsKey(field)) {
+            data[field] = FieldValue.delete()
+        }
+    }
+    return data
 }
 
 internal fun sketchFromFirestoreData(
@@ -260,8 +275,8 @@ class SketchFirebaseStore @Inject constructor(
      * SketchModel -> Firestore 문서 데이터로 변환
      * points는 List<Map<String, Double>> 형태로 저장 (각 {latitude, longitude})
      */
-    fun sketchToFirestoreData(sketch: SketchModel): Map<String, Any?> {
-        return sketchToFirestoreDocumentData(sketch)
+    fun sketchToFirestoreData(sketch: SketchModel): Map<String, Any> {
+        return sketchToFirestoreMergeData(sketch)
     }
 
     /**

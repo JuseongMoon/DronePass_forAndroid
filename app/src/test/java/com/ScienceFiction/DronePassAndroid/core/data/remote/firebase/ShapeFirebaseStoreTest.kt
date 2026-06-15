@@ -4,9 +4,9 @@ import com.ScienceFiction.DronePassAndroid.domain.model.Coordinate
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeType
 import com.google.firebase.Timestamp
+import com.google.firebase.firestore.FieldValue
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -141,7 +141,7 @@ class ShapeFirebaseStoreTest {
     }
 
     @Test
-    fun `Shape Firestore 쓰기는 현재 shapeType 에 맞지 않는 geometry 필드를 비운다`() {
+    fun `Shape Firestore 문서 데이터는 현재 shapeType 에 맞지 않는 geometry 필드를 쓰지 않는다`() {
         val circle = ShapeModel(
             id = "00000000-0000-0000-0000-000000000005",
             title = "Circle",
@@ -173,12 +173,38 @@ class ShapeFirebaseStoreTest {
         val rectangleData = shapeToFirestoreDocumentData(rectangle)
 
         assertEquals(120.0, circleData["radius"])
-        assertNull(circleData["secondCoordinate"])
-        assertNull(circleData["polygonCoordinates"])
-        assertNull(circleData["polylineCoordinates"])
-        assertNull(rectangleData["radius"])
+        assertFalse(circleData.containsKey("secondCoordinate"))
+        assertFalse(circleData.containsKey("polygonCoordinates"))
+        assertFalse(circleData.containsKey("polylineCoordinates"))
+        assertFalse(rectangleData.containsKey("radius"))
         assertTrue(rectangleData["secondCoordinate"] is Map<*, *>)
-        assertNull(rectangleData["polygonCoordinates"])
-        assertNull(rectangleData["polylineCoordinates"])
+        assertFalse(rectangleData.containsKey("polygonCoordinates"))
+        assertFalse(rectangleData.containsKey("polylineCoordinates"))
+    }
+
+    @Test
+    fun `Shape Firestore merge 쓰기는 누락 optional 필드를 delete sentinel 로 정리한다`() {
+        val shape = ShapeModel(
+            id = "00000000-0000-0000-0000-000000000007",
+            title = "Circle",
+            shapeType = ShapeType.CIRCLE,
+            baseCoordinate = Coordinate(37.0, 127.0),
+            radius = 120.0,
+            color = "#007AFF",
+            createdAt = 1_700_000_000_000L,
+            updatedAt = 1_700_000_123_000L,
+            flightStartDate = 1_700_000_456_000L,
+        )
+
+        val data = shapeToFirestoreMergeData(shape)
+
+        assertEquals(120.0, data["radius"])
+        assertTrue(data["secondCoordinate"] is FieldValue)
+        assertTrue(data["polygonCoordinates"] is FieldValue)
+        assertTrue(data["polylineCoordinates"] is FieldValue)
+        assertTrue(data["height"] is FieldValue)
+        assertTrue(data["droneId"] is FieldValue)
+        assertTrue(data["flightEndDate"] is FieldValue)
+        assertTrue(data["deletedAt"] is FieldValue)
     }
 }
