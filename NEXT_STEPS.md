@@ -17,6 +17,8 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- Android 13+ back dispatcher manifest opt-in을 명시해 드론 관리 시트 back 동작 중 반복되던 `OnBackInvokedCallback is not enabled` 경고를 제거했다. `AndroidManifestContractTest`에 `android:enableOnBackInvokedCallback="true"` 계약을 추가했고, `:app:testDebugUnitTest --tests "*AndroidManifestContractTest"` 및 `:app:assembleDebug` 통과. 최신 debug APK 재설치 후 설정 탭 → 드론 관리 시트 → back smoke에서 MainActivity focus/PID 유지, ANR 없음, 해당 warning 재발 없음 확인.
+- 같은 실기기 `RFCW324TZ0Z`에서 저장 탭/설정 탭/드론 관리 시트 비파괴 회귀를 재확인했다. 저장 탭은 `저장 목록`, 정렬 칩 `비행시작일순`/`내림차순`, `활성화` 섹션과 visible saved rows가 렌더링됐고, 설정 탭은 `내 정보`, `로그인 / 회원가입`, `내 드론 관리하기`, `비행 환경`, KP/날씨/알림 섹션이 렌더링됐다. 드론 관리 시트는 `드론 관리`, `내 드론 목록`, 기존 드론 2개, `새 드론 추가`, `사용법` 섹션을 확인했다.
 - Firestore 크로스플랫폼 데이터 계약을 `FIRESTORE_CONTRACT.md`로 문서화하고 `README.md`/`MIGRATION_PLAN.md`에서 최신 계약 문서로 연결했다. Shape `shapeType`은 쓰기 소문자 raw value, 읽기 대소문자 무시 정책을 유지한다. `:app:testDebugUnitTest --tests "*ShapeTypeTest" --tests "*ShapeFirebaseStoreTest" --tests "*ShapeFirestoreParsingTest"` 통과.
 - 문서/패치노트 inline markdown 렌더링을 iOS `AttributedString(markdown: .inlineOnlyPreservingWhitespace)`처럼 중첩 링크/볼드 조합을 보존하도록 보정했다. `[**NOAA**](url)`와 `**[NOAA](url)**` 모두 link annotation과 bold style이 함께 유지된다. `:app:testDebugUnitTest --tests "*MarkdownInlineTextTest" --tests "*MarkdownParserTest" --tests "*DocumentEntryPolicyTest" --tests "*PatchNotesContentTest"` 및 `:app:assembleDebug` 통과.
 - 약관/개인정보 문서 시트의 header padding, divider thickness, error icon, empty/error spacing, error title color를 iOS 문서 시트 토큰에 맞춰 보정했다. `:app:testDebugUnitTest --tests "*DocumentEntryPolicyTest" --tests "*MarkdownInlineTextTest" --tests "*MarkdownParserTest" --tests "*PatchNotesContentTest"` 및 `:app:assembleDebug` 통과.

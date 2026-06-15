@@ -46,6 +46,7 @@
         android:name=".app.DronePassApplication"
         android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
+        android:enableOnBackInvokedCallback="true"
         android:fullBackupContent="@xml/backup_rules"
         android:forceDarkAllowed="false"
         android:icon="@mipmap/ic_launcher"

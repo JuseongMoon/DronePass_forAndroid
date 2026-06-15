@@ -33,6 +33,13 @@ class AndroidManifestContractTest {
     }
 
     @Test
+    fun `Application 은 Android 13 이상 back dispatcher 를 명시적으로 사용한다`() {
+        val manifest = parseManifest()
+
+        assertEquals("true", manifest.findApplication().getAttribute("android:enableOnBackInvokedCallback"))
+    }
+
+    @Test
     fun `FCM 과 로컬 알림 리시버는 외부에서 직접 실행되지 않는다`() {
         val manifest = parseManifest()
 
@@ -68,6 +75,10 @@ class AndroidManifestContractTest {
 
     private fun Document.findActivity(name: String): Element {
         return findElementByAndroidName(tagName = "activity", name = name)
+    }
+
+    private fun Document.findApplication(): Element {
+        return getElementsByTagName("application").item(0) as Element
     }
 
     private fun Document.findService(name: String): Element {
