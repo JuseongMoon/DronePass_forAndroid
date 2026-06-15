@@ -91,6 +91,22 @@ class FcmServiceTest {
     }
 
     @Test
+    fun `로컬 알림 수신 로그는 제목과 shapeId 원문을 노출하지 않는다`() {
+        val title = "비공개 도형 종료 알림"
+        val shapeId = "secret-shape-id"
+        val message = notificationReceivedLogMessage(
+            type = NotificationScheduler.TYPE_END_DATE,
+            title = title,
+            shapeId = shapeId,
+        )
+
+        assertFalse(message.contains(title))
+        assertFalse(message.contains(shapeId))
+        assertTrue(message.contains("titleLength=${title.length}"))
+        assertTrue(message.contains("hasShapeId=true"))
+    }
+
+    @Test
     fun `FCM 데이터에서 camelCase shapeId 를 알림 포커스 대상으로 추출한다`() {
         val shapeId = extractNotificationShapeId(
             mapOf(

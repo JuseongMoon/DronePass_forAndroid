@@ -26,7 +26,7 @@ class NotificationReceiver : BroadcastReceiver() {
         val body = intent.getStringExtra(NotificationScheduler.EXTRA_NOTIFICATION_BODY) ?: ""
         val shapeId = intent.getStringExtra(NotificationScheduler.EXTRA_SHAPE_ID)
 
-        Log.d(TAG, "알림 수신: type=$type, title=$title, shapeId=$shapeId")
+        Log.d(TAG, notificationReceivedLogMessage(type = type, title = title, shapeId = shapeId))
 
         foregroundNotificationForLocalDelivery(
             title = title,
@@ -80,4 +80,14 @@ class NotificationReceiver : BroadcastReceiver() {
 
         notificationManager.notify(notificationId, notification)
     }
+}
+
+internal fun notificationReceivedLogMessage(
+    type: String,
+    title: String?,
+    shapeId: String?,
+): String {
+    val titleLength = title?.length ?: 0
+    val hasShapeId = normalizeNotificationShapeId(shapeId) != null
+    return "알림 수신: type=$type, titleLength=$titleLength, hasShapeId=$hasShapeId"
 }
