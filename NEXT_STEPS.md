@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 날씨 정보 가이드의 드론 카테고리 선택기를 iOS `WeatherInfoView.droneCategorySelector` 토큰에 맞춰 보정했다. Android 정보 가이드에서 텍스트 `⌄` 대신 chevron 아이콘을 사용하고, 선택기 패딩을 iOS horizontal 8 / vertical 4, 아이콘 12dp 기준으로 고정했다. `:app:testDebugUnitTest --tests "*InfoGuideSheetsTest" --tests "*StringResourceCoverageTest"` 및 `:app:assembleDebug` 통과.
 - 시간별 날씨 예보의 순간 풍속 증가량을 iOS `WeatherManager.hourlyForecast.map`과 맞췄다. 현재 날씨 위험도 평가는 iOS처럼 돌풍값 누락 시 평균풍 x 1.3 추정을 유지하지만, 시간별 예보 데이터는 iOS처럼 관측 돌풍이 없으면 `gust = meanWind`로 보고 `gustDifference = 0`을 저장한다. `:app:testDebugUnitTest --tests "*GustDifferenceCalculatorTest" --tests "*WeatherRepositoryTest" --tests "*WeatherForecastParityTest"`, `:app:assembleDebug`, `:app:testDebugUnitTest` 통과.
 - 최신 HEAD `96b03d0` 기준으로 `:app:lintDebug`를 재실행해 통과 확인. 최초 샌드박스 실행은 Gradle wrapper cache lock(`/Users/david/.gradle/...zip.lck`) 접근 권한으로 실패했지만, 외부 권한 재실행은 `BUILD SUCCESSFUL`이며 lint report는 `app/build/reports/lint-results-debug.html`에 생성됐다.
 - iOS `ShapeFirebaseStore`와 Android `ShapeFirebaseStore`의 타입별 geometry 파싱을 재대조했다. iOS 실제 파서는 rectangle/polygon/polyline geometry가 없으면 nil로 둔 뒤 "있으면 검증"하는 관대한 상태지만, 공유 Firestore 계약은 타입별 geometry를 필수로 둔다. Android는 계약대로 rectangle `secondCoordinate`, polygon/polyline 좌표 최소 개수를 엄격히 유지하며, 이 차이는 Android 완화가 아니라 iOS 파서/검증 보강 후보로 기록한다.
