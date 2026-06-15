@@ -44,7 +44,6 @@ import java.util.Locale
 import java.util.TimeZone
 
 // ─── 색상 상수 ─────────────────────────────────────────────
-private val WarningYellow = Color(0xFFDAA520)
 private val ZoneGreen = Color(0xFF4CAF50)
 private val ZoneYellow = Color(0xFFFFC107)
 private val ZoneRed = Color(0xFFF44336)
@@ -60,6 +59,10 @@ internal val IosKpChartCardCornerRadius = 16.dp
 internal val IosKpChartCardPadding = 16.dp
 internal val IosKpChartCardSpacing = 12.dp
 internal val IosKpChartCardContainerColor = Color(0xFFF2F2F7)
+internal val IosKpChartPlaceholderHeight = 200.dp
+internal val IosKpChartErrorIconSize = 40.dp
+internal val IosKpChartErrorSpacing = 8.dp
+internal val IosKpChartErrorIconColor = Color(0xFFFF9500)
 
 internal enum class KpDataSource {
     GFZ_CURRENT,
@@ -386,7 +389,7 @@ private fun KpChartLoadingPlaceholder() {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(200.dp),
+            .height(IosKpChartPlaceholderHeight),
         contentAlignment = androidx.compose.ui.Alignment.Center,
     ) {
         CircularProgressIndicator()
@@ -398,17 +401,17 @@ private fun KpChartErrorPlaceholder(message: String) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .height(200.dp),
+            .height(IosKpChartPlaceholderHeight),
         horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
         Icon(
             imageVector = Icons.Default.Warning,
             contentDescription = null,
-            tint = WarningYellow,
-            modifier = Modifier.size(40.dp),
+            tint = IosKpChartErrorIconColor,
+            modifier = Modifier.size(IosKpChartErrorIconSize),
         )
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(IosKpChartErrorSpacing))
         Text(
             text = message,
             style = MaterialTheme.typography.labelSmall,
@@ -422,7 +425,7 @@ private fun KpChartNoDataPlaceholder() {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(200.dp),
+            .height(IosKpChartPlaceholderHeight),
         contentAlignment = androidx.compose.ui.Alignment.Center,
     ) {
         Text(

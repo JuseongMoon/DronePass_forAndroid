@@ -258,6 +258,10 @@ class KpChartsTest {
         assertEquals(16.dp, IosKpChartCardPadding)
         assertEquals(12.dp, IosKpChartCardSpacing)
         assertEquals(0xFFF2F2F7.toInt(), IosKpChartCardContainerColor.toArgb())
+        assertEquals(200.dp, IosKpChartPlaceholderHeight)
+        assertEquals(40.dp, IosKpChartErrorIconSize)
+        assertEquals(8.dp, IosKpChartErrorSpacing)
+        assertEquals(0xFFFF9500.toInt(), IosKpChartErrorIconColor.toArgb())
     }
 
     @Test
