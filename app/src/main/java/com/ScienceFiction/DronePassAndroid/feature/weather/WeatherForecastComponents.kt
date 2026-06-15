@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -79,6 +80,7 @@ internal val IosWeatherForecastCardCornerRadius = 16.dp
 internal val IosWeatherForecastCardPadding = 16.dp
 internal val IosWeatherForecastCardSpacing = 12.dp
 internal val IosWeatherForecastCardContainerColor = Color(0xFFF2F2F7)
+internal val IosCurrentWeatherEmptyStateHeight = 200.dp
 internal val IosWeatherReloadingIndicatorCornerRadius = 8.dp
 internal val IosWeatherReloadingIndicatorPadding = 8.dp
 internal val IosWeatherReloadingIndicatorSize = 16.dp
@@ -111,6 +113,8 @@ internal fun iosGustDifferenceThresholds(category: DroneCategory): Pair<Double, 
 
 enum class WarningIconType { None, Info, Caution, Warning }
 
+internal enum class CurrentWeatherContentState { Loading, Error, Data }
+
 internal fun resolveTemperatureWarningIcon(temperatureC: Double): WarningIconType = when {
     temperatureC < IosTemperatureLowCautionC -> WarningIconType.Caution
     temperatureC > IosTemperatureHighCautionC -> WarningIconType.Caution
@@ -138,6 +142,16 @@ internal fun resolveCriWarningIcon(cri: Double): WarningIconType = when {
 internal fun resolveGustDifferenceSubTextRes(level: GustDifferenceLevel): Int? =
     if (level == GustDifferenceLevel.LOCALIZED_GUST) R.string.weather_gust_warning else null
 
+internal fun resolveCurrentWeatherContentState(
+    hourlyForecast: List<HourlyWeatherData>,
+    isLoading: Boolean,
+    hasError: Boolean,
+): CurrentWeatherContentState = when {
+    hourlyForecast.isEmpty() && isLoading -> CurrentWeatherContentState.Loading
+    hourlyForecast.isEmpty() && hasError -> CurrentWeatherContentState.Error
+    else -> CurrentWeatherContentState.Data
+}
+
 /**
  * iOS `WeatherForecastView.currentWeatherCard` 1:1 정합.
  * 헤더(현재 날씨 + 드론 카테고리) + 큰 미리보기 + 7개 데이터 그리드 + 면책 문구.
@@ -148,6 +162,7 @@ internal fun CurrentWeatherSection(
     category: DroneCategory,
     onCategoryChanged: (DroneCategory) -> Unit,
     isLoading: Boolean,
+    error: WeatherError? = null,
     modifier: Modifier = Modifier,
     onWeatherInfoRequested: (WeatherInfoTopic) -> Unit = {},
 ) {
@@ -179,6 +194,11 @@ internal fun CurrentWeatherSection(
     val visibilityWarning = resolveNullableVisibilityWarningIcon(visibility)
     val criWarning = current?.cri?.let(::resolveCriWarningIcon) ?: WarningIconType.None
     val shouldShowReloadingIndicator = shouldShowWeatherReloadingIndicator(isLoading, data.hourlyForecast)
+    val contentState = resolveCurrentWeatherContentState(
+        hourlyForecast = data.hourlyForecast,
+        isLoading = isLoading,
+        hasError = error != null,
+    )
 
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -210,137 +230,187 @@ internal fun CurrentWeatherSection(
                 DroneCategoryMenu(category = category, onCategoryChanged = onCategoryChanged)
             }
 
-            Box {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    PreviewBlock(
-                        weatherIcon = WeatherCodeMapper.weatherCodeToIcon(current?.weatherCode ?: Int.MIN_VALUE),
-                        conditionText = current?.weatherCode
-                            ?.let(WeatherCodeMapper::weatherCodeToDescription)
-                            ?: stringResource(R.string.weather_unknown),
-                        temperatureText = formatNullableIosTemperatureDegrees(current?.temperature),
-                        temperatureColor = current?.temperature?.let(::interpolateTemperatureColor) ?: Color.Gray,
-                        maxTemperatureText = maxTemperatureText,
-                        minTemperatureText = minTemperatureText,
-                    )
-
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            WeatherDataCell(
-                                modifier = Modifier.weight(1f),
-                                icon = Icons.Default.Thermostat,
-                                iconColor = current?.temperature?.let(::interpolateTemperatureColor) ?: Color.Gray,
-                                label = stringResource(R.string.weather_temperature),
-                                value = formatNullableIosTemperatureDegrees(current?.temperature),
-                                warningIcon = tempWarning,
-                                onClick = { onWeatherInfoRequested(WeatherInfoTopic.Temperature) },
-                            )
-                            WeatherDataCell(
-                                modifier = Modifier.weight(1f),
-                                icon = Icons.Default.Air,
-                                iconColor = WindSpeedGreen,
-                                label = stringResource(R.string.weather_wind_speed),
-                                value = formatIosMetersPerSecond(current?.windSpeed),
-                                warningIcon = windWarning,
-                                onClick = { onWeatherInfoRequested(WeatherInfoTopic.WindSpeed) },
-                            )
-                        }
-                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            WeatherDataCell(
-                                modifier = Modifier.weight(1f),
-                                icon = Icons.Default.Navigation,
-                                iconColor = WindArrowTeal,
-                                label = stringResource(R.string.weather_wind_direction),
-                                value = current?.windDirection
-                                    ?.let { stringResource(resolveWindDirectionLabelRes(it)) }
-                                    ?: MissingWeatherValueText,
-                                rotation = current?.windDirection?.toFloat(),
-                            )
-                            WeatherDataCell(
-                                modifier = Modifier.weight(1f),
-                                icon = Icons.Default.Storm,
-                                iconColor = GustOrange,
-                                label = stringResource(R.string.weather_gust_difference),
-                                value = formatIosMetersPerSecond(gustDiff),
-                                warningIcon = gustWarning,
-                                subText = gustSubText?.let { stringResource(it) },
-                                onClick = { onWeatherInfoRequested(WeatherInfoTopic.GustDifference) },
-                            )
-                        }
-                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            WeatherDataCell(
-                                modifier = Modifier.weight(1f),
-                                icon = Icons.Default.WaterDrop,
-                                iconColor = PrecipitationBlue,
-                                label = stringResource(R.string.weather_precipitation),
-                                value = formatIosPrecipitationIntensity(current?.precipitation),
-                                warningIcon = precipWarning,
-                                onClick = { onWeatherInfoRequested(WeatherInfoTopic.Precipitation) },
-                            )
-                            WeatherDataCell(
-                                modifier = Modifier.weight(1f),
-                                icon = Icons.Default.Visibility,
-                                iconColor = VisibilityPurple,
-                                label = stringResource(R.string.weather_visibility),
-                                value = formatNullableIosVisibilityKilometers(visibility),
-                                warningIcon = visibilityWarning,
-                                onClick = { onWeatherInfoRequested(WeatherInfoTopic.Visibility) },
-                            )
-                        }
-                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            WeatherDataCell(
-                                modifier = Modifier.weight(1f),
-                                icon = Icons.Default.Opacity,
-                                iconColor = CriCyan,
-                                label = stringResource(R.string.weather_cri),
-                                value = formatIosCri(current?.cri),
-                                warningIcon = criWarning,
-                                onClick = { onWeatherInfoRequested(WeatherInfoTopic.Cri) },
-                            )
-                            Spacer(modifier = Modifier.weight(1f))
-                        }
-                    }
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End,
-                        verticalAlignment = Alignment.Top,
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Info,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                            modifier = Modifier.size(12.dp),
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = stringResource(R.string.weather_disclaimer),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                            textAlign = TextAlign.End,
-                        )
-                    }
+            when (contentState) {
+                CurrentWeatherContentState.Loading -> CurrentWeatherLoadingState()
+                CurrentWeatherContentState.Error -> {
+                    val message = error?.formatArg?.let { formatArg ->
+                        stringResource(error.messageRes, formatArg)
+                    } ?: error?.let {
+                        stringResource(it.messageRes)
+                    }.orEmpty()
+                    CurrentWeatherErrorState(message = message)
                 }
-
-                if (shouldShowReloadingIndicator) {
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .clip(RoundedCornerShape(IosWeatherReloadingIndicatorCornerRadius))
-                            .background(
-                                IosWeatherForecastCardContainerColor.copy(
-                                    alpha = IosWeatherReloadingIndicatorBackgroundAlpha,
-                                ),
+                CurrentWeatherContentState.Data -> {
+                    Box {
+                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            PreviewBlock(
+                                weatherIcon = WeatherCodeMapper.weatherCodeToIcon(current?.weatherCode ?: Int.MIN_VALUE),
+                                conditionText = current?.weatherCode
+                                    ?.let(WeatherCodeMapper::weatherCodeToDescription)
+                                    ?: stringResource(R.string.weather_unknown),
+                                temperatureText = formatNullableIosTemperatureDegrees(current?.temperature),
+                                temperatureColor = current?.temperature?.let(::interpolateTemperatureColor) ?: Color.Gray,
+                                maxTemperatureText = maxTemperatureText,
+                                minTemperatureText = minTemperatureText,
                             )
-                            .padding(IosWeatherReloadingIndicatorPadding),
-                    ) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(IosWeatherReloadingIndicatorSize),
-                            strokeWidth = IosWeatherReloadingIndicatorStrokeWidth,
-                        )
+
+                            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    WeatherDataCell(
+                                        modifier = Modifier.weight(1f),
+                                        icon = Icons.Default.Thermostat,
+                                        iconColor = current?.temperature?.let(::interpolateTemperatureColor) ?: Color.Gray,
+                                        label = stringResource(R.string.weather_temperature),
+                                        value = formatNullableIosTemperatureDegrees(current?.temperature),
+                                        warningIcon = tempWarning,
+                                        onClick = { onWeatherInfoRequested(WeatherInfoTopic.Temperature) },
+                                    )
+                                    WeatherDataCell(
+                                        modifier = Modifier.weight(1f),
+                                        icon = Icons.Default.Air,
+                                        iconColor = WindSpeedGreen,
+                                        label = stringResource(R.string.weather_wind_speed),
+                                        value = formatIosMetersPerSecond(current?.windSpeed),
+                                        warningIcon = windWarning,
+                                        onClick = { onWeatherInfoRequested(WeatherInfoTopic.WindSpeed) },
+                                    )
+                                }
+                                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    WeatherDataCell(
+                                        modifier = Modifier.weight(1f),
+                                        icon = Icons.Default.Navigation,
+                                        iconColor = WindArrowTeal,
+                                        label = stringResource(R.string.weather_wind_direction),
+                                        value = current?.windDirection
+                                            ?.let { stringResource(resolveWindDirectionLabelRes(it)) }
+                                            ?: MissingWeatherValueText,
+                                        rotation = current?.windDirection?.toFloat(),
+                                    )
+                                    WeatherDataCell(
+                                        modifier = Modifier.weight(1f),
+                                        icon = Icons.Default.Storm,
+                                        iconColor = GustOrange,
+                                        label = stringResource(R.string.weather_gust_difference),
+                                        value = formatIosMetersPerSecond(gustDiff),
+                                        warningIcon = gustWarning,
+                                        subText = gustSubText?.let { stringResource(it) },
+                                        onClick = { onWeatherInfoRequested(WeatherInfoTopic.GustDifference) },
+                                    )
+                                }
+                                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    WeatherDataCell(
+                                        modifier = Modifier.weight(1f),
+                                        icon = Icons.Default.WaterDrop,
+                                        iconColor = PrecipitationBlue,
+                                        label = stringResource(R.string.weather_precipitation),
+                                        value = formatIosPrecipitationIntensity(current?.precipitation),
+                                        warningIcon = precipWarning,
+                                        onClick = { onWeatherInfoRequested(WeatherInfoTopic.Precipitation) },
+                                    )
+                                    WeatherDataCell(
+                                        modifier = Modifier.weight(1f),
+                                        icon = Icons.Default.Visibility,
+                                        iconColor = VisibilityPurple,
+                                        label = stringResource(R.string.weather_visibility),
+                                        value = formatNullableIosVisibilityKilometers(visibility),
+                                        warningIcon = visibilityWarning,
+                                        onClick = { onWeatherInfoRequested(WeatherInfoTopic.Visibility) },
+                                    )
+                                }
+                                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    WeatherDataCell(
+                                        modifier = Modifier.weight(1f),
+                                        icon = Icons.Default.Opacity,
+                                        iconColor = CriCyan,
+                                        label = stringResource(R.string.weather_cri),
+                                        value = formatIosCri(current?.cri),
+                                        warningIcon = criWarning,
+                                        onClick = { onWeatherInfoRequested(WeatherInfoTopic.Cri) },
+                                    )
+                                    Spacer(modifier = Modifier.weight(1f))
+                                }
+                            }
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.End,
+                                verticalAlignment = Alignment.Top,
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Info,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                    modifier = Modifier.size(12.dp),
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = stringResource(R.string.weather_disclaimer),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                    textAlign = TextAlign.End,
+                                )
+                            }
+                        }
+
+                        if (shouldShowReloadingIndicator) {
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .clip(RoundedCornerShape(IosWeatherReloadingIndicatorCornerRadius))
+                                    .background(
+                                        IosWeatherForecastCardContainerColor.copy(
+                                            alpha = IosWeatherReloadingIndicatorBackgroundAlpha,
+                                        ),
+                                    )
+                                    .padding(IosWeatherReloadingIndicatorPadding),
+                            ) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(IosWeatherReloadingIndicatorSize),
+                                    strokeWidth = IosWeatherReloadingIndicatorStrokeWidth,
+                                )
+                            }
+                        }
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun CurrentWeatherLoadingState() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(IosCurrentWeatherEmptyStateHeight),
+        contentAlignment = Alignment.Center,
+    ) {
+        CircularProgressIndicator()
+    }
+}
+
+@Composable
+private fun CurrentWeatherErrorState(message: String) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(IosCurrentWeatherEmptyStateHeight)
+            .padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Icon(
+            imageVector = Icons.Default.Warning,
+            contentDescription = null,
+            tint = GustOrange,
+            modifier = Modifier.size(40.dp),
+        )
+        Text(
+            text = message,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
     }
 }
 

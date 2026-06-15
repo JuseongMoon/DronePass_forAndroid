@@ -106,6 +106,7 @@ class WeatherForecastParityTest {
         assertEquals(16.dp, IosWeatherForecastCardPadding)
         assertEquals(12.dp, IosWeatherForecastCardSpacing)
         assertEquals(0xFFF2F2F7.toInt(), IosWeatherForecastCardContainerColor.toArgb())
+        assertEquals(200.dp, IosCurrentWeatherEmptyStateHeight)
         assertEquals(16.dp, IosWeatherChartCardCornerRadius)
         assertEquals(16.dp, IosWeatherChartCardPadding)
         assertEquals(12.dp, IosWeatherChartCardSpacing)
@@ -139,6 +140,50 @@ class WeatherForecastParityTest {
         assertFalse(shouldShowWeatherReloadingIndicator(isLoading = false, listOf(hourlyWeather())))
         assertFalse(shouldShowWeatherReloadingIndicator(isLoading = true, emptyList()))
         assertTrue(shouldShowWeatherReloadingIndicator(isLoading = true, listOf(hourlyWeather())))
+    }
+
+    @Test
+    fun `current weather card empty forecast state matches iOS branch priority`() {
+        assertEquals(
+            CurrentWeatherContentState.Loading,
+            resolveCurrentWeatherContentState(
+                hourlyForecast = emptyList(),
+                isLoading = true,
+                hasError = false,
+            ),
+        )
+        assertEquals(
+            CurrentWeatherContentState.Loading,
+            resolveCurrentWeatherContentState(
+                hourlyForecast = emptyList(),
+                isLoading = true,
+                hasError = true,
+            ),
+        )
+        assertEquals(
+            CurrentWeatherContentState.Error,
+            resolveCurrentWeatherContentState(
+                hourlyForecast = emptyList(),
+                isLoading = false,
+                hasError = true,
+            ),
+        )
+        assertEquals(
+            CurrentWeatherContentState.Data,
+            resolveCurrentWeatherContentState(
+                hourlyForecast = emptyList(),
+                isLoading = false,
+                hasError = false,
+            ),
+        )
+        assertEquals(
+            CurrentWeatherContentState.Data,
+            resolveCurrentWeatherContentState(
+                hourlyForecast = listOf(hourlyWeather()),
+                isLoading = true,
+                hasError = true,
+            ),
+        )
     }
 
     @Test

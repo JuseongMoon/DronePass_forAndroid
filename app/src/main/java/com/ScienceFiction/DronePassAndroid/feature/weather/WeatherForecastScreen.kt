@@ -230,6 +230,7 @@ fun WeatherForecastContent(
                         category = selectedCategory,
                         onCategoryChanged = { viewModel.setCategory(it) },
                         isLoading = isLoading,
+                        error = error,
                         lastUpdateTime = lastUpdateTime,
                         onWeatherInfoRequested = onWeatherInfoRequested,
                     )
@@ -251,6 +252,7 @@ private fun WeatherForecastBody(
     category: DroneCategory,
     onCategoryChanged: (DroneCategory) -> Unit,
     isLoading: Boolean,
+    error: WeatherError?,
     lastUpdateTime: Long?,
     onWeatherInfoRequested: (WeatherInfoTopic) -> Unit,
 ) {
@@ -278,6 +280,7 @@ private fun WeatherForecastBody(
                 category = category,
                 onCategoryChanged = onCategoryChanged,
                 isLoading = isLoading,
+                error = error,
                 onWeatherInfoRequested = onWeatherInfoRequested,
             )
         }
