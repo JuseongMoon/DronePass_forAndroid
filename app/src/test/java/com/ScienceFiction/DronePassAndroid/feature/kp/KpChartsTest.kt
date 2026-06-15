@@ -154,6 +154,22 @@ class KpChartsTest {
     }
 
     @Test
+    fun `KP forecast body and current card tokens match iOS KPForecastView`() {
+        assertEquals(16.dp, IosKpForecastContentHorizontalPadding)
+        assertEquals(16.dp, IosKpForecastContentVerticalPadding)
+        assertEquals(20.dp, IosKpForecastContentSpacing)
+        assertEquals(12.dp, IosCurrentKpSectionSpacing)
+        assertEquals(16.dp, IosCurrentKpCardCornerRadius)
+        assertEquals(16.dp, IosCurrentKpCardPadding)
+        assertEquals(12.dp, IosCurrentKpCardHorizontalSpacing)
+        assertEquals(10.dp, IosCurrentKpDetailLeadingPadding)
+        assertEquals(8.dp, IosCurrentKpDetailSpacing)
+        assertEquals(6.dp, IosCurrentKpLevelRowSpacing)
+        assertEquals(20.dp, IosCurrentKpLevelIconSize)
+        assertEquals(0.1f, IosCurrentKpCardBackgroundAlpha, 0f)
+    }
+
+    @Test
     fun `current KP card value keeps iOS hyphen fallback when data is missing`() {
         assertEquals("-", formatCurrentKpValue(null))
         assertEquals(

@@ -68,6 +68,18 @@ import java.util.Locale
 
 internal const val KpCurrentValueFontSizeSp = 60
 internal const val KpToolbarShowsLoadingIndicator = false
+internal val IosKpForecastContentHorizontalPadding = 16.dp
+internal val IosKpForecastContentVerticalPadding = 16.dp
+internal val IosKpForecastContentSpacing = 20.dp
+internal val IosCurrentKpSectionSpacing = 12.dp
+internal val IosCurrentKpCardCornerRadius = 16.dp
+internal val IosCurrentKpCardPadding = 16.dp
+internal val IosCurrentKpCardHorizontalSpacing = 12.dp
+internal val IosCurrentKpDetailLeadingPadding = 10.dp
+internal val IosCurrentKpDetailSpacing = 8.dp
+internal val IosCurrentKpLevelRowSpacing = 6.dp
+internal val IosCurrentKpLevelIconSize = 20.dp
+internal const val IosCurrentKpCardBackgroundAlpha = 0.1f
 
 @Suppress("UNUSED_PARAMETER")
 internal fun isKpRefreshActionEnabled(isLoading: Boolean): Boolean = true
@@ -233,8 +245,11 @@ fun KpForecastContent(
     Box(modifier = modifier.fillMaxSize()) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = PaddingValues(
+                horizontal = IosKpForecastContentHorizontalPadding,
+                vertical = IosKpForecastContentVerticalPadding,
+            ),
+            verticalArrangement = Arrangement.spacedBy(IosKpForecastContentSpacing),
         ) {
             // ① 현재 Kp 지수 카드 (섹션 헤더 + 좌우 분할)
             item {
@@ -279,7 +294,7 @@ private fun CurrentKpSection(
     currentKp: KpIndexData?,
     kpLevel: KpLevel,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(IosCurrentKpSectionSpacing)) {
         // Section header (카드 바깥)
         Text(
             text = stringResource(R.string.kp_section_current),
@@ -290,17 +305,17 @@ private fun CurrentKpSection(
 
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(IosCurrentKpCardCornerRadius),
             colors = CardDefaults.cardColors(
-                containerColor = Color(kpLevel.color.toInt()).copy(alpha = 0.1f),
+                containerColor = Color(kpLevel.color.toInt()).copy(alpha = IosCurrentKpCardBackgroundAlpha),
             ),
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
+                    .padding(IosCurrentKpCardPadding),
                 verticalAlignment = Alignment.Top,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(IosCurrentKpCardHorizontalSpacing),
             ) {
                 // 좌측: 큰 숫자 (iOS .system(size: 60, weight: .bold, design: .rounded))
                 Text(
@@ -314,18 +329,18 @@ private fun CurrentKpSection(
                 Column(
                     modifier = Modifier
                         .weight(1f)
-                        .padding(start = 4.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                        .padding(start = IosCurrentKpDetailLeadingPadding),
+                    verticalArrangement = Arrangement.spacedBy(IosCurrentKpDetailSpacing),
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        horizontalArrangement = Arrangement.spacedBy(IosCurrentKpLevelRowSpacing),
                     ) {
                         Icon(
                             imageVector = kpLevelIcon(kpLevel),
                             contentDescription = null,
                             tint = Color(kpLevel.color.toInt()),
-                            modifier = Modifier.size(20.dp),
+                            modifier = Modifier.size(IosCurrentKpLevelIconSize),
                         )
                         Text(
                             text = stringResource(kpLevelNameRes(kpLevel)),
