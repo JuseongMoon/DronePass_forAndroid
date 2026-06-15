@@ -57,7 +57,7 @@
 - 로그인 오류 다이얼로그 본문도 iOS `LoginView`의 `localizedDescription ?? unknown` 동작처럼 빈 문자열/공백 문자열을 fallback으로 대체하지 않고 그대로 표시하도록 보정. `:app:testDebugUnitTest --tests "*AuthViewModelForegroundSyncTest"` 및 `:app:assembleDebug` 통과.
 - Firestore `shapeType` 크로스플랫폼 계약을 최신 HEAD에서 재확인. Android 쓰기는 소문자 raw value만 사용하고, 읽기는 레거시 `CIRCLE`/`Circle`을 허용한다. `:app:testDebugUnitTest --tests "*ShapeTypeTest" --tests "*ShapeFirestoreParsingTest" --tests "*ShapeFirebaseStoreTest"` 통과.
 - `FlightPermissionResult.details`를 iOS처럼 금지/승인필요/주의 결과에는 `레이어명: zoneCode 또는 레이어명` 목록으로 채우고, 비행 가능 결과에는 빈 목록을 유지하도록 보정. `:app:testDebugUnitTest --tests "*FlightZoneCalculatorTest" --tests "*VWorld*Test" --tests "*FlightZone*Test"` 및 `:app:assembleDebug` 통과.
-- Shape/Sketch Firestore optional 숫자 읽기를 iOS처럼 관대하게 보정
+- Shape/Sketch Firestore optional 숫자 읽기를 iOS처럼 관대하게 보정했다. 쓰기는 기존처럼 Double 표준을 유지하되, 읽기에서는 Firestore가 정수 Number로 돌려주는 `radius`/`height`/`strokeWidth`/`opacity`를 Double로 복구하고 문자열은 계속 누락/default 처리한다. 좌표와 Timestamp 필드는 공유 계약대로 엄격하게 유지한다. `:app:testDebugUnitTest --tests "*ShapeFirestoreParsingTest" --tests "*SketchFirebaseStoreTest"` 및 `:app:assembleDebug` 통과.
 - 스케치 전체 삭제 영어 확인 메시지의 단수 분기도 iOS와 같은 문장으로 보정
 - `5f2990a fix: tolerate partial shape coordinate arrays`
 - `3abc1d7 fix: filter invalid vworld geometry rings`
