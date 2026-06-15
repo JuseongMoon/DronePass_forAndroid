@@ -46,6 +46,12 @@ internal enum class ForegroundCloudSyncAction {
     REQUEST_USER_CONFIRMATION,
 }
 
+internal sealed interface ForegroundSyncDialogState {
+    data object Loading : ForegroundSyncDialogState
+    data object Complete : ForegroundSyncDialogState
+    data class Error(val message: String) : ForegroundSyncDialogState
+}
+
 internal enum class AuthProviderSignInAction {
     START,
     IGNORE,
@@ -65,6 +71,11 @@ private data class PendingAccountSwitchLogin(
     val providerName: String,
     val selectAllDronesAfterSync: Boolean,
 )
+
+private sealed interface FullSyncResult {
+    data object Success : FullSyncResult
+    data class Failure(val message: String) : FullSyncResult
+}
 
 internal fun resolveAuthProviderSignInAction(authState: AuthState): AuthProviderSignInAction {
     return when (authState) {
@@ -177,6 +188,13 @@ class AuthViewModel @Inject constructor(
     )
     val foregroundSyncConfirmation: SharedFlow<Unit> = _foregroundSyncConfirmation.asSharedFlow()
 
+    private val _foregroundSyncDialogState = MutableSharedFlow<ForegroundSyncDialogState>(
+        replay = 0,
+        extraBufferCapacity = 1,
+    )
+    internal val foregroundSyncDialogState: SharedFlow<ForegroundSyncDialogState> =
+        _foregroundSyncDialogState.asSharedFlow()
+
     private val _accountSwitchConfirmation = MutableStateFlow<AccountSwitchConfirmationRequest?>(null)
     val accountSwitchConfirmation: StateFlow<AccountSwitchConfirmationRequest?> =
         _accountSwitchConfirmation.asStateFlow()
@@ -249,7 +267,15 @@ class AuthViewModel @Inject constructor(
             if (action == ForegroundCloudSyncAction.REQUEST_USER_CONFIRMATION) {
                 Log.d(TAG, "포그라운드 복귀: 사용자 확인 후 실시간 동기화 리스너 복구 userId=${user.uid}")
                 realtimeSyncManager.startListening(user.uid)
-                performFullSync(selectAllDronesAfterSync = false)
+                _foregroundSyncDialogState.tryEmit(ForegroundSyncDialogState.Loading)
+                when (val result = performFullSync(selectAllDronesAfterSync = false)) {
+                    FullSyncResult.Success ->
+                        _foregroundSyncDialogState.tryEmit(ForegroundSyncDialogState.Complete)
+                    is FullSyncResult.Failure ->
+                        _foregroundSyncDialogState.tryEmit(
+                            ForegroundSyncDialogState.Error(result.message),
+                        )
+                }
             }
         }
     }
@@ -517,7 +543,7 @@ class AuthViewModel @Inject constructor(
      * 모든 Repository에 대해 Firebase 양방향 동기화 실행
      * 로그인 성공 시 및 앱 시작 시(이미 로그인 상태) 호출
      */
-    private suspend fun performFullSync(selectAllDronesAfterSync: Boolean) {
+    private suspend fun performFullSync(selectAllDronesAfterSync: Boolean): FullSyncResult {
         try {
             Log.d(TAG, "Firebase 양방향 동기화 시작")
             shapeRepository.performFullSync()
@@ -536,9 +562,13 @@ class AuthViewModel @Inject constructor(
                 preferences.recordSketchRealtimeSyncSuccess(sketchSyncTime)
             }
             Log.d(TAG, "Firebase 양방향 동기화 완료")
+            return FullSyncResult.Success
         } catch (e: Exception) {
             Log.e(TAG, "Firebase 동기화 실패", e)
             _syncMessage.tryEmit(appContext.getString(R.string.login_sync_failed))
+            return FullSyncResult.Failure(
+                e.localizedMessage ?: appContext.getString(R.string.common_unknown_error),
+            )
         }
     }
 

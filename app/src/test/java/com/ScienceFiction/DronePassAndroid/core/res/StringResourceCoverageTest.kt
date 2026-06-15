@@ -102,10 +102,28 @@ class StringResourceCoverageTest {
             "다른 기기에서 변경사항이 감지되었습니다.\\n도형 정보를 최신화합니다.",
             stringResourceValue("values/strings.xml", "sync_alert_detected_message"),
         )
+        assertEquals("동기화 중…", stringResourceValue("values/strings.xml", "sync_loading_title"))
+        assertEquals("최신 데이터를 가져오는 중입니다.", stringResourceValue("values/strings.xml", "sync_loading_message"))
+        assertEquals("동기화 완료", stringResourceValue("values/strings.xml", "sync_complete_title"))
+        assertEquals("도형 정보가 최신화되었습니다.", stringResourceValue("values/strings.xml", "sync_complete_message"))
+        assertEquals("동기화 실패", stringResourceValue("values/strings.xml", "sync_error_title"))
+        assertEquals(
+            "변경사항을 가져오는 중 오류가 발생했습니다.\\n%1\$s",
+            stringResourceValue("values/strings.xml", "sync_error_message"),
+        )
         assertEquals("Changes Detected", stringResourceValue("values-en/strings.xml", "sync_alert_detected_title"))
         assertEquals(
             "Changes detected from another device.\\nUpdating shape data.",
             stringResourceValue("values-en/strings.xml", "sync_alert_detected_message"),
+        )
+        assertEquals("Syncing…", stringResourceValue("values-en/strings.xml", "sync_loading_title"))
+        assertEquals("Fetching latest data.", stringResourceValue("values-en/strings.xml", "sync_loading_message"))
+        assertEquals("Sync Complete", stringResourceValue("values-en/strings.xml", "sync_complete_title"))
+        assertEquals("Shape data has been updated.", stringResourceValue("values-en/strings.xml", "sync_complete_message"))
+        assertEquals("Sync Failed", stringResourceValue("values-en/strings.xml", "sync_error_title"))
+        assertEquals(
+            "Failed to fetch changes.\\n%1\$s",
+            stringResourceValue("values-en/strings.xml", "sync_error_message"),
         )
     }
 

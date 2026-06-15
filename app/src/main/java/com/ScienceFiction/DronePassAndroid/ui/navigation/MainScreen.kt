@@ -46,6 +46,7 @@ import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -87,6 +88,7 @@ import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.core.ui.currentWindowSizeDp
 import com.ScienceFiction.DronePassAndroid.feature.auth.AuthState
 import com.ScienceFiction.DronePassAndroid.feature.auth.AuthViewModel
+import com.ScienceFiction.DronePassAndroid.feature.auth.ForegroundSyncDialogState
 import com.ScienceFiction.DronePassAndroid.feature.map.MapViewModel
 import com.ScienceFiction.DronePassAndroid.feature.saved.SavedListScreen
 import com.ScienceFiction.DronePassAndroid.feature.saved.SavedListViewModel
@@ -422,6 +424,7 @@ internal fun MainScreen(
     var foregroundNotification by remember { mutableStateOf<ForegroundNotification?>(null) }
     var displayedForegroundNotification by remember { mutableStateOf<ForegroundNotification?>(null) }
     var showForegroundSyncConfirmation by remember { mutableStateOf(false) }
+    var foregroundSyncDialog by remember { mutableStateOf<ForegroundSyncDialogState?>(null) }
 
     fun dismissSavedListOverlay() {
         showSavedListOverlay = false
@@ -500,9 +503,22 @@ internal fun MainScreen(
         }
     }
 
+    LaunchedEffect(Unit) {
+        authViewModel.foregroundSyncDialogState.collect { dialogState ->
+            foregroundSyncDialog = dialogState
+        }
+    }
+
     LaunchedEffect(foregroundNotification, isLoginScreen) {
         foregroundNotification?.takeIf { !isLoginScreen }?.let { notification ->
             displayedForegroundNotification = notification
+        }
+    }
+
+    LaunchedEffect(isLoginScreen) {
+        if (isLoginScreen) {
+            showForegroundSyncConfirmation = false
+            foregroundSyncDialog = null
         }
     }
 
@@ -669,6 +685,70 @@ internal fun MainScreen(
                 dismissButton = {
                     TextButton(onClick = { showForegroundSyncConfirmation = false }) {
                         Text(stringResource(R.string.common_cancel))
+                    }
+                },
+            )
+        }
+
+        foregroundSyncDialog?.takeIf { !isLoginScreen }?.let { dialogState ->
+            ForegroundSyncDialog(
+                dialogState = dialogState,
+                onDismiss = { foregroundSyncDialog = null },
+            )
+        }
+    }
+}
+
+@Composable
+private fun ForegroundSyncDialog(
+    dialogState: ForegroundSyncDialogState,
+    onDismiss: () -> Unit,
+) {
+    when (dialogState) {
+        ForegroundSyncDialogState.Loading -> {
+            AlertDialog(
+                onDismissRequest = {},
+                title = { Text(stringResource(R.string.sync_loading_title)) },
+                text = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            strokeWidth = 2.dp,
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Text(stringResource(R.string.sync_loading_message))
+                    }
+                },
+                confirmButton = {},
+            )
+        }
+        ForegroundSyncDialogState.Complete -> {
+            AlertDialog(
+                onDismissRequest = onDismiss,
+                title = { Text(stringResource(R.string.sync_complete_title)) },
+                text = { Text(stringResource(R.string.sync_complete_message)) },
+                confirmButton = {
+                    TextButton(onClick = onDismiss) {
+                        Text(stringResource(R.string.common_confirm))
+                    }
+                },
+            )
+        }
+        is ForegroundSyncDialogState.Error -> {
+            AlertDialog(
+                onDismissRequest = onDismiss,
+                title = { Text(stringResource(R.string.sync_error_title)) },
+                text = {
+                    Text(
+                        stringResource(
+                            R.string.sync_error_message,
+                            dialogState.message,
+                        ),
+                    )
+                },
+                confirmButton = {
+                    TextButton(onClick = onDismiss) {
+                        Text(stringResource(R.string.common_confirm))
                     }
                 },
             )

@@ -723,6 +723,12 @@
     <string name="profile_sync_alert_title">실시간 클라우드 동기화</string>
     <string name="sync_alert_detected_title">변경사항 감지</string>
     <string name="sync_alert_detected_message">다른 기기에서 변경사항이 감지되었습니다.\n도형 정보를 최신화합니다.</string>
+    <string name="sync_loading_title">동기화 중…</string>
+    <string name="sync_loading_message">최신 데이터를 가져오는 중입니다.</string>
+    <string name="sync_complete_title">동기화 완료</string>
+    <string name="sync_complete_message">도형 정보가 최신화되었습니다.</string>
+    <string name="sync_error_title">동기화 실패</string>
+    <string name="sync_error_message">변경사항을 가져오는 중 오류가 발생했습니다.\n%1$s</string>
     <plurals name="profile_sync_success">
         <item quantity="other">%1$d개 도형의 동기화가 완료되었습니다.</item>
     </plurals>

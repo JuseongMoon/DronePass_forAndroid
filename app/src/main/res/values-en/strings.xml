@@ -401,6 +401,12 @@
     <string name="profile_sync_alert_title">Real-time Cloud Sync</string>
     <string name="sync_alert_detected_title">Changes Detected</string>
     <string name="sync_alert_detected_message">Changes detected from another device.\nUpdating shape data.</string>
+    <string name="sync_loading_title">Syncing…</string>
+    <string name="sync_loading_message">Fetching latest data.</string>
+    <string name="sync_complete_title">Sync Complete</string>
+    <string name="sync_complete_message">Shape data has been updated.</string>
+    <string name="sync_error_title">Sync Failed</string>
+    <string name="sync_error_message">Failed to fetch changes.\n%1$s</string>
     <plurals name="profile_sync_success">
         <item quantity="one">Sync completed for %1$d shape.</item>
         <item quantity="other">Sync completed for %1$d shapes.</item>
