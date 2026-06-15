@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 현재 날씨 카드의 드론 카테고리 선택 동작을 iOS `fetchWeatherData(forceRefresh: true)` 흐름과 맞췄다. Android도 저장된 좌표 기준선이 있으면 카테고리 선택 시 로딩 상태를 켜고 에러를 초기화한 뒤 weather cache를 무효화해 같은 카테고리 재선택도 실제 새로고침 경로를 타도록 보정했다. `:app:testDebugUnitTest --tests "*WeatherForecastParityTest"` 및 `:app:assembleDebug` 통과.
 - 현재 날씨 카드 하단 면책 문구를 iOS `WeatherForecastView`의 top 8pt padding, 12pt info icon, 4pt spacing, secondary color alpha 1.0 기준으로 보정했다. 기존 Android의 0.7 alpha로 더 흐리게 보이던 처리를 제거하고 회귀 테스트로 고정했다. `:app:testDebugUnitTest --tests "*WeatherForecastParityTest"` 및 `:app:assembleDebug` 통과.
 - 현재 날씨 데이터 그리드 셀을 iOS `weatherDataCard`의 `tertiarySystemBackground`/12pt radius/12pt padding/32pt 아이콘 슬롯/24pt 아이콘/16pt warning icon 기준으로 보정했다. Android Material surface 의존을 제거하고 셀 배경 `#FFFFFF`, 총 최소 높이 62dp를 회귀 테스트로 고정했다. `:app:testDebugUnitTest --tests "*WeatherForecastParityTest"` 및 `:app:assembleDebug` 통과.
 - 현재 날씨 카드의 큰 미리보기 블록을 iOS `WeatherForecastView`의 `tertiarySystemBackground`/12pt radius/16pt padding/64pt 아이콘 + 좌우 15pt padding 기준으로 보정했다. Android Material surface 의존을 제거하고 iOS light `#FFFFFF` 배경, 94dp 아이콘 슬롯 폭을 회귀 테스트로 고정했다. `:app:testDebugUnitTest --tests "*WeatherForecastParityTest"` 및 `:app:assembleDebug` 통과.
