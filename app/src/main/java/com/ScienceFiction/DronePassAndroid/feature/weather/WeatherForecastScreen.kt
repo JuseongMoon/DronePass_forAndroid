@@ -207,7 +207,9 @@ fun WeatherForecastContent(
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
                         Text(
-                            text = stringResource(currentError.messageRes),
+                            text = currentError.formatArg?.let { formatArg ->
+                                stringResource(currentError.messageRes, formatArg)
+                            } ?: stringResource(currentError.messageRes),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.error,
                         )

@@ -662,6 +662,7 @@
     <string name="weather_noon">Noon</string>
     <string name="weather_midnight">Midnight</string>
     <string name="weather_error_load_failed">Unable to load weather data</string>
+    <string name="weather_error_load_failed_detail">Failed to fetch weather information: %1$s</string>
     <string name="weather_error_unknown">An unknown error occurred</string>
     <string name="weather_error_location_permission">Location permission is required</string>
     <string name="weather_error_location_unavailable">Unable to get location</string>

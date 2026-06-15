@@ -268,8 +268,8 @@ class WeatherViewModel @Inject constructor(
                     }
                 }
             }
-            .onFailure { _ ->
-                _error.value = WeatherError.LoadFailed
+            .onFailure { cause ->
+                _error.value = WeatherError.LoadFailed(cause.localizedMessage)
             }
         _isLoading.value = false
     }
@@ -303,7 +303,10 @@ internal fun resolveWeatherLocationAccuracy(accuracyMeters: Float?): WeatherLoca
  *
  * UI 는 [messageRes] 를 `stringResource()` 로 변환해 다국어 표시한다 (D-M9).
  */
-sealed class WeatherError(@StringRes val messageRes: Int) {
+sealed class WeatherError(
+    @StringRes val messageRes: Int,
+    val formatArg: String? = null,
+) {
     /** 위치 권한 거부됨 (Android 6.0+ runtime permission) */
     data object LocationPermission : WeatherError(R.string.weather_error_location_permission)
 
@@ -311,7 +314,16 @@ sealed class WeatherError(@StringRes val messageRes: Int) {
     data object LocationUnavailable : WeatherError(R.string.weather_error_location_unavailable)
 
     /** Open-Meteo API 호출 실패 (네트워크/서버 오류) */
-    data object LoadFailed : WeatherError(R.string.weather_error_load_failed)
+    data class LoadFailed(
+        val detail: String?,
+    ) : WeatherError(
+        messageRes = if (detail == null) {
+            R.string.weather_error_load_failed
+        } else {
+            R.string.weather_error_load_failed_detail
+        },
+        formatArg = detail,
+    )
 
     /** 분류 불가 — 마지막 폴백 */
     data object Unknown : WeatherError(R.string.weather_error_unknown)

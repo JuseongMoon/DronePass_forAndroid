@@ -218,6 +218,25 @@ class WeatherForecastParityTest {
     }
 
     @Test
+    fun `weather load failure keeps iOS localized description boundary`() {
+        val noDetail = WeatherError.LoadFailed(null)
+        assertEquals(R.string.weather_error_load_failed, noDetail.messageRes)
+        assertNull(noDetail.formatArg)
+
+        val emptyDetail = WeatherError.LoadFailed("")
+        assertEquals(R.string.weather_error_load_failed_detail, emptyDetail.messageRes)
+        assertEquals("", emptyDetail.formatArg)
+
+        val blankDetail = WeatherError.LoadFailed("   ")
+        assertEquals(R.string.weather_error_load_failed_detail, blankDetail.messageRes)
+        assertEquals("   ", blankDetail.formatArg)
+
+        val normalDetail = WeatherError.LoadFailed("network")
+        assertEquals(R.string.weather_error_load_failed_detail, normalDetail.messageRes)
+        assertEquals("network", normalDetail.formatArg)
+    }
+
+    @Test
     fun `weather charts use iOS drone category thresholds`() {
         assertEquals(7.0 to 9.0, iosWindSpeedThresholds(DroneCategory.TOY))
         assertEquals(12.0 to 15.0, iosWindSpeedThresholds(DroneCategory.CLASS2))

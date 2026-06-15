@@ -839,6 +839,10 @@ class StringResourceCoverageTest {
         )
         assertEquals("마지막 업데이트: %1\$s", stringResourceValue("values/strings.xml", "weather_last_update"))
         assertEquals("새로고침되었습니다.", stringResourceValue("values/strings.xml", "weather_refresh"))
+        assertEquals(
+            "날씨 정보를 가져오는데 실패했습니다: %1\$s",
+            stringResourceValue("values/strings.xml", "weather_error_load_failed_detail"),
+        )
         assertEquals("북", stringResourceValue("values/strings.xml", "weather_direction_n"))
         assertEquals("북동", stringResourceValue("values/strings.xml", "weather_direction_ne"))
         assertEquals("동", stringResourceValue("values/strings.xml", "weather_direction_e"))
@@ -867,6 +871,10 @@ class StringResourceCoverageTest {
         )
         assertEquals("Last updated: %1\$s", stringResourceValue("values-en/strings.xml", "weather_last_update"))
         assertEquals("Refreshed", stringResourceValue("values-en/strings.xml", "weather_refresh"))
+        assertEquals(
+            "Failed to fetch weather information: %1\$s",
+            stringResourceValue("values-en/strings.xml", "weather_error_load_failed_detail"),
+        )
         assertEquals("N", stringResourceValue("values-en/strings.xml", "weather_direction_n"))
         assertEquals("NE", stringResourceValue("values-en/strings.xml", "weather_direction_ne"))
         assertEquals("E", stringResourceValue("values-en/strings.xml", "weather_direction_e"))
