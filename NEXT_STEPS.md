@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 현재 날씨 카드 하단 면책 문구를 iOS `WeatherForecastView`의 top 8pt padding, 12pt info icon, 4pt spacing, secondary color alpha 1.0 기준으로 보정했다. 기존 Android의 0.7 alpha로 더 흐리게 보이던 처리를 제거하고 회귀 테스트로 고정했다. `:app:testDebugUnitTest --tests "*WeatherForecastParityTest"` 및 `:app:assembleDebug` 통과.
 - 현재 날씨 데이터 그리드 셀을 iOS `weatherDataCard`의 `tertiarySystemBackground`/12pt radius/12pt padding/32pt 아이콘 슬롯/24pt 아이콘/16pt warning icon 기준으로 보정했다. Android Material surface 의존을 제거하고 셀 배경 `#FFFFFF`, 총 최소 높이 62dp를 회귀 테스트로 고정했다. `:app:testDebugUnitTest --tests "*WeatherForecastParityTest"` 및 `:app:assembleDebug` 통과.
 - 현재 날씨 카드의 큰 미리보기 블록을 iOS `WeatherForecastView`의 `tertiarySystemBackground`/12pt radius/16pt padding/64pt 아이콘 + 좌우 15pt padding 기준으로 보정했다. Android Material surface 의존을 제거하고 iOS light `#FFFFFF` 배경, 94dp 아이콘 슬롯 폭을 회귀 테스트로 고정했다. `:app:testDebugUnitTest --tests "*WeatherForecastParityTest"` 및 `:app:assembleDebug` 통과.
 - 현재 날씨 카드의 빈 시간별 예보 상태를 iOS `WeatherForecastView.currentWeatherCard` 분기와 맞췄다. `hourlyForecast.isEmpty && isLoading`이면 카드 내부 200dp 로딩 상태를 표시하고, `hourlyForecast.isEmpty && error != null`이면 카드 내부 경고 아이콘/에러 문구를 표시하며, 기존 hourly forecast가 있으면 iOS처럼 로딩/에러 중에도 기존 데이터 카드를 유지한다. `:app:testDebugUnitTest --tests "*WeatherForecastParityTest"` 및 `:app:assembleDebug` 통과.
