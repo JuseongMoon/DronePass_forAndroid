@@ -86,6 +86,14 @@ internal val IosCurrentWeatherPreviewPadding = 16.dp
 internal val IosCurrentWeatherPreviewIconSize = 64.dp
 internal val IosCurrentWeatherPreviewIconSlotWidth = 94.dp
 internal val IosCurrentWeatherPreviewContainerColor = Color(0xFFFFFFFF)
+internal val IosWeatherDataCellCornerRadius = 12.dp
+internal val IosWeatherDataCellHorizontalPadding = 12.dp
+internal val IosWeatherDataCellVerticalPadding = 12.dp
+internal val IosWeatherDataCellMinHeight = 62.dp
+internal val IosWeatherDataCellIconSize = 24.dp
+internal val IosWeatherDataCellIconSlotWidth = 32.dp
+internal val IosWeatherDataCellWarningIconSize = 16.dp
+internal val IosWeatherDataCellContainerColor = Color(0xFFFFFFFF)
 internal val IosWeatherReloadingIndicatorCornerRadius = 8.dp
 internal val IosWeatherReloadingIndicatorPadding = 8.dp
 internal val IosWeatherReloadingIndicatorSize = 16.dp
@@ -606,25 +614,33 @@ private fun WeatherDataCell(
                 Modifier
             }
         ),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        shape = RoundedCornerShape(IosWeatherDataCellCornerRadius),
+        colors = CardDefaults.cardColors(containerColor = IosWeatherDataCellContainerColor),
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = 62.dp)
-                .padding(vertical = 12.dp, horizontal = 12.dp),
+                .heightIn(min = IosWeatherDataCellMinHeight)
+                .padding(
+                    vertical = IosWeatherDataCellVerticalPadding,
+                    horizontal = IosWeatherDataCellHorizontalPadding,
+                ),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = iconColor,
-                modifier = Modifier
-                    .size(24.dp)
-                    .rotate(rotation?.plus(180f) ?: 0f),
-            )
+            Box(
+                modifier = Modifier.width(IosWeatherDataCellIconSlotWidth),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = iconColor,
+                    modifier = Modifier
+                        .size(IosWeatherDataCellIconSize)
+                        .rotate(rotation?.plus(180f) ?: 0f),
+                )
+            }
             Column(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(if (hasSubText) 1.dp else 2.dp),
@@ -666,7 +682,7 @@ private fun WeatherDataCell(
                         WarningIconType.Warning -> WarningRed
                         else -> Color.Transparent
                     },
-                    modifier = Modifier.size(16.dp),
+                    modifier = Modifier.size(IosWeatherDataCellWarningIconSize),
                 )
             }
         }
