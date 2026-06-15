@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- KP 48시간/27일 예보 차트 카드도 iOS `KPForecastView`의 `secondarySystemBackground`/16pt radius/16pt padding/12pt spacing 기준으로 보정했다. 기존 Android의 `surfaceVariant.copy(alpha = 0.4f)` 배경을 `#F2F2F7` 고정색으로 바꾸고 카드 토큰을 상수화해 회귀 테스트로 고정했다. `:app:testDebugUnitTest --tests "*KpChartsTest"` 및 `:app:assembleDebug` 통과.
 - 날씨 예보 차트 카드 배경을 iOS light `UIColor.secondarySystemBackground` 값인 `#F2F2F7`로 명시했다. Material3 Card 기본색에 맡기지 않고 `CardDefaults.cardColors(containerColor = IosWeatherChartCardContainerColor)`를 사용하며, ARGB 값을 회귀 테스트로 고정했다. `:app:testDebugUnitTest --tests "*WeatherForecastParityTest"` 및 `:app:assembleDebug` 통과.
 - 날씨 예보 차트 카드의 시각 토큰을 iOS `WeatherForecastView`의 `VStack(spacing: 12).padding().cornerRadius(16)` 기준으로 보정했다. Android `ChartCard`의 corner radius를 16dp로 올리고, 내부 padding 16dp와 헤더-차트 spacing 12dp를 상수화해 회귀 테스트로 고정했다. `:app:testDebugUnitTest --tests "*WeatherForecastParityTest"` 및 `:app:assembleDebug` 통과.
 - 날씨 예보 차트 제목을 iOS `WeatherForecastView`의 dynamic title 경로와 맞췄다. Android의 고정 `온도 예보 (3일)` 문자열을 `온도 예보 (%1$s)` + `weather_forecast_days`/`weather_forecast_hours` 조합으로 바꾸고, `WeatherForecastDays = 3`, `WeatherForecastChartHours = 72` 상수를 iOS `FORECAST_DAYS` 기준으로 고정했다. `:app:testDebugUnitTest --tests "*WeatherForecastParityTest" --tests "*StringResourceCoverageTest"` 및 `:app:assembleDebug` 통과.
