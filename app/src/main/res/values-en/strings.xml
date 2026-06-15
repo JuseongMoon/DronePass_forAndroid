@@ -734,9 +734,9 @@
     <string name="kp_level_g3_desc">Strong geomagnetic storm</string>
     <string name="kp_level_g4_desc">Severe geomagnetic storm</string>
     <string name="kp_level_g5_desc">Extreme geomagnetic storm</string>
-    <string name="kp_error_load_failed">Unable to load Kp index</string>
-    <string name="kp_error_forecast_failed">Unable to load Kp forecast</string>
-    <string name="kp_error_unknown">An error occurred while processing Kp index</string>
+    <string name="kp_error_load_failed">Unable to load KP index data</string>
+    <string name="kp_error_forecast_failed">Unable to load KP index data</string>
+    <string name="kp_error_unknown">An error occurred while processing KP index</string>
 
     <string name="saved_sort_title">By Title</string>
     <string name="saved_sort_date_created">By Date Created</string>

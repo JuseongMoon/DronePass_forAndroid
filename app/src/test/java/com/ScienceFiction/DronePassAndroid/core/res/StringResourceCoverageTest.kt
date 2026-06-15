@@ -789,6 +789,9 @@ class StringResourceCoverageTest {
         assertEquals("KP 지수", stringResourceValue("values/strings.xml", "kp_title"))
         assertEquals("현재 KP 지수", stringResourceValue("values/strings.xml", "kp_current"))
         assertEquals("데이터가 없습니다", stringResourceValue("values/strings.xml", "kp_no_data"))
+        assertEquals("KP 지수 데이터를 가져올 수 없습니다", stringResourceValue("values/strings.xml", "kp_error_load_failed"))
+        assertEquals("KP 지수 데이터를 가져올 수 없습니다", stringResourceValue("values/strings.xml", "kp_error_forecast_failed"))
+        assertEquals("KP 지수 처리 중 오류가 발생했습니다", stringResourceValue("values/strings.xml", "kp_error_unknown"))
         assertEquals("KP 지수 예보", stringResourceValue("values/strings.xml", "kp_navigation_title"))
         assertEquals("현재 KP 지수", stringResourceValue("values/strings.xml", "kp_section_current"))
         assertEquals("향후 48시간 예보", stringResourceValue("values/strings.xml", "kp_section_forecast48"))
@@ -808,6 +811,12 @@ class StringResourceCoverageTest {
         assertEquals("KP Index", stringResourceValue("values-en/strings.xml", "kp_title"))
         assertEquals("Current KP Index", stringResourceValue("values-en/strings.xml", "kp_current"))
         assertEquals("No data available", stringResourceValue("values-en/strings.xml", "kp_no_data"))
+        assertEquals("Unable to load KP index data", stringResourceValue("values-en/strings.xml", "kp_error_load_failed"))
+        assertEquals("Unable to load KP index data", stringResourceValue("values-en/strings.xml", "kp_error_forecast_failed"))
+        assertEquals(
+            "An error occurred while processing KP index",
+            stringResourceValue("values-en/strings.xml", "kp_error_unknown"),
+        )
         assertEquals("KP Index Forecast", stringResourceValue("values-en/strings.xml", "kp_navigation_title"))
         assertEquals("Current KP Index", stringResourceValue("values-en/strings.xml", "kp_section_current"))
         assertEquals("48-Hour Forecast", stringResourceValue("values-en/strings.xml", "kp_section_forecast48"))
