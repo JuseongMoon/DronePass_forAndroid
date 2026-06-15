@@ -11,12 +11,13 @@
 | 항목 | 값 |
 |---|---|
 | 워킹 트리 | clean |
-| 주요 검증 | `:app:testDebugUnitTest`, `:app:assembleDebug`, `:app:minifyReleaseWithR8`, `:app:testDebugUnitTest --tests "*MainScreenStartDestinationTest"`, `:app:testDebugUnitTest --tests "*MapScreenLayersTest"`, `:app:testDebugUnitTest --tests "*SettingsPreferenceKeysTest"`, `:app:testDebugUnitTest --tests "*SettingsPreferenceKeysTest" --tests "*NotificationPreferenceKeysTest" --tests "*SettingsEndDateAlarmPlanTest" --tests "*MainActivityKeepScreenAwakeTest"`, `:app:testDebugUnitTest --tests "*Auth*Test" --tests "*StringResourceCoverageTest"` 통과 |
-| Release readiness | 2026-06-15에 실제 `keystore.properties` 또는 `WEB_CLIENT_ID`가 없으면 `assembleRelease`/`bundleRelease`가 의도적으로 실패함을 재확인 |
+| 주요 검증 | `:app:testDebugUnitTest`, `:app:lintDebug`, `:app:assembleDebug`, `:app:minifyReleaseWithR8`, `:app:testDebugUnitTest --tests "*MainScreenStartDestinationTest"`, `:app:testDebugUnitTest --tests "*MapScreenLayersTest"`, `:app:testDebugUnitTest --tests "*SettingsPreferenceKeysTest"`, `:app:testDebugUnitTest --tests "*SettingsPreferenceKeysTest" --tests "*NotificationPreferenceKeysTest" --tests "*SettingsEndDateAlarmPlanTest" --tests "*MainActivityKeepScreenAwakeTest"`, `:app:testDebugUnitTest --tests "*Auth*Test" --tests "*StringResourceCoverageTest"` 통과 |
+| Release readiness | 2026-06-16에 실제 `keystore.properties` 또는 `WEB_CLIENT_ID`가 없으면 `assembleRelease`/`bundleRelease`가 의도적으로 실패함을 재확인 |
 | 남은 성격 | 실기기 전체 회귀, 콘솔/스토어 운영 설정, 최종 iOS 동기화 검증 |
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 2026-06-16 최신 HEAD에서 predictive back manifest 보정 이후 전체 `:app:testDebugUnitTest`, `:app:lintDebug`, `:app:minifyReleaseWithR8` 재검증을 통과했다. R8 중 Naver Map SDK stack map table 경고와 Play Services Location companion 경고는 기존 외부 라이브러리 경고로 남지만 빌드는 성공한다.
 - 2026-06-16 최신 HEAD에서 release readiness gate를 재확인했다. 현재 로컬에는 `keystore.properties`가 없고 `local.properties`의 `WEB_CLIENT_ID`가 비어 있어 `:app:assembleRelease`와 `:app:bundleRelease`가 release signing 설정 누락 및 Google sign-in Web client ID 누락 메시지를 함께 출력하며 의도적으로 실패한다.
 - Android 13+ back dispatcher manifest opt-in을 명시해 드론 관리 시트 back 동작 중 반복되던 `OnBackInvokedCallback is not enabled` 경고를 제거했다. `AndroidManifestContractTest`에 `android:enableOnBackInvokedCallback="true"` 계약을 추가했고, `:app:testDebugUnitTest --tests "*AndroidManifestContractTest"` 및 `:app:assembleDebug` 통과. 최신 debug APK 재설치 후 설정 탭 → 드론 관리 시트 → back smoke에서 MainActivity focus/PID 유지, ANR 없음, 해당 warning 재발 없음 확인.
 - 같은 실기기 `RFCW324TZ0Z`에서 저장 탭/설정 탭/드론 관리 시트 비파괴 회귀를 재확인했다. 저장 탭은 `저장 목록`, 정렬 칩 `비행시작일순`/`내림차순`, `활성화` 섹션과 visible saved rows가 렌더링됐고, 설정 탭은 `내 정보`, `로그인 / 회원가입`, `내 드론 관리하기`, `비행 환경`, KP/날씨/알림 섹션이 렌더링됐다. 드론 관리 시트는 `드론 관리`, `내 드론 목록`, 기존 드론 2개, `새 드론 추가`, `사용법` 섹션을 확인했다.
