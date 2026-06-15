@@ -2,14 +2,18 @@ package com.ScienceFiction.DronePassAndroid.feature.weather
 
 import android.graphics.Paint
 import android.graphics.Typeface
+import androidx.compose.foundation.background
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -18,7 +22,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -81,6 +87,11 @@ internal data class BackgroundZone(
 internal data class WeatherThresholdLine(
     val value: Double,
     val color: Color,
+)
+
+private data class WeatherChartLegendItem(
+    val color: Color,
+    val text: String,
 )
 
 /**
@@ -720,6 +731,24 @@ fun TemperatureChart(
                 lineSegmentColors = pointColors,
             )
         }
+        WeatherChartLegend(
+            items = listOf(
+                WeatherChartLegendItem(
+                    color = thresholdLines[0].color,
+                    text = stringResource(
+                        R.string.weather_legend_low_temp,
+                        IosTemperatureLowCautionC.toInt(),
+                    ),
+                ),
+                WeatherChartLegendItem(
+                    color = thresholdLines[1].color,
+                    text = stringResource(
+                        R.string.weather_legend_high_temp,
+                        IosTemperatureHighCautionC.toInt(),
+                    ),
+                ),
+            ),
+        )
     }
 }
 
@@ -753,6 +782,18 @@ fun WindSpeedChart(
                 pointColors = weatherChartPointColors(dataPoints.size, lineColor),
             )
         }
+        WeatherChartLegend(
+            items = listOf(
+                WeatherChartLegendItem(
+                    color = thresholdLines[0].color,
+                    text = stringResource(R.string.weather_legend_caution, thresholdLines[0].value),
+                ),
+                WeatherChartLegendItem(
+                    color = thresholdLines[1].color,
+                    text = stringResource(R.string.weather_legend_danger, thresholdLines[1].value),
+                ),
+            ),
+        )
     }
 }
 
@@ -786,6 +827,18 @@ fun GustDifferenceChart(
                 pointColors = weatherChartPointColors(dataPoints.size, lineColor),
             )
         }
+        WeatherChartLegend(
+            items = listOf(
+                WeatherChartLegendItem(
+                    color = thresholdLines[0].color,
+                    text = stringResource(R.string.weather_legend_caution, thresholdLines[0].value),
+                ),
+                WeatherChartLegendItem(
+                    color = thresholdLines[1].color,
+                    text = stringResource(R.string.weather_legend_danger, thresholdLines[1].value),
+                ),
+            ),
+        )
     }
 }
 
@@ -851,6 +904,18 @@ fun VisibilityChart(
                 pointColors = weatherChartPointColors(dataPoints.size, lineColor),
             )
         }
+        WeatherChartLegend(
+            items = listOf(
+                WeatherChartLegendItem(
+                    color = thresholdLines[0].color,
+                    text = stringResource(R.string.weather_legend_poor, IosVisibilityPoorKm.toInt()),
+                ),
+                WeatherChartLegendItem(
+                    color = thresholdLines[1].color,
+                    text = stringResource(R.string.weather_legend_good, IosVisibilityGoodKm.toInt()),
+                ),
+            ),
+        )
     }
 }
 
@@ -884,6 +949,18 @@ fun CriChart(
                 pointColors = weatherChartPointColors(dataPoints.size, lineColor),
             )
         }
+        WeatherChartLegend(
+            items = listOf(
+                WeatherChartLegendItem(
+                    color = thresholdLines[0].color,
+                    text = stringResource(R.string.weather_legend_cri_caution),
+                ),
+                WeatherChartLegendItem(
+                    color = thresholdLines[1].color,
+                    text = stringResource(R.string.weather_legend_cri_warning),
+                ),
+            ),
+        )
     }
 }
 
@@ -920,5 +997,41 @@ internal fun ChartCard(
             )
             content()
         }
+    }
+}
+
+@Composable
+private fun WeatherChartLegend(
+    items: List<WeatherChartLegendItem>,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier.padding(start = 23.dp, top = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        items.forEach { item ->
+            WeatherChartLegendItemView(item)
+        }
+    }
+}
+
+@Composable
+private fun WeatherChartLegendItemView(item: WeatherChartLegendItem) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(width = 16.dp, height = 8.dp)
+                .clip(RoundedCornerShape(2.dp))
+                .background(item.color),
+        )
+        Text(
+            text = item.text,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }

@@ -914,6 +914,14 @@ class StringResourceCoverageTest {
         assertEquals("가시거리 예보 (3일)", stringResourceValue("values/strings.xml", "weather_chart_visibility"))
         assertEquals("결로위험지수 예보 (3일)", stringResourceValue("values/strings.xml", "weather_chart_cri"))
         assertEquals("현재", stringResourceValue("values/strings.xml", "weather_chart_current"))
+        assertEquals("저온 ≤ %1\$d°C", stringResourceValue("values/strings.xml", "weather_legend_low_temp"))
+        assertEquals("고온 ≥ %1\$d°C", stringResourceValue("values/strings.xml", "weather_legend_high_temp"))
+        assertEquals("주의 ≥ %1\$.1fm/s", stringResourceValue("values/strings.xml", "weather_legend_caution"))
+        assertEquals("위험 ≥ %1\$.1fm/s", stringResourceValue("values/strings.xml", "weather_legend_danger"))
+        assertEquals("주의 ≥ 40", stringResourceValue("values/strings.xml", "weather_legend_cri_caution"))
+        assertEquals("경고 ≥ 70", stringResourceValue("values/strings.xml", "weather_legend_cri_warning"))
+        assertEquals("위험 ≤ %1\$dkm", stringResourceValue("values/strings.xml", "weather_legend_poor"))
+        assertEquals("양호 ≥ %1\$dkm", stringResourceValue("values/strings.xml", "weather_legend_good"))
 
         assertEquals("Location-based Information", stringResourceValue("values-en/strings.xml", "weather_navigation_title"))
         assertEquals("Sunrise/Sunset", stringResourceValue("values-en/strings.xml", "weather_section_sunrise_sunset"))
@@ -948,6 +956,14 @@ class StringResourceCoverageTest {
         assertEquals("Visibility Forecast (3 Days)", stringResourceValue("values-en/strings.xml", "weather_chart_visibility"))
         assertEquals("CRI Forecast (3 Days)", stringResourceValue("values-en/strings.xml", "weather_chart_cri"))
         assertEquals("Now", stringResourceValue("values-en/strings.xml", "weather_chart_current"))
+        assertEquals("Low Temp ≤ %1\$d°C", stringResourceValue("values-en/strings.xml", "weather_legend_low_temp"))
+        assertEquals("High Temp ≥ %1\$d°C", stringResourceValue("values-en/strings.xml", "weather_legend_high_temp"))
+        assertEquals("Caution ≥ %1\$.1fm/s", stringResourceValue("values-en/strings.xml", "weather_legend_caution"))
+        assertEquals("Danger ≥ %1\$.1fm/s", stringResourceValue("values-en/strings.xml", "weather_legend_danger"))
+        assertEquals("Caution ≥ 40", stringResourceValue("values-en/strings.xml", "weather_legend_cri_caution"))
+        assertEquals("Warning ≥ 70", stringResourceValue("values-en/strings.xml", "weather_legend_cri_warning"))
+        assertEquals("Poor ≤ %1\$dkm", stringResourceValue("values-en/strings.xml", "weather_legend_poor"))
+        assertEquals("Good ≥ %1\$dkm", stringResourceValue("values-en/strings.xml", "weather_legend_good"))
     }
 
     @Test

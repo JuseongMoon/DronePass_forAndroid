@@ -478,6 +478,14 @@
     <string name="weather_chart_visibility">가시거리 예보 (3일)</string>
     <string name="weather_chart_cri">결로위험지수 예보 (3일)</string>
     <string name="weather_chart_current">현재</string>
+    <string name="weather_legend_low_temp">저온 ≤ %1$d°C</string>
+    <string name="weather_legend_high_temp">고온 ≥ %1$d°C</string>
+    <string name="weather_legend_caution">주의 ≥ %1$.1fm/s</string>
+    <string name="weather_legend_danger">위험 ≥ %1$.1fm/s</string>
+    <string name="weather_legend_cri_caution">주의 ≥ 40</string>
+    <string name="weather_legend_cri_warning">경고 ≥ 70</string>
+    <string name="weather_legend_poor">위험 ≤ %1$dkm</string>
+    <string name="weather_legend_good">양호 ≥ %1$dkm</string>
 
     <!-- Weather Sheet (iOS WeatherForecastView 정합) -->
     <string name="weather_navigation_title">현위치 기반 정보</string>
