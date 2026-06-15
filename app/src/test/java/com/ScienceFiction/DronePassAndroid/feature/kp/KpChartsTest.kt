@@ -169,6 +169,13 @@ class KpChartsTest {
     }
 
     @Test
+    fun `KP chart point labels match iOS point annotations`() {
+        assertEquals("0.0", formatKpChartPointLabel(0.0))
+        assertEquals("4.7", formatKpChartPointLabel(4.74))
+        assertEquals("4.8", formatKpChartPointLabel(4.75))
+    }
+
+    @Test
     fun `KP charts use iOS visible domains and source data label intervals`() {
         val hourMs = 60L * 60 * 1000
 

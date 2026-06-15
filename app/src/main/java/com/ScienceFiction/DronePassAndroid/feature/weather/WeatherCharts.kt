@@ -77,6 +77,7 @@ internal data class BackgroundZone(
  * - [currentTimeMs]: 현재 시간 빨강 수직선
  * - [predicted]: dataPoints 와 같은 size 의 Boolean 리스트. 양쪽이 모두 true 인 segment 는 점선
  * - [pointColors]: 각 데이터 포인트에 표시할 원의 색 (예: KpLevel 별 색상)
+ * - [pointLabels]: 각 데이터 포인트 위에 표시할 라벨 (예: iOS KP PointMark annotation)
  * - [backgroundZones]: Y축 값 범위별 배경 색상 (KP 의 zone 표시)
  */
 @Composable
@@ -97,11 +98,13 @@ internal fun WeatherLineChart(
     currentTimeMs: Long? = null,
     predicted: List<Boolean> = emptyList(),
     pointColors: List<Color>? = null,
+    pointLabels: List<String> = emptyList(),
     backgroundZones: List<BackgroundZone> = emptyList(),
     chartHeight: Dp = WeatherLineChartDefaultHeight,
 ) {
     if (dataPoints.isEmpty()) return
 
+    val onSurface = MaterialTheme.colorScheme.onSurface
     val onSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant
     val surfaceColor = MaterialTheme.colorScheme.surface
     // Canvas 내부 nativeCanvas.drawText 의 Paint.textSize 는 px 단위라 sp 환산이 필요.
@@ -115,7 +118,7 @@ internal fun WeatherLineChart(
     ) {
         val leftPadding = 48f
         val rightPadding = 16f
-        val topPadding = 12f
+        val topPadding = if (pointLabels.size == dataPoints.size) axisLabelPx + 12f else 12f
         val bottomPadding = 28f
 
         val chartWidth = size.width - leftPadding - rightPadding
@@ -356,6 +359,24 @@ internal fun WeatherLineChart(
             screenPoints.forEachIndexed { idx, point ->
                 val color = colors.getOrNull(idx) ?: lineColor
                 drawCircle(color = color, radius = 4f, center = point)
+            }
+        }
+
+        if (pointLabels.size == screenPoints.size) {
+            val pointLabelPaint = Paint().apply {
+                color = onSurface.toArgb()
+                textSize = axisLabelPx
+                textAlign = Paint.Align.CENTER
+                isAntiAlias = true
+                typeface = Typeface.DEFAULT
+            }
+            screenPoints.forEachIndexed { idx, point ->
+                drawContext.canvas.nativeCanvas.drawText(
+                    pointLabels[idx],
+                    point.x,
+                    point.y - 8f,
+                    pointLabelPaint,
+                )
             }
         }
     }

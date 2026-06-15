@@ -85,6 +85,7 @@ fun KpForecastLineChart(
     val dataPoints = parsed.map { it.timeMillis to it.item.kp }
     val predicted = parsed.map { it.isPredicted }
     val pointColors = parsed.map { Color(KpLevel.fromKp(it.item.kp).color.toInt()) }
+    val pointLabels = parsed.map { formatKpChartPointLabel(it.item.kp) }
     val xLabelTimes = parsed.map { it.timeMillis }
     val primaryColor = MaterialTheme.colorScheme.primary
 
@@ -116,6 +117,7 @@ fun KpForecastLineChart(
                     currentTimeMs = System.currentTimeMillis(),
                     predicted = predicted,
                     pointColors = pointColors,
+                    pointLabels = pointLabels,
                     backgroundZones = listOf(
                         BackgroundZone(0.0..5.0, ZoneGreen),
                         BackgroundZone(5.0..7.0, ZoneYellow),
@@ -227,6 +229,7 @@ private fun Kp27DayLineChart(longTermForecast: List<Kp27DayForecast>) {
     }
     val dataPoints = parsedForecast.map { (timeMs, forecast) -> timeMs to forecast.kp }
     val pointColors = parsedForecast.map { (_, forecast) -> Color(KpLevel.fromKp(forecast.kp).color.toInt()) }
+    val pointLabels = parsedForecast.map { (_, forecast) -> formatKpChartPointLabel(forecast.kp) }
     val xLabelTimes = parsedForecast.map { (timeMs, _) -> timeMs }
     val primaryColor = MaterialTheme.colorScheme.primary
 
@@ -246,6 +249,7 @@ private fun Kp27DayLineChart(longTermForecast: List<Kp27DayForecast>) {
             xLabelTimesMs = xLabelTimes,
             currentTimeMs = kp27DayCurrentMarkerMillis(),
             pointColors = pointColors,
+            pointLabels = pointLabels,
             backgroundZones = listOf(
                 BackgroundZone(0.0..5.0, ZoneGreen),
                 BackgroundZone(5.0..7.0, ZoneYellow),
@@ -255,6 +259,10 @@ private fun Kp27DayLineChart(longTermForecast: List<Kp27DayForecast>) {
             chartHeight = KpForecastChartHeight,
         )
     }
+}
+
+internal fun formatKpChartPointLabel(kp: Double): String {
+    return String.format(Locale.ROOT, "%.1f", kp)
 }
 
 internal fun kp27DayLineChartPoints(longTermForecast: List<Kp27DayForecast>): List<Pair<Long, Double>> {
