@@ -105,6 +105,7 @@ class WeatherForecastParityTest {
         assertEquals(16.dp, IosWeatherChartCardCornerRadius)
         assertEquals(16.dp, IosWeatherChartCardPadding)
         assertEquals(12.dp, IosWeatherChartCardSpacing)
+        assertEquals(0xFFF2F2F7.toInt(), IosWeatherChartCardContainerColor.toArgb())
     }
 
     @Test

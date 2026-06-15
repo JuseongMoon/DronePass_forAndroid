@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -62,6 +63,7 @@ internal val WeatherPrecipitationChartHeight = WeatherForecastChartHeight
 internal val IosWeatherChartCardCornerRadius = 16.dp
 internal val IosWeatherChartCardPadding = 16.dp
 internal val IosWeatherChartCardSpacing = 12.dp
+internal val IosWeatherChartCardContainerColor = Color(0xFFF2F2F7)
 internal const val IosWeatherChartVisibleDomainMs = 12L * 60 * 60 * 1000
 internal const val IosWeatherChartXLabelIntervalMs = 60L * 60 * 1000
 internal val IosWeatherWindSpeedChartColor = Color(0xFF4CAF50)
@@ -998,7 +1000,10 @@ internal fun ChartCard(
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(IosWeatherChartCardCornerRadius)
+        shape = RoundedCornerShape(IosWeatherChartCardCornerRadius),
+        colors = CardDefaults.cardColors(
+            containerColor = IosWeatherChartCardContainerColor,
+        ),
     ) {
         Column(
             modifier = Modifier
