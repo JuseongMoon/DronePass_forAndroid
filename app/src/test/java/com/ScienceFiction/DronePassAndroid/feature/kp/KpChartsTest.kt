@@ -150,6 +150,20 @@ class KpChartsTest {
     }
 
     @Test
+    fun `current KP card value keeps iOS hyphen fallback when data is missing`() {
+        assertEquals("-", formatCurrentKpValue(null))
+        assertEquals(
+            "4.7",
+            formatCurrentKpValue(
+                KpIndexData(
+                    timeTag = "2026-02-24 12:00:00",
+                    kp = 4.7,
+                ),
+            ),
+        )
+    }
+
+    @Test
     fun `KP forecast chart height matches iOS forecast chart frame`() {
         assertEquals(250.dp, KpForecastChartHeight)
     }

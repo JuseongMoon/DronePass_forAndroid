@@ -295,79 +295,67 @@ private fun CurrentKpSection(
                 containerColor = Color(kpLevel.color.toInt()).copy(alpha = 0.1f),
             ),
         ) {
-            if (currentKp == null) {
-                Box(
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                // 좌측: 큰 숫자 (iOS .system(size: 60, weight: .bold, design: .rounded))
+                Text(
+                    text = formatCurrentKpValue(currentKp),
+                    fontSize = KpCurrentValueFontSizeSp.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(kpLevel.color.toInt()),
+                )
+
+                // 우측: 아이콘+레벨명 → 설명 → 출처
+                Column(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(24.dp),
-                    contentAlignment = Alignment.Center,
+                        .weight(1f)
+                        .padding(start = 4.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        Icon(
+                            imageVector = kpLevelIcon(kpLevel),
+                            contentDescription = null,
+                            tint = Color(kpLevel.color.toInt()),
+                            modifier = Modifier.size(20.dp),
+                        )
+                        Text(
+                            text = stringResource(kpLevelNameRes(kpLevel)),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color(kpLevel.color.toInt()),
+                        )
+                    }
                     Text(
-                        text = stringResource(R.string.kp_no_data),
-                        style = MaterialTheme.typography.titleMedium,
+                        text = stringResource(kpLevelDescriptionRes(kpLevel)),
+                        style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                }
-            } else {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.Top,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    // 좌측: 큰 숫자 (iOS .system(size: 60, weight: .bold, design: .rounded))
-                    Text(
-                        text = "%.1f".format(Locale.ROOT, currentKp.kp),
-                        fontSize = KpCurrentValueFontSizeSp.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(kpLevel.color.toInt()),
-                    )
-
-                    // 우측: 아이콘+레벨명 → 설명 → 출처
-                    Column(
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(start = 4.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End,
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        ) {
-                            Icon(
-                                imageVector = kpLevelIcon(kpLevel),
-                                contentDescription = null,
-                                tint = Color(kpLevel.color.toInt()),
-                                modifier = Modifier.size(20.dp),
-                            )
-                            Text(
-                                text = stringResource(kpLevelNameRes(kpLevel)),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.SemiBold,
-                                color = Color(kpLevel.color.toInt()),
-                            )
-                        }
-                        Text(
-                            text = stringResource(kpLevelDescriptionRes(kpLevel)),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        KpDataSourceLink(
+                            label = stringResource(R.string.kp_data_source_gfz),
+                            source = KpDataSource.GFZ_CURRENT,
                         )
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.End,
-                        ) {
-                            KpDataSourceLink(
-                                label = stringResource(R.string.kp_data_source_gfz),
-                                source = KpDataSource.GFZ_CURRENT,
-                            )
-                        }
                     }
                 }
             }
         }
     }
 }
+
+internal fun formatCurrentKpValue(currentKp: KpIndexData?): String =
+    currentKp?.let { "%.1f".format(Locale.ROOT, it.kp) } ?: "-"
 
 /**
  * iOS `KPLevel.icon` → Material Icons 매핑.
