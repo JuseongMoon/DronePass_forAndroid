@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- KP 예보 차트 헤더의 우측 note badge를 iOS `KPForecastView`의 `tertiarySystemBackground`/6pt corner/8pt horizontal padding/4pt vertical padding 기준으로 보정했다. Android Material surface 의존을 제거하고 iOS light `#FFFFFF` 배경을 회귀 테스트로 고정했다. `:app:testDebugUnitTest --tests "*KpChartsTest"` 및 `:app:assembleDebug` 통과.
 - KP 예보 차트의 loading/error/no-data placeholder 토큰을 iOS `KPForecastView` 기준으로 상수화하고, 에러 아이콘 색상을 iOS `.orange`(`#FF9500`)로 보정했다. placeholder height 200dp, error icon 40dp, icon-text spacing 8dp를 회귀 테스트로 고정했다. `:app:testDebugUnitTest --tests "*KpChartsTest"` 및 `:app:assembleDebug` 통과.
 - KP 예보 화면의 전체 콘텐츠 패딩/간격과 현재 KP 카드 내부 토큰을 iOS `KPForecastView` 기준으로 보정했다. Android의 horizontal 8dp/spacedBy 16dp를 iOS `.padding()`/`VStack(spacing: 20)`에 맞춰 16dp/20dp로 바꾸고, 현재 KP 카드의 section spacing 12dp, card padding 16dp, row spacing 12dp, detail leading 10dp, level row spacing 6dp, icon 20dp, background alpha 0.1을 회귀 테스트로 고정했다. `:app:testDebugUnitTest --tests "*KpChartsTest"` 및 `:app:assembleDebug` 통과.
 - 날씨 화면의 초기 로딩/초기 에러 표시를 iOS `WeatherForecastView`처럼 전체 화면 대체 UI가 아니라 본문 카드 내부 상태로 흐르게 보정했다. `weatherData == null`이어도 로딩 또는 에러가 있으면 빈 `WeatherData` placeholder로 `WeatherForecastBody`를 유지해 현재 날씨 카드의 200dp 로딩/에러 분기가 실제 초기 상태에도 표시된다. `:app:testDebugUnitTest --tests "*WeatherForecastParityTest"` 및 `:app:assembleDebug` 통과.
