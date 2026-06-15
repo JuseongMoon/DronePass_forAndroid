@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 날씨 예보 화면과 설정/지도 시트 헤더의 새로고침 버튼 활성화 정책을 iOS `WeatherForecastView` toolbar처럼 로딩 중에도 유지되도록 보정했다. 기존 Android는 `isLoading` 중 새로고침 버튼을 비활성화했지만, iOS는 버튼을 disable하지 않으므로 공용 `isWeatherRefreshActionEnabled` 정책으로 전체 화면/시트 헤더를 통일했다. `:app:testDebugUnitTest --tests "*WeatherForecastParityTest"` 및 `:app:assembleDebug` 통과.
 - 날씨 정보 가이드의 드론 카테고리 선택기를 iOS `WeatherInfoView.droneCategorySelector` 토큰에 맞춰 보정했다. Android 정보 가이드에서 텍스트 `⌄` 대신 chevron 아이콘을 사용하고, 선택기 패딩을 iOS horizontal 8 / vertical 4, 아이콘 12dp 기준으로 고정했다. `:app:testDebugUnitTest --tests "*InfoGuideSheetsTest" --tests "*StringResourceCoverageTest"` 및 `:app:assembleDebug` 통과.
 - 시간별 날씨 예보의 순간 풍속 증가량을 iOS `WeatherManager.hourlyForecast.map`과 맞췄다. 현재 날씨 위험도 평가는 iOS처럼 돌풍값 누락 시 평균풍 x 1.3 추정을 유지하지만, 시간별 예보 데이터는 iOS처럼 관측 돌풍이 없으면 `gust = meanWind`로 보고 `gustDifference = 0`을 저장한다. `:app:testDebugUnitTest --tests "*GustDifferenceCalculatorTest" --tests "*WeatherRepositoryTest" --tests "*WeatherForecastParityTest"`, `:app:assembleDebug`, `:app:testDebugUnitTest` 통과.
 - 최신 HEAD `96b03d0` 기준으로 `:app:lintDebug`를 재실행해 통과 확인. 최초 샌드박스 실행은 Gradle wrapper cache lock(`/Users/david/.gradle/...zip.lck`) 접근 권한으로 실패했지만, 외부 권한 재실행은 `BUILD SUCCESSFUL`이며 lint report는 `app/build/reports/lint-results-debug.html`에 생성됐다.
