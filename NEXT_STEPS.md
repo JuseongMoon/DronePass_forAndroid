@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- KP 예보 현재 지수 카드를 iOS `KPForecastView.currentKPCard`처럼 현재 KP 데이터가 없어도 카드 구조를 유지하도록 보정했다. iOS `KPIndexManager.currentKPString`은 `currentKP == nil`일 때 `"-"`를 표시하고 `currentLevel` 기본값 `.normal`로 레벨/설명/GFZ 출처를 계속 보여주므로, Android도 `데이터가 없습니다` 대체 카드 대신 `-` + Normal 레벨/설명/출처를 렌더링한다. `:app:testDebugUnitTest --tests "*KpChartsTest"` 및 `:app:assembleDebug` 통과.
 - KP 예보 화면과 설정/지도 시트 헤더의 새로고침 버튼 활성화 정책을 iOS `KPForecastView` toolbar처럼 로딩 중에도 유지되도록 보정했다. 기존 Android는 `isLoading` 중 새로고침 버튼을 비활성화했고 전체 화면 toolbar에 별도 스피너도 표시했지만, iOS는 버튼을 disable하지 않고 toolbar 스피너도 두지 않으므로 공용 `isKpRefreshActionEnabled` 정책과 `KpToolbarShowsLoadingIndicator = false` 기준으로 통일했다. `:app:testDebugUnitTest --tests "*KpChartsTest"` 및 `:app:assembleDebug` 통과.
 - 날씨 예보 화면과 설정/지도 시트 헤더의 새로고침 버튼 활성화 정책을 iOS `WeatherForecastView` toolbar처럼 로딩 중에도 유지되도록 보정했다. 기존 Android는 `isLoading` 중 새로고침 버튼을 비활성화했지만, iOS는 버튼을 disable하지 않으므로 공용 `isWeatherRefreshActionEnabled` 정책으로 전체 화면/시트 헤더를 통일했다. `:app:testDebugUnitTest --tests "*WeatherForecastParityTest"` 및 `:app:assembleDebug` 통과.
 - 날씨 정보 가이드의 드론 카테고리 선택기를 iOS `WeatherInfoView.droneCategorySelector` 토큰에 맞춰 보정했다. Android 정보 가이드에서 텍스트 `⌄` 대신 chevron 아이콘을 사용하고, 선택기 패딩을 iOS horizontal 8 / vertical 4, 아이콘 12dp 기준으로 고정했다. `:app:testDebugUnitTest --tests "*InfoGuideSheetsTest" --tests "*StringResourceCoverageTest"` 및 `:app:assembleDebug` 통과.
