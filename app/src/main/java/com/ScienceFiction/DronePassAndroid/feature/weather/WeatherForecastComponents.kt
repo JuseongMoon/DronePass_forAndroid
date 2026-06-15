@@ -73,6 +73,7 @@ private val CautionYellow = Color(0xFFFFCC00)
 private val WarningRed = Color(0xFFFF3B30)
 private val InfoYellow = Color(0xFFFFCC00)
 
+internal const val MissingWeatherValueText = "-"
 internal const val IosTemperatureLowCautionC = -10.0
 internal const val IosTemperatureHighCautionC = 35.0
 internal const val IosPrecipitationDetectionMm = 0.0
@@ -114,6 +115,9 @@ internal fun resolveVisibilityWarningIcon(visibilityKm: Double): WarningIconType
     else -> WarningIconType.None
 }
 
+internal fun resolveNullableVisibilityWarningIcon(visibilityKm: Double?): WarningIconType =
+    visibilityKm?.let(::resolveVisibilityWarningIcon) ?: WarningIconType.Caution
+
 internal fun resolveCriWarningIcon(cri: Double): WarningIconType = when {
     cri >= IosCriHigh -> WarningIconType.Warning
     cri >= IosCriModerate -> WarningIconType.Caution
@@ -136,31 +140,33 @@ internal fun CurrentWeatherSection(
     modifier: Modifier = Modifier,
     onWeatherInfoRequested: (WeatherInfoTopic) -> Unit = {},
 ) {
-    val current = data.current ?: return
+    val current = data.current
 
     val temperatureRange = resolveForecastTemperatureRange(data.hourlyForecast)
-    val maxTemp = temperatureRange?.first ?: current.temperature
-    val minTemp = temperatureRange?.second ?: current.temperature
-    val visibility = data.hourlyForecast.firstOrNull()?.visibility ?: 0.0
-    val gustDiff = GustDifferenceCalculator.calculateGustDifference(current.windSpeed, current.windGusts)
+    val maxTemperatureText = formatNullableIosTemperatureDegrees(temperatureRange?.first ?: current?.temperature)
+    val minTemperatureText = formatNullableIosTemperatureDegrees(temperatureRange?.second ?: current?.temperature)
+    val visibility = data.hourlyForecast.firstOrNull()?.visibility
+    val gustDiff = current?.let { GustDifferenceCalculator.calculateGustDifference(it.windSpeed, it.windGusts) }
 
     val (windCaution, windDanger) = iosWindSpeedThresholds(category)
     val windWarning = when {
+        current == null -> WarningIconType.None
         current.windSpeed >= windDanger -> WarningIconType.Warning
         current.windSpeed >= windCaution -> WarningIconType.Caution
         else -> WarningIconType.None
     }
-    val tempWarning = resolveTemperatureWarningIcon(current.temperature)
-    val gustWarning = when (current.gustDifferenceLevel) {
+    val tempWarning = current?.temperature?.let(::resolveTemperatureWarningIcon) ?: WarningIconType.None
+    val gustWarning = when (current?.gustDifferenceLevel) {
         GustDifferenceLevel.SAFE -> WarningIconType.None
         GustDifferenceLevel.LOCALIZED_GUST -> WarningIconType.Info
         GustDifferenceLevel.CAUTION -> WarningIconType.Caution
         GustDifferenceLevel.DANGER -> WarningIconType.Warning
+        null -> WarningIconType.None
     }
-    val gustSubText = resolveGustDifferenceSubTextRes(current.gustDifferenceLevel)
-    val precipWarning = resolvePrecipitationWarningIcon(current.precipitation)
-    val visibilityWarning = resolveVisibilityWarningIcon(visibility)
-    val criWarning = resolveCriWarningIcon(current.cri)
+    val gustSubText = current?.gustDifferenceLevel?.let(::resolveGustDifferenceSubTextRes)
+    val precipWarning = current?.precipitation?.let(::resolvePrecipitationWarningIcon) ?: WarningIconType.None
+    val visibilityWarning = resolveNullableVisibilityWarningIcon(visibility)
+    val criWarning = current?.cri?.let(::resolveCriWarningIcon) ?: WarningIconType.None
 
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -195,10 +201,14 @@ internal fun CurrentWeatherSection(
             Box {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     PreviewBlock(
-                        weatherCode = current.weatherCode,
-                        temperature = current.temperature,
-                        maxTemperature = maxTemp,
-                        minTemperature = minTemp,
+                        weatherIcon = WeatherCodeMapper.weatherCodeToIcon(current?.weatherCode ?: Int.MIN_VALUE),
+                        conditionText = current?.weatherCode
+                            ?.let(WeatherCodeMapper::weatherCodeToDescription)
+                            ?: stringResource(R.string.weather_unknown),
+                        temperatureText = formatNullableIosTemperatureDegrees(current?.temperature),
+                        temperatureColor = current?.temperature?.let(::interpolateTemperatureColor) ?: Color.Gray,
+                        maxTemperatureText = maxTemperatureText,
+                        minTemperatureText = minTemperatureText,
                     )
 
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -206,9 +216,9 @@ internal fun CurrentWeatherSection(
                             WeatherDataCell(
                                 modifier = Modifier.weight(1f),
                                 icon = Icons.Default.Thermostat,
-                                iconColor = interpolateTemperatureColor(current.temperature),
+                                iconColor = current?.temperature?.let(::interpolateTemperatureColor) ?: Color.Gray,
                                 label = stringResource(R.string.weather_temperature),
-                                value = formatIosTemperatureDegrees(current.temperature),
+                                value = formatNullableIosTemperatureDegrees(current?.temperature),
                                 warningIcon = tempWarning,
                                 onClick = { onWeatherInfoRequested(WeatherInfoTopic.Temperature) },
                             )
@@ -217,7 +227,7 @@ internal fun CurrentWeatherSection(
                                 icon = Icons.Default.Air,
                                 iconColor = WindSpeedGreen,
                                 label = stringResource(R.string.weather_wind_speed),
-                                value = "%.1f m/s".format(Locale.ROOT, current.windSpeed),
+                                value = formatIosMetersPerSecond(current?.windSpeed),
                                 warningIcon = windWarning,
                                 onClick = { onWeatherInfoRequested(WeatherInfoTopic.WindSpeed) },
                             )
@@ -228,15 +238,17 @@ internal fun CurrentWeatherSection(
                                 icon = Icons.Default.Navigation,
                                 iconColor = WindArrowTeal,
                                 label = stringResource(R.string.weather_wind_direction),
-                                value = stringResource(resolveWindDirectionLabelRes(current.windDirection)),
-                                rotation = current.windDirection.toFloat(),
+                                value = current?.windDirection
+                                    ?.let { stringResource(resolveWindDirectionLabelRes(it)) }
+                                    ?: MissingWeatherValueText,
+                                rotation = current?.windDirection?.toFloat(),
                             )
                             WeatherDataCell(
                                 modifier = Modifier.weight(1f),
                                 icon = Icons.Default.Storm,
                                 iconColor = GustOrange,
                                 label = stringResource(R.string.weather_gust_difference),
-                                value = "%.1f m/s".format(Locale.ROOT, gustDiff),
+                                value = formatIosMetersPerSecond(gustDiff),
                                 warningIcon = gustWarning,
                                 subText = gustSubText?.let { stringResource(it) },
                                 onClick = { onWeatherInfoRequested(WeatherInfoTopic.GustDifference) },
@@ -248,7 +260,7 @@ internal fun CurrentWeatherSection(
                                 icon = Icons.Default.WaterDrop,
                                 iconColor = PrecipitationBlue,
                                 label = stringResource(R.string.weather_precipitation),
-                                value = "%.1f mm".format(Locale.ROOT, current.precipitation),
+                                value = formatIosPrecipitationIntensity(current?.precipitation),
                                 warningIcon = precipWarning,
                                 onClick = { onWeatherInfoRequested(WeatherInfoTopic.Precipitation) },
                             )
@@ -257,7 +269,7 @@ internal fun CurrentWeatherSection(
                                 icon = Icons.Default.Visibility,
                                 iconColor = VisibilityPurple,
                                 label = stringResource(R.string.weather_visibility),
-                                value = formatIosVisibilityKilometers(visibility),
+                                value = formatNullableIosVisibilityKilometers(visibility),
                                 warningIcon = visibilityWarning,
                                 onClick = { onWeatherInfoRequested(WeatherInfoTopic.Visibility) },
                             )
@@ -268,7 +280,7 @@ internal fun CurrentWeatherSection(
                                 icon = Icons.Default.Opacity,
                                 iconColor = CriCyan,
                                 label = stringResource(R.string.weather_cri),
-                                value = "${current.cri.toInt()}",
+                                value = formatIosCri(current?.cri),
                                 warningIcon = criWarning,
                                 onClick = { onWeatherInfoRequested(WeatherInfoTopic.Cri) },
                             )
@@ -397,10 +409,12 @@ private fun DroneCategoryMenu(
 
 @Composable
 private fun PreviewBlock(
-    weatherCode: Int,
-    temperature: Double,
-    maxTemperature: Double,
-    minTemperature: Double,
+    weatherIcon: ImageVector,
+    conditionText: String,
+    temperatureText: String,
+    temperatureColor: Color,
+    maxTemperatureText: String,
+    minTemperatureText: String,
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -415,8 +429,8 @@ private fun PreviewBlock(
             verticalAlignment = Alignment.Top,
         ) {
             Icon(
-                imageVector = WeatherCodeMapper.weatherCodeToIcon(weatherCode),
-                contentDescription = WeatherCodeMapper.weatherCodeToDescription(weatherCode),
+                imageVector = weatherIcon,
+                contentDescription = conditionText,
                 tint = WeatherIconBlue,
                 modifier = Modifier.size(64.dp),
             )
@@ -429,21 +443,20 @@ private fun PreviewBlock(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Text(
-                        text = formatIosTemperatureDegrees(temperature),
+                        text = temperatureText,
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.SemiBold,
-                        color = interpolateTemperatureColor(temperature),
+                        color = temperatureColor,
                     )
                     Text(
-                        text = WeatherCodeMapper.weatherCodeToDescription(weatherCode),
+                        text = conditionText,
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurface,
                     )
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
-                        text = stringResource(R.string.weather_temperature_high_prefix) +
-                            formatIosTemperatureDegrees(maxTemperature),
+                        text = stringResource(R.string.weather_temperature_high_prefix) + maxTemperatureText,
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -453,8 +466,7 @@ private fun PreviewBlock(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Text(
-                        text = stringResource(R.string.weather_temperature_low_prefix) +
-                            formatIosTemperatureDegrees(minTemperature),
+                        text = stringResource(R.string.weather_temperature_low_prefix) + minTemperatureText,
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -554,11 +566,26 @@ private fun WeatherDataCell(
 
 internal fun weatherDataCellHasSubText(subText: String?): Boolean = subText != null
 
+internal fun formatNullableIosTemperatureDegrees(temperatureC: Double?): String =
+    temperatureC?.let(::formatIosTemperatureDegrees) ?: MissingWeatherValueText
+
 internal fun formatIosTemperatureDegrees(temperatureC: Double): String =
     "%.0f°".format(Locale.ROOT, temperatureC)
 
+internal fun formatNullableIosVisibilityKilometers(visibilityKm: Double?): String =
+    visibilityKm?.let(::formatIosVisibilityKilometers) ?: MissingWeatherValueText
+
 internal fun formatIosVisibilityKilometers(visibilityKm: Double): String =
     "%.1f km".format(Locale.ROOT, visibilityKm)
+
+internal fun formatIosMetersPerSecond(value: Double?): String =
+    value?.let { "%.1f m/s".format(Locale.ROOT, it) } ?: MissingWeatherValueText
+
+internal fun formatIosPrecipitationIntensity(precipitation: Double?): String =
+    precipitation?.let { "%.1f mm/h".format(Locale.ROOT, it) } ?: MissingWeatherValueText
+
+internal fun formatIosCri(cri: Double?): String =
+    cri?.let { "%.0f".format(Locale.ROOT, it) } ?: MissingWeatherValueText
 
 @StringRes
 internal fun resolveWindDirectionLabelRes(degrees: Double): Int {

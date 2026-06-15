@@ -99,6 +99,7 @@
     <string name="weather_drone_category_class2_description">산업용 드론\n2급 자격증 필요</string>
     <string name="weather_drone_category_class2_examples">농업용/산업용 드론</string>
     <string name="weather_temperature">온도</string>
+    <string name="weather_unknown">알 수 없음</string>
     <string name="weather_gust_difference">돌풍 차이</string>
     <string name="weather_precipitation">강수량</string>
     <string name="weather_cri">결로 위험 (CRI)</string>

@@ -162,6 +162,7 @@ class WeatherForecastParityTest {
         assertEquals("20°", formatIosTemperatureDegrees(20.4))
         assertEquals("21°", formatIosTemperatureDegrees(20.6))
         assertEquals("-3°", formatIosTemperatureDegrees(-3.4))
+        assertEquals("-", formatNullableIosTemperatureDegrees(null))
     }
 
     @Test
@@ -169,6 +170,25 @@ class WeatherForecastParityTest {
         assertEquals("10.0 km", formatIosVisibilityKilometers(10.0))
         assertEquals("2.4 km", formatIosVisibilityKilometers(2.44))
         assertEquals("2.5 km", formatIosVisibilityKilometers(2.45))
+        assertEquals("-", formatNullableIosVisibilityKilometers(null))
+    }
+
+    @Test
+    fun `current weather fallback strings match iOS manager computed values`() {
+        assertEquals("-", MissingWeatherValueText)
+        assertEquals("-", formatIosMetersPerSecond(null))
+        assertEquals("5.2 m/s", formatIosMetersPerSecond(5.24))
+        assertEquals("-", formatIosPrecipitationIntensity(null))
+        assertEquals("1.2 mm/h", formatIosPrecipitationIntensity(1.24))
+        assertEquals("-", formatIosCri(null))
+        assertEquals("43", formatIosCri(42.6))
+    }
+
+    @Test
+    fun `missing current weather visibility keeps iOS moderate warning fallback`() {
+        assertEquals(WarningIconType.Caution, resolveNullableVisibilityWarningIcon(null))
+        assertEquals(WarningIconType.Warning, resolveNullableVisibilityWarningIcon(1.99))
+        assertEquals(WarningIconType.None, resolveNullableVisibilityWarningIcon(10.0))
     }
 
     @Test

@@ -98,6 +98,7 @@
     <string name="weather_drone_category_class2_description">Industrial Drones\nClass 2 License Required</string>
     <string name="weather_drone_category_class2_examples">Agricultural/Industrial Drones</string>
     <string name="weather_temperature">Temperature</string>
+    <string name="weather_unknown">Unknown</string>
     <string name="weather_gust_difference">Gust difference</string>
     <string name="weather_precipitation">Precipitation</string>
     <string name="weather_cri">Condensation Risk (CRI)</string>
