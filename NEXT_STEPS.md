@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 날씨 예보 강수량 차트의 X축 라벨도 iOS `WeatherForecastView`처럼 자정에는 `MM/dd` 날짜 라벨을 쓰도록 보정했다. Android 일반 라인 차트는 이미 같은 규칙을 쓰고 있었지만, 강수량 바 차트만 `HH` 고정이어서 다일 예보에서 날짜 경계가 iOS와 달랐다. 공용 `formatIosTimeChartAxisLabel`로 통일하고, `:app:testDebugUnitTest --tests "*WeatherForecastParityTest" --tests "*StringResourceCoverageTest"` 및 `:app:assembleDebug` 통과.
 - 날씨 예보 현재 날씨 카드를 iOS `WeatherForecastView.currentWeatherCard`처럼 현재 weather 데이터가 없어도 카드 구조를 유지하도록 보정했다. Android는 `data.current == null`이면 섹션을 생략했지만, iOS `WeatherManager` computed 문자열들은 `"-"`/`weather.unknown` fallback으로 카드 안 값을 유지한다. Android도 현재 카드에서 온도/풍속/풍향/돌풍/강수/가시거리/CRI fallback을 맞추고, 현재 강수 표기를 iOS `precipitationString`과 같은 `mm/h` 단위로 정리했다. `:app:testDebugUnitTest --tests "*WeatherForecastParityTest" --tests "*StringResourceCoverageTest"` 및 `:app:assembleDebug` 통과.
 - KP 예보 현재 지수 카드를 iOS `KPForecastView.currentKPCard`처럼 현재 KP 데이터가 없어도 카드 구조를 유지하도록 보정했다. iOS `KPIndexManager.currentKPString`은 `currentKP == nil`일 때 `"-"`를 표시하고 `currentLevel` 기본값 `.normal`로 레벨/설명/GFZ 출처를 계속 보여주므로, Android도 `데이터가 없습니다` 대체 카드 대신 `-` + Normal 레벨/설명/출처를 렌더링한다. `:app:testDebugUnitTest --tests "*KpChartsTest"` 및 `:app:assembleDebug` 통과.
 - KP 예보 화면과 설정/지도 시트 헤더의 새로고침 버튼 활성화 정책을 iOS `KPForecastView` toolbar처럼 로딩 중에도 유지되도록 보정했다. 기존 Android는 `isLoading` 중 새로고침 버튼을 비활성화했고 전체 화면 toolbar에 별도 스피너도 표시했지만, iOS는 버튼을 disable하지 않고 toolbar 스피너도 두지 않으므로 공용 `isKpRefreshActionEnabled` 정책과 `KpToolbarShowsLoadingIndicator = false` 기준으로 통일했다. `:app:testDebugUnitTest --tests "*KpChartsTest"` 및 `:app:assembleDebug` 통과.
@@ -299,7 +300,7 @@ iOS와 Android가 공유하는 `users/{uid}/shapes`, `users/{uid}/sketches`, `us
 - 2026-06-13 재확인: Android 계정 탈퇴 원격 삭제는 iOS 기본 삭제 대상(`shapes`/`drones`/`metadata`)에 더해 `sketches`와 Android FCM `devices`까지 삭제한다. 이는 잔여 원격 데이터 방어 목적이며, iOS도 Sketch/기기 토큰 정리 범위 재검토 후보.
 - 2026-06-14 추가 고정: Shape 파싱은 표준 `flightStartDate`가 있으면 레거시 `startedAt`보다 우선하고, 시작일이 `Long`/문자열이면 invalid로 skip한다. Shape 쓰기는 `deletedAt`까지 `Timestamp`로 직렬화하며 `startedAt`/`expireDate` 키를 생성하지 않는 회귀 테스트를 유지한다.
 - 2026-06-14 추가 방어: Shape `polygonCoordinates`/`polylineCoordinates` 읽기는 iOS `compactMap` 파서처럼 손상 좌표 원소만 제외한다. 제외 후 polygon 3점 미만, polyline 2점 미만이면 문서 전체를 skip한다. 쓰기는 계속 표준 Double 좌표 map 배열만 허용한다.
-- 2026-06-14 추가 방어: Shape optional 숫자(`radius`, `height`) 읽기는 iOS `as? Double` 동작처럼 타입 불일치 값을 문서 전체 invalid가 아니라 `nil`로 처리한다. Sketch optional 숫자(`strokeWidth`, `opacity`)도 타입 불일치 시 iOS 기본값 `3.0`/`1.0`으로 fallback한다. 쓰기 검증은 계속 표준 Double과 범위 제한을 유지한다.
+- 2026-06-15 추가 방어: Shape optional 숫자(`radius`, `height`)와 Sketch optional 숫자(`strokeWidth`, `opacity`) 읽기는 Firestore가 정수 `Number`로 돌려주는 레거시 값을 Double로 복구한다. 문자열은 계속 `nil`/기본값으로 처리하고, 쓰기 검증은 표준 Double과 범위 제한을 유지한다.
 - 2026-06-15 추가 방어: Shape/Sketch/Drone 쓰기에서 선택 필드 값이 없을 때 Firestore 문서에 `null`을 저장하지 않는다. 표준 문서 데이터는 iOS처럼 값이 있는 optional 필드만 포함하고, Android의 merge 저장 payload에는 해당 필드 `FieldValue.delete()`를 넣어 기존 null/stale 값을 정리한다.
 - 2026-06-15 재확인: Android Shape 읽기는 공유 계약에 맞춰 rectangle `secondCoordinate`, polygon 3점 이상, polyline 2점 이상을 필수로 유지한다. iOS 현재 파서는 해당 geometry 누락을 nil로 통과시킬 수 있으므로, 플랫폼을 더 맞추려면 Android 완화가 아니라 iOS 검증 강화가 안전하다.
 
