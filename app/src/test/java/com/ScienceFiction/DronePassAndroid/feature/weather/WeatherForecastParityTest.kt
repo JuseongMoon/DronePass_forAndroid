@@ -325,11 +325,42 @@ class WeatherForecastParityTest {
         assertEquals(12.0 to 15.0, iosWindSpeedThresholds(DroneCategory.CLASS2))
         assertEquals(6.0 to 8.5, iosGustDifferenceThresholds(DroneCategory.CLASS4))
         assertEquals(9.0 to 12.0, iosGustDifferenceThresholds(DroneCategory.CLASS2))
+        assertEquals(-10.0, IosTemperatureLowCautionC, 0.0)
+        assertEquals(35.0, IosTemperatureHighCautionC, 0.0)
         assertEquals(10.0, IosVisibilityGoodKm, 0.0)
         assertEquals(2.0, IosVisibilityPoorKm, 0.0)
         assertEquals(40.0, IosCriModerate, 0.0)
         assertEquals(70.0, IosCriHigh, 0.0)
         assertEquals(0.0..100.0, IosWeatherCriChartYRange)
+    }
+
+    @Test
+    fun `weather chart threshold lines use iOS RuleMark colors`() {
+        assertThresholdLines(
+            temperatureChartThresholdLines(),
+            values = listOf(-10.0, 35.0),
+            colors = listOf(0xFF007AFF.toInt(), 0xFFFF9500.toInt()),
+        )
+        assertThresholdLines(
+            windSpeedChartThresholdLines(DroneCategory.CLASS2),
+            values = listOf(12.0, 15.0),
+            colors = listOf(0xFFFF9500.toInt(), 0xFFFF3B30.toInt()),
+        )
+        assertThresholdLines(
+            gustDifferenceChartThresholdLines(DroneCategory.CLASS4),
+            values = listOf(6.0, 8.5),
+            colors = listOf(0xFFFF9500.toInt(), 0xFFFF3B30.toInt()),
+        )
+        assertThresholdLines(
+            visibilityChartThresholdLines(),
+            values = listOf(2.0, 10.0),
+            colors = listOf(0xFFFF3B30.toInt(), 0xFF34C759.toInt()),
+        )
+        assertThresholdLines(
+            criChartThresholdLines(),
+            values = listOf(40.0, 70.0),
+            colors = listOf(0xFFFFCC00.toInt(), 0xFFFF3B30.toInt()),
+        )
     }
 
     @Test
@@ -407,6 +438,15 @@ class WeatherForecastParityTest {
                 preferencesOf(WeatherDroneCategoryPreferenceKey to "invalid"),
             ),
         )
+    }
+
+    private fun assertThresholdLines(
+        thresholdLines: List<WeatherThresholdLine>,
+        values: List<Double>,
+        colors: List<Int>,
+    ) {
+        assertEquals(values, thresholdLines.map { it.value })
+        assertEquals(colors, thresholdLines.map { it.color.toArgb() })
     }
 
     private fun hourlyWeather(

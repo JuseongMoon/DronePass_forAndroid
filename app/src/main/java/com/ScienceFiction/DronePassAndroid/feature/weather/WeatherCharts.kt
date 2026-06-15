@@ -61,6 +61,11 @@ internal val IosWeatherPrecipitationChartColor = Color(0xFF2196F3)
 internal val IosWeatherVisibilityChartColor = Color(0xFF9C27B0)
 internal val IosWeatherCriChartColor = Color(0xFF00BCD4)
 internal val IosWeatherCriChartYRange = 0.0..100.0
+internal val IosWeatherRuleMarkBlue = Color(0xFF007AFF)
+internal val IosWeatherRuleMarkOrange = Color(0xFFFF9500)
+internal val IosWeatherRuleMarkGreen = Color(0xFF34C759)
+internal val IosWeatherRuleMarkYellow = Color(0xFFFFCC00)
+internal val IosWeatherRuleMarkRed = Color(0xFFFF3B30)
 
 /**
  * Y축 배경 색상 영역. WeatherLineChart 의 [backgroundZones] 에 전달.
@@ -71,6 +76,11 @@ internal data class BackgroundZone(
     val range: ClosedFloatingPointRange<Double>,
     val color: Color,
     val alpha: Float = 0.08f,
+)
+
+internal data class WeatherThresholdLine(
+    val value: Double,
+    val color: Color,
 )
 
 /**
@@ -88,6 +98,7 @@ internal data class BackgroundZone(
  * - [pointColors]: 각 데이터 포인트에 표시할 원의 색 (예: KpLevel 별 색상)
  * - [pointLabels]: 각 데이터 포인트 위에 표시할 라벨 (예: iOS KP PointMark annotation)
  * - [lineSegmentColors]: 각 데이터 포인트에서 시작하는 line segment 색상 (예: iOS KP LineMark foregroundStyle)
+ * - [thresholdLines]: iOS Weather RuleMark 처럼 값별 색상이 필요한 기준선
  * - [backgroundZones]: Y축 값 범위별 배경 색상 (KP 의 zone 표시)
  */
 @Composable
@@ -99,6 +110,7 @@ internal fun WeatherLineChart(
     warningThreshold: Double? = null,
     dangerThreshold: Double? = null,
     invertWarning: Boolean = false,
+    thresholdLines: List<WeatherThresholdLine> = emptyList(),
     yAxisLabel: String = "",
     formatValue: (Double) -> String = { String.format(Locale.ROOT, "%.1f", it) },
     yAxisRange: ClosedFloatingPointRange<Double>? = null,
@@ -269,16 +281,27 @@ internal fun WeatherLineChart(
             }
         }
 
+        thresholdLines.forEach { thresholdLine ->
+            if (thresholdLine.value in yMin..yMax) {
+                drawWeatherThresholdLine(
+                    y = toScreenY(thresholdLine.value),
+                    color = thresholdLine.color,
+                    left = leftPadding,
+                    right = size.width - rightPadding,
+                    strokeWidth = 1f,
+                )
+            }
+        }
+
         // Warning threshold (노란 점선)
         warningThreshold?.let { threshold ->
             if (threshold in yMin..yMax) {
-                val y = toScreenY(threshold)
-                drawLine(
+                drawWeatherThresholdLine(
+                    y = toScreenY(threshold),
                     color = Color(0xFFFFB300),
-                    start = Offset(leftPadding, y),
-                    end = Offset(size.width - rightPadding, y),
+                    left = leftPadding,
+                    right = size.width - rightPadding,
                     strokeWidth = 2f,
-                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 8f))
                 )
             }
         }
@@ -286,13 +309,12 @@ internal fun WeatherLineChart(
         // Danger threshold (빨간 점선)
         dangerThreshold?.let { threshold ->
             if (threshold in yMin..yMax) {
-                val y = toScreenY(threshold)
-                drawLine(
+                drawWeatherThresholdLine(
+                    y = toScreenY(threshold),
                     color = Color(0xFFF44336),
-                    start = Offset(leftPadding, y),
-                    end = Offset(size.width - rightPadding, y),
+                    left = leftPadding,
+                    right = size.width - rightPadding,
                     strokeWidth = 2f,
-                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 8f))
                 )
             }
         }
@@ -450,6 +472,22 @@ internal fun WeatherLineChart(
             }
         }
     }
+}
+
+private fun DrawScope.drawWeatherThresholdLine(
+    y: Float,
+    color: Color,
+    left: Float,
+    right: Float,
+    strokeWidth: Float,
+) {
+    drawLine(
+        color = color,
+        start = Offset(left, y),
+        end = Offset(right, y),
+        strokeWidth = strokeWidth,
+        pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 8f)),
+    )
 }
 
 private fun DrawScope.drawWeatherCurrentTimeLabel(
@@ -617,6 +655,37 @@ internal fun resolveIosTemperatureYRange(temperatures: List<Double>): ClosedFloa
     return if (yMin <= yMax) yMin..yMax else -30.0..50.0
 }
 
+internal fun temperatureChartThresholdLines(): List<WeatherThresholdLine> = listOf(
+    WeatherThresholdLine(IosTemperatureLowCautionC, IosWeatherRuleMarkBlue),
+    WeatherThresholdLine(IosTemperatureHighCautionC, IosWeatherRuleMarkOrange),
+)
+
+internal fun windSpeedChartThresholdLines(category: DroneCategory): List<WeatherThresholdLine> {
+    val (cautionThreshold, dangerThreshold) = iosWindSpeedThresholds(category)
+    return listOf(
+        WeatherThresholdLine(cautionThreshold, IosWeatherRuleMarkOrange),
+        WeatherThresholdLine(dangerThreshold, IosWeatherRuleMarkRed),
+    )
+}
+
+internal fun gustDifferenceChartThresholdLines(category: DroneCategory): List<WeatherThresholdLine> {
+    val (cautionThreshold, dangerThreshold) = iosGustDifferenceThresholds(category)
+    return listOf(
+        WeatherThresholdLine(cautionThreshold, IosWeatherRuleMarkOrange),
+        WeatherThresholdLine(dangerThreshold, IosWeatherRuleMarkRed),
+    )
+}
+
+internal fun visibilityChartThresholdLines(): List<WeatherThresholdLine> = listOf(
+    WeatherThresholdLine(IosVisibilityPoorKm, IosWeatherRuleMarkRed),
+    WeatherThresholdLine(IosVisibilityGoodKm, IosWeatherRuleMarkGreen),
+)
+
+internal fun criChartThresholdLines(): List<WeatherThresholdLine> = listOf(
+    WeatherThresholdLine(IosCriModerate, IosWeatherRuleMarkYellow),
+    WeatherThresholdLine(IosCriHigh, IosWeatherRuleMarkRed),
+)
+
 // ─── 개별 차트 6종 ────────────────────────────────────────────
 
 @Composable
@@ -628,6 +697,7 @@ fun TemperatureChart(
     val dataPoints = hourlyData.map { it.time to it.temperature }
     val pointColors = hourlyData.map { interpolateTemperatureColor(it.temperature) }
     val yAxisRange = resolveIosTemperatureYRange(hourlyData.map { it.temperature })
+    val thresholdLines = temperatureChartThresholdLines()
     val currentLabel = stringResource(R.string.weather_chart_current)
     ChartCard(
         title = stringResource(R.string.weather_chart_temperature),
@@ -640,6 +710,7 @@ fun TemperatureChart(
                 lineColor = Color(0xFFFF6B35),
                 fillAlpha = 0.15f,
                 yAxisRange = yAxisRange,
+                thresholdLines = thresholdLines,
                 yAxisLabel = "\u00B0C",
                 formatValue = { String.format(Locale.ROOT, "%.0f\u00B0", it) },
                 xLabelIntervalMs = IosWeatherChartXLabelIntervalMs,
@@ -660,7 +731,7 @@ fun WindSpeedChart(
     nowMillis: Long = System.currentTimeMillis(),
 ) {
     val dataPoints = hourlyData.map { it.time to it.windSpeed }
-    val (cautionThreshold, dangerThreshold) = iosWindSpeedThresholds(category)
+    val thresholdLines = windSpeedChartThresholdLines(category)
     val lineColor = IosWeatherWindSpeedChartColor
     val currentLabel = stringResource(R.string.weather_chart_current)
     ChartCard(
@@ -673,8 +744,7 @@ fun WindSpeedChart(
                 modifier = chartModifier,
                 lineColor = lineColor,
                 fillAlpha = 0.1f,
-                warningThreshold = cautionThreshold,
-                dangerThreshold = dangerThreshold,
+                thresholdLines = thresholdLines,
                 yAxisLabel = "m/s",
                 formatValue = { String.format(Locale.ROOT, "%.1f", it) },
                 xLabelIntervalMs = IosWeatherChartXLabelIntervalMs,
@@ -694,7 +764,7 @@ fun GustDifferenceChart(
     nowMillis: Long = System.currentTimeMillis(),
 ) {
     val dataPoints = hourlyData.map { it.time to it.gustDifference }
-    val (cautionThreshold, dangerThreshold) = iosGustDifferenceThresholds(category)
+    val thresholdLines = gustDifferenceChartThresholdLines(category)
     val lineColor = IosWeatherGustDifferenceChartColor
     val currentLabel = stringResource(R.string.weather_chart_current)
     ChartCard(
@@ -707,8 +777,7 @@ fun GustDifferenceChart(
                 modifier = chartModifier,
                 lineColor = lineColor,
                 fillAlpha = 0.1f,
-                warningThreshold = cautionThreshold,
-                dangerThreshold = dangerThreshold,
+                thresholdLines = thresholdLines,
                 yAxisLabel = "m/s",
                 formatValue = { String.format(Locale.ROOT, "%.1f", it) },
                 xLabelIntervalMs = IosWeatherChartXLabelIntervalMs,
@@ -761,6 +830,7 @@ fun VisibilityChart(
 ) {
     val dataPoints = hourlyData.map { it.time to it.visibility }
     val lineColor = IosWeatherVisibilityChartColor
+    val thresholdLines = visibilityChartThresholdLines()
     val currentLabel = stringResource(R.string.weather_chart_current)
     ChartCard(
         title = stringResource(R.string.weather_chart_visibility),
@@ -772,8 +842,7 @@ fun VisibilityChart(
                 modifier = chartModifier,
                 lineColor = lineColor,
                 fillAlpha = 0.1f,
-                warningThreshold = IosVisibilityGoodKm,
-                dangerThreshold = IosVisibilityPoorKm,
+                thresholdLines = thresholdLines,
                 yAxisLabel = "km",
                 formatValue = { String.format(Locale.ROOT, "%.0f", it) },
                 xLabelIntervalMs = IosWeatherChartXLabelIntervalMs,
@@ -793,6 +862,7 @@ fun CriChart(
 ) {
     val dataPoints = hourlyData.map { it.time to it.cri }
     val lineColor = IosWeatherCriChartColor
+    val thresholdLines = criChartThresholdLines()
     val currentLabel = stringResource(R.string.weather_chart_current)
     ChartCard(
         title = stringResource(R.string.weather_chart_cri),
@@ -805,8 +875,7 @@ fun CriChart(
                 lineColor = lineColor,
                 fillAlpha = 0.1f,
                 yAxisRange = IosWeatherCriChartYRange,
-                warningThreshold = IosCriModerate,
-                dangerThreshold = IosCriHigh,
+                thresholdLines = thresholdLines,
                 yAxisLabel = "%",
                 formatValue = { String.format(Locale.ROOT, "%.0f", it) },
                 xLabelIntervalMs = IosWeatherChartXLabelIntervalMs,
