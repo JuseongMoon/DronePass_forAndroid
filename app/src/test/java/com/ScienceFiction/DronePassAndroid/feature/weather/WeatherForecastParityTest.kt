@@ -106,6 +106,12 @@ class WeatherForecastParityTest {
     }
 
     @Test
+    fun `forecast refresh action stays enabled while loading like iOS toolbar`() {
+        assertTrue(isWeatherRefreshActionEnabled(isLoading = false))
+        assertTrue(isWeatherRefreshActionEnabled(isLoading = true))
+    }
+
+    @Test
     fun `forecast charts use iOS twelve hour visible domain with hourly labels`() {
         assertEquals(12 * HourMs, IosWeatherChartVisibleDomainMs)
         assertEquals(HourMs, IosWeatherChartXLabelIntervalMs)

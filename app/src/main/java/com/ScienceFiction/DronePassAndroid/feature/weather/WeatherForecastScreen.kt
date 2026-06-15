@@ -66,6 +66,9 @@ import java.util.Locale
 
 internal const val WeatherDataSourceUrl = "https://open-meteo.com/"
 
+@Suppress("UNUSED_PARAMETER")
+internal fun isWeatherRefreshActionEnabled(isLoading: Boolean): Boolean = true
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WeatherForecastScreen(
@@ -110,7 +113,7 @@ fun WeatherForecastScreen(
                     }
                     IconButton(
                         onClick = { viewModel.refreshWeather() },
-                        enabled = !isLoading,
+                        enabled = isWeatherRefreshActionEnabled(isLoading),
                     ) {
                         Icon(
                             imageVector = Icons.Default.Refresh,
@@ -407,7 +410,7 @@ fun WeatherSheetHeader(
                 modifier = Modifier.weight(1f),
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
             )
-            IconButton(onClick = onRefresh, enabled = !isLoading) {
+            IconButton(onClick = onRefresh, enabled = isWeatherRefreshActionEnabled(isLoading)) {
                 Icon(
                     imageVector = Icons.Default.Refresh,
                     contentDescription = stringResource(R.string.weather_refresh),
