@@ -1,6 +1,6 @@
 # DronePass Android 작업 이어가기
 
-> 마지막 업데이트: 2026-06-15
+> 마지막 업데이트: 2026-06-16
 > 브랜치: `fix/critical-pri0-fixes`
 > 상태: iOS 동작 대조와 Android 출시 하드닝 진행 중
 
@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 날씨 예보 차트의 기준선을 iOS `WeatherForecastView`의 `RuleMark` 색상/두께에 맞춰 보정했다. 공용 차트에 값별 색상을 받는 `WeatherThresholdLine`을 추가하고, 온도 차트에는 저온 파랑/고온 주황 점선, 풍속·순간풍속에는 주의 주황/위험 빨강 점선, 가시거리에는 위험 빨강/양호 초록 점선, CRI에는 주의 노랑/경고 빨강 점선을 사용한다. 기존 `warningThreshold`/`dangerThreshold` 경로는 KP 등 기존 호출을 위해 유지한다. `:app:testDebugUnitTest --tests "*WeatherForecastParityTest"` 및 `:app:assembleDebug` 통과.
 - 날씨 CRI 예보 차트의 Y축 범위를 iOS `WeatherForecastView`의 `.chartYScale(domain: 0...100)`처럼 0..100 고정 범위로 보정했다. 다른 날씨 차트의 자동 범위는 유지하고 CRI 차트만 iOS 전용 범위를 명시한다. `:app:testDebugUnitTest --tests "*WeatherForecastParityTest"` 및 `:app:assembleDebug` 통과.
 - 날씨 온도 예보 차트의 Y축 범위를 iOS `WeatherForecastView.calculateTemperatureYRange()`처럼 데이터 최저/최고값에 각각 5도 여백을 주고 5도 단위로 내림/올림한 뒤 `-30...50` 범위로 제한하도록 보정했다. Android 공용 차트의 10% 자동 패딩 대신 온도 차트만 iOS 전용 범위를 명시한다. `:app:testDebugUnitTest --tests "*WeatherForecastParityTest"` 및 `:app:assembleDebug` 통과.
 - 날씨 예보 차트의 현재 시각 표시를 iOS `WeatherForecastView`의 `RuleMark.annotation`처럼 빨간 수직선 + 상단 `현재`/`Now` 배지로 보정했다. KP 차트는 iOS처럼 라벨 없는 현재 시각 선을 유지하고, 날씨 차트에서만 `weather.chart.current` 대응 리소스를 사용한다. `:app:testDebugUnitTest --tests "*WeatherForecastParityTest" --tests "*StringResourceCoverageTest"` 및 `:app:assembleDebug` 통과.
