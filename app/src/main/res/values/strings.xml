@@ -471,13 +471,15 @@
     <string name="weather_direction_nw">북서</string>
 
     <!-- Weather Charts -->
-    <string name="weather_chart_temperature">온도 예보 (3일)</string>
-    <string name="weather_chart_wind_speed">풍속 예보 (3일)</string>
-    <string name="weather_chart_gust_difference">순간풍속증가량 예보 (3일)</string>
-    <string name="weather_chart_precipitation">강수량 예보 (3일)</string>
-    <string name="weather_chart_visibility">가시거리 예보 (3일)</string>
-    <string name="weather_chart_cri">결로위험지수 예보 (3일)</string>
+    <string name="weather_chart_temperature">온도 예보 (%1$s)</string>
+    <string name="weather_chart_wind_speed">풍속 예보 (%1$s)</string>
+    <string name="weather_chart_gust_difference">순간풍속증가량 예보 (%1$s)</string>
+    <string name="weather_chart_precipitation">강수량 예보 (%1$s)</string>
+    <string name="weather_chart_visibility">가시거리 예보 (%1$s)</string>
+    <string name="weather_chart_cri">결로위험지수 예보 (%1$s)</string>
     <string name="weather_chart_current">현재</string>
+    <string name="weather_forecast_days">%1$d일</string>
+    <string name="weather_forecast_hours">%1$d시간</string>
     <string name="weather_legend_low_temp">저온 ≤ %1$d°C</string>
     <string name="weather_legend_high_temp">고온 ≥ %1$d°C</string>
     <string name="weather_legend_caution">주의 ≥ %1$.1fm/s</string>

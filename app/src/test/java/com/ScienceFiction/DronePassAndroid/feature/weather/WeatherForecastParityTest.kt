@@ -27,6 +27,9 @@ class WeatherForecastParityTest {
 
     @Test
     fun `forecast charts use iOS three day hourly data window from current hour`() {
+        assertEquals(3, WeatherForecastDays)
+        assertEquals(72, WeatherForecastChartHours)
+
         val hourly = (0 until 90).map { index ->
             hourlyWeather(time = index * HourMs, temperature = index.toDouble())
         }

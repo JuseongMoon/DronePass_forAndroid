@@ -710,8 +710,9 @@ fun TemperatureChart(
     val yAxisRange = resolveIosTemperatureYRange(hourlyData.map { it.temperature })
     val thresholdLines = temperatureChartThresholdLines()
     val currentLabel = stringResource(R.string.weather_chart_current)
+    val forecastPeriodLabel = weatherForecastPeriodLabel()
     ChartCard(
-        title = stringResource(R.string.weather_chart_temperature),
+        title = stringResource(R.string.weather_chart_temperature, forecastPeriodLabel),
         unitLabel = stringResource(R.string.weather_unit_celsius),
         modifier = modifier,
     ) {
@@ -764,8 +765,9 @@ fun WindSpeedChart(
     val thresholdLines = windSpeedChartThresholdLines(category)
     val lineColor = IosWeatherWindSpeedChartColor
     val currentLabel = stringResource(R.string.weather_chart_current)
+    val forecastPeriodLabel = weatherForecastPeriodLabel()
     ChartCard(
-        title = stringResource(R.string.weather_chart_wind_speed),
+        title = stringResource(R.string.weather_chart_wind_speed, forecastPeriodLabel),
         unitLabel = stringResource(R.string.weather_unit_mps),
         modifier = modifier,
     ) {
@@ -810,8 +812,9 @@ fun GustDifferenceChart(
     val thresholdLines = gustDifferenceChartThresholdLines(category)
     val lineColor = IosWeatherGustDifferenceChartColor
     val currentLabel = stringResource(R.string.weather_chart_current)
+    val forecastPeriodLabel = weatherForecastPeriodLabel()
     ChartCard(
-        title = stringResource(R.string.weather_chart_gust_difference),
+        title = stringResource(R.string.weather_chart_gust_difference, forecastPeriodLabel),
         unitLabel = stringResource(R.string.weather_unit_mps),
         modifier = modifier,
     ) {
@@ -855,8 +858,9 @@ fun PrecipitationChart(
     val lineColor = IosWeatherPrecipitationChartColor
     val yMax = resolveIosPrecipitationYMax(dataPoints.map { it.second })
     val currentLabel = stringResource(R.string.weather_chart_current)
+    val forecastPeriodLabel = weatherForecastPeriodLabel()
     ChartCard(
-        title = stringResource(R.string.weather_chart_precipitation),
+        title = stringResource(R.string.weather_chart_precipitation, forecastPeriodLabel),
         unitLabel = stringResource(R.string.weather_unit_mmph),
         modifier = modifier,
     ) {
@@ -889,8 +893,9 @@ fun VisibilityChart(
     val lineColor = IosWeatherVisibilityChartColor
     val thresholdLines = visibilityChartThresholdLines()
     val currentLabel = stringResource(R.string.weather_chart_current)
+    val forecastPeriodLabel = weatherForecastPeriodLabel()
     ChartCard(
-        title = stringResource(R.string.weather_chart_visibility),
+        title = stringResource(R.string.weather_chart_visibility, forecastPeriodLabel),
         unitLabel = stringResource(R.string.weather_unit_km),
         modifier = modifier,
     ) {
@@ -934,8 +939,9 @@ fun CriChart(
     val lineColor = IosWeatherCriChartColor
     val thresholdLines = criChartThresholdLines()
     val currentLabel = stringResource(R.string.weather_chart_current)
+    val forecastPeriodLabel = weatherForecastPeriodLabel()
     ChartCard(
-        title = stringResource(R.string.weather_chart_cri),
+        title = stringResource(R.string.weather_chart_cri, forecastPeriodLabel),
         unitLabel = stringResource(R.string.weather_unit_custom),
         modifier = modifier,
     ) {
@@ -1019,6 +1025,15 @@ internal fun ChartCard(
             }
             content()
         }
+    }
+}
+
+@Composable
+private fun weatherForecastPeriodLabel(): String {
+    return if (WeatherForecastDays == 1) {
+        stringResource(R.string.weather_forecast_hours, WeatherForecastChartHours)
+    } else {
+        stringResource(R.string.weather_forecast_days, WeatherForecastDays)
     }
 }
 

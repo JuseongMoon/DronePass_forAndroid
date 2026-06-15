@@ -338,7 +338,8 @@ private fun WeatherForecastBody(
     }
 }
 
-private const val WeatherForecastChartHours = 3 * 24
+internal const val WeatherForecastDays = 3
+internal const val WeatherForecastChartHours = WeatherForecastDays * 24
 
 internal fun resolveWeatherForecastChartHours(
     hourlyForecast: List<HourlyWeatherData>,
