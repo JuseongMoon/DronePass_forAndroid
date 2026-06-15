@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 날씨 예보 차트의 기준선 범례를 iOS `WeatherForecastView`처럼 차트 아래에 추가했다. 온도/풍속/순간풍속/가시거리/CRI 차트가 16x8 색상 스와치와 iOS String Catalog 기준 문구(`저온 ≤ -10°C`, `주의 ≥ %.1fm/s`, `위험 ≤ 2km` 등)를 표시하며, 강수량 차트는 iOS처럼 별도 범례 없이 유지한다. `:app:testDebugUnitTest --tests "*WeatherForecastParityTest" --tests "*StringResourceCoverageTest"` 및 `:app:assembleDebug` 통과.
 - 날씨 예보 차트의 기준선을 iOS `WeatherForecastView`의 `RuleMark` 색상/두께에 맞춰 보정했다. 공용 차트에 값별 색상을 받는 `WeatherThresholdLine`을 추가하고, 온도 차트에는 저온 파랑/고온 주황 점선, 풍속·순간풍속에는 주의 주황/위험 빨강 점선, 가시거리에는 위험 빨강/양호 초록 점선, CRI에는 주의 노랑/경고 빨강 점선을 사용한다. 기존 `warningThreshold`/`dangerThreshold` 경로는 KP 등 기존 호출을 위해 유지한다. `:app:testDebugUnitTest --tests "*WeatherForecastParityTest"` 및 `:app:assembleDebug` 통과.
 - 날씨 CRI 예보 차트의 Y축 범위를 iOS `WeatherForecastView`의 `.chartYScale(domain: 0...100)`처럼 0..100 고정 범위로 보정했다. 다른 날씨 차트의 자동 범위는 유지하고 CRI 차트만 iOS 전용 범위를 명시한다. `:app:testDebugUnitTest --tests "*WeatherForecastParityTest"` 및 `:app:assembleDebug` 통과.
 - 날씨 온도 예보 차트의 Y축 범위를 iOS `WeatherForecastView.calculateTemperatureYRange()`처럼 데이터 최저/최고값에 각각 5도 여백을 주고 5도 단위로 내림/올림한 뒤 `-30...50` 범위로 제한하도록 보정했다. Android 공용 차트의 10% 자동 패딩 대신 온도 차트만 iOS 전용 범위를 명시한다. `:app:testDebugUnitTest --tests "*WeatherForecastParityTest"` 및 `:app:assembleDebug` 통과.
