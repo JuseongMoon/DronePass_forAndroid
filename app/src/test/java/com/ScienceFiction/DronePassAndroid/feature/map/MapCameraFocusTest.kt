@@ -499,6 +499,22 @@ class MapCameraFocusTest {
     }
 
     @Test
+    fun `저장 목록 포커스 저장은 iOS처럼 카메라 이동 지연 하이라이트에 선택을 맡긴다`() {
+        assertEquals(
+            false,
+            shouldSelectShapeImmediatelyAfterSave(ShapeEditPostSaveAction.FOCUS_SAVED_LIST),
+        )
+        assertEquals(
+            true,
+            shouldSelectShapeImmediatelyAfterSave(ShapeEditPostSaveAction.RETURN_TO_DETAIL),
+        )
+        assertEquals(
+            false,
+            shouldSelectShapeImmediatelyAfterSave(ShapeEditPostSaveAction.CLOSE),
+        )
+    }
+
+    @Test
     fun `저장 목록 바로 편집 경로는 저장 후 상세를 열지 않는다`() {
         assertEquals(
             ShapeEditPostSaveAction.CLOSE,

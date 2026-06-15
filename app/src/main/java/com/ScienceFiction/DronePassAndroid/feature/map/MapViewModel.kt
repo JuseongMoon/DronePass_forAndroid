@@ -256,6 +256,10 @@ internal fun resolveShapeEditPostSaveAction(
     }
 }
 
+internal fun shouldSelectShapeImmediatelyAfterSave(action: ShapeEditPostSaveAction): Boolean {
+    return action == ShapeEditPostSaveAction.RETURN_TO_DETAIL
+}
+
 internal fun shouldReturnToShapeDetailAfterEditDismiss(
     selectedShapeId: String?,
     returnToDetailAfterEditDismiss: Boolean,
@@ -698,10 +702,12 @@ class MapViewModel @Inject constructor(
                 _pendingNewShapeRequest.value = null
                 returnToShapeDetailAfterEditSave = false
                 returnToShapeDetailAfterEditDismiss = false
+                if (shouldSelectShapeImmediatelyAfterSave(postSaveAction)) {
+                    _selectedShapeId.value = updatedShape.id
+                }
 
                 when (postSaveAction) {
                     ShapeEditPostSaveAction.FOCUS_SAVED_LIST -> {
-                        _selectedShapeId.value = updatedShape.id
                         _showShapeDetail.value = false
                         _savedShapeFocusEvent.emit(updatedShape.id)
                         _cameraEvent.emit(
@@ -713,7 +719,6 @@ class MapViewModel @Inject constructor(
                         )
                     }
                     ShapeEditPostSaveAction.RETURN_TO_DETAIL -> {
-                        _selectedShapeId.value = updatedShape.id
                         _showShapeDetail.value = true
                     }
                     ShapeEditPostSaveAction.CLOSE -> Unit
