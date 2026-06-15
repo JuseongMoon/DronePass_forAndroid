@@ -486,6 +486,11 @@
     <string name="weather_legend_cri_warning">경고 ≥ 70</string>
     <string name="weather_legend_poor">위험 ≤ %1$dkm</string>
     <string name="weather_legend_good">양호 ≥ %1$dkm</string>
+    <string name="weather_unit_celsius">단위: °C</string>
+    <string name="weather_unit_mps">단위: m/s</string>
+    <string name="weather_unit_mmph">단위: mm/h</string>
+    <string name="weather_unit_km">단위: km</string>
+    <string name="weather_unit_custom">단위: 자체단위사용</string>
 
     <!-- Weather Sheet (iOS WeatherForecastView 정합) -->
     <string name="weather_navigation_title">현위치 기반 정보</string>

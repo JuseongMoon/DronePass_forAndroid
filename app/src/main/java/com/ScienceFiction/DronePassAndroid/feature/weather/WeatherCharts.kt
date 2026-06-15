@@ -712,6 +712,7 @@ fun TemperatureChart(
     val currentLabel = stringResource(R.string.weather_chart_current)
     ChartCard(
         title = stringResource(R.string.weather_chart_temperature),
+        unitLabel = stringResource(R.string.weather_unit_celsius),
         modifier = modifier,
     ) {
         ScrollableTimeChartViewport(dataPoints, IosWeatherChartVisibleDomainMs) { chartModifier ->
@@ -765,6 +766,7 @@ fun WindSpeedChart(
     val currentLabel = stringResource(R.string.weather_chart_current)
     ChartCard(
         title = stringResource(R.string.weather_chart_wind_speed),
+        unitLabel = stringResource(R.string.weather_unit_mps),
         modifier = modifier,
     ) {
         ScrollableTimeChartViewport(dataPoints, IosWeatherChartVisibleDomainMs) { chartModifier ->
@@ -810,6 +812,7 @@ fun GustDifferenceChart(
     val currentLabel = stringResource(R.string.weather_chart_current)
     ChartCard(
         title = stringResource(R.string.weather_chart_gust_difference),
+        unitLabel = stringResource(R.string.weather_unit_mps),
         modifier = modifier,
     ) {
         ScrollableTimeChartViewport(dataPoints, IosWeatherChartVisibleDomainMs) { chartModifier ->
@@ -854,6 +857,7 @@ fun PrecipitationChart(
     val currentLabel = stringResource(R.string.weather_chart_current)
     ChartCard(
         title = stringResource(R.string.weather_chart_precipitation),
+        unitLabel = stringResource(R.string.weather_unit_mmph),
         modifier = modifier,
     ) {
         ScrollableTimeChartViewport(dataPoints, IosWeatherChartVisibleDomainMs) { chartModifier ->
@@ -887,6 +891,7 @@ fun VisibilityChart(
     val currentLabel = stringResource(R.string.weather_chart_current)
     ChartCard(
         title = stringResource(R.string.weather_chart_visibility),
+        unitLabel = stringResource(R.string.weather_unit_km),
         modifier = modifier,
     ) {
         ScrollableTimeChartViewport(dataPoints, IosWeatherChartVisibleDomainMs) { chartModifier ->
@@ -931,6 +936,7 @@ fun CriChart(
     val currentLabel = stringResource(R.string.weather_chart_current)
     ChartCard(
         title = stringResource(R.string.weather_chart_cri),
+        unitLabel = stringResource(R.string.weather_unit_custom),
         modifier = modifier,
     ) {
         ScrollableTimeChartViewport(dataPoints, IosWeatherChartVisibleDomainMs) { chartModifier ->
@@ -977,6 +983,7 @@ internal fun resolveWeatherChartCurrentTimeMarkerMs(
 @Composable
 internal fun ChartCard(
     title: String,
+    unitLabel: String? = null,
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {
@@ -989,12 +996,27 @@ internal fun ChartCard(
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 8.dp),
-            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f),
+                )
+                unitLabel?.let { label ->
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
             content()
         }
     }

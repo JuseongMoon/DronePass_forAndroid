@@ -574,6 +574,11 @@
     <string name="weather_legend_cri_warning">Warning ≥ 70</string>
     <string name="weather_legend_poor">Poor ≤ %1$dkm</string>
     <string name="weather_legend_good">Good ≥ %1$dkm</string>
+    <string name="weather_unit_celsius">Unit: °C</string>
+    <string name="weather_unit_mps">Unit: m/s</string>
+    <string name="weather_unit_mmph">Unit: mm/h</string>
+    <string name="weather_unit_km">Unit: km</string>
+    <string name="weather_unit_custom">Unit: Custom</string>
     <string name="weather_navigation_title">Location-based Information</string>
     <string name="weather_section_sunrise_sunset">Sunrise/Sunset</string>
     <string name="weather_section_current">Current Weather</string>

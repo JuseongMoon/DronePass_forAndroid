@@ -922,6 +922,11 @@ class StringResourceCoverageTest {
         assertEquals("경고 ≥ 70", stringResourceValue("values/strings.xml", "weather_legend_cri_warning"))
         assertEquals("위험 ≤ %1\$dkm", stringResourceValue("values/strings.xml", "weather_legend_poor"))
         assertEquals("양호 ≥ %1\$dkm", stringResourceValue("values/strings.xml", "weather_legend_good"))
+        assertEquals("단위: °C", stringResourceValue("values/strings.xml", "weather_unit_celsius"))
+        assertEquals("단위: m/s", stringResourceValue("values/strings.xml", "weather_unit_mps"))
+        assertEquals("단위: mm/h", stringResourceValue("values/strings.xml", "weather_unit_mmph"))
+        assertEquals("단위: km", stringResourceValue("values/strings.xml", "weather_unit_km"))
+        assertEquals("단위: 자체단위사용", stringResourceValue("values/strings.xml", "weather_unit_custom"))
 
         assertEquals("Location-based Information", stringResourceValue("values-en/strings.xml", "weather_navigation_title"))
         assertEquals("Sunrise/Sunset", stringResourceValue("values-en/strings.xml", "weather_section_sunrise_sunset"))
@@ -964,6 +969,11 @@ class StringResourceCoverageTest {
         assertEquals("Warning ≥ 70", stringResourceValue("values-en/strings.xml", "weather_legend_cri_warning"))
         assertEquals("Poor ≤ %1\$dkm", stringResourceValue("values-en/strings.xml", "weather_legend_poor"))
         assertEquals("Good ≥ %1\$dkm", stringResourceValue("values-en/strings.xml", "weather_legend_good"))
+        assertEquals("Unit: °C", stringResourceValue("values-en/strings.xml", "weather_unit_celsius"))
+        assertEquals("Unit: m/s", stringResourceValue("values-en/strings.xml", "weather_unit_mps"))
+        assertEquals("Unit: mm/h", stringResourceValue("values-en/strings.xml", "weather_unit_mmph"))
+        assertEquals("Unit: km", stringResourceValue("values-en/strings.xml", "weather_unit_km"))
+        assertEquals("Unit: Custom", stringResourceValue("values-en/strings.xml", "weather_unit_custom"))
     }
 
     @Test
