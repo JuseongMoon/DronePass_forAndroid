@@ -59,6 +59,10 @@ internal val IosKpChartCardCornerRadius = 16.dp
 internal val IosKpChartCardPadding = 16.dp
 internal val IosKpChartCardSpacing = 12.dp
 internal val IosKpChartCardContainerColor = Color(0xFFF2F2F7)
+internal val IosKpChartNoteBadgeCornerRadius = 6.dp
+internal val IosKpChartNoteBadgeHorizontalPadding = 8.dp
+internal val IosKpChartNoteBadgeVerticalPadding = 4.dp
+internal val IosKpChartNoteBadgeContainerColor = Color(0xFFFFFFFF)
 internal val IosKpChartPlaceholderHeight = 200.dp
 internal val IosKpChartErrorIconSize = 40.dp
 internal val IosKpChartErrorSpacing = 8.dp
@@ -341,9 +345,12 @@ private fun KpChartCard(
                     Spacer(modifier = Modifier.weight(1f))
                     Box(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(MaterialTheme.colorScheme.surface)
-                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                            .clip(RoundedCornerShape(IosKpChartNoteBadgeCornerRadius))
+                            .background(IosKpChartNoteBadgeContainerColor)
+                            .padding(
+                                horizontal = IosKpChartNoteBadgeHorizontalPadding,
+                                vertical = IosKpChartNoteBadgeVerticalPadding,
+                            ),
                     ) {
                         Text(
                             text = noteBadge,
