@@ -73,6 +73,10 @@ private val CautionYellow = Color(0xFFFFCC00)
 private val WarningRed = Color(0xFFFF3B30)
 private val InfoYellow = Color(0xFFFFCC00)
 
+internal val IosWeatherForecastCardCornerRadius = 16.dp
+internal val IosWeatherForecastCardPadding = 16.dp
+internal val IosWeatherForecastCardSpacing = 12.dp
+internal val IosWeatherForecastCardContainerColor = Color(0xFFF2F2F7)
 internal const val MissingWeatherValueText = "-"
 internal const val IosTemperatureLowCautionC = -10.0
 internal const val IosTemperatureHighCautionC = 35.0
@@ -170,16 +174,16 @@ internal fun CurrentWeatherSection(
 
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(IosWeatherForecastCardCornerRadius),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+            containerColor = IosWeatherForecastCardContainerColor,
         ),
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+                .padding(IosWeatherForecastCardPadding),
+            verticalArrangement = Arrangement.spacedBy(IosWeatherForecastCardSpacing),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(

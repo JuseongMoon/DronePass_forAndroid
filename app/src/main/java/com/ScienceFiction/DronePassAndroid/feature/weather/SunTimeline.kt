@@ -81,16 +81,16 @@ fun SunTimeline(
 
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(IosWeatherForecastCardCornerRadius),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+            containerColor = IosWeatherForecastCardContainerColor,
         ),
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+                .padding(IosWeatherForecastCardPadding),
+            verticalArrangement = Arrangement.spacedBy(IosWeatherForecastCardSpacing),
         ) {
             // Title row (iOS: title3 semibold secondary)
             Text(

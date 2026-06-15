@@ -60,10 +60,10 @@ import kotlin.math.floor
 internal val WeatherForecastChartHeight = 250.dp
 internal val WeatherLineChartDefaultHeight = WeatherForecastChartHeight
 internal val WeatherPrecipitationChartHeight = WeatherForecastChartHeight
-internal val IosWeatherChartCardCornerRadius = 16.dp
-internal val IosWeatherChartCardPadding = 16.dp
-internal val IosWeatherChartCardSpacing = 12.dp
-internal val IosWeatherChartCardContainerColor = Color(0xFFF2F2F7)
+internal val IosWeatherChartCardCornerRadius = IosWeatherForecastCardCornerRadius
+internal val IosWeatherChartCardPadding = IosWeatherForecastCardPadding
+internal val IosWeatherChartCardSpacing = IosWeatherForecastCardSpacing
+internal val IosWeatherChartCardContainerColor = IosWeatherForecastCardContainerColor
 internal const val IosWeatherChartVisibleDomainMs = 12L * 60 * 60 * 1000
 internal const val IosWeatherChartXLabelIntervalMs = 60L * 60 * 1000
 internal val IosWeatherWindSpeedChartColor = Color(0xFF4CAF50)

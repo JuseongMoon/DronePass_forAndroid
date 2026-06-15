@@ -102,6 +102,10 @@ class WeatherForecastParityTest {
 
     @Test
     fun `forecast chart card tokens match iOS WeatherForecastView`() {
+        assertEquals(16.dp, IosWeatherForecastCardCornerRadius)
+        assertEquals(16.dp, IosWeatherForecastCardPadding)
+        assertEquals(12.dp, IosWeatherForecastCardSpacing)
+        assertEquals(0xFFF2F2F7.toInt(), IosWeatherForecastCardContainerColor.toArgb())
         assertEquals(16.dp, IosWeatherChartCardCornerRadius)
         assertEquals(16.dp, IosWeatherChartCardPadding)
         assertEquals(12.dp, IosWeatherChartCardSpacing)
