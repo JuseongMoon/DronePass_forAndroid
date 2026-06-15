@@ -166,6 +166,14 @@ class WeatherForecastParityTest {
     }
 
     @Test
+    fun `temperature chart y axis uses iOS five degree padded range`() {
+        assertEquals(-30.0..50.0, resolveIosTemperatureYRange(emptyList()))
+        assertEquals(5.0..30.0, resolveIosTemperatureYRange(listOf(10.1, 24.9)))
+        assertEquals(-30.0..50.0, resolveIosTemperatureYRange(listOf(-100.0, 100.0)))
+        assertEquals(-30.0..50.0, resolveIosTemperatureYRange(listOf(60.0)))
+    }
+
+    @Test
     fun `weather line charts use iOS PointMark colors`() {
         assertEquals(
             listOf(

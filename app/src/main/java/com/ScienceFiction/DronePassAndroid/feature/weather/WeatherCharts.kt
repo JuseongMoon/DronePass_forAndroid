@@ -46,6 +46,7 @@ import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
 import kotlin.math.ceil
+import kotlin.math.floor
 
 // ─── 공통 Line Chart ────────────────────────────────────────────
 
@@ -604,6 +605,17 @@ internal fun resolveIosPrecipitationYMax(precipitations: List<Double>): Double {
     return maxOf(10.0, ceil(maxPrecip * 1.2))
 }
 
+internal fun resolveIosTemperatureYRange(temperatures: List<Double>): ClosedFloatingPointRange<Double> {
+    if (temperatures.isEmpty()) return -30.0..50.0
+
+    val minTemp = temperatures.minOrNull() ?: 0.0
+    val maxTemp = temperatures.maxOrNull() ?: 30.0
+    val yMin = maxOf(-30.0, floor((minTemp - 5.0) / 5.0) * 5.0)
+    val yMax = minOf(50.0, ceil((maxTemp + 5.0) / 5.0) * 5.0)
+
+    return if (yMin <= yMax) yMin..yMax else -30.0..50.0
+}
+
 // ─── 개별 차트 6종 ────────────────────────────────────────────
 
 @Composable
@@ -614,6 +626,7 @@ fun TemperatureChart(
 ) {
     val dataPoints = hourlyData.map { it.time to it.temperature }
     val pointColors = hourlyData.map { interpolateTemperatureColor(it.temperature) }
+    val yAxisRange = resolveIosTemperatureYRange(hourlyData.map { it.temperature })
     val currentLabel = stringResource(R.string.weather_chart_current)
     ChartCard(
         title = stringResource(R.string.weather_chart_temperature),
@@ -625,6 +638,7 @@ fun TemperatureChart(
                 modifier = chartModifier,
                 lineColor = Color(0xFFFF6B35),
                 fillAlpha = 0.15f,
+                yAxisRange = yAxisRange,
                 yAxisLabel = "\u00B0C",
                 formatValue = { String.format(Locale.ROOT, "%.0f\u00B0", it) },
                 xLabelIntervalMs = IosWeatherChartXLabelIntervalMs,
