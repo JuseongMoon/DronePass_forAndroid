@@ -16,14 +16,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -68,6 +66,24 @@ internal const val WeatherDataSourceUrl = "https://open-meteo.com/"
 
 @Suppress("UNUSED_PARAMETER")
 internal fun isWeatherRefreshActionEnabled(isLoading: Boolean): Boolean = true
+
+internal fun emptyWeatherForecastData(): WeatherData = WeatherData(
+    current = null,
+    hourlyForecast = emptyList(),
+    sunrise = null,
+    sunset = null,
+    sunriseTimes = emptyList(),
+    sunsetTimes = emptyList(),
+    utcOffsetSeconds = null,
+)
+
+internal fun weatherForecastBodyData(
+    weatherData: WeatherData?,
+    isLoading: Boolean,
+    hasError: Boolean,
+): WeatherData? {
+    return weatherData ?: if (isLoading || hasError) emptyWeatherForecastData() else null
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -199,43 +215,20 @@ fun WeatherForecastContent(
     }
 
     Box(modifier = modifier.fillMaxSize()) {
-        when {
-            isLoading && weatherData == null -> {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-            }
-            error != null && weatherData == null -> {
-                error?.let { currentError ->
-                    Column(
-                        modifier = Modifier.align(Alignment.Center),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        Text(
-                            text = currentError.formatArg?.let { formatArg ->
-                                stringResource(currentError.messageRes, formatArg)
-                            } ?: stringResource(currentError.messageRes),
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.error,
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        OutlinedButton(onClick = { viewModel.refreshWeather() }) {
-                            Text(stringResource(R.string.common_retry))
-                        }
-                    }
-                }
-            }
-            else -> {
-                weatherData?.let { data ->
-                    WeatherForecastBody(
-                        data = data,
-                        category = selectedCategory,
-                        onCategoryChanged = { viewModel.setCategory(it) },
-                        isLoading = isLoading,
-                        error = error,
-                        lastUpdateTime = lastUpdateTime,
-                        onWeatherInfoRequested = onWeatherInfoRequested,
-                    )
-                }
-            }
+        weatherForecastBodyData(
+            weatherData = weatherData,
+            isLoading = isLoading,
+            hasError = error != null,
+        )?.let { data ->
+            WeatherForecastBody(
+                data = data,
+                category = selectedCategory,
+                onCategoryChanged = { viewModel.setCategory(it) },
+                isLoading = isLoading,
+                error = error,
+                lastUpdateTime = lastUpdateTime,
+                onWeatherInfoRequested = onWeatherInfoRequested,
+            )
         }
 
         IosToastMessageOverlay(

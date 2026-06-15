@@ -7,6 +7,7 @@ import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.core.util.DroneCategory
 import com.ScienceFiction.DronePassAndroid.core.util.GustDifferenceLevel
 import com.ScienceFiction.DronePassAndroid.domain.model.HourlyWeatherData
+import com.ScienceFiction.DronePassAndroid.domain.model.WeatherData
 import com.ScienceFiction.DronePassAndroid.ui.component.IosToastMessageAnimationDurationMs
 import com.ScienceFiction.DronePassAndroid.ui.component.IosToastMessageBackgroundAlpha
 import com.ScienceFiction.DronePassAndroid.ui.component.IosToastMessageBottomPadding
@@ -145,6 +146,29 @@ class WeatherForecastParityTest {
     fun `forecast refresh action stays enabled while loading like iOS toolbar`() {
         assertTrue(isWeatherRefreshActionEnabled(isLoading = false))
         assertTrue(isWeatherRefreshActionEnabled(isLoading = true))
+    }
+
+    @Test
+    fun `forecast content keeps iOS card body during initial loading and error states`() {
+        val existing = WeatherData(
+            current = null,
+            hourlyForecast = listOf(hourlyWeather()),
+            sunrise = null,
+            sunset = null,
+        )
+
+        assertEquals(existing, weatherForecastBodyData(existing, isLoading = false, hasError = false))
+        assertNull(weatherForecastBodyData(null, isLoading = false, hasError = false))
+
+        val loadingPlaceholder = weatherForecastBodyData(null, isLoading = true, hasError = false)!!
+        assertNull(loadingPlaceholder.current)
+        assertTrue(loadingPlaceholder.hourlyForecast.isEmpty())
+        assertTrue(loadingPlaceholder.sunriseTimes.isEmpty())
+        assertTrue(loadingPlaceholder.sunsetTimes.isEmpty())
+
+        val errorPlaceholder = weatherForecastBodyData(null, isLoading = false, hasError = true)!!
+        assertNull(errorPlaceholder.current)
+        assertTrue(errorPlaceholder.hourlyForecast.isEmpty())
     }
 
     @Test
