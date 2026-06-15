@@ -529,6 +529,13 @@ class WeatherForecastParityTest {
         )
     }
 
+    @Test
+    fun `weather category selection refreshes only after a coordinate baseline exists`() {
+        assertFalse(shouldFetchWeatherAfterCategorySelection(latitude = 0.0, longitude = 0.0))
+        assertTrue(shouldFetchWeatherAfterCategorySelection(latitude = 37.5665, longitude = 0.0))
+        assertTrue(shouldFetchWeatherAfterCategorySelection(latitude = 0.0, longitude = 126.9780))
+    }
+
     private fun assertThresholdLines(
         thresholdLines: List<WeatherThresholdLine>,
         values: List<Double>,

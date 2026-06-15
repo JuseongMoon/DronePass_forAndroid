@@ -46,6 +46,10 @@ internal fun storedWeatherDroneCategory(preferences: Preferences): DroneCategory
         ?: DroneCategory.IosDefault
 }
 
+internal fun shouldFetchWeatherAfterCategorySelection(latitude: Double, longitude: Double): Boolean {
+    return latitude != 0.0 || longitude != 0.0
+}
+
 @HiltViewModel
 class WeatherViewModel @Inject constructor(
     private val weatherRepository: WeatherRepository,
@@ -114,7 +118,10 @@ class WeatherViewModel @Inject constructor(
                 preferences.remove(LegacyWeatherDroneCategoryPreferenceKey)
             }
             // 카테고리 변경 시 날씨 데이터 재계산
-            if (currentLatitude != 0.0 || currentLongitude != 0.0) {
+            if (shouldFetchWeatherAfterCategorySelection(currentLatitude, currentLongitude)) {
+                _isLoading.value = true
+                _error.value = null
+                weatherRepository.invalidateCache()
                 fetchWeatherInternal(
                     latitude = currentLatitude,
                     longitude = currentLongitude,
