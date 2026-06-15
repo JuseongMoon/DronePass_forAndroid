@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 새 도형/복제 저장 후 저장 목록으로 포커스되는 경로도 iOS `ShapeEditViewModel.saveShape` → `MoveToShapeNotification` 순서처럼 지도 하이라이트를 즉시 적용하지 않고 카메라 이벤트의 300ms 지연 적용에 맡기도록 보정했다. 상세에서 편집 저장 후 상세 시트로 돌아가는 경우만 즉시 선택 상태를 갱신한다. `:app:testDebugUnitTest --tests "*MapCameraFocusTest"` 및 `:app:assembleDebug` 통과.
 - 저장 목록 도형 탭 → 지도 포커스 흐름의 하이라이트 타이밍을 iOS `MapViewModel.moveCameraToShape`처럼 1차 줌 이동 후 300ms 지연 지점에 적용되도록 보정했다. `MoveToShape` 이벤트에 하이라이트 대상 id를 실어 보내고, 저장 목록 포커스 경로의 즉시 지도 선택 갱신을 제거해 iOS의 `updateHighlight` 순서와 맞췄다. `:app:testDebugUnitTest --tests "*MapCameraFocusTest" --tests "*SavedListSectionsTest" --tests "*MainScreenStartDestinationTest"` 및 `:app:assembleDebug` 통과.
 - KP 예보 차트 헤더의 우측 note badge를 iOS `KPForecastView`의 `tertiarySystemBackground`/6pt corner/8pt horizontal padding/4pt vertical padding 기준으로 보정했다. Android Material surface 의존을 제거하고 iOS light `#FFFFFF` 배경을 회귀 테스트로 고정했다. `:app:testDebugUnitTest --tests "*KpChartsTest"` 및 `:app:assembleDebug` 통과.
 - KP 예보 차트의 loading/error/no-data placeholder 토큰을 iOS `KPForecastView` 기준으로 상수화하고, 에러 아이콘 색상을 iOS `.orange`(`#FF9500`)로 보정했다. placeholder height 200dp, error icon 40dp, icon-text spacing 8dp를 회귀 테스트로 고정했다. `:app:testDebugUnitTest --tests "*KpChartsTest"` 및 `:app:assembleDebug` 통과.
