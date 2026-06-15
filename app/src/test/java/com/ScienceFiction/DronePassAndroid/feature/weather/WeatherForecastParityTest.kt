@@ -130,6 +130,18 @@ class WeatherForecastParityTest {
     }
 
     @Test
+    fun `current weather reload indicator matches iOS refresh overlay boundary`() {
+        assertEquals(8.dp, IosWeatherReloadingIndicatorCornerRadius)
+        assertEquals(8.dp, IosWeatherReloadingIndicatorPadding)
+        assertEquals(16.dp, IosWeatherReloadingIndicatorSize)
+        assertEquals(2.dp, IosWeatherReloadingIndicatorStrokeWidth)
+        assertEquals(0.9f, IosWeatherReloadingIndicatorBackgroundAlpha, 0f)
+        assertFalse(shouldShowWeatherReloadingIndicator(isLoading = false, listOf(hourlyWeather())))
+        assertFalse(shouldShowWeatherReloadingIndicator(isLoading = true, emptyList()))
+        assertTrue(shouldShowWeatherReloadingIndicator(isLoading = true, listOf(hourlyWeather())))
+    }
+
+    @Test
     fun `forecast charts use iOS twelve hour visible domain with hourly labels`() {
         assertEquals(12 * HourMs, IosWeatherChartVisibleDomainMs)
         assertEquals(HourMs, IosWeatherChartXLabelIntervalMs)

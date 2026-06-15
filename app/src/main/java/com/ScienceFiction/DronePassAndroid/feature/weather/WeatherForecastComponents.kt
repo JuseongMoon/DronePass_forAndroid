@@ -1,6 +1,7 @@
 package com.ScienceFiction.DronePassAndroid.feature.weather
 
 import androidx.annotation.StringRes
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -44,6 +45,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -77,6 +79,11 @@ internal val IosWeatherForecastCardCornerRadius = 16.dp
 internal val IosWeatherForecastCardPadding = 16.dp
 internal val IosWeatherForecastCardSpacing = 12.dp
 internal val IosWeatherForecastCardContainerColor = Color(0xFFF2F2F7)
+internal val IosWeatherReloadingIndicatorCornerRadius = 8.dp
+internal val IosWeatherReloadingIndicatorPadding = 8.dp
+internal val IosWeatherReloadingIndicatorSize = 16.dp
+internal val IosWeatherReloadingIndicatorStrokeWidth = 2.dp
+internal const val IosWeatherReloadingIndicatorBackgroundAlpha = 0.9f
 internal const val MissingWeatherValueText = "-"
 internal const val IosTemperatureLowCautionC = -10.0
 internal const val IosTemperatureHighCautionC = 35.0
@@ -171,6 +178,7 @@ internal fun CurrentWeatherSection(
     val precipWarning = current?.precipitation?.let(::resolvePrecipitationWarningIcon) ?: WarningIconType.None
     val visibilityWarning = resolveNullableVisibilityWarningIcon(visibility)
     val criWarning = current?.cri?.let(::resolveCriWarningIcon) ?: WarningIconType.None
+    val shouldShowReloadingIndicator = shouldShowWeatherReloadingIndicator(isLoading, data.hourlyForecast)
 
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -313,18 +321,33 @@ internal fun CurrentWeatherSection(
                     }
                 }
 
-                if (isLoading) {
-                    CircularProgressIndicator(
+                if (shouldShowReloadingIndicator) {
+                    Box(
                         modifier = Modifier
                             .align(Alignment.TopEnd)
-                            .size(16.dp),
-                        strokeWidth = 2.dp,
-                    )
+                            .clip(RoundedCornerShape(IosWeatherReloadingIndicatorCornerRadius))
+                            .background(
+                                IosWeatherForecastCardContainerColor.copy(
+                                    alpha = IosWeatherReloadingIndicatorBackgroundAlpha,
+                                ),
+                            )
+                            .padding(IosWeatherReloadingIndicatorPadding),
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(IosWeatherReloadingIndicatorSize),
+                            strokeWidth = IosWeatherReloadingIndicatorStrokeWidth,
+                        )
+                    }
                 }
             }
         }
     }
 }
+
+internal fun shouldShowWeatherReloadingIndicator(
+    isLoading: Boolean,
+    hourlyForecast: List<HourlyWeatherData>,
+): Boolean = isLoading && hourlyForecast.isNotEmpty()
 
 internal fun resolveForecastTemperatureRange(
     hourlyForecast: List<HourlyWeatherData>,
