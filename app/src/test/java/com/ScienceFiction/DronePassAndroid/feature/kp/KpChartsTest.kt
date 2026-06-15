@@ -100,6 +100,11 @@ class KpChartsTest {
     }
 
     @Test
+    fun `toolbar does not show an extra loading indicator like iOS`() {
+        assertEquals(false, KpToolbarShowsLoadingIndicator)
+    }
+
+    @Test
     fun `auto refresh matches iOS forecast screen by refreshing NOAA forecast data only`() {
         listOf(false, true).forEach { hasCurrentKp ->
             val plan = resolveKpDataLoadPlan(

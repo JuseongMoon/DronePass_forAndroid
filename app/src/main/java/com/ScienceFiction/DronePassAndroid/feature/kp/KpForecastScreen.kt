@@ -67,6 +67,7 @@ import kotlinx.coroutines.delay
 import java.util.Locale
 
 internal const val KpCurrentValueFontSizeSp = 60
+internal const val KpToolbarShowsLoadingIndicator = false
 
 @Suppress("UNUSED_PARAMETER")
 internal fun isKpRefreshActionEnabled(isLoading: Boolean): Boolean = true
@@ -97,7 +98,7 @@ fun KpForecastScreen(
                 }
             },
             actions = {
-                if (isLoading) {
+                if (KpToolbarShowsLoadingIndicator && isLoading) {
                     CircularProgressIndicator(
                         modifier = Modifier
                             .size(20.dp)
