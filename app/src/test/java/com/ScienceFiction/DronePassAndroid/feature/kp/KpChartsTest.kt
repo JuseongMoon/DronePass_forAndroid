@@ -1,5 +1,7 @@
 package com.ScienceFiction.DronePassAndroid.feature.kp
 
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.domain.model.Kp27DayForecast
@@ -7,6 +9,8 @@ import com.ScienceFiction.DronePassAndroid.domain.model.KpIndexData
 import com.ScienceFiction.DronePassAndroid.domain.model.KpLevel
 import com.ScienceFiction.DronePassAndroid.feature.weather.WeatherForecastChartHeight
 import com.ScienceFiction.DronePassAndroid.feature.weather.resolveTimeChartLabelTimes
+import com.ScienceFiction.DronePassAndroid.feature.weather.shouldDrawWeatherLineAsSegments
+import com.ScienceFiction.DronePassAndroid.feature.weather.weatherLineSegmentColor
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.util.Calendar
@@ -173,6 +177,47 @@ class KpChartsTest {
         assertEquals("0.0", formatKpChartPointLabel(0.0))
         assertEquals("4.7", formatKpChartPointLabel(4.74))
         assertEquals("4.8", formatKpChartPointLabel(4.75))
+    }
+
+    @Test
+    fun `KP chart line segments use iOS KP level colors`() {
+        val colors = kpChartPointColors(listOf(4.9, 5.0, 6.0, 7.0, 8.0, 9.0))
+
+        assertEquals(
+            listOf(
+                KpLevel.NORMAL.color.toInt(),
+                KpLevel.G1.color.toInt(),
+                KpLevel.G2.color.toInt(),
+                KpLevel.G3.color.toInt(),
+                KpLevel.G4.color.toInt(),
+                KpLevel.G5.color.toInt(),
+            ),
+            colors.map { it.toArgb() },
+        )
+        assertEquals(
+            KpLevel.G2.color.toInt(),
+            weatherLineSegmentColor(
+                lineColor = Color.Black,
+                lineSegmentColors = colors,
+                segmentStartIndex = 2,
+            ).toArgb(),
+        )
+        assertEquals(
+            Color.Black.toArgb(),
+            weatherLineSegmentColor(
+                lineColor = Color.Black,
+                lineSegmentColors = colors,
+                segmentStartIndex = colors.size,
+            ).toArgb(),
+        )
+        assertEquals(
+            true,
+            shouldDrawWeatherLineAsSegments(
+                dataPointCount = colors.size,
+                predicted = List(colors.size) { false },
+                lineSegmentColors = colors,
+            ),
+        )
     }
 
     @Test

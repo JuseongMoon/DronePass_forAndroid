@@ -78,6 +78,7 @@ internal data class BackgroundZone(
  * - [predicted]: dataPoints 와 같은 size 의 Boolean 리스트. 양쪽이 모두 true 인 segment 는 점선
  * - [pointColors]: 각 데이터 포인트에 표시할 원의 색 (예: KpLevel 별 색상)
  * - [pointLabels]: 각 데이터 포인트 위에 표시할 라벨 (예: iOS KP PointMark annotation)
+ * - [lineSegmentColors]: 각 데이터 포인트에서 시작하는 line segment 색상 (예: iOS KP LineMark foregroundStyle)
  * - [backgroundZones]: Y축 값 범위별 배경 색상 (KP 의 zone 표시)
  */
 @Composable
@@ -99,6 +100,7 @@ internal fun WeatherLineChart(
     predicted: List<Boolean> = emptyList(),
     pointColors: List<Color>? = null,
     pointLabels: List<String> = emptyList(),
+    lineSegmentColors: List<Color>? = null,
     backgroundZones: List<BackgroundZone> = emptyList(),
     chartHeight: Dp = WeatherLineChartDefaultHeight,
 ) {
@@ -294,9 +296,15 @@ internal fun WeatherLineChart(
             Offset(toScreenX(time), toScreenY(value))
         }
 
-        // predicted 가 비어있으면 단일 부드러운 곡선 (기존 동작).
-        // 명시되면 segment 별로 실선/점선 분기하여 직선으로 그린다 (cubic + dashed 조합은 어색).
-        if (predicted.size != dataPoints.size || predicted.all { !it }) {
+        val drawSegmentedLine = shouldDrawWeatherLineAsSegments(
+            dataPointCount = dataPoints.size,
+            predicted = predicted,
+            lineSegmentColors = lineSegmentColors,
+        )
+
+        // 기본 Weather 차트는 단일 부드러운 곡선 (기존 동작).
+        // KP처럼 예측/레벨 색상이 명시되면 iOS LineMark처럼 segment 단위로 직선을 그린다.
+        if (!drawSegmentedLine) {
             // 부드러운 곡선 Path (cubicTo) — 기존 동작
             val linePath = Path()
             linePath.moveTo(screenPoints.first().x, screenPoints.first().y)
@@ -343,9 +351,14 @@ internal fun WeatherLineChart(
             // segment 별 실선/점선 — KP 의 observed/predicted 표현
             val predictedDash = PathEffect.dashPathEffect(floatArrayOf(10f, 6f), 0f)
             for (i in 0 until screenPoints.size - 1) {
-                val isPredictedSegment = predicted[i] && predicted[i + 1]
+                val isPredictedSegment = predicted.size == dataPoints.size && predicted[i] && predicted[i + 1]
+                val segmentColor = weatherLineSegmentColor(
+                    lineColor = lineColor,
+                    lineSegmentColors = lineSegmentColors,
+                    segmentStartIndex = i,
+                )
                 drawLine(
-                    color = if (isPredictedSegment) lineColor.copy(alpha = 0.6f) else lineColor,
+                    color = if (isPredictedSegment) segmentColor.copy(alpha = 0.6f) else segmentColor,
                     start = screenPoints[i],
                     end = screenPoints[i + 1],
                     strokeWidth = 3f,
@@ -380,6 +393,23 @@ internal fun WeatherLineChart(
             }
         }
     }
+}
+
+internal fun shouldDrawWeatherLineAsSegments(
+    dataPointCount: Int,
+    predicted: List<Boolean>,
+    lineSegmentColors: List<Color>?,
+): Boolean {
+    return lineSegmentColors?.size == dataPointCount ||
+        (predicted.size == dataPointCount && predicted.any { it })
+}
+
+internal fun weatherLineSegmentColor(
+    lineColor: Color,
+    lineSegmentColors: List<Color>?,
+    segmentStartIndex: Int,
+): Color {
+    return lineSegmentColors?.getOrNull(segmentStartIndex) ?: lineColor
 }
 
 internal fun resolveTimeChartLabelTimes(
