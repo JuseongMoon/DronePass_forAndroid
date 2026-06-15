@@ -80,6 +80,10 @@ internal fun shouldNotifyProfileSyncResultForCloudToggle(
     return enabled && isLoggedIn
 }
 
+internal fun profileErrorDescription(localizedMessage: String?, fallback: String): String {
+    return localizedMessage ?: fallback
+}
+
 internal fun normalizeProfileJoinDateMillis(timestamp: Long?): Long? =
     timestamp?.takeIf { it > 0L }
 
@@ -289,7 +293,14 @@ class ProfileViewModel @Inject constructor(
         } catch (e: Exception) {
             Log.e(TAG, "수동 백업 실패", e)
             if (notifyResult) {
-                _syncResultMessage.emit(SyncResult.Failure(e.localizedMessage ?: "Unknown"))
+                _syncResultMessage.emit(
+                    SyncResult.Failure(
+                        profileErrorDescription(
+                            localizedMessage = e.localizedMessage,
+                            fallback = appContext.getString(R.string.common_unknown_error),
+                        ),
+                    ),
+                )
             }
         } finally {
             _isSyncing.value = false
@@ -356,8 +367,10 @@ class ProfileViewModel @Inject constructor(
                         _isAccountActionInProgress.value = false
                         onResult(
                             false,
-                            err?.localizedMessage
-                                ?: appContext.getString(R.string.profile_delete_data_error),
+                            profileErrorDescription(
+                                localizedMessage = err?.localizedMessage,
+                                fallback = appContext.getString(R.string.profile_delete_data_error),
+                            ),
                         )
                         return@launch
                     }
@@ -383,7 +396,13 @@ class ProfileViewModel @Inject constructor(
                 },
                 onFailure = { exception ->
                     _isAccountActionInProgress.value = false
-                    onResult(false, exception.localizedMessage ?: appContext.getString(R.string.profile_delete_account_error))
+                    onResult(
+                        false,
+                        profileErrorDescription(
+                            localizedMessage = exception.localizedMessage,
+                            fallback = appContext.getString(R.string.profile_delete_account_error),
+                        ),
+                    )
                 },
             )
         }

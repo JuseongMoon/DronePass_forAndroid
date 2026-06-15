@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 프로필 수동 백업/탈퇴 오류 문구 선택을 iOS처럼 null일 때만 fallback하도록 명시하고, 수동 백업 실패의 null fallback을 하드코딩 `Unknown` 대신 공용 unknown 리소스로 보정. `:app:testDebugUnitTest --tests "*ProfileViewModelTest"` 및 `:app:assembleDebug` 통과.
 - 로그인 오류 보정 커밋 이후 최신 debug APK를 Android 15 실기기 `RFCW324TZ0Z`에 데이터 유지 재설치하고 cold launch + 하단 탭 smoke 재확인. `LaunchState: COLD`, `TotalTime: 1920`, PID `15369`, MainActivity focus 유지. 홈 UI, 상단 드론 선택 버튼/드롭다운 원 시각 bounds 정렬, 저장/설정 오버레이, Naver Map 준비, 무크래시 로그 확인.
 - 최신 debug APK를 Android 15 실기기 `RFCW324TZ0Z`에 데이터 유지 재설치하고 cold launch smoke 재확인. 홈 UI, 상단 드론 선택 버튼/드롭다운 원 정렬, Naver Map 준비, 무크래시 로그 확인.
 - 패치노트 렌더링 보정 커밋 이후 최신 debug APK를 같은 실기기 `RFCW324TZ0Z`에 데이터 유지 재설치하고 cold launch smoke 재확인. LaunchState `COLD`, `TotalTime: 1924`, PID `12627`, MainActivity focus, 홈 UI와 Naver Map 준비, `FATAL EXCEPTION` 없음.

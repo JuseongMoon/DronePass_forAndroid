@@ -152,6 +152,14 @@ class ProfileViewModelTest {
     }
 
     @Test
+    fun `프로필 오류 문구는 iOS처럼 null일 때만 fallback을 사용한다`() {
+        assertEquals("message", profileErrorDescription("message", fallback = "fallback"))
+        assertEquals("", profileErrorDescription("", fallback = "fallback"))
+        assertEquals("   ", profileErrorDescription("   ", fallback = "fallback"))
+        assertEquals("fallback", profileErrorDescription(null, fallback = "fallback"))
+    }
+
+    @Test
     fun `프로필 가입일은 iOS처럼 Firebase 생성 시각이 있을 때만 표시한다`() {
         assertEquals(1_700_000_000_000L, normalizeProfileJoinDateMillis(1_700_000_000_000L))
         assertEquals(null, normalizeProfileJoinDateMillis(0L))
