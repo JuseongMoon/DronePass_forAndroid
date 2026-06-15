@@ -152,6 +152,34 @@ class RealtimeSyncManagerTest {
     }
 
     @Test
+    fun `foreground change prompt follows iOS ChangeDetectionManager shape metadata check`() {
+        assertEquals(
+            true,
+            hasForegroundShapeMetadataChange(
+                serverLastModified = 300L,
+                lastSyncTime = 200L,
+                lastLocalModificationTime = null,
+            ),
+        )
+        assertEquals(
+            false,
+            hasForegroundShapeMetadataChange(
+                serverLastModified = null,
+                lastSyncTime = 200L,
+                lastLocalModificationTime = null,
+            ),
+        )
+        assertEquals(
+            false,
+            hasForegroundShapeMetadataChange(
+                serverLastModified = 200L,
+                lastSyncTime = 100L,
+                lastLocalModificationTime = 200L,
+            ),
+        )
+    }
+
+    @Test
     fun `foreground change prompt ignores remote timestamps already covered by local edits`() {
         assertEquals(
             false,

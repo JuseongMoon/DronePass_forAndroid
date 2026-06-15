@@ -76,6 +76,18 @@ internal fun hasRealtimeRemoteChanges(
         )
 }
 
+internal fun hasForegroundShapeMetadataChange(
+    serverLastModified: Long?,
+    lastSyncTime: Long?,
+    lastLocalModificationTime: Long?,
+): Boolean {
+    return hasRealtimeRemoteChanges(
+        serverLastModified = serverLastModified,
+        lastSyncTime = lastSyncTime,
+        lastLocalModificationTime = lastLocalModificationTime,
+    )
+}
+
 internal const val RealtimeSyncRestartDelayMs = 500L
 
 /**
@@ -543,25 +555,17 @@ class RealtimeSyncManager @Inject constructor(
         startListening(userId)
     }
 
-    suspend fun hasRemoteChanges(): Boolean {
+    suspend fun hasForegroundShapeRemoteChanges(): Boolean {
         val userId = auth.currentUser?.uid ?: return false
         val preferences = dataStore.data.first()
         val shapeServerLastModified = fetchMetadataLastModified(
             userId = userId,
             documentId = "server",
         )
-        val sketchServerLastModified = fetchMetadataLastModified(
-            userId = userId,
-            documentId = "sketchServer",
-        )
-        return hasRealtimeRemoteChanges(
+        return hasForegroundShapeMetadataChange(
             serverLastModified = shapeServerLastModified,
             lastSyncTime = preferences[SyncPreferenceKeys.LAST_SYNC_TIME],
             lastLocalModificationTime = preferences[SyncPreferenceKeys.LAST_LOCAL_MODIFICATION_TIME],
-        ) || hasRealtimeRemoteChanges(
-            serverLastModified = sketchServerLastModified,
-            lastSyncTime = preferences[SyncPreferenceKeys.LAST_SKETCH_SYNC_TIME],
-            lastLocalModificationTime = preferences[SyncPreferenceKeys.LAST_LOCAL_SKETCH_MODIFICATION_TIME],
         )
     }
 

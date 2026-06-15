@@ -273,7 +273,9 @@ class AuthViewModel @Inject constructor(
                     return@launch
                 }
                 lastForegroundRemoteChangeCheckTimeMillis = nowMillis
-                val remoteChangesResult = runCatching { realtimeSyncManager.hasRemoteChanges() }
+                val remoteChangesResult = runCatching {
+                    realtimeSyncManager.hasForegroundShapeRemoteChanges()
+                }
                     .onFailure { Log.w(TAG, "포그라운드 원격 변경 확인 실패", it) }
                 if (remoteChangesResult.isSuccess) {
                     hasCheckedForegroundRemoteChanges = true
