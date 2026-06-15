@@ -94,6 +94,10 @@ internal val IosWeatherDataCellIconSize = 24.dp
 internal val IosWeatherDataCellIconSlotWidth = 32.dp
 internal val IosWeatherDataCellWarningIconSize = 16.dp
 internal val IosWeatherDataCellContainerColor = Color(0xFFFFFFFF)
+internal val IosWeatherDisclaimerTopPadding = 8.dp
+internal val IosWeatherDisclaimerIconSize = 12.dp
+internal val IosWeatherDisclaimerSpacing = 4.dp
+internal const val IosWeatherDisclaimerColorAlpha = 1f
 internal val IosWeatherReloadingIndicatorCornerRadius = 8.dp
 internal val IosWeatherReloadingIndicatorPadding = 8.dp
 internal val IosWeatherReloadingIndicatorSize = 16.dp
@@ -345,21 +349,27 @@ internal fun CurrentWeatherSection(
                             }
 
                             Row(
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = IosWeatherDisclaimerTopPadding),
                                 horizontalArrangement = Arrangement.End,
                                 verticalAlignment = Alignment.Top,
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Info,
                                     contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                                    modifier = Modifier.size(12.dp),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                                        alpha = IosWeatherDisclaimerColorAlpha,
+                                    ),
+                                    modifier = Modifier.size(IosWeatherDisclaimerIconSize),
                                 )
-                                Spacer(modifier = Modifier.width(4.dp))
+                                Spacer(modifier = Modifier.width(IosWeatherDisclaimerSpacing))
                                 Text(
                                     text = stringResource(R.string.weather_disclaimer),
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                                        alpha = IosWeatherDisclaimerColorAlpha,
+                                    ),
                                     textAlign = TextAlign.End,
                                 )
                             }
