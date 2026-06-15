@@ -139,6 +139,50 @@ class ShapeEditDefaultsTest {
     }
 
     @Test
+    fun `도형 저장 실패 문구는 iOS처럼 null일 때만 fallback을 사용한다`() {
+        assertEquals(
+            "add: message",
+            shapeEditSaveFailureMessage(
+                isEditMode = false,
+                localizedMessage = "message",
+                fallback = "fallback",
+                addFailureFormat = "add: %1\$s",
+                updateFailureFormat = "update: %1\$s",
+            ),
+        )
+        assertEquals(
+            "add: ",
+            shapeEditSaveFailureMessage(
+                isEditMode = false,
+                localizedMessage = "",
+                fallback = "fallback",
+                addFailureFormat = "add: %1\$s",
+                updateFailureFormat = "update: %1\$s",
+            ),
+        )
+        assertEquals(
+            "update:    ",
+            shapeEditSaveFailureMessage(
+                isEditMode = true,
+                localizedMessage = "   ",
+                fallback = "fallback",
+                addFailureFormat = "add: %1\$s",
+                updateFailureFormat = "update: %1\$s",
+            ),
+        )
+        assertEquals(
+            "update: fallback",
+            shapeEditSaveFailureMessage(
+                isEditMode = true,
+                localizedMessage = null,
+                fallback = "fallback",
+                addFailureFormat = "add: %1\$s",
+                updateFailureFormat = "update: %1\$s",
+            ),
+        )
+    }
+
+    @Test
     fun `날짜 시간 선택 시트는 iOS처럼 한 화면에서 완료한다`() {
         assertTrue(ShapeDateTimeSelectionSkipPartiallyExpanded)
     }

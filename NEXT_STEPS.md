@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 도형 추가/수정 저장 실패를 iOS `ShapeEditViewModel`처럼 편집 시트 Alert에 `도형 추가/수정 중 오류가 발생했습니다: 원인` 형식으로 표시하도록 보강하고, 저장 실패 시 시트를 닫지 않도록 처리. `:app:testDebugUnitTest --tests "*ShapeEditDefaultsTest" --tests "*StringResourceCoverageTest"` 및 `:app:assembleDebug` 통과.
 - KP 실패 문구를 iOS `KPIndexManager`처럼 요청 소스 구분 없이 `KP 지수 데이터를 가져올 수 없습니다` 단일 사용자 표시로 보정하고 `Kp` 표기를 `KP`로 정리. `:app:testDebugUnitTest --tests "*StringResourceCoverageTest"` 및 `:app:assembleDebug` 통과.
 - 날씨 API 실패 표시를 iOS `WeatherManager`처럼 원인 `localizedDescription`이 있을 때 본문에 포함하도록 보정하고, 빈 문자열/공백 원인도 원문 경계대로 유지. `:app:testDebugUnitTest --tests "*WeatherForecastParityTest" --tests "*StringResourceCoverageTest"` 및 `:app:assembleDebug` 통과.
 - 프로필 수동 백업/탈퇴 오류 문구 선택을 iOS처럼 null일 때만 fallback하도록 명시하고, 수동 백업 실패의 null fallback을 하드코딩 `Unknown` 대신 공용 unknown 리소스로 보정. `:app:testDebugUnitTest --tests "*ProfileViewModelTest"` 및 `:app:assembleDebug` 통과.

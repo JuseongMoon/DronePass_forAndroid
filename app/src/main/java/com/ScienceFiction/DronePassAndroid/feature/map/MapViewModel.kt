@@ -37,6 +37,7 @@ import com.ScienceFiction.DronePassAndroid.feature.settings.storedKeepScreenAwak
 import com.ScienceFiction.DronePassAndroid.feature.settings.storedKoreaFeaturesEnabled
 import com.ScienceFiction.DronePassAndroid.feature.shape.ShapeEditDefaults
 import com.ScienceFiction.DronePassAndroid.feature.shape.resolveShapeEditConflict
+import com.ScienceFiction.DronePassAndroid.feature.shape.shapeEditSaveFailureMessage
 import com.ScienceFiction.DronePassAndroid.feature.shape.storedShapeEditDefaults
 import com.ScienceFiction.DronePassAndroid.feature.shape.writeShapeEditDateOnlyMode
 import com.ScienceFiction.DronePassAndroid.feature.shape.writeShapeEditDefaults
@@ -664,54 +665,68 @@ class MapViewModel @Inject constructor(
         isDuplicate: Boolean = false,
         focusAfterSave: Boolean = false,
         originalShapeAtEditStart: ShapeModel? = null,
+        onFailure: (String) -> Unit = {},
     ) {
         viewModelScope.launch {
-            val latestShape = if (!isDuplicate && originalShapeAtEditStart != null) {
-                shapeRepository.getShapeById(originalShapeAtEditStart.id)
-            } else {
-                null
-            }
-            val resolvedShape = resolveShapeEditConflict(
-                editedShape = shape,
-                originalShape = originalShapeAtEditStart,
-                latestShape = latestShape,
-            )
-            val updatedShape = resolvedShape.copy(updatedAt = System.currentTimeMillis())
-            shapeRepository.insertShape(updatedShape)
-            val postSaveAction = resolveShapeEditPostSaveAction(
-                isDuplicate = isDuplicate,
-                focusAfterSave = focusAfterSave,
-                returnToDetailAfterEditSave = returnToShapeDetailAfterEditSave,
-            )
-            when {
-                isDuplicate -> analyticsLogger.logShapeDuplicated()
-                focusAfterSave -> analyticsLogger.logShapeCreated(shape.shapeType.rawValue)
-            }
-            _showShapeEdit.value = false
-            _isDuplicateMode.value = false
-            _newShapeCoordinate.value = null
-            _reverseGeocodedAddress.value = null
-            _pendingNewShapeRequest.value = null
-            returnToShapeDetailAfterEditSave = false
-            returnToShapeDetailAfterEditDismiss = false
+            try {
+                val latestShape = if (!isDuplicate && originalShapeAtEditStart != null) {
+                    shapeRepository.getShapeById(originalShapeAtEditStart.id)
+                } else {
+                    null
+                }
+                val resolvedShape = resolveShapeEditConflict(
+                    editedShape = shape,
+                    originalShape = originalShapeAtEditStart,
+                    latestShape = latestShape,
+                )
+                val updatedShape = resolvedShape.copy(updatedAt = System.currentTimeMillis())
+                shapeRepository.insertShape(updatedShape)
+                val postSaveAction = resolveShapeEditPostSaveAction(
+                    isDuplicate = isDuplicate,
+                    focusAfterSave = focusAfterSave,
+                    returnToDetailAfterEditSave = returnToShapeDetailAfterEditSave,
+                )
+                when {
+                    isDuplicate -> analyticsLogger.logShapeDuplicated()
+                    focusAfterSave -> analyticsLogger.logShapeCreated(shape.shapeType.rawValue)
+                }
+                _showShapeEdit.value = false
+                _isDuplicateMode.value = false
+                _newShapeCoordinate.value = null
+                _reverseGeocodedAddress.value = null
+                _pendingNewShapeRequest.value = null
+                returnToShapeDetailAfterEditSave = false
+                returnToShapeDetailAfterEditDismiss = false
 
-            when (postSaveAction) {
-                ShapeEditPostSaveAction.FOCUS_SAVED_LIST -> {
-                    _selectedShapeId.value = updatedShape.id
-                    _showShapeDetail.value = false
-                    _savedShapeFocusEvent.emit(updatedShape.id)
-                    _cameraEvent.emit(
-                        CameraEvent.MoveToShape(
-                            coordinate = calculateShapeFocusCoordinate(updatedShape),
-                            zoom = calculateShapeFocusZoomLevel(calculateShapeFocusRadiusMeters(updatedShape)),
-                        ),
-                    )
+                when (postSaveAction) {
+                    ShapeEditPostSaveAction.FOCUS_SAVED_LIST -> {
+                        _selectedShapeId.value = updatedShape.id
+                        _showShapeDetail.value = false
+                        _savedShapeFocusEvent.emit(updatedShape.id)
+                        _cameraEvent.emit(
+                            CameraEvent.MoveToShape(
+                                coordinate = calculateShapeFocusCoordinate(updatedShape),
+                                zoom = calculateShapeFocusZoomLevel(calculateShapeFocusRadiusMeters(updatedShape)),
+                            ),
+                        )
+                    }
+                    ShapeEditPostSaveAction.RETURN_TO_DETAIL -> {
+                        _selectedShapeId.value = updatedShape.id
+                        _showShapeDetail.value = true
+                    }
+                    ShapeEditPostSaveAction.CLOSE -> Unit
                 }
-                ShapeEditPostSaveAction.RETURN_TO_DETAIL -> {
-                    _selectedShapeId.value = updatedShape.id
-                    _showShapeDetail.value = true
-                }
-                ShapeEditPostSaveAction.CLOSE -> Unit
+            } catch (error: Exception) {
+                Log.e(TAG, "도형 저장 실패", error)
+                onFailure(
+                    shapeEditSaveFailureMessage(
+                        isEditMode = !isDuplicate && originalShapeAtEditStart != null,
+                        localizedMessage = error.localizedMessage,
+                        fallback = appContext.getString(R.string.common_unknown_error),
+                        addFailureFormat = appContext.getString(R.string.shape_edit_error_add_failed),
+                        updateFailureFormat = appContext.getString(R.string.shape_edit_error_update_failed),
+                    ),
+                )
             }
         }
     }

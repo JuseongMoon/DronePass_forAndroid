@@ -127,7 +127,7 @@ fun ShapeEditScreen(
     isDuplicateMode: Boolean = false,
     onPersistEditDefaults: (ShapeEditDefaults) -> Unit = {},
     onDateOnlyModeChanged: (Boolean) -> Unit = {},
-    onSave: (ShapeModel, ShapeModel?) -> Unit,
+    onSave: (ShapeModel, ShapeModel?, (String) -> Unit) -> Unit,
     onDismiss: () -> Unit
 ) {
     // 복제 모드: shape 전체 데이터 활용하되 신규 ID + 새 createdAt 으로 저장.
@@ -338,7 +338,9 @@ fun ShapeEditScreen(
         onSave(
             resultShape,
             if (isEditMode) originalShapeAtEditStart else null,
-        )
+        ) { saveErrorMessage ->
+            errorMessage = saveErrorMessage
+        }
     }
 
     ModalBottomSheet(

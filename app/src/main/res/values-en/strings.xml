@@ -153,6 +153,8 @@
     <string name="shape_edit_error_radius_required">Please enter radius!</string>
     <string name="shape_edit_error_no_address">No address found for this location</string>
     <string name="shape_edit_error_no_coordinate">Coordinates not set.</string>
+    <string name="shape_edit_error_add_failed">Failed to add shape: %1$s</string>
+    <string name="shape_edit_error_update_failed">Failed to update shape: %1$s</string>
     <string name="shape_edit_title_label">Title</string>
     <string name="shape_edit_title_placeholder">Enter title</string>
     <string name="shape_edit_coordinate_label">Coordinates</string>

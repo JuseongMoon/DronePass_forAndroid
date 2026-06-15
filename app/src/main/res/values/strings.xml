@@ -156,6 +156,8 @@
     <string name="shape_edit_error_radius_required">반경을 반드시 입력해주세요!</string>
     <string name="shape_edit_error_no_address">해당 위치의 주소가 존재하지 않습니다</string>
     <string name="shape_edit_error_no_coordinate">좌표가 설정되지 않았습니다.</string>
+    <string name="shape_edit_error_add_failed">도형 추가 중 오류가 발생했습니다: %1$s</string>
+    <string name="shape_edit_error_update_failed">도형 수정 중 오류가 발생했습니다: %1$s</string>
     <string name="shape_edit_title_label">제목</string>
     <string name="shape_edit_title_placeholder">제목을 입력하세요</string>
     <string name="shape_edit_coordinate_label">좌표</string>

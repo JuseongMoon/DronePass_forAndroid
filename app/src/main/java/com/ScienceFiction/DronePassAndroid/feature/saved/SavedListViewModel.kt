@@ -24,9 +24,11 @@ import com.ScienceFiction.DronePassAndroid.feature.settings.storedKoreaFeaturesE
 import com.ScienceFiction.DronePassAndroid.feature.shape.ShapeEditDefaults
 import com.ScienceFiction.DronePassAndroid.feature.shape.resolveShapeEditDefaultColor
 import com.ScienceFiction.DronePassAndroid.feature.shape.resolveShapeEditConflict
+import com.ScienceFiction.DronePassAndroid.feature.shape.shapeEditSaveFailureMessage
 import com.ScienceFiction.DronePassAndroid.feature.shape.storedShapeEditDefaults
 import com.ScienceFiction.DronePassAndroid.feature.shape.writeShapeEditDateOnlyMode
 import com.ScienceFiction.DronePassAndroid.feature.shape.writeShapeEditDefaults
+import com.ScienceFiction.DronePassAndroid.R
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -407,33 +409,46 @@ class SavedListViewModel @Inject constructor(
         shape: ShapeModel,
         isDuplicate: Boolean,
         originalShapeAtEditStart: ShapeModel? = null,
+        onFailure: (String) -> Unit = {},
     ) {
         viewModelScope.launch {
-            val latestShape = if (!isDuplicate && originalShapeAtEditStart != null) {
-                shapeRepository.getShapeById(originalShapeAtEditStart.id)
-            } else {
-                null
-            }
-            val resolvedShape = resolveShapeEditConflict(
-                editedShape = shape,
-                originalShape = originalShapeAtEditStart,
-                latestShape = latestShape,
-            )
-            val updatedShape = resolvedShape.copy(updatedAt = System.currentTimeMillis())
-            shapeRepository.insertShape(updatedShape)
-
-            _showShapeEdit.value = false
-            _isDuplicateMode.value = false
-            _selectedShapeId.value = updatedShape.id
-
-            when (resolveSavedDetailEditPostSaveAction(isDuplicate)) {
-                SavedDetailEditPostSaveAction.RETURN_TO_DETAIL -> {
-                    _showShapeDetail.value = true
+            try {
+                val latestShape = if (!isDuplicate && originalShapeAtEditStart != null) {
+                    shapeRepository.getShapeById(originalShapeAtEditStart.id)
+                } else {
+                    null
                 }
-                SavedDetailEditPostSaveAction.FOCUS_SAVED_LIST -> {
-                    _showShapeDetail.value = false
-                    _savedShapeFocusEvent.emit(updatedShape.id)
+                val resolvedShape = resolveShapeEditConflict(
+                    editedShape = shape,
+                    originalShape = originalShapeAtEditStart,
+                    latestShape = latestShape,
+                )
+                val updatedShape = resolvedShape.copy(updatedAt = System.currentTimeMillis())
+                shapeRepository.insertShape(updatedShape)
+
+                _showShapeEdit.value = false
+                _isDuplicateMode.value = false
+                _selectedShapeId.value = updatedShape.id
+
+                when (resolveSavedDetailEditPostSaveAction(isDuplicate)) {
+                    SavedDetailEditPostSaveAction.RETURN_TO_DETAIL -> {
+                        _showShapeDetail.value = true
+                    }
+                    SavedDetailEditPostSaveAction.FOCUS_SAVED_LIST -> {
+                        _showShapeDetail.value = false
+                        _savedShapeFocusEvent.emit(updatedShape.id)
+                    }
                 }
+            } catch (error: Exception) {
+                onFailure(
+                    shapeEditSaveFailureMessage(
+                        isEditMode = !isDuplicate && originalShapeAtEditStart != null,
+                        localizedMessage = error.localizedMessage,
+                        fallback = appContext.getString(R.string.common_unknown_error),
+                        addFailureFormat = appContext.getString(R.string.shape_edit_error_add_failed),
+                        updateFailureFormat = appContext.getString(R.string.shape_edit_error_update_failed),
+                    ),
+                )
             }
         }
     }

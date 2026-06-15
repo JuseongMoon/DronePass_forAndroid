@@ -292,11 +292,12 @@ fun SavedListScreen(
                 isDuplicateMode = isDuplicateMode,
                 onPersistEditDefaults = viewModel::saveShapeEditDefaults,
                 onDateOnlyModeChanged = viewModel::setShapeEditDateOnlyMode,
-                onSave = { updatedShape, originalShapeAtEditStart ->
+                onSave = { updatedShape, originalShapeAtEditStart, onSaveFailed ->
                     viewModel.saveShape(
                         shape = updatedShape,
                         isDuplicate = isDuplicateMode,
                         originalShapeAtEditStart = originalShapeAtEditStart,
+                        onFailure = onSaveFailed,
                     )
                 },
                 onDismiss = {

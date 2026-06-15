@@ -246,6 +246,8 @@ class StringResourceCoverageTest {
         assertEquals("수정 중인 정보가 있습니다", stringResourceValue("values/strings.xml", "shape_edit_alert_unsaved_title"))
         assertEquals("수정 중인 내용이 모두 사라집니다. 닫으시겠습니까?", stringResourceValue("values/strings.xml", "shape_edit_alert_unsaved_message"))
         assertEquals("닫기", stringResourceValue("values/strings.xml", "shape_edit_alert_unsaved_discard"))
+        assertEquals("도형 추가 중 오류가 발생했습니다: %1\$s", stringResourceValue("values/strings.xml", "shape_edit_error_add_failed"))
+        assertEquals("도형 수정 중 오류가 발생했습니다: %1\$s", stringResourceValue("values/strings.xml", "shape_edit_error_update_failed"))
         assertEquals("Coordinates", stringResourceValue("values-en/strings.xml", "shape_edit_label_coordinate"))
         assertEquals("Search address", stringResourceValue("values-en/strings.xml", "shape_edit_placeholder_address"))
         assertEquals("Altitude", stringResourceValue("values-en/strings.xml", "shape_edit_altitude_label"))
@@ -263,6 +265,8 @@ class StringResourceCoverageTest {
         assertEquals("Unsaved Changes", stringResourceValue("values-en/strings.xml", "shape_edit_alert_unsaved_title"))
         assertEquals("All changes will be lost. Close anyway?", stringResourceValue("values-en/strings.xml", "shape_edit_alert_unsaved_message"))
         assertEquals("Close", stringResourceValue("values-en/strings.xml", "shape_edit_alert_unsaved_discard"))
+        assertEquals("Failed to add shape: %1\$s", stringResourceValue("values-en/strings.xml", "shape_edit_error_add_failed"))
+        assertEquals("Failed to update shape: %1\$s", stringResourceValue("values-en/strings.xml", "shape_edit_error_update_failed"))
     }
 
     @Test

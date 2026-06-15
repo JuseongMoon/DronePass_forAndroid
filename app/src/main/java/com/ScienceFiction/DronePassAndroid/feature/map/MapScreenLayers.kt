@@ -706,7 +706,7 @@ internal fun MapBottomSheets(
             isDuplicateMode = isDuplicateMode,
             onPersistEditDefaults = { viewModel.saveShapeEditDefaults(it) },
             onDateOnlyModeChanged = { viewModel.setShapeEditDateOnlyMode(it) },
-            onSave = { updatedShape, originalShapeAtEditStart ->
+            onSave = { updatedShape, originalShapeAtEditStart, onSaveFailed ->
                 viewModel.saveShape(
                     shape = updatedShape,
                     isDuplicate = isDuplicateMode,
@@ -715,6 +715,7 @@ internal fun MapBottomSheets(
                         isDuplicateMode = isDuplicateMode,
                     ),
                     originalShapeAtEditStart = originalShapeAtEditStart,
+                    onFailure = onSaveFailed,
                 )
             },
             onDismiss = { viewModel.dismissShapeEdit() },

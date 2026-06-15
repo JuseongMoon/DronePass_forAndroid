@@ -171,6 +171,17 @@ internal fun resolveShapeEditNavigationTitle(isEditMode: Boolean): String {
     return ""
 }
 
+internal fun shapeEditSaveFailureMessage(
+    isEditMode: Boolean,
+    localizedMessage: String?,
+    fallback: String,
+    addFailureFormat: String,
+    updateFailureFormat: String,
+): String {
+    val template = if (isEditMode) updateFailureFormat else addFailureFormat
+    return String.format(Locale.getDefault(), template, localizedMessage ?: fallback)
+}
+
 internal fun resolveInitialShapeEditRadius(
     shape: ShapeModel?,
     editDefaults: ShapeEditDefaults,
