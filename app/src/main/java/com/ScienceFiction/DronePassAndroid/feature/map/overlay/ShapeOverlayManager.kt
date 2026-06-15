@@ -30,14 +30,23 @@ internal enum class MapShapeOverlayKind {
 internal fun resolveMapShapeOverlayKind(shape: ShapeModel): MapShapeOverlayKind? {
     return when (shape.shapeType) {
         ShapeType.CIRCLE -> if (shape.radius != null) MapShapeOverlayKind.CIRCLE else null
-        ShapeType.RECTANGLE -> if (shape.secondCoordinate != null) MapShapeOverlayKind.RECTANGLE else null
-        ShapeType.POLYGON -> if ((shape.polygonCoordinates?.size ?: 0) >= 3) MapShapeOverlayKind.POLYGON else null
-        ShapeType.POLYLINE -> if ((shape.polylineCoordinates?.size ?: 0) >= 2) MapShapeOverlayKind.POLYLINE else null
+        ShapeType.RECTANGLE -> if (shape.hasRenderableRectangleGeometry()) MapShapeOverlayKind.RECTANGLE else null
+        ShapeType.POLYGON -> if (shape.polygonCoordinates.hasAtLeastDistinctCoordinates(3)) MapShapeOverlayKind.POLYGON else null
+        ShapeType.POLYLINE -> if (shape.polylineCoordinates.hasAtLeastDistinctCoordinates(2)) MapShapeOverlayKind.POLYLINE else null
     }
 }
 
 internal fun shouldRenderMapShapeOverlay(shape: ShapeModel): Boolean {
     return resolveMapShapeOverlayKind(shape) != null
+}
+
+private fun ShapeModel.hasRenderableRectangleGeometry(): Boolean {
+    val second = secondCoordinate ?: return false
+    return baseCoordinate.latitude != second.latitude && baseCoordinate.longitude != second.longitude
+}
+
+private fun List<Coordinate>?.hasAtLeastDistinctCoordinates(minCount: Int): Boolean {
+    return this?.distinct()?.size?.let { it >= minCount } ?: false
 }
 
 internal fun rectangleOverlayCoordinates(shape: ShapeModel): List<Coordinate>? {

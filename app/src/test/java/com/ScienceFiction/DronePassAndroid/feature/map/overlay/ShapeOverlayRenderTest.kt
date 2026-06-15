@@ -93,6 +93,45 @@ class ShapeOverlayRenderTest {
     }
 
     @Test
+    fun `실제 면적이나 길이가 없는 계약 도형은 지도 오버레이를 만들지 않는다`() {
+        assertEquals(
+            false,
+            shouldRenderMapShapeOverlay(
+                ShapeModel(
+                    shapeType = ShapeType.RECTANGLE,
+                    baseCoordinate = Coordinate(37.0, 127.0),
+                    secondCoordinate = Coordinate(37.0, 127.1),
+                ),
+            ),
+        )
+        assertEquals(
+            false,
+            shouldRenderMapShapeOverlay(
+                ShapeModel(
+                    shapeType = ShapeType.POLYGON,
+                    polygonCoordinates = listOf(
+                        Coordinate(37.0, 127.0),
+                        Coordinate(37.0, 127.0),
+                        Coordinate(37.0, 127.0),
+                    ),
+                ),
+            ),
+        )
+        assertEquals(
+            false,
+            shouldRenderMapShapeOverlay(
+                ShapeModel(
+                    shapeType = ShapeType.POLYLINE,
+                    polylineCoordinates = listOf(
+                        Coordinate(37.0, 127.0),
+                        Coordinate(37.0, 127.0),
+                    ),
+                ),
+            ),
+        )
+    }
+
+    @Test
     fun `사각형 지도 오버레이는 두 좌표에서 네 모서리를 만든다`() {
         val shape = ShapeModel(
             shapeType = ShapeType.RECTANGLE,
@@ -148,7 +187,7 @@ class ShapeOverlayRenderTest {
     }
 
     @Test
-    fun `지도 하이라이트는 원형 오버레이 후보에만 적용한다`() {
+    fun `원형 도형 하이라이트 반경은 iOS처럼 2미터를 더한다`() {
         val radius = resolveMapCircleHighlightRadius(
             ShapeModel(
                 shapeType = ShapeType.CIRCLE,
@@ -160,7 +199,7 @@ class ShapeOverlayRenderTest {
     }
 
     @Test
-    fun `비원형 도형은 반경 값이 있어도 지도 하이라이트를 만들지 않는다`() {
+    fun `비원형 도형은 반경 값이 있어도 원형 하이라이트 반경을 만들지 않는다`() {
         assertNull(
             resolveMapCircleHighlightRadius(
                 ShapeModel(
