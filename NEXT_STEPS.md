@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 최신 debug APK를 Android 15 실기기 `RFCW324TZ0Z`에 데이터 유지 재설치하고 cold launch + 하단 탭 smoke를 다시 확인. `LaunchState: COLD`, `TotalTime: 1967`, `WaitTime: 1971`, PID `12120`, MainActivity focus 유지. 홈 UI에서 Naver Map controls, 현위치/확대·축소/NAVER logo, 상단 `내 드론`/`드론 2` 선택 버튼과 드롭다운 원, `비행구역 레이어`, `스케치`, `새 도형 추가`, 하단 `지도`/`저장`/`설정` 렌더링을 확인했다. 상단 드론 선택 요소 bounds는 `[401,195][657,285]`, `[680,195][922,285]`, `[945,195][1035,285]`로 y=195·height=90이 일치했다. 저장 탭은 `저장 목록`/`활성화`/저장 행, 설정 탭은 `설정`/`내 정보`/`로그인 / 회원가입`/`내 드론 관리하기`/`비행 환경`/`현재 KP 지수`/`현재 날씨`가 렌더링됐고, 지도 복귀 후 focus/PID가 유지됐다. 앱 PID logcat 필터에는 `NaverMapDebug: 네이버 지도 준비 완료`만 있으며 `FATAL EXCEPTION`/`ThemeUtils` 앱 오류는 없었다.
 - 동기화 진행 제목과 프로필 동기화 진행 상태 문구를 iOS String Catalog처럼 단일 말줄임표가 아닌 `...` 표기로 보정. `:app:testDebugUnitTest --tests "*StringResourceCoverageTest" --tests "*ProfileViewModelTest" --tests "*AuthViewModelForegroundSyncTest"` 및 `:app:assembleDebug` 통과.
 - iOS 실제 빌드 리소스가 `Localization/Localizable.xcstrings`임을 재확인하고, 직전 `.strings` 기준 문자열 보정을 String Catalog 기준으로 재정렬. 도형 상세/도형 편집/드론 목록·상세·편집 라벨은 `고도(m)`, `수정하기`, `복제하기`, `좌표를 입력하세요`, `주소를 검색하세요`, `드론 관리`, `내 드론 목록`, `제작 번호`, `이륙 무게` 등 `.xcstrings` 값을 따른다. `:app:testDebugUnitTest --tests "*StringResourceCoverageTest" --tests "*ShapeDetailDroneResolutionTest" --tests "*ShapeEditDefaultsTest" --tests "*DroneListScreenTest" --tests "*DroneDeleteValidationTest"` 및 `:app:assembleDebug` 통과.
 - 저장 목록 swipe 삭제를 iOS `SavedTableListView`처럼 목록 선택/상세 상태를 건드리지 않고 soft delete만 수행하도록 보정하고, 상세 시트 삭제만 selection/detail/edit state를 정리하도록 분리. `:app:testDebugUnitTest --tests "*SavedListSectionsTest" --tests "*MapCameraFocusTest" --tests "*MainScreenStartDestinationTest"` 및 `:app:assembleDebug` 통과.
@@ -433,7 +434,7 @@ iOS와 Android가 공유하는 `users/{uid}/shapes`, `users/{uid}/sketches`, `us
 9. 패치노트/약관/개인정보 문서 로드
 10. 앱 삭제 후 재설치 시 로그인/Firestore 동기화/FCM deviceId 재생성
 
-2026-06-13 현재 로컬/비파괴 실기기 경로 중 1-4, 8, 9는 최신 debug APK에서 재확인했습니다. 2026-06-14에는 설치/실행/로그 무크래시와 잠금 해제 후 메인 지도 UI XML smoke까지 재확인했습니다. 5-7과 10은 실제 OAuth 설정, 공유 Firestore 계정, FCM payload, 또는 앱 데이터 삭제/재설치가 필요하므로 외부 설정/데이터 백업 확인 후 진행합니다.
+2026-06-15 현재 로컬/비파괴 실기기 경로 중 1, 8, 9와 메인 지도/저장/설정 탭 smoke는 최신 debug APK에서 재확인했습니다. 2-4는 앞선 저장 도형/드론/스케치 smoke와 단위 테스트 기준을 유지하며, 5-7과 10은 실제 OAuth 설정, 공유 Firestore 계정, FCM payload, 또는 앱 데이터 삭제/재설치가 필요하므로 외부 설정/데이터 백업 확인 후 진행합니다.
 
 ### 3.2 운영 콘솔 설정
 
