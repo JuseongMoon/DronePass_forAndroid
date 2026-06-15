@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.weather
 
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
 import androidx.datastore.preferences.core.preferencesOf
 import com.ScienceFiction.DronePassAndroid.R
@@ -93,7 +94,7 @@ class WeatherForecastParityTest {
     fun `forecast chart heights match iOS WeatherForecastView chart frames`() {
         assertEquals(250.dp, WeatherForecastChartHeight)
         assertEquals(WeatherForecastChartHeight, WeatherLineChartDefaultHeight)
-        assertEquals(WeatherForecastChartHeight, WeatherPrecipitationBarChartHeight)
+        assertEquals(WeatherForecastChartHeight, WeatherPrecipitationChartHeight)
     }
 
     @Test
@@ -162,6 +163,30 @@ class WeatherForecastParityTest {
         assertEquals(10.0, resolveIosPrecipitationYMax(emptyList()), 0.0)
         assertEquals(10.0, resolveIosPrecipitationYMax(listOf(0.0, 3.0)), 0.0)
         assertEquals(15.0, resolveIosPrecipitationYMax(listOf(12.1)), 0.0)
+    }
+
+    @Test
+    fun `weather line charts use iOS PointMark colors`() {
+        assertEquals(
+            listOf(
+                IosWeatherWindSpeedChartColor.toArgb(),
+                IosWeatherGustDifferenceChartColor.toArgb(),
+                IosWeatherPrecipitationChartColor.toArgb(),
+                IosWeatherVisibilityChartColor.toArgb(),
+                IosWeatherCriChartColor.toArgb(),
+            ),
+            listOf(
+                0xFF4CAF50.toInt(),
+                0xFF5856D6.toInt(),
+                0xFF2196F3.toInt(),
+                0xFF9C27B0.toInt(),
+                0xFF00BCD4.toInt(),
+            ),
+        )
+        assertEquals(
+            List(3) { IosWeatherWindSpeedChartColor.toArgb() },
+            weatherChartPointColors(3, IosWeatherWindSpeedChartColor).map { it.toArgb() },
+        )
     }
 
     @Test
