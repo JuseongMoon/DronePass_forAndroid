@@ -913,6 +913,7 @@ class StringResourceCoverageTest {
         assertEquals("강수량 예보 (3일)", stringResourceValue("values/strings.xml", "weather_chart_precipitation"))
         assertEquals("가시거리 예보 (3일)", stringResourceValue("values/strings.xml", "weather_chart_visibility"))
         assertEquals("결로위험지수 예보 (3일)", stringResourceValue("values/strings.xml", "weather_chart_cri"))
+        assertEquals("현재", stringResourceValue("values/strings.xml", "weather_chart_current"))
 
         assertEquals("Location-based Information", stringResourceValue("values-en/strings.xml", "weather_navigation_title"))
         assertEquals("Sunrise/Sunset", stringResourceValue("values-en/strings.xml", "weather_section_sunrise_sunset"))
@@ -946,6 +947,7 @@ class StringResourceCoverageTest {
         assertEquals("Precipitation Forecast (3 Days)", stringResourceValue("values-en/strings.xml", "weather_chart_precipitation"))
         assertEquals("Visibility Forecast (3 Days)", stringResourceValue("values-en/strings.xml", "weather_chart_visibility"))
         assertEquals("CRI Forecast (3 Days)", stringResourceValue("values-en/strings.xml", "weather_chart_cri"))
+        assertEquals("Now", stringResourceValue("values-en/strings.xml", "weather_chart_current"))
     }
 
     @Test

@@ -335,6 +335,13 @@ class WeatherForecastParityTest {
         assertNull(resolveWeatherChartCurrentTimeMarkerMs(dataPoints, 9_999L))
         assertNull(resolveWeatherChartCurrentTimeMarkerMs(dataPoints, 30_001L))
         assertNull(resolveWeatherChartCurrentTimeMarkerMs(emptyList(), 20_000L))
+
+        assertTrue(shouldDrawWeatherCurrentMarker(20_000L, 10_000L, 30_000L))
+        assertFalse(shouldDrawWeatherCurrentMarker(9_999L, 10_000L, 30_000L))
+        assertFalse(shouldDrawWeatherCurrentMarker(null, 10_000L, 30_000L))
+        assertEquals(12f, resolveWeatherChartTopPadding(false, false, 11f), 0f)
+        assertEquals(23f, resolveWeatherChartTopPadding(false, true, 11f), 0f)
+        assertEquals(23f, resolveWeatherChartTopPadding(true, false, 11f), 0f)
     }
 
     @Test

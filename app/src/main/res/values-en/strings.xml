@@ -565,6 +565,7 @@
     <string name="weather_chart_precipitation">Precipitation Forecast (3 Days)</string>
     <string name="weather_chart_visibility">Visibility Forecast (3 Days)</string>
     <string name="weather_chart_cri">CRI Forecast (3 Days)</string>
+    <string name="weather_chart_current">Now</string>
     <string name="weather_navigation_title">Location-based Information</string>
     <string name="weather_section_sunrise_sunset">Sunrise/Sunset</string>
     <string name="weather_section_current">Current Weather</string>

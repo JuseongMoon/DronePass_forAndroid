@@ -477,6 +477,7 @@
     <string name="weather_chart_precipitation">강수량 예보 (3일)</string>
     <string name="weather_chart_visibility">가시거리 예보 (3일)</string>
     <string name="weather_chart_cri">결로위험지수 예보 (3일)</string>
+    <string name="weather_chart_current">현재</string>
 
     <!-- Weather Sheet (iOS WeatherForecastView 정합) -->
     <string name="weather_navigation_title">현위치 기반 정보</string>

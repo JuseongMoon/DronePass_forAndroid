@@ -19,6 +19,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -80,6 +81,7 @@ internal data class BackgroundZone(
  * - [xLabelIntervalMs]: X축 라벨 간격 (기본 3시간)
  * - [xLabelTimesMs]: X축 라벨을 표시할 명시적 시각들 (KP 차트의 iOS AxisMarks values 정합)
  * - [currentTimeMs]: 현재 시간 빨강 수직선
+ * - [currentTimeLabel]: 현재 시간 수직선 위에 표시할 라벨 (iOS Weather RuleMark annotation)
  * - [predicted]: dataPoints 와 같은 size 의 Boolean 리스트. 양쪽이 모두 true 인 segment 는 점선
  * - [pointColors]: 각 데이터 포인트에 표시할 원의 색 (예: KpLevel 별 색상)
  * - [pointLabels]: 각 데이터 포인트 위에 표시할 라벨 (예: iOS KP PointMark annotation)
@@ -102,6 +104,7 @@ internal fun WeatherLineChart(
     xLabelIntervalMs: Long? = null,
     xLabelTimesMs: List<Long>? = null,
     currentTimeMs: Long? = null,
+    currentTimeLabel: String? = null,
     predicted: List<Boolean> = emptyList(),
     pointColors: List<Color>? = null,
     pointLabels: List<String> = emptyList(),
@@ -125,7 +128,16 @@ internal fun WeatherLineChart(
     ) {
         val leftPadding = 48f
         val rightPadding = 16f
-        val topPadding = if (pointLabels.size == dataPoints.size) axisLabelPx + 12f else 12f
+        val shouldDrawCurrentMarker = shouldDrawWeatherCurrentMarker(
+            currentTimeMs = currentTimeMs,
+            dataStartMs = dataPoints.first().first,
+            dataEndMs = dataPoints.last().first,
+        )
+        val topPadding = resolveWeatherChartTopPadding(
+            hasPointLabels = pointLabels.size == dataPoints.size,
+            hasCurrentTimeLabel = shouldDrawCurrentMarker && currentTimeLabel != null,
+            axisLabelPx = axisLabelPx,
+        )
         val bottomPadding = 28f
 
         val chartWidth = size.width - leftPadding - rightPadding
@@ -284,14 +296,21 @@ internal fun WeatherLineChart(
         }
 
         // 현재 시간 빨강 수직선 (옵션)
-        currentTimeMs?.let { now ->
-            if (now in dataPoints.first().first..dataPoints.last().first) {
-                val nowX = toScreenX(now)
-                drawLine(
-                    color = Color(0xFFFF0000),
-                    start = Offset(nowX, topPadding),
-                    end = Offset(nowX, topPadding + chartHeight),
-                    strokeWidth = 2f,
+        if (shouldDrawCurrentMarker && currentTimeMs != null) {
+            val nowX = toScreenX(currentTimeMs)
+            drawLine(
+                color = Color(0xFFFF0000),
+                start = Offset(nowX, topPadding),
+                end = Offset(nowX, topPadding + chartHeight),
+                strokeWidth = 2f,
+            )
+            currentTimeLabel?.let { label ->
+                drawWeatherCurrentTimeLabel(
+                    label = label,
+                    centerX = nowX,
+                    leftBound = leftPadding,
+                    rightBound = size.width - rightPadding,
+                    textSizePx = axisLabelPx,
                 )
             }
         }
@@ -431,6 +450,65 @@ internal fun WeatherLineChart(
     }
 }
 
+private fun DrawScope.drawWeatherCurrentTimeLabel(
+    label: String,
+    centerX: Float,
+    leftBound: Float,
+    rightBound: Float,
+    textSizePx: Float,
+) {
+    val horizontalPadding = 6f
+    val verticalPadding = 2f
+    val labelPaint = Paint().apply {
+        color = Color.White.toArgb()
+        textSize = textSizePx
+        textAlign = Paint.Align.CENTER
+        isAntiAlias = true
+        typeface = Typeface.DEFAULT
+    }
+    val labelWidth = labelPaint.measureText(label) + horizontalPadding * 2
+    val labelHeight = textSizePx + verticalPadding * 2
+    val availableWidth = rightBound - leftBound
+    val labelCenterX = if (availableWidth >= labelWidth) {
+        centerX.coerceIn(
+            leftBound + labelWidth / 2,
+            rightBound - labelWidth / 2,
+        )
+    } else {
+        (leftBound + rightBound) / 2
+    }
+    val labelTop = 2f
+    drawRoundRect(
+        color = Color.Red,
+        topLeft = Offset(labelCenterX - labelWidth / 2, labelTop),
+        size = Size(labelWidth, labelHeight),
+        cornerRadius = CornerRadius(4f, 4f),
+    )
+    drawContext.canvas.nativeCanvas.drawText(
+        label,
+        labelCenterX,
+        labelTop + verticalPadding + textSizePx,
+        labelPaint,
+    )
+}
+
+internal fun resolveWeatherChartTopPadding(
+    hasPointLabels: Boolean,
+    hasCurrentTimeLabel: Boolean,
+    axisLabelPx: Float,
+): Float {
+    val labelPadding = if (hasPointLabels || hasCurrentTimeLabel) axisLabelPx + 12f else 12f
+    return maxOf(12f, labelPadding)
+}
+
+internal fun shouldDrawWeatherCurrentMarker(
+    currentTimeMs: Long?,
+    dataStartMs: Long,
+    dataEndMs: Long,
+): Boolean {
+    return currentTimeMs != null && currentTimeMs in dataStartMs..dataEndMs
+}
+
 internal fun shouldDrawWeatherLineAsSegments(
     dataPointCount: Int,
     predicted: List<Boolean>,
@@ -536,6 +614,7 @@ fun TemperatureChart(
 ) {
     val dataPoints = hourlyData.map { it.time to it.temperature }
     val pointColors = hourlyData.map { interpolateTemperatureColor(it.temperature) }
+    val currentLabel = stringResource(R.string.weather_chart_current)
     ChartCard(
         title = stringResource(R.string.weather_chart_temperature),
         modifier = modifier,
@@ -550,6 +629,7 @@ fun TemperatureChart(
                 formatValue = { String.format(Locale.ROOT, "%.0f\u00B0", it) },
                 xLabelIntervalMs = IosWeatherChartXLabelIntervalMs,
                 currentTimeMs = resolveWeatherChartCurrentTimeMarkerMs(dataPoints, nowMillis),
+                currentTimeLabel = currentLabel,
                 pointColors = pointColors,
                 lineSegmentColors = pointColors,
             )
@@ -567,6 +647,7 @@ fun WindSpeedChart(
     val dataPoints = hourlyData.map { it.time to it.windSpeed }
     val (cautionThreshold, dangerThreshold) = iosWindSpeedThresholds(category)
     val lineColor = IosWeatherWindSpeedChartColor
+    val currentLabel = stringResource(R.string.weather_chart_current)
     ChartCard(
         title = stringResource(R.string.weather_chart_wind_speed),
         modifier = modifier,
@@ -583,6 +664,7 @@ fun WindSpeedChart(
                 formatValue = { String.format(Locale.ROOT, "%.1f", it) },
                 xLabelIntervalMs = IosWeatherChartXLabelIntervalMs,
                 currentTimeMs = resolveWeatherChartCurrentTimeMarkerMs(dataPoints, nowMillis),
+                currentTimeLabel = currentLabel,
                 pointColors = weatherChartPointColors(dataPoints.size, lineColor),
             )
         }
@@ -599,6 +681,7 @@ fun GustDifferenceChart(
     val dataPoints = hourlyData.map { it.time to it.gustDifference }
     val (cautionThreshold, dangerThreshold) = iosGustDifferenceThresholds(category)
     val lineColor = IosWeatherGustDifferenceChartColor
+    val currentLabel = stringResource(R.string.weather_chart_current)
     ChartCard(
         title = stringResource(R.string.weather_chart_gust_difference),
         modifier = modifier,
@@ -615,6 +698,7 @@ fun GustDifferenceChart(
                 formatValue = { String.format(Locale.ROOT, "%.1f", it) },
                 xLabelIntervalMs = IosWeatherChartXLabelIntervalMs,
                 currentTimeMs = resolveWeatherChartCurrentTimeMarkerMs(dataPoints, nowMillis),
+                currentTimeLabel = currentLabel,
                 pointColors = weatherChartPointColors(dataPoints.size, lineColor),
             )
         }
@@ -630,6 +714,7 @@ fun PrecipitationChart(
     val dataPoints = hourlyData.map { it.time to it.precipitation }
     val lineColor = IosWeatherPrecipitationChartColor
     val yMax = resolveIosPrecipitationYMax(dataPoints.map { it.second })
+    val currentLabel = stringResource(R.string.weather_chart_current)
     ChartCard(
         title = stringResource(R.string.weather_chart_precipitation),
         modifier = modifier,
@@ -644,6 +729,7 @@ fun PrecipitationChart(
                 yAxisLabel = "mm/h",
                 formatValue = { String.format(Locale.ROOT, "%.1f", it) },
                 currentTimeMs = resolveWeatherChartCurrentTimeMarkerMs(dataPoints, nowMillis),
+                currentTimeLabel = currentLabel,
                 xLabelIntervalMs = IosWeatherChartXLabelIntervalMs,
                 pointColors = weatherChartPointColors(dataPoints.size, lineColor),
                 chartHeight = WeatherPrecipitationChartHeight,
@@ -660,6 +746,7 @@ fun VisibilityChart(
 ) {
     val dataPoints = hourlyData.map { it.time to it.visibility }
     val lineColor = IosWeatherVisibilityChartColor
+    val currentLabel = stringResource(R.string.weather_chart_current)
     ChartCard(
         title = stringResource(R.string.weather_chart_visibility),
         modifier = modifier,
@@ -676,6 +763,7 @@ fun VisibilityChart(
                 formatValue = { String.format(Locale.ROOT, "%.0f", it) },
                 xLabelIntervalMs = IosWeatherChartXLabelIntervalMs,
                 currentTimeMs = resolveWeatherChartCurrentTimeMarkerMs(dataPoints, nowMillis),
+                currentTimeLabel = currentLabel,
                 pointColors = weatherChartPointColors(dataPoints.size, lineColor),
             )
         }
@@ -690,6 +778,7 @@ fun CriChart(
 ) {
     val dataPoints = hourlyData.map { it.time to it.cri }
     val lineColor = IosWeatherCriChartColor
+    val currentLabel = stringResource(R.string.weather_chart_current)
     ChartCard(
         title = stringResource(R.string.weather_chart_cri),
         modifier = modifier,
@@ -706,6 +795,7 @@ fun CriChart(
                 formatValue = { String.format(Locale.ROOT, "%.0f", it) },
                 xLabelIntervalMs = IosWeatherChartXLabelIntervalMs,
                 currentTimeMs = resolveWeatherChartCurrentTimeMarkerMs(dataPoints, nowMillis),
+                currentTimeLabel = currentLabel,
                 pointColors = weatherChartPointColors(dataPoints.size, lineColor),
             )
         }
