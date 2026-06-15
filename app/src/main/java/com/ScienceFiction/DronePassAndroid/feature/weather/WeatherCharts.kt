@@ -60,6 +60,7 @@ internal val IosWeatherGustDifferenceChartColor = Color(0xFF5856D6)
 internal val IosWeatherPrecipitationChartColor = Color(0xFF2196F3)
 internal val IosWeatherVisibilityChartColor = Color(0xFF9C27B0)
 internal val IosWeatherCriChartColor = Color(0xFF00BCD4)
+internal val IosWeatherCriChartYRange = 0.0..100.0
 
 /**
  * Y축 배경 색상 영역. WeatherLineChart 의 [backgroundZones] 에 전달.
@@ -803,6 +804,7 @@ fun CriChart(
                 modifier = chartModifier,
                 lineColor = lineColor,
                 fillAlpha = 0.1f,
+                yAxisRange = IosWeatherCriChartYRange,
                 warningThreshold = IosCriModerate,
                 dangerThreshold = IosCriHigh,
                 yAxisLabel = "%",

@@ -329,6 +329,7 @@ class WeatherForecastParityTest {
         assertEquals(2.0, IosVisibilityPoorKm, 0.0)
         assertEquals(40.0, IosCriModerate, 0.0)
         assertEquals(70.0, IosCriHigh, 0.0)
+        assertEquals(0.0..100.0, IosWeatherCriChartYRange)
     }
 
     @Test
