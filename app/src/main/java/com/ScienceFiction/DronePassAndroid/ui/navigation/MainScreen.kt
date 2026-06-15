@@ -524,8 +524,10 @@ internal fun MainScreen(
 
     DisposableEffect(lifecycleOwner, authViewModel) {
         val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
-                authViewModel.ensureCloudSyncActiveOnForeground()
+            when (event) {
+                Lifecycle.Event.ON_RESUME -> authViewModel.ensureCloudSyncActiveOnForeground()
+                Lifecycle.Event.ON_STOP -> authViewModel.resetForegroundSyncCheckStatus()
+                else -> Unit
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)

@@ -140,6 +140,19 @@ internal fun resolveForegroundCloudSyncAction(
     }
 }
 
+internal const val ForegroundRemoteChangeCheckThrottleMs = 30_000L
+
+internal fun shouldCheckForegroundRemoteChanges(
+    hasCheckedForChanges: Boolean,
+    isSyncing: Boolean,
+    nowMillis: Long,
+    lastCheckTimeMillis: Long?,
+): Boolean {
+    if (hasCheckedForChanges || isSyncing) return false
+    return lastCheckTimeMillis == null ||
+        nowMillis - lastCheckTimeMillis >= ForegroundRemoteChangeCheckThrottleMs
+}
+
 /**
  * 인증 화면의 ViewModel.
  *
@@ -195,6 +208,10 @@ class AuthViewModel @Inject constructor(
     internal val foregroundSyncDialogState: SharedFlow<ForegroundSyncDialogState> =
         _foregroundSyncDialogState.asSharedFlow()
 
+    private var hasCheckedForegroundRemoteChanges = false
+    private var lastForegroundRemoteChangeCheckTimeMillis: Long? = null
+    private var isForegroundSyncing = false
+
     private val _accountSwitchConfirmation = MutableStateFlow<AccountSwitchConfirmationRequest?>(null)
     val accountSwitchConfirmation: StateFlow<AccountSwitchConfirmationRequest?> =
         _accountSwitchConfirmation.asStateFlow()
@@ -245,14 +262,33 @@ class AuthViewModel @Inject constructor(
                 realtimeSyncEnabled = realtimeSyncManager.isRealtimeSyncEnabled.value,
             )
             if (action == ForegroundCloudSyncAction.REQUEST_USER_CONFIRMATION) {
-                val hasRemoteChanges = runCatching { realtimeSyncManager.hasRemoteChanges() }
+                val nowMillis = System.currentTimeMillis()
+                if (!shouldCheckForegroundRemoteChanges(
+                        hasCheckedForChanges = hasCheckedForegroundRemoteChanges,
+                        isSyncing = isForegroundSyncing,
+                        nowMillis = nowMillis,
+                        lastCheckTimeMillis = lastForegroundRemoteChangeCheckTimeMillis,
+                    )
+                ) {
+                    return@launch
+                }
+                lastForegroundRemoteChangeCheckTimeMillis = nowMillis
+                val remoteChangesResult = runCatching { realtimeSyncManager.hasRemoteChanges() }
                     .onFailure { Log.w(TAG, "포그라운드 원격 변경 확인 실패", it) }
-                    .getOrDefault(false)
+                if (remoteChangesResult.isSuccess) {
+                    hasCheckedForegroundRemoteChanges = true
+                }
+                val hasRemoteChanges = remoteChangesResult.getOrDefault(false)
                 if (hasRemoteChanges) {
                     _foregroundSyncConfirmation.tryEmit(Unit)
                 }
             }
         }
+    }
+
+    fun resetForegroundSyncCheckStatus() {
+        hasCheckedForegroundRemoteChanges = false
+        lastForegroundRemoteChangeCheckTimeMillis = null
     }
 
     fun confirmForegroundCloudSync() {
@@ -265,16 +301,22 @@ class AuthViewModel @Inject constructor(
                 realtimeSyncEnabled = realtimeSyncManager.isRealtimeSyncEnabled.value,
             )
             if (action == ForegroundCloudSyncAction.REQUEST_USER_CONFIRMATION) {
+                if (isForegroundSyncing) return@launch
                 Log.d(TAG, "포그라운드 복귀: 사용자 확인 후 실시간 동기화 리스너 복구 userId=${user.uid}")
-                realtimeSyncManager.startListening(user.uid)
-                _foregroundSyncDialogState.tryEmit(ForegroundSyncDialogState.Loading)
-                when (val result = performFullSync(selectAllDronesAfterSync = false)) {
-                    FullSyncResult.Success ->
-                        _foregroundSyncDialogState.tryEmit(ForegroundSyncDialogState.Complete)
-                    is FullSyncResult.Failure ->
-                        _foregroundSyncDialogState.tryEmit(
-                            ForegroundSyncDialogState.Error(result.message),
-                        )
+                isForegroundSyncing = true
+                try {
+                    realtimeSyncManager.startListening(user.uid)
+                    _foregroundSyncDialogState.tryEmit(ForegroundSyncDialogState.Loading)
+                    when (val result = performFullSync(selectAllDronesAfterSync = false)) {
+                        FullSyncResult.Success ->
+                            _foregroundSyncDialogState.tryEmit(ForegroundSyncDialogState.Complete)
+                        is FullSyncResult.Failure ->
+                            _foregroundSyncDialogState.tryEmit(
+                                ForegroundSyncDialogState.Error(result.message),
+                            )
+                    }
+                } finally {
+                    isForegroundSyncing = false
                 }
             }
         }

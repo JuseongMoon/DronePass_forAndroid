@@ -61,6 +61,63 @@ class AuthViewModelForegroundSyncTest {
     }
 
     @Test
+    fun `foreground remote change check is skipped after a completed check in the same session`() {
+        assertEquals(
+            false,
+            shouldCheckForegroundRemoteChanges(
+                hasCheckedForChanges = true,
+                isSyncing = false,
+                nowMillis = 40_000L,
+                lastCheckTimeMillis = 10_000L,
+            ),
+        )
+    }
+
+    @Test
+    fun `foreground remote change check is skipped while sync is already running`() {
+        assertEquals(
+            false,
+            shouldCheckForegroundRemoteChanges(
+                hasCheckedForChanges = false,
+                isSyncing = true,
+                nowMillis = 40_000L,
+                lastCheckTimeMillis = null,
+            ),
+        )
+    }
+
+    @Test
+    fun `foreground remote change check follows iOS thirty second throttle`() {
+        assertEquals(
+            true,
+            shouldCheckForegroundRemoteChanges(
+                hasCheckedForChanges = false,
+                isSyncing = false,
+                nowMillis = 10_000L,
+                lastCheckTimeMillis = null,
+            ),
+        )
+        assertEquals(
+            false,
+            shouldCheckForegroundRemoteChanges(
+                hasCheckedForChanges = false,
+                isSyncing = false,
+                nowMillis = 39_999L,
+                lastCheckTimeMillis = 10_000L,
+            ),
+        )
+        assertEquals(
+            true,
+            shouldCheckForegroundRemoteChanges(
+                hasCheckedForChanges = false,
+                isSyncing = false,
+                nowMillis = 40_000L,
+                lastCheckTimeMillis = 10_000L,
+            ),
+        )
+    }
+
+    @Test
     fun `provider login starts only from logged out or error state like iOS retry flow`() {
         assertEquals(
             AuthProviderSignInAction.START,
