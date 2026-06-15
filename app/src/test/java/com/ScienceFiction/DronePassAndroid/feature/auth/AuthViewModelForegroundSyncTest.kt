@@ -61,6 +61,14 @@ class AuthViewModelForegroundSyncTest {
     }
 
     @Test
+    fun `foreground confirmation syncs only shape domain like iOS change detection prompt`() {
+        assertEquals(
+            listOf(ForegroundCloudSyncDomain.Shape),
+            foregroundCloudSyncDomains(),
+        )
+    }
+
+    @Test
     fun `foreground remote change check is skipped after a completed check in the same session`() {
         assertEquals(
             false,

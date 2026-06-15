@@ -46,6 +46,10 @@ internal enum class ForegroundCloudSyncAction {
     REQUEST_USER_CONFIRMATION,
 }
 
+internal enum class ForegroundCloudSyncDomain {
+    Shape,
+}
+
 internal sealed interface ForegroundSyncDialogState {
     data object Loading : ForegroundSyncDialogState
     data object Complete : ForegroundSyncDialogState
@@ -138,6 +142,10 @@ internal fun resolveForegroundCloudSyncAction(
     } else {
         ForegroundCloudSyncAction.NO_OP
     }
+}
+
+internal fun foregroundCloudSyncDomains(): List<ForegroundCloudSyncDomain> {
+    return listOf(ForegroundCloudSyncDomain.Shape)
 }
 
 internal const val ForegroundRemoteChangeCheckThrottleMs = 30_000L
@@ -309,7 +317,7 @@ class AuthViewModel @Inject constructor(
                 try {
                     realtimeSyncManager.startListening(user.uid)
                     _foregroundSyncDialogState.tryEmit(ForegroundSyncDialogState.Loading)
-                    when (val result = performFullSync(selectAllDronesAfterSync = false)) {
+                    when (val result = performForegroundCloudSync()) {
                         FullSyncResult.Success ->
                             _foregroundSyncDialogState.tryEmit(ForegroundSyncDialogState.Complete)
                         is FullSyncResult.Failure ->
@@ -580,6 +588,36 @@ class AuthViewModel @Inject constructor(
         dataStore.edit { preferences ->
             preferences[SyncPreferenceKeys.SYNCED_SHAPE_BASELINE] =
                 encodeAccountSwitchShapeBaseline(activeShapeUpdatedAtById)
+        }
+    }
+
+    /**
+     * iOS `ChangeDetectionManager.performSync()` 정합.
+     *
+     * 포그라운드 복귀 fallback 프롬프트는 Shape 변경 감지/도형 정보 최신화 문구를
+     * 표시하므로, 확인 버튼도 Shape 동기화 결과만 완료/실패 다이얼로그에 반영한다.
+     */
+    private suspend fun performForegroundCloudSync(): FullSyncResult {
+        return try {
+            foregroundCloudSyncDomains().forEach { domain ->
+                when (domain) {
+                    ForegroundCloudSyncDomain.Shape -> {
+                        shapeRepository.performFullSync()
+                        saveSyncedShapeBaseline()
+                        val shapeSyncTime = System.currentTimeMillis()
+                        dataStore.edit { preferences ->
+                            preferences.recordShapeRealtimeSyncSuccess(shapeSyncTime)
+                        }
+                    }
+                }
+            }
+            FullSyncResult.Success
+        } catch (e: Exception) {
+            Log.e(TAG, "포그라운드 Shape 동기화 실패", e)
+            _syncMessage.tryEmit(appContext.getString(R.string.login_sync_failed))
+            FullSyncResult.Failure(
+                e.localizedMessage ?: appContext.getString(R.string.common_unknown_error),
+            )
         }
     }
 
