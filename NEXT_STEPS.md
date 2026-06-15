@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 날씨 예보 현재 날씨 카드를 iOS `WeatherForecastView.currentWeatherCard`처럼 현재 weather 데이터가 없어도 카드 구조를 유지하도록 보정했다. Android는 `data.current == null`이면 섹션을 생략했지만, iOS `WeatherManager` computed 문자열들은 `"-"`/`weather.unknown` fallback으로 카드 안 값을 유지한다. Android도 현재 카드에서 온도/풍속/풍향/돌풍/강수/가시거리/CRI fallback을 맞추고, 현재 강수 표기를 iOS `precipitationString`과 같은 `mm/h` 단위로 정리했다. `:app:testDebugUnitTest --tests "*WeatherForecastParityTest" --tests "*StringResourceCoverageTest"` 및 `:app:assembleDebug` 통과.
 - KP 예보 현재 지수 카드를 iOS `KPForecastView.currentKPCard`처럼 현재 KP 데이터가 없어도 카드 구조를 유지하도록 보정했다. iOS `KPIndexManager.currentKPString`은 `currentKP == nil`일 때 `"-"`를 표시하고 `currentLevel` 기본값 `.normal`로 레벨/설명/GFZ 출처를 계속 보여주므로, Android도 `데이터가 없습니다` 대체 카드 대신 `-` + Normal 레벨/설명/출처를 렌더링한다. `:app:testDebugUnitTest --tests "*KpChartsTest"` 및 `:app:assembleDebug` 통과.
 - KP 예보 화면과 설정/지도 시트 헤더의 새로고침 버튼 활성화 정책을 iOS `KPForecastView` toolbar처럼 로딩 중에도 유지되도록 보정했다. 기존 Android는 `isLoading` 중 새로고침 버튼을 비활성화했고 전체 화면 toolbar에 별도 스피너도 표시했지만, iOS는 버튼을 disable하지 않고 toolbar 스피너도 두지 않으므로 공용 `isKpRefreshActionEnabled` 정책과 `KpToolbarShowsLoadingIndicator = false` 기준으로 통일했다. `:app:testDebugUnitTest --tests "*KpChartsTest"` 및 `:app:assembleDebug` 통과.
 - 날씨 예보 화면과 설정/지도 시트 헤더의 새로고침 버튼 활성화 정책을 iOS `WeatherForecastView` toolbar처럼 로딩 중에도 유지되도록 보정했다. 기존 Android는 `isLoading` 중 새로고침 버튼을 비활성화했지만, iOS는 버튼을 disable하지 않으므로 공용 `isWeatherRefreshActionEnabled` 정책으로 전체 화면/시트 헤더를 통일했다. `:app:testDebugUnitTest --tests "*WeatherForecastParityTest"` 및 `:app:assembleDebug` 통과.
