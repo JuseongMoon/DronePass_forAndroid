@@ -137,7 +137,7 @@ internal fun shapeFromFirestoreData(data: Map<String, Any?>): ShapeModel? {
     val deletedAt = timestampMillis(data["deletedAt"])
     val baseCoordinate = firestoreMapToCoordinate(data["baseCoordinate"]) ?: return null
     val radius = if (shapeType == ShapeType.CIRCLE) {
-        data["radius"] as? Double
+        firestoreOptionalDouble(data["radius"])
     } else {
         null
     }
@@ -171,7 +171,7 @@ internal fun shapeFromFirestoreData(data: Map<String, Any?>): ShapeModel? {
         secondCoordinate = secondCoordinate,
         polygonCoordinates = polygonCoordinates,
         polylineCoordinates = polylineCoordinates,
-        height = data["height"] as? Double,
+        height = firestoreOptionalDouble(data["height"]),
         memo = data["memo"] as? String,
         color = color,
         droneId = data["droneId"] as? String,

@@ -152,10 +152,24 @@ class SketchFirebaseStoreTest {
     }
 
     @Test
-    fun `스케치 숫자 선택 필드 타입 불일치는 iOS처럼 기본값으로 파싱한다`() {
+    fun `스케치 숫자 선택 필드는 iOS처럼 정수 숫자도 Double 로 읽는다`() {
         val sketch = sketchFromFirestoreData(
             validDocument() + mapOf(
                 "strokeWidth" to 5,
+                "opacity" to 1L,
+            ),
+        )
+
+        requireNotNull(sketch)
+        assertEquals(5.0, sketch.strokeWidth, 0.0)
+        assertEquals(1.0, sketch.opacity, 0.0)
+    }
+
+    @Test
+    fun `스케치 숫자 선택 필드 문자열은 iOS처럼 기본값으로 파싱한다`() {
+        val sketch = sketchFromFirestoreData(
+            validDocument() + mapOf(
+                "strokeWidth" to "5",
                 "opacity" to "1.0",
             ),
         )
