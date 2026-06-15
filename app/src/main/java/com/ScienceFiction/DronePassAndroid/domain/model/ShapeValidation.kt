@@ -22,6 +22,7 @@ fun ShapeModel.validateForLocalPersistence(): ShapeValidationResult {
         maxRadiusMeters = null,
         maxCoordinateCount = null,
         requireTypedGeometry = false,
+        requireRenderableGeometry = false,
         requireNonEmptyTitle = true,
         requireNonBlankTitle = false,
     )
@@ -35,6 +36,7 @@ fun ShapeModel.validateForFirebasePersistence(): ShapeValidationResult {
         maxRadiusMeters = MAX_FIREBASE_RADIUS_METERS,
         maxCoordinateCount = MAX_FIREBASE_COORDINATE_COUNT,
         requireTypedGeometry = true,
+        requireRenderableGeometry = true,
         requireNonEmptyTitle = true,
         requireNonBlankTitle = true,
     )
@@ -48,6 +50,7 @@ fun ShapeModel.validateForFirebaseRead(): ShapeValidationResult {
         maxRadiusMeters = MAX_FIREBASE_RADIUS_METERS,
         maxCoordinateCount = MAX_FIREBASE_COORDINATE_COUNT,
         requireTypedGeometry = true,
+        requireRenderableGeometry = false,
         requireNonEmptyTitle = false,
         requireNonBlankTitle = false,
     )
@@ -72,6 +75,19 @@ fun validateFirebaseShapeBatch(shapes: List<ShapeModel>): ShapeValidationResult 
     return ShapeValidationResult(isValid = true)
 }
 
+fun validateFirebaseShapeReadBatch(shapes: List<ShapeModel>): ShapeValidationResult {
+    shapes.forEach { shape ->
+        val validation = shape.validateForFirebaseRead()
+        if (!validation.isValid) return validation
+    }
+
+    if (shapes.map { it.id }.toSet().size != shapes.size) {
+        return ShapeValidationResult(isValid = false, reason = "duplicate shape id")
+    }
+
+    return ShapeValidationResult(isValid = true)
+}
+
 private fun isValidFirebaseShapeId(id: String): Boolean {
     return runCatching { UUID.fromString(id) }.isSuccess
 }
@@ -80,6 +96,7 @@ private fun ShapeModel.validateShape(
     maxRadiusMeters: Double?,
     maxCoordinateCount: Int?,
     requireTypedGeometry: Boolean,
+    requireRenderableGeometry: Boolean,
     requireNonEmptyTitle: Boolean,
     requireNonBlankTitle: Boolean,
 ): ShapeValidationResult {
@@ -101,11 +118,11 @@ private fun ShapeModel.validateShape(
 
     return when (shapeType) {
         ShapeType.CIRCLE -> validateCircleRadius(radius, maxRadiusMeters)
-        ShapeType.RECTANGLE -> validateCoordinate(
-            coordinate = secondCoordinate,
-            required = requireTypedGeometry,
-            missingReason = "missing second coordinate",
-            invalidReason = "invalid second coordinate",
+        ShapeType.RECTANGLE -> validateRectangleCoordinate(
+            baseCoordinate = baseCoordinate,
+            secondCoordinate = secondCoordinate,
+            requireTypedGeometry = requireTypedGeometry,
+            requireRenderableGeometry = requireRenderableGeometry,
         )
         ShapeType.POLYGON -> validateCoordinateList(
             coordinates = polygonCoordinates,
@@ -113,6 +130,7 @@ private fun ShapeModel.validateShape(
             maxCount = maxCoordinateCount,
             label = "polygon coordinates",
             required = requireTypedGeometry,
+            requireDistinctCoordinates = requireRenderableGeometry,
         )
         ShapeType.POLYLINE -> validateCoordinateList(
             coordinates = polylineCoordinates,
@@ -120,6 +138,7 @@ private fun ShapeModel.validateShape(
             maxCount = maxCoordinateCount,
             label = "polyline coordinates",
             required = requireTypedGeometry,
+            requireDistinctCoordinates = requireRenderableGeometry,
         )
     }
 }
@@ -153,12 +172,38 @@ private fun validateCoordinate(
     return ShapeValidationResult(isValid = false, reason = invalidReason)
 }
 
+private fun validateRectangleCoordinate(
+    baseCoordinate: Coordinate,
+    secondCoordinate: Coordinate?,
+    requireTypedGeometry: Boolean,
+    requireRenderableGeometry: Boolean,
+): ShapeValidationResult {
+    val validation = validateCoordinate(
+        coordinate = secondCoordinate,
+        required = requireTypedGeometry,
+        missingReason = "missing second coordinate",
+        invalidReason = "invalid second coordinate",
+    )
+    if (!validation.isValid || secondCoordinate == null || !requireRenderableGeometry) {
+        return validation
+    }
+
+    return if (baseCoordinate.latitude != secondCoordinate.latitude &&
+        baseCoordinate.longitude != secondCoordinate.longitude
+    ) {
+        ShapeValidationResult(isValid = true)
+    } else {
+        ShapeValidationResult(isValid = false, reason = "degenerate rectangle coordinates")
+    }
+}
+
 private fun validateCoordinateList(
     coordinates: List<Coordinate>?,
     minCount: Int,
     maxCount: Int?,
     label: String,
     required: Boolean,
+    requireDistinctCoordinates: Boolean,
 ): ShapeValidationResult {
     if (coordinates == null) {
         return ShapeValidationResult(isValid = !required, reason = "$label missing".takeIf { required })
@@ -171,6 +216,9 @@ private fun validateCoordinateList(
     }
     if (!coordinates.all { it.isValidShapeCoordinate() }) {
         return ShapeValidationResult(isValid = false, reason = "invalid $label")
+    }
+    if (requireDistinctCoordinates && coordinates.distinct().size < minCount) {
+        return ShapeValidationResult(isValid = false, reason = "$label below distinct minimum")
     }
     return ShapeValidationResult(isValid = true)
 }

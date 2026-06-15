@@ -121,10 +121,65 @@ class ShapeValidationTest {
     }
 
     @Test
-    fun `Firebase batch 는 중복 ID 를 거부한다`() {
+    fun `도형 Firebase 쓰기는 실제 면적이나 길이가 없는 geometry 를 거부한다`() {
+        val degenerateRectangle = validCircle().copy(
+            shapeType = ShapeType.RECTANGLE,
+            radius = null,
+            secondCoordinate = Coordinate(37.0, 127.1),
+        )
+        val degeneratePolygon = validCircle().copy(
+            shapeType = ShapeType.POLYGON,
+            radius = null,
+            polygonCoordinates = listOf(
+                Coordinate(37.0, 127.0),
+                Coordinate(37.0, 127.0),
+                Coordinate(37.0, 127.0),
+            ),
+        )
+        val degeneratePolyline = validCircle().copy(
+            shapeType = ShapeType.POLYLINE,
+            radius = null,
+            polylineCoordinates = listOf(
+                Coordinate(37.0, 127.0),
+                Coordinate(37.0, 127.0),
+            ),
+        )
+
+        assertFalse(degenerateRectangle.isValidForFirebasePersistence())
+        assertFalse(degeneratePolygon.isValidForFirebasePersistence())
+        assertFalse(degeneratePolyline.isValidForFirebasePersistence())
+    }
+
+    @Test
+    fun `도형 Firebase 읽기는 iOS처럼 빈 제목과 레거시 퇴화 geometry 를 허용한다`() {
+        val blankTitle = validCircle().copy(title = "")
+        val degeneratePolygon = validCircle().copy(
+            shapeType = ShapeType.POLYGON,
+            radius = null,
+            polygonCoordinates = listOf(
+                Coordinate(37.0, 127.0),
+                Coordinate(37.0, 127.0),
+                Coordinate(37.0, 127.0),
+            ),
+        )
+
+        assertTrue(blankTitle.isValidForFirebaseRead())
+        assertTrue(degeneratePolygon.isValidForFirebaseRead())
+    }
+
+    @Test
+    fun `Firebase write batch 는 중복 ID 를 거부한다`() {
         val shape = validCircle()
 
         assertFalse(validateFirebaseShapeBatch(listOf(shape, shape.copy(title = "Duplicate"))).isValid)
+    }
+
+    @Test
+    fun `Firebase read batch 는 읽기 검증을 사용하고 중복 ID 를 거부한다`() {
+        val shape = validCircle()
+
+        assertTrue(validateFirebaseShapeReadBatch(listOf(shape.copy(title = ""))).isValid)
+        assertFalse(validateFirebaseShapeReadBatch(listOf(shape, shape.copy(title = ""))).isValid)
     }
 
     private fun validCircle(): ShapeModel {

@@ -9,6 +9,7 @@ import com.ScienceFiction.DronePassAndroid.domain.model.isValidForFirebasePersis
 import com.ScienceFiction.DronePassAndroid.domain.model.normalizeFirebaseHexColorForRead
 import com.ScienceFiction.DronePassAndroid.domain.model.normalizeFirebaseHexColorForWrite
 import com.ScienceFiction.DronePassAndroid.domain.model.validateFirebaseShapeBatch
+import com.ScienceFiction.DronePassAndroid.domain.model.validateFirebaseShapeReadBatch
 import com.ScienceFiction.DronePassAndroid.domain.model.validateForFirebasePersistence
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FieldValue
@@ -202,7 +203,7 @@ class ShapeFirebaseStore @Inject constructor(
                 firestoreDocumentToShape(doc.id, data)
             }.filter { it.deletedAt == null }
 
-            val validation = validateFirebaseShapeBatch(shapes)
+            val validation = validateFirebaseShapeReadBatch(shapes)
             if (!validation.isValid) {
                 return Result.failure(ShapeFirebaseInvalidDataException(validation.reason))
             }
