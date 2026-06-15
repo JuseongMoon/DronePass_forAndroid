@@ -250,16 +250,16 @@ class StringResourceCoverageTest {
 
     @Test
     fun `shape edit labels match iOS localizations`() {
-        assertEquals("반경(m)", stringResourceValue("values/strings.xml", "shape_edit_radius_label"))
-        assertEquals("고도(m)", stringResourceValue("values/strings.xml", "shape_edit_altitude_label"))
-        assertEquals("주소를 검색하세요", stringResourceValue("values/strings.xml", "shape_edit_address_search_placeholder"))
-        assertEquals("주소를 검색하세요", stringResourceValue("values/strings.xml", "shape_edit_placeholder_address"))
-        assertEquals("제목을 입력하세요", stringResourceValue("values/strings.xml", "shape_edit_title_placeholder"))
-        assertEquals("좌표를 입력하세요", stringResourceValue("values/strings.xml", "shape_edit_coordinate_placeholder"))
-        assertEquals("반경을 입력하세요", stringResourceValue("values/strings.xml", "shape_edit_radius_placeholder"))
-        assertEquals("비행 고도를 입력해주세요", stringResourceValue("values/strings.xml", "shape_edit_altitude_placeholder"))
+        assertEquals("반경 (m)", stringResourceValue("values/strings.xml", "shape_edit_radius_label"))
+        assertEquals("고도 (m)", stringResourceValue("values/strings.xml", "shape_edit_altitude_label"))
+        assertEquals("주소 검색", stringResourceValue("values/strings.xml", "shape_edit_address_search_placeholder"))
+        assertEquals("주소 검색", stringResourceValue("values/strings.xml", "shape_edit_placeholder_address"))
+        assertEquals("제목 입력", stringResourceValue("values/strings.xml", "shape_edit_title_placeholder"))
+        assertEquals("좌표 입력", stringResourceValue("values/strings.xml", "shape_edit_coordinate_placeholder"))
+        assertEquals("반경 입력", stringResourceValue("values/strings.xml", "shape_edit_radius_placeholder"))
+        assertEquals("고도 입력", stringResourceValue("values/strings.xml", "shape_edit_altitude_placeholder"))
         assertEquals("메모", stringResourceValue("values/strings.xml", "shape_edit_label_memo"))
-        assertEquals("메모를 입력하세요", stringResourceValue("values/strings.xml", "shape_edit_placeholder_memo"))
+        assertEquals("메모 입력", stringResourceValue("values/strings.xml", "shape_edit_placeholder_memo"))
         assertEquals("시작일 선택", stringResourceValue("values/strings.xml", "shape_edit_start_date_select"))
         assertEquals("종료일 선택", stringResourceValue("values/strings.xml", "shape_edit_end_date_select"))
         assertEquals(
@@ -267,7 +267,7 @@ class StringResourceCoverageTest {
             androidDisplayStringResourceValue("values/strings.xml", "coordinate_guide"),
         )
         assertEquals("지원하는 좌표 형식:", stringResourceValue("values/strings.xml", "coordinate_format_title"))
-        assertEquals("일단위 입력", stringResourceValue("values/strings.xml", "shape_edit_date_only_mode"))
+        assertEquals("날짜만 표시", stringResourceValue("values/strings.xml", "shape_edit_date_only_mode"))
         assertEquals("선택 완료", stringResourceValue("values/strings.xml", "date_time_done"))
         assertEquals("좌표를 입력해주세요", stringResourceValue("values/strings.xml", "coordinate_placeholder"))
         assertEquals("잘못된 좌표 형식입니다", stringResourceValue("values/strings.xml", "coordinate_validation_invalid"))
@@ -282,7 +282,7 @@ class StringResourceCoverageTest {
         assertEquals("도형 수정 중 오류가 발생했습니다: %1\$s", stringResourceValue("values/strings.xml", "shape_edit_error_update_failed"))
         assertEquals("Coordinates", stringResourceValue("values-en/strings.xml", "shape_edit_label_coordinate"))
         assertEquals("Search address", stringResourceValue("values-en/strings.xml", "shape_edit_placeholder_address"))
-        assertEquals("Altitude", stringResourceValue("values-en/strings.xml", "shape_edit_altitude_label"))
+        assertEquals("Altitude (m)", stringResourceValue("values-en/strings.xml", "shape_edit_altitude_label"))
         assertEquals("Memo", stringResourceValue("values-en/strings.xml", "shape_edit_label_memo"))
         assertEquals("Select Drone", stringResourceValue("values-en/strings.xml", "shape_edit_drone_label"))
         assertEquals("Select Start Date", stringResourceValue("values-en/strings.xml", "shape_edit_start_date_select"))

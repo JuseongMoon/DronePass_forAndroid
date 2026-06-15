@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 도형 편집 화면 한국어 라벨/placeholder와 영문 고도 라벨을 iOS `ShapeEditView` 로컬라이즈 값과 맞춰 `반경 (m)`, `고도 (m)`, `제목 입력`, `좌표 입력`, `주소 검색`, `메모 입력`, `날짜만 표시`, `Altitude (m)`로 보정. `:app:testDebugUnitTest --tests "*StringResourceCoverageTest" --tests "*ShapeEditDefaultsTest"` 및 `:app:assembleDebug` 통과.
 - 도형 상세 시트 한국어 문자열을 iOS `ShapeDetailView` 로컬라이즈 값과 맞춰 `상세정보`, `고도`, `네이버 지도`, `구글 지도`, `편집`, `복제`로 보정. `:app:testDebugUnitTest --tests "*StringResourceCoverageTest" --tests "*ShapeDetailDroneResolutionTest"` 및 `:app:assembleDebug` 통과.
 - 저장 목록 swipe 삭제를 iOS `SavedTableListView`처럼 목록 선택/상세 상태를 건드리지 않고 soft delete만 수행하도록 보정하고, 상세 시트 삭제만 selection/detail/edit state를 정리하도록 분리. `:app:testDebugUnitTest --tests "*SavedListSectionsTest" --tests "*MapCameraFocusTest" --tests "*MainScreenStartDestinationTest"` 및 `:app:assembleDebug` 통과.
 - 로컬 알림 수신 로그가 알림 제목과 `shapeId` 원문을 남기지 않도록 보정. 알림 표시/클릭 payload는 기존처럼 원문을 보존하고, 로그에는 제목 길이와 shapeId 존재 여부만 남긴다. `:app:testDebugUnitTest --tests "*FcmServiceTest"`, `:app:assembleDebug`, `:app:lintDebug` 통과.
