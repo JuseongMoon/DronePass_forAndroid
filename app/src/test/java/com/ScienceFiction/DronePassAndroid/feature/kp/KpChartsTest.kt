@@ -237,6 +237,14 @@ class KpChartsTest {
     }
 
     @Test
+    fun `KP chart card tokens match iOS KPForecastView`() {
+        assertEquals(16.dp, IosKpChartCardCornerRadius)
+        assertEquals(16.dp, IosKpChartCardPadding)
+        assertEquals(12.dp, IosKpChartCardSpacing)
+        assertEquals(0xFFF2F2F7.toInt(), IosKpChartCardContainerColor.toArgb())
+    }
+
+    @Test
     fun `48 hour forecast time tags parse as UTC like iOS KPIndexData date`() {
         val expected = utcMillis(
             year = 2026,

@@ -56,6 +56,10 @@ internal const val KpForecastLabelIntervalMs = 3L * 60 * 60 * 1000
 internal const val Kp27DayVisibleDomainMs = 786_240L * 1000
 internal const val Kp27DayLabelIntervalMs = 24L * 60 * 60 * 1000
 internal const val KpYAxisLabelStep = 1.0
+internal val IosKpChartCardCornerRadius = 16.dp
+internal val IosKpChartCardPadding = 16.dp
+internal val IosKpChartCardSpacing = 12.dp
+internal val IosKpChartCardContainerColor = Color(0xFFF2F2F7)
 
 internal enum class KpDataSource {
     GFZ_CURRENT,
@@ -308,16 +312,16 @@ private fun KpChartCard(
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(IosKpChartCardCornerRadius),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+            containerColor = IosKpChartCardContainerColor,
         ),
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+                .padding(IosKpChartCardPadding),
+            verticalArrangement = Arrangement.spacedBy(IosKpChartCardSpacing),
         ) {
             // Header: 제목 + 우측 배지 (iOS .title3 semibold + Capsule(.tertiarySystemBackground) note)
             Row(
