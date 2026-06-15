@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 전체 unit test 재확인 후 최신 debug APK를 Android 15 실기기 `RFCW324TZ0Z`에 데이터 유지 재설치하고 cold launch smoke 재확인. `LaunchState: COLD`, `TotalTime: 2104`, `WaitTime: 2110`, PID `32379`, MainActivity focus 유지. Naver Map 준비 완료, `FATAL EXCEPTION` 없음. 접근성 bounds 기준 상단 드론 선택 버튼 `[401,195][657,285]`, `[680,195][922,285]`와 드롭다운 원 `[945,195][1035,285]`가 모두 높이 90px, 상단 y=195로 일치함을 확인.
 - 프로필/날씨/KP/도형 저장 실패 보정 커밋 이후 전체 unit test `:app:testDebugUnitTest` 재확인 통과.
 - 도형 추가/수정 저장 실패를 iOS `ShapeEditViewModel`처럼 편집 시트 Alert에 `도형 추가/수정 중 오류가 발생했습니다: 원인` 형식으로 표시하도록 보강하고, 저장 실패 시 시트를 닫지 않도록 처리. `:app:testDebugUnitTest --tests "*ShapeEditDefaultsTest" --tests "*StringResourceCoverageTest"` 및 `:app:assembleDebug` 통과.
 - KP 실패 문구를 iOS `KPIndexManager`처럼 요청 소스 구분 없이 `KP 지수 데이터를 가져올 수 없습니다` 단일 사용자 표시로 보정하고 `Kp` 표기를 `KP`로 정리. `:app:testDebugUnitTest --tests "*StringResourceCoverageTest"` 및 `:app:assembleDebug` 통과.
