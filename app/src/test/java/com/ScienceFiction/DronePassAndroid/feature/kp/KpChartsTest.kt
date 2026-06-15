@@ -94,6 +94,12 @@ class KpChartsTest {
     }
 
     @Test
+    fun `refresh action stays enabled while loading like iOS toolbar`() {
+        assertEquals(true, isKpRefreshActionEnabled(isLoading = false))
+        assertEquals(true, isKpRefreshActionEnabled(isLoading = true))
+    }
+
+    @Test
     fun `auto refresh matches iOS forecast screen by refreshing NOAA forecast data only`() {
         listOf(false, true).forEach { hasCurrentKp ->
             val plan = resolveKpDataLoadPlan(

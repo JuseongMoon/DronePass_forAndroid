@@ -68,6 +68,9 @@ import java.util.Locale
 
 internal const val KpCurrentValueFontSizeSp = 60
 
+@Suppress("UNUSED_PARAMETER")
+internal fun isKpRefreshActionEnabled(isLoading: Boolean): Boolean = true
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun KpForecastScreen(
@@ -104,7 +107,7 @@ fun KpForecastScreen(
                 }
                 IconButton(
                     onClick = { viewModel.loadKpData() },
-                    enabled = !isLoading,
+                    enabled = isKpRefreshActionEnabled(isLoading),
                 ) {
                     Icon(
                         imageVector = Icons.Default.Refresh,
@@ -164,7 +167,7 @@ fun KpSheetHeader(
                 modifier = Modifier.weight(1f),
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
             )
-            IconButton(onClick = onRefresh, enabled = !isLoading) {
+            IconButton(onClick = onRefresh, enabled = isKpRefreshActionEnabled(isLoading)) {
                 Icon(
                     imageVector = Icons.Default.Refresh,
                     contentDescription = stringResource(R.string.kp_refresh),
