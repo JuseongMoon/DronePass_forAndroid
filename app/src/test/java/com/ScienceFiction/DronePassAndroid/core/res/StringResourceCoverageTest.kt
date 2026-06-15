@@ -598,6 +598,7 @@ class StringResourceCoverageTest {
         assertEquals("실시간 클라우드 동기화", stringResourceValue("values/strings.xml", "profile_sync_cloud"))
         assertEquals("동기화 중…", stringResourceValue("values/strings.xml", "profile_sync_in_progress"))
         assertEquals("로그인이 필요합니다", stringResourceValue("values/strings.xml", "profile_sync_login_required"))
+        assertEquals("비활성화됨", stringResourceValue("values/strings.xml", "profile_sync_disabled"))
         assertEquals("활성화 - 실시간 동기화중", stringResourceValue("values/strings.xml", "profile_sync_active"))
         assertEquals("활성화 - 실시간 동기화 대기중", stringResourceValue("values/strings.xml", "profile_sync_waiting"))
         assertEquals("동기화 기록이 없습니다.", stringResourceValue("values/strings.xml", "profile_sync_no_history"))
@@ -625,6 +626,8 @@ class StringResourceCoverageTest {
             "계정이 삭제되고\\n클라우드 동기화가 중단됩니다.\\n\\n기기에 저장된 도형과 드론은\\n계속 사용할 수 있습니다.\\n\\n정말 탈퇴하시겠습니까?",
             stringResourceValue("values/strings.xml", "profile_delete_account_message"),
         )
+        assertEquals("최종 확인", stringResourceValue("values/strings.xml", "profile_delete_account_final_title"))
+        assertEquals("이 작업은 되돌릴 수 없습니다.", stringResourceValue("values/strings.xml", "profile_delete_account_final_message"))
         assertEquals("영구 탈퇴", stringResourceValue("values/strings.xml", "profile_delete_account_final_button"))
         assertEquals("탈퇴 실패", stringResourceValue("values/strings.xml", "profile_delete_account_error_title"))
         assertEquals("회원 탈퇴가 완료되었습니다.", stringResourceValue("values/strings.xml", "profile_delete_account_success"))
@@ -648,10 +651,14 @@ class StringResourceCoverageTest {
         assertEquals("Real-time cloud sync", stringResourceValue("values-en/strings.xml", "profile_sync_cloud"))
         assertEquals("Syncing…", stringResourceValue("values-en/strings.xml", "profile_sync_in_progress"))
         assertEquals("Login required", stringResourceValue("values-en/strings.xml", "profile_sync_login_required"))
+        assertEquals("Disabled", stringResourceValue("values-en/strings.xml", "profile_sync_disabled"))
+        assertEquals("Active - Real-time syncing", stringResourceValue("values-en/strings.xml", "profile_sync_active"))
+        assertEquals("Active - Waiting for sync", stringResourceValue("values-en/strings.xml", "profile_sync_waiting"))
         assertEquals("No sync history", stringResourceValue("values-en/strings.xml", "profile_sync_no_history"))
         assertEquals("Manual backup", stringResourceValue("values-en/strings.xml", "profile_backup_manual"))
         assertEquals("Sync completed for %1\$d shape.", pluralResourceValue("values-en/strings.xml", "profile_sync_success", "one"))
         assertEquals("Sync completed for %1\$d shapes.", pluralResourceValue("values-en/strings.xml", "profile_sync_success", "other"))
+        assertEquals("Sync failed: %1\$s", stringResourceValue("values-en/strings.xml", "profile_sync_failed"))
         assertEquals(
             "Please log in to use real-time cloud sync.",
             stringResourceValue("values-en/strings.xml", "profile_sync_footer_login_required"),
@@ -664,11 +671,14 @@ class StringResourceCoverageTest {
             "Only the account will be deleted. Local data will remain available.",
             stringResourceValue("values-en/strings.xml", "profile_account_delete_desc"),
         )
+        assertEquals("Are you sure you want to sign out?", stringResourceValue("values-en/strings.xml", "profile_logout_message"))
         assertEquals("Delete", stringResourceValue("values-en/strings.xml", "profile_delete_account_button"))
         assertEquals(
             "Your account will be deleted and cloud sync will stop.\\n\\nShapes and drones saved on this device will remain available.\\n\\nAre you sure you want to delete your account?",
             stringResourceValue("values-en/strings.xml", "profile_delete_account_message"),
         )
+        assertEquals("Final Confirmation", stringResourceValue("values-en/strings.xml", "profile_delete_account_final_title"))
+        assertEquals("This action cannot be undone.", stringResourceValue("values-en/strings.xml", "profile_delete_account_final_message"))
         assertEquals("Permanently Delete", stringResourceValue("values-en/strings.xml", "profile_delete_account_final_button"))
         assertEquals("Deletion Failed", stringResourceValue("values-en/strings.xml", "profile_delete_account_error_title"))
         assertEquals("Account deleted successfully.", stringResourceValue("values-en/strings.xml", "profile_delete_account_success"))
