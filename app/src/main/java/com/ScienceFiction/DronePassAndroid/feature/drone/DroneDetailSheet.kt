@@ -64,6 +64,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
@@ -73,6 +74,9 @@ import com.ScienceFiction.DronePassAndroid.domain.model.PaletteColor
  * 드론 상세 BottomSheet.
  * iOS DroneDetailView 와 동일하게 상단 더보기 메뉴 + 섹션형 상세 정보로 구성한다.
  */
+internal val DroneDetailNavigationHeaderHeight = 44.dp
+internal val DroneDetailNavigationHeaderSideWidth = 44.dp
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DroneDetailSheet(
@@ -120,134 +124,106 @@ fun DroneDetailSheet(
                 .navigationBarsPadding(),
         ) {
             Column(modifier = Modifier.fillMaxWidth()) {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = stringResource(R.string.drone_detail_title),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                },
-                actions = {
-                    IconButton(onClick = { showMoreMenu = true }) {
-                        Icon(
-                            imageVector = Icons.Default.MoreHoriz,
-                            contentDescription = stringResource(R.string.drone_detail_more_menu),
-                        )
-                    }
-                    DropdownMenu(
-                        expanded = showMoreMenu,
-                        onDismissRequest = { showMoreMenu = false },
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.common_edit)) },
-                            onClick = {
-                                showMoreMenu = false
-                                onEdit()
-                            },
-                        )
-                        DropdownMenuItem(
-                            text = {
-                                Text(
-                                    text = stringResource(R.string.common_delete),
-                                    color = MaterialTheme.colorScheme.error,
-                                )
-                            },
-                            onClick = {
-                                showMoreMenu = false
-                                shapeCount = resetDroneDeleteShapeCountForPrompt()
-                                showDeleteDialog = true
-                                coroutineScope.launch {
-                                    shapeCount = getShapeCount(drone.id)
-                                }
-                            },
-                        )
-                    }
-                },
-            )
-
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp)
-                    .padding(top = 4.dp)
-                    .verticalScroll(rememberScrollState()),
-            ) {
-                DroneDetailTextRow(
-                    label = stringResource(R.string.drone_detail_name),
-                    value = drone.name,
-                    copyText = drone.name,
-                    onCopy = ::copyAndShowToast,
-                    valueFontWeight = FontWeight.Medium,
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-                DroneDetailSectionHeader(text = stringResource(R.string.drone_detail_section_basic))
-                val colorLabel = drone.paletteColor?.localizedLabel()
-                DroneDetailColorRow(
-                    label = stringResource(R.string.drone_detail_color),
-                    color = drone.paletteColor,
-                    colorLabel = colorLabel,
-                    onCopy = ::copyAndShowToast,
-                )
-                HorizontalDivider()
-                DroneDetailBlockRow(
-                    label = stringResource(R.string.drone_detail_serial_number),
-                    value = droneDetailOptionalText(
-                        drone.serialNumber,
-                        emptyFallback = stringResource(R.string.drone_detail_not_entered),
-                    ),
-                    copyText = drone.serialNumber,
-                    isPlaceholder = isDroneDetailPlaceholder(drone.serialNumber),
-                    onCopy = ::copyAndShowToast,
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-                DroneDetailSectionHeader(text = stringResource(R.string.drone_detail_section_specs))
-                DroneDetailBlockRow(
-                    label = stringResource(R.string.drone_detail_takeoff_weight),
-                    value = droneDetailOptionalText(
-                        drone.takeoffWeight,
-                        emptyFallback = stringResource(R.string.drone_detail_not_entered),
-                    ),
-                    copyText = drone.takeoffWeight,
-                    isPlaceholder = isDroneDetailPlaceholder(drone.takeoffWeight),
-                    onCopy = ::copyAndShowToast,
-                )
-                HorizontalDivider()
-                DroneDetailBlockRow(
-                    label = stringResource(R.string.drone_detail_size),
-                    value = droneDetailOptionalText(
-                        drone.size,
-                        emptyFallback = stringResource(R.string.drone_detail_not_entered),
-                    ),
-                    copyText = drone.size,
-                    isPlaceholder = isDroneDetailPlaceholder(drone.size),
-                    onCopy = ::copyAndShowToast,
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-                DroneDetailSectionHeader(text = stringResource(R.string.common_memo))
-                val memoText = droneDetailOptionalText(
-                    drone.memo,
-                    emptyFallback = stringResource(R.string.drone_detail_memo_empty),
-                )
-                Text(
-                    text = memoText,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = if (isDroneDetailPlaceholder(drone.memo)) {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    } else {
-                        MaterialTheme.colorScheme.onSurface
+                // iOS NavigationView inline title 정합: 좌우 슬롯 폭을 같게 둬 제목을 가운데 고정한다.
+                DroneDetailNavigationHeader(
+                    menuExpanded = showMoreMenu,
+                    onMenuExpandedChange = { showMoreMenu = it },
+                    onEdit = {
+                        showMoreMenu = false
+                        onEdit()
                     },
+                    onDelete = {
+                        showMoreMenu = false
+                        shapeCount = resetDroneDeleteShapeCountForPrompt()
+                        showDeleteDialog = true
+                        coroutineScope.launch {
+                            shapeCount = getShapeCount(drone.id)
+                        }
+                    },
+                )
+
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .copyOnLongPress(drone.memo, ::copyAndShowToast)
-                        .padding(vertical = 10.dp),
-                )
+                        .padding(horizontal = 20.dp)
+                        .padding(top = 4.dp)
+                        .verticalScroll(rememberScrollState()),
+                ) {
+                    DroneDetailTextRow(
+                        label = stringResource(R.string.drone_detail_name),
+                        value = drone.name,
+                        copyText = drone.name,
+                        onCopy = ::copyAndShowToast,
+                        valueFontWeight = FontWeight.Medium,
+                    )
 
-                Spacer(modifier = Modifier.height(24.dp))
-            }
+                    Spacer(modifier = Modifier.height(12.dp))
+                    DroneDetailSectionHeader(text = stringResource(R.string.drone_detail_section_basic))
+                    val colorLabel = drone.paletteColor?.localizedLabel()
+                    DroneDetailColorRow(
+                        label = stringResource(R.string.drone_detail_color),
+                        color = drone.paletteColor,
+                        colorLabel = colorLabel,
+                        onCopy = ::copyAndShowToast,
+                    )
+                    HorizontalDivider()
+                    DroneDetailBlockRow(
+                        label = stringResource(R.string.drone_detail_serial_number),
+                        value = droneDetailOptionalText(
+                            drone.serialNumber,
+                            emptyFallback = stringResource(R.string.drone_detail_not_entered),
+                        ),
+                        copyText = drone.serialNumber,
+                        isPlaceholder = isDroneDetailPlaceholder(drone.serialNumber),
+                        onCopy = ::copyAndShowToast,
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+                    DroneDetailSectionHeader(text = stringResource(R.string.drone_detail_section_specs))
+                    DroneDetailBlockRow(
+                        label = stringResource(R.string.drone_detail_takeoff_weight),
+                        value = droneDetailOptionalText(
+                            drone.takeoffWeight,
+                            emptyFallback = stringResource(R.string.drone_detail_not_entered),
+                        ),
+                        copyText = drone.takeoffWeight,
+                        isPlaceholder = isDroneDetailPlaceholder(drone.takeoffWeight),
+                        onCopy = ::copyAndShowToast,
+                    )
+                    HorizontalDivider()
+                    DroneDetailBlockRow(
+                        label = stringResource(R.string.drone_detail_size),
+                        value = droneDetailOptionalText(
+                            drone.size,
+                            emptyFallback = stringResource(R.string.drone_detail_not_entered),
+                        ),
+                        copyText = drone.size,
+                        isPlaceholder = isDroneDetailPlaceholder(drone.size),
+                        onCopy = ::copyAndShowToast,
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+                    DroneDetailSectionHeader(text = stringResource(R.string.common_memo))
+                    val memoText = droneDetailOptionalText(
+                        drone.memo,
+                        emptyFallback = stringResource(R.string.drone_detail_memo_empty),
+                    )
+                    Text(
+                        text = memoText,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (isDroneDetailPlaceholder(drone.memo)) {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        } else {
+                            MaterialTheme.colorScheme.onSurface
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .copyOnLongPress(drone.memo, ::copyAndShowToast)
+                            .padding(vertical = 10.dp),
+                    )
+
+                    Spacer(modifier = Modifier.height(24.dp))
+                }
             }
             DroneDetailCopyToast(
                 visible = showCopyToast,
@@ -322,6 +298,66 @@ fun DroneDetailSheet(
             },
             onDismiss = { showMoveTargetSheet = false },
         )
+    }
+}
+
+/**
+ * iOS DroneDetailView NavigationView inline title + trailing ellipsis.circle 정합.
+ */
+@Composable
+private fun DroneDetailNavigationHeader(
+    menuExpanded: Boolean,
+    onMenuExpandedChange: (Boolean) -> Unit,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(DroneDetailNavigationHeaderHeight)
+            .padding(horizontal = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Spacer(modifier = Modifier.width(DroneDetailNavigationHeaderSideWidth))
+        Text(
+            text = stringResource(R.string.drone_detail_title),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.weight(1f),
+        )
+        Box(
+            modifier = Modifier.width(DroneDetailNavigationHeaderSideWidth),
+            contentAlignment = Alignment.Center,
+        ) {
+            IconButton(
+                onClick = { onMenuExpandedChange(true) },
+                modifier = Modifier.size(DroneDetailNavigationHeaderSideWidth),
+            ) {
+                Icon(
+                    imageVector = Icons.Default.MoreHoriz,
+                    contentDescription = stringResource(R.string.drone_detail_more_menu),
+                )
+            }
+            DropdownMenu(
+                expanded = menuExpanded,
+                onDismissRequest = { onMenuExpandedChange(false) },
+            ) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.common_edit)) },
+                    onClick = onEdit,
+                )
+                DropdownMenuItem(
+                    text = {
+                        Text(
+                            text = stringResource(R.string.common_delete),
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    },
+                    onClick = onDelete,
+                )
+            }
+        }
     }
 }
 

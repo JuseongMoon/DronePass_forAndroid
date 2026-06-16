@@ -1,6 +1,7 @@
 package com.ScienceFiction.DronePassAndroid.feature.drone
 
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.unit.dp
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.PaletteColor
 import org.junit.Assert.assertEquals
@@ -10,6 +11,12 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class DroneDeleteValidationTest {
+
+    @Test
+    fun `드론 상세 헤더는 iOS inline navigation title처럼 좌우 슬롯 폭을 맞춘다`() {
+        assertEquals(44.dp, DroneDetailNavigationHeaderHeight)
+        assertEquals(44.dp, DroneDetailNavigationHeaderSideWidth)
+    }
 
     @Test
     fun `마지막 드론 삭제는 iOS처럼 차단한다`() {
