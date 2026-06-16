@@ -138,8 +138,10 @@ com.ScienceFiction.DronePassAndroid/
 
 **품질 게이트**:
 - [ ] 빌드 성공, Lint 경고 0건
-- [ ] 3탭 네비게이션 동작 확인
-- [ ] Room DB CRUD Unit Test 통과
+- [x] 3탭 네비게이션 동작 확인
+- [x] Room DB CRUD/Soft Delete Integration Test 통과
+
+> 2026-06-16: `:app:testDebugUnitTest :app:lintDebug`는 통과하지만 lint report에 dependency/update 계열 warning이 남아 있어 "Lint 경고 0건" 게이트는 미완료로 유지합니다. 3탭 네비게이션은 `MainScreenStartDestinationTest`와 실기기 지도/저장/설정 탭 smoke로 확인했고, Room Shape CRUD 및 Shape/Sketch/Drone soft-delete 필터링은 `SoftDeleteFilteringIntegrationTest`를 Android 15 실기기에서 실행해 확인했습니다.
 
 ---
 
@@ -164,9 +166,11 @@ com.ScienceFiction.DronePassAndroid/
 - `View/MainFloatingButtonView.swift`
 
 **품질 게이트**:
-- [ ] 원형 도형 지도 위 렌더링 확인
+- [x] 원형 도형 지도 위 렌더링 확인
 - [ ] ShapeModel 파싱 Unit Test 커버리지 90%
 - [ ] 도형 생성→저장→재실행→복원 E2E 통과
+
+> 2026-06-16: 원형 도형 지도 오버레이 조건과 하이라이트 반경은 `ShapeOverlayRenderTest`에서 고정했고, 최신 실기기 smoke에서 Naver Map과 저장 도형 UI 렌더링을 재확인했습니다. ShapeModel 파싱 커버리지 90%와 생성→저장→재실행→복원 E2E는 정량 커버리지/완전 E2E 증거가 별도로 필요해 미완료로 유지합니다.
 
 ---
 

@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 
@@ -48,6 +49,40 @@ class SoftDeleteFilteringIntegrationTest {
             listOf("deleted", "active-newer", "active-older"),
             database.shapeDao().getAllShapes().first().map { it.id },
         )
+    }
+
+    @Test
+    fun shapeCrudKeepsIosSoftDeleteRestoreAndHardDeleteContracts() = runBlocking {
+        val dao = database.shapeDao()
+        val created = shapeEntity(id = "shape-crud", updatedAt = 100L, deletedAt = null)
+
+        dao.insertShape(created)
+        assertEquals(created, dao.getShapeById("shape-crud"))
+        assertEquals(listOf("shape-crud"), dao.getActiveShapes().first().map { it.id })
+
+        val updated = created.copy(
+            title = "Updated",
+            memo = "memo",
+            updatedAt = 200L,
+        )
+        dao.updateShape(updated)
+        assertEquals("Updated", dao.getShapeById("shape-crud")?.title)
+        assertEquals("memo", dao.getShapeById("shape-crud")?.memo)
+
+        val deleted = updated.copy(deletedAt = 300L, updatedAt = 300L)
+        dao.updateShape(deleted)
+        assertEquals(emptyList<String>(), dao.getActiveShapes().first().map { it.id })
+        assertEquals(listOf("shape-crud"), dao.getAllShapes().first().map { it.id })
+        assertEquals(300L, dao.getShapeById("shape-crud")?.deletedAt)
+
+        val restored = deleted.copy(deletedAt = null, updatedAt = 400L)
+        dao.updateShape(restored)
+        assertEquals(listOf("shape-crud"), dao.getActiveShapes().first().map { it.id })
+        assertNull(dao.getShapeById("shape-crud")?.deletedAt)
+
+        dao.deleteShape(restored)
+        assertNull(dao.getShapeById("shape-crud"))
+        assertEquals(emptyList<String>(), dao.getAllShapes().first().map { it.id })
     }
 
     @Test
