@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 2026-06-16 최신 HEAD에서 Android 15 실기기 `SM-A346N`의 `SoftDeleteFilteringIntegrationTest`를 재실행해 7 tests 모두 통과했다. XML 결과는 `tests=7`, `failures=0`, `errors=0`, `skipped=0`이며, Shape/Sketch/Drone soft-delete active query 필터링, Shape CRUD soft-delete/restore/hard-delete, 파일 DB close/reopen 후 Shape/geometry 복원, 손상 geometry JSON의 빈 목록 복구가 실제 Room/SQLite 런타임에서 유지된다.
 - 2026-06-16 최신 HEAD에서 release shrink 경로 `:app:minifyReleaseWithR8`를 재실행해 통과했다. `app/build/outputs/mapping/release/mapping.txt`가 갱신됐고 Crashlytics mapping upload task까지 완료됐다. R8는 기존과 같은 Naver Map SDK `Expected stack map table for method with non-linear control flow` warning과 Play Services Location `Companion could not be found` warning을 출력하지만 build failure는 아니다.
 - 2026-06-16 최신 HEAD에서 표준 로컬 게이트 `:app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:shapeParsingCoverageVerification`를 재실행해 통과했다. `app/build/reports/lint-results-debug.txt`는 `No issues found.`, `ShapeFirebaseStoreKt` Jacoco CSV는 instruction 99.66%(870/873), branch 99.28%(137/138), line 100%(111/111)로 90% coverage gate를 유지한다.
 - 2026-06-16 최신 HEAD에서 Play 내부 테스트 AAB 경로인 `:app:bundleRelease` release readiness gate를 재확인했다. 현재 로컬에는 `keystore.properties`가 없고 `local.properties`의 `WEB_CLIENT_ID`가 비어 있으며 `app/google-services.json`의 Android `oauth_client`가 빈 배열이므로, `bundleRelease`는 산출물을 만들기 전에 release signing, Google Web client ID, Firebase Android OAuth client 누락 메시지 세 개를 함께 출력하며 의도적으로 실패한다.
