@@ -95,9 +95,8 @@ fun ProfileScreen(
         viewModel.syncResultMessage.collect { result ->
             val message = when (result) {
                 is ProfileViewModel.SyncResult.Success ->
-                    resources.getQuantityString(
-                        R.plurals.profile_sync_success,
-                        result.shapeCount,
+                    resources.getString(
+                        R.string.profile_sync_success,
                         result.shapeCount,
                     )
                 is ProfileViewModel.SyncResult.Failure ->

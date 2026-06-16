@@ -746,9 +746,7 @@
     <string name="sync_complete_message">도형 정보가 최신화되었습니다.</string>
     <string name="sync_error_title">동기화 실패</string>
     <string name="sync_error_message">변경사항을 가져오는 중 오류가 발생했습니다.\n%1$s</string>
-    <plurals name="profile_sync_success">
-        <item quantity="other">%1$d개 도형의 동기화가 완료되었습니다.</item>
-    </plurals>
+    <string name="profile_sync_success">%1$d개 도형의 동기화가 완료되었습니다.</string>
     <string name="profile_sync_failed">실시간 클라우드 동기화에 실패했습니다: %1$s</string>
 
     <string name="profile_terms_service">이용약관</string>

@@ -408,10 +408,7 @@
     <string name="sync_complete_message">Shape data has been updated.</string>
     <string name="sync_error_title">Sync Failed</string>
     <string name="sync_error_message">Failed to fetch changes.\n%1$s</string>
-    <plurals name="profile_sync_success">
-        <item quantity="one">Sync completed for %1$d shape.</item>
-        <item quantity="other">Sync completed for %1$d shapes.</item>
-    </plurals>
+    <string name="profile_sync_success">Sync completed for %1$d shapes.</string>
     <string name="profile_sync_failed">Sync failed: %1$s</string>
 
     <string name="profile_terms_service">Terms of Service</string>

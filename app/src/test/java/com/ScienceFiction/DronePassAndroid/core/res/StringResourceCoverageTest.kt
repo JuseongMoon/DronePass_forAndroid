@@ -605,7 +605,7 @@ class StringResourceCoverageTest {
         assertEquals("수동 백업하기", stringResourceValue("values/strings.xml", "profile_backup_manual"))
         assertEquals(
             "%1\$d개 도형의 동기화가 완료되었습니다.",
-            pluralResourceValue("values/strings.xml", "profile_sync_success", "other"),
+            stringResourceValue("values/strings.xml", "profile_sync_success"),
         )
         assertEquals("실시간 클라우드 동기화에 실패했습니다: %1\$s", stringResourceValue("values/strings.xml", "profile_sync_failed"))
         assertEquals(
@@ -656,8 +656,7 @@ class StringResourceCoverageTest {
         assertEquals("Active - Waiting for sync", stringResourceValue("values-en/strings.xml", "profile_sync_waiting"))
         assertEquals("No sync history", stringResourceValue("values-en/strings.xml", "profile_sync_no_history"))
         assertEquals("Manual backup", stringResourceValue("values-en/strings.xml", "profile_backup_manual"))
-        assertEquals("Sync completed for %1\$d shape.", pluralResourceValue("values-en/strings.xml", "profile_sync_success", "one"))
-        assertEquals("Sync completed for %1\$d shapes.", pluralResourceValue("values-en/strings.xml", "profile_sync_success", "other"))
+        assertEquals("Sync completed for %1\$d shapes.", stringResourceValue("values-en/strings.xml", "profile_sync_success"))
         assertEquals("Sync failed: %1\$s", stringResourceValue("values-en/strings.xml", "profile_sync_failed"))
         assertEquals(
             "Please log in to use real-time cloud sync.",
