@@ -176,6 +176,7 @@ class NotificationScheduler @Inject constructor(
         const val EXTRA_NOTIFICATION_TITLE = "notification_title"
         const val EXTRA_NOTIFICATION_BODY = "notification_body"
         const val EXTRA_SHAPE_ID = "shape_id"
+        const val EXTRA_NOTIFICATION_ID = "notification_id"
 
         // 알림 타입
         const val TYPE_SUNRISE = "sunrise"
@@ -405,6 +406,7 @@ class NotificationScheduler @Inject constructor(
             putExtra(EXTRA_NOTIFICATION_TYPE, type)
             putExtra(EXTRA_NOTIFICATION_TITLE, title)
             putExtra(EXTRA_NOTIFICATION_BODY, body)
+            putExtra(EXTRA_NOTIFICATION_ID, requestCode)
             if (shapeId != null) {
                 putExtra(EXTRA_SHAPE_ID, shapeId)
             }

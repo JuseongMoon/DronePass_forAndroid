@@ -44,14 +44,16 @@ class NotificationReceiver : BroadcastReceiver() {
                 return
             }
 
-        val notificationId = when (type) {
-            NotificationScheduler.TYPE_SUNRISE -> 1001
-            NotificationScheduler.TYPE_SUNSET -> 1002
-            NotificationScheduler.TYPE_END_DATE -> {
-                2000 + ((shapeId?.hashCode() ?: 0) and 0x7FFFFFFF) % 10000
-            }
-            else -> System.currentTimeMillis().toInt()
+        val explicitNotificationId = if (intent.hasExtra(NotificationScheduler.EXTRA_NOTIFICATION_ID)) {
+            intent.getIntExtra(NotificationScheduler.EXTRA_NOTIFICATION_ID, 0).takeIf { it > 0 }
+        } else {
+            null
         }
+        val notificationId = localNotificationId(
+            type = type,
+            shapeId = shapeId,
+            explicitNotificationId = explicitNotificationId,
+        )
         val clickIntent = buildNotificationClickIntent(
             context = context,
             shapeId = shapeId,
@@ -90,4 +92,21 @@ internal fun notificationReceivedLogMessage(
     val titleLength = title?.length ?: 0
     val hasShapeId = normalizeNotificationShapeId(shapeId) != null
     return "알림 수신: type=$type, titleLength=$titleLength, hasShapeId=$hasShapeId"
+}
+
+internal fun localNotificationId(
+    type: String,
+    shapeId: String?,
+    explicitNotificationId: Int?,
+    fallbackTimeMillis: Long = System.currentTimeMillis(),
+): Int {
+    explicitNotificationId?.takeIf { it > 0 }?.let { return it }
+    return when (type) {
+        NotificationScheduler.TYPE_SUNRISE -> 1001
+        NotificationScheduler.TYPE_SUNSET -> 1002
+        NotificationScheduler.TYPE_END_DATE -> {
+            2000 + ((shapeId?.hashCode() ?: 0) and 0x7FFFFFFF) % 10000
+        }
+        else -> fallbackTimeMillis.toInt()
+    }
 }
