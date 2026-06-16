@@ -54,9 +54,8 @@ class MainScreenStartDestinationTest {
 
     @Test
     fun `하단 탭바는 iOS처럼 스케치 모드에서 숨긴다`() {
-        assertEquals(true, shouldShowFloatingTabBar(isLoginScreen = false, isSketchMode = false))
-        assertEquals(false, shouldShowFloatingTabBar(isLoginScreen = false, isSketchMode = true))
-        assertEquals(false, shouldShowFloatingTabBar(isLoginScreen = true, isSketchMode = false))
+        assertEquals(true, shouldShowFloatingTabBar(isSketchMode = false))
+        assertEquals(false, shouldShowFloatingTabBar(isSketchMode = true))
     }
 
     @Test

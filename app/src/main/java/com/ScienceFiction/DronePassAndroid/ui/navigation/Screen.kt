@@ -2,7 +2,6 @@ package com.ScienceFiction.DronePassAndroid.ui.navigation
 
 import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Settings
@@ -19,9 +18,6 @@ sealed class Screen(
     val selectedIcon: ImageVector = icon,
     @StringRes val tabLabelResId: Int? = null,
 ) {
-    /** 로그인 화면 */
-    data object Login : Screen("login", R.string.screen_login, Icons.AutoMirrored.Filled.Login)
-
     /** 지도 — iOS: map / map.fill */
     data object Map : Screen(
         route = "map",

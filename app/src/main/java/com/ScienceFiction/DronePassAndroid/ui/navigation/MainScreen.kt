@@ -204,9 +204,8 @@ internal fun resolveMainSelectedTabRoute(
 }
 
 internal fun shouldShowFloatingTabBar(
-    isLoginScreen: Boolean,
     isSketchMode: Boolean,
-): Boolean = !isLoginScreen && !isSketchMode
+): Boolean = !isSketchMode
 
 internal fun resolveTabBarBottomPadding(isTablet: Boolean): Dp {
     return if (isTablet) TabBarTabletBottomPadding else TabBarPhoneBottomPadding
@@ -408,8 +407,6 @@ internal fun MainScreen(
     val isTablet = windowSize.width >= TabletBreakpointDp.dp
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    val isLoginScreen = currentRoute == Screen.Login.route
-
     val startDestination = resolveMainStartDestination(authState)
 
     var pendingFocusShapeId by remember { mutableStateOf<String?>(null) }
@@ -509,16 +506,9 @@ internal fun MainScreen(
         }
     }
 
-    LaunchedEffect(foregroundNotification, isLoginScreen) {
-        foregroundNotification?.takeIf { !isLoginScreen }?.let { notification ->
+    LaunchedEffect(foregroundNotification) {
+        foregroundNotification?.let { notification ->
             displayedForegroundNotification = notification
-        }
-    }
-
-    LaunchedEffect(isLoginScreen) {
-        if (isLoginScreen) {
-            showForegroundSyncConfirmation = false
-            foregroundSyncDialog = null
         }
     }
 
@@ -627,7 +617,7 @@ internal fun MainScreen(
         // Floating tab bar — 오버레이가 떠 있어도 탭 전환이 가능해야 하므로
         // SavedList/Settings 오버레이 위에 둔다. 포그라운드 알림 팝업은 아래 블록에서
         // 가장 위에 표시된다.
-        if (shouldShowFloatingTabBar(isLoginScreen = isLoginScreen, isSketchMode = isSketchMode)) {
+        if (shouldShowFloatingTabBar(isSketchMode = isSketchMode)) {
             FloatingTabBar(
                 tabs = tabScreens,
                 selectedRoute = selectedTabRoute,
@@ -656,7 +646,7 @@ internal fun MainScreen(
         }
 
         AnimatedVisibility(
-            visible = foregroundNotification != null && !isLoginScreen,
+            visible = foregroundNotification != null,
             enter = notificationPopupEnterTransition(),
             exit = notificationPopupExitTransition(),
         ) {
@@ -669,7 +659,7 @@ internal fun MainScreen(
             }
         }
 
-        if (showForegroundSyncConfirmation && !isLoginScreen) {
+        if (showForegroundSyncConfirmation) {
             AlertDialog(
                 onDismissRequest = { showForegroundSyncConfirmation = false },
                 title = { Text(stringResource(R.string.sync_alert_detected_title)) },
@@ -692,7 +682,7 @@ internal fun MainScreen(
             )
         }
 
-        foregroundSyncDialog?.takeIf { !isLoginScreen }?.let { dialogState ->
+        foregroundSyncDialog?.let { dialogState ->
             ForegroundSyncDialog(
                 dialogState = dialogState,
                 onDismiss = { foregroundSyncDialog = null },
