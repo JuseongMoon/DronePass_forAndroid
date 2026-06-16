@@ -86,7 +86,6 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.core.ui.currentWindowSizeDp
-import com.ScienceFiction.DronePassAndroid.feature.auth.AuthState
 import com.ScienceFiction.DronePassAndroid.feature.auth.AuthViewModel
 import com.ScienceFiction.DronePassAndroid.feature.auth.ForegroundSyncDialogState
 import com.ScienceFiction.DronePassAndroid.feature.map.MapViewModel
@@ -189,7 +188,7 @@ private const val SheetFractionExpandTrigger = 0.7f
 private val SavedOverlayPhoneMaxHeight = 500.dp
 internal const val SavedOverlayInitialFocusDelayMs = 500L
 
-internal fun resolveMainStartDestination(authState: AuthState): String = Screen.Map.route
+internal fun resolveMainStartDestination(): String = Screen.Map.route
 
 internal fun resolveMainSelectedTabRoute(
     currentRoute: String?,
@@ -398,7 +397,6 @@ internal fun MainScreen(
     onInitialForegroundNotificationConsumed: () -> Unit = {},
 ) {
     val navController = rememberNavController()
-    val authState by authViewModel.authState.collectAsStateWithLifecycle()
     val isSketchMode by sketchViewModel.isSketchMode.collectAsStateWithLifecycle()
     val tabScreens = listOf(Screen.Map, Screen.SavedList, Screen.Settings)
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -406,8 +404,6 @@ internal fun MainScreen(
     val windowSize = currentWindowSizeDp()
     val isTablet = windowSize.width >= TabletBreakpointDp.dp
     val lifecycleOwner = LocalLifecycleOwner.current
-
-    val startDestination = resolveMainStartDestination(authState)
 
     var pendingFocusShapeId by remember { mutableStateOf<String?>(null) }
     // 저장 탭 → 편집 시 ShapeDetailSheet 자동 표시 우회용 — focus 와 별도 채널
@@ -531,7 +527,6 @@ internal fun MainScreen(
     Box(modifier = Modifier.fillMaxSize()) {
         DronePassNavGraph(
             navController = navController,
-            startDestination = startDestination,
             sketchViewModel = sketchViewModel,
             mapViewModel = mapViewModel,
             onNavigateToMapWithShape = { shapeId ->
@@ -997,7 +992,7 @@ private fun handleTabSelection(
                 }
             }
         }
-        else -> {
+        Screen.Map -> {
             onSavedListOverlayChange(false)
             onSettingsOverlayChange(false)
             navController.navigate(screen.route) {

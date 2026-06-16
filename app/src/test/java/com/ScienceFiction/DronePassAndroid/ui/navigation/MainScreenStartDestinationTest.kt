@@ -3,25 +3,14 @@ package com.ScienceFiction.DronePassAndroid.ui.navigation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.sp
-import com.ScienceFiction.DronePassAndroid.feature.auth.AuthState
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class MainScreenStartDestinationTest {
 
     @Test
-    fun `앱 시작 화면은 iOS처럼 로그인 상태 확인 중에도 지도이다`() {
-        assertEquals(Screen.Map.route, resolveMainStartDestination(AuthState.Loading))
-    }
-
-    @Test
-    fun `앱 시작 화면은 iOS처럼 로그아웃 상태에도 지도이다`() {
-        assertEquals(Screen.Map.route, resolveMainStartDestination(AuthState.LoggedOut))
-    }
-
-    @Test
-    fun `앱 시작 화면은 인증 오류 상태에도 지도이다`() {
-        assertEquals(Screen.Map.route, resolveMainStartDestination(AuthState.Error("error")))
+    fun `앱 시작 화면은 iOS처럼 인증 상태와 무관하게 지도이다`() {
+        assertEquals(Screen.Map.route, resolveMainStartDestination())
     }
 
     @Test

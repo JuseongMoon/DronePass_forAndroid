@@ -11,7 +11,6 @@ import com.ScienceFiction.DronePassAndroid.feature.sketch.SketchViewModel
 @Composable
 fun DronePassNavGraph(
     navController: NavHostController,
-    startDestination: String = Screen.Map.route,
     sketchViewModel: SketchViewModel,
     mapViewModel: MapViewModel,
     onNavigateToMapWithShape: (String) -> Unit = {},
@@ -23,7 +22,7 @@ fun DronePassNavGraph(
     onPendingDuplicateShapeConsumed: () -> Unit = {},
     onShapeListFocusRequested: (String) -> Unit = {},
 ) {
-    NavHost(navController = navController, startDestination = startDestination) {
+    NavHost(navController = navController, startDestination = Screen.Map.route) {
         composable(Screen.Map.route) {
             MapScreen(
                 focusShapeId = pendingFocusShapeId,
