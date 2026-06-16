@@ -140,6 +140,29 @@ internal fun foregroundNotificationForRemoteDelivery(
     )
 }
 
+internal fun notificationClickExtras(
+    shapeId: String? = null,
+    title: String? = null,
+    body: String? = null,
+): Map<String, String> {
+    val payload = notificationClickPayload(
+        shapeId = shapeId,
+        title = title,
+        body = body,
+    )
+    return buildMap {
+        payload.shapeId?.let {
+            put(NotificationScheduler.EXTRA_SHAPE_ID, it)
+        }
+        payload.title?.let {
+            put(NotificationScheduler.EXTRA_NOTIFICATION_TITLE, it)
+        }
+        payload.body?.let {
+            put(NotificationScheduler.EXTRA_NOTIFICATION_BODY, it)
+        }
+    }
+}
+
 internal fun extractForegroundNotification(intent: Intent?): ForegroundNotification? {
     if (intent == null) return null
     return foregroundNotificationFromClickPayload(
@@ -157,7 +180,7 @@ internal fun buildNotificationClickIntent(
     title: String? = null,
     body: String? = null,
 ): Intent {
-    val payload = notificationClickPayload(
+    val extras = notificationClickExtras(
         shapeId = shapeId,
         title = title,
         body = body,
@@ -166,14 +189,8 @@ internal fun buildNotificationClickIntent(
         flags = Intent.FLAG_ACTIVITY_NEW_TASK or
             Intent.FLAG_ACTIVITY_CLEAR_TOP or
             Intent.FLAG_ACTIVITY_SINGLE_TOP
-        payload.shapeId?.let {
-            putExtra(NotificationScheduler.EXTRA_SHAPE_ID, it)
-        }
-        payload.title?.let {
-            putExtra(NotificationScheduler.EXTRA_NOTIFICATION_TITLE, it)
-        }
-        payload.body?.let {
-            putExtra(NotificationScheduler.EXTRA_NOTIFICATION_BODY, it)
+        extras.forEach { (key, value) ->
+            putExtra(key, value)
         }
     }
 }

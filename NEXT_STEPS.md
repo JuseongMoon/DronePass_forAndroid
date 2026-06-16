@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 알림 탭/포그라운드 팝업 복원 경로에서 클릭 Intent extras 생성을 순수 함수로 분리하고, shapeId만 trim 정규화하며 제목/본문은 빈 문자열과 공백까지 원문 보존하는 iOS `PushNotificationManager` 계약을 회귀 테스트로 고정했다. `:app:testDebugUnitTest --tests "*FcmServiceTest" --tests "*NotificationSchedulerTest"` 및 `:app:assembleDebug` 통과.
 - 2026-06-16 최신 HEAD에서 predictive back manifest 보정 이후 전체 `:app:testDebugUnitTest`, `:app:lintDebug`, `:app:minifyReleaseWithR8` 재검증을 통과했다. R8 중 Naver Map SDK stack map table 경고와 Play Services Location companion 경고는 기존 외부 라이브러리 경고로 남지만 빌드는 성공한다.
 - 2026-06-16 최신 HEAD에서 release readiness gate를 재확인했다. 현재 로컬에는 `keystore.properties`가 없고 `local.properties`의 `WEB_CLIENT_ID`가 비어 있어 `:app:assembleRelease`와 `:app:bundleRelease`가 release signing 설정 누락 및 Google sign-in Web client ID 누락 메시지를 함께 출력하며 의도적으로 실패한다.
 - Android 13+ back dispatcher manifest opt-in을 명시해 드론 관리 시트 back 동작 중 반복되던 `OnBackInvokedCallback is not enabled` 경고를 제거했다. `AndroidManifestContractTest`에 `android:enableOnBackInvokedCallback="true"` 계약을 추가했고, `:app:testDebugUnitTest --tests "*AndroidManifestContractTest"` 및 `:app:assembleDebug` 통과. 최신 debug APK 재설치 후 설정 탭 → 드론 관리 시트 → back smoke에서 MainActivity focus/PID 유지, ANR 없음, 해당 warning 재발 없음 확인.

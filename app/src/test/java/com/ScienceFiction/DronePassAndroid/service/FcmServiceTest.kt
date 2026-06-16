@@ -185,6 +185,32 @@ class FcmServiceTest {
     }
 
     @Test
+    fun `알림 클릭 Intent extras 는 iOS 탭 복원 계약처럼 shapeId 만 정규화하고 제목 본문 원문을 보존한다`() {
+        val extras = notificationClickExtras(
+            shapeId = " shape-123 ",
+            title = "",
+            body = " ",
+        )
+
+        assertEquals("shape-123", extras[NotificationScheduler.EXTRA_SHAPE_ID])
+        assertEquals("", extras[NotificationScheduler.EXTRA_NOTIFICATION_TITLE])
+        assertEquals(" ", extras[NotificationScheduler.EXTRA_NOTIFICATION_BODY])
+    }
+
+    @Test
+    fun `알림 클릭 Intent extras 는 값이 null 인 제목 본문을 쓰지 않는다`() {
+        val extras = notificationClickExtras(
+            shapeId = "shape-123",
+            title = null,
+            body = null,
+        )
+
+        assertEquals("shape-123", extras[NotificationScheduler.EXTRA_SHAPE_ID])
+        assertFalse(extras.containsKey(NotificationScheduler.EXTRA_NOTIFICATION_TITLE))
+        assertFalse(extras.containsKey(NotificationScheduler.EXTRA_NOTIFICATION_BODY))
+    }
+
+    @Test
     fun `FCM data payload 제목 본문은 iOS처럼 알림 탭 팝업 데이터로 복원한다`() {
         val notification = extractForegroundNotification(
             mapOf(
