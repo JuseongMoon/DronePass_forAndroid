@@ -18,8 +18,10 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -55,6 +57,7 @@ internal val ProfileInfoDividerVerticalPadding = 2.dp
 internal val ProfileInfoValueLeadingSpacing = 16.dp
 internal val ProfileInfoToLogoutSectionSpacing = 10.dp
 internal val ProfileLogoutToSyncSectionSpacing = 16.dp
+internal const val ProfileSheetUsesLargeNavigationTitle = true
 
 /**
  * iOS `ProfileView` 1:1 정합 시트 콘텐츠.
@@ -109,160 +112,159 @@ fun ProfileScreen(
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .verticalScroll(rememberScrollState()),
-    ) {
-        // 시트 헤더 (iOS NavigationView 제목 정합)
-        Row(
+    Scaffold(
+        modifier = Modifier.fillMaxWidth(),
+        topBar = {
+            LargeTopAppBar(
+                title = {
+                    Text(
+                        text = stringResource(R.string.profile_title),
+                        fontWeight = FontWeight.Bold,
+                    )
+                },
+            )
+        },
+    ) { innerPadding ->
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
+                .padding(innerPadding)
+                .verticalScroll(rememberScrollState()),
         ) {
-            Text(
-                text = stringResource(R.string.profile_title),
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.weight(1f),
+            // ===== 1. 내 정보 섹션 =====
+            SectionHeader(title = stringResource(R.string.profile_section_my_info))
+
+            ProfileInfoSection(
+                email = profileEmail ?: stringResource(R.string.profile_info_email_hidden),
+                loginProvider = profileLoginProvider.displayText(),
+                joinDate = joinDateMillis?.let(::formatJoinDate)
+                    ?: stringResource(R.string.profile_info_join_unknown),
+                shapeCount = stringResource(R.string.profile_info_count_unit, activeShapeCount),
+                sketchCount = stringResource(R.string.profile_info_count_unit, activeSketchCount),
+                droneCount = stringResource(R.string.profile_info_count_unit, activeDroneCount),
+                expiredShapeCount = stringResource(R.string.profile_info_count_unit, expiredShapeCount),
             )
-        }
-        HorizontalDivider()
 
-        // ===== 1. 내 정보 섹션 =====
-        SectionHeader(title = stringResource(R.string.profile_section_my_info))
-
-        ProfileInfoSection(
-            email = profileEmail ?: stringResource(R.string.profile_info_email_hidden),
-            loginProvider = profileLoginProvider.displayText(),
-            joinDate = joinDateMillis?.let(::formatJoinDate)
-                ?: stringResource(R.string.profile_info_join_unknown),
-            shapeCount = stringResource(R.string.profile_info_count_unit, activeShapeCount),
-            sketchCount = stringResource(R.string.profile_info_count_unit, activeSketchCount),
-            droneCount = stringResource(R.string.profile_info_count_unit, activeDroneCount),
-            expiredShapeCount = stringResource(R.string.profile_info_count_unit, expiredShapeCount),
-        )
-
-        // iOS ProfileView: 내 정보 카드와 로그아웃은 별도 Section이며 listSectionSpacing(10)을 둔다.
-        Spacer(modifier = Modifier.height(ProfileInfoToLogoutSectionSpacing))
-        SettingsItem(
-            title = stringResource(R.string.profile_account_logout),
-            titleColor = MaterialTheme.colorScheme.error,
-            onClick = { if (!isAccountActionInProgress) showLogoutDialog = true },
-            enabled = shouldEnableProfileAccountAction(isAccountActionInProgress),
-        )
-
-        Spacer(modifier = Modifier.height(ProfileLogoutToSyncSectionSpacing))
-
-        // ===== 2. 동기화 섹션 =====
-        SectionHeader(title = stringResource(R.string.profile_section_sync))
-
-        ProfileCloudSyncToggleItem(
-            title = stringResource(R.string.profile_sync_cloud),
-            subtitle = stringResource(syncStatus.labelRes),
-            subtitleColor = syncStatus.color,
-            checked = isCloudBackupEnabled,
-            enabled = !isSyncing,
-            showProgress = shouldShowProfileSyncProgress(isSyncing),
-            onCheckedChange = { viewModel.setCloudBackupEnabled(it) },
-        )
-
-        // 마지막 동기화 시간 — iOS lastSyncTimeText 라벨 분기 정합.
-        val lastSyncDisplay = when {
-            lastRealtimeSyncTime.hasSyncTimestamp() ->
-                stringResource(R.string.profile_sync_last_sync, formatLastSync(lastRealtimeSyncTime))
-            lastBackupTime.hasSyncTimestamp() ->
-                stringResource(R.string.profile_backup_last_backup, formatLastSync(lastBackupTime))
-            else ->
-                stringResource(R.string.profile_sync_no_history)
-        }
-        Text(
-            text = lastSyncDisplay,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-        )
-
-        // 수동 백업 (로그인 + 토글 ON 시만 표시)
-        if (isLoggedIn && isCloudBackupEnabled) {
-            HorizontalDivider()
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Box(modifier = Modifier.weight(1f)) {
-                    SettingsItem(
-                        title = stringResource(R.string.profile_backup_manual),
-                        titleColor = MaterialTheme.colorScheme.primary,
-                        onClick = { viewModel.syncToCloud() },
-                        enabled = shouldEnableProfileManualBackup(isSyncing),
-                    )
-                }
-                if (isSyncing) {
-                    CircularProgressIndicator(
-                        modifier = Modifier
-                            .size(20.dp)
-                            .padding(end = 16.dp),
-                        strokeWidth = 2.dp,
-                    )
-                }
-            }
-        }
-
-        val syncFooterTextRes = when {
-            !isLoggedIn -> R.string.profile_sync_footer_login_required
-            !isCloudBackupEnabled -> R.string.profile_sync_footer_enable_info
-            else -> null
-        }
-        syncFooterTextRes?.let { textRes ->
-            Text(
-                text = stringResource(textRes),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            )
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // ===== 3. 약관 및 정책 섹션 =====
-        SectionHeader(title = stringResource(R.string.profile_section_terms))
-
-        SettingsItem(
-            title = stringResource(R.string.profile_terms_service),
-            onClick = { webDocTarget = WebDocTarget.Terms },
-            showArrow = true,
-        )
-        HorizontalDivider(modifier = Modifier.padding(start = 16.dp))
-        SettingsItem(
-            title = stringResource(R.string.profile_terms_privacy),
-            onClick = { webDocTarget = WebDocTarget.Privacy },
-            showArrow = true,
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // ===== 4. 계정 관리 섹션 (회원 탈퇴만) =====
-        if (isLoggedIn) {
-            SectionHeader(title = stringResource(R.string.profile_section_account))
-
+            // iOS ProfileView: 내 정보 카드와 로그아웃은 별도 Section이며 listSectionSpacing(10)을 둔다.
+            Spacer(modifier = Modifier.height(ProfileInfoToLogoutSectionSpacing))
             SettingsItem(
-                title = stringResource(R.string.profile_account_delete),
+                title = stringResource(R.string.profile_account_logout),
                 titleColor = MaterialTheme.colorScheme.error,
-                onClick = { if (!isAccountActionInProgress) showDeleteDialog = true },
+                onClick = { if (!isAccountActionInProgress) showLogoutDialog = true },
                 enabled = shouldEnableProfileAccountAction(isAccountActionInProgress),
             )
 
+            Spacer(modifier = Modifier.height(ProfileLogoutToSyncSectionSpacing))
+
+            // ===== 2. 동기화 섹션 =====
+            SectionHeader(title = stringResource(R.string.profile_section_sync))
+
+            ProfileCloudSyncToggleItem(
+                title = stringResource(R.string.profile_sync_cloud),
+                subtitle = stringResource(syncStatus.labelRes),
+                subtitleColor = syncStatus.color,
+                checked = isCloudBackupEnabled,
+                enabled = !isSyncing,
+                showProgress = shouldShowProfileSyncProgress(isSyncing),
+                onCheckedChange = { viewModel.setCloudBackupEnabled(it) },
+            )
+
+            // 마지막 동기화 시간 — iOS lastSyncTimeText 라벨 분기 정합.
+            val lastSyncDisplay = when {
+                lastRealtimeSyncTime.hasSyncTimestamp() ->
+                    stringResource(R.string.profile_sync_last_sync, formatLastSync(lastRealtimeSyncTime))
+                lastBackupTime.hasSyncTimestamp() ->
+                    stringResource(R.string.profile_backup_last_backup, formatLastSync(lastBackupTime))
+                else ->
+                    stringResource(R.string.profile_sync_no_history)
+            }
             Text(
-                text = stringResource(R.string.profile_account_delete_desc),
+                text = lastSyncDisplay,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
             )
-        }
 
-        Spacer(modifier = Modifier.height(32.dp))
+            // 수동 백업 (로그인 + 토글 ON 시만 표시)
+            if (isLoggedIn && isCloudBackupEnabled) {
+                HorizontalDivider()
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(modifier = Modifier.weight(1f)) {
+                        SettingsItem(
+                            title = stringResource(R.string.profile_backup_manual),
+                            titleColor = MaterialTheme.colorScheme.primary,
+                            onClick = { viewModel.syncToCloud() },
+                            enabled = shouldEnableProfileManualBackup(isSyncing),
+                        )
+                    }
+                    if (isSyncing) {
+                        CircularProgressIndicator(
+                            modifier = Modifier
+                                .size(20.dp)
+                                .padding(end = 16.dp),
+                            strokeWidth = 2.dp,
+                        )
+                    }
+                }
+            }
+
+            val syncFooterTextRes = when {
+                !isLoggedIn -> R.string.profile_sync_footer_login_required
+                !isCloudBackupEnabled -> R.string.profile_sync_footer_enable_info
+                else -> null
+            }
+            syncFooterTextRes?.let { textRes ->
+                Text(
+                    text = stringResource(textRes),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // ===== 3. 약관 및 정책 섹션 =====
+            SectionHeader(title = stringResource(R.string.profile_section_terms))
+
+            SettingsItem(
+                title = stringResource(R.string.profile_terms_service),
+                onClick = { webDocTarget = WebDocTarget.Terms },
+                showArrow = true,
+            )
+            HorizontalDivider(modifier = Modifier.padding(start = 16.dp))
+            SettingsItem(
+                title = stringResource(R.string.profile_terms_privacy),
+                onClick = { webDocTarget = WebDocTarget.Privacy },
+                showArrow = true,
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // ===== 4. 계정 관리 섹션 (회원 탈퇴만) =====
+            if (isLoggedIn) {
+                SectionHeader(title = stringResource(R.string.profile_section_account))
+
+                SettingsItem(
+                    title = stringResource(R.string.profile_account_delete),
+                    titleColor = MaterialTheme.colorScheme.error,
+                    onClick = { if (!isAccountActionInProgress) showDeleteDialog = true },
+                    enabled = shouldEnableProfileAccountAction(isAccountActionInProgress),
+                )
+
+                Text(
+                    text = stringResource(R.string.profile_account_delete_desc),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                )
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
+        }
     }
 
     // 로그아웃 확인 다이얼로그

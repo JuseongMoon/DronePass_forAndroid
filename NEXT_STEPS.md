@@ -1,6 +1,6 @@
 # DronePass Android 작업 이어가기
 
-> 마지막 업데이트: 2026-06-16
+> 마지막 업데이트: 2026-06-17
 > 브랜치: `fix/critical-pri0-fixes`
 > 상태: iOS 동작 대조와 Android 출시 하드닝 진행 중
 
@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 2026-06-17 프로필 시트 상단을 iOS `ProfileView`의 `NavigationView` large navigation title 흐름에 맞췄다. Android의 직접 그린 작은 커스텀 헤더를 `LargeTopAppBar` 기반 `Scaffold`로 교체해, 드론 관리/앱 정보 시트와 같은 large-title 표면을 사용한다. `:app:testDebugUnitTest --tests "*ProfileSheetParityTest" --tests "*ProfileViewModelTest"`, `:app:assembleDebug` 통과.
 - 2026-06-17 Shape/Drone/Sketch Firestore store 에서 문서 ID 검증 없이 raw data 만 파싱하던 미사용 `firestoreDataTo*` helper 를 제거했다. 실제 collection load 와 단건 문서 변환은 계속 `firestoreDocumentTo*`/`*FromFirestoreDocument` 경로만 사용해, `id` 필드가 Firestore document id 와 같아야 한다는 크로스플랫폼 계약을 우회하지 않게 했다. `:app:testDebugUnitTest --tests "*ShapeFirestoreParsingTest" --tests "*DroneFirestoreParsingTest" --tests "*SketchFirebaseStoreTest" --tests "*CrossPlatformFirestoreContractTest"`, `:app:assembleDebug` 통과.
 - 2026-06-17 `NavGraph` 시작 route 를 iOS `MainTabView`처럼 지도 단일 표면으로 고정했다. 로그인/저장/설정/KP/날씨 route 제거 이후에도 외부에서 삭제된 route 를 `startDestination`으로 주입할 수 있던 내부 API를 없애고, `MainScreen`이 시작 route 계산만을 위해 인증 상태를 구독하지 않도록 정리했다. 탭 선택 fallback 도 `Screen.Map` 명시 분기로 좁혀 새 route 추가 시 컴파일 단계에서 확인되게 했다. `:app:testDebugUnitTest --tests "*MainScreenStartDestinationTest"`, `:app:assembleDebug` 통과.
 - 2026-06-17 로그인도 iOS `SettingView`처럼 설정 내부 sheet 로만 열리도록 Android 내비게이션 표면을 정리했다. 더 이상 호출되지 않는 `Screen.Login`/`NavGraph` login route 와 route 기반 `isLoginScreen` guard 를 제거해, 로그인 전체 화면 route 로 잘못 진입하는 잠재 경로를 없앴다. 실제 로그인 UI는 `SettingsScreen`의 `ModalBottomSheet` 경로를 유지한다. `:app:testDebugUnitTest --tests "*MainScreenStartDestinationTest" --tests "*AuthViewModelForegroundSyncTest"`, 전체 `:app:testDebugUnitTest`, `:app:assembleDebug` 통과.

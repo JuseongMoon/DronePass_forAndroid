@@ -13,6 +13,11 @@ class ProfileSheetParityTest {
     }
 
     @Test
+    fun `프로필 시트는 iOS NavigationView 처럼 large title 을 사용한다`() {
+        assertEquals(true, ProfileSheetUsesLargeNavigationTitle)
+    }
+
+    @Test
     fun `로그아웃 행은 iOS처럼 내 정보 섹션과 분리한다`() {
         assertEquals(10.dp, ProfileInfoToLogoutSectionSpacing)
         assertEquals(16.dp, ProfileLogoutToSyncSectionSpacing)
