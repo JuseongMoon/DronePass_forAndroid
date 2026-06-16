@@ -6,6 +6,11 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.entity.DroneEntity
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.entity.ShapeEntity
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.entity.SketchEntity
+import com.ScienceFiction.DronePassAndroid.core.data.local.room.mapper.toDomain
+import com.ScienceFiction.DronePassAndroid.core.data.local.room.mapper.toEntity
+import com.ScienceFiction.DronePassAndroid.domain.model.Coordinate
+import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
+import com.ScienceFiction.DronePassAndroid.domain.model.ShapeType
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -83,6 +88,54 @@ class SoftDeleteFilteringIntegrationTest {
         dao.deleteShape(restored)
         assertNull(dao.getShapeById("shape-crud"))
         assertEquals(emptyList<String>(), dao.getAllShapes().first().map { it.id })
+    }
+
+    @Test
+    fun shapeModelPersistsAcrossRoomCloseAndReopen() = runBlocking {
+        val context: Context = InstrumentationRegistry.getInstrumentation().targetContext
+        val databaseName = "shape_restart_contract_test.db"
+        context.deleteDatabase(databaseName)
+
+        val shape = ShapeModel(
+            id = "00000000-0000-0000-0000-000000000123",
+            title = "Restart Area",
+            shapeType = ShapeType.RECTANGLE,
+            baseCoordinate = Coordinate(37.5665, 126.9780),
+            address = "Seoul",
+            radius = null,
+            secondCoordinate = Coordinate(37.5675, 126.9790),
+            height = 120.5,
+            memo = "memo",
+            color = "#FF9500",
+            droneId = "drone-a",
+            createdAt = 1_700_000_000_000L,
+            deletedAt = null,
+            flightStartDate = 1_700_000_100_000L,
+            flightEndDate = 1_700_000_200_000L,
+            updatedAt = 1_700_000_300_000L,
+        )
+
+        var fileDatabase = Room.databaseBuilder(context, DronePassDatabase::class.java, databaseName)
+            .allowMainThreadQueries()
+            .build()
+        try {
+            fileDatabase.shapeDao().insertShape(shape.toEntity())
+        } finally {
+            fileDatabase.close()
+        }
+
+        fileDatabase = Room.databaseBuilder(context, DronePassDatabase::class.java, databaseName)
+            .allowMainThreadQueries()
+            .build()
+        try {
+            val restored = fileDatabase.shapeDao().getShapeById(shape.id)?.toDomain()
+
+            assertEquals(shape, restored)
+            assertEquals(listOf(shape.id), fileDatabase.shapeDao().getActiveShapes().first().map { it.id })
+        } finally {
+            fileDatabase.close()
+            context.deleteDatabase(databaseName)
+        }
     }
 
     @Test
