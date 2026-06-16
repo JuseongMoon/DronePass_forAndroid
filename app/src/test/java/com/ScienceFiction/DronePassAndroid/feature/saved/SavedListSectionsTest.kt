@@ -97,6 +97,27 @@ class SavedListSectionsTest {
     }
 
     @Test
+    fun `저장 목록은 iOS처럼 선택된 드론이 없으면 도형이 있어도 빈 상태다`() {
+        val sections = buildSavedShapeSections(
+            shapes = listOf(
+                shape(id = "shape-a", start = 1_000, end = 3_000, droneId = "drone-a"),
+                shape(id = "shape-legacy", start = 1_000, end = 3_000, droneId = null),
+            ),
+            activeDrones = listOf(DroneModel(id = "drone-a", name = "A")),
+            selectedDroneIds = emptySet(),
+            sortOption = SortOption.FLIGHT_START,
+            sortDirection = SortDirection.ASCENDING,
+            visibilitySettings = SavedShapeVisibilitySettings(),
+            now = 2_000,
+        )
+
+        assertEquals(emptyList<String>(), sections.notStarted.map { it.id })
+        assertEquals(emptyList<String>(), sections.activeFiltered.map { it.id })
+        assertEquals(emptyList<String>(), sections.expired.map { it.id })
+        assertEquals(0, sections.total)
+    }
+
+    @Test
     fun `저장 목록은 iOS SavedTableListView처럼 종료 시각과 현재가 같으면 만료 섹션으로 분류한다`() {
         val now = 10_000L
         val sections = buildSavedShapeSections(
@@ -510,7 +531,7 @@ class SavedListSectionsTest {
         id: String,
         start: Long,
         end: Long?,
-        droneId: String = "drone-a",
+        droneId: String? = "drone-a",
     ): ShapeModel {
         return shape(
             id = id,
@@ -528,7 +549,7 @@ class SavedListSectionsTest {
         address: String?,
         start: Long,
         end: Long?,
-        droneId: String = "drone-a",
+        droneId: String? = "drone-a",
     ): ShapeModel {
         return ShapeModel(
             id = id,
