@@ -187,7 +187,7 @@ fun TermsOfServiceScreen(
         if (shouldAutoLoadParsedDocumentOnEnter(state)) viewModel.loadTerms()
     }
     DocumentScreen(
-        title = stringResource(R.string.profile_terms_service),
+        title = stringResource(R.string.document_terms_service_title),
         state = state,
         onRetry = { viewModel.loadTerms() },
         onDismiss = onDismiss,
@@ -210,7 +210,7 @@ fun PrivacyPolicyScreen(
         if (shouldAutoLoadParsedDocumentOnEnter(state)) viewModel.loadPrivacy()
     }
     DocumentScreen(
-        title = stringResource(R.string.profile_terms_privacy),
+        title = stringResource(R.string.document_terms_privacy_title),
         state = state,
         onRetry = { viewModel.loadPrivacy() },
         onDismiss = onDismiss,

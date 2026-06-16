@@ -1095,7 +1095,9 @@ class StringResourceCoverageTest {
     fun `document and terms strings match iOS localizations`() {
         assertEquals("개인정보 취급방침", stringResourceValue("values/strings.xml", "login_terms_privacy"))
         assertEquals("개인정보 취급방침", stringResourceValue("values/strings.xml", "profile_terms_privacy"))
-        assertEquals("불러오는 중…", stringResourceValue("values/strings.xml", "document_terms_loading"))
+        assertEquals("이용약관", stringResourceValue("values/strings.xml", "document_terms_service_title"))
+        assertEquals("개인정보 취급방침", stringResourceValue("values/strings.xml", "document_terms_privacy_title"))
+        assertEquals("불러오는 중...", stringResourceValue("values/strings.xml", "document_terms_loading"))
         assertEquals("약관을 불러올 수 없습니다.", stringResourceValue("values/strings.xml", "document_terms_service_error_title"))
         assertEquals("잠시 후 다시 시도해주세요.", stringResourceValue("values/strings.xml", "document_terms_service_error_message"))
         assertEquals(
@@ -1106,7 +1108,9 @@ class StringResourceCoverageTest {
 
         assertEquals("Privacy Policy", stringResourceValue("values-en/strings.xml", "login_terms_privacy"))
         assertEquals("Privacy Policy", stringResourceValue("values-en/strings.xml", "profile_terms_privacy"))
-        assertEquals("Loading…", stringResourceValue("values-en/strings.xml", "document_terms_loading"))
+        assertEquals("Terms of Service", stringResourceValue("values-en/strings.xml", "document_terms_service_title"))
+        assertEquals("Privacy Policy", stringResourceValue("values-en/strings.xml", "document_terms_privacy_title"))
+        assertEquals("Loading...", stringResourceValue("values-en/strings.xml", "document_terms_loading"))
         assertEquals("Unable to load terms", stringResourceValue("values-en/strings.xml", "document_terms_service_error_title"))
         assertEquals("Please try again later", stringResourceValue("values-en/strings.xml", "document_terms_service_error_message"))
         assertEquals(
