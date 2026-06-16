@@ -29,7 +29,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -44,15 +43,19 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.text.rememberTextMeasurer
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.PaletteColor
 
 private const val DRONE_NAME_MAX_WIDTH_DP = 210
 internal val DroneEditMemoMinHeight = 100.dp
+internal val DroneEditNavigationHeaderHeight = 44.dp
+internal val DroneEditNavigationHeaderSideWidth = 88.dp
 
 /**
  * 드론 생성/편집 BottomSheet.
@@ -132,35 +135,18 @@ fun DroneEditSheet(
                 .fillMaxWidth()
                 .navigationBarsPadding(),
         ) {
-            TopAppBar(
-                navigationIcon = {
-                    TextButton(onClick = onDismiss) {
-                        Text(stringResource(R.string.common_cancel))
-                    }
+            DroneEditNavigationHeader(
+                title = if (isEditMode) {
+                    stringResource(R.string.drone_edit_title_edit)
+                } else {
+                    stringResource(R.string.drone_edit_title_create)
                 },
-                title = {
-                    Text(
-                        text = if (isEditMode) {
-                            stringResource(R.string.drone_edit_title_edit)
-                        } else {
-                            stringResource(R.string.drone_edit_title_create)
-                        },
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                },
-                actions = {
-                    TextButton(
-                        onClick = ::saveDrone,
-                        enabled = canSave,
-                    ) {
-                        Text(
-                            stringResource(
-                                if (isEditMode) R.string.common_save else R.string.drone_edit_add
-                            )
-                        )
-                    }
-                },
+                primaryActionText = stringResource(
+                    if (isEditMode) R.string.common_save else R.string.drone_edit_add
+                ),
+                canSave = canSave,
+                onDismiss = onDismiss,
+                onSave = ::saveDrone,
             )
 
             Column(
@@ -270,6 +256,55 @@ fun DroneEditSheet(
                 }
             },
         )
+    }
+}
+
+/**
+ * iOS DroneEditView NavigationStack inline title + leading/trailing toolbar 정합.
+ */
+@Composable
+private fun DroneEditNavigationHeader(
+    title: String,
+    primaryActionText: String,
+    canSave: Boolean,
+    onDismiss: () -> Unit,
+    onSave: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(DroneEditNavigationHeaderHeight)
+            .padding(horizontal = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier.width(DroneEditNavigationHeaderSideWidth),
+            contentAlignment = Alignment.CenterStart,
+        ) {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.common_cancel))
+            }
+        }
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            textAlign = TextAlign.Center,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
+        Box(
+            modifier = Modifier.width(DroneEditNavigationHeaderSideWidth),
+            contentAlignment = Alignment.CenterEnd,
+        ) {
+            TextButton(
+                onClick = onSave,
+                enabled = canSave,
+            ) {
+                Text(primaryActionText)
+            }
+        }
     }
 }
 

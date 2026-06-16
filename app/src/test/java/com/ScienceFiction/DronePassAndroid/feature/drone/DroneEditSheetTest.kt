@@ -12,6 +12,12 @@ import org.junit.Test
 class DroneEditSheetTest {
 
     @Test
+    fun `드론 편집 헤더는 iOS inline navigation title처럼 좌우 액션 슬롯 폭을 맞춘다`() {
+        assertEquals(44.dp, DroneEditNavigationHeaderHeight)
+        assertEquals(88.dp, DroneEditNavigationHeaderSideWidth)
+    }
+
+    @Test
     fun `추가 모드 초기 색상은 iOS처럼 추천 색상을 사용한다`() {
         assertEquals(
             PaletteColor.ORANGE,
