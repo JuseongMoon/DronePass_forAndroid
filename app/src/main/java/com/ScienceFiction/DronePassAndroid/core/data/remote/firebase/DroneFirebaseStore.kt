@@ -190,7 +190,7 @@ class DroneFirebaseStore @Inject constructor(
                 throw DroneFirebaseInvalidDataException(validation.reason)
             }
 
-            drones.chunked(500).forEach { chunk ->
+            firestoreWriteChunks(drones).forEach { chunk ->
                 val batch = firestore.batch()
                 chunk.forEach { drone ->
                     val data = droneToFirestoreData(drone)

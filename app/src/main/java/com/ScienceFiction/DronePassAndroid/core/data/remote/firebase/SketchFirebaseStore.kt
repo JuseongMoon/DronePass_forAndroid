@@ -215,7 +215,7 @@ class SketchFirebaseStore @Inject constructor(
                 throw SketchFirebaseInvalidDataException(validation.reason)
             }
 
-            sketches.chunked(500).forEach { chunk ->
+            firestoreWriteChunks(sketches).forEach { chunk ->
                 val batch = firestore.batch()
                 chunk.forEach { sketch ->
                     val data = sketchToFirestoreData(sketch)

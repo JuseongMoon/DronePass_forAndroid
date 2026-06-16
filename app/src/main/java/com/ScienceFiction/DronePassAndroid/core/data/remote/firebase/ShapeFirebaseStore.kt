@@ -294,7 +294,7 @@ class ShapeFirebaseStore @Inject constructor(
                 throw ShapeFirebaseInvalidDataException(validation.reason)
             }
 
-            shapes.chunked(500).forEach { chunk ->
+            firestoreWriteChunks(shapes).forEach { chunk ->
                 val batch = firestore.batch()
                 chunk.forEach { shape ->
                     val data = shapeToFirestoreData(shape)

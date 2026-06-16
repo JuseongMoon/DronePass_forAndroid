@@ -213,7 +213,7 @@ val createdAt = document.getTimestamp("createdAt")
 - [ ] LWW 충돌 해결 Unit Test 10가지 케이스 통과
 - [ ] Soft Delete 필터링 Integration Test 통과
 - [ ] 크로스 플랫폼 동기화 테스트 통과 (iOS 생성 → Android 수신)
-- [ ] 500개 초과 배치 처리 테스트 통과
+- [x] 500개 초과 배치 처리 테스트 통과
 
 ---
 
