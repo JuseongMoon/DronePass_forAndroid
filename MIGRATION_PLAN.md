@@ -218,7 +218,7 @@ val createdAt = document.getTimestamp("createdAt")
 **품질 게이트**:
 - [x] LWW 충돌 해결 Unit Test 10가지 케이스 통과
 - [x] Soft Delete 필터링 Integration Test 통과
-- [ ] 크로스 플랫폼 동기화 테스트 통과 (iOS 생성 → Android 수신)
+- [ ] 크로스 플랫폼 동기화 테스트 통과 (iOS 생성 → Android 수신, `CROSS_PLATFORM_E2E_RUNBOOK.md` 기준)
 - [x] 500개 초과 배치 처리 테스트 통과
 
 ---
@@ -659,6 +659,8 @@ iOS와 Android가 **동일 Firestore**를 공유하므로 가장 중요한 QA �
 | TC-CROSS-02 | Android Soft Delete → iOS 목록 제거 | deletedAt 필터 동작 |
 | TC-CROSS-03 | 동시 수정 LWW → 최신 updatedAt 승리 | 양쪽 동일 결과 |
 | TC-CROSS-04 | 도형 100개 동기화 → Android 5초 이내 | 데이터 무결성 |
+
+실제 계정/공유 Firebase 검증 절차와 증거 기록 기준은 `CROSS_PLATFORM_E2E_RUNBOOK.md`를 따른다.
 
 ### Firestore 레거시 필드 호환
 

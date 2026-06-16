@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 2026-06-16 남은 실제 iOS -> Android 공유 Firestore 동기화 게이트의 실행 절차를 `CROSS_PLATFORM_E2E_RUNBOOK.md`로 분리했다. `CrossPlatformFirestoreContractTest`는 wire format 회귀를 막고, 런북은 실제 Firebase 프로젝트/실계정/OAuth 설정이 준비된 뒤 `MIGRATION_PLAN.md`의 미완료 크로스플랫폼 체크박스를 닫기 위한 판정 기준과 증거 기록 기준을 정의한다.
 - 2026-06-16 release readiness gate에 Firebase Android OAuth client 검사를 추가했다. `app/google-services.json`을 구조적으로 파싱해 현재 applicationId의 `oauth_client`가 비어 있으면 `assembleRelease`/`bundleRelease`를 차단한다. 현재 로컬 상태는 `WEB_CLIENT_ID` length 0, `oauth_client=[]`, `keystore.properties` 없음이므로 `:app:assembleRelease`는 release signing, Web client ID, Firebase Android OAuth client 누락 메시지를 함께 출력하며 의도적으로 실패한다. `:app:assembleDebug`는 통과했다.
 - 2026-06-16 빌드/lint 품질 게이트를 닫았다. dependency/update advisory(`AndroidGradlePluginVersion`, `GradleDependency`, `NewerVersionAvailable`)는 의존성 업그레이드 관리 항목으로 분리하고 release-blocking code/resource lint에서는 비활성화했다. 최신 `:app:lintDebug`는 통과했고 `app/build/reports/lint-results-debug.txt`는 `No issues found.`, XML issue count는 0이다.
 - 2026-06-16 ShapeModel 파싱 커버리지 90% 게이트를 정량 검증으로 닫았다. Gradle 내장 Jacoco 기반 `:app:shapeParsingCoverageReport`/`:app:shapeParsingCoverageVerification` 태스크를 추가했고, 대상은 Shape Firestore 파서 top-level 함수가 컴파일되는 `ShapeFirebaseStoreKt`로 좁혔다. 최신 실행 결과 `ShapeFirebaseStoreKt` instruction 99.66%(870/873), branch 99.28%(137/138), line 100%(111/111)로 90% 기준을 통과했다. 리포트는 `app/build/reports/jacoco/shapeParsingCoverageReport/`에 생성된다.
