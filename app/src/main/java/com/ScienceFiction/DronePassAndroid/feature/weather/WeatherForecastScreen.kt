@@ -13,19 +13,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -40,7 +34,6 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -50,7 +43,6 @@ import com.ScienceFiction.DronePassAndroid.core.util.DroneCategory
 import com.ScienceFiction.DronePassAndroid.core.util.openUriSafely
 import com.ScienceFiction.DronePassAndroid.domain.model.HourlyWeatherData
 import com.ScienceFiction.DronePassAndroid.domain.model.WeatherData
-import com.ScienceFiction.DronePassAndroid.feature.settings.WeatherInfoGuideSheet
 import com.ScienceFiction.DronePassAndroid.ui.component.IosToastMessageDurationMs
 import com.ScienceFiction.DronePassAndroid.ui.component.IosToastMessageOverlay
 import kotlinx.coroutines.delay
@@ -85,91 +77,9 @@ internal fun weatherForecastBodyData(
     return weatherData ?: if (isLoading || hasError) emptyWeatherForecastData() else null
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun WeatherForecastScreen(
-    onBack: () -> Unit = {},
-    viewModel: WeatherViewModel = hiltViewModel(),
-) {
-    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
-    val selectedCategory by viewModel.selectedCategory.collectAsStateWithLifecycle()
-    val isUsingGps by viewModel.isUsingGps.collectAsStateWithLifecycle()
-    val locationAccuracyMeters by viewModel.locationAccuracyMeters.collectAsStateWithLifecycle()
-    var showWeatherInfoSheet by remember { mutableStateOf(false) }
-    var selectedWeatherInfoTopic by remember { mutableStateOf<WeatherInfoTopic?>(null) }
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = stringResource(R.string.weather_navigation_title),
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.common_back),
-                        )
-                    }
-                },
-                actions = {
-                    IconButton(
-                        onClick = {
-                            selectedWeatherInfoTopic = null
-                            showWeatherInfoSheet = true
-                        },
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Info,
-                            contentDescription = stringResource(R.string.weather_info_button),
-                        )
-                    }
-                    IconButton(
-                        onClick = { viewModel.refreshWeather() },
-                        enabled = isWeatherRefreshActionEnabled(isLoading),
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Refresh,
-                            contentDescription = stringResource(R.string.common_refresh),
-                        )
-                    }
-                },
-            )
-        },
-    ) { innerPadding ->
-        WeatherForecastContent(
-            viewModel = viewModel,
-            modifier = Modifier.padding(innerPadding),
-            onWeatherInfoRequested = { topic ->
-                selectedWeatherInfoTopic = topic
-                showWeatherInfoSheet = true
-            },
-        )
-    }
-
-    if (showWeatherInfoSheet) {
-        ModalBottomSheet(
-            onDismissRequest = { showWeatherInfoSheet = false },
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        ) {
-            WeatherInfoGuideSheet(
-                onDismiss = { showWeatherInfoSheet = false },
-                initialTopic = selectedWeatherInfoTopic,
-                category = selectedCategory,
-                onCategoryChanged = { viewModel.setCategory(it) },
-                isUsingGps = isUsingGps,
-                locationAccuracyMeters = locationAccuracyMeters,
-            )
-        }
-    }
-}
-
 /**
  * iOS `WeatherForecastView` body 정합 — 헤더 없는 순수 콘텐츠.
- * 풀스크린 [WeatherForecastScreen] 과 ModalBottomSheet 양쪽에서 재사용.
+ * ModalBottomSheet 내부에서 [WeatherSheetHeader] 와 함께 사용한다.
  */
 @Composable
 fun WeatherForecastContent(

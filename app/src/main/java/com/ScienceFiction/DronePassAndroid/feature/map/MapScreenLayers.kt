@@ -639,7 +639,6 @@ internal fun MapBottomSheets(
     flightZoneOverlayManager: FlightZoneOverlayManager,
     kpViewModel: KpViewModel,
     weatherViewModel: WeatherViewModel,
-    onNavigateToWeather: () -> Unit = {},
 ) {
     val selectedShape by viewModel.selectedShape.collectAsStateWithLifecycle()
     val activeShapes by viewModel.activeShapes.collectAsStateWithLifecycle()

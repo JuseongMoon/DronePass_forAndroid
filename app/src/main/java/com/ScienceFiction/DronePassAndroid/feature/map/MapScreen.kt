@@ -85,7 +85,6 @@ fun MapScreen(
     duplicateShapeId: String? = null,
     onDuplicateShapeConsumed: () -> Unit = {},
     onShapeListFocusRequested: (String) -> Unit = {},
-    onNavigateToWeather: () -> Unit = {},
     viewModel: MapViewModel = hiltViewModel(),
     sketchViewModel: SketchViewModel = hiltViewModel(),
     weatherViewModel: WeatherViewModel = hiltViewModel(),
@@ -474,7 +473,6 @@ fun MapScreen(
         flightZoneOverlayManager = flightZoneOverlayManager,
         kpViewModel = kpViewModel,
         weatherViewModel = weatherViewModel,
-        onNavigateToWeather = onNavigateToWeather,
     )
 
     // 생명주기 관리 - LifecycleOwner 연동

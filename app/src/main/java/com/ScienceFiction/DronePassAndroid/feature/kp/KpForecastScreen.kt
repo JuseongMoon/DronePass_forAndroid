@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.Brightness6
 import androidx.compose.material.icons.filled.CheckCircle
@@ -27,16 +26,11 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -53,7 +47,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -61,14 +54,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.domain.model.KpIndexData
 import com.ScienceFiction.DronePassAndroid.domain.model.KpLevel
-import com.ScienceFiction.DronePassAndroid.feature.settings.KpInfoGuideSheet
 import com.ScienceFiction.DronePassAndroid.ui.component.IosToastMessageDurationMs
 import com.ScienceFiction.DronePassAndroid.ui.component.IosToastMessageOverlay
 import kotlinx.coroutines.delay
 import java.util.Locale
 
 internal const val KpCurrentValueFontSizeSp = 60
-internal const val KpToolbarShowsLoadingIndicator = false
 internal val IosKpForecastContentHorizontalPadding = 16.dp
 internal val IosKpForecastContentVerticalPadding = 16.dp
 internal val IosKpForecastContentSpacing = 20.dp
@@ -84,102 +75,6 @@ internal const val IosCurrentKpCardBackgroundAlpha = 0.1f
 
 @Suppress("UNUSED_PARAMETER")
 internal fun isKpRefreshActionEnabled(isLoading: Boolean): Boolean = true
-
-internal enum class KpForecastTopBarNavigationAction {
-    Info,
-    Back,
-}
-
-internal fun resolveKpForecastTopBarNavigationAction(hasBackHandler: Boolean): KpForecastTopBarNavigationAction =
-    if (hasBackHandler) {
-        KpForecastTopBarNavigationAction.Back
-    } else {
-        KpForecastTopBarNavigationAction.Info
-    }
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun KpForecastScreen(
-    onBack: (() -> Unit)? = null,
-    viewModel: KpViewModel = hiltViewModel(),
-) {
-    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
-    var showKpInfoSheet by remember { mutableStateOf(false) }
-    val navigationAction = remember(onBack) {
-        resolveKpForecastTopBarNavigationAction(hasBackHandler = onBack != null)
-    }
-
-    Column(modifier = Modifier.fillMaxSize()) {
-        TopAppBar(
-            title = {
-                Text(
-                    text = stringResource(R.string.kp_navigation_title),
-                    fontWeight = FontWeight.SemiBold,
-                )
-            },
-            navigationIcon = {
-                when (navigationAction) {
-                    KpForecastTopBarNavigationAction.Back -> {
-                        IconButton(onClick = { onBack?.invoke() }) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = stringResource(R.string.common_back),
-                            )
-                        }
-                    }
-                    KpForecastTopBarNavigationAction.Info -> {
-                        IconButton(onClick = { showKpInfoSheet = true }) {
-                            Icon(
-                                imageVector = Icons.Default.Info,
-                                contentDescription = stringResource(R.string.kp_info_button),
-                            )
-                        }
-                    }
-                }
-            },
-            actions = {
-                if (navigationAction == KpForecastTopBarNavigationAction.Back) {
-                    IconButton(onClick = { showKpInfoSheet = true }) {
-                        Icon(
-                            imageVector = Icons.Default.Info,
-                            contentDescription = stringResource(R.string.kp_info_button),
-                        )
-                    }
-                }
-                if (KpToolbarShowsLoadingIndicator && isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier
-                            .size(20.dp)
-                            .padding(end = 8.dp),
-                        strokeWidth = 2.dp,
-                    )
-                }
-                IconButton(
-                    onClick = { viewModel.loadKpData() },
-                    enabled = isKpRefreshActionEnabled(isLoading),
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Refresh,
-                        contentDescription = stringResource(R.string.common_refresh),
-                    )
-                }
-            },
-        )
-        KpForecastContent(
-            viewModel = viewModel,
-            modifier = Modifier.fillMaxSize(),
-        )
-    }
-
-    if (showKpInfoSheet) {
-        ModalBottomSheet(
-            onDismissRequest = { showKpInfoSheet = false },
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        ) {
-            KpInfoGuideSheet(onDismiss = { showKpInfoSheet = false })
-        }
-    }
-}
 
 /**
  * ModalBottomSheet 내부에서 표시할 KP 시트 헤더 — iOS `KPForecastView` 의 NavigationView TopBar 정합.
@@ -233,7 +128,7 @@ fun KpSheetHeader(
 
 /**
  * iOS `KPForecastView` body 정합 — 헤더 없는 순수 콘텐츠.
- * 풀스크린 [KpForecastScreen] 과 ModalBottomSheet 양쪽에서 재사용.
+ * ModalBottomSheet 내부에서 [KpSheetHeader] 와 함께 사용한다.
  */
 @Composable
 fun KpForecastContent(

@@ -7,9 +7,7 @@ import androidx.navigation.compose.composable
 import com.ScienceFiction.DronePassAndroid.feature.auth.LoginScreen
 import com.ScienceFiction.DronePassAndroid.feature.map.MapScreen
 import com.ScienceFiction.DronePassAndroid.feature.map.MapViewModel
-import com.ScienceFiction.DronePassAndroid.feature.settings.SettingsScreen
 import com.ScienceFiction.DronePassAndroid.feature.sketch.SketchViewModel
-import com.ScienceFiction.DronePassAndroid.feature.weather.WeatherForecastScreen
 
 @Composable
 fun DronePassNavGraph(
@@ -50,21 +48,11 @@ fun DronePassNavGraph(
                 duplicateShapeId = pendingDuplicateShapeId,
                 onDuplicateShapeConsumed = onPendingDuplicateShapeConsumed,
                 onShapeListFocusRequested = onShapeListFocusRequested,
-                onNavigateToWeather = {
-                    navController.navigate(Screen.Weather.route)
-                },
                 viewModel = mapViewModel,
                 sketchViewModel = sketchViewModel,
             )
         }
-        // 저장 목록은 MainScreen 의 오버레이로 표시되므로 NavGraph 라우트가 불필요.
-        // KP 예보는 MapScreen 의 ModalBottomSheet 로 표시되므로 마찬가지로 라우트 미사용.
-        // (이전에는 dead route 가 남아 있어 진입 경로 혼란을 일으켰음)
-        composable(Screen.Weather.route) {
-            WeatherForecastScreen(
-                onBack = { navController.popBackStack() }
-            )
-        }
-        composable(Screen.Settings.route) { SettingsScreen() }
+        // 저장 목록/설정/KP/날씨는 iOS처럼 MainScreen/MapScreen 의 overlay 또는 sheet 로 표시한다.
+        // 별도 route 를 남기면 전체 화면 헤더로 잘못 진입할 수 있어 실제 내비게이션 표면에서 제외한다.
     }
 }

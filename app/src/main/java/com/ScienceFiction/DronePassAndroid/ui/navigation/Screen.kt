@@ -3,8 +3,6 @@ package com.ScienceFiction.DronePassAndroid.ui.navigation
 import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Login
-import androidx.compose.material.icons.filled.BrightnessHigh
-import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Settings
@@ -41,9 +39,6 @@ sealed class Screen(
         selectedIcon = Icons.Filled.Inventory2,
         tabLabelResId = R.string.tab_label_saved,
     )
-
-    data object KpForecast : Screen("kp_forecast", R.string.screen_kp_forecast, Icons.Default.BrightnessHigh)
-    data object Weather : Screen("weather", R.string.screen_weather, Icons.Default.Cloud)
 
     /** 설정 — iOS: gearshape / gearshape.fill */
     data object Settings : Screen(

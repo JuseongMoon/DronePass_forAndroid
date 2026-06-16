@@ -104,23 +104,6 @@ class KpChartsTest {
     }
 
     @Test
-    fun `toolbar does not show an extra loading indicator like iOS`() {
-        assertEquals(false, KpToolbarShowsLoadingIndicator)
-    }
-
-    @Test
-    fun `KP 전체 화면 라우트는 back handler 가 있으면 뒤로가기를 leading action 으로 사용한다`() {
-        assertEquals(
-            KpForecastTopBarNavigationAction.Back,
-            resolveKpForecastTopBarNavigationAction(hasBackHandler = true),
-        )
-        assertEquals(
-            KpForecastTopBarNavigationAction.Info,
-            resolveKpForecastTopBarNavigationAction(hasBackHandler = false),
-        )
-    }
-
-    @Test
     fun `auto refresh matches iOS forecast screen by refreshing NOAA forecast data only`() {
         listOf(false, true).forEach { hasCurrentKp ->
             val plan = resolveKpDataLoadPlan(
