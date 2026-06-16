@@ -168,9 +168,11 @@ com.ScienceFiction.DronePassAndroid/
 **품질 게이트**:
 - [x] 원형 도형 지도 위 렌더링 확인
 - [ ] ShapeModel 파싱 Unit Test 커버리지 90%
-- [ ] 도형 생성→저장→재실행→복원 E2E 통과
+- [x] 도형 생성→저장→재실행→복원 E2E 통과
 
-> 2026-06-16: 원형 도형 지도 오버레이 조건과 하이라이트 반경은 `ShapeOverlayRenderTest`에서 고정했고, 최신 실기기 smoke에서 Naver Map과 저장 도형 UI 렌더링을 재확인했습니다. Shape Firestore 파서는 iOS 날짜 fallback(`flightEndDate`/`expireDate`, `createdAt`, `updatedAt`)까지 추가 회귀 테스트로 고정했고, Room mapper는 `EntityMapperTest`와 Android 15 실기기 `SoftDeleteFilteringIntegrationTest` 7 tests로 shapeType fallback, 선택 필드 왕복, polygon/polyline 좌표 JSON close/reopen 복원, 손상 geometry JSON 방어를 보강했습니다. 다만 ShapeModel 파싱 커버리지 90%와 앱 UI 전체 생성→저장→재실행→복원 E2E는 정량 커버리지/완전 E2E 증거가 별도로 필요해 미완료로 유지합니다.
+> 2026-06-16: 원형 도형 지도 오버레이 조건과 하이라이트 반경은 `ShapeOverlayRenderTest`에서 고정했고, 최신 실기기 smoke에서 Naver Map과 저장 도형 UI 렌더링을 재확인했습니다. Shape Firestore 파서는 iOS 날짜 fallback(`flightEndDate`/`expireDate`, `createdAt`, `updatedAt`)까지 추가 회귀 테스트로 고정했고, Room mapper는 `EntityMapperTest`와 Android 15 실기기 `SoftDeleteFilteringIntegrationTest` 7 tests로 shapeType fallback, 선택 필드 왕복, polygon/polyline 좌표 JSON close/reopen 복원, 손상 geometry JSON 방어를 보강했습니다. 다만 ShapeModel 파싱 커버리지 90%는 정량 커버리지 증거가 별도로 필요해 미완료로 유지합니다.
+>
+> 2026-06-16: Android 15 실기기 `RFCW324TZ0Z`에서 실제 UI 도형 생성→저장→앱 강제 종료→런처 재실행→저장 목록 복원 E2E를 통과했습니다. 기준선 Room DB는 `shapes=0`, `active=0`이었고, `새 도형 추가` FAB → `ShapeEditScreen`에서 제목 `DP_E2E_20260616`, 반경 `100` 입력 후 저장했습니다. 저장 직후 저장 목록 UI에 해당 제목이 표시됐고 DB는 `shapes=1`, `active=1`, `shapeType=circle`, `radius=100.0`이었습니다. `adb shell am force-stop` 후 런처 재실행(PID `10301`) 및 저장 탭 진입 뒤 동일 제목/주소/기간이 저장 목록에 복원됐고, 상세 시트에도 제목/좌표/반경 `100 m`이 표시됐습니다. PID logcat에는 `NaverMapDebug: 네이버 지도 준비 완료`가 있고 `AndroidRuntime`/`FATAL EXCEPTION`은 없었습니다. 검증 뒤 UI 삭제 플로우로 테스트 도형을 soft-delete해 저장 목록은 빈 상태, 활성 도형 수는 0으로 정리했습니다.
 
 ---
 
