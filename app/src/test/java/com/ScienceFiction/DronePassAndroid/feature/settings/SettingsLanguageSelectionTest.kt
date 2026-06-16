@@ -9,7 +9,7 @@ import org.junit.Test
 class SettingsLanguageSelectionTest {
 
     @Test
-    fun `다른 언어를 선택하면 iOS처럼 즉시 적용하고 재시작 안내를 표시한다`() {
+    fun `다른 언어를 선택하면 iOS처럼 저장하고 재시작 안내를 표시한다`() {
         val action = resolveLanguageSelectionAction(
             selectedLanguage = AppLanguage.English,
             currentLanguage = AppLanguage.Korean,
@@ -75,6 +75,32 @@ class SettingsLanguageSelectionTest {
             resolveAppLanguageForStoredOrSystemTag(
                 storedLanguageTag = "",
                 systemLanguageTag = "ja-JP",
+            ),
+        )
+    }
+
+    @Test
+    fun `pending 언어 선택값은 다음 실행 적용을 위해 런타임 언어보다 우선한다`() {
+        assertEquals(
+            AppLanguage.English,
+            resolveAppLanguageForStoredOrSystemTag(
+                pendingLanguageTag = "en",
+                runtimeLanguageTag = "ko",
+                storedLanguageTag = "ko",
+                systemLanguageTag = "ko-KR",
+            ),
+        )
+    }
+
+    @Test
+    fun `pending 값이 없으면 Android per-app language 변경은 저장값보다 우선한다`() {
+        assertEquals(
+            AppLanguage.Korean,
+            resolveAppLanguageForStoredOrSystemTag(
+                pendingLanguageTag = null,
+                runtimeLanguageTag = "ko",
+                storedLanguageTag = "en",
+                systemLanguageTag = "en-US",
             ),
         )
     }

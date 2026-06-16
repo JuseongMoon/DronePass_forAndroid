@@ -12,6 +12,7 @@ import java.util.Locale
 
 private const val APP_LANGUAGE_PREFS = "dronepass_app_language"
 private const val KEY_APP_LANGUAGE_TAG = "app_language_tag"
+private const val KEY_PENDING_APP_LANGUAGE_TAG = "pending_app_language_tag"
 
 /**
  * iOS `SettingManager.initializeAppLanguage` 정합.
@@ -25,6 +26,7 @@ private const val KEY_APP_LANGUAGE_TAG = "app_language_tag"
 fun initializeAppLanguage(context: Context) {
     val language = resolvePersistedOrInitialAppLanguage(context)
     persistAppLanguage(context, language)
+    clearPendingAppLanguage(context)
     applyAppLanguageToRuntime(context, language)
 }
 
@@ -41,7 +43,9 @@ internal fun localizedAppLanguageContext(base: Context): Context {
 
 internal fun resolvePersistedOrInitialAppLanguage(context: Context): AppLanguage {
     return resolveAppLanguageForStoredOrSystemTag(
-        storedLanguageTag = selectedRuntimeAppLanguageTag(context) ?: storedAppLanguageTag(context),
+        pendingLanguageTag = pendingAppLanguageTag(context),
+        runtimeLanguageTag = selectedRuntimeAppLanguageTag(context),
+        storedLanguageTag = storedAppLanguageTag(context),
         systemLanguageTag = Locale.getDefault().language,
     )
 }
@@ -49,10 +53,18 @@ internal fun resolvePersistedOrInitialAppLanguage(context: Context): AppLanguage
 internal fun resolveAppLanguageForStoredOrSystemTag(
     storedLanguageTag: String?,
     systemLanguageTag: String?,
+    pendingLanguageTag: String? = null,
+    runtimeLanguageTag: String? = null,
 ): AppLanguage {
-    return storedLanguageTag
+    return pendingLanguageTag
         ?.takeIf { it.isNotBlank() }
         ?.let(AppLanguage::fromTag)
+        ?: runtimeLanguageTag
+            ?.takeIf { it.isNotBlank() }
+            ?.let(AppLanguage::fromTag)
+        ?: storedLanguageTag
+            ?.takeIf { it.isNotBlank() }
+            ?.let(AppLanguage::fromTag)
         ?: initialAppLanguageForSystemTag(systemLanguageTag)
 }
 
@@ -60,6 +72,12 @@ internal fun storedAppLanguageTag(context: Context): String? {
     return context
         .getSharedPreferences(APP_LANGUAGE_PREFS, Context.MODE_PRIVATE)
         .getString(KEY_APP_LANGUAGE_TAG, null)
+}
+
+internal fun pendingAppLanguageTag(context: Context): String? {
+    return context
+        .getSharedPreferences(APP_LANGUAGE_PREFS, Context.MODE_PRIVATE)
+        .getString(KEY_PENDING_APP_LANGUAGE_TAG, null)
 }
 
 private fun selectedRuntimeAppLanguageTag(context: Context): String? {
@@ -86,6 +104,23 @@ internal fun persistAppLanguage(context: Context, language: AppLanguage) {
         .getSharedPreferences(APP_LANGUAGE_PREFS, Context.MODE_PRIVATE)
         .edit {
             putString(KEY_APP_LANGUAGE_TAG, language.tag)
+        }
+}
+
+internal fun persistAppLanguageForNextLaunch(context: Context, language: AppLanguage) {
+    context
+        .getSharedPreferences(APP_LANGUAGE_PREFS, Context.MODE_PRIVATE)
+        .edit {
+            putString(KEY_APP_LANGUAGE_TAG, language.tag)
+            putString(KEY_PENDING_APP_LANGUAGE_TAG, language.tag)
+        }
+}
+
+private fun clearPendingAppLanguage(context: Context) {
+    context
+        .getSharedPreferences(APP_LANGUAGE_PREFS, Context.MODE_PRIVATE)
+        .edit {
+            remove(KEY_PENDING_APP_LANGUAGE_TAG)
         }
 }
 

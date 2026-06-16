@@ -150,11 +150,10 @@ class SettingsViewModel @Inject constructor(
 
     /**
      * 앱 언어 변경 — iOS `UserDefaults.set(...)` + `AppleLanguages` 정합.
-     * 앱 자체 저장값과 Android per-app language 를 함께 갱신한다.
+     * 선택값은 즉시 저장하되 런타임 locale 은 다음 앱 시작 때 적용한다.
      */
     fun setLanguage(language: AppLanguage) {
-        persistAppLanguage(appContext, language)
-        applyAppLanguageToRuntime(appContext, language)
+        persistAppLanguageForNextLaunch(appContext, language)
         _currentLanguage.value = language
     }
 
