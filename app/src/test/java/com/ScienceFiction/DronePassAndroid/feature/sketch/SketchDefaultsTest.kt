@@ -122,6 +122,15 @@ class SketchDefaultsTest {
     }
 
     @Test
+    fun `색상 슬라이더 hue to hex 는 iOS처럼 RGB 성분을 버림 처리한다`() {
+        assertEquals("#E52222", sketchHueToIosHexColor(0f))
+        assertEquals("#22E522", sketchHueToIosHexColor(120f))
+        assertEquals("#2222E5", sketchHueToIosHexColor(240f))
+        assertEquals("#E59722", sketchHueToIosHexColor(36f))
+        assertEquals("#E52222", sketchHueToIosHexColor(360f))
+    }
+
+    @Test
     fun `스케치 툴바 색상은 iOS처럼 8자리 hex 의 alpha 를 무시한다`() {
         assertEquals(0xFF123456.toInt(), parseSketchToolbarColorSafe("#AA123456").toArgb())
     }

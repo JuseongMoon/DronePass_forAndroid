@@ -129,6 +129,32 @@ internal fun sketchHueDegreesFromIosHexColor(hex: String): Float {
     return if (hue < 0f) hue + 360f else hue
 }
 
+internal fun sketchHueToIosHexColor(hueDegrees: Float): String {
+    val hue = (((hueDegrees % 360f) + 360f) % 360f).toDouble()
+    val saturation = 0.85
+    val brightness = 0.9
+    val chroma = brightness * saturation
+    val x = chroma * (1 - kotlin.math.abs((hue / 60.0) % 2 - 1))
+    val m = brightness - chroma
+    val (redPrime, greenPrime, bluePrime) = when {
+        hue < 60.0 -> Triple(chroma, x, 0.0)
+        hue < 120.0 -> Triple(x, chroma, 0.0)
+        hue < 180.0 -> Triple(0.0, chroma, x)
+        hue < 240.0 -> Triple(0.0, x, chroma)
+        hue < 300.0 -> Triple(x, 0.0, chroma)
+        else -> Triple(chroma, 0.0, x)
+    }
+
+    fun toIosComponent(value: Double): Int {
+        return ((value + m) * 255.0).coerceIn(0.0, 255.0).toInt()
+    }
+
+    val red = toIosComponent(redPrime)
+    val green = toIosComponent(greenPrime)
+    val blue = toIosComponent(bluePrime)
+    return String.format(Locale.ROOT, "#%02X%02X%02X", red, green, blue)
+}
+
 internal fun parseSketchToolbarColorSafe(color: String): Color {
     return Color(parseIosOpaqueRgbHexColor(color) ?: 0xFFFF0000.toInt())
 }
@@ -882,8 +908,7 @@ private fun hexToHue(hex: String): Float {
  * Saturation=0.85, Brightness=0.9 고정
  */
 private fun hueToHex(hue: Float): String {
-    val color = android.graphics.Color.HSVToColor(floatArrayOf(hue, 0.85f, 0.9f))
-    return String.format(Locale.ROOT, "#%06X", 0xFFFFFF and color)
+    return sketchHueToIosHexColor(hue)
 }
 
 private fun parseSketchColor(color: String): Color {
