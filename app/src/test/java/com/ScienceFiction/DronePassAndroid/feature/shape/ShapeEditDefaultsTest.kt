@@ -354,6 +354,12 @@ class ShapeEditDefaultsTest {
     }
 
     @Test
+    fun `도형 편집 상단 toolbar는 iOS inline toolbar 높이와 좌우 액션 슬롯을 따른다`() {
+        assertEquals(44.dp, ShapeEditNavigationHeaderHeight)
+        assertEquals(80.dp, ShapeEditNavigationActionSlotWidth)
+    }
+
+    @Test
     fun `도형 편집 날짜 섹션은 iOS DateSection처럼 별도 헤더를 표시하지 않는다`() {
         assertFalse(ShowShapeEditFlightPeriodSectionHeader)
     }

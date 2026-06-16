@@ -49,8 +49,6 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberTimePickerState
@@ -102,6 +100,8 @@ internal val CoordinateGuideCardMaxWidth = 500.dp
 internal val CoordinateGuideCardPadding = 16.dp
 internal val CoordinateGuideCardVerticalSpacing = 8.dp
 internal val ShapeEditMemoMinHeight = 170.dp
+internal val ShapeEditNavigationHeaderHeight = 44.dp
+internal val ShapeEditNavigationActionSlotWidth = 80.dp
 
 /**
  * 도형 편집 화면 — iOS ShapeEditView 1:1 정합.
@@ -353,33 +353,9 @@ fun ShapeEditScreen(
                 .fillMaxWidth()
                 .navigationBarsPadding()
         ) {
-            // ===== TopAppBar (iOS NavigationView + Toolbar 정합) =====
-            TopAppBar(
-                title = {
-                    Text(
-                        text = resolveShapeEditNavigationTitle(isEditMode),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                },
-                navigationIcon = {
-                    TextButton(onClick = handleCancel) {
-                        Text(stringResource(R.string.shape_edit_navigation_cancel))
-                    }
-                },
-                actions = {
-                    TextButton(
-                        onClick = handleSave,
-                    ) {
-                        Text(
-                            text = stringResource(R.string.shape_edit_navigation_save),
-                            fontWeight = FontWeight.SemiBold,
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                ),
+            ShapeEditNavigationHeader(
+                onCancel = handleCancel,
+                onSave = handleSave,
             )
             HorizontalDivider()
 
@@ -864,6 +840,40 @@ fun ShapeEditScreen(
             },
             onDismiss = { showAddressSearch = false },
         )
+    }
+}
+
+/**
+ * iOS ShapeEditView inline toolbar 정합. 이 화면은 navigation title 을 표시하지 않는다.
+ */
+@Composable
+private fun ShapeEditNavigationHeader(
+    onCancel: () -> Unit,
+    onSave: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(ShapeEditNavigationHeaderHeight)
+            .padding(horizontal = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        TextButton(
+            onClick = onCancel,
+            modifier = Modifier.width(ShapeEditNavigationActionSlotWidth),
+        ) {
+            Text(stringResource(R.string.shape_edit_navigation_cancel))
+        }
+        Spacer(modifier = Modifier.weight(1f))
+        TextButton(
+            onClick = onSave,
+            modifier = Modifier.width(ShapeEditNavigationActionSlotWidth),
+        ) {
+            Text(
+                text = stringResource(R.string.shape_edit_navigation_save),
+                fontWeight = FontWeight.SemiBold,
+            )
+        }
     }
 }
 

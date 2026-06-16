@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 2026-06-16 도형 편집 화면 상단 toolbar를 iOS `ShapeEditView`의 제목 없는 inline toolbar 배치와 맞췄다. Android `TopAppBar` 기본 높이/액션 배치 대신 44dp 커스텀 toolbar와 좌우 80dp 액션 슬롯을 사용해 `취소`/`저장`만 표시하고, 기존 저장·취소·미저장 변경 확인 동작은 유지한다. `:app:testDebugUnitTest --tests "*ShapeEditDefaultsTest" --tests "*ShapeDetailDroneResolutionTest" --tests "*ExternalMapTargetTest"`, 전체 `:app:testDebugUnitTest`, `:app:assembleDebug` 통과.
 - 2026-06-16 드론 편집/생성 시트 상단 헤더를 iOS `DroneEditView`의 inline navigation title + leading/trailing toolbar 배치와 맞췄다. Android `TopAppBar` 대신 좌우 88dp 액션 슬롯을 둔 커스텀 헤더로 교체해 `취소`와 `저장/추가` 버튼 폭이 제목 중앙 정렬을 흔들지 않게 했다. `:app:testDebugUnitTest --tests "*DroneEditSheetTest" --tests "*DroneDeleteValidationTest" --tests "*DroneListScreenTest"`, 전체 `:app:testDebugUnitTest`, `:app:assembleDebug` 통과.
 - 2026-06-16 드론 상세 시트 상단 헤더를 iOS `DroneDetailView`의 inline navigation title 배치와 맞췄다. Android 상세 헤더의 기본 시작 정렬을 좌우 44dp 슬롯 커스텀 헤더로 교체해 제목을 중앙에 고정하고, 기존 더보기 메뉴의 편집/삭제 동작은 유지한다. `:app:testDebugUnitTest --tests "*DroneDeleteValidationTest" --tests "*DroneListScreenTest"`, 전체 `:app:testDebugUnitTest`, `:app:assembleDebug` 통과.
 - 2026-06-16 도형 상세 시트 상단 헤더를 iOS `ShapeDetailView`의 inline navigation title 배치와 맞췄다. Android `TopAppBar` 기본 시작 정렬 대신 좌우 44dp 슬롯을 둔 커스텀 헤더로 교체해 제목이 중앙에 고정되고, 기존 더보기 메뉴의 편집/복제/삭제 동작은 유지한다. `:app:testDebugUnitTest --tests "*ShapeDetailDroneResolutionTest" --tests "*ExternalMapTargetTest"`, 전체 `:app:testDebugUnitTest`, `:app:assembleDebug` 통과.
