@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.Brightness6
 import androidx.compose.material.icons.filled.CheckCircle
@@ -84,6 +85,18 @@ internal const val IosCurrentKpCardBackgroundAlpha = 0.1f
 @Suppress("UNUSED_PARAMETER")
 internal fun isKpRefreshActionEnabled(isLoading: Boolean): Boolean = true
 
+internal enum class KpForecastTopBarNavigationAction {
+    Info,
+    Back,
+}
+
+internal fun resolveKpForecastTopBarNavigationAction(hasBackHandler: Boolean): KpForecastTopBarNavigationAction =
+    if (hasBackHandler) {
+        KpForecastTopBarNavigationAction.Back
+    } else {
+        KpForecastTopBarNavigationAction.Info
+    }
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun KpForecastScreen(
@@ -92,6 +105,9 @@ fun KpForecastScreen(
 ) {
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     var showKpInfoSheet by remember { mutableStateOf(false) }
+    val navigationAction = remember(onBack) {
+        resolveKpForecastTopBarNavigationAction(hasBackHandler = onBack != null)
+    }
 
     Column(modifier = Modifier.fillMaxSize()) {
         TopAppBar(
@@ -102,14 +118,34 @@ fun KpForecastScreen(
                 )
             },
             navigationIcon = {
-                IconButton(onClick = { showKpInfoSheet = true }) {
-                    Icon(
-                        imageVector = Icons.Default.Info,
-                        contentDescription = stringResource(R.string.kp_info_button),
-                    )
+                when (navigationAction) {
+                    KpForecastTopBarNavigationAction.Back -> {
+                        IconButton(onClick = { onBack?.invoke() }) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(R.string.common_back),
+                            )
+                        }
+                    }
+                    KpForecastTopBarNavigationAction.Info -> {
+                        IconButton(onClick = { showKpInfoSheet = true }) {
+                            Icon(
+                                imageVector = Icons.Default.Info,
+                                contentDescription = stringResource(R.string.kp_info_button),
+                            )
+                        }
+                    }
                 }
             },
             actions = {
+                if (navigationAction == KpForecastTopBarNavigationAction.Back) {
+                    IconButton(onClick = { showKpInfoSheet = true }) {
+                        Icon(
+                            imageVector = Icons.Default.Info,
+                            contentDescription = stringResource(R.string.kp_info_button),
+                        )
+                    }
+                }
                 if (KpToolbarShowsLoadingIndicator && isLoading) {
                     CircularProgressIndicator(
                         modifier = Modifier
