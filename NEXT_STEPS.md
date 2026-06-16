@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 2026-06-16 기본 템플릿 `ExampleUnitTest`를 `AppIdentityContractTest`로 교체했다. JVM `:app:testDebugUnitTest --tests "*AppIdentityContractTest"`가 통과했고, debug BuildConfig의 `APPLICATION_ID`가 공유 Firebase 패키지 `com.ScienceFiction.DronePassAndroid`로 유지되며 `.debug` suffix를 붙이지 않는 계약을 고정했다.
 - 2026-06-16 최신 HEAD에서 전체 Android instrumentation 게이트 `:app:connectedDebugAndroidTest`를 Android 15 실기기 `SM-A346N`에서 재실행해 10 tests 모두 통과했다. 결과 XML은 `tests=10`, `failures=0`, `errors=0`, `skipped=0`이며, `RuntimeAppContractTest` 2개와 `SoftDeleteFilteringIntegrationTest` 8개가 같은 connected run에서 통과한다.
 - 2026-06-16 기본 템플릿 `ExampleInstrumentedTest`를 `RuntimeAppContractTest`로 교체했다. Android 15 실기기 `SM-A346N`에서 2 tests 모두 통과했고, 설치된 앱의 package/applicationId가 공유 Firebase 패키지 `com.ScienceFiction.DronePassAndroid`로 유지되며 런타임 `ApplicationInfo.FLAG_ALLOW_BACKUP` 플래그가 꺼져 있음을 확인했다.
 - 2026-06-16 최신 HEAD에서 Android 15 실기기 `SM-A346N`의 `SoftDeleteFilteringIntegrationTest`를 재실행해 8 tests 모두 통과했다. XML 결과는 해당 class 범위에서 `tests=8`, `failures=0`, `errors=0`, `skipped=0`이며, Shape/Sketch/Drone soft-delete active query 필터링, Shape CRUD soft-delete/restore/hard-delete, 빈 DB에서 iOS처럼 기본 드론 1개만 자동 생성하는 repository 계약, 파일 DB close/reopen 후 Shape/geometry 복원, 손상 geometry JSON의 빈 목록 복구가 실제 Room/SQLite 런타임에서 유지된다.
