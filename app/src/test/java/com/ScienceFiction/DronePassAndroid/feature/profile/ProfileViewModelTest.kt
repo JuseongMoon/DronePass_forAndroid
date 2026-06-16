@@ -196,6 +196,16 @@ class ProfileViewModelTest {
     }
 
     @Test
+    fun `프로필 동기화 성공 개수는 iOS처럼 동기화 전 로컬 활성 도형 snapshot 기준이다`() {
+        val activeLocalShapesBeforeSync = listOf(
+            ShapeModel(id = "shape-1"),
+            ShapeModel(id = "shape-2"),
+        )
+
+        assertEquals(2, profileSyncSuccessCount(activeLocalShapesBeforeSync))
+    }
+
+    @Test
     fun `로그아웃 baseline은 iOS처럼 활성 도형 updatedAt만 저장한다`() {
         val baseline = buildProfileSyncedShapeBaseline(
             listOf(

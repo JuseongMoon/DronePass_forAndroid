@@ -110,6 +110,10 @@ internal fun countExpiredProfileShapes(
     }
 }
 
+internal fun profileSyncSuccessCount(activeLocalShapesBeforeSync: List<ShapeModel>): Int {
+    return activeLocalShapesBeforeSync.size
+}
+
 internal fun buildProfileSyncedShapeBaseline(shapes: List<ShapeModel>): Map<String, Long> {
     return buildAccountSwitchShapeBaseline(shapes)
 }
@@ -280,6 +284,8 @@ class ProfileViewModel @Inject constructor(
         if (_isSyncing.value) return
         _isSyncing.value = true
         try {
+            val activeLocalShapesBeforeSync = shapeRepository.getActiveShapes().first()
+            val syncedShapeCount = profileSyncSuccessCount(activeLocalShapesBeforeSync)
             realtimeSyncManager.forceSyncNow()
             val now = System.currentTimeMillis()
             dataStore.edit {
@@ -287,8 +293,7 @@ class ProfileViewModel @Inject constructor(
                 it.remove(ProfilePreferenceKeys.LEGACY_LAST_BACKUP_TIME)
             }
             if (notifyResult) {
-                val shapeCount = shapeRepository.getActiveShapes().first().size
-                _syncResultMessage.emit(SyncResult.Success(shapeCount))
+                _syncResultMessage.emit(SyncResult.Success(syncedShapeCount))
             }
         } catch (e: Exception) {
             Log.e(TAG, "수동 백업 실패", e)
