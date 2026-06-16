@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 2026-06-16 최신 HEAD에서 release shrink 경로 `:app:minifyReleaseWithR8`를 재실행해 통과했다. `app/build/outputs/mapping/release/mapping.txt`가 갱신됐고 Crashlytics mapping upload task까지 완료됐다. R8는 기존과 같은 Naver Map SDK `Expected stack map table for method with non-linear control flow` warning과 Play Services Location `Companion could not be found` warning을 출력하지만 build failure는 아니다.
 - 2026-06-16 최신 HEAD에서 표준 로컬 게이트 `:app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:shapeParsingCoverageVerification`를 재실행해 통과했다. `app/build/reports/lint-results-debug.txt`는 `No issues found.`, `ShapeFirebaseStoreKt` Jacoco CSV는 instruction 99.66%(870/873), branch 99.28%(137/138), line 100%(111/111)로 90% coverage gate를 유지한다.
 - 2026-06-16 최신 HEAD에서 Play 내부 테스트 AAB 경로인 `:app:bundleRelease` release readiness gate를 재확인했다. 현재 로컬에는 `keystore.properties`가 없고 `local.properties`의 `WEB_CLIENT_ID`가 비어 있으며 `app/google-services.json`의 Android `oauth_client`가 빈 배열이므로, `bundleRelease`는 산출물을 만들기 전에 release signing, Google Web client ID, Firebase Android OAuth client 누락 메시지 세 개를 함께 출력하며 의도적으로 실패한다.
 - 2026-06-16 같은 실기기/PID `15796`에서 설정 `내 드론 관리하기` 시트와 메인 드론 드롭다운 비파괴 smoke를 추가 확인했다. 드론 관리 시트는 `드론 관리`, 뒤로가기 버튼, `내 드론 목록`, 기존 `내 드론`, `새 드론 추가`, `사용법`, `각 드론마다 고유한 색상을 지정할 수 있습니다`, `마지막 남은 드론은 삭제할 수 없습니다`를 렌더링했고, system back으로 설정 화면에 복귀해도 PID/focus가 유지됐다. 지도 탭 복귀 후 상단 `드론 목록 열기` 원 버튼을 탭하면 popup bounds `[705,296][1035,422]`에 현재 드론 `내 드론` 항목이 표시됐다. 전 구간 PID `15796` 유지, `NaverMapDebug: 네이버 지도 준비 완료`, `AndroidRuntime`/`FATAL EXCEPTION`/`ThemeUtils` 앱 오류 및 ANR 없음.
