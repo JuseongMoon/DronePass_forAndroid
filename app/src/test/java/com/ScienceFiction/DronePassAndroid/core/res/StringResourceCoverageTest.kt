@@ -1118,6 +1118,16 @@ class StringResourceCoverageTest {
             stringResourceValue("values-en/strings.xml", "document_terms_privacy_error_title"),
         )
         assertEquals("Please try again later", stringResourceValue("values-en/strings.xml", "document_terms_privacy_error_message"))
+
+        assertEquals("패치노트", stringResourceValue("values/strings.xml", "patch_notes_title"))
+        assertEquals("불러오는 중...", stringResourceValue("values/strings.xml", "patch_notes_loading"))
+        assertEquals("패치노트를 불러올 수 없습니다.", stringResourceValue("values/strings.xml", "patch_notes_error_title"))
+        assertEquals("잠시 후 다시 시도해주세요.", stringResourceValue("values/strings.xml", "patch_notes_error_message"))
+
+        assertEquals("Patch Notes", stringResourceValue("values-en/strings.xml", "patch_notes_title"))
+        assertEquals("Loading...", stringResourceValue("values-en/strings.xml", "patch_notes_loading"))
+        assertEquals("Failed to load patch notes.", stringResourceValue("values-en/strings.xml", "patch_notes_error_title"))
+        assertEquals("Please try again later.", stringResourceValue("values-en/strings.xml", "patch_notes_error_message"))
     }
 
     private fun stringResourceNames(relativePath: String): Set<String> {

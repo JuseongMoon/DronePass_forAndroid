@@ -438,7 +438,7 @@
     <string name="document_terms_service_error_message">Please try again later</string>
     <string name="document_terms_privacy_error_title">Unable to load privacy policy</string>
     <string name="document_terms_privacy_error_message">Please try again later</string>
-    <string name="patch_notes_loading">Loading…</string>
+    <string name="patch_notes_loading" tools:ignore="TypographyEllipsis">Loading...</string>
     <string name="patch_notes_error_title">Failed to load patch notes.</string>
     <string name="patch_notes_error_message">Please try again later.</string>
 
