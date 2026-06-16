@@ -134,6 +134,7 @@ internal fun shapeFromFirestoreData(data: Map<String, Any?>): ShapeModel? {
         ?: timestampMillis(data["expireDate"])
     val createdAt = timestampMillis(data["createdAt"]) ?: flightStartDate
     val updatedAt = timestampMillis(data["updatedAt"]) ?: createdAt
+    if (hasInvalidFirestoreTimestampField(data, "deletedAt")) return null
     val deletedAt = timestampMillis(data["deletedAt"])
     val baseCoordinate = firestoreMapToCoordinate(data["baseCoordinate"]) ?: return null
     val radius = if (shapeType == ShapeType.CIRCLE) {

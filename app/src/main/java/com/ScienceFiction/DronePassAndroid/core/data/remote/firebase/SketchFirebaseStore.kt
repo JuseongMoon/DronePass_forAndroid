@@ -94,6 +94,7 @@ internal fun sketchFromFirestoreData(
 
     val createdAt = sketchTimestampMillis(data["createdAt"]) ?: nowMillis
     val updatedAt = sketchTimestampMillis(data["updatedAt"]) ?: createdAt
+    if (hasInvalidFirestoreTimestampField(data, "deletedAt")) return null
     val deletedAt = sketchTimestampMillis(data["deletedAt"])
 
     val points = firestoreListToSketchPoints(data["points"])

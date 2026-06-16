@@ -146,6 +146,12 @@ class SketchFirebaseStoreTest {
     }
 
     @Test
+    fun `스케치 파싱은 잘못된 deletedAt 타입을 활성 스케치로 되살리지 않는다`() {
+        assertNull(sketchFromFirestoreData(validDocument() + ("deletedAt" to 1_700_000_456_000L)))
+        assertNull(sketchFromFirestoreData(validDocument() + ("deletedAt" to "2026-06-16T00:00:00Z")))
+    }
+
+    @Test
     fun `스케치 color 문자열이 Firebase 계약을 어기면 iOS처럼 기본 빨강으로 살린다`() {
         assertEquals("#FF0000", sketchFromFirestoreData(validDocument() + ("color" to "red"))?.color)
         assertEquals("#FF0000", sketchFromFirestoreData(validDocument() + ("color" to "#FF000080"))?.color)

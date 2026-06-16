@@ -73,6 +73,7 @@ internal fun droneFromFirestoreData(data: Map<String, Any?>): DroneModel? {
     )
     val createdAt = droneTimestampMillis(data["createdAt"]) ?: return null
     val updatedAt = droneTimestampMillis(data["updatedAt"]) ?: return null
+    if (hasInvalidFirestoreTimestampField(data, "deletedAt")) return null
     val deletedAt = droneTimestampMillis(data["deletedAt"])
 
     return DroneModel(

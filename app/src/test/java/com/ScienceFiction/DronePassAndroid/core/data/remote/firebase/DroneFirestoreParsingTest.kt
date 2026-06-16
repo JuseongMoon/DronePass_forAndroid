@@ -126,6 +126,12 @@ class DroneFirestoreParsingTest {
     }
 
     @Test
+    fun `드론 파싱은 잘못된 deletedAt 타입을 활성 드론으로 되살리지 않는다`() {
+        assertNull(droneFromFirestoreData(validDocument() + ("deletedAt" to 1_700_000_456_000L)))
+        assertNull(droneFromFirestoreData(validDocument() + ("deletedAt" to "2026-06-16T00:00:00Z")))
+    }
+
+    @Test
     fun `Firestore 문서 파싱은 문서 ID 와 id 필드가 다르면 invalid 이다`() {
         assertEquals(
             "00000000-0000-0000-0000-000000000001",

@@ -60,6 +60,8 @@ Writers must only write geometry fields that match the current `shapeType`; stal
 
 Do not write dates as epoch numbers, ISO strings, or Unix seconds. Do not write coordinates as `GeoPoint`, arrays, integers, or strings.
 
+If `deletedAt` is present, readers must only accept it as a Firestore `Timestamp`. A malformed tombstone must be skipped instead of treated as an active item, otherwise a deleted shape, sketch, or drone can be resurrected during Android's full-collection sync path.
+
 Legacy read fallbacks:
 
 - `startedAt` may be used when `flightStartDate` is missing.

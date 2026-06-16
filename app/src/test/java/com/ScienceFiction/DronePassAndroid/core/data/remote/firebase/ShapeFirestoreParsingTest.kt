@@ -175,6 +175,12 @@ class ShapeFirestoreParsingTest {
     }
 
     @Test
+    fun `Firestore 파싱은 잘못된 deletedAt 타입을 활성 도형으로 되살리지 않는다`() {
+        assertNull(shapeFromFirestoreData(validDocument() + ("deletedAt" to 1_700_000_456_000L)))
+        assertNull(shapeFromFirestoreData(validDocument() + ("deletedAt" to "2026-06-16T00:00:00Z")))
+    }
+
+    @Test
     fun `Firestore 파싱은 Android 레거시 enum name 을 허용하지만 unknown 은 invalid 이다`() {
         val legacy = shapeFromFirestoreData(validDocument() + ("shapeType" to "CIRCLE"))
         val mixedCase = shapeFromFirestoreData(validDocument() + ("shapeType" to "Circle"))
