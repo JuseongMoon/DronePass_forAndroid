@@ -188,7 +188,6 @@
 
     <!-- DroneListScreen -->
     <string name="drone_list_title">드론 관리</string>
-    <string name="drone_list_back">뒤로가기</string>
     <string name="drone_list_add">새 드론 추가</string>
     <string name="drone_list_section_my">내 드론 목록</string>
     <string name="drone_list_empty">등록된 드론이 없습니다.</string>

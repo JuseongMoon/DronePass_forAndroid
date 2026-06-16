@@ -19,18 +19,16 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -49,14 +47,11 @@ import com.ScienceFiction.DronePassAndroid.domain.model.PaletteColor
 
 /**
  * 드론 관리 목록 화면
- *
- * @param onBack 뒤로가기 콜백
  * @param droneViewModel 드론 ViewModel
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DroneListScreen(
-    onBack: () -> Unit,
     droneViewModel: DroneViewModel = hiltViewModel()
 ) {
     val drones by droneViewModel.activeDrones.collectAsStateWithLifecycle()
@@ -67,21 +62,13 @@ fun DroneListScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
+            LargeTopAppBar(
                 title = {
                     Text(
                         text = stringResource(R.string.drone_list_title),
                         fontWeight = FontWeight.Bold
                     )
                 },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.drone_list_back)
-                        )
-                    }
-                }
             )
         }
     ) { innerPadding ->

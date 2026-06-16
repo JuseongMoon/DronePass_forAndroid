@@ -185,7 +185,6 @@
 
     <!-- DroneListScreen -->
     <string name="drone_list_title">Manage Drones</string>
-    <string name="drone_list_back">Back</string>
     <string name="drone_list_add">Add New Drone</string>
     <string name="drone_list_section_my">My Drones</string>
     <string name="drone_list_empty">No drones registered.</string>

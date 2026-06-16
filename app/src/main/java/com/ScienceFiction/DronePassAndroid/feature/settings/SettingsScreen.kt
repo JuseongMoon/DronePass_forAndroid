@@ -103,7 +103,7 @@ fun SettingsScreen(
             onDismissRequest = { showDroneListSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         ) {
-            DroneListScreen(onBack = { showDroneListSheet = false })
+            DroneListScreen()
         }
     }
 
