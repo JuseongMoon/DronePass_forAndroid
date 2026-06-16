@@ -2,6 +2,7 @@ package com.ScienceFiction.DronePassAndroid.feature.profile
 
 import androidx.datastore.preferences.core.preferencesOf
 import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncPreferenceKeys
+import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncState
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -121,6 +122,40 @@ class ProfileViewModelTest {
     fun `프로필 수동 백업은 iOS처럼 동기화 중에 비활성화된다`() {
         assertTrue(!shouldEnableProfileManualBackup(isSyncing = true))
         assertTrue(shouldEnableProfileManualBackup(isSyncing = false))
+    }
+
+    @Test
+    fun `프로필 클라우드 동기화는 iOS처럼 수동 또는 실시간 동기화 중이면 시작하지 않는다`() {
+        assertTrue(
+            shouldStartProfileCloudSync(
+                manualSyncing = false,
+                realtimeSyncState = SyncState.Idle,
+            )
+        )
+        assertTrue(
+            !shouldStartProfileCloudSync(
+                manualSyncing = true,
+                realtimeSyncState = SyncState.Idle,
+            )
+        )
+        assertTrue(
+            !shouldStartProfileCloudSync(
+                manualSyncing = false,
+                realtimeSyncState = SyncState.Syncing,
+            )
+        )
+        assertTrue(
+            shouldStartProfileCloudSync(
+                manualSyncing = false,
+                realtimeSyncState = SyncState.Success(timestamp = 1_700_000_000_000L),
+            )
+        )
+        assertTrue(
+            shouldStartProfileCloudSync(
+                manualSyncing = false,
+                realtimeSyncState = SyncState.Error(message = "network"),
+            )
+        )
     }
 
     @Test

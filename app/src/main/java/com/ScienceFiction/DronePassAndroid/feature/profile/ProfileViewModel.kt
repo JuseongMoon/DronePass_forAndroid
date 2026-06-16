@@ -114,6 +114,13 @@ internal fun profileSyncSuccessCount(activeLocalShapesBeforeSync: List<ShapeMode
     return activeLocalShapesBeforeSync.size
 }
 
+internal fun shouldStartProfileCloudSync(
+    manualSyncing: Boolean,
+    realtimeSyncState: SyncState,
+): Boolean {
+    return !manualSyncing && realtimeSyncState !is SyncState.Syncing
+}
+
 internal fun buildProfileSyncedShapeBaseline(shapes: List<ShapeModel>): Map<String, Long> {
     return buildAccountSwitchShapeBaseline(shapes)
 }
@@ -281,7 +288,7 @@ class ProfileViewModel @Inject constructor(
     }
 
     private suspend fun syncToCloudInternal(notifyResult: Boolean) {
-        if (_isSyncing.value) return
+        if (!shouldStartProfileCloudSync(_isSyncing.value, realtimeSyncManager.syncState.value)) return
         _isSyncing.value = true
         try {
             val activeLocalShapesBeforeSync = shapeRepository.getActiveShapes().first()
