@@ -1,5 +1,9 @@
 import java.util.Properties
 import org.gradle.api.GradleException
+import org.gradle.api.tasks.testing.Test
+import org.gradle.testing.jacoco.plugins.JacocoTaskExtension
+import org.gradle.testing.jacoco.tasks.JacocoCoverageVerification
+import org.gradle.testing.jacoco.tasks.JacocoReport
 
 plugins {
     alias(libs.plugins.android.application)
@@ -9,6 +13,7 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.google.services)
     alias(libs.plugins.firebase.crashlytics)
+    jacoco
 }
 
 // local.properties에서 API 키 로드
@@ -134,6 +139,62 @@ android {
 
 ksp {
     arg("room.schemaLocation", "$projectDir/schemas")
+}
+
+jacoco {
+    toolVersion = "0.8.13"
+}
+
+tasks.withType<Test>().configureEach {
+    extensions.configure<JacocoTaskExtension> {
+        isIncludeNoLocationClasses = true
+        excludes = listOf("jdk.internal.*")
+    }
+}
+
+val shapeParsingCoverageExecutionData = fileTree(layout.buildDirectory) {
+    include(
+        "jacoco/testDebugUnitTest.exec",
+        "outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec",
+    )
+}
+
+val shapeParsingCoverageClassDirectories = files(
+    fileTree(layout.buildDirectory.dir("tmp/kotlin-classes/debug")) {
+        include(
+            "com/ScienceFiction/DronePassAndroid/core/data/remote/firebase/ShapeFirebaseStoreKt.class",
+        )
+    },
+)
+
+tasks.register<JacocoReport>("shapeParsingCoverageReport") {
+    dependsOn("testDebugUnitTest")
+
+    executionData(shapeParsingCoverageExecutionData)
+    classDirectories.setFrom(shapeParsingCoverageClassDirectories)
+    sourceDirectories.setFrom(files("src/main/java"))
+
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+        csv.required.set(true)
+    }
+}
+
+tasks.register<JacocoCoverageVerification>("shapeParsingCoverageVerification") {
+    dependsOn("shapeParsingCoverageReport")
+
+    executionData(shapeParsingCoverageExecutionData)
+    classDirectories.setFrom(shapeParsingCoverageClassDirectories)
+    sourceDirectories.setFrom(files("src/main/java"))
+
+    violationRules {
+        rule {
+            limit {
+                minimum = "0.90".toBigDecimal()
+            }
+        }
+    }
 }
 
 dependencies {
