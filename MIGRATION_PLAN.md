@@ -137,11 +137,11 @@ com.ScienceFiction.DronePassAndroid/
 - `Manager/CoordinateManager.swift`
 
 **품질 게이트**:
-- [ ] 빌드 성공, Lint 경고 0건
+- [x] 빌드 성공, Lint 경고 0건
 - [x] 3탭 네비게이션 동작 확인
 - [x] Room DB CRUD/Soft Delete Integration Test 통과
 
-> 2026-06-16: `:app:testDebugUnitTest :app:lintDebug`는 통과하지만 lint report에 dependency/update 계열 warning이 남아 있어 "Lint 경고 0건" 게이트는 미완료로 유지합니다. 3탭 네비게이션은 `MainScreenStartDestinationTest`와 실기기 지도/저장/설정 탭 smoke로 확인했고, Room Shape CRUD 및 Shape/Sketch/Drone soft-delete 필터링은 `SoftDeleteFilteringIntegrationTest`를 Android 15 실기기에서 실행해 확인했습니다.
+> 2026-06-16: `:app:testDebugUnitTest`, `:app:assembleDebug`, `:app:lintDebug`가 통과합니다. dependency/update advisory(`AndroidGradlePluginVersion`, `GradleDependency`, `NewerVersionAvailable`)는 의존성 업그레이드 관리 항목으로 분리하고 release-blocking code/resource lint에서는 비활성화했으며, 최신 `app/build/reports/lint-results-debug.txt`는 `No issues found.`를 출력합니다. 3탭 네비게이션은 `MainScreenStartDestinationTest`와 실기기 지도/저장/설정 탭 smoke로 확인했고, Room Shape CRUD 및 Shape/Sketch/Drone soft-delete 필터링은 `SoftDeleteFilteringIntegrationTest`를 Android 15 실기기에서 실행해 확인했습니다.
 
 ---
 

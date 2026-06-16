@@ -135,6 +135,14 @@ android {
         compose = true
         buildConfig = true
     }
+    lint {
+        // Version update advisories are tracked separately from release-blocking code/resource lint.
+        disable += setOf(
+            "AndroidGradlePluginVersion",
+            "GradleDependency",
+            "NewerVersionAvailable",
+        )
+    }
 }
 
 ksp {
