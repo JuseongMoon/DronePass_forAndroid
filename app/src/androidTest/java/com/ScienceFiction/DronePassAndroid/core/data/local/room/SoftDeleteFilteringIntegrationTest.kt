@@ -139,6 +139,79 @@ class SoftDeleteFilteringIntegrationTest {
     }
 
     @Test
+    fun shapeModelPersistsPolygonPolylineCoordinatesAcrossRoomCloseAndReopen() = runBlocking {
+        val context: Context = InstrumentationRegistry.getInstrumentation().targetContext
+        val databaseName = "shape_geometry_restart_contract_test.db"
+        context.deleteDatabase(databaseName)
+
+        val polygon = listOf(
+            Coordinate(37.5665, 126.9780),
+            Coordinate(37.5675, 126.9790),
+            Coordinate(37.5685, 126.9800),
+        )
+        val polyline = listOf(
+            Coordinate(36.1, 126.1),
+            Coordinate(36.2, 126.2),
+        )
+        val shape = ShapeModel(
+            id = "00000000-0000-0000-0000-000000000124",
+            title = "Geometry Area",
+            shapeType = ShapeType.POLYGON,
+            baseCoordinate = Coordinate(37.5665, 126.9780),
+            address = "Seoul",
+            radius = 250.0,
+            secondCoordinate = Coordinate(37.5675, 126.9790),
+            polygonCoordinates = polygon,
+            polylineCoordinates = polyline,
+            height = 80.0,
+            memo = "memo",
+            color = "#34C759",
+            droneId = "drone-a",
+            createdAt = 1_700_000_000_000L,
+            deletedAt = null,
+            flightStartDate = 1_700_000_100_000L,
+            flightEndDate = 1_700_000_200_000L,
+            updatedAt = 1_700_000_300_000L,
+        )
+
+        var fileDatabase = Room.databaseBuilder(context, DronePassDatabase::class.java, databaseName)
+            .allowMainThreadQueries()
+            .build()
+        try {
+            fileDatabase.shapeDao().insertShape(shape.toEntity())
+        } finally {
+            fileDatabase.close()
+        }
+
+        fileDatabase = Room.databaseBuilder(context, DronePassDatabase::class.java, databaseName)
+            .allowMainThreadQueries()
+            .build()
+        try {
+            val restored = fileDatabase.shapeDao().getShapeById(shape.id)?.toDomain()
+
+            assertEquals(shape, restored)
+            assertEquals(listOf(shape.id), fileDatabase.shapeDao().getActiveShapes().first().map { it.id })
+        } finally {
+            fileDatabase.close()
+            context.deleteDatabase(databaseName)
+        }
+    }
+
+    @Test
+    fun malformedShapeGeometryJsonRestoresEmptyListsWithoutCrash() {
+        val restored = shapeEntity(id = "shape-malformed-geometry", updatedAt = 100L, deletedAt = null)
+            .copy(
+                shapeType = "polygon",
+                polygonCoordinates = "[",
+                polylineCoordinates = """[{"latitude":37.0}]""",
+            )
+            .toDomain()
+
+        assertEquals(emptyList<Coordinate>(), restored.polygonCoordinates)
+        assertEquals(emptyList<Coordinate>(), restored.polylineCoordinates)
+    }
+
+    @Test
     fun sketchActiveQueriesExcludeSoftDeletedRowsButAllQueriesKeepTombstones() = runBlocking {
         database.sketchDao().insertSketches(
             listOf(

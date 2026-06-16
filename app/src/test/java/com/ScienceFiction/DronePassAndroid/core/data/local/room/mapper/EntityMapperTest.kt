@@ -24,6 +24,13 @@ class EntityMapperTest {
     }
 
     @Test
+    fun `ShapeEntity 는 손상된 shapeType 도 Flow 를 깨지 않고 circle 로 복구한다`() {
+        val shape = shapeEntity(shapeType = "unknown-shape-type").toDomain()
+
+        assertEquals(ShapeType.CIRCLE, shape.shapeType)
+    }
+
+    @Test
     fun `ShapeModel 저장 시 shapeType 은 iOS raw value 로 저장한다`() {
         val entity = ShapeModel(shapeType = ShapeType.CIRCLE).toEntity()
 
@@ -53,6 +60,32 @@ class EntityMapperTest {
         assertEquals(127.2, entity.secondLongitude)
         assertEquals(Coordinate.listToJson(polygon), entity.polygonCoordinates)
         assertEquals(Coordinate.listToJson(polyline), entity.polylineCoordinates)
+    }
+
+    @Test
+    fun `ShapeModel Room 왕복은 iOS ShapeModel 단일값 선택 필드를 보존한다`() {
+        val shape = ShapeModel(
+            id = "shape-all-fields",
+            title = "전체 필드 도형",
+            shapeType = ShapeType.RECTANGLE,
+            baseCoordinate = Coordinate(37.0, 127.0),
+            address = "서울특별시",
+            radius = 100.0,
+            secondCoordinate = Coordinate(37.1, 127.1),
+            height = 120.0,
+            memo = "memo",
+            color = "#FF3B30",
+            droneId = "drone-1",
+            createdAt = 1_000L,
+            deletedAt = 2_000L,
+            flightStartDate = 3_000L,
+            flightEndDate = 4_000L,
+            updatedAt = 5_000L,
+        )
+
+        val restored = shape.toEntity().toDomain()
+
+        assertEquals(shape, restored)
     }
 
     @Test
