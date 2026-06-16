@@ -343,7 +343,10 @@ fun LoginScreen(
             },
             confirmButton = {
                 TextButton(onClick = { viewModel.confirmAccountSwitch() }) {
-                    Text(text = stringResource(R.string.login_account_switch_confirm))
+                    Text(
+                        text = stringResource(R.string.login_account_switch_confirm),
+                        color = MaterialTheme.colorScheme.error,
+                    )
                 }
             },
             dismissButton = {
