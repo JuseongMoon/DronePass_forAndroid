@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -47,6 +48,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.core.util.DroneCategory
@@ -57,6 +59,9 @@ import kotlinx.coroutines.delay
 internal val WeatherGuideCategoryMenuHorizontalPadding = 8.dp
 internal val WeatherGuideCategoryMenuVerticalPadding = 4.dp
 internal val WeatherGuideCategoryMenuIconSize = 12.dp
+internal val InfoGuideHeaderActionWidth = 72.dp
+internal val InfoGuideHeaderHorizontalPadding = 4.dp
+internal val InfoGuideHeaderVerticalPadding = 8.dp
 
 @Composable
 internal fun KpInfoGuideSheet(onDismiss: () -> Unit) {
@@ -139,17 +144,27 @@ private fun InfoGuideScaffold(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 8.dp),
+                .padding(
+                    horizontal = InfoGuideHeaderHorizontalPadding,
+                    vertical = InfoGuideHeaderVerticalPadding,
+                ),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            Box(modifier = Modifier.width(InfoGuideHeaderActionWidth))
             Text(
                 text = stringResource(titleRes),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
+                textAlign = TextAlign.Center,
                 modifier = Modifier.weight(1f),
             )
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.common_close))
+            Box(
+                modifier = Modifier.width(InfoGuideHeaderActionWidth),
+                contentAlignment = Alignment.CenterEnd,
+            ) {
+                TextButton(onClick = onDismiss) {
+                    Text(stringResource(R.string.common_close))
+                }
             }
         }
         HorizontalDivider(

@@ -115,6 +115,13 @@ class InfoGuideSheetsTest {
     }
 
     @Test
+    fun `info guide header uses iOS inline title action slots`() {
+        assertEquals(72.dp, InfoGuideHeaderActionWidth)
+        assertEquals(4.dp, InfoGuideHeaderHorizontalPadding)
+        assertEquals(8.dp, InfoGuideHeaderVerticalPadding)
+    }
+
+    @Test
     fun `weather guide note parser matches iOS FormattedNoteText line rules`() {
         assertEquals(
             listOf(
