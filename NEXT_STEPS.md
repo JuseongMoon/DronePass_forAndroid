@@ -12,11 +12,12 @@
 |---|---|
 | 워킹 트리 | clean |
 | 주요 검증 | `:app:testDebugUnitTest`, `:app:lintDebug`, `:app:assembleDebug`, `:app:minifyReleaseWithR8`, `:app:shapeParsingCoverageVerification`, `:app:testDebugUnitTest --tests "*MainScreenStartDestinationTest"`, `:app:testDebugUnitTest --tests "*MapScreenLayersTest"`, `:app:testDebugUnitTest --tests "*SettingsPreferenceKeysTest"`, `:app:testDebugUnitTest --tests "*SettingsPreferenceKeysTest" --tests "*NotificationPreferenceKeysTest" --tests "*SettingsEndDateAlarmPlanTest" --tests "*MainActivityKeepScreenAwakeTest"`, `:app:testDebugUnitTest --tests "*Auth*Test" --tests "*StringResourceCoverageTest"` 통과 |
-| Release readiness | 2026-06-16에 실제 `keystore.properties` 또는 `WEB_CLIENT_ID`가 없으면 `assembleRelease`/`bundleRelease`가 의도적으로 실패함을 재확인 |
+| Release readiness | 2026-06-16에 실제 `keystore.properties`, `WEB_CLIENT_ID`, Firebase Android `oauth_client`가 없으면 `assembleRelease`/`bundleRelease`가 의도적으로 실패함을 재확인 |
 | 남은 성격 | 실기기 전체 회귀, 콘솔/스토어 운영 설정, 최종 iOS 동기화 검증 |
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 2026-06-16 release readiness gate에 Firebase Android OAuth client 검사를 추가했다. `app/google-services.json`을 구조적으로 파싱해 현재 applicationId의 `oauth_client`가 비어 있으면 `assembleRelease`/`bundleRelease`를 차단한다. 현재 로컬 상태는 `WEB_CLIENT_ID` length 0, `oauth_client=[]`, `keystore.properties` 없음이므로 `:app:assembleRelease`는 release signing, Web client ID, Firebase Android OAuth client 누락 메시지를 함께 출력하며 의도적으로 실패한다. `:app:assembleDebug`는 통과했다.
 - 2026-06-16 빌드/lint 품질 게이트를 닫았다. dependency/update advisory(`AndroidGradlePluginVersion`, `GradleDependency`, `NewerVersionAvailable`)는 의존성 업그레이드 관리 항목으로 분리하고 release-blocking code/resource lint에서는 비활성화했다. 최신 `:app:lintDebug`는 통과했고 `app/build/reports/lint-results-debug.txt`는 `No issues found.`, XML issue count는 0이다.
 - 2026-06-16 ShapeModel 파싱 커버리지 90% 게이트를 정량 검증으로 닫았다. Gradle 내장 Jacoco 기반 `:app:shapeParsingCoverageReport`/`:app:shapeParsingCoverageVerification` 태스크를 추가했고, 대상은 Shape Firestore 파서 top-level 함수가 컴파일되는 `ShapeFirebaseStoreKt`로 좁혔다. 최신 실행 결과 `ShapeFirebaseStoreKt` instruction 99.66%(870/873), branch 99.28%(137/138), line 100%(111/111)로 90% 기준을 통과했다. 리포트는 `app/build/reports/jacoco/shapeParsingCoverageReport/`에 생성된다.
 - 2026-06-16 Android 15 실기기 `RFCW324TZ0Z`에서 실제 UI 도형 생성→저장→앱 강제 종료→런처 재실행→저장 목록 복원 E2E를 통과했다. 기준선 Room DB는 `shapes=0`, `active=0`이었고, `새 도형 추가` FAB → `ShapeEditScreen`에서 제목 `DP_E2E_20260616`, 반경 `100` 입력 후 저장했다. 저장 직후 저장 목록 UI에 해당 제목이 표시됐고 DB는 `shapes=1`, `active=1`, `shapeType=circle`, `radius=100.0`이었다. `adb shell am force-stop` 후 런처 재실행(PID `10301`) 및 저장 탭 진입 뒤 동일 제목/주소/기간이 저장 목록에 복원됐고, 상세 시트에도 제목/좌표/반경 `100 m`이 표시됐다. PID logcat에는 `NaverMapDebug: 네이버 지도 준비 완료`가 있고 `AndroidRuntime`/`FATAL EXCEPTION`은 없었다. 검증 뒤 UI 삭제 플로우로 테스트 도형을 soft-delete해 저장 목록은 빈 상태, 활성 도형 수는 0으로 정리했다.
@@ -772,14 +773,14 @@ export PATH="$JAVA_HOME/bin:$PATH"
 - 2026-06-16 위 설정/프로필 패리티 보정 후 최신 debug APK를 실기기 `RFCW324TZ0Z`에 데이터 유지 재설치하고 런처 smoke를 재수행했다. 앱 PID `28371`, focus `com.ScienceFiction.DronePassAndroid/.MainActivity` 유지, `dumpsys window lastanr`는 `<no ANR has occurred since boot>`. UIAutomator XML에서 Naver Map controls, 현위치/확대·축소/NAVER logo, 상단 `내 드론`/`드론 2`/드롭다운 원, `비행구역 레이어`, `스케치`, KP/날씨 카드, `새 도형 추가`, 하단 `지도`/`저장`/`설정` 렌더링을 확인했다. 상단 드론 선택 요소 bounds는 `[401,195][657,285]`, `[680,195][922,285]`, `[945,195][1035,285]`로 y=195·height=90이 일치했다. `AndroidRuntime:E` fatal 로그 없음. PID error 로그는 기존 OEM/SDK 잡음(`setpriority`, resource package ID, QT file)만 확인.
 - `:app:minifyReleaseWithR8`는 현재 성공합니다.
 - Naver Maps SDK와 Play Services Location에서 R8 warning이 여러 줄 출력될 수 있지만, 현재는 build failure가 아닙니다.
-- `assembleRelease`와 `bundleRelease`는 실제 release signing과 `WEB_CLIENT_ID` 설정 전까지 의도적으로 차단되며, 2026-06-15에 두 실패 경로를 모두 재확인했습니다.
+- `assembleRelease`와 `bundleRelease`는 실제 release signing, `WEB_CLIENT_ID`, Firebase Android `oauth_client` 설정 전까지 의도적으로 차단되며, 2026-06-16에 세 실패 경로를 함께 재확인했습니다.
 - OS Auto Backup은 비활성화되어 있으며, 앱 데이터 백업/동기화는 Firebase 흐름 기준으로 검증합니다.
 
 ## 5. 다음에 바로 볼 후보
 
 1. 남은 실기기 회귀 시나리오를 돌리고 실패 항목을 코드 수정 단위로 커밋
 2. iOS ↔ Android Firestore 실제 계정 동기화 시나리오 검증
-3. Play Store 내부 테스트용 signing 구성 후 `bundleRelease` 검증
+3. Play Store 내부 테스트용 signing/Firebase OAuth client 구성 후 `bundleRelease` 검증
 4. 실기기/실계정 검증 결과를 반영해 `NEXT_STEPS.md`의 잔여 항목을 줄이기
 
 ## 6. 주요 경로

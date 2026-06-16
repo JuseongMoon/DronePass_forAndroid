@@ -1,9 +1,28 @@
+import groovy.json.JsonSlurper
+import java.io.File
 import java.util.Properties
 import org.gradle.api.GradleException
 import org.gradle.api.tasks.testing.Test
 import org.gradle.testing.jacoco.plugins.JacocoTaskExtension
 import org.gradle.testing.jacoco.tasks.JacocoCoverageVerification
 import org.gradle.testing.jacoco.tasks.JacocoReport
+
+val dronepassApplicationId = "com.ScienceFiction.DronePassAndroid"
+
+private fun googleServicesHasAndroidOauthClient(file: File, packageName: String): Boolean {
+    if (!file.isFile) return false
+    return runCatching {
+        val root = JsonSlurper().parse(file) as? Map<*, *> ?: return@runCatching false
+        val clients = root["client"] as? List<*> ?: return@runCatching false
+        clients.any { rawClient ->
+            val client = rawClient as? Map<*, *> ?: return@any false
+            val clientInfo = client["client_info"] as? Map<*, *>
+            val androidClientInfo = clientInfo?.get("android_client_info") as? Map<*, *>
+            val oauthClients = client["oauth_client"] as? List<*>
+            androidClientInfo?.get("package_name") == packageName && !oauthClients.isNullOrEmpty()
+        }
+    }.getOrDefault(false)
+}
 
 plugins {
     alias(libs.plugins.android.application)
@@ -56,10 +75,19 @@ val releaseSigningErrorMessage =
 val releaseWebClientIdErrorMessage =
     "Google sign-in WEB_CLIENT_ID is not configured. Set WEB_CLIENT_ID in " +
         "local.properties to the Firebase Web client ID before building release artifacts."
+val googleServicesOauthClientErrorMessage =
+    "Firebase Android OAuth client is not configured in app/google-services.json. Register the " +
+        "debug/release SHA fingerprints in Firebase Console, download the updated google-services.json, " +
+        "and verify oauth_client is not empty before building release artifacts."
+val hasGoogleServicesAndroidOauthClient = googleServicesHasAndroidOauthClient(
+    file = project.file("google-services.json"),
+    packageName = dronepassApplicationId,
+)
 val releaseReadinessErrorMessage: String?
     get() = listOfNotNull(
         releaseSigningErrorMessage.takeUnless { hasReleaseSigningConfig },
         releaseWebClientIdErrorMessage.takeUnless { webClientId.isNotBlank() },
+        googleServicesOauthClientErrorMessage.takeUnless { hasGoogleServicesAndroidOauthClient },
     ).takeIf { it.isNotEmpty() }?.joinToString(separator = "\n")
 
 android {
@@ -69,7 +97,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.ScienceFiction.DronePassAndroid"
+        applicationId = dronepassApplicationId
         minSdk = 28
         targetSdk = 36
         versionCode = 1

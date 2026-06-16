@@ -96,14 +96,16 @@ Android Studio에서 Gradle Sync 후 실행하거나, 터미널에서 다음 명
 ./gradlew :app:assembleDebug
 ```
 
-Release 빌드는 실제 서명 설정이 없으면 의도적으로 실패합니다. 디버그 키로 릴리스 APK/AAB가 만들어지지 않도록 `assembleRelease`와 `bundleRelease` 앞에서 서명 설정을 검증합니다.
+Release 빌드는 실제 서명 설정, Google 로그인 Web client ID, Firebase Android OAuth client가 없으면 의도적으로 실패합니다. 디버그 키나 콘솔 설정 누락 상태로 릴리스 APK/AAB가 만들어지지 않도록 `assembleRelease`와 `bundleRelease` 앞에서 release readiness를 검증합니다.
 
 Release 서명 설정:
 
 1. `keystore.properties.example`을 `keystore.properties`로 복사합니다.
 2. 실제 `storeFile`, `storePassword`, `keyAlias`, `keyPassword`를 입력합니다.
 3. `storeFile`은 프로젝트 루트 기준 상대경로로 지정합니다.
-4. `./gradlew :app:assembleRelease` 또는 `./gradlew :app:bundleRelease`를 실행합니다.
+4. `local.properties`에 Firebase Web client ID를 `WEB_CLIENT_ID`로 입력합니다.
+5. Firebase Console에 debug/release SHA-1/SHA-256을 등록하고, `oauth_client`가 포함된 `app/google-services.json`을 다시 내려받습니다.
+6. `./gradlew :app:assembleRelease` 또는 `./gradlew :app:bundleRelease`를 실행합니다.
 
 키스토어 생성 예시:
 
