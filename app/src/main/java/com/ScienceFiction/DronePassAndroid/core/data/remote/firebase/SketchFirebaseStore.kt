@@ -280,21 +280,6 @@ class SketchFirebaseStore @Inject constructor(
         return sketchToFirestoreMergeData(sketch)
     }
 
-    /**
-     * Firestore 문서 데이터 -> SketchModel로 변환.
-     *
-     * iOS SketchFirebaseStore 는 points 배열 안에서 파싱 가능한 좌표만 compactMap 으로 살리고,
-     * points 필드가 없거나 배열이 아니면 빈 배열로 읽는다. Android도 같은 관대 파싱을 따른다.
-     */
-    fun firestoreDataToSketch(data: Map<String, Any?>): SketchModel? {
-        return try {
-            sketchFromFirestoreData(data)
-        } catch (e: Exception) {
-            Log.e(TAG, "Firestore 데이터 -> SketchModel 변환 실패", e)
-            null
-        }
-    }
-
     fun firestoreDocumentToSketch(documentId: String, data: Map<String, Any?>): SketchModel? {
         return try {
             val sketch = sketchFromFirestoreDocument(documentId, data)

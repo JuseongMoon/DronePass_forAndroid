@@ -358,24 +358,6 @@ class ShapeFirebaseStore @Inject constructor(
         return shapeToFirestoreMergeData(shape)
     }
 
-    /**
-     * Firestore 문서 데이터 -> ShapeModel로 변환
-     * 레거시 필드 폴백 지원: startedAt -> flightStartDate, expireDate -> flightEndDate
-     */
-    @Suppress("UNCHECKED_CAST")
-    fun firestoreDataToShape(data: Map<String, Any?>): ShapeModel? {
-        return try {
-            val shape = shapeFromFirestoreData(data)
-            if (shape == null) {
-                Log.w(TAG, "필수 필드 누락/손상으로 도형 스킵: id=${data["id"]}")
-            }
-            shape
-        } catch (e: Exception) {
-            Log.e(TAG, "Firestore 데이터 -> ShapeModel 변환 실패", e)
-            null
-        }
-    }
-
     fun firestoreDocumentToShape(documentId: String, data: Map<String, Any?>): ShapeModel? {
         return try {
             val shape = shapeFromFirestoreDocument(documentId, data)

@@ -254,18 +254,6 @@ class DroneFirebaseStore @Inject constructor(
         return droneToFirestoreMergeData(drone)
     }
 
-    /**
-     * Firestore 문서 데이터 -> DroneModel로 변환
-     */
-    fun firestoreDataToDrone(data: Map<String, Any?>): DroneModel? {
-        return try {
-            droneFromFirestoreData(data)
-        } catch (e: Exception) {
-            Log.e(TAG, "Firestore 데이터 -> DroneModel 변환 실패", e)
-            null
-        }
-    }
-
     fun firestoreDocumentToDrone(documentId: String, data: Map<String, Any?>): DroneModel? {
         return try {
             val drone = droneFromFirestoreDocument(documentId, data)
