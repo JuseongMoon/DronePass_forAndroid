@@ -39,7 +39,7 @@
     <string name="login_google">Sign in with Google</string>
     <string name="login_google_logo_description">Google logo</string>
     <string name="login_error_title">Login Error</string>
-    <string name="login_error_unknown">Unknown error</string>
+    <string name="login_error_unknown" tools:ignore="UnusedResources">Unknown error</string>
     <string name="login_google_error">An error occurred while signing in with Google.</string>
     <string name="login_google_config_missing">Google sign-in is not configured. Please check WEB_CLIENT_ID.</string>
     <string name="login_apple_error">An error occurred while signing in with Apple.</string>
@@ -388,7 +388,7 @@
     <string name="profile_info_count_unit">%1$d</string>
 
     <string name="profile_sync_cloud">Real-time cloud sync</string>
-    <string name="profile_sync_in_progress">Syncing...</string>
+    <string name="profile_sync_in_progress" tools:ignore="TypographyEllipsis">Syncing...</string>
     <string name="profile_sync_login_required">Login required</string>
     <string name="profile_sync_disabled">Disabled</string>
     <string name="profile_sync_active">Active - Real-time syncing</string>
@@ -402,13 +402,13 @@
     <string name="profile_sync_alert_title">Real-time Cloud Sync</string>
     <string name="sync_alert_detected_title">Changes Detected</string>
     <string name="sync_alert_detected_message">Changes detected from another device.\nUpdating shape data.</string>
-    <string name="sync_loading_title">Syncing...</string>
+    <string name="sync_loading_title" tools:ignore="TypographyEllipsis">Syncing...</string>
     <string name="sync_loading_message">Fetching latest data.</string>
     <string name="sync_complete_title">Sync Complete</string>
     <string name="sync_complete_message">Shape data has been updated.</string>
     <string name="sync_error_title">Sync Failed</string>
     <string name="sync_error_message">Failed to fetch changes.\n%1$s</string>
-    <string name="profile_sync_success">Sync completed for %1$d shapes.</string>
+    <string name="profile_sync_success" tools:ignore="PluralsCandidate">Sync completed for %1$d shapes.</string>
     <string name="profile_sync_failed">Sync failed: %1$s</string>
 
     <string name="profile_terms_service">Terms of Service</string>
@@ -563,8 +563,8 @@
     <string name="weather_chart_visibility">Visibility Forecast (%1$s)</string>
     <string name="weather_chart_cri">CRI Forecast (%1$s)</string>
     <string name="weather_chart_current">Now</string>
-    <string name="weather_forecast_days">%1$d Days</string>
-    <string name="weather_forecast_hours">%1$d Hours</string>
+    <string name="weather_forecast_days" tools:ignore="PluralsCandidate">%1$d Days</string>
+    <string name="weather_forecast_hours" tools:ignore="PluralsCandidate">%1$d Hours</string>
     <string name="weather_legend_low_temp">Low Temp ≤ %1$d°C</string>
     <string name="weather_legend_high_temp">High Temp ≥ %1$d°C</string>
     <string name="weather_legend_caution">Caution ≥ %1$.1fm/s</string>

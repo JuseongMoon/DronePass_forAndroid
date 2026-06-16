@@ -179,8 +179,8 @@ internal fun CurrentWeatherSection(
     category: DroneCategory,
     onCategoryChanged: (DroneCategory) -> Unit,
     isLoading: Boolean,
-    error: WeatherError? = null,
     modifier: Modifier = Modifier,
+    error: WeatherError? = null,
     onWeatherInfoRequested: (WeatherInfoTopic) -> Unit = {},
 ) {
     val current = data.current

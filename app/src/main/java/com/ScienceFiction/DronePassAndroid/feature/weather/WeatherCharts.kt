@@ -994,8 +994,8 @@ internal fun resolveWeatherChartCurrentTimeMarkerMs(
 @Composable
 internal fun ChartCard(
     title: String,
-    unitLabel: String? = null,
     modifier: Modifier = Modifier,
+    unitLabel: String? = null,
     content: @Composable () -> Unit
 ) {
     Card(
