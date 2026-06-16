@@ -94,6 +94,10 @@ class ShapeRepositoryTest {
             id = "active",
             flightEndDate = now + 1,
         )
+        val exactlyNow = shapeEntity(
+            id = "exactly-now",
+            flightEndDate = now,
+        )
         val deletedExpired = shapeEntity(
             id = "deleted-expired",
             deletedAt = now - 5_000,
@@ -105,7 +109,7 @@ class ShapeRepositoryTest {
         )
 
         val deletedShapes = softDeleteExpiredShapeEntities(
-            shapes = listOf(expired, active, deletedExpired, noEndDate),
+            shapes = listOf(expired, active, exactlyNow, deletedExpired, noEndDate),
             now = now,
         )
 
