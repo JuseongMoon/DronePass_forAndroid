@@ -1144,6 +1144,27 @@ class ShapeEditDefaultsTest {
     }
 
     @Test
+    fun `도형 편집 충돌은 원격 soft delete 를 보존해 삭제 도형을 되살리지 않는다`() {
+        val original = baseConflictShape()
+        val latest = original.copy(
+            deletedAt = 300L,
+            updatedAt = 300L,
+        )
+        val edited = original.copy(
+            title = "edited title",
+        )
+
+        val resolved = resolveShapeEditConflict(
+            editedShape = edited,
+            originalShape = original,
+            latestShape = latest,
+        )
+
+        assertEquals("edited title", resolved.title)
+        assertEquals(300L, resolved.deletedAt)
+    }
+
+    @Test
     fun `도형 편집 충돌은 사용자가 기하 데이터를 바꾸지 않았으면 원격 기하 데이터를 적용한다`() {
         val original = baseConflictShape()
         val latest = original.copy(
