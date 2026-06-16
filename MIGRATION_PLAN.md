@@ -170,7 +170,7 @@ com.ScienceFiction.DronePassAndroid/
 - [ ] ShapeModel 파싱 Unit Test 커버리지 90%
 - [ ] 도형 생성→저장→재실행→복원 E2E 통과
 
-> 2026-06-16: 원형 도형 지도 오버레이 조건과 하이라이트 반경은 `ShapeOverlayRenderTest`에서 고정했고, 최신 실기기 smoke에서 Naver Map과 저장 도형 UI 렌더링을 재확인했습니다. ShapeModel 파싱 커버리지 90%와 생성→저장→재실행→복원 E2E는 정량 커버리지/완전 E2E 증거가 별도로 필요해 미완료로 유지합니다.
+> 2026-06-16: 원형 도형 지도 오버레이 조건과 하이라이트 반경은 `ShapeOverlayRenderTest`에서 고정했고, 최신 실기기 smoke에서 Naver Map과 저장 도형 UI 렌더링을 재확인했습니다. Shape Firestore 파서는 iOS 날짜 fallback(`flightEndDate`/`expireDate`, `createdAt`, `updatedAt`)까지 추가 회귀 테스트로 고정했지만, ShapeModel 파싱 커버리지 90%와 생성→저장→재실행→복원 E2E는 정량 커버리지/완전 E2E 증거가 별도로 필요해 미완료로 유지합니다.
 
 ---
 

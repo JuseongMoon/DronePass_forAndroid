@@ -175,6 +175,61 @@ class ShapeFirestoreParsingTest {
     }
 
     @Test
+    fun `표준 flightEndDate 가 있으면 레거시 expireDate 보다 우선한다`() {
+        val document = validDocument()
+            .plus("flightEndDate" to Timestamp(Date(1_700_000_222_000L)))
+            .plus("expireDate" to Timestamp(Date(1_700_000_111_000L)))
+
+        val shape = shapeFromFirestoreData(document)
+
+        requireNotNull(shape)
+        assertEquals(1_700_000_222_000L, shape.flightEndDate)
+    }
+
+    @Test
+    fun `Firestore 파싱은 iOS처럼 잘못된 선택 종료일 타입을 누락값으로 본다`() {
+        val shapeWithBadEndDate = shapeFromFirestoreData(
+            validDocument() + ("flightEndDate" to 1_700_000_456_000L),
+        )
+        val shapeWithBadLegacyEndDate = shapeFromFirestoreData(
+            validDocument() + ("expireDate" to "2026-06-16T00:00:00Z"),
+        )
+
+        assertNull(requireNotNull(shapeWithBadEndDate).flightEndDate)
+        assertNull(requireNotNull(shapeWithBadLegacyEndDate).flightEndDate)
+    }
+
+    @Test
+    fun `Firestore 파싱은 iOS처럼 createdAt 과 updatedAt 누락 시 날짜 fallback 을 사용한다`() {
+        val createdAtFallback = shapeFromFirestoreData(validDocument())
+        val updatedAtFallback = shapeFromFirestoreData(
+            validDocument() + ("createdAt" to Timestamp(Date(1_700_000_333_000L))),
+        )
+
+        requireNotNull(createdAtFallback)
+        assertEquals(1_700_000_000_000L, createdAtFallback.createdAt)
+        assertEquals(1_700_000_000_000L, createdAtFallback.updatedAt)
+
+        requireNotNull(updatedAtFallback)
+        assertEquals(1_700_000_333_000L, updatedAtFallback.createdAt)
+        assertEquals(1_700_000_333_000L, updatedAtFallback.updatedAt)
+    }
+
+    @Test
+    fun `Firestore 파싱은 표준 updatedAt 이 있으면 createdAt fallback 보다 우선한다`() {
+        val shape = shapeFromFirestoreData(
+            validDocument() + mapOf(
+                "createdAt" to Timestamp(Date(1_700_000_111_000L)),
+                "updatedAt" to Timestamp(Date(1_700_000_444_000L)),
+            ),
+        )
+
+        requireNotNull(shape)
+        assertEquals(1_700_000_111_000L, shape.createdAt)
+        assertEquals(1_700_000_444_000L, shape.updatedAt)
+    }
+
+    @Test
     fun `Firestore 파싱은 잘못된 deletedAt 타입을 활성 도형으로 되살리지 않는다`() {
         assertNull(shapeFromFirestoreData(validDocument() + ("deletedAt" to 1_700_000_456_000L)))
         assertNull(shapeFromFirestoreData(validDocument() + ("deletedAt" to "2026-06-16T00:00:00Z")))
