@@ -91,6 +91,12 @@ class ShapeDetailDroneResolutionTest {
     }
 
     @Test
+    fun `상세 시트 헤더는 iOS inline navigation title처럼 좌우 슬롯 폭을 맞춘다`() {
+        assertEquals(44.dp, ShapeDetailNavigationHeaderHeight)
+        assertEquals(44.dp, ShapeDetailNavigationHeaderSideWidth)
+    }
+
+    @Test
     fun `상세 정보 행 최소 높이는 iOS defaultMinListRowHeight 44와 맞춘다`() {
         assertEquals(44.dp, ShapeDetailRowMinHeight)
     }

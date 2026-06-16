@@ -148,6 +148,8 @@ internal fun encodeExternalMapDestinationName(destinationName: String): String =
     java.net.URLEncoder.encode(destinationName, Charsets.UTF_8.name()).replace("+", "%20")
 
 internal const val ShapeDetailSheetHeightFraction = 0.8f
+internal val ShapeDetailNavigationHeaderHeight = 44.dp
+internal val ShapeDetailNavigationHeaderSideWidth = 44.dp
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -218,63 +220,30 @@ fun ShapeDetailSheet(
                 .navigationBarsPadding()
         ) {
             Column(modifier = Modifier.fillMaxWidth()) {
-            // iOS NavigationView 정합 — 고정 헤더 TopAppBar.
-            // title: inline 제목, actions: ellipsis.circle → DropdownMenu(편집/복제/삭제).
-            TopAppBar(
-                title = {
-                    Text(
-                        text = stringResource(R.string.shape_detail_navigation_title),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                },
-                actions = {
-                    IconButton(onClick = { showMoreMenu = true }) {
-                        Icon(
-                            imageVector = Icons.Default.MoreHoriz,
-                            contentDescription = stringResource(R.string.shape_detail_more_menu),
-                        )
-                    }
-                    DropdownMenu(
-                        expanded = showMoreMenu,
-                        onDismissRequest = { showMoreMenu = false },
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.shape_detail_edit)) },
-                            onClick = {
-                                showMoreMenu = false
-                                hideAndThen(onEdit)
-                            },
-                        )
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.shape_detail_duplicate)) },
-                            onClick = {
-                                showMoreMenu = false
-                                hideAndThen(onDuplicate)
-                            },
-                        )
-                        DropdownMenuItem(
-                            text = {
-                                Text(
-                                    text = stringResource(R.string.common_delete),
-                                    color = MaterialTheme.colorScheme.error,
-                                )
-                            },
-                            onClick = {
-                                showMoreMenu = false
-                                showDeleteConfirmDialog = true
-                            },
-                        )
-                    }
-                },
-            )
+                // iOS NavigationView inline title 정합: 좌우 슬롯 폭을 같게 둬 제목을 가운데 고정한다.
+                ShapeDetailNavigationHeader(
+                    menuExpanded = showMoreMenu,
+                    onMenuExpandedChange = { showMoreMenu = it },
+                    onEdit = {
+                        showMoreMenu = false
+                        hideAndThen(onEdit)
+                    },
+                    onDuplicate = {
+                        showMoreMenu = false
+                        hideAndThen(onDuplicate)
+                    },
+                    onDelete = {
+                        showMoreMenu = false
+                        showDeleteConfirmDialog = true
+                    },
+                )
 
-            Column(
-                modifier = Modifier
-                    .padding(horizontal = 20.dp)
-                    .padding(top = 4.dp)
-                    .verticalScroll(rememberScrollState())
-            ) {
+                Column(
+                    modifier = Modifier
+                        .padding(horizontal = 20.dp)
+                        .padding(top = 4.dp)
+                        .verticalScroll(rememberScrollState())
+                ) {
                 // iOS Section 1 — 행 순서: 드론 → 제목 → 좌표 → 주소 → 반경 → 고도 → 시작일 → 종료일.
                 // 좌측 라벨(bold primary), 우측 값(secondary). StatusBadge 제거.
 
@@ -466,6 +435,71 @@ fun ShapeDetailSheet(
             url = url,
             onDismiss = { memoWebUrl = null },
         )
+    }
+}
+
+/**
+ * iOS ShapeDetailView NavigationView inline title + trailing ellipsis.circle 정합.
+ */
+@Composable
+private fun ShapeDetailNavigationHeader(
+    menuExpanded: Boolean,
+    onMenuExpandedChange: (Boolean) -> Unit,
+    onEdit: () -> Unit,
+    onDuplicate: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(ShapeDetailNavigationHeaderHeight)
+            .padding(horizontal = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Spacer(modifier = Modifier.width(ShapeDetailNavigationHeaderSideWidth))
+        Text(
+            text = stringResource(R.string.shape_detail_navigation_title),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.weight(1f),
+        )
+        Box(
+            modifier = Modifier.width(ShapeDetailNavigationHeaderSideWidth),
+            contentAlignment = Alignment.Center,
+        ) {
+            IconButton(
+                onClick = { onMenuExpandedChange(true) },
+                modifier = Modifier.size(ShapeDetailNavigationHeaderSideWidth),
+            ) {
+                Icon(
+                    imageVector = Icons.Default.MoreHoriz,
+                    contentDescription = stringResource(R.string.shape_detail_more_menu),
+                )
+            }
+            DropdownMenu(
+                expanded = menuExpanded,
+                onDismissRequest = { onMenuExpandedChange(false) },
+            ) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.shape_detail_edit)) },
+                    onClick = onEdit,
+                )
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.shape_detail_duplicate)) },
+                    onClick = onDuplicate,
+                )
+                DropdownMenuItem(
+                    text = {
+                        Text(
+                            text = stringResource(R.string.common_delete),
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    },
+                    onClick = onDelete,
+                )
+            }
+        }
     }
 }
 
