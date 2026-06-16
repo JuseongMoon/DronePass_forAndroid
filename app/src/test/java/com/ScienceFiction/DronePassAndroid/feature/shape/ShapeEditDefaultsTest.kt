@@ -1214,6 +1214,27 @@ class ShapeEditDefaultsTest {
     }
 
     @Test
+    fun `도형 편집 충돌은 iOS처럼 드론 변경 없는 원격 색상만으로는 편집 색상을 바꾸지 않는다`() {
+        val original = baseConflictShape()
+        val latest = original.copy(
+            color = "#222222",
+        )
+        val edited = original.copy(
+            title = "edited title",
+            color = "#111111",
+        )
+
+        val resolved = resolveShapeEditConflict(
+            editedShape = edited,
+            originalShape = original,
+            latestShape = latest,
+        )
+
+        assertEquals("drone-original", resolved.droneId)
+        assertEquals("#111111", resolved.color)
+    }
+
+    @Test
     fun `도형 편집 충돌은 드론을 직접 바꿨으면 편집 드론과 색상을 우선한다`() {
         val original = baseConflictShape()
         val latest = original.copy(

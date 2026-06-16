@@ -620,7 +620,6 @@ private fun resolveShapeEditColor(
     return when {
         editedShape.droneId != originalShape.droneId -> editedShape.color
         latestShape.droneId != originalShape.droneId -> latestShape.color
-        latestShape.color != originalShape.color -> latestShape.color
         else -> editedShape.color
     }
 }
