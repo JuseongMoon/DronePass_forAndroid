@@ -25,7 +25,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -80,9 +79,6 @@ internal fun resolveLanguageSelectionAction(
 @Composable
 fun SettingsScreen(
     settingsViewModel: SettingsViewModel = hiltViewModel(),
-    // iOS 동등 오버레이로 호스팅할 때 자체 TopAppBar 를 숨김.
-    // 오버레이가 자체 큰 "설정" 헤더(.title .bold) 를 그리므로 이중 헤더 방지.
-    showTopAppBar: Boolean = true,
     onAccountSessionEnded: () -> Unit = {},
 ) {
     var showDroneListSheet by remember { mutableStateOf(false) }
@@ -91,7 +87,6 @@ fun SettingsScreen(
 
     SettingsMainContent(
         settingsViewModel = settingsViewModel,
-        showTopAppBar = showTopAppBar,
         onNavigateToDroneList = { showDroneListSheet = true },
         onNavigateToAppInfo = { showAppInfoSheet = true },
         onNavigateToPatchNotes = { showPatchNotesSheet = true },
@@ -130,7 +125,6 @@ fun SettingsScreen(
 @Composable
 private fun SettingsMainContent(
     settingsViewModel: SettingsViewModel,
-    showTopAppBar: Boolean,
     onNavigateToDroneList: () -> Unit,
     onNavigateToAppInfo: () -> Unit,
     onNavigateToPatchNotes: () -> Unit,
@@ -162,17 +156,6 @@ private fun SettingsMainContent(
     var koreaFeaturesAlertOn by remember { mutableStateOf<Boolean?>(null) }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        if (showTopAppBar) {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = stringResource(R.string.screen_settings),
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            )
-        }
-
         Column(
             modifier = Modifier
                 .fillMaxSize()

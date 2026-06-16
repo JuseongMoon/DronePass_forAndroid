@@ -1379,7 +1379,6 @@ private fun SettingsOverlay(
                     }
                 }
                 SettingsScreen(
-                    showTopAppBar = false,
                     onAccountSessionEnded = onAccountSessionEnded,
                 )
             }
