@@ -1,21 +1,34 @@
 package com.ScienceFiction.DronePassAndroid.core.data.local.room
 
 import android.content.Context
+import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.room.Room
 import androidx.test.platform.app.InstrumentationRegistry
+import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.entity.DroneEntity
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.entity.ShapeEntity
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.entity.SketchEntity
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.mapper.toDomain
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.mapper.toEntity
+import com.ScienceFiction.DronePassAndroid.core.data.remote.firebase.DroneFirebaseStore
+import com.ScienceFiction.DronePassAndroid.core.data.repository.DroneRepository
+import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncPreferenceKeys
 import com.ScienceFiction.DronePassAndroid.domain.model.Coordinate
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeType
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import java.io.File
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
@@ -250,6 +263,42 @@ class SoftDeleteFilteringIntegrationTest {
             database.droneDao().getAllDrones().first().map { it.id },
         )
         assertEquals(2, database.droneDao().getActiveDroneCount())
+    }
+
+    @Test
+    fun droneRepositoryCreatesOneDefaultDroneWhenActiveListIsEmpty() = runBlocking {
+        val context: Context = InstrumentationRegistry.getInstrumentation().targetContext
+        val dataStoreScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+        val dataStoreFile = File(context.filesDir, "drone_repository_default_${System.nanoTime()}.preferences_pb")
+        val dataStore = PreferenceDataStoreFactory.create(
+            scope = dataStoreScope,
+            produceFile = { dataStoreFile },
+        )
+        val repository = DroneRepository(
+            droneDao = database.droneDao(),
+            droneFirebaseStore = DroneFirebaseStore(FirebaseFirestore.getInstance()),
+            auth = FirebaseAuth.getInstance(),
+            dataStore = dataStore,
+            context = context,
+        )
+
+        try {
+            val created = repository.ensureDefaultDroneIfNeeded()
+            val secondCreation = repository.ensureDefaultDroneIfNeeded()
+            val activeDrones = database.droneDao().getActiveDrones().first().map { it.toDomain() }
+            val modificationTime = dataStore.data.first()[SyncPreferenceKeys.LAST_LOCAL_DRONE_MODIFICATION_TIME]
+
+            assertEquals(context.getString(R.string.drone_edit_default_name_first), created?.name)
+            assertEquals("#007AFF", created?.color)
+            assertNull(secondCreation)
+            assertEquals(1, activeDrones.size)
+            assertEquals(created?.id, activeDrones.single().id)
+            assertNull(activeDrones.single().deletedAt)
+            assertTrue(modificationTime != null && modificationTime > 0L)
+        } finally {
+            dataStoreScope.cancel()
+            dataStoreFile.delete()
+        }
     }
 
     private fun shapeEntity(
