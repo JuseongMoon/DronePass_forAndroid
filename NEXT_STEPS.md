@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 앱 삭제 후 재설치 동기화 항목 중 외부 계정 없이 확인 가능한 로컬 계약을 재검증했다. Android OS Auto Backup은 `allowBackup=false`이고, API 30 이하 `backup_rules` 및 API 31+ `data_extraction_rules` 모두 root/file/database/sharedpref/external 전체를 제외해 Firebase Auth/FCM deviceId/Room 캐시가 시스템 백업이나 기기 전송으로 복원되지 않는다. FCM device id 저장 키는 iOS와 같은 `DeviceUUID`이고 legacy `fcm_device_id` migration 방어도 유지된다. `:app:testDebugUnitTest --tests "*BackupRulesTest" --tests "*FcmServiceTest"` 통과.
 - 알림 탭/포그라운드 팝업 복원 경로에서 클릭 Intent extras 생성을 순수 함수로 분리하고, shapeId만 trim 정규화하며 제목/본문은 빈 문자열과 공백까지 원문 보존하는 iOS `PushNotificationManager` 계약을 회귀 테스트로 고정했다. `:app:testDebugUnitTest --tests "*FcmServiceTest" --tests "*NotificationSchedulerTest"` 및 `:app:assembleDebug` 통과.
 - 2026-06-16 최신 HEAD에서 predictive back manifest 보정 이후 전체 `:app:testDebugUnitTest`, `:app:lintDebug`, `:app:minifyReleaseWithR8` 재검증을 통과했다. R8 중 Naver Map SDK stack map table 경고와 Play Services Location companion 경고는 기존 외부 라이브러리 경고로 남지만 빌드는 성공한다.
 - 2026-06-16 최신 HEAD에서 release readiness gate를 재확인했다. 현재 로컬에는 `keystore.properties`가 없고 `local.properties`의 `WEB_CLIENT_ID`가 비어 있어 `:app:assembleRelease`와 `:app:bundleRelease`가 release signing 설정 누락 및 Google sign-in Web client ID 누락 메시지를 함께 출력하며 의도적으로 실패한다.
