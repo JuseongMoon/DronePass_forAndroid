@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 2026-06-16 기본 템플릿 `ExampleInstrumentedTest`를 `RuntimeAppContractTest`로 교체했다. Android 15 실기기 `SM-A346N`에서 2 tests 모두 통과했고, 설치된 앱의 package/applicationId가 공유 Firebase 패키지 `com.ScienceFiction.DronePassAndroid`로 유지되며 런타임 `ApplicationInfo.FLAG_ALLOW_BACKUP` 플래그가 꺼져 있음을 확인했다.
 - 2026-06-16 최신 HEAD에서 Android 15 실기기 `SM-A346N`의 `SoftDeleteFilteringIntegrationTest`를 재실행해 7 tests 모두 통과했다. XML 결과는 `tests=7`, `failures=0`, `errors=0`, `skipped=0`이며, Shape/Sketch/Drone soft-delete active query 필터링, Shape CRUD soft-delete/restore/hard-delete, 파일 DB close/reopen 후 Shape/geometry 복원, 손상 geometry JSON의 빈 목록 복구가 실제 Room/SQLite 런타임에서 유지된다.
 - 2026-06-16 최신 HEAD에서 release shrink 경로 `:app:minifyReleaseWithR8`를 재실행해 통과했다. `app/build/outputs/mapping/release/mapping.txt`가 갱신됐고 Crashlytics mapping upload task까지 완료됐다. R8는 기존과 같은 Naver Map SDK `Expected stack map table for method with non-linear control flow` warning과 Play Services Location `Companion could not be found` warning을 출력하지만 build failure는 아니다.
 - 2026-06-16 최신 HEAD에서 표준 로컬 게이트 `:app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:shapeParsingCoverageVerification`를 재실행해 통과했다. `app/build/reports/lint-results-debug.txt`는 `No issues found.`, `ShapeFirebaseStoreKt` Jacoco CSV는 instruction 99.66%(870/873), branch 99.28%(137/138), line 100%(111/111)로 90% coverage gate를 유지한다.
