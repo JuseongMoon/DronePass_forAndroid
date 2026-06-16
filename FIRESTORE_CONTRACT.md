@@ -23,6 +23,7 @@ Android legacy builds wrote enum names to Firestore. Android must continue readi
 
 Regression coverage:
 
+- `CrossPlatformFirestoreContractTest`
 - `ShapeTypeTest`
 - `ShapeFirebaseStoreTest`
 - `ShapeFirestoreParsingTest`
@@ -47,6 +48,15 @@ Optional shape fields:
 - `polylineCoordinates`: array of coordinate maps, polyline only.
 - `droneId`, `memo`, `address`: strings.
 - `height`: `Double`.
+
+For each `shapeType`, its matching geometry field is required for that type to render and sync correctly:
+
+- `circle`: `radius`
+- `rectangle`: `secondCoordinate`
+- `polygon`: `polygonCoordinates`
+- `polyline`: `polylineCoordinates`
+
+Writers must only write geometry fields that match the current `shapeType`; stale geometry for other types must be omitted or deleted on merge.
 
 Do not write dates as epoch numbers, ISO strings, or Unix seconds. Do not write coordinates as `GeoPoint`, arrays, integers, or strings.
 
