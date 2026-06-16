@@ -19,6 +19,12 @@ class DroneDeleteValidationTest {
     }
 
     @Test
+    fun `도형 이동 대상 선택 헤더는 iOS inline navigation title처럼 좌우 액션 슬롯 폭을 맞춘다`() {
+        assertEquals(44.dp, DroneMoveTargetNavigationHeaderHeight)
+        assertEquals(88.dp, DroneMoveTargetNavigationHeaderSideWidth)
+    }
+
+    @Test
     fun `마지막 드론 삭제는 iOS처럼 차단한다`() {
         assertEquals(
             DroneDeleteValidationError.CANNOT_DELETE_LAST_DRONE,

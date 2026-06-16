@@ -42,7 +42,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -65,6 +64,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
@@ -76,6 +76,8 @@ import com.ScienceFiction.DronePassAndroid.domain.model.PaletteColor
  */
 internal val DroneDetailNavigationHeaderHeight = 44.dp
 internal val DroneDetailNavigationHeaderSideWidth = 44.dp
+internal val DroneMoveTargetNavigationHeaderHeight = 44.dp
+internal val DroneMoveTargetNavigationHeaderSideWidth = 88.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -491,28 +493,11 @@ private fun DroneMoveTargetSheet(
                 .fillMaxWidth()
                 .navigationBarsPadding(),
         ) {
-            TopAppBar(
-                navigationIcon = {
-                    TextButton(onClick = onDismiss) {
-                        Text(stringResource(R.string.common_cancel))
-                    }
-                },
-                title = {
-                    Text(
-                        text = stringResource(R.string.drone_select_title),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                },
-                actions = {
-                    TextButton(
-                        onClick = {
-                            selectedDroneId?.let(onConfirm)
-                        },
-                        enabled = selectedDroneId != null,
-                    ) {
-                        Text(stringResource(R.string.drone_select_confirm))
-                    }
+            DroneMoveTargetNavigationHeader(
+                canConfirm = selectedDroneId != null,
+                onCancel = onDismiss,
+                onConfirm = {
+                    selectedDroneId?.let(onConfirm)
                 },
             )
 
@@ -534,6 +519,53 @@ private fun DroneMoveTargetSheet(
                         HorizontalDivider(modifier = Modifier.padding(start = 40.dp))
                     }
                 }
+            }
+        }
+    }
+}
+
+/**
+ * iOS DroneSelectionSheet inline title + leading/trailing toolbar 정합.
+ */
+@Composable
+private fun DroneMoveTargetNavigationHeader(
+    canConfirm: Boolean,
+    onCancel: () -> Unit,
+    onConfirm: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(DroneMoveTargetNavigationHeaderHeight)
+            .padding(horizontal = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier.width(DroneMoveTargetNavigationHeaderSideWidth),
+            contentAlignment = Alignment.CenterStart,
+        ) {
+            TextButton(onClick = onCancel) {
+                Text(stringResource(R.string.common_cancel))
+            }
+        }
+        Text(
+            text = stringResource(R.string.drone_select_title),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            textAlign = TextAlign.Center,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
+        Box(
+            modifier = Modifier.width(DroneMoveTargetNavigationHeaderSideWidth),
+            contentAlignment = Alignment.CenterEnd,
+        ) {
+            TextButton(
+                onClick = onConfirm,
+                enabled = canConfirm,
+            ) {
+                Text(stringResource(R.string.drone_select_confirm))
             }
         }
     }
