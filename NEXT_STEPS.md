@@ -11,12 +11,13 @@
 | 항목 | 값 |
 |---|---|
 | 워킹 트리 | clean |
-| 주요 검증 | `:app:testDebugUnitTest`, `:app:lintDebug`, `:app:assembleDebug`, `:app:minifyReleaseWithR8`, `:app:shapeParsingCoverageVerification`, `:app:testDebugUnitTest --tests "*MainScreenStartDestinationTest"`, `:app:testDebugUnitTest --tests "*MapScreenLayersTest"`, `:app:testDebugUnitTest --tests "*SettingsPreferenceKeysTest"`, `:app:testDebugUnitTest --tests "*SettingsPreferenceKeysTest" --tests "*NotificationPreferenceKeysTest" --tests "*SettingsEndDateAlarmPlanTest" --tests "*MainActivityKeepScreenAwakeTest"`, `:app:testDebugUnitTest --tests "*Auth*Test" --tests "*StringResourceCoverageTest"` 통과 |
+| 주요 검증 | `:app:testDebugUnitTest`, `:app:lintDebug`, `:app:assembleDebug`, `:app:minifyReleaseWithR8`, `:app:connectedDebugAndroidTest`, `:app:shapeParsingCoverageVerification`, `:app:testDebugUnitTest --tests "*MainScreenStartDestinationTest"`, `:app:testDebugUnitTest --tests "*MapScreenLayersTest"`, `:app:testDebugUnitTest --tests "*SettingsPreferenceKeysTest"`, `:app:testDebugUnitTest --tests "*SettingsPreferenceKeysTest" --tests "*NotificationPreferenceKeysTest" --tests "*SettingsEndDateAlarmPlanTest" --tests "*MainActivityKeepScreenAwakeTest"`, `:app:testDebugUnitTest --tests "*Auth*Test" --tests "*StringResourceCoverageTest"` 통과 |
 | Release readiness | 2026-06-16에 실제 `keystore.properties`, `WEB_CLIENT_ID`, Firebase Android `oauth_client`가 없으면 `assembleRelease`/`bundleRelease`가 의도적으로 실패함을 재확인 |
 | 남은 성격 | 실기기 전체 회귀, 콘솔/스토어 운영 설정, 최종 iOS 동기화 검증 |
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 2026-06-16 최신 HEAD에서 전체 Android instrumentation 게이트 `:app:connectedDebugAndroidTest`를 Android 15 실기기 `SM-A346N`에서 재실행해 9 tests 모두 통과했다. 결과 XML은 `tests=9`, `failures=0`, `errors=0`, `skipped=0`이며, `RuntimeAppContractTest` 2개와 `SoftDeleteFilteringIntegrationTest` 7개가 같은 connected run에서 통과한다.
 - 2026-06-16 기본 템플릿 `ExampleInstrumentedTest`를 `RuntimeAppContractTest`로 교체했다. Android 15 실기기 `SM-A346N`에서 2 tests 모두 통과했고, 설치된 앱의 package/applicationId가 공유 Firebase 패키지 `com.ScienceFiction.DronePassAndroid`로 유지되며 런타임 `ApplicationInfo.FLAG_ALLOW_BACKUP` 플래그가 꺼져 있음을 확인했다.
 - 2026-06-16 최신 HEAD에서 Android 15 실기기 `SM-A346N`의 `SoftDeleteFilteringIntegrationTest`를 재실행해 7 tests 모두 통과했다. XML 결과는 `tests=7`, `failures=0`, `errors=0`, `skipped=0`이며, Shape/Sketch/Drone soft-delete active query 필터링, Shape CRUD soft-delete/restore/hard-delete, 파일 DB close/reopen 후 Shape/geometry 복원, 손상 geometry JSON의 빈 목록 복구가 실제 Room/SQLite 런타임에서 유지된다.
 - 2026-06-16 최신 HEAD에서 release shrink 경로 `:app:minifyReleaseWithR8`를 재실행해 통과했다. `app/build/outputs/mapping/release/mapping.txt`가 갱신됐고 Crashlytics mapping upload task까지 완료됐다. R8는 기존과 같은 Naver Map SDK `Expected stack map table for method with non-linear control flow` warning과 Play Services Location `Companion could not be found` warning을 출력하지만 build failure는 아니다.
