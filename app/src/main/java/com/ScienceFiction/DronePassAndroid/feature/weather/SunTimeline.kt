@@ -37,6 +37,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.core.util.nextSunEvent
 import java.time.Duration
@@ -44,6 +45,30 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 
 private val SunEventColor = Color(0xFFFF9500) // iOS .orange
+
+internal val IosSunTimelineTitleFontSize = 20.sp
+internal val IosSunTimelineTitleFontWeight = FontWeight.SemiBold
+internal val IosSunTimelineInnerSpacing = 16.dp
+internal val IosSunTimelineRowHeight = 60.dp
+internal val IosSunTimelineRowSpacing = 8.dp
+internal val IosSunTimelineSideSlotWidth = 56.dp
+internal val IosSunTimelineSideIconTimeSpacing = 4.dp
+internal val IosSunTimelineSideIconSize = 24.dp
+internal val IosSunTimelineSideTimeFontSize = 12.sp
+internal val IosSunTimelineProgressLineHeight = 2.dp
+internal val IosSunTimelineMarkerSpacing = 2.dp
+internal val IosSunTimelineMarkerDiamondSize = 8.dp
+internal val IosSunTimelineMarkerLineWidth = 1.dp
+internal val IosSunTimelineMarkerLineHeight = 20.dp
+internal val IosSunTimelineMarkerLabelFontSize = 11.sp
+internal val IosSunTimelineCurrentBadgeSize = 36.dp
+internal val IosSunTimelineCurrentBadgeIconSize = 16.dp
+internal val IosSunTimelineCurrentBadgeShadowElevation = 8.dp
+internal val IosSunTimelineRemainingSpacing = 6.dp
+internal val IosSunTimelineRemainingIconSize = 14.dp
+internal val IosSunTimelineRemainingFontSize = 15.sp
+internal val IosSunTimelineRegularFontWeight = FontWeight.Normal
+internal val IosSunTimelineSemiboldFontWeight = FontWeight.SemiBold
 
 // iOS daytime gradient (orange.opacity(0.8) → yellow.opacity(0.6))
 private val DaytimeGradientColors = listOf(
@@ -95,12 +120,12 @@ fun SunTimeline(
             // Title row (iOS: title3 semibold secondary)
             Text(
                 text = stringResource(R.string.weather_section_sunrise_sunset),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
+                fontSize = IosSunTimelineTitleFontSize,
+                fontWeight = IosSunTimelineTitleFontWeight,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(IosSunTimelineInnerSpacing)) {
                 TimelineProgressBar(
                     timelineState = timelineState,
                     now = nowDateTime,
@@ -109,31 +134,33 @@ fun SunTimeline(
                 // 남은 시간 (HStack)
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(IosSunTimelineRemainingSpacing),
                 ) {
                     Icon(
                         imageVector = Icons.Default.Schedule,
                         contentDescription = null,
                         tint = SunEventColor,
-                        modifier = Modifier.size(14.dp),
+                        modifier = Modifier.size(IosSunTimelineRemainingIconSize),
                     )
                     Text(
                         text = stringResource(
                             if (timelineState.nextEvent.isNextSunset) R.string.weather_until_sunset
                             else R.string.weather_until_sunrise,
                         ),
-                        style = MaterialTheme.typography.bodyMedium,
+                        fontSize = IosSunTimelineRemainingFontSize,
+                        fontWeight = IosSunTimelineRegularFontWeight,
                         color = MaterialTheme.colorScheme.onSurface,
                     )
                     Text(
                         text = timelineState.nextEvent.timeUntilFormatted,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold,
+                        fontSize = IosSunTimelineRemainingFontSize,
+                        fontWeight = IosSunTimelineSemiboldFontWeight,
                         color = SunEventColor,
                     )
                     Text(
                         text = stringResource(R.string.weather_remaining),
-                        style = MaterialTheme.typography.bodyMedium,
+                        fontSize = IosSunTimelineRemainingFontSize,
+                        fontWeight = IosSunTimelineRegularFontWeight,
                         color = MaterialTheme.colorScheme.onSurface,
                     )
                 }
@@ -151,9 +178,9 @@ private fun TimelineProgressBar(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(60.dp),
+            .height(IosSunTimelineRowHeight),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(IosSunTimelineRowSpacing),
     ) {
         // 시작 측 (낮: 일출 / 밤: 일몰)
         SideIconTime(
@@ -176,7 +203,7 @@ private fun TimelineProgressBar(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(2.dp)
+                    .height(IosSunTimelineProgressLineHeight)
                     .background(Color.Gray.copy(alpha = 0.3f)),
             )
 
@@ -186,26 +213,27 @@ private fun TimelineProgressBar(
                 Column(
                     modifier = Modifier.offset(x = markerX),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                    verticalArrangement = Arrangement.spacedBy(IosSunTimelineMarkerSpacing),
                 ) {
                     // Diamond (8x8 회전된 사각형)
                     Box(
                         modifier = Modifier
-                            .size(8.dp)
+                            .size(IosSunTimelineMarkerDiamondSize)
                             .rotate(45f)
                             .background(Color.Gray.copy(alpha = 0.5f)),
                     )
                     // Vertical line (1x20)
                     Box(
                         modifier = Modifier
-                            .width(1.dp)
-                            .height(20.dp)
+                            .width(IosSunTimelineMarkerLineWidth)
+                            .height(IosSunTimelineMarkerLineHeight)
                             .background(Color.Gray.copy(alpha = 0.3f)),
                     )
                     // Label
                     Text(
                         text = stringResource(marker.labelRes),
-                        style = MaterialTheme.typography.labelSmall,
+                        fontSize = IosSunTimelineMarkerLabelFontSize,
+                        fontWeight = IosSunTimelineRegularFontWeight,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
@@ -216,9 +244,9 @@ private fun TimelineProgressBar(
             Box(
                 modifier = Modifier
                     .offset(x = badgeX)
-                    .size(36.dp)
+                    .size(IosSunTimelineCurrentBadgeSize)
                     .shadow(
-                        elevation = 6.dp,
+                        elevation = IosSunTimelineCurrentBadgeShadowElevation,
                         shape = CircleShape,
                         ambientColor = if (isDaytime) SunEventColor else Color(0xFF5856D6),
                         spotColor = if (isDaytime) SunEventColor else Color(0xFF5856D6),
@@ -235,7 +263,7 @@ private fun TimelineProgressBar(
                     imageVector = if (isDaytime) Icons.Default.WbSunny else Icons.Default.NightsStay,
                     contentDescription = null,
                     tint = Color.White,
-                    modifier = Modifier.size(18.dp),
+                    modifier = Modifier.size(IosSunTimelineCurrentBadgeIconSize),
                 )
             }
         }
@@ -254,19 +282,20 @@ private fun SideIconTime(
     time: LocalTime,
 ) {
     Column(
-        modifier = Modifier.width(56.dp),
+        modifier = Modifier.width(IosSunTimelineSideSlotWidth),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+        verticalArrangement = Arrangement.spacedBy(IosSunTimelineSideIconTimeSpacing),
     ) {
         Icon(
             imageVector = if (iconDaytime) Icons.Default.WbSunny else Icons.Default.Bedtime,
             contentDescription = null,
             tint = SunEventColor,
-            modifier = Modifier.size(24.dp),
+            modifier = Modifier.size(IosSunTimelineSideIconSize),
         )
         Text(
             text = formatHourMinute(time),
-            style = MaterialTheme.typography.bodySmall,
+            fontSize = IosSunTimelineSideTimeFontSize,
+            fontWeight = IosSunTimelineRegularFontWeight,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }

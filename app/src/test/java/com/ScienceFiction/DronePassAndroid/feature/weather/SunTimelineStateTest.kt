@@ -1,5 +1,8 @@
 package com.ScienceFiction.DronePassAndroid.feature.weather
 
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.ScienceFiction.DronePassAndroid.R
 import java.time.LocalDateTime
 import org.junit.Assert.assertEquals
@@ -74,5 +77,32 @@ class SunTimelineStateTest {
 
         assertEquals(R.string.weather_midnight, marker.labelRes)
         assertTrue(marker.progress in 0f..1f)
+    }
+
+    @Test
+    fun `sun timeline tokens match iOS sunriseSunsetCard`() {
+        assertEquals(20.sp, IosSunTimelineTitleFontSize)
+        assertEquals(FontWeight.SemiBold, IosSunTimelineTitleFontWeight)
+        assertEquals(16.dp, IosSunTimelineInnerSpacing)
+        assertEquals(60.dp, IosSunTimelineRowHeight)
+        assertEquals(8.dp, IosSunTimelineRowSpacing)
+        assertEquals(56.dp, IosSunTimelineSideSlotWidth)
+        assertEquals(4.dp, IosSunTimelineSideIconTimeSpacing)
+        assertEquals(24.dp, IosSunTimelineSideIconSize)
+        assertEquals(12.sp, IosSunTimelineSideTimeFontSize)
+        assertEquals(2.dp, IosSunTimelineProgressLineHeight)
+        assertEquals(2.dp, IosSunTimelineMarkerSpacing)
+        assertEquals(8.dp, IosSunTimelineMarkerDiamondSize)
+        assertEquals(1.dp, IosSunTimelineMarkerLineWidth)
+        assertEquals(20.dp, IosSunTimelineMarkerLineHeight)
+        assertEquals(11.sp, IosSunTimelineMarkerLabelFontSize)
+        assertEquals(36.dp, IosSunTimelineCurrentBadgeSize)
+        assertEquals(16.dp, IosSunTimelineCurrentBadgeIconSize)
+        assertEquals(8.dp, IosSunTimelineCurrentBadgeShadowElevation)
+        assertEquals(6.dp, IosSunTimelineRemainingSpacing)
+        assertEquals(14.dp, IosSunTimelineRemainingIconSize)
+        assertEquals(15.sp, IosSunTimelineRemainingFontSize)
+        assertEquals(FontWeight.Normal, IosSunTimelineRegularFontWeight)
+        assertEquals(FontWeight.SemiBold, IosSunTimelineSemiboldFontWeight)
     }
 }
