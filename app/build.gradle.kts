@@ -14,14 +14,32 @@ private fun googleServicesHasAndroidOauthClient(file: File, packageName: String)
     return runCatching {
         val root = JsonSlurper().parse(file) as? Map<*, *> ?: return@runCatching false
         val clients = root["client"] as? List<*> ?: return@runCatching false
-        clients.any { rawClient ->
-            val client = rawClient as? Map<*, *> ?: return@any false
+        clients.any clientMatches@ { rawClient ->
+            val client = rawClient as? Map<*, *> ?: return@clientMatches false
             val clientInfo = client["client_info"] as? Map<*, *>
             val androidClientInfo = clientInfo?.get("android_client_info") as? Map<*, *>
             val oauthClients = client["oauth_client"] as? List<*>
-            androidClientInfo?.get("package_name") == packageName && !oauthClients.isNullOrEmpty()
+            androidClientInfo?.get("package_name") == packageName &&
+                oauthClients.orEmpty().any oauthClientMatches@ { rawOauthClient ->
+                    val oauthClient = rawOauthClient as? Map<*, *> ?: return@oauthClientMatches false
+                    val oauthAndroidInfo = oauthClient["android_info"] as? Map<*, *>
+                    val clientType = when (val value = oauthClient["client_type"]) {
+                        is Number -> value.toInt()
+                        is String -> value.toIntOrNull()
+                        else -> null
+                    }
+                    clientType == 1 && oauthAndroidInfo?.get("package_name") == packageName
+                }
         }
     }.getOrDefault(false)
+}
+
+private fun isGoogleWebClientIdConfigured(clientId: String?): Boolean {
+    val trimmed = clientId?.trim().orEmpty()
+    return trimmed.isNotEmpty() &&
+        trimmed != "YOUR_FIREBASE_WEB_CLIENT_ID" &&
+        trimmed != "YOUR_WEB_CLIENT_ID" &&
+        trimmed.endsWith(".apps.googleusercontent.com")
 }
 
 plugins {
@@ -78,7 +96,7 @@ val releaseWebClientIdErrorMessage =
 val googleServicesOauthClientErrorMessage =
     "Firebase Android OAuth client is not configured in app/google-services.json. Register the " +
         "debug/release SHA fingerprints in Firebase Console, download the updated google-services.json, " +
-        "and verify oauth_client is not empty before building release artifacts."
+        "and verify oauth_client contains a client_type=1 entry for $dronepassApplicationId before building release artifacts."
 val hasGoogleServicesAndroidOauthClient = googleServicesHasAndroidOauthClient(
     file = project.file("google-services.json"),
     packageName = dronepassApplicationId,
@@ -86,7 +104,7 @@ val hasGoogleServicesAndroidOauthClient = googleServicesHasAndroidOauthClient(
 val releaseReadinessErrorMessage: String?
     get() = listOfNotNull(
         releaseSigningErrorMessage.takeUnless { hasReleaseSigningConfig },
-        releaseWebClientIdErrorMessage.takeUnless { webClientId.isNotBlank() },
+        releaseWebClientIdErrorMessage.takeUnless { isGoogleWebClientIdConfigured(webClientId) },
         googleServicesOauthClientErrorMessage.takeUnless { hasGoogleServicesAndroidOauthClient },
     ).takeIf { it.isNotEmpty() }?.joinToString(separator = "\n")
 

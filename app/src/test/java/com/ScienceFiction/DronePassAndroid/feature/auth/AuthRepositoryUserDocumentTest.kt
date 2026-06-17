@@ -340,6 +340,10 @@ class AuthRepositoryUserDocumentTest {
     fun `Google 로그인은 WEB_CLIENT_ID 가 설정된 경우에만 시작한다`() {
         assertFalse(isGoogleWebClientIdConfigured(""))
         assertFalse(isGoogleWebClientIdConfigured("   "))
+        assertFalse(isGoogleWebClientIdConfigured("YOUR_FIREBASE_WEB_CLIENT_ID"))
+        assertFalse(isGoogleWebClientIdConfigured("YOUR_WEB_CLIENT_ID"))
+        assertFalse(isGoogleWebClientIdConfigured("web-client-id"))
         assertTrue(isGoogleWebClientIdConfigured("web-client-id.apps.googleusercontent.com"))
+        assertTrue(isGoogleWebClientIdConfigured("  web-client-id.apps.googleusercontent.com  "))
     }
 }

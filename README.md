@@ -104,7 +104,7 @@ Release 서명 설정:
 2. 실제 `storeFile`, `storePassword`, `keyAlias`, `keyPassword`를 입력합니다.
 3. `storeFile`은 프로젝트 루트 기준 상대경로로 지정합니다.
 4. `local.properties`에 Firebase Web client ID를 `WEB_CLIENT_ID`로 입력합니다.
-5. Firebase Console에 debug/release SHA-1/SHA-256을 등록하고, `oauth_client`가 포함된 `app/google-services.json`을 다시 내려받습니다.
+5. Firebase Console에 debug/release SHA-1/SHA-256을 등록하고, `client_type=1` Android `oauth_client`가 포함된 `app/google-services.json`을 다시 내려받습니다.
 6. `./gradlew :app:assembleRelease` 또는 `./gradlew :app:bundleRelease`를 실행합니다.
 
 키스토어 생성 예시:

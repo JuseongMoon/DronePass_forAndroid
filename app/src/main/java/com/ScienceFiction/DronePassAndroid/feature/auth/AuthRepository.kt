@@ -174,8 +174,13 @@ internal fun buildMigratedOldUserPatch(
     "migratedAt" to Timestamp(Date(nowMillis)),
 )
 
-internal fun isGoogleWebClientIdConfigured(webClientId: String): Boolean =
-    webClientId.isNotBlank()
+internal fun isGoogleWebClientIdConfigured(webClientId: String): Boolean {
+    val trimmed = webClientId.trim()
+    return trimmed.isNotEmpty() &&
+        trimmed != "YOUR_FIREBASE_WEB_CLIENT_ID" &&
+        trimmed != "YOUR_WEB_CLIENT_ID" &&
+        trimmed.endsWith(".apps.googleusercontent.com")
+}
 
 /**
  * Firebase Auth 래퍼 Repository.
