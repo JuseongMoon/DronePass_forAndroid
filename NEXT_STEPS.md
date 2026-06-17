@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 2026-06-17 패치노트 리스트 키를 iOS `PatchNote` UUID identity처럼 중복 version/date에도 충돌하지 않도록 보강했다. Android `LazyColumn`이 기존에는 `version + date`를 key로 써서 서버 문서에 같은 버전/날짜 블록이 들어오면 Compose 중복 키 문제가 날 수 있었고, 이제 인덱스를 포함한 키로 같은 노트 값도 안전하게 렌더링한다. `:app:testDebugUnitTest --tests "*PatchNotesContentTest" --tests "*MarkdownParserTest" --tests "*DocumentRepositoryTest" --tests "*DocumentEntryPolicyTest"`, `:app:assembleDebug` 통과.
 - 2026-06-17 앱 정보 시트의 `.circle.fill` 계열 기능 아이콘을 iOS `AppInfoView`처럼 색상 원형 배지 안의 흰색 심볼로 맞췄다. Android의 다중 드론/비행구역 시각화/만료 알림/주소 검색 행이 기존에는 일반 아이콘만 표시되어 iOS `paperplane.circle.fill`, `map.circle.fill`, `bell.circle.fill`, `magnifyingglass.circle.fill`와 질감이 달랐고, 해당 행만 32dp 원형 배지 + 20dp 내부 심볼 토큰으로 분리했다. `:app:testDebugUnitTest --tests "*AppInfoScreenTest"`, `:app:assembleDebug` 통과.
 - 2026-06-17 도형 상세/드론 상세 시트의 상단 더보기 버튼을 iOS `ellipsis.circle` 심볼처럼 원 테두리 안의 점 아이콘으로 맞췄다. 기존 Android `MoreHoriz` 단독 아이콘은 원이 없어 iOS navigation bar 버튼과 시각적으로 달랐고, 도형/드론 상세 모두 24dp 원 + 1.5dp stroke + 18dp dots 토큰을 테스트로 고정했다. `:app:testDebugUnitTest --tests "*ShapeDetailDroneResolutionTest" --tests "*DroneDeleteValidationTest"`, `:app:assembleDebug` 통과.
 - 2026-06-17 저장 목록 오버레이의 정렬 기준 칩 아이콘을 iOS `ShapeSortingManager.SortOption.icon` 분기와 맞췄다. Android가 모든 정렬 기준에 `SwapVert` 하나만 쓰던 것을 제목순 `TextFields`, 생성일순 `CalendarToday`, 비행시작일순 `FlightTakeoff`, 비행종료일순 `FlightLand`로 분리했고, 정렬 방향 아이콘도 resolver 테스트로 고정했다. `:app:testDebugUnitTest --tests "*MainScreenStartDestinationTest"`, `:app:assembleDebug` 통과.

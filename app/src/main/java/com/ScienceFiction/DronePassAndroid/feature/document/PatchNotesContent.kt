@@ -12,7 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.FindInPage
@@ -83,7 +83,7 @@ fun PatchNotesContent(
                         contentPadding = PaddingValues(vertical = 12.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
-                        items(s.notes, key = { it.version + it.date }) { note ->
+                        itemsIndexed(s.notes, key = ::patchNoteListKey) { _, note ->
                             PatchNoteSection(note = note)
                         }
                     }
@@ -111,6 +111,10 @@ internal fun shouldShowPatchNoteFeatureDescription(description: String?): Boolea
 
 internal fun shouldShowPatchNoteTitle(title: String): Boolean {
     return title.isNotEmpty()
+}
+
+internal fun patchNoteListKey(index: Int, note: PatchNote): String {
+    return "$index-${note.version}-${note.date}"
 }
 
 @Composable

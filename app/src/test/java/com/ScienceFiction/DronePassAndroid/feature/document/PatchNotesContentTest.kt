@@ -1,9 +1,11 @@
 package com.ScienceFiction.DronePassAndroid.feature.document
 
 import androidx.compose.ui.unit.dp
+import com.ScienceFiction.DronePassAndroid.domain.model.PatchNote
 import com.ScienceFiction.DronePassAndroid.domain.model.PatchNoteFeature
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -65,5 +67,20 @@ class PatchNotesContentTest {
         assertFalse(shouldShowPatchNoteTitle(""))
         assertTrue(shouldShowPatchNoteTitle(" "))
         assertTrue(shouldShowPatchNoteTitle("Release title"))
+    }
+
+    @Test
+    fun `패치노트 리스트 키는 iOS UUID identity 처럼 같은 version date 도 충돌하지 않는다`() {
+        val note = PatchNote(
+            version = "v1.0.0",
+            date = "2025-01-01",
+            title = "Release",
+            features = emptyList(),
+        )
+
+        assertNotEquals(
+            patchNoteListKey(0, note),
+            patchNoteListKey(1, note),
+        )
     }
 }
