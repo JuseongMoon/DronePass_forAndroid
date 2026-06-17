@@ -3,6 +3,7 @@ package com.ScienceFiction.DronePassAndroid.feature.kp
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.domain.model.Kp27DayForecast
 import com.ScienceFiction.DronePassAndroid.domain.model.KpIndexData
@@ -161,6 +162,10 @@ class KpChartsTest {
         assertEquals(8.dp, IosCurrentKpDetailSpacing)
         assertEquals(6.dp, IosCurrentKpLevelRowSpacing)
         assertEquals(20.dp, IosCurrentKpLevelIconSize)
+        assertEquals(20.sp, IosCurrentKpSectionTitleFontSize)
+        assertEquals(20.sp, IosCurrentKpLevelNameFontSize)
+        assertEquals(12.sp, IosCurrentKpLevelDescriptionFontSize)
+        assertEquals(11.sp, IosCurrentKpDataSourceFontSize)
         assertEquals(0.1f, IosCurrentKpCardBackgroundAlpha, 0f)
     }
 
@@ -253,14 +258,25 @@ class KpChartsTest {
         assertEquals(16.dp, IosKpChartCardPadding)
         assertEquals(12.dp, IosKpChartCardSpacing)
         assertEquals(0xFFF2F2F7.toInt(), IosKpChartCardContainerColor.toArgb())
+        assertEquals(20.sp, IosKpChartSectionTitleFontSize)
         assertEquals(6.dp, IosKpChartNoteBadgeCornerRadius)
         assertEquals(8.dp, IosKpChartNoteBadgeHorizontalPadding)
         assertEquals(4.dp, IosKpChartNoteBadgeVerticalPadding)
         assertEquals(0xFFFFFFFF.toInt(), IosKpChartNoteBadgeContainerColor.toArgb())
+        assertEquals(12.sp, IosKpChartNoteBadgeFontSize)
         assertEquals(200.dp, IosKpChartPlaceholderHeight)
         assertEquals(40.dp, IosKpChartErrorIconSize)
         assertEquals(8.dp, IosKpChartErrorSpacing)
         assertEquals(0xFFFF9500.toInt(), IosKpChartErrorIconColor.toArgb())
+        assertEquals(12.sp, IosKpChartPlaceholderFontSize)
+        assertEquals(8.dp, IosKpLegendColumnSpacing)
+        assertEquals(16.dp, IosKpLegendRowSpacing)
+        assertEquals(4.dp, IosKpLegendItemSpacing)
+        assertEquals(23.dp, IosKpLegendLeadingPadding)
+        assertEquals(16.dp, IosKpLegendSwatchWidth)
+        assertEquals(8.dp, IosKpLegendSwatchHeight)
+        assertEquals(2.dp, IosKpLegendSwatchCornerRadius)
+        assertEquals(11.sp, IosKpLegendTextFontSize)
     }
 
     @Test

@@ -71,6 +71,10 @@ internal val IosCurrentKpDetailLeadingPadding = 10.dp
 internal val IosCurrentKpDetailSpacing = 8.dp
 internal val IosCurrentKpLevelRowSpacing = 6.dp
 internal val IosCurrentKpLevelIconSize = 20.dp
+internal val IosCurrentKpSectionTitleFontSize = 20.sp
+internal val IosCurrentKpLevelNameFontSize = 20.sp
+internal val IosCurrentKpLevelDescriptionFontSize = 12.sp
+internal val IosCurrentKpDataSourceFontSize = 11.sp
 internal const val IosCurrentKpCardBackgroundAlpha = 0.1f
 
 @Suppress("UNUSED_PARAMETER")
@@ -229,7 +233,7 @@ private fun CurrentKpSection(
         // Section header (카드 바깥)
         Text(
             text = stringResource(R.string.kp_section_current),
-            style = MaterialTheme.typography.titleMedium,
+            fontSize = IosCurrentKpSectionTitleFontSize,
             fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -275,14 +279,14 @@ private fun CurrentKpSection(
                         )
                         Text(
                             text = stringResource(kpLevelNameRes(kpLevel)),
-                            style = MaterialTheme.typography.titleMedium,
+                            fontSize = IosCurrentKpLevelNameFontSize,
                             fontWeight = FontWeight.SemiBold,
                             color = Color(kpLevel.color.toInt()),
                         )
                     }
                     Text(
                         text = stringResource(kpLevelDescriptionRes(kpLevel)),
-                        style = MaterialTheme.typography.bodySmall,
+                        fontSize = IosCurrentKpLevelDescriptionFontSize,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Row(

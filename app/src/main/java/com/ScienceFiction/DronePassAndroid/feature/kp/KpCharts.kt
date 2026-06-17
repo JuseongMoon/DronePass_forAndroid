@@ -59,14 +59,25 @@ internal val IosKpChartCardCornerRadius = 16.dp
 internal val IosKpChartCardPadding = 16.dp
 internal val IosKpChartCardSpacing = 12.dp
 internal val IosKpChartCardContainerColor = Color(0xFFF2F2F7)
+internal val IosKpChartSectionTitleFontSize = 20.sp
 internal val IosKpChartNoteBadgeCornerRadius = 6.dp
 internal val IosKpChartNoteBadgeHorizontalPadding = 8.dp
 internal val IosKpChartNoteBadgeVerticalPadding = 4.dp
 internal val IosKpChartNoteBadgeContainerColor = Color(0xFFFFFFFF)
+internal val IosKpChartNoteBadgeFontSize = 12.sp
 internal val IosKpChartPlaceholderHeight = 200.dp
 internal val IosKpChartErrorIconSize = 40.dp
 internal val IosKpChartErrorSpacing = 8.dp
 internal val IosKpChartErrorIconColor = Color(0xFFFF9500)
+internal val IosKpChartPlaceholderFontSize = 12.sp
+internal val IosKpLegendColumnSpacing = 8.dp
+internal val IosKpLegendRowSpacing = 16.dp
+internal val IosKpLegendItemSpacing = 4.dp
+internal val IosKpLegendLeadingPadding = 23.dp
+internal val IosKpLegendSwatchWidth = 16.dp
+internal val IosKpLegendSwatchHeight = 8.dp
+internal val IosKpLegendSwatchCornerRadius = 2.dp
+internal val IosKpLegendTextFontSize = 11.sp
 
 internal enum class KpDataSource {
     GFZ_CURRENT,
@@ -337,7 +348,7 @@ private fun KpChartCard(
             ) {
                 Text(
                     text = sectionTitle,
-                    style = MaterialTheme.typography.titleMedium,
+                    fontSize = IosKpChartSectionTitleFontSize,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -354,7 +365,7 @@ private fun KpChartCard(
                     ) {
                         Text(
                             text = noteBadge,
-                            style = MaterialTheme.typography.labelSmall,
+                            fontSize = IosKpChartNoteBadgeFontSize,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
@@ -383,7 +394,7 @@ internal fun KpDataSourceLink(label: String, source: KpDataSource) {
     val uriHandler = LocalUriHandler.current
     Text(
         text = label,
-        style = MaterialTheme.typography.labelSmall,
+        fontSize = IosCurrentKpDataSourceFontSize,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.clickable {
             openUriSafely(uriHandler, kpDataSourceUrl(source))
@@ -421,7 +432,7 @@ private fun KpChartErrorPlaceholder(message: String) {
         Spacer(modifier = Modifier.height(IosKpChartErrorSpacing))
         Text(
             text = message,
-            style = MaterialTheme.typography.labelSmall,
+            fontSize = IosKpChartPlaceholderFontSize,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
@@ -437,7 +448,7 @@ private fun KpChartNoDataPlaceholder() {
     ) {
         Text(
             text = stringResource(R.string.kp_no_data),
-            style = MaterialTheme.typography.labelSmall,
+            fontSize = IosKpChartPlaceholderFontSize,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
@@ -445,13 +456,16 @@ private fun KpChartNoDataPlaceholder() {
 
 @Composable
 private fun KpLegend() {
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+    Column(
+        modifier = Modifier.padding(start = IosKpLegendLeadingPadding),
+        verticalArrangement = Arrangement.spacedBy(IosKpLegendColumnSpacing),
+    ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(IosKpLegendRowSpacing)) {
             LegendItem(level = KpLevel.NORMAL, label = stringResource(R.string.kp_legend_normal))
             LegendItem(level = KpLevel.G1, label = stringResource(R.string.kp_legend_g1))
             LegendItem(level = KpLevel.G2, label = stringResource(R.string.kp_legend_g2))
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(IosKpLegendRowSpacing)) {
             LegendItem(level = KpLevel.G3, label = stringResource(R.string.kp_legend_g3))
             LegendItem(level = KpLevel.G4, label = stringResource(R.string.kp_legend_g4))
             LegendItem(level = KpLevel.G5, label = stringResource(R.string.kp_legend_g5))
@@ -463,17 +477,17 @@ private fun KpLegend() {
 private fun LegendItem(level: KpLevel, label: String) {
     Row(
         verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(IosKpLegendItemSpacing),
     ) {
         Box(
             modifier = Modifier
-                .size(width = 16.dp, height = 8.dp)
-                .clip(RoundedCornerShape(2.dp))
+                .size(width = IosKpLegendSwatchWidth, height = IosKpLegendSwatchHeight)
+                .clip(RoundedCornerShape(IosKpLegendSwatchCornerRadius))
                 .background(Color(level.color.toInt())),
         )
         Text(
             text = label,
-            style = MaterialTheme.typography.labelSmall,
+            fontSize = IosKpLegendTextFontSize,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
