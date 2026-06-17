@@ -94,6 +94,50 @@ class DroneSyncMergeTest {
         assertFalse(shouldKeepLocalDroneMissingOnServer(localDroneUpdatedAt = 30L, lastSyncTime = 30L))
     }
 
+    @Test
+    fun `로그인 중 지도 초기화는 Firebase full sync 전 기본 드론 생성을 미룬다`() {
+        assertFalse(
+            shouldCreateDefaultDrone(
+                activeDroneCount = 0,
+                isLoggedIn = true,
+                deferWhenLoggedIn = true,
+            )
+        )
+    }
+
+    @Test
+    fun `Firebase full sync 후에도 드론이 없으면 기본 드론 생성을 허용한다`() {
+        assertTrue(
+            shouldCreateDefaultDrone(
+                activeDroneCount = 0,
+                isLoggedIn = true,
+                deferWhenLoggedIn = false,
+            )
+        )
+    }
+
+    @Test
+    fun `로그아웃 상태의 빈 로컬 DB는 기존처럼 기본 드론을 만든다`() {
+        assertTrue(
+            shouldCreateDefaultDrone(
+                activeDroneCount = 0,
+                isLoggedIn = false,
+                deferWhenLoggedIn = true,
+            )
+        )
+    }
+
+    @Test
+    fun `이미 활성 드론이 있으면 기본 드론을 추가로 만들지 않는다`() {
+        assertFalse(
+            shouldCreateDefaultDrone(
+                activeDroneCount = 1,
+                isLoggedIn = false,
+                deferWhenLoggedIn = false,
+            )
+        )
+    }
+
     private fun drone(
         id: String,
         updatedAt: Long,

@@ -630,6 +630,7 @@ class AuthViewModel @Inject constructor(
             Log.d(TAG, "Firebase 양방향 동기화 시작")
             shapeRepository.performFullSync()
             droneRepository.performFullSync()
+            droneRepository.ensureDefaultDroneIfNeeded()
             saveSyncedShapeBaseline()
             val shapeSyncTime = System.currentTimeMillis()
             dataStore.edit { preferences ->

@@ -321,7 +321,7 @@ class MapViewModel @Inject constructor(
 
     private suspend fun ensureDefaultDroneIfNeeded() {
         try {
-            droneRepository.ensureDefaultDroneIfNeeded()
+            droneRepository.ensureDefaultDroneIfNeeded(deferWhenLoggedIn = true)
         } catch (e: Exception) {
             Log.w(TAG, "기본 드론 자동 생성 실패", e)
         }

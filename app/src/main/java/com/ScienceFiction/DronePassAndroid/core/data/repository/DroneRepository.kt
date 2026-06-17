@@ -67,6 +67,15 @@ internal fun mergeDronesForFullSync(
     return SyncMergeResult(merged, toUpload)
 }
 
+internal fun shouldCreateDefaultDrone(
+    activeDroneCount: Int,
+    isLoggedIn: Boolean,
+    deferWhenLoggedIn: Boolean,
+): Boolean {
+    if (activeDroneCount > 0) return false
+    return !(deferWhenLoggedIn && isLoggedIn)
+}
+
 @Singleton
 class DroneRepository @Inject constructor(
     private val droneDao: DroneDao,
@@ -110,9 +119,21 @@ class DroneRepository @Inject constructor(
     /**
      * iOS DroneManager.setupInitialDroneIfNeeded 정합.
      * 활성 드론이 하나도 없으면 기본 드론을 생성하고 즉시 저장한다.
+     *
+     * 지도 화면 초기화 중 로그인 사용자의 로컬 DB가 비어 있더라도, Firebase full sync 전에는
+     * 기본 드론을 만들지 않는다. iOS DroneManager 도 앱 시작 즉시 만드는 기본 드론은 임시
+     * 메모리 상태이며, 실제 loadDrones() 이후에도 드론이 없을 때만 저장한다.
      */
-    suspend fun ensureDefaultDroneIfNeeded(): DroneModel? {
-        if (droneDao.getActiveDroneCount() > 0) return null
+    suspend fun ensureDefaultDroneIfNeeded(deferWhenLoggedIn: Boolean = false): DroneModel? {
+        val activeDroneCount = droneDao.getActiveDroneCount()
+        if (!shouldCreateDefaultDrone(
+                activeDroneCount = activeDroneCount,
+                isLoggedIn = auth.currentUser != null,
+                deferWhenLoggedIn = deferWhenLoggedIn,
+            )
+        ) {
+            return null
+        }
 
         val defaultDrone = DroneModel.createDefault(
             defaultName = context.getString(R.string.drone_edit_default_name_first),
