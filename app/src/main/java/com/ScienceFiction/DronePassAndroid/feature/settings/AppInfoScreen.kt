@@ -60,15 +60,24 @@ internal val AppInfoIntroIconSize = 60.dp
 internal val AppInfoIntroSymbolSize = 36.dp
 internal val AppInfoIntroSpacing = 12.dp
 internal val AppInfoFeatureIconSize = 32.dp
+internal val AppInfoFeatureCircleSymbolSize = 20.dp
 internal val AppInfoFeatureHorizontalSpacing = 12.dp
 internal val AppInfoFeatureTitleDescriptionSpacing = 4.dp
 internal val AppInfoFeatureVerticalPadding = 4.dp
 internal val AppInfoFeatureHorizontalPadding = 16.dp
+internal enum class AppInfoFeatureIconStyle {
+    Plain,
+    CircleFill,
+}
 internal val AppInfoMultiDroneIcon: ImageVector = Icons.AutoMirrored.Filled.Send
+internal val AppInfoMultiDroneIconStyle = AppInfoFeatureIconStyle.CircleFill
+internal val AppInfoVisualizationIconStyle = AppInfoFeatureIconStyle.CircleFill
+internal val AppInfoExpirationAlertIconStyle = AppInfoFeatureIconStyle.CircleFill
 internal val AppInfoWeatherIcon: ImageVector = Icons.Default.WbCloudy
 internal val AppInfoKpIndexIcon: ImageVector = Icons.Default.SettingsInputAntenna
 internal val AppInfoSunriseSunsetIcon: ImageVector = Icons.Default.WbTwilight
 internal val AppInfoShapeManagementIcon: ImageVector = Icons.Default.RadioButtonChecked
+internal val AppInfoSearchIconStyle = AppInfoFeatureIconStyle.CircleFill
 internal val AppInfoCloudSyncIcon: ImageVector = Icons.Default.CloudSync
 internal val AppInfoDroneOnestopIcon: ImageVector = Icons.Default.Verified
 internal val AppInfoBuildNumberIcon: ImageVector = Icons.Default.Numbers
@@ -132,6 +141,7 @@ fun AppInfoScreen(
             FeatureRow(
                 icon = AppInfoMultiDroneIcon,
                 iconColor = Color(0xFF007AFF),
+                iconStyle = AppInfoMultiDroneIconStyle,
                 title = stringResource(R.string.app_info_feature_multi_drone_title),
                 description = stringResource(R.string.app_info_feature_multi_drone_desc),
             )
@@ -139,6 +149,7 @@ fun AppInfoScreen(
             FeatureRow(
                 icon = Icons.Default.Map,
                 iconColor = Color(0xFF34C759),
+                iconStyle = AppInfoVisualizationIconStyle,
                 title = stringResource(R.string.app_info_feature_visualization_title),
                 description = stringResource(R.string.app_info_feature_visualization_desc),
             )
@@ -146,6 +157,7 @@ fun AppInfoScreen(
             FeatureRow(
                 icon = Icons.Default.Notifications,
                 iconColor = Color(0xFFFF9500),
+                iconStyle = AppInfoExpirationAlertIconStyle,
                 title = stringResource(R.string.app_info_feature_expiration_alert_title),
                 description = stringResource(R.string.app_info_feature_expiration_alert_desc),
             )
@@ -192,6 +204,7 @@ fun AppInfoScreen(
             FeatureRow(
                 icon = Icons.Default.Search,
                 iconColor = AppInfoSearchIconColor,
+                iconStyle = AppInfoSearchIconStyle,
                 title = stringResource(R.string.app_info_feature_search_title),
                 description = stringResource(R.string.app_info_feature_search_desc),
             )
@@ -270,6 +283,7 @@ private fun AppInfoIntroIcon() {
 private fun FeatureRow(
     icon: ImageVector,
     iconColor: Color,
+    iconStyle: AppInfoFeatureIconStyle = AppInfoFeatureIconStyle.Plain,
     title: String,
     description: String,
 ) {
@@ -282,11 +296,10 @@ private fun FeatureRow(
             ),
         verticalAlignment = Alignment.Top,
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = iconColor,
-            modifier = Modifier.size(AppInfoFeatureIconSize),
+        FeatureIcon(
+            icon = icon,
+            iconColor = iconColor,
+            iconStyle = iconStyle,
         )
         Spacer(modifier = Modifier.width(AppInfoFeatureHorizontalSpacing))
         Column(modifier = Modifier.weight(1f)) {
@@ -302,6 +315,40 @@ private fun FeatureRow(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+        }
+    }
+}
+
+@Composable
+private fun FeatureIcon(
+    icon: ImageVector,
+    iconColor: Color,
+    iconStyle: AppInfoFeatureIconStyle,
+) {
+    when (iconStyle) {
+        AppInfoFeatureIconStyle.Plain -> {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = iconColor,
+                modifier = Modifier.size(AppInfoFeatureIconSize),
+            )
+        }
+        AppInfoFeatureIconStyle.CircleFill -> {
+            Box(
+                modifier = Modifier
+                    .size(AppInfoFeatureIconSize)
+                    .clip(CircleShape)
+                    .background(iconColor),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(AppInfoFeatureCircleSymbolSize),
+                )
+            }
         }
     }
 }

@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 2026-06-17 앱 정보 시트의 `.circle.fill` 계열 기능 아이콘을 iOS `AppInfoView`처럼 색상 원형 배지 안의 흰색 심볼로 맞췄다. Android의 다중 드론/비행구역 시각화/만료 알림/주소 검색 행이 기존에는 일반 아이콘만 표시되어 iOS `paperplane.circle.fill`, `map.circle.fill`, `bell.circle.fill`, `magnifyingglass.circle.fill`와 질감이 달랐고, 해당 행만 32dp 원형 배지 + 20dp 내부 심볼 토큰으로 분리했다. `:app:testDebugUnitTest --tests "*AppInfoScreenTest"`, `:app:assembleDebug` 통과.
 - 2026-06-17 도형 상세/드론 상세 시트의 상단 더보기 버튼을 iOS `ellipsis.circle` 심볼처럼 원 테두리 안의 점 아이콘으로 맞췄다. 기존 Android `MoreHoriz` 단독 아이콘은 원이 없어 iOS navigation bar 버튼과 시각적으로 달랐고, 도형/드론 상세 모두 24dp 원 + 1.5dp stroke + 18dp dots 토큰을 테스트로 고정했다. `:app:testDebugUnitTest --tests "*ShapeDetailDroneResolutionTest" --tests "*DroneDeleteValidationTest"`, `:app:assembleDebug` 통과.
 - 2026-06-17 저장 목록 오버레이의 정렬 기준 칩 아이콘을 iOS `ShapeSortingManager.SortOption.icon` 분기와 맞췄다. Android가 모든 정렬 기준에 `SwapVert` 하나만 쓰던 것을 제목순 `TextFields`, 생성일순 `CalendarToday`, 비행시작일순 `FlightTakeoff`, 비행종료일순 `FlightLand`로 분리했고, 정렬 방향 아이콘도 resolver 테스트로 고정했다. `:app:testDebugUnitTest --tests "*MainScreenStartDestinationTest"`, `:app:assembleDebug` 통과.
 - 2026-06-17 도형 편집의 주소 검색/좌표 입력 안내 카드 배경을 iOS `Color(.systemGray6)`와 같은 `#F2F2F7`로 고정했다. Android Material `surfaceVariant` alpha 배경을 제거해 라이트 모드에서 iOS 안내 카드와 같은 색감을 쓰며, `SearchAddressSheetTest`/`ShapeEditDefaultsTest`에 색상 계약을 추가했다. `:app:testDebugUnitTest --tests "*SearchAddressSheetTest" --tests "*ShapeEditDefaultsTest"`, `:app:assembleDebug` 통과.

@@ -25,6 +25,7 @@ class AppInfoScreenTest {
         assertEquals(36.dp, AppInfoIntroSymbolSize)
         assertEquals(12.dp, AppInfoIntroSpacing)
         assertEquals(32.dp, AppInfoFeatureIconSize)
+        assertEquals(20.dp, AppInfoFeatureCircleSymbolSize)
         assertEquals(12.dp, AppInfoFeatureHorizontalSpacing)
         assertEquals(4.dp, AppInfoFeatureTitleDescriptionSpacing)
         assertEquals(4.dp, AppInfoFeatureVerticalPadding)
@@ -44,6 +45,14 @@ class AppInfoScreenTest {
     @Test
     fun `다중 드론 기능 아이콘은 iOS paperplane circle fill 의미와 맞는 종이비행기 아이콘을 사용한다`() {
         assertEquals("AutoMirrored.Filled.Send", AppInfoMultiDroneIcon.name)
+    }
+
+    @Test
+    fun `circle fill 계열 앱 정보 아이콘은 iOS처럼 색상 원형 배지를 사용한다`() {
+        assertEquals(AppInfoFeatureIconStyle.CircleFill, AppInfoMultiDroneIconStyle)
+        assertEquals(AppInfoFeatureIconStyle.CircleFill, AppInfoVisualizationIconStyle)
+        assertEquals(AppInfoFeatureIconStyle.CircleFill, AppInfoExpirationAlertIconStyle)
+        assertEquals(AppInfoFeatureIconStyle.CircleFill, AppInfoSearchIconStyle)
     }
 
     @Test
