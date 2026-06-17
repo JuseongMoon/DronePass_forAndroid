@@ -4,6 +4,7 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.graphics.PointF
+import android.location.Location
 import android.util.Log
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -53,6 +54,8 @@ import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.accompanist.permissions.shouldShowRationale
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
+import com.google.android.gms.tasks.CancellationTokenSource
 import com.naver.maps.geometry.LatLng
 import com.naver.maps.geometry.LatLngBounds
 import com.naver.maps.map.CameraAnimation
@@ -549,6 +552,17 @@ internal fun hasUsableMapLocationPermission(
     return fineLocationGranted || coarseLocationGranted
 }
 
+internal fun shouldRequestCurrentLocationFallback(lastLocationAvailable: Boolean): Boolean {
+    return !lastLocationAvailable
+}
+
+private fun centerMapOnUserLocation(map: NaverMap, location: Location) {
+    map.cameraPosition = CameraPosition(
+        LatLng(location.latitude, location.longitude),
+        MapUserLocationZoomLevel,
+    )
+}
+
 @SuppressLint("MissingPermission")
 private fun setupLocationTracking(map: NaverMap, context: android.content.Context) {
     try {
@@ -562,13 +576,27 @@ private fun setupLocationTracking(map: NaverMap, context: android.content.Contex
         map.locationTrackingMode = MapInitialLocationTrackingMode
 
         val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
-        fusedLocationClient.lastLocation.addOnSuccessListener { location ->
-            location?.let {
-                map.cameraPosition = CameraPosition(
-                    LatLng(it.latitude, it.longitude),
-                    MapUserLocationZoomLevel,
-                )
+        fun requestCurrentLocationFallback() {
+            fusedLocationClient.getCurrentLocation(
+                Priority.PRIORITY_BALANCED_POWER_ACCURACY,
+                CancellationTokenSource().token,
+            ).addOnSuccessListener { currentLocation ->
+                currentLocation?.let { centerMapOnUserLocation(map, it) }
+            }.addOnFailureListener { error ->
+                Log.w("MapScreen", "현재 위치 fallback 조회 실패: ${error.message}")
             }
+        }
+
+        fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+            val lastLocationAvailable = location != null
+            if (lastLocationAvailable) {
+                location?.let { centerMapOnUserLocation(map, it) }
+            } else if (shouldRequestCurrentLocationFallback(lastLocationAvailable)) {
+                requestCurrentLocationFallback()
+            }
+        }.addOnFailureListener { error ->
+            Log.w("MapScreen", "마지막 위치 조회 실패, 현재 위치 fallback 시도: ${error.message}")
+            requestCurrentLocationFallback()
         }
     } catch (e: Exception) {
         Log.e("MapScreen", "위치 추적 설정 실패: ${e.message}", e)

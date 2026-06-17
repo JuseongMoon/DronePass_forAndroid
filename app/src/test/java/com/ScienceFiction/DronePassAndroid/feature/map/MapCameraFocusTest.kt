@@ -26,6 +26,12 @@ class MapCameraFocusTest {
     }
 
     @Test
+    fun `최초 사용자 위치 센터링은 마지막 위치가 없으면 현재 위치를 한 번 요청한다`() {
+        assertEquals(false, shouldRequestCurrentLocationFallback(lastLocationAvailable = true))
+        assertEquals(true, shouldRequestCurrentLocationFallback(lastLocationAvailable = false))
+    }
+
+    @Test
     fun `사용자 위치 오버레이는 iOS처럼 계속 따라가기 모드가 아니다`() {
         assertEquals(LocationTrackingMode.NoFollow, MapInitialLocationTrackingMode)
     }
