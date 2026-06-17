@@ -13,13 +13,12 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.requiredSize
@@ -47,12 +46,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
@@ -68,6 +69,9 @@ internal val DroneDropdownShadowElevation = 4.dp
 internal val DroneDropdownEmptyIconSize = 12.dp
 internal val DroneDropdownChevronIconSize = 10.dp
 internal val DroneDropdownTriggerDiameter = 32.dp
+internal val DroneDropdownChevronReservedWidth = 40.dp
+internal val DroneDropdownChipHorizontalSpacing = 8.dp
+internal val DroneDropdownChipLineSpacing = 4.dp
 internal val DroneDropdownSelectionButtonHeight = DroneDropdownTriggerDiameter
 internal val DroneDropdownTriggerSize = DroneDropdownTriggerDiameter
 internal val DroneDropdownControlVerticalAlignment: Alignment.Vertical = Alignment.Top
@@ -76,7 +80,6 @@ internal val DroneDropdownTextSize = 14.sp
 internal val DroneDropdownEmptyIconRes = R.drawable.ic_drone
 internal fun droneDropdownEmptyTextColor(onSurface: Color): Color = onSurface
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DroneSelectionDropdown(
     activeDrones: List<DroneModel>,
@@ -92,14 +95,16 @@ fun DroneSelectionDropdown(
 
     val selectedDrones = selectedDronesForIosDropdown(activeDrones, selectedDroneIds)
 
-    Box(modifier = modifier) {
-        Row(
-            verticalAlignment = DroneDropdownControlVerticalAlignment,
-            modifier = Modifier.onGloballyPositioned { coordinates ->
-                triggerHeight = coordinates.size.height
-            }
-        ) {
-            if (selectedDrones.isEmpty()) {
+    Box(
+        modifier = modifier.onGloballyPositioned { coordinates ->
+            triggerHeight = coordinates.size.height
+        }
+    ) {
+        if (selectedDrones.isEmpty()) {
+            Row(
+                modifier = Modifier.align(Alignment.TopEnd),
+                verticalAlignment = DroneDropdownControlVerticalAlignment,
+            ) {
                 Surface(
                     shape = RoundedCornerShape(20.dp),
                     color = MaterialTheme.colorScheme.surface,
@@ -130,52 +135,25 @@ fun DroneSelectionDropdown(
                     }
                 }
                 Spacer(modifier = Modifier.width(8.dp))
-            } else {
-                FlowRow(
-                    modifier = Modifier
-                        .weight(1f, fill = false)
-                        .align(DroneDropdownControlVerticalAlignment),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                    itemVerticalAlignment = DroneDropdownControlVerticalAlignment,
-                ) {
-                    selectedDrones.forEach { drone ->
-                        DroneChip(
-                            drone = drone,
-                            isHighlighted = drone.id in highlightedDroneIds,
-                            onClick = { onToggleHighlight(drone.id) }
-                        )
-                    }
-                }
-                Spacer(modifier = Modifier.width(8.dp))
+                DroneDropdownChevronButton(
+                    showDropdown = showDropdown,
+                    onClick = { showDropdown = !showDropdown },
+                )
             }
-
-            Surface(
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.surface,
-                shadowElevation = DroneDropdownShadowElevation,
+        } else {
+            DroneChipFlowLayout(
+                drones = selectedDrones,
+                highlightedDroneIds = highlightedDroneIds,
+                onToggleHighlight = onToggleHighlight,
                 modifier = Modifier
-                    .requiredSize(DroneDropdownTriggerSize)
-                    .align(DroneDropdownControlVerticalAlignment)
-            ) {
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .clickable { showDropdown = !showDropdown }
-                ) {
-                    Icon(
-                        imageVector = if (showDropdown) Icons.Default.KeyboardArrowUp
-                        else Icons.Default.KeyboardArrowDown,
-                        contentDescription = if (showDropdown)
-                            stringResource(R.string.drone_dropdown_collapse)
-                        else
-                            stringResource(R.string.drone_dropdown_toggle),
-                        modifier = Modifier.size(DroneDropdownChevronIconSize),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
+                    .fillMaxWidth()
+                    .align(Alignment.TopEnd),
+            )
+            DroneDropdownChevronButton(
+                showDropdown = showDropdown,
+                onClick = { showDropdown = !showDropdown },
+                modifier = Modifier.align(Alignment.TopEnd),
+            )
         }
 
         // 드롭다운 메뉴 (Popup)
@@ -276,6 +254,87 @@ fun DroneSelectionDropdown(
 }
 
 @Composable
+private fun DroneDropdownChevronButton(
+    showDropdown: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.surface,
+        shadowElevation = DroneDropdownShadowElevation,
+        modifier = modifier.requiredSize(DroneDropdownTriggerSize),
+    ) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .fillMaxSize()
+                .clickable(onClick = onClick),
+        ) {
+            Icon(
+                imageVector = if (showDropdown) Icons.Default.KeyboardArrowUp
+                else Icons.Default.KeyboardArrowDown,
+                contentDescription = if (showDropdown)
+                    stringResource(R.string.drone_dropdown_collapse)
+                else
+                    stringResource(R.string.drone_dropdown_toggle),
+                modifier = Modifier.size(DroneDropdownChevronIconSize),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun DroneChipFlowLayout(
+    drones: List<DroneModel>,
+    highlightedDroneIds: Set<String>,
+    onToggleHighlight: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val density = LocalDensity.current
+    val firstLineReservedWidth = with(density) { DroneDropdownChevronReservedWidth.roundToPx() }
+    val horizontalSpacing = with(density) { DroneDropdownChipHorizontalSpacing.roundToPx() }
+    val lineSpacing = with(density) { DroneDropdownChipLineSpacing.roundToPx() }
+
+    Layout(
+        modifier = modifier,
+        content = {
+            drones.forEach { drone ->
+                DroneChip(
+                    drone = drone,
+                    isHighlighted = drone.id in highlightedDroneIds,
+                    onClick = { onToggleHighlight(drone.id) },
+                )
+            }
+        },
+    ) { measurables, constraints ->
+        val looseConstraints = constraints.copy(minWidth = 0, minHeight = 0)
+        val placeables = measurables.map { measurable ->
+            measurable.measure(looseConstraints)
+        }
+        val maxWidth = constraints.maxWidth
+        val layout = computeDroneDropdownChipFlowLayout(
+            itemSizes = placeables.map { IntSize(it.width, it.height) },
+            maxWidth = maxWidth,
+            firstLineReservedWidth = firstLineReservedWidth,
+            horizontalSpacing = horizontalSpacing,
+            lineSpacing = lineSpacing,
+        )
+
+        layout(
+            width = maxWidth.coerceIn(constraints.minWidth, constraints.maxWidth),
+            height = layout.height.coerceIn(constraints.minHeight, constraints.maxHeight),
+        ) {
+            placeables.forEachIndexed { index, placeable ->
+                val placement = layout.placements[index]
+                placeable.placeRelative(placement.x, placement.y)
+            }
+        }
+    }
+}
+
+@Composable
 private fun DroneChip(
     drone: DroneModel,
     isHighlighted: Boolean,
@@ -324,3 +383,98 @@ private fun DroneChip(
 }
 
 internal fun shouldShowSelectedDroneChipColorIndicator(color: PaletteColor?): Boolean = color != null
+
+internal data class DroneDropdownChipPlacement(
+    val x: Int,
+    val y: Int,
+)
+
+internal data class DroneDropdownChipFlowLayoutResult(
+    val height: Int,
+    val placements: List<DroneDropdownChipPlacement>,
+    val lineWidths: List<Int>,
+)
+
+internal fun computeDroneDropdownChipFlowLayout(
+    itemSizes: List<IntSize>,
+    maxWidth: Int,
+    firstLineReservedWidth: Int,
+    horizontalSpacing: Int,
+    lineSpacing: Int,
+): DroneDropdownChipFlowLayoutResult {
+    if (itemSizes.isEmpty()) {
+        return DroneDropdownChipFlowLayoutResult(
+            height = 0,
+            placements = emptyList(),
+            lineWidths = emptyList(),
+        )
+    }
+
+    val safeMaxWidth = maxWidth.coerceAtLeast(0)
+    val safeReservedWidth = firstLineReservedWidth.coerceAtLeast(0)
+    val safeHorizontalSpacing = horizontalSpacing.coerceAtLeast(0)
+    val safeLineSpacing = lineSpacing.coerceAtLeast(0)
+    val lineItems = mutableListOf<MutableList<Int>>(mutableListOf())
+    val lineWidths = mutableListOf(0)
+    val lineHeights = mutableListOf(0)
+
+    itemSizes.forEachIndexed { index, rawSize ->
+        val width = rawSize.width.coerceAtLeast(0)
+        val height = rawSize.height.coerceAtLeast(0)
+        val lineIndex = lineItems.lastIndex
+        val currentItems = lineItems[lineIndex]
+        val currentWidth = lineWidths[lineIndex]
+        val candidateWidth = if (currentItems.isEmpty()) {
+            width
+        } else {
+            currentWidth + safeHorizontalSpacing + width
+        }
+        val availableWidth = if (lineIndex == 0) {
+            (safeMaxWidth - safeReservedWidth).coerceAtLeast(0)
+        } else {
+            safeMaxWidth
+        }
+
+        val targetLineIndex = if (currentItems.isNotEmpty() && candidateWidth > availableWidth) {
+            lineItems.add(mutableListOf())
+            lineWidths.add(0)
+            lineHeights.add(0)
+            lineItems.lastIndex
+        } else {
+            lineIndex
+        }
+
+        val targetItems = lineItems[targetLineIndex]
+        lineWidths[targetLineIndex] = if (targetItems.isEmpty()) {
+            width
+        } else {
+            lineWidths[targetLineIndex] + safeHorizontalSpacing + width
+        }
+        lineHeights[targetLineIndex] = maxOf(lineHeights[targetLineIndex], height)
+        targetItems.add(index)
+    }
+
+    val placements = MutableList(itemSizes.size) { DroneDropdownChipPlacement(0, 0) }
+    var currentY = 0
+    lineItems.forEachIndexed { lineIndex, indices ->
+        if (indices.isEmpty()) return@forEachIndexed
+        val availableWidth = if (lineIndex == 0) {
+            (safeMaxWidth - safeReservedWidth).coerceAtLeast(0)
+        } else {
+            safeMaxWidth
+        }
+        var currentX = (availableWidth - lineWidths[lineIndex]).coerceAtLeast(0)
+
+        indices.forEach { itemIndex ->
+            placements[itemIndex] = DroneDropdownChipPlacement(currentX, currentY)
+            currentX += itemSizes[itemIndex].width.coerceAtLeast(0) + safeHorizontalSpacing
+        }
+        currentY += lineHeights[lineIndex] + safeLineSpacing
+    }
+
+    return DroneDropdownChipFlowLayoutResult(
+        height = (currentY - safeLineSpacing).coerceAtLeast(0),
+        placements = placements,
+        lineWidths = lineWidths,
+    )
+}

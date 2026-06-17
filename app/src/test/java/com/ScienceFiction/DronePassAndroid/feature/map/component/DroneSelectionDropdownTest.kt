@@ -2,6 +2,7 @@ package com.ScienceFiction.DronePassAndroid.feature.map.component
 
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ScienceFiction.DronePassAndroid.R
@@ -50,6 +51,7 @@ class DroneSelectionDropdownTest {
     @Test
     fun `드론 선택 버튼 높이는 오른쪽 드롭다운 원 지름과 같다`() {
         assertEquals(32.dp, DroneDropdownTriggerDiameter)
+        assertEquals(40.dp, DroneDropdownChevronReservedWidth)
         assertEquals(DroneDropdownTriggerDiameter, DroneDropdownSelectionButtonHeight)
         assertEquals(DroneDropdownTriggerDiameter, DroneDropdownTriggerSize)
     }
@@ -57,5 +59,46 @@ class DroneSelectionDropdownTest {
     @Test
     fun `드론 선택 버튼과 오른쪽 드롭다운 원은 같은 상단 정렬을 쓴다`() {
         assertEquals(Alignment.Top, DroneDropdownControlVerticalAlignment)
+    }
+
+    @Test
+    fun `선택 드론 줄바꿈은 iOS처럼 첫 줄만 chevron 공간을 예약한다`() {
+        val layout = computeDroneDropdownChipFlowLayout(
+            itemSizes = listOf(
+                IntSize(width = 100, height = 32),
+                IntSize(width = 100, height = 32),
+                IntSize(width = 100, height = 32),
+            ),
+            maxWidth = 220,
+            firstLineReservedWidth = 40,
+            horizontalSpacing = 8,
+            lineSpacing = 4,
+        )
+
+        assertEquals(listOf(100, 208), layout.lineWidths)
+        assertEquals(
+            listOf(
+                DroneDropdownChipPlacement(x = 80, y = 0),
+                DroneDropdownChipPlacement(x = 12, y = 36),
+                DroneDropdownChipPlacement(x = 120, y = 36),
+            ),
+            layout.placements,
+        )
+        assertEquals(68, layout.height)
+    }
+
+    @Test
+    fun `선택 드론 줄바꿈 계산은 빈 목록을 안전하게 처리한다`() {
+        val layout = computeDroneDropdownChipFlowLayout(
+            itemSizes = emptyList(),
+            maxWidth = 220,
+            firstLineReservedWidth = 40,
+            horizontalSpacing = 8,
+            lineSpacing = 4,
+        )
+
+        assertEquals(0, layout.height)
+        assertEquals(emptyList<Int>(), layout.lineWidths)
+        assertEquals(emptyList<DroneDropdownChipPlacement>(), layout.placements)
     }
 }
