@@ -85,6 +85,70 @@ internal fun resolveMapShapeHighlightCoordinates(shape: ShapeModel): List<Coordi
     return coordinates.takeIf { it.size >= 2 }
 }
 
+internal const val MapOverlaySystemGrayHex = "#8E8E93"
+internal const val MapOverlayFocusHighlightHex = "#FF3B30"
+internal const val MapOverlayDroneHighlightOutlineHex = "#333333"
+
+internal fun calculateMapOverlayFillColor(
+    shape: ShapeModel,
+    highlightedDroneIds: Set<String>,
+): Int {
+    val mainColor = mainMapOverlayColorFor(shape)
+    val isHighlighted = isMapDroneHighlighted(shape, highlightedDroneIds)
+    val alpha = when {
+        shape.isNotStarted && isHighlighted -> 0x80
+        shape.isNotStarted -> 0x33
+        isHighlighted -> 0xB3
+        else -> 0x4D
+    }
+
+    return withMapOverlayAlpha(mainColor, alpha)
+}
+
+internal fun calculateMapOverlayOutlineColor(
+    shape: ShapeModel,
+    highlightedDroneIds: Set<String>,
+): Int {
+    val mainColor = mainMapOverlayColorFor(shape)
+    val isHighlighted = isMapDroneHighlighted(shape, highlightedDroneIds)
+    return when {
+        shape.isNotStarted && isHighlighted -> parseMapOverlayColorSafe(MapOverlayDroneHighlightOutlineHex)
+        shape.isNotStarted -> withMapOverlayAlpha(mainColor, 0x80)
+        isHighlighted -> parseMapOverlayColorSafe(MapOverlayDroneHighlightOutlineHex)
+        else -> mainColor
+    }
+}
+
+internal fun calculateMapOverlayOutlineWidth(shape: ShapeModel): Int {
+    return if (shape.isNotStarted) 1 else 2
+}
+
+internal fun calculateMapPolylineWidth(
+    shape: ShapeModel,
+    highlightedDroneIds: Set<String>,
+): Int {
+    return if (isMapDroneHighlighted(shape, highlightedDroneIds)) 5 else 3
+}
+
+private fun mainMapOverlayColorFor(shape: ShapeModel): Int {
+    return if (shape.isExpired) {
+        parseMapOverlayColorSafe(MapOverlaySystemGrayHex)
+    } else {
+        parseMapOverlayColorSafe(shape.color)
+    }
+}
+
+private fun isMapDroneHighlighted(
+    shape: ShapeModel,
+    highlightedDroneIds: Set<String>,
+): Boolean {
+    return shape.droneId?.let { it in highlightedDroneIds } ?: false
+}
+
+private fun withMapOverlayAlpha(color: Int, alpha: Int): Int {
+    return ((alpha and 0xFF) shl 24) or (color and 0x00FFFFFF)
+}
+
 private fun List<Coordinate>.closeIfNeeded(): List<Coordinate> {
     if (isEmpty() || first() == last()) return this
     return this + first()
@@ -271,7 +335,7 @@ class ShapeOverlayManager {
                     this.center = shape.baseCoordinate.toLatLng()
                     this.radius = radius
                     this.color = Color.TRANSPARENT
-                    this.outlineColor = parseColorSafe(SYSTEM_RED)
+                    this.outlineColor = parseColorSafe(MapOverlayFocusHighlightHex)
                     this.outlineWidth = 5
                 }
             }
@@ -281,7 +345,7 @@ class ShapeOverlayManager {
                 val coordinates = resolveMapShapeHighlightCoordinates(shape) ?: return
                 PolylineOverlay().apply {
                     this.coords = coordinates.toLatLngs()
-                    this.color = parseColorSafe(SYSTEM_RED)
+                    this.color = parseColorSafe(MapOverlayFocusHighlightHex)
                     this.width = 5
                 }
             }
@@ -304,59 +368,22 @@ class ShapeOverlayManager {
      * - 만료 도형은 채움과 외곽선 모두 systemGray 기반
      */
     private fun calculateFillColor(shape: ShapeModel): Int {
-        val mainColor = mainColorFor(shape)
-        val isHighlighted = isDroneHighlighted(shape)
-        val alpha = when {
-            shape.isNotStarted && isHighlighted -> 0x80
-            shape.isNotStarted -> 0x33
-            isHighlighted -> 0xB3
-            else -> 0x4D
-        }
-
-        return withAlpha(mainColor, alpha)
+        return calculateMapOverlayFillColor(shape, highlightedDroneIds)
     }
 
     /**
      * 도형의 상태에 따른 외곽선 색상을 계산한다.
      */
     private fun calculateOutlineColor(shape: ShapeModel): Int {
-        val mainColor = mainColorFor(shape)
-        val isHighlighted = isDroneHighlighted(shape)
-        return when {
-            shape.isNotStarted && isHighlighted -> parseColorSafe(HIGHLIGHT_OUTLINE)
-            shape.isNotStarted -> withAlpha(mainColor, 0x80)
-            isHighlighted -> parseColorSafe(HIGHLIGHT_OUTLINE)
-            else -> mainColor
-        }
+        return calculateMapOverlayOutlineColor(shape, highlightedDroneIds)
     }
 
     private fun calculateOutlineWidth(shape: ShapeModel): Int {
-        return if (shape.isNotStarted) 1 else 2
+        return calculateMapOverlayOutlineWidth(shape)
     }
 
     private fun calculatePolylineWidth(shape: ShapeModel): Int {
-        return if (isDroneHighlighted(shape)) 5 else 3
-    }
-
-    private fun mainColorFor(shape: ShapeModel): Int {
-        return if (shape.isExpired) {
-            parseColorSafe(SYSTEM_GRAY)
-        } else {
-            parseColorSafe(shape.color)
-        }
-    }
-
-    private fun isDroneHighlighted(shape: ShapeModel): Boolean {
-        return shape.droneId?.let { it in highlightedDroneIds } ?: false
-    }
-
-    private fun withAlpha(color: Int, alpha: Int): Int {
-        return Color.argb(
-            alpha,
-            Color.red(color),
-            Color.green(color),
-            Color.blue(color)
-        )
+        return calculateMapPolylineWidth(shape, highlightedDroneIds)
     }
 
     /**
@@ -369,12 +396,6 @@ class ShapeOverlayManager {
 
     private fun List<Coordinate>.toLatLngs(): List<LatLng> =
         map { it.toLatLng() }
-
-    private companion object {
-        const val SYSTEM_GRAY = "#8E8E93"
-        const val SYSTEM_RED = "#FF3B30"
-        const val HIGHLIGHT_OUTLINE = "#333333"
-    }
 
     // ──────────────────────────────────────────────
     // 오버레이 제거
