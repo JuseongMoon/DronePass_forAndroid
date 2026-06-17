@@ -2,6 +2,7 @@ package com.ScienceFiction.DronePassAndroid.feature.document
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -89,5 +90,17 @@ class MarkdownInlineTextTest {
     fun `markdown table separators match iOS table overlays`() {
         assertTrue(shouldShowMarkdownTableVerticalDividerAfterCell())
         assertTrue(shouldShowMarkdownTableHorizontalDividerAfterDataRow())
+    }
+
+    @Test
+    fun `markdown header font tokens match iOS title styles`() {
+        assertEquals(28.sp, markdownHeaderFontSize(1))
+        assertEquals(22.sp, markdownHeaderFontSize(2))
+        assertEquals(20.sp, markdownHeaderFontSize(3))
+        assertEquals(17.sp, markdownHeaderFontSize(4))
+        assertEquals(FontWeight.Bold, markdownHeaderFontWeight(1))
+        assertEquals(FontWeight.Bold, markdownHeaderFontWeight(2))
+        assertEquals(FontWeight.SemiBold, markdownHeaderFontWeight(3))
+        assertEquals(FontWeight.SemiBold, markdownHeaderFontWeight(4))
     }
 }

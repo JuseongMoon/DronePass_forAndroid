@@ -92,12 +92,10 @@ private fun HeaderView(text: String, level: Int) {
     ) {
         InlineMarkdownText(
             text = text,
-            style = when (level) {
-                1 -> MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Bold)
-                2 -> MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold)
-                3 -> MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.SemiBold)
-                else -> MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
-            },
+            style = TextStyle(
+                fontSize = markdownHeaderFontSize(level),
+                fontWeight = markdownHeaderFontWeight(level),
+            ),
             color = MaterialTheme.colorScheme.onSurface,
         )
         // 레벨 1·2 만 하단 라인 (iOS HeaderView 정합)
@@ -117,6 +115,18 @@ private fun headerPadding(level: Int) = when (level) {
     2 -> 10.dp
     3 -> 8.dp
     else -> 6.dp
+}
+
+internal fun markdownHeaderFontSize(level: Int) = when (level) {
+    1 -> 28.sp
+    2 -> 22.sp
+    3 -> 20.sp
+    else -> 17.sp
+}
+
+internal fun markdownHeaderFontWeight(level: Int) = when (level) {
+    1, 2 -> FontWeight.Bold
+    else -> FontWeight.SemiBold
 }
 
 @Composable
