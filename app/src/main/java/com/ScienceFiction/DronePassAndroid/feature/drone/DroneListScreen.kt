@@ -45,6 +45,9 @@ import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.PaletteColor
 
+internal val DroneListAddIconSize = 20.dp
+internal val DroneListAddIconTextSpacing = 8.dp
+
 /**
  * 드론 관리 목록 화면
  * @param droneViewModel 드론 ViewModel
@@ -266,9 +269,9 @@ private fun DroneAddItem(onClick: () -> Unit) {
             imageVector = Icons.Default.AddCircle,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(22.dp),
+            modifier = Modifier.size(DroneListAddIconSize),
         )
-        Spacer(modifier = Modifier.width(12.dp))
+        Spacer(modifier = Modifier.width(DroneListAddIconTextSpacing))
         Text(
             text = stringResource(R.string.drone_list_add),
             style = MaterialTheme.typography.bodyLarge,
