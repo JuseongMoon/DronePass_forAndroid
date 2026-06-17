@@ -40,12 +40,9 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDownward
-import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.FlightLand
-import androidx.compose.material.icons.filled.FlightTakeoff
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.ArrowUpward
-import androidx.compose.material.icons.filled.TextFields
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -353,10 +350,10 @@ internal fun resolveSavedOverlaySortChipIconSize(isTablet: Boolean): Dp {
 
 internal fun resolveSavedSortOptionIcon(option: SortOption): ImageVector {
     return when (option) {
-        SortOption.TITLE -> Icons.Default.TextFields
-        SortOption.DATE_CREATED -> Icons.Default.CalendarToday
-        SortOption.FLIGHT_START -> Icons.Default.FlightTakeoff
-        SortOption.FLIGHT_END -> Icons.Default.FlightLand
+        SortOption.TITLE,
+        SortOption.DATE_CREATED,
+        SortOption.FLIGHT_START,
+        SortOption.FLIGHT_END -> Icons.Default.SwapVert
     }
 }
 

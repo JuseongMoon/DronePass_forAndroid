@@ -3,10 +3,7 @@ package com.ScienceFiction.DronePassAndroid.ui.navigation
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
-import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.FlightLand
-import androidx.compose.material.icons.filled.FlightTakeoff
-import androidx.compose.material.icons.filled.TextFields
+import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.sp
@@ -232,11 +229,11 @@ class MainScreenStartDestinationTest {
     }
 
     @Test
-    fun `저장 목록 정렬 칩 아이콘은 iOS SortOption icon 분기를 따른다`() {
-        assertEquals(Icons.Default.TextFields, resolveSavedSortOptionIcon(SortOption.TITLE))
-        assertEquals(Icons.Default.CalendarToday, resolveSavedSortOptionIcon(SortOption.DATE_CREATED))
-        assertEquals(Icons.Default.FlightTakeoff, resolveSavedSortOptionIcon(SortOption.FLIGHT_START))
-        assertEquals(Icons.Default.FlightLand, resolveSavedSortOptionIcon(SortOption.FLIGHT_END))
+    fun `저장 목록 정렬 기준 칩 아이콘은 iOS처럼 옵션과 무관하게 고정된다`() {
+        assertEquals(Icons.Default.SwapVert, resolveSavedSortOptionIcon(SortOption.TITLE))
+        assertEquals(Icons.Default.SwapVert, resolveSavedSortOptionIcon(SortOption.DATE_CREATED))
+        assertEquals(Icons.Default.SwapVert, resolveSavedSortOptionIcon(SortOption.FLIGHT_START))
+        assertEquals(Icons.Default.SwapVert, resolveSavedSortOptionIcon(SortOption.FLIGHT_END))
     }
 
     @Test
