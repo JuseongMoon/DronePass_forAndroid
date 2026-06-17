@@ -54,6 +54,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.core.util.DroneCategory
 import com.ScienceFiction.DronePassAndroid.core.util.GustDifferenceCalculator
@@ -94,6 +95,14 @@ internal val IosWeatherDataCellIconSize = 24.dp
 internal val IosWeatherDataCellIconSlotWidth = 32.dp
 internal val IosWeatherDataCellWarningIconSize = 16.dp
 internal val IosWeatherDataCellContainerColor = Color(0xFFFFFFFF)
+internal val IosWeatherDataCellLabelFontSize = 17.sp
+internal val IosWeatherDataCellLabelWithSubTextFontSize = 15.sp
+internal val IosWeatherDataCellValueFontSize = 20.sp
+internal val IosWeatherDataCellValueWithSubTextFontSize = 17.sp
+internal val IosWeatherDataCellSubTextFontSize = 11.sp
+internal val IosWeatherDataCellHeadlineFontWeight = FontWeight.SemiBold
+internal val IosWeatherDataCellRegularFontWeight = FontWeight.Normal
+internal val IosWeatherDataCellValueFontWeight = FontWeight.SemiBold
 internal val IosWeatherDisclaimerTopPadding = 8.dp
 internal val IosWeatherDisclaimerIconSize = 12.dp
 internal val IosWeatherDisclaimerSpacing = 4.dp
@@ -657,21 +666,35 @@ private fun WeatherDataCell(
             ) {
                 Text(
                     text = label,
-                    style = if (hasSubText) MaterialTheme.typography.labelMedium else MaterialTheme.typography.bodySmall,
+                    fontSize = if (hasSubText) {
+                        IosWeatherDataCellLabelWithSubTextFontSize
+                    } else {
+                        IosWeatherDataCellLabelFontSize
+                    },
+                    fontWeight = if (hasSubText) {
+                        IosWeatherDataCellRegularFontWeight
+                    } else {
+                        IosWeatherDataCellHeadlineFontWeight
+                    },
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                 )
                 Text(
                     text = value,
-                    style = if (hasSubText) MaterialTheme.typography.bodyMedium else MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
+                    fontSize = if (hasSubText) {
+                        IosWeatherDataCellValueWithSubTextFontSize
+                    } else {
+                        IosWeatherDataCellValueFontSize
+                    },
+                    fontWeight = IosWeatherDataCellValueFontWeight,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                 )
                 if (hasSubText) {
                     Text(
                         text = subText.orEmpty(),
-                        style = MaterialTheme.typography.labelSmall,
+                        fontSize = IosWeatherDataCellSubTextFontSize,
+                        fontWeight = IosWeatherDataCellRegularFontWeight,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                     )

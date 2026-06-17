@@ -1,7 +1,9 @@
 package com.ScienceFiction.DronePassAndroid.feature.weather
 
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.datastore.preferences.core.preferencesOf
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.core.util.DroneCategory
@@ -131,6 +133,18 @@ class WeatherForecastParityTest {
         assertEquals(16.dp, IosWeatherChartCardPadding)
         assertEquals(12.dp, IosWeatherChartCardSpacing)
         assertEquals(0xFFF2F2F7.toInt(), IosWeatherChartCardContainerColor.toArgb())
+    }
+
+    @Test
+    fun `current weather data cell typography matches iOS weatherDataCard`() {
+        assertEquals(17.sp, IosWeatherDataCellLabelFontSize)
+        assertEquals(15.sp, IosWeatherDataCellLabelWithSubTextFontSize)
+        assertEquals(20.sp, IosWeatherDataCellValueFontSize)
+        assertEquals(17.sp, IosWeatherDataCellValueWithSubTextFontSize)
+        assertEquals(11.sp, IosWeatherDataCellSubTextFontSize)
+        assertEquals(FontWeight.SemiBold, IosWeatherDataCellHeadlineFontWeight)
+        assertEquals(FontWeight.Normal, IosWeatherDataCellRegularFontWeight)
+        assertEquals(FontWeight.SemiBold, IosWeatherDataCellValueFontWeight)
     }
 
     @Test
