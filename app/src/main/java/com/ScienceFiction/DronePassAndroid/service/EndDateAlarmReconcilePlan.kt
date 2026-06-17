@@ -25,9 +25,10 @@ internal fun buildEndDateAlarmReconcilePlan(
     shapes: List<ShapeModel>,
     nowMillis: Long = System.currentTimeMillis(),
     zoneId: ZoneId = ZoneId.systemDefault(),
+    additionalCancelShapeIds: List<String> = emptyList(),
 ): EndDateAlarmReconcilePlan {
     return EndDateAlarmReconcilePlan(
-        cancelShapeIds = shapes.map { it.id },
+        cancelShapeIds = (additionalCancelShapeIds + shapes.map { it.id }).distinct(),
         shapesToSchedule = shapes.filter { shape ->
             shouldScheduleEndDateAlarm(shape, nowMillis, zoneId)
         },

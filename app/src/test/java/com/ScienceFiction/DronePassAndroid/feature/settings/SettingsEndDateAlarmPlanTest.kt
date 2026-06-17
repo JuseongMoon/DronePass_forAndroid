@@ -51,6 +51,32 @@ class SettingsEndDateAlarmPlanTest {
     }
 
     @Test
+    fun `서버에서 삭제되어 로컬에서 사라진 도형의 기존 종료일 알림도 함께 취소한다`() {
+        val zoneId = ZoneId.of("Asia/Seoul")
+        val now = LocalDateTime.of(2026, 6, 15, 12, 0)
+            .atZone(zoneId)
+            .toInstant()
+            .toEpochMilli()
+        val remaining = shape(
+            id = "remaining",
+            flightEndDate = LocalDateTime.of(2026, 6, 23, 12, 0)
+                .atZone(zoneId)
+                .toInstant()
+                .toEpochMilli(),
+        )
+
+        val plan = buildEndDateAlarmReconcilePlan(
+            shapes = listOf(remaining),
+            nowMillis = now,
+            zoneId = zoneId,
+            additionalCancelShapeIds = listOf("server-deleted", "remaining"),
+        )
+
+        assertEquals(listOf("server-deleted", "remaining"), plan.cancelShapeIds)
+        assertEquals(listOf(remaining), plan.shapesToSchedule)
+    }
+
+    @Test
     fun `종료일 알림 예약 대상은 iOS처럼 7일 전 시각이 현재보다 미래일 때만 참이다`() {
         val zoneId = ZoneId.of("Asia/Seoul")
         val now = LocalDateTime.of(2026, 6, 15, 12, 0)

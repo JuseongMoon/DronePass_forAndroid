@@ -20,6 +20,7 @@ import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 import com.ScienceFiction.DronePassAndroid.domain.model.validateForFirebasePersistence
 import com.ScienceFiction.DronePassAndroid.domain.model.validateForLocalPersistence
 import com.ScienceFiction.DronePassAndroid.service.NotificationScheduler
+import com.ScienceFiction.DronePassAndroid.service.buildEndDateAlarmReconcilePlan
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -404,7 +405,7 @@ class ShapeRepository @Inject constructor(
                 shouldReconcileAlarms = true
             }
             if (shouldReconcileAlarms) {
-                reconcileEndDateAlarmsWithLocalShapes()
+                reconcileEndDateAlarmsWithLocalShapes(additionalCancelShapeIds = staleLocalIds)
             }
             Log.d(TAG, "syncFromFirebase: 서버=${serverShapes.size}, LWW 통과=${toApply.size}")
         } catch (e: Exception) {
@@ -455,7 +456,7 @@ class ShapeRepository @Inject constructor(
                 shouldReconcileAlarms = true
             }
             if (shouldReconcileAlarms) {
-                reconcileEndDateAlarmsWithLocalShapes()
+                reconcileEndDateAlarmsWithLocalShapes(additionalCancelShapeIds = staleLocalIds)
             }
 
             // Firebase: 로컬이 LWW 에서 이긴 항목 업로드
@@ -498,13 +499,30 @@ class ShapeRepository @Inject constructor(
         )
     }
 
-    private suspend fun reconcileEndDateAlarmsWithLocalShapes() {
+    private suspend fun reconcileEndDateAlarmsWithLocalShapes(
+        additionalCancelShapeIds: List<String> = emptyList(),
+    ) {
         val preferences = dataStore.data.first()
+        val shapes = shapeDao.getAllShapesOnce()
+            .map { it.toDomain() }
+        val plan = buildEndDateAlarmReconcilePlan(
+            shapes = shapes,
+            additionalCancelShapeIds = additionalCancelShapeIds,
+        )
+
+        plan.cancelShapeIds.forEach { shapeId ->
+            notificationScheduler.cancelEndDateAlarm(shapeId)
+        }
         if (!storedEndDateAlarmEnabled(preferences)) return
 
-        shapeDao.getAllShapesOnce()
-            .map { it.toDomain() }
-            .forEach { shape -> updateEndDateAlarmForShape(shape) }
+        plan.shapesToSchedule.forEach { shape ->
+            val flightEndDate = shape.flightEndDate ?: return@forEach
+            notificationScheduler.scheduleEndDateAlarm(
+                shapeId = shape.id,
+                flightEndDate = flightEndDate,
+                shapeTitle = shape.title,
+            )
+        }
     }
 
     private fun ShapeModel.isValidForFirebaseWrite(operation: String): Boolean {
