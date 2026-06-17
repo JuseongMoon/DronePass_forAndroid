@@ -40,6 +40,34 @@ class AndroidManifestContractTest {
     }
 
     @Test
+    fun `Android 11 package visibility 는 외부 지도와 다이얼러 경로를 유지한다`() {
+        val manifest = parseManifest()
+
+        assertTrue(manifest.hasQueryPackage("com.nhn.android.nmap"))
+        assertTrue(manifest.hasQueryPackage("net.daum.android.map"))
+        assertTrue(manifest.hasQueryPackage("com.skt.tmap.ku"))
+        assertTrue(manifest.hasQueryPackage("com.google.android.apps.maps"))
+        assertTrue(
+            manifest.hasQueryIntent(
+                action = "android.intent.action.VIEW",
+                scheme = "https",
+            ),
+        )
+        assertTrue(
+            manifest.hasQueryIntent(
+                action = "android.intent.action.VIEW",
+                scheme = "geo",
+            ),
+        )
+        assertTrue(
+            manifest.hasQueryIntent(
+                action = "android.intent.action.DIAL",
+                scheme = "tel",
+            ),
+        )
+    }
+
+    @Test
     fun `FCM 과 로컬 알림 리시버는 외부에서 직접 실행되지 않는다`() {
         val manifest = parseManifest()
 
@@ -73,6 +101,29 @@ class AndroidManifestContractTest {
         return false
     }
 
+    private fun Document.hasQueryPackage(name: String): Boolean {
+        val queryPackages = findQueriesElement()
+            .childElementsByTagName("package")
+        return queryPackages.any { queryPackage -> queryPackage.getAttribute("android:name") == name }
+    }
+
+    private fun Document.hasQueryIntent(action: String, scheme: String): Boolean {
+        val queryIntents = findQueriesElement()
+            .childElementsByTagName("intent")
+        return queryIntents.any { queryIntent ->
+            queryIntent.childElementsByTagName("action")
+                .any { actionElement -> actionElement.getAttribute("android:name") == action } &&
+                queryIntent.childElementsByTagName("data")
+                    .any { dataElement -> dataElement.getAttribute("android:scheme") == scheme }
+        }
+    }
+
+    private fun Document.findQueriesElement(): Element {
+        val queries = getElementsByTagName("queries")
+        check(queries.length == 1) { "Expected exactly one <queries> block but found ${queries.length}" }
+        return queries.item(0) as Element
+    }
+
     private fun Document.findActivity(name: String): Element {
         return findElementByAndroidName(tagName = "activity", name = name)
     }
@@ -103,6 +154,12 @@ class AndroidManifestContractTest {
     private fun Element.hasIntentAction(name: String): Boolean {
         return descendantsByTagName("action")
             .any { action -> action.getAttribute("android:name") == name }
+    }
+
+    private fun Element.childElementsByTagName(tagName: String): Sequence<Element> {
+        return childNodes.asSequence()
+            .filterIsInstance<Element>()
+            .filter { element -> element.tagName == tagName }
     }
 
     private fun Element.descendantsByTagName(tagName: String): Sequence<Element> {
