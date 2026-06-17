@@ -161,7 +161,17 @@ internal fun shouldStartProfileCloudSync(
     manualSyncing: Boolean,
     realtimeSyncState: SyncState,
 ): Boolean {
-    return !manualSyncing && realtimeSyncState !is SyncState.Syncing
+    return !isProfileSyncInProgress(
+        manualSyncing = manualSyncing,
+        realtimeSyncState = realtimeSyncState,
+    )
+}
+
+internal fun isProfileSyncInProgress(
+    manualSyncing: Boolean,
+    realtimeSyncState: SyncState,
+): Boolean {
+    return manualSyncing || realtimeSyncState is SyncState.Syncing
 }
 
 internal fun buildProfileSyncedShapeBaseline(shapes: List<ShapeModel>): Map<String, Long> {
@@ -244,7 +254,10 @@ class ProfileViewModel @Inject constructor(
         _isSyncing,
         realtimeSyncManager.syncState,
     ) { manualSyncing, syncState ->
-        manualSyncing || syncState is SyncState.Syncing
+        isProfileSyncInProgress(
+            manualSyncing = manualSyncing,
+            realtimeSyncState = syncState,
+        )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     /** 로그아웃·탈퇴 진행 중 (UI 버튼 비활성화용). */

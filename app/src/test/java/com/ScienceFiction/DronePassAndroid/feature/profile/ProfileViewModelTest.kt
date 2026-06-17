@@ -125,6 +125,28 @@ class ProfileViewModelTest {
     }
 
     @Test
+    fun `프로필 동기화 진행 상태는 iOS처럼 수동 또는 실시간 Shape 동기화를 포함한다`() {
+        assertTrue(
+            isProfileSyncInProgress(
+                manualSyncing = true,
+                realtimeSyncState = SyncState.Idle,
+            ),
+        )
+        assertTrue(
+            isProfileSyncInProgress(
+                manualSyncing = false,
+                realtimeSyncState = SyncState.Syncing,
+            ),
+        )
+        assertTrue(
+            !isProfileSyncInProgress(
+                manualSyncing = false,
+                realtimeSyncState = SyncState.Success(timestamp = 1_700_000_000_000L),
+            ),
+        )
+    }
+
+    @Test
     fun `프로필 클라우드 동기화는 iOS처럼 수동 또는 실시간 동기화 중이면 시작하지 않는다`() {
         assertTrue(
             shouldStartProfileCloudSync(
