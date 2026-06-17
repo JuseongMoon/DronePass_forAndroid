@@ -107,7 +107,7 @@ class FcmServiceTest {
     }
 
     @Test
-    fun `FCM 데이터에서 camelCase shapeId 를 알림 포커스 대상으로 추출한다`() {
+    fun `FCM 데이터에서 camelCase shapeId 를 알림 payload 로 추출한다`() {
         val shapeId = extractNotificationShapeId(
             mapOf(
                 "title" to "비행 종료일 알림",
@@ -119,7 +119,7 @@ class FcmServiceTest {
     }
 
     @Test
-    fun `FCM 데이터에서 snake_case shape_id 를 알림 포커스 대상으로 추출한다`() {
+    fun `FCM 데이터에서 snake_case shape_id 를 알림 payload 로 추출한다`() {
         val shapeId = extractNotificationShapeId(
             mapOf(
                 "title" to "비행 종료일 알림",
@@ -131,7 +131,7 @@ class FcmServiceTest {
     }
 
     @Test
-    fun `빈 shapeId 는 알림 포커스 대상으로 사용하지 않는다`() {
+    fun `빈 shapeId 는 알림 payload 로 사용하지 않는다`() {
         val shapeId = extractNotificationShapeId(
             mapOf(
                 "shapeId" to "   ",

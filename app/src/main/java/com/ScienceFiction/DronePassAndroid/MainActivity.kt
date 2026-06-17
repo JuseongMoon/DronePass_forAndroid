@@ -38,7 +38,7 @@ internal const val LaunchNotificationPermissionRequestCode = 7301
 class MainActivity : ComponentActivity() {
     @Inject lateinit var dataStore: DataStore<Preferences>
 
-    private val notificationShapeId = mutableStateOf<String?>(null)
+    private val initialFocusShapeId = mutableStateOf<String?>(null)
     private val notificationForPopup = mutableStateOf<ForegroundNotification?>(null)
 
     override fun attachBaseContext(newBase: Context) {
@@ -47,7 +47,9 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        notificationShapeId.value = extractNotificationShapeId(intent)
+        initialFocusShapeId.value = resolveNotificationLaunchFocusShapeId(
+            notificationShapeId = extractNotificationShapeId(intent),
+        )
         notificationForPopup.value = extractForegroundNotification(intent)
         enableEdgeToEdge()
         observeKeepScreenAwakeSetting()
@@ -55,10 +57,10 @@ class MainActivity : ComponentActivity() {
         setContent {
             DronePassAndroidTheme {
                 MainScreen(
-                    initialFocusShapeId = notificationShapeId.value,
+                    initialFocusShapeId = initialFocusShapeId.value,
                     initialForegroundNotification = notificationForPopup.value,
                     onInitialFocusShapeConsumed = {
-                        notificationShapeId.value = null
+                        initialFocusShapeId.value = null
                     },
                     onInitialForegroundNotificationConsumed = {
                         notificationForPopup.value = null
@@ -71,7 +73,9 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        notificationShapeId.value = extractNotificationShapeId(intent)
+        initialFocusShapeId.value = resolveNotificationLaunchFocusShapeId(
+            notificationShapeId = extractNotificationShapeId(intent),
+        )
         notificationForPopup.value = extractForegroundNotification(intent)
     }
 
@@ -138,6 +142,15 @@ internal fun shouldRequestLaunchNotificationPermission(
     alreadyRequested: Boolean,
 ): Boolean {
     return sdkInt >= Build.VERSION_CODES.TIRAMISU && !permissionGranted && !alreadyRequested
+}
+
+@Suppress("UNUSED_PARAMETER")
+internal fun resolveNotificationLaunchFocusShapeId(
+    notificationShapeId: String?,
+): String? {
+    // iOS PushNotificationManager.didReceive only restores the title/body popup.
+    // Shape map focus remains limited to in-app saved-list and overlay taps.
+    return null
 }
 
 internal enum class KeepScreenAwakeFlagUpdate {

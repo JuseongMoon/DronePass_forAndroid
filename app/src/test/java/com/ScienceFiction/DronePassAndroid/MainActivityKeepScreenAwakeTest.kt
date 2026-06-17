@@ -3,6 +3,7 @@ package com.ScienceFiction.DronePassAndroid
 import android.os.Build
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -58,5 +59,11 @@ class MainActivityKeepScreenAwakeTest {
                 alreadyRequested = true,
             ),
         )
+    }
+
+    @Test
+    fun `알림 탭 shapeId 는 iOS처럼 앱 시작 지도 포커스로 사용하지 않는다`() {
+        assertNull(resolveNotificationLaunchFocusShapeId(notificationShapeId = "shape-1"))
+        assertNull(resolveNotificationLaunchFocusShapeId(notificationShapeId = null))
     }
 }
