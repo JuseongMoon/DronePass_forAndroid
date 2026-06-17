@@ -13,15 +13,20 @@ internal fun buildAnonymizedUserData(
     deletedAtMillis: Long,
     accountCreatedAtMillis: Long?,
 ): Map<String, Any> = buildMap {
+    val activeShapes = shapesForAnonymizedDeletion(shapes)
     put("deletedAt", Timestamp(Date(deletedAtMillis)))
-    put("totalShapesCreated", shapes.size)
+    put("totalShapesCreated", activeShapes.size)
     put("cloudSyncEnabled", cloudSyncEnabled)
     put("devicePlatform", "Android")
     put("totalDronesUsed", drones.count { !it.isDeleted })
-    put("shapeTypeDistribution", calculateShapeTypeDistribution(shapes))
+    put("shapeTypeDistribution", calculateShapeTypeDistribution(activeShapes))
     if (accountCreatedAtMillis != null) {
         put("accountCreatedAt", Timestamp(Date(accountCreatedAtMillis)))
     }
+}
+
+internal fun shapesForAnonymizedDeletion(shapes: List<ShapeModel>): List<ShapeModel> {
+    return shapes.filter { it.deletedAt == null }
 }
 
 internal fun calculateShapeTypeDistribution(shapes: List<ShapeModel>): Map<String, Int> {

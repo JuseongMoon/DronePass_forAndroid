@@ -33,13 +33,23 @@ class AnonymizedDeletionDataTest {
             accountCreatedAtMillis = 1_600_000_000_000L,
         )
 
-        assertEquals(4, data["totalShapesCreated"])
+        assertEquals(3, data["totalShapesCreated"])
         assertEquals(1, data["totalDronesUsed"])
         assertEquals(true, data["cloudSyncEnabled"])
         assertEquals("Android", data["devicePlatform"])
-        assertEquals(mapOf("circle" to 2, "polygon" to 2), data["shapeTypeDistribution"])
+        assertEquals(mapOf("circle" to 1, "polygon" to 2), data["shapeTypeDistribution"])
         assertEquals(1_700_000_000_000L, (data["deletedAt"] as Timestamp).toDate().time)
         assertEquals(1_600_000_000_000L, (data["accountCreatedAt"] as Timestamp).toDate().time)
+    }
+
+    @Test
+    fun `탈퇴 익명화 도형 목록은 iOS ShapeFileStore처럼 삭제 도형을 제외한다`() {
+        val shapes = listOf(
+            shape(id = "active", shapeType = ShapeType.CIRCLE),
+            shape(id = "deleted", shapeType = ShapeType.POLYGON, deletedAt = 1_700_000_020_000L),
+        )
+
+        assertEquals(listOf("active"), shapesForAnonymizedDeletion(shapes).map { it.id })
     }
 
     @Test
