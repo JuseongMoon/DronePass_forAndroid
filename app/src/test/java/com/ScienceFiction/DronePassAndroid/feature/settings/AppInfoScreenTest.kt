@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.settings
 
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -63,5 +64,10 @@ class AppInfoScreenTest {
     @Test
     fun `드론 원스톱 기능 아이콘은 iOS checkmark seal fill 의미와 맞는 인증 배지 아이콘을 사용한다`() {
         assertEquals("Filled.Verified", AppInfoDroneOnestopIcon.name)
+    }
+
+    @Test
+    fun `주소 검색 기능 아이콘 색상은 iOS mint 와 맞춘다`() {
+        assertEquals(0xFF00C7BE.toInt(), AppInfoSearchIconColor.toArgb())
     }
 }

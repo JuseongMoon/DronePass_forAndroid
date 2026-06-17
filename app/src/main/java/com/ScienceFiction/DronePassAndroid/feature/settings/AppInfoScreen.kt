@@ -71,6 +71,7 @@ internal val AppInfoSunriseSunsetIcon: ImageVector = Icons.Default.WbTwilight
 internal val AppInfoShapeManagementIcon: ImageVector = Icons.Default.RadioButtonChecked
 internal val AppInfoCloudSyncIcon: ImageVector = Icons.Default.CloudSync
 internal val AppInfoDroneOnestopIcon: ImageVector = Icons.Default.Verified
+internal val AppInfoSearchIconColor = Color(0xFF00C7BE)
 
 internal fun appInfoVersionValue(versionName: String, versionCode: Int): String {
     return "$versionName ($versionCode)"
@@ -189,7 +190,7 @@ fun AppInfoScreen(
             HorizontalDivider(modifier = Modifier.padding(start = 64.dp))
             FeatureRow(
                 icon = Icons.Default.Search,
-                iconColor = Color(0xFF34C759),
+                iconColor = AppInfoSearchIconColor,
                 title = stringResource(R.string.app_info_feature_search_title),
                 description = stringResource(R.string.app_info_feature_search_desc),
             )
