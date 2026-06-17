@@ -19,6 +19,13 @@ class DroneDeleteValidationTest {
     }
 
     @Test
+    fun `드론 상세 더보기 버튼은 iOS ellipsis circle 심볼 치수를 따른다`() {
+        assertEquals(24.dp, DroneDetailMoreCircleSize)
+        assertEquals(1.5.dp, DroneDetailMoreCircleStrokeWidth)
+        assertEquals(18.dp, DroneDetailMoreDotsSize)
+    }
+
+    @Test
     fun `도형 이동 대상 선택 헤더는 iOS inline navigation title처럼 좌우 액션 슬롯 폭을 맞춘다`() {
         assertEquals(44.dp, DroneMoveTargetNavigationHeaderHeight)
         assertEquals(88.dp, DroneMoveTargetNavigationHeaderSideWidth)

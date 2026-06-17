@@ -97,6 +97,13 @@ class ShapeDetailDroneResolutionTest {
     }
 
     @Test
+    fun `상세 시트 더보기 버튼은 iOS ellipsis circle 심볼 치수를 따른다`() {
+        assertEquals(24.dp, ShapeDetailMoreCircleSize)
+        assertEquals(1.5.dp, ShapeDetailMoreCircleStrokeWidth)
+        assertEquals(18.dp, ShapeDetailMoreDotsSize)
+    }
+
+    @Test
     fun `상세 정보 행 최소 높이는 iOS defaultMinListRowHeight 44와 맞춘다`() {
         assertEquals(44.dp, ShapeDetailRowMinHeight)
     }

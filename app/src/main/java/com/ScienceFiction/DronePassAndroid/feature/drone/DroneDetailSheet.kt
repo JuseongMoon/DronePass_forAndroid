@@ -9,6 +9,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -76,6 +77,9 @@ import com.ScienceFiction.DronePassAndroid.domain.model.PaletteColor
  */
 internal val DroneDetailNavigationHeaderHeight = 44.dp
 internal val DroneDetailNavigationHeaderSideWidth = 44.dp
+internal val DroneDetailMoreCircleSize = 24.dp
+internal val DroneDetailMoreCircleStrokeWidth = 1.5.dp
+internal val DroneDetailMoreDotsSize = 18.dp
 internal val DroneMoveTargetNavigationHeaderHeight = 44.dp
 internal val DroneMoveTargetNavigationHeaderSideWidth = 88.dp
 
@@ -336,8 +340,7 @@ private fun DroneDetailNavigationHeader(
                 onClick = { onMenuExpandedChange(true) },
                 modifier = Modifier.size(DroneDetailNavigationHeaderSideWidth),
             ) {
-                Icon(
-                    imageVector = Icons.Default.MoreHoriz,
+                DroneDetailEllipsisCircleIcon(
                     contentDescription = stringResource(R.string.drone_detail_more_menu),
                 )
             }
@@ -360,6 +363,31 @@ private fun DroneDetailNavigationHeader(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun DroneDetailEllipsisCircleIcon(
+    contentDescription: String,
+) {
+    Box(
+        modifier = Modifier
+            .size(DroneDetailMoreCircleSize)
+            .border(
+                BorderStroke(
+                    width = DroneDetailMoreCircleStrokeWidth,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                ),
+                CircleShape,
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            imageVector = Icons.Default.MoreHoriz,
+            contentDescription = contentDescription,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(DroneDetailMoreDotsSize),
+        )
     }
 }
 

@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 2026-06-17 도형 상세/드론 상세 시트의 상단 더보기 버튼을 iOS `ellipsis.circle` 심볼처럼 원 테두리 안의 점 아이콘으로 맞췄다. 기존 Android `MoreHoriz` 단독 아이콘은 원이 없어 iOS navigation bar 버튼과 시각적으로 달랐고, 도형/드론 상세 모두 24dp 원 + 1.5dp stroke + 18dp dots 토큰을 테스트로 고정했다. `:app:testDebugUnitTest --tests "*ShapeDetailDroneResolutionTest" --tests "*DroneDeleteValidationTest"`, `:app:assembleDebug` 통과.
 - 2026-06-17 저장 목록 오버레이의 정렬 기준 칩 아이콘을 iOS `ShapeSortingManager.SortOption.icon` 분기와 맞췄다. Android가 모든 정렬 기준에 `SwapVert` 하나만 쓰던 것을 제목순 `TextFields`, 생성일순 `CalendarToday`, 비행시작일순 `FlightTakeoff`, 비행종료일순 `FlightLand`로 분리했고, 정렬 방향 아이콘도 resolver 테스트로 고정했다. `:app:testDebugUnitTest --tests "*MainScreenStartDestinationTest"`, `:app:assembleDebug` 통과.
 - 2026-06-17 도형 편집의 주소 검색/좌표 입력 안내 카드 배경을 iOS `Color(.systemGray6)`와 같은 `#F2F2F7`로 고정했다. Android Material `surfaceVariant` alpha 배경을 제거해 라이트 모드에서 iOS 안내 카드와 같은 색감을 쓰며, `SearchAddressSheetTest`/`ShapeEditDefaultsTest`에 색상 계약을 추가했다. `:app:testDebugUnitTest --tests "*SearchAddressSheetTest" --tests "*ShapeEditDefaultsTest"`, `:app:assembleDebug` 통과.
 - 2026-06-17 VWorld 구역 상세 시트의 고도 제한 행 표시 조건을 iOS `VWorldZoneDetailView`처럼 다시 맞췄다. iOS는 `altitudeInfo != nil`을 기준으로 행을 렌더링하고 `altitudeInfo`는 원시 상한/하한이 모두 있을 때만 값이 생기므로, Android도 상한/하한이 둘 다 있을 때만 고도 행을 표시한다. `VWorldZoneDetailSheetTest`에 upper-only/lower-only 미표시 계약을 고정했고 `:app:testDebugUnitTest --tests "*VWorldZoneDetailSheetTest"`, `:app:assembleDebug` 통과.

@@ -24,6 +24,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.annotation.StringRes
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -72,6 +73,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.automirrored.filled.HelpOutline
@@ -150,6 +152,9 @@ internal fun encodeExternalMapDestinationName(destinationName: String): String =
 internal const val ShapeDetailSheetHeightFraction = 0.8f
 internal val ShapeDetailNavigationHeaderHeight = 44.dp
 internal val ShapeDetailNavigationHeaderSideWidth = 44.dp
+internal val ShapeDetailMoreCircleSize = 24.dp
+internal val ShapeDetailMoreCircleStrokeWidth = 1.5.dp
+internal val ShapeDetailMoreDotsSize = 18.dp
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -472,8 +477,7 @@ private fun ShapeDetailNavigationHeader(
                 onClick = { onMenuExpandedChange(true) },
                 modifier = Modifier.size(ShapeDetailNavigationHeaderSideWidth),
             ) {
-                Icon(
-                    imageVector = Icons.Default.MoreHoriz,
+                EllipsisCircleIcon(
                     contentDescription = stringResource(R.string.shape_detail_more_menu),
                 )
             }
@@ -500,6 +504,31 @@ private fun ShapeDetailNavigationHeader(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun EllipsisCircleIcon(
+    contentDescription: String,
+) {
+    Box(
+        modifier = Modifier
+            .size(ShapeDetailMoreCircleSize)
+            .border(
+                BorderStroke(
+                    width = ShapeDetailMoreCircleStrokeWidth,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                ),
+                CircleShape,
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            imageVector = Icons.Default.MoreHoriz,
+            contentDescription = contentDescription,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(ShapeDetailMoreDotsSize),
+        )
     }
 }
 
