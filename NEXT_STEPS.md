@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 2026-06-17 iOS 최신 String Catalog와 거리 계산 계약을 재감사했다. 실제 화면 문자열은 `.xcstrings` 기준으로 Android와 큰 차이가 없고, legacy `Localizable.strings`는 일부 오래된 값이 남아 있어 기준에서 제외한다. 거리 계산은 iOS처럼 스케치용 `DistanceCalculator`가 평균 지구 반지름 `6371000`, VWorld `FlightZoneCalculator`가 WGS-84 `6378137`을 쓰는 것이 맞으므로, 오래된 `REFACTORING_PLAN.md` 설명과 `FlightZoneCalculator` 주석을 현재 계약에 맞게 바로잡았다. `:app:testDebugUnitTest --tests "*DistanceCalculatorTest" --tests "*FlightZoneCalculatorTest"` 통과.
 - 2026-06-17 KP 정보/예보 시트의 범위 표기를 iOS `KPInfoView`/`KPForecastView`처럼 ASCII 하이픈으로 맞췄다. Android의 `0–9`, `0–5`, `5–6`, `6–7`, `7–8`, `8–9` 표기를 `0-9`, `0-5`, `5-6`, `6-7`, `7-8`, `8-9`로 보정하고, 한국어/영어 문자열 회귀 계약을 `StringResourceCoverageTest`에 고정했다. `:app:testDebugUnitTest --tests "*StringResourceCoverageTest"`, `:app:assembleDebug` 통과.
 - 2026-06-17 날씨 예보 시트의 마지막 업데이트 시간 표시를 iOS `WeatherForecastView.formatUpdateTime`처럼 로케일 기반 short time style 로 맞췄다. Android의 고정 `HH:mm:ss` 표시를 제거해 초 단위가 노출되지 않고, 사용자 12/24시간 설정과 로케일을 따른다. `:app:testDebugUnitTest --tests "*WeatherForecastParityTest"`, `:app:assembleDebug` 통과.
 - 2026-06-17 VWorld 비행구역 레이어 선택 시트의 영어 UI 문자열을 iOS String Catalog의 Title Case와 맞췄다. Android `Select all`/`Deselect all`/`Selected layers`/`Displayed zones`를 `Select All`/`Deselect All`/`Selected Layers`/`Displayed Zones`로 보정하고 `StringResourceCoverageTest`에 회귀 계약을 추가했다. `:app:testDebugUnitTest --tests "*StringResourceCoverageTest"`, `:app:assembleDebug` 통과.

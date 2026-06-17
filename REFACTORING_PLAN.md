@@ -15,7 +15,7 @@
 
 - **데이터 레이어**: 실시간 동기화 4중 결함, Migration SQL 불일치 — **Pri 0 PR에서 해결**
 - **지도/오버레이**: `FlightZoneCalculator` Ray Casting 좌표축 혼선 — **Pri 0 PR에서 해결**. 잔여: MapView 누수/회전 카메라 손실/Overlay Diff 부재
-- **알고리즘**: Haversine 반지름 불일치(iOS WGS-84 6378.137km vs Android 6371km), CRI Magnus NaN, SketchPointsCache TOCTOU
+- **알고리즘**: VWorld Haversine 반지름 불일치(iOS FlightZoneCalculator WGS-84 6378.137km vs Android 6371km), CRI Magnus NaN, SketchPointsCache TOCTOU
 - **Feature UI**: LoginScreen 이중 LaunchedEffect, Kp/Weather 무한 새로고침, SettingsViewModel.signOut FCM/Sync 누락
 - **인프라**: 백업규칙 파일명 불일치(클라우드 복원 시 폭주), POST_NOTIFICATIONS 런타임 미요청, release signingConfig 부재
 
@@ -85,11 +85,11 @@
 
 ### 2.3 알고리즘 (3건)
 
-- [x] **C-C1: Haversine 지구 반지름을 WGS-84 적도반지름으로 통일**
-  - 파일: `core/util/FlightZoneCalculator.kt:22, 65-73`, `core/util/DistanceCalculator.kt:24, 42-54`
-  - 문제: 두 구현 모두 `6371.0 km`(평균반지름) 사용. iOS 원본은 `6378137.0 m`(WGS-84 적도반지름). 한국 영역에서 0.112% 오차. 또한 Android는 `2*asin(sqrt(a))`인데 iOS는 `2*atan2(sqrt(a), sqrt(1-a))`로 수치 안정성 차이.
-  - 영향: iOS↔Android 거리 결과가 100km당 약 112m 다름. 비행구역 경계 부근에서 안전 판정 일관성 결여 가능.
-  - 수정: 상수 `EARTH_RADIUS_M = 6_378_137.0` 통일. `c = 2 * atan2(sqrt(a), sqrt(1-a))`로 통일. `FlightZoneCalculatorTest`에 iOS와 동일한 거리 결과 검증 추가(서울-부산 ≈ 325km 허용 범위 좁히기).
+- [x] **C-C1: VWorld Haversine 지구 반지름을 WGS-84 적도반지름으로 통일**
+  - 파일: `core/util/FlightZoneCalculator.kt:22, 65-73`
+  - 문제: VWorld 비행구역 계산이 `6371.0 km`(평균반지름)를 사용. iOS `FlightZoneCalculator.swift`는 `6378137.0 m`(WGS-84 적도반지름). 한국 영역에서 0.112% 오차. 또한 Android는 `2*asin(sqrt(a))`인데 iOS는 `2*atan2(sqrt(a), sqrt(1-a))`로 수치 안정성 차이.
+  - 영향: iOS↔Android 비행구역 거리 결과가 100km당 약 112m 다름. 비행구역 경계 부근에서 안전 판정 일관성 결여 가능.
+  - 수정: VWorld `FlightZoneCalculator`는 상수 `EARTH_RADIUS_M = 6_378_137.0`과 `c = 2 * atan2(sqrt(a), sqrt(1-a))`로 iOS와 통일. 스케치 샘플링/지우개 거리 계산용 `DistanceCalculator`는 iOS `DistanceCalculator.swift`와 같이 평균 지구 반지름 `6371000`을 유지한다. `FlightZoneCalculatorTest`와 `DistanceCalculatorTest`가 두 계약을 각각 고정한다.
 
 - [x] **C-C2: CRICalculator Magnus 공식의 NaN/0-division 가드**
   - 파일: `core/util/CRICalculator.kt:57-68`

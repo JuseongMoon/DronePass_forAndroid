@@ -20,7 +20,8 @@ object FlightZoneCalculator {
 
     /**
      * WGS-84 적도 반지름 (미터).
-     * iOS 원본(FlightZoneCalculator.swift) 및 [DistanceCalculator]와 동일한 값.
+     * iOS FlightZoneCalculator.swift 와 동일한 값이다. 스케치 거리 계산용
+     * [DistanceCalculator]는 iOS DistanceCalculator.swift 와 같이 평균 반지름을 쓴다.
      */
     private const val EARTH_RADIUS_M = 6_378_137.0
 
