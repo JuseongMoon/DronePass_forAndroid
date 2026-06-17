@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -41,6 +42,7 @@ internal val DocumentDividerThickness = 0.5.dp
 internal val DocumentErrorIconSize = 50.dp
 internal val DocumentEmptyStateSpacing = 12.dp
 internal val DocumentErrorRetryTopSpacing = 20.dp
+internal val DocumentStateMinHeight = 300.dp
 
 /**
  * iOS `TermsOfServiceView` / `PrivacyPolicyView` 정합 공통 시트 콘텐츠.
@@ -122,7 +124,9 @@ internal fun shouldAutoLoadParsedDocumentOnEnter(state: ParsedDocumentUiState): 
 @Composable
 private fun LoadingContent(@StringRes loadingTextResId: Int) {
     Column(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = DocumentStateMinHeight),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -144,7 +148,8 @@ private fun ErrorContent(
 ) {
     Column(
         modifier = Modifier
-            .fillMaxSize()
+            .fillMaxWidth()
+            .heightIn(min = DocumentStateMinHeight)
             .padding(32.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,

@@ -47,6 +47,7 @@ class DocumentEntryPolicyTest {
         assertEquals(50.dp, DocumentErrorIconSize)
         assertEquals(12.dp, DocumentEmptyStateSpacing)
         assertEquals(20.dp, DocumentErrorRetryTopSpacing)
+        assertEquals(300.dp, DocumentStateMinHeight)
     }
 
     @Test

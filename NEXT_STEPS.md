@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 2026-06-17 약관/개인정보 문서 시트의 로딩/오류 상태 배치를 iOS `TermsOfServiceView`/`PrivacyPolicyView`의 `frame(minHeight: 300)` 기준과 맞췄다. Android가 이전에는 남은 시트 전체 높이 중앙에 상태 뷰를 배치해 medium/large 시트 높이에 따라 iOS보다 아래로 치우칠 수 있었고, 이제 300dp 최소 콘텐츠 높이 안에서 중앙 배치한다. `:app:testDebugUnitTest --tests "*DocumentEntryPolicyTest" --tests "*StringResourceCoverageTest" --tests "*AuthViewModelForegroundSyncTest"`, `:app:assembleDebug` 통과.
 - 2026-06-17 패치노트 리스트 키를 iOS `PatchNote` UUID identity처럼 중복 version/date에도 충돌하지 않도록 보강했다. Android `LazyColumn`이 기존에는 `version + date`를 key로 써서 서버 문서에 같은 버전/날짜 블록이 들어오면 Compose 중복 키 문제가 날 수 있었고, 이제 인덱스를 포함한 키로 같은 노트 값도 안전하게 렌더링한다. `:app:testDebugUnitTest --tests "*PatchNotesContentTest" --tests "*MarkdownParserTest" --tests "*DocumentRepositoryTest" --tests "*DocumentEntryPolicyTest"`, `:app:assembleDebug` 통과.
 - 2026-06-17 앱 정보 시트의 `.circle.fill` 계열 기능 아이콘을 iOS `AppInfoView`처럼 색상 원형 배지 안의 흰색 심볼로 맞췄다. Android의 다중 드론/비행구역 시각화/만료 알림/주소 검색 행이 기존에는 일반 아이콘만 표시되어 iOS `paperplane.circle.fill`, `map.circle.fill`, `bell.circle.fill`, `magnifyingglass.circle.fill`와 질감이 달랐고, 해당 행만 32dp 원형 배지 + 20dp 내부 심볼 토큰으로 분리했다. `:app:testDebugUnitTest --tests "*AppInfoScreenTest"`, `:app:assembleDebug` 통과.
 - 2026-06-17 도형 상세/드론 상세 시트의 상단 더보기 버튼을 iOS `ellipsis.circle` 심볼처럼 원 테두리 안의 점 아이콘으로 맞췄다. 기존 Android `MoreHoriz` 단독 아이콘은 원이 없어 iOS navigation bar 버튼과 시각적으로 달랐고, 도형/드론 상세 모두 24dp 원 + 1.5dp stroke + 18dp dots 토큰을 테스트로 고정했다. `:app:testDebugUnitTest --tests "*ShapeDetailDroneResolutionTest" --tests "*DroneDeleteValidationTest"`, `:app:assembleDebug` 통과.
