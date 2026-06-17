@@ -355,7 +355,14 @@ class MapCameraFocusTest {
             ),
         )
 
-        assertEquals("target", action?.shapeId)
+        assertEquals(
+            ShapeOverlayTapAction(
+                shapeId = "target",
+                showShapeDetail = false,
+                requestSavedListFocus = true,
+            ),
+            action,
+        )
     }
 
     @Test
@@ -371,7 +378,14 @@ class MapCameraFocusTest {
             ),
         )
 
-        assertEquals("target", action?.shapeId)
+        assertEquals(
+            ShapeOverlayTapAction(
+                shapeId = "target",
+                showShapeDetail = false,
+                requestSavedListFocus = true,
+            ),
+            action,
+        )
     }
 
     @Test

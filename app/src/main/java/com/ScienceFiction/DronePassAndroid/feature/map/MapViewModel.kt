@@ -128,6 +128,8 @@ internal fun resolveShapeFocusCameraEvent(
 
 internal data class ShapeOverlayTapAction(
     val shapeId: String,
+    val showShapeDetail: Boolean,
+    val requestSavedListFocus: Boolean,
 )
 
 internal fun resolveShapeOverlayTapAction(
@@ -136,6 +138,8 @@ internal fun resolveShapeOverlayTapAction(
     val shape = tappedShape ?: return null
     return ShapeOverlayTapAction(
         shapeId = shape.id,
+        showShapeDetail = false,
+        requestSavedListFocus = true,
     )
 }
 
@@ -537,9 +541,11 @@ class MapViewModel @Inject constructor(
         val action = resolveShapeOverlayTapAction(shape) ?: return
 
         _selectedShapeId.value = action.shapeId
-        _showShapeDetail.value = false
-        viewModelScope.launch {
-            _savedShapeFocusEvent.emit(action.shapeId)
+        _showShapeDetail.value = action.showShapeDetail
+        if (action.requestSavedListFocus) {
+            viewModelScope.launch {
+                _savedShapeFocusEvent.emit(action.shapeId)
+            }
         }
     }
 
