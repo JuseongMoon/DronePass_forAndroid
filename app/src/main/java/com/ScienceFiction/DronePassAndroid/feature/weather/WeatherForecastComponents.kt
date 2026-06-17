@@ -87,6 +87,12 @@ internal val IosCurrentWeatherPreviewPadding = 16.dp
 internal val IosCurrentWeatherPreviewIconSize = 64.dp
 internal val IosCurrentWeatherPreviewIconSlotWidth = 94.dp
 internal val IosCurrentWeatherPreviewContainerColor = Color(0xFFFFFFFF)
+internal val IosCurrentWeatherPreviewTemperatureFontSize = 32.sp
+internal val IosCurrentWeatherPreviewConditionFontSize = 20.sp
+internal val IosCurrentWeatherPreviewTemperatureRangeFontSize = 15.sp
+internal val IosCurrentWeatherPreviewTemperatureFontWeight = FontWeight.SemiBold
+internal val IosCurrentWeatherPreviewRegularFontWeight = FontWeight.Normal
+internal val IosCurrentWeatherPreviewTemperatureRangeSpacing = 8.dp
 internal val IosWeatherDataCellCornerRadius = 12.dp
 internal val IosWeatherDataCellHorizontalPadding = 12.dp
 internal val IosWeatherDataCellVerticalPadding = 12.dp
@@ -580,30 +586,34 @@ private fun PreviewBlock(
                 ) {
                     Text(
                         text = temperatureText,
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.SemiBold,
+                        fontSize = IosCurrentWeatherPreviewTemperatureFontSize,
+                        fontWeight = IosCurrentWeatherPreviewTemperatureFontWeight,
                         color = temperatureColor,
                     )
                     Text(
                         text = conditionText,
-                        style = MaterialTheme.typography.titleMedium,
+                        fontSize = IosCurrentWeatherPreviewConditionFontSize,
+                        fontWeight = IosCurrentWeatherPreviewRegularFontWeight,
                         color = MaterialTheme.colorScheme.onSurface,
                     )
                 }
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(IosCurrentWeatherPreviewTemperatureRangeSpacing)) {
                     Text(
                         text = stringResource(R.string.weather_temperature_high_prefix) + maxTemperatureText,
-                        style = MaterialTheme.typography.bodyMedium,
+                        fontSize = IosCurrentWeatherPreviewTemperatureRangeFontSize,
+                        fontWeight = IosCurrentWeatherPreviewRegularFontWeight,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Text(
                         text = "~",
-                        style = MaterialTheme.typography.bodyMedium,
+                        fontSize = IosCurrentWeatherPreviewTemperatureRangeFontSize,
+                        fontWeight = IosCurrentWeatherPreviewRegularFontWeight,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Text(
                         text = stringResource(R.string.weather_temperature_low_prefix) + minTemperatureText,
-                        style = MaterialTheme.typography.bodyMedium,
+                        fontSize = IosCurrentWeatherPreviewTemperatureRangeFontSize,
+                        fontWeight = IosCurrentWeatherPreviewRegularFontWeight,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
