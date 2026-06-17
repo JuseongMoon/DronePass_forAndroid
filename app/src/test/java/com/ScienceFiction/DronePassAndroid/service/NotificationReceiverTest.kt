@@ -104,6 +104,40 @@ class NotificationReceiverTest {
     }
 
     @Test
+    fun `종료일 알림 표시 키는 해시 충돌 도형도 iOS identifier 처럼 shapeId 태그로 분리한다`() {
+        val first = localNotificationDeliveryKey(
+            type = NotificationScheduler.TYPE_END_DATE,
+            shapeId = "FB",
+            explicitNotificationId = null,
+            fallbackTimeMillis = 1L,
+        )
+        val second = localNotificationDeliveryKey(
+            type = NotificationScheduler.TYPE_END_DATE,
+            shapeId = "Ea",
+            explicitNotificationId = null,
+            fallbackTimeMillis = 1L,
+        )
+
+        assertEquals(first.id, second.id)
+        assertEquals("end_date_FB", first.tag)
+        assertEquals("end_date_Ea", second.tag)
+        assertNotEquals(first, second)
+    }
+
+    @Test
+    fun `종료일 알림 표시 태그는 공백 shapeId 를 iOS처럼 식별자 없음으로 취급한다`() {
+        assertEquals(
+            LocalNotificationDeliveryKey(tag = null, id = 2000),
+            localNotificationDeliveryKey(
+                type = NotificationScheduler.TYPE_END_DATE,
+                shapeId = "   ",
+                explicitNotificationId = null,
+                fallbackTimeMillis = 1L,
+            ),
+        )
+    }
+
+    @Test
     fun `알 수 없는 로컬 알림 타입은 기존처럼 시간 기반 ID로 fallback 한다`() {
         assertEquals(
             1234,

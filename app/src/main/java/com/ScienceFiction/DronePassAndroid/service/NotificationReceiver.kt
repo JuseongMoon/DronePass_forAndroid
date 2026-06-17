@@ -80,9 +80,19 @@ class NotificationReceiver : BroadcastReceiver() {
             .setStyle(NotificationCompat.BigTextStyle().bigText(body))
             .build()
 
-        notificationManager.notify(notificationId, notification)
+        val notificationTag = localNotificationTag(type = type, shapeId = shapeId)
+        if (notificationTag != null) {
+            notificationManager.notify(notificationTag, notificationId, notification)
+        } else {
+            notificationManager.notify(notificationId, notification)
+        }
     }
 }
+
+internal data class LocalNotificationDeliveryKey(
+    val tag: String?,
+    val id: Int,
+)
 
 internal fun notificationReceivedLogMessage(
     type: String,
@@ -101,12 +111,43 @@ internal fun localNotificationId(
     fallbackTimeMillis: Long = System.currentTimeMillis(),
 ): Int {
     explicitNotificationId?.takeIf { it > 0 }?.let { return it }
+    val normalizedShapeId = normalizeNotificationShapeId(shapeId)
     return when (type) {
         NotificationScheduler.TYPE_SUNRISE -> 1001
         NotificationScheduler.TYPE_SUNSET -> 1002
         NotificationScheduler.TYPE_END_DATE -> {
-            2000 + ((shapeId?.hashCode() ?: 0) and 0x7FFFFFFF) % 10000
+            2000 + ((normalizedShapeId?.hashCode() ?: 0) and 0x7FFFFFFF) % 10000
         }
         else -> fallbackTimeMillis.toInt()
     }
+}
+
+internal fun localNotificationTag(
+    type: String,
+    shapeId: String?,
+): String? {
+    return when (type) {
+        NotificationScheduler.TYPE_END_DATE -> {
+            val normalizedShapeId = normalizeNotificationShapeId(shapeId) ?: return null
+            "${NotificationScheduler.TYPE_END_DATE}_$normalizedShapeId"
+        }
+        else -> null
+    }
+}
+
+internal fun localNotificationDeliveryKey(
+    type: String,
+    shapeId: String?,
+    explicitNotificationId: Int?,
+    fallbackTimeMillis: Long = System.currentTimeMillis(),
+): LocalNotificationDeliveryKey {
+    return LocalNotificationDeliveryKey(
+        tag = localNotificationTag(type = type, shapeId = shapeId),
+        id = localNotificationId(
+            type = type,
+            shapeId = shapeId,
+            explicitNotificationId = explicitNotificationId,
+            fallbackTimeMillis = fallbackTimeMillis,
+        ),
+    )
 }
