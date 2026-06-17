@@ -758,6 +758,7 @@
     <string name="profile_delete_account_error_title">탈퇴 실패</string>
     <string name="profile_delete_account_success">회원 탈퇴가 완료되었습니다.</string>
     <string name="profile_delete_account_error">회원 탈퇴에 실패했습니다.</string>
+    <string name="profile_delete_account_requires_recent_login">보안을 위해 다시 로그인한 후 탈퇴해주세요.</string>
     <string name="profile_delete_data_error">데이터 삭제에 실패했습니다. 네트워크 확인 후 다시 시도해 주세요.</string>
 
     <!-- Document / PatchNotes (iOS FetchWebDocuments + 마크다운 렌더링 정합) -->

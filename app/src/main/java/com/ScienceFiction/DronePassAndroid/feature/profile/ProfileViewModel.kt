@@ -21,6 +21,8 @@ import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 import com.ScienceFiction.DronePassAndroid.feature.auth.AuthRepository
 import com.ScienceFiction.DronePassAndroid.service.FcmService
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseAuthException
+import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FirebaseFirestore
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -62,6 +64,7 @@ internal val ACCOUNT_DELETION_SYNC_PREFERENCE_KEYS_TO_CLEAR: List<Key<*>> = list
 private const val FIRESTORE_BATCH_LIMIT = 500
 internal const val FIRESTORE_USER_DELETE_MAX_ATTEMPTS = 3
 private const val FIRESTORE_USER_DELETE_RETRY_DELAY_MS = 1_000L
+private const val FIREBASE_AUTH_REQUIRES_RECENT_LOGIN = "ERROR_REQUIRES_RECENT_LOGIN"
 
 internal fun chunkFirestoreDocumentIdsForBatchDelete(documentIds: List<String>): List<List<String>> {
     return documentIds.chunked(FIRESTORE_BATCH_LIMIT)
@@ -82,6 +85,46 @@ internal fun shouldNotifyProfileSyncResultForCloudToggle(
 
 internal fun profileErrorDescription(localizedMessage: String?, fallback: String): String {
     return localizedMessage ?: fallback
+}
+
+internal fun isRecentLoginRequiredAuthErrorCode(errorCode: String?): Boolean {
+    return errorCode == FIREBASE_AUTH_REQUIRES_RECENT_LOGIN
+}
+
+internal fun isRecentLoginRequiredForAccountDeletion(exception: Throwable): Boolean {
+    return exception is FirebaseAuthRecentLoginRequiredException ||
+        (exception as? FirebaseAuthException)?.let { authException ->
+            isRecentLoginRequiredAuthErrorCode(authException.errorCode)
+        } == true
+}
+
+internal fun profileDeleteAccountErrorDescription(
+    recentLoginRequired: Boolean,
+    localizedMessage: String?,
+    recentLoginRequiredMessage: String,
+    fallback: String,
+): String {
+    return if (recentLoginRequired) {
+        recentLoginRequiredMessage
+    } else {
+        profileErrorDescription(
+            localizedMessage = localizedMessage,
+            fallback = fallback,
+        )
+    }
+}
+
+internal fun profileDeleteAccountErrorDescription(
+    exception: Throwable,
+    recentLoginRequiredMessage: String,
+    fallback: String,
+): String {
+    return profileDeleteAccountErrorDescription(
+        recentLoginRequired = isRecentLoginRequiredForAccountDeletion(exception),
+        localizedMessage = exception.localizedMessage,
+        recentLoginRequiredMessage = recentLoginRequiredMessage,
+        fallback = fallback,
+    )
 }
 
 internal fun normalizeProfileJoinDateMillis(timestamp: Long?): Long? =
@@ -410,8 +453,11 @@ class ProfileViewModel @Inject constructor(
                     _isAccountActionInProgress.value = false
                     onResult(
                         false,
-                        profileErrorDescription(
-                            localizedMessage = exception.localizedMessage,
+                        profileDeleteAccountErrorDescription(
+                            exception = exception,
+                            recentLoginRequiredMessage = appContext.getString(
+                                R.string.profile_delete_account_requires_recent_login,
+                            ),
                             fallback = appContext.getString(R.string.profile_delete_account_error),
                         ),
                     )

@@ -640,6 +640,10 @@ class StringResourceCoverageTest {
             "회원 탈퇴에 실패했습니다.",
             stringResourceValue("values/strings.xml", "profile_delete_account_error"),
         )
+        assertEquals(
+            "보안을 위해 다시 로그인한 후 탈퇴해주세요.",
+            stringResourceValue("values/strings.xml", "profile_delete_account_requires_recent_login"),
+        )
         assertEquals("로그아웃하시겠습니까?", stringResourceValue("values/strings.xml", "profile_logout_message"))
 
         assertEquals("My Info", stringResourceValue("values-en/strings.xml", "profile_section_my_info"))
@@ -689,6 +693,10 @@ class StringResourceCoverageTest {
         assertEquals(
             "Failed to delete account.",
             stringResourceValue("values-en/strings.xml", "profile_delete_account_error"),
+        )
+        assertEquals(
+            "For security, please sign in again before deleting your account.",
+            stringResourceValue("values-en/strings.xml", "profile_delete_account_requires_recent_login"),
         )
     }
 

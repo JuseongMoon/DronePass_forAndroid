@@ -422,6 +422,7 @@
     <string name="profile_delete_account_error_title">Deletion Failed</string>
     <string name="profile_delete_account_success">Account deleted successfully.</string>
     <string name="profile_delete_account_error">Failed to delete account.</string>
+    <string name="profile_delete_account_requires_recent_login">For security, please sign in again before deleting your account.</string>
     <string name="profile_delete_data_error">Data deletion failed. Please check your network connection and try again.</string>
 
     <!-- Document / PatchNotes -->

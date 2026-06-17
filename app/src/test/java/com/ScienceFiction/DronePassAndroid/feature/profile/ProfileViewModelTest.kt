@@ -195,6 +195,35 @@ class ProfileViewModelTest {
     }
 
     @Test
+    fun `탈퇴 최근 로그인 필요 오류는 iOS AccountDeletionError 메시지로 고정한다`() {
+        assertTrue(isRecentLoginRequiredAuthErrorCode("ERROR_REQUIRES_RECENT_LOGIN"))
+        assertTrue(!isRecentLoginRequiredAuthErrorCode("ERROR_NETWORK_REQUEST_FAILED"))
+        assertEquals(
+            "보안을 위해 다시 로그인한 후 탈퇴해주세요.",
+            profileDeleteAccountErrorDescription(
+                recentLoginRequired = true,
+                localizedMessage = "raw firebase message",
+                recentLoginRequiredMessage = "보안을 위해 다시 로그인한 후 탈퇴해주세요.",
+                fallback = "회원 탈퇴에 실패했습니다.",
+            ),
+        )
+    }
+
+    @Test
+    fun `탈퇴 일반 오류는 iOS처럼 localizedMessage 를 우선한다`() {
+        assertTrue(!isRecentLoginRequiredForAccountDeletion(IllegalStateException("network")))
+        assertEquals(
+            "network",
+            profileDeleteAccountErrorDescription(
+                recentLoginRequired = false,
+                localizedMessage = "network",
+                recentLoginRequiredMessage = "보안을 위해 다시 로그인한 후 탈퇴해주세요.",
+                fallback = "회원 탈퇴에 실패했습니다.",
+            ),
+        )
+    }
+
+    @Test
     fun `프로필 가입일은 iOS처럼 Firebase 생성 시각이 있을 때만 표시한다`() {
         assertEquals(1_700_000_000_000L, normalizeProfileJoinDateMillis(1_700_000_000_000L))
         assertEquals(null, normalizeProfileJoinDateMillis(0L))
