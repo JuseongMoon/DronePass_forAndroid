@@ -100,17 +100,27 @@ fun DocumentScreen(
                     messageResId = errorMessageResId,
                     onRetry = onRetry,
                 )
-                is ParsedDocumentUiState.Content -> Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(rememberScrollState())
-                        .padding(vertical = 16.dp),
-                ) {
-                    MarkdownView(
-                        elements = state.document.elements,
-                        tables = state.document.tables,
-                    )
-                    Spacer(modifier = Modifier.height(32.dp))
+                is ParsedDocumentUiState.Content -> {
+                    if (!parsedDocumentHasRenderableContent(state)) {
+                        ErrorContent(
+                            titleResId = errorTitleResId,
+                            messageResId = errorMessageResId,
+                            onRetry = onRetry,
+                        )
+                    } else {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .verticalScroll(rememberScrollState())
+                                .padding(vertical = 16.dp),
+                        ) {
+                            MarkdownView(
+                                elements = state.document.elements,
+                                tables = state.document.tables,
+                            )
+                            Spacer(modifier = Modifier.height(32.dp))
+                        }
+                    }
                 }
             }
         }
@@ -118,7 +128,15 @@ fun DocumentScreen(
 }
 
 internal fun shouldAutoLoadParsedDocumentOnEnter(state: ParsedDocumentUiState): Boolean {
-    return state !is ParsedDocumentUiState.Content
+    return when (state) {
+        is ParsedDocumentUiState.Loading,
+        is ParsedDocumentUiState.Error -> true
+        is ParsedDocumentUiState.Content -> !parsedDocumentHasRenderableContent(state)
+    }
+}
+
+internal fun parsedDocumentHasRenderableContent(state: ParsedDocumentUiState.Content): Boolean {
+    return state.document.elements.isNotEmpty()
 }
 
 @Composable

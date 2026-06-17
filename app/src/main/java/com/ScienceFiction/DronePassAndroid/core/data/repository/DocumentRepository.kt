@@ -116,7 +116,10 @@ class DocumentRepository @Inject constructor(
             try {
                 val body = documentApi.getDocument(path = path)
                 val content = body.string()
-                val parsed = MarkdownParser.parseMarkdown(content)
+                val parsed = requireDisplayableParsedDocument(
+                    document = MarkdownParser.parseMarkdown(content),
+                    label = label,
+                )
                 cacheSet(CacheEntry(value = parsed, path = path, fetchedAt = System.currentTimeMillis()))
                 Result.success(parsed)
             } catch (e: Exception) {
@@ -138,4 +141,18 @@ internal fun localizedDocumentPath(base: String, languageTag: String?): String {
         ?.substringBefore('-')
         ?.lowercase(Locale.ROOT)
     return if (primaryLanguage == "ko") "$base.txt" else "${base}_en.txt"
+}
+
+internal fun parsedDocumentHasDisplayableElements(document: ParsedDocument): Boolean {
+    return document.elements.isNotEmpty()
+}
+
+internal fun requireDisplayableParsedDocument(
+    document: ParsedDocument,
+    label: String,
+): ParsedDocument {
+    if (!parsedDocumentHasDisplayableElements(document)) {
+        throw IllegalStateException("$label document is empty")
+    }
+    return document
 }

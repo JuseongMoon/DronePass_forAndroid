@@ -3,6 +3,8 @@ package com.ScienceFiction.DronePassAndroid.feature.document
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.FindInPage
 import androidx.compose.ui.unit.dp
+import com.ScienceFiction.DronePassAndroid.domain.model.MarkdownElement
+import com.ScienceFiction.DronePassAndroid.domain.model.MarkdownElementType
 import com.ScienceFiction.DronePassAndroid.domain.model.ParsedDocument
 import com.ScienceFiction.DronePassAndroid.domain.model.PatchNote
 import org.junit.Assert.assertEquals
@@ -23,15 +25,33 @@ class DocumentEntryPolicyTest {
     }
 
     @Test
-    fun `약관 문서는 캐시된 콘텐츠가 있으면 iOS 메모리 캐시처럼 자동 로드를 건너뛴다`() {
+    fun `약관 문서는 캐시된 렌더링 콘텐츠가 있으면 iOS 메모리 캐시처럼 자동 로드를 건너뛴다`() {
         assertEquals(
             false,
             shouldAutoLoadParsedDocumentOnEnter(
                 ParsedDocumentUiState.Content(
-                    ParsedDocument(elements = emptyList(), tables = emptyList()),
+                    ParsedDocument(
+                        elements = listOf(
+                            MarkdownElement(
+                                type = MarkdownElementType.Paragraph,
+                                content = "terms",
+                            ),
+                        ),
+                        tables = emptyList(),
+                    ),
                 ),
             ),
         )
+    }
+
+    @Test
+    fun `약관 문서는 iOS처럼 빈 콘텐츠를 오류 상태처럼 취급하고 재진입 시 자동 로드한다`() {
+        val emptyContent = ParsedDocumentUiState.Content(
+            ParsedDocument(elements = emptyList(), tables = emptyList()),
+        )
+
+        assertEquals(false, parsedDocumentHasRenderableContent(emptyContent))
+        assertEquals(true, shouldAutoLoadParsedDocumentOnEnter(emptyContent))
     }
 
     @Test
