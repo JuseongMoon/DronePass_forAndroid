@@ -74,6 +74,7 @@ internal val DroneDropdownControlVerticalAlignment: Alignment.Vertical = Alignme
 internal val DroneDropdownTextSize = 14.sp
 @DrawableRes
 internal val DroneDropdownEmptyIconRes = R.drawable.ic_drone
+internal fun droneDropdownEmptyTextColor(onSurface: Color): Color = onSurface
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -124,7 +125,7 @@ fun DroneSelectionDropdown(
                             text = stringResource(R.string.drone_dropdown_select),
                             fontSize = DroneDropdownTextSize,
                             fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = droneDropdownEmptyTextColor(MaterialTheme.colorScheme.onSurface)
                         )
                     }
                 }

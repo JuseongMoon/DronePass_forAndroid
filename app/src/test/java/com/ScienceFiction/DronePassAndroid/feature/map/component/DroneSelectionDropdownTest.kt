@@ -1,6 +1,7 @@
 package com.ScienceFiction.DronePassAndroid.feature.map.component
 
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ScienceFiction.DronePassAndroid.R
@@ -33,6 +34,11 @@ class DroneSelectionDropdownTest {
     fun `선택된 드론이 없을 때 iOS처럼 드론 아이콘을 사용한다`() {
         assertEquals(R.drawable.ic_drone, DroneDropdownEmptyIconRes)
         assertEquals(12.dp, DroneDropdownEmptyIconSize)
+    }
+
+    @Test
+    fun `선택된 드론이 없을 때 텍스트는 iOS primary 색상을 따른다`() {
+        assertEquals(Color.Black, droneDropdownEmptyTextColor(Color.Black))
     }
 
     @Test
