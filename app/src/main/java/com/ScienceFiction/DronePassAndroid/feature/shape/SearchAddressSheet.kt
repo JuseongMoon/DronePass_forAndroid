@@ -119,11 +119,35 @@ internal fun addressBuildingName(address: GeocodingAddress): String? {
         ?.takeIf { it.isNotEmpty() }
 }
 
+internal enum class SearchAddressContentMode {
+    LOADING,
+    ERROR,
+    GUIDE,
+    RESULTS,
+}
+
+internal fun resolveSearchAddressContentMode(
+    isLoading: Boolean,
+    errorMessage: String?,
+    hasResults: Boolean,
+): SearchAddressContentMode {
+    return when {
+        isLoading -> SearchAddressContentMode.LOADING
+        errorMessage != null -> SearchAddressContentMode.ERROR
+        !hasResults -> SearchAddressContentMode.GUIDE
+        else -> SearchAddressContentMode.RESULTS
+    }
+}
+
 internal fun shouldShowSearchAddressGuide(
     isLoading: Boolean,
     errorMessage: String?,
     hasResults: Boolean,
-): Boolean = !isLoading && errorMessage == null && !hasResults
+): Boolean = resolveSearchAddressContentMode(
+    isLoading = isLoading,
+    errorMessage = errorMessage,
+    hasResults = hasResults,
+) == SearchAddressContentMode.GUIDE
 
 internal fun shouldEnableSearchAddressSubmit(query: String): Boolean = query.isNotEmpty()
 
@@ -250,40 +274,39 @@ fun SearchAddressSheet(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // 에러 메시지 표시
-            errorMessage?.let { message ->
-                SearchAddressErrorView(
-                    message = message,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(180.dp),
+            when (
+                resolveSearchAddressContentMode(
+                    isLoading = isLoading,
+                    errorMessage = errorMessage,
+                    hasResults = results.isNotEmpty(),
                 )
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-
-            when {
-                isLoading -> {
+            ) {
+                SearchAddressContentMode.LOADING -> {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(180.dp),
+                            .weight(1f),
                         contentAlignment = Alignment.Center,
                     ) {
                         CircularProgressIndicator()
                     }
                 }
-                shouldShowSearchAddressGuide(
-                    isLoading = isLoading,
-                    errorMessage = errorMessage,
-                    hasResults = results.isNotEmpty(),
-                ) -> {
+                SearchAddressContentMode.ERROR -> {
+                    SearchAddressErrorView(
+                        message = errorMessage.orEmpty(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                    )
+                }
+                SearchAddressContentMode.GUIDE -> {
                     SearchAddressGuideCard(
                         modifier = Modifier
                             .align(Alignment.CenterHorizontally)
                             .padding(top = 4.dp),
                     )
                 }
-                else -> {
+                SearchAddressContentMode.RESULTS -> {
                     LazyColumn(
                         modifier = Modifier
                             .fillMaxWidth()

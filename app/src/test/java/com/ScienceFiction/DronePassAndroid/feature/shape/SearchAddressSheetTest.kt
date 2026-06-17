@@ -287,6 +287,42 @@ class SearchAddressSheetTest {
     }
 
     @Test
+    fun `주소 검색 콘텐츠는 iOS처럼 로딩 에러 안내 결과 중 하나만 표시한다`() {
+        assertEquals(
+            SearchAddressContentMode.LOADING,
+            resolveSearchAddressContentMode(
+                isLoading = true,
+                errorMessage = "network",
+                hasResults = true,
+            ),
+        )
+        assertEquals(
+            SearchAddressContentMode.ERROR,
+            resolveSearchAddressContentMode(
+                isLoading = false,
+                errorMessage = "",
+                hasResults = true,
+            ),
+        )
+        assertEquals(
+            SearchAddressContentMode.GUIDE,
+            resolveSearchAddressContentMode(
+                isLoading = false,
+                errorMessage = null,
+                hasResults = false,
+            ),
+        )
+        assertEquals(
+            SearchAddressContentMode.RESULTS,
+            resolveSearchAddressContentMode(
+                isLoading = false,
+                errorMessage = null,
+                hasResults = true,
+            ),
+        )
+    }
+
+    @Test
     fun `주소 검색 안내 카드는 로딩 에러 결과가 있으면 숨긴다`() {
         assertFalse(
             shouldShowSearchAddressGuide(
