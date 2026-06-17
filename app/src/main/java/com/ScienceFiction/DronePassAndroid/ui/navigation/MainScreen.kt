@@ -40,9 +40,12 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.FlightLand
+import androidx.compose.material.icons.filled.FlightTakeoff
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.ArrowUpward
-import androidx.compose.material.icons.filled.SwapVert
+import androidx.compose.material.icons.filled.TextFields
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -342,6 +345,23 @@ internal fun resolveSavedOverlaySortChipIconSize(isTablet: Boolean): Dp {
         SavedOverlaySortChipTabletIconSize
     } else {
         SavedOverlaySortChipPhoneIconSize
+    }
+}
+
+internal fun resolveSavedSortOptionIcon(option: SortOption): ImageVector {
+    return when (option) {
+        SortOption.TITLE -> Icons.Default.TextFields
+        SortOption.DATE_CREATED -> Icons.Default.CalendarToday
+        SortOption.FLIGHT_START -> Icons.Default.FlightTakeoff
+        SortOption.FLIGHT_END -> Icons.Default.FlightLand
+    }
+}
+
+internal fun resolveSavedSortDirectionIcon(direction: SortDirection): ImageVector {
+    return if (direction == SortDirection.ASCENDING) {
+        Icons.Default.ArrowDownward
+    } else {
+        Icons.Default.ArrowUpward
     }
 }
 
@@ -1424,7 +1444,7 @@ private fun SavedListHeaderRow(
         SortChip(
             isTablet = isTablet,
             text = stringResource(sortOption.labelRes),
-            iconVector = Icons.Default.SwapVert,
+            iconVector = resolveSavedSortOptionIcon(sortOption),
             color = SortOptionChipColor,
             onClick = onCycleSortOption,
         )
@@ -1432,11 +1452,7 @@ private fun SavedListHeaderRow(
         SortChip(
             isTablet = isTablet,
             text = stringResource(sortDirection.labelRes),
-            iconVector = if (sortDirection == SortDirection.ASCENDING) {
-                Icons.Default.ArrowDownward
-            } else {
-                Icons.Default.ArrowUpward
-            },
+            iconVector = resolveSavedSortDirectionIcon(sortDirection),
             color = SortDirectionChipColor,
             onClick = onToggleSortDirection,
         )

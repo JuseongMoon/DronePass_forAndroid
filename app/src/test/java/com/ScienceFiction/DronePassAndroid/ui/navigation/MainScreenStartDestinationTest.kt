@@ -1,8 +1,17 @@
 package com.ScienceFiction.DronePassAndroid.ui.navigation
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.FlightLand
+import androidx.compose.material.icons.filled.FlightTakeoff
+import androidx.compose.material.icons.filled.TextFields
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.sp
+import com.ScienceFiction.DronePassAndroid.feature.saved.SortDirection
+import com.ScienceFiction.DronePassAndroid.feature.saved.SortOption
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -220,6 +229,20 @@ class MainScreenStartDestinationTest {
         assertEquals(11.dp, resolveSavedOverlaySortChipIconSize(isTablet = true))
         assertEquals(16.dp, SettingsOverlayHeaderHorizontalPadding)
         assertEquals(4.dp, SettingsOverlayHeaderBottomPadding)
+    }
+
+    @Test
+    fun `저장 목록 정렬 칩 아이콘은 iOS SortOption icon 분기를 따른다`() {
+        assertEquals(Icons.Default.TextFields, resolveSavedSortOptionIcon(SortOption.TITLE))
+        assertEquals(Icons.Default.CalendarToday, resolveSavedSortOptionIcon(SortOption.DATE_CREATED))
+        assertEquals(Icons.Default.FlightTakeoff, resolveSavedSortOptionIcon(SortOption.FLIGHT_START))
+        assertEquals(Icons.Default.FlightLand, resolveSavedSortOptionIcon(SortOption.FLIGHT_END))
+    }
+
+    @Test
+    fun `저장 목록 정렬 방향 칩 아이콘은 iOS SortDirection icon 분기를 따른다`() {
+        assertEquals(Icons.Default.ArrowDownward, resolveSavedSortDirectionIcon(SortDirection.ASCENDING))
+        assertEquals(Icons.Default.ArrowUpward, resolveSavedSortDirectionIcon(SortDirection.DESCENDING))
     }
 
     @Test

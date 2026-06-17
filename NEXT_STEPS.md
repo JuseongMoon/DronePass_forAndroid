@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 2026-06-17 저장 목록 오버레이의 정렬 기준 칩 아이콘을 iOS `ShapeSortingManager.SortOption.icon` 분기와 맞췄다. Android가 모든 정렬 기준에 `SwapVert` 하나만 쓰던 것을 제목순 `TextFields`, 생성일순 `CalendarToday`, 비행시작일순 `FlightTakeoff`, 비행종료일순 `FlightLand`로 분리했고, 정렬 방향 아이콘도 resolver 테스트로 고정했다. `:app:testDebugUnitTest --tests "*MainScreenStartDestinationTest"`, `:app:assembleDebug` 통과.
 - 2026-06-17 도형 편집의 주소 검색/좌표 입력 안내 카드 배경을 iOS `Color(.systemGray6)`와 같은 `#F2F2F7`로 고정했다. Android Material `surfaceVariant` alpha 배경을 제거해 라이트 모드에서 iOS 안내 카드와 같은 색감을 쓰며, `SearchAddressSheetTest`/`ShapeEditDefaultsTest`에 색상 계약을 추가했다. `:app:testDebugUnitTest --tests "*SearchAddressSheetTest" --tests "*ShapeEditDefaultsTest"`, `:app:assembleDebug` 통과.
 - 2026-06-17 VWorld 구역 상세 시트의 고도 제한 행 표시 조건을 iOS `VWorldZoneDetailView`처럼 다시 맞췄다. iOS는 `altitudeInfo != nil`을 기준으로 행을 렌더링하고 `altitudeInfo`는 원시 상한/하한이 모두 있을 때만 값이 생기므로, Android도 상한/하한이 둘 다 있을 때만 고도 행을 표시한다. `VWorldZoneDetailSheetTest`에 upper-only/lower-only 미표시 계약을 고정했고 `:app:testDebugUnitTest --tests "*VWorldZoneDetailSheetTest"`, `:app:assembleDebug` 통과.
 - 2026-06-17 iOS 최신 String Catalog와 거리 계산 계약을 재감사했다. 실제 화면 문자열은 `.xcstrings` 기준으로 Android와 큰 차이가 없고, legacy `Localizable.strings`는 일부 오래된 값이 남아 있어 기준에서 제외한다. 거리 계산은 iOS처럼 스케치용 `DistanceCalculator`가 평균 지구 반지름 `6371000`, VWorld `FlightZoneCalculator`가 WGS-84 `6378137`을 쓰는 것이 맞으므로, 오래된 `REFACTORING_PLAN.md` 설명과 `FlightZoneCalculator` 주석을 현재 계약에 맞게 바로잡았다. `:app:testDebugUnitTest --tests "*DistanceCalculatorTest" --tests "*FlightZoneCalculatorTest"` 통과.
