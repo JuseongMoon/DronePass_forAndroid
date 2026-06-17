@@ -14,7 +14,7 @@ Unit tests such as `CrossPlatformFirestoreContractTest` protect the wire format.
 - Android Google sign-in is operational:
   - `local.properties` has a real `WEB_CLIENT_ID`.
   - Firebase Console has the Android debug/release SHA-1 and SHA-256 fingerprints.
-  - `app/google-services.json` has a non-empty Android `oauth_client` for `com.ScienceFiction.DronePassAndroid`.
+  - `app/google-services.json` has a `client_type=1` Android `oauth_client` for `com.ScienceFiction.DronePassAndroid`.
 - Cloud backup/sync is enabled for the test account in both apps.
 - Any existing test data with the chosen prefix is safe to delete.
 
