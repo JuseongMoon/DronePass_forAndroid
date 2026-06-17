@@ -17,10 +17,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Bedtime
 import androidx.compose.material.icons.filled.NightsStay
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.WbSunny
+import androidx.compose.material.icons.filled.WbTwilight
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -34,6 +34,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -184,7 +185,7 @@ private fun TimelineProgressBar(
     ) {
         // 시작 측 (낮: 일출 / 밤: 일몰)
         SideIconTime(
-            iconDaytime = isDaytime,  // 낮이면 sunrise(WbSunny), 밤이면 sunset(Bedtime)
+            endpointIcon = resolveSunTimelineEndpointIcon(isSunrise = isDaytime),
             time = timelineState.startDateTime.toLocalTime(),
         )
 
@@ -270,7 +271,7 @@ private fun TimelineProgressBar(
 
         // 끝 측 (낮: 일몰 / 밤: 일출(내일))
         SideIconTime(
-            iconDaytime = !isDaytime,  // 낮이면 sunset(Bedtime), 밤이면 sunrise(WbSunny)
+            endpointIcon = resolveSunTimelineEndpointIcon(isSunrise = !isDaytime),
             time = timelineState.endDateTime.toLocalTime(),
         )
     }
@@ -278,7 +279,7 @@ private fun TimelineProgressBar(
 
 @Composable
 private fun SideIconTime(
-    iconDaytime: Boolean,
+    endpointIcon: SunTimelineEndpointIcon,
     time: LocalTime,
 ) {
     Column(
@@ -287,7 +288,7 @@ private fun SideIconTime(
         verticalArrangement = Arrangement.spacedBy(IosSunTimelineSideIconTimeSpacing),
     ) {
         Icon(
-            imageVector = if (iconDaytime) Icons.Default.WbSunny else Icons.Default.Bedtime,
+            imageVector = sunTimelineEndpointImageVector(endpointIcon),
             contentDescription = null,
             tint = SunEventColor,
             modifier = Modifier.size(IosSunTimelineSideIconSize),
@@ -305,6 +306,20 @@ internal data class NoonMidnightMarker(
     val progress: Float,
     val labelRes: Int,
 )
+
+internal enum class SunTimelineEndpointIcon {
+    Sunrise,
+    Sunset,
+}
+
+internal fun resolveSunTimelineEndpointIcon(isSunrise: Boolean): SunTimelineEndpointIcon =
+    if (isSunrise) SunTimelineEndpointIcon.Sunrise else SunTimelineEndpointIcon.Sunset
+
+internal fun sunTimelineEndpointImageVector(endpointIcon: SunTimelineEndpointIcon): ImageVector =
+    when (endpointIcon) {
+        SunTimelineEndpointIcon.Sunrise -> Icons.Default.WbSunny
+        SunTimelineEndpointIcon.Sunset -> Icons.Default.WbTwilight
+    }
 
 internal data class SunTimelineState(
     val isDaytime: Boolean,

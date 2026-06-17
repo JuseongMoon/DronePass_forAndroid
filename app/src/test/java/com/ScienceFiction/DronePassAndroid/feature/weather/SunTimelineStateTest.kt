@@ -80,6 +80,20 @@ class SunTimelineStateTest {
     }
 
     @Test
+    fun `sun timeline endpoint icons keep iOS sunrise and sunset semantics`() {
+        assertEquals(SunTimelineEndpointIcon.Sunrise, resolveSunTimelineEndpointIcon(isSunrise = true))
+        assertEquals(SunTimelineEndpointIcon.Sunset, resolveSunTimelineEndpointIcon(isSunrise = false))
+        assertEquals(
+            "Filled.WbSunny",
+            sunTimelineEndpointImageVector(SunTimelineEndpointIcon.Sunrise).name,
+        )
+        assertEquals(
+            "Filled.WbTwilight",
+            sunTimelineEndpointImageVector(SunTimelineEndpointIcon.Sunset).name,
+        )
+    }
+
+    @Test
     fun `sun timeline tokens match iOS sunriseSunsetCard`() {
         assertEquals(20.sp, IosSunTimelineTitleFontSize)
         assertEquals(FontWeight.SemiBold, IosSunTimelineTitleFontWeight)
