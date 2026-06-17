@@ -174,6 +174,9 @@ internal val NotificationPopupCornerRadius = 20.dp
 internal val NotificationPopupButtonCornerRadius = 12.dp
 internal const val NotificationPopupDimAlpha = 0.4f
 internal val NotificationPopupShadowElevation = 20.dp
+internal val NotificationPopupTitleTextSize = 17.sp
+internal val NotificationPopupBodyTextSize = 17.sp
+internal val NotificationPopupButtonTextSize = 17.sp
 internal const val NotificationPopupAnimationDurationMs = 250
 internal const val NotificationPopupInitialScale = 0.9f
 private val TabletOverlayCornerRadius = 16.dp
@@ -818,14 +821,14 @@ private fun PushNotificationOverlay(
                 )
                 Text(
                     text = notification.title,
-                    style = MaterialTheme.typography.titleMedium,
+                    fontSize = NotificationPopupTitleTextSize,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Text(
                     text = notification.body,
-                    style = MaterialTheme.typography.bodyMedium,
+                    fontSize = NotificationPopupBodyTextSize,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -843,6 +846,7 @@ private fun PushNotificationOverlay(
                 ) {
                     Text(
                         text = stringResource(R.string.common_confirm),
+                        fontSize = NotificationPopupButtonTextSize,
                         fontWeight = FontWeight.SemiBold,
                     )
                 }
