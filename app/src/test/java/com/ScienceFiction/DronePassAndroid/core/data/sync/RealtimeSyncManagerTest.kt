@@ -120,6 +120,34 @@ class RealtimeSyncManagerTest {
     }
 
     @Test
+    fun `realtime listener treats missing last sync as iOS distant past baseline`() {
+        assertEquals(
+            true,
+            shouldScheduleRealtimeSync(
+                serverLastModified = 1L,
+                lastSyncTime = null,
+                lastLocalModificationTime = null,
+            ),
+        )
+        assertEquals(
+            false,
+            shouldScheduleRealtimeSync(
+                serverLastModified = 1L,
+                lastSyncTime = null,
+                lastLocalModificationTime = 1L,
+            ),
+        )
+        assertEquals(
+            true,
+            hasForegroundShapeMetadataChange(
+                serverLastModified = 1L,
+                lastSyncTime = null,
+                lastLocalModificationTime = null,
+            ),
+        )
+    }
+
+    @Test
     fun `foreground change prompt requires a remote timestamp`() {
         assertEquals(
             false,
