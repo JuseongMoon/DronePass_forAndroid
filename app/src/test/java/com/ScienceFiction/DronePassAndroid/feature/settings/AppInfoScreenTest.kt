@@ -67,6 +67,11 @@ class AppInfoScreenTest {
     }
 
     @Test
+    fun `빌드 번호 행 아이콘은 iOS number circle 의미와 맞는 숫자 아이콘을 사용한다`() {
+        assertEquals("Filled.Numbers", AppInfoBuildNumberIcon.name)
+    }
+
+    @Test
     fun `주소 검색 기능 아이콘 색상은 iOS mint 와 맞춘다`() {
         assertEquals(0xFF00C7BE.toInt(), AppInfoSearchIconColor.toArgb())
     }

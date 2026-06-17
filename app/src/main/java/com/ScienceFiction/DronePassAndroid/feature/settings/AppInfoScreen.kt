@@ -26,10 +26,10 @@ import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Numbers
 import androidx.compose.material.icons.filled.RadioButtonChecked
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SettingsInputAntenna
-import androidx.compose.material.icons.filled.Tag
 import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material.icons.filled.WbCloudy
 import androidx.compose.material.icons.filled.WbTwilight
@@ -71,6 +71,7 @@ internal val AppInfoSunriseSunsetIcon: ImageVector = Icons.Default.WbTwilight
 internal val AppInfoShapeManagementIcon: ImageVector = Icons.Default.RadioButtonChecked
 internal val AppInfoCloudSyncIcon: ImageVector = Icons.Default.CloudSync
 internal val AppInfoDroneOnestopIcon: ImageVector = Icons.Default.Verified
+internal val AppInfoBuildNumberIcon: ImageVector = Icons.Default.Numbers
 internal val AppInfoSearchIconColor = Color(0xFF00C7BE)
 
 internal fun appInfoVersionValue(versionName: String, versionCode: Int): String {
@@ -220,7 +221,7 @@ fun AppInfoScreen(
             )
             HorizontalDivider(modifier = Modifier.padding(start = 64.dp))
             InfoRow(
-                icon = Icons.Default.Tag,
+                icon = AppInfoBuildNumberIcon,
                 title = stringResource(R.string.app_info_version_build),
                 value = appInfoBuildNumberValue(BuildConfig.VERSION_CODE),
             )
