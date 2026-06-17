@@ -146,6 +146,13 @@ class AuthViewModelForegroundSyncTest {
     }
 
     @Test
+    fun `login screen keeps provider buttons visible but disables them while loading like iOS`() {
+        assertEquals(true, areLoginProviderButtonsEnabled(AuthState.LoggedOut))
+        assertEquals(true, areLoginProviderButtonsEnabled(AuthState.Error("failed")))
+        assertEquals(false, areLoginProviderButtonsEnabled(AuthState.Loading))
+    }
+
+    @Test
     fun `Google login cancellation is ignored like iOS user cancelled flow`() {
         assertEquals(
             true,

@@ -30,7 +30,6 @@
     <!-- LoginScreen -->
     <string name="login_logo_description">DronePass logo</string>
     <string name="login_title">Sign In / Sign Up</string>
-    <string name="login_loading">Signing in\u2026</string>
     <string name="login_apple">Continue with Apple</string>
     <string name="login_apple_logo_description">Apple logo</string>
     <string name="login_google">Sign in with Google</string>

@@ -30,7 +30,6 @@
     <!-- LoginScreen -->
     <string name="login_logo_description">DronePass 로고</string>
     <string name="login_title">로그인 / 회원가입</string>
-    <string name="login_loading">로그인 중…</string>
     <string name="login_google">Google로 로그인</string>
     <string name="login_google_logo_description">Google 로고</string>
     <string name="login_apple">Apple로 계속하기</string>
