@@ -186,6 +186,14 @@ class WeatherForecastParityTest {
     }
 
     @Test
+    fun `weather sheet header matches iOS inline navigation toolbar`() {
+        assertEquals(44.dp, WeatherSheetNavigationHeaderHeight)
+        assertEquals(44.dp, WeatherSheetNavigationHeaderActionWidth)
+        assertEquals(8.dp, WeatherSheetNavigationHeaderHorizontalPadding)
+        assertEquals(0.5f, WeatherSheetNavigationHeaderDividerThickness.value, 0f)
+    }
+
+    @Test
     fun `last update time uses iOS localized short time style without forced seconds`() {
         val timestamp = 1_700_000_000_000L
 

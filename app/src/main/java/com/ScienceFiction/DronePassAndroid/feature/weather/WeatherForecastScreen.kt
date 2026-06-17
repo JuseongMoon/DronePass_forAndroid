@@ -6,11 +6,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
@@ -55,6 +56,10 @@ import java.util.Date
 import java.util.Locale
 
 internal const val WeatherDataSourceUrl = "https://open-meteo.com/"
+internal val WeatherSheetNavigationHeaderHeight = 44.dp
+internal val WeatherSheetNavigationHeaderActionWidth = 44.dp
+internal val WeatherSheetNavigationHeaderHorizontalPadding = 8.dp
+internal val WeatherSheetNavigationHeaderDividerThickness = 0.5.dp
 
 @Suppress("UNUSED_PARAMETER")
 internal fun isWeatherRefreshActionEnabled(isLoading: Boolean): Boolean = true
@@ -302,19 +307,26 @@ fun WeatherSheetHeader(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 4.dp),
+                .height(WeatherSheetNavigationHeaderHeight)
+                .padding(horizontal = WeatherSheetNavigationHeaderHorizontalPadding),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            if (onInfo != null) {
-                IconButton(onClick = onInfo) {
-                    Icon(
-                        imageVector = Icons.Default.Info,
-                        contentDescription = stringResource(R.string.weather_info_button),
-                        tint = MaterialTheme.colorScheme.primary,
-                    )
+            Box(
+                modifier = Modifier.width(WeatherSheetNavigationHeaderActionWidth),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (onInfo != null) {
+                    IconButton(
+                        onClick = onInfo,
+                        modifier = Modifier.size(WeatherSheetNavigationHeaderActionWidth),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Info,
+                            contentDescription = stringResource(R.string.weather_info_button),
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                    }
                 }
-            } else {
-                Spacer(modifier = Modifier.padding(start = 48.dp))
             }
             Text(
                 text = stringResource(R.string.weather_navigation_title),
@@ -323,16 +335,25 @@ fun WeatherSheetHeader(
                 modifier = Modifier.weight(1f),
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
             )
-            IconButton(onClick = onRefresh, enabled = isWeatherRefreshActionEnabled(isLoading)) {
-                Icon(
-                    imageVector = Icons.Default.Refresh,
-                    contentDescription = stringResource(R.string.weather_refresh),
-                    tint = MaterialTheme.colorScheme.primary,
-                )
+            Box(
+                modifier = Modifier.width(WeatherSheetNavigationHeaderActionWidth),
+                contentAlignment = Alignment.Center,
+            ) {
+                IconButton(
+                    onClick = onRefresh,
+                    enabled = isWeatherRefreshActionEnabled(isLoading),
+                    modifier = Modifier.size(WeatherSheetNavigationHeaderActionWidth),
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Refresh,
+                        contentDescription = stringResource(R.string.weather_refresh),
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                }
             }
         }
         HorizontalDivider(
-            thickness = 0.5.dp,
+            thickness = WeatherSheetNavigationHeaderDividerThickness,
             color = MaterialTheme.colorScheme.outlineVariant,
         )
     }
