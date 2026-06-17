@@ -91,6 +91,7 @@ import kotlinx.coroutines.launch
 internal const val CoordinateInputSheetSkipPartiallyExpanded = false
 internal const val CoordinateInputSheetInteractiveDismissEnabled = false
 internal const val CoordinateInputSheetHeightFraction = 0.85f
+internal val CoordinateInputNavigationHeaderHeight = 44.dp
 internal const val ShapeDateTimeSelectionSkipPartiallyExpanded = true
 internal val CoordinateValidationSuccessColor = Color(0xFF34C759)
 internal val CoordinateAddressResultCardCornerRadius = 12.dp
@@ -920,7 +921,7 @@ private fun CoordinateInputSheet(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(52.dp)
+                    .height(CoordinateInputNavigationHeaderHeight)
                     .padding(horizontal = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -949,7 +950,8 @@ private fun CoordinateInputSheet(
                     .fillMaxWidth()
                     .heightIn(min = 360.dp)
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                    .padding(horizontal = 16.dp)
+                    .padding(top = 8.dp, bottom = 12.dp),
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),

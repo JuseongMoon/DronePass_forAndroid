@@ -41,6 +41,11 @@ class ShapeEditDefaultsTest {
     }
 
     @Test
+    fun `좌표 입력 시트 헤더는 iOS CoordinateView inline toolbar 높이를 따른다`() {
+        assertEquals(44.dp, CoordinateInputNavigationHeaderHeight)
+    }
+
+    @Test
     fun `좌표 입력 검색바는 iOS CoordinateView처럼 SearchBar 토큰을 사용한다`() {
         assertEquals(8.dp, SearchAddressBarCornerRadius)
         assertEquals(8.dp, SearchAddressBarInnerPadding)

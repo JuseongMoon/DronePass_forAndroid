@@ -32,6 +32,12 @@ class SearchAddressSheetTest {
     }
 
     @Test
+    fun `주소 검색 시트 헤더는 iOS SearchAddressView inline toolbar 토큰을 따른다`() {
+        assertEquals(44.dp, SearchAddressNavigationHeaderHeight)
+        assertEquals(8.dp, SearchAddressHeaderToSearchSpacing)
+    }
+
+    @Test
     fun `주소 검색 버튼은 iOS처럼 빈 문자열일 때만 비활성화한다`() {
         assertFalse(shouldEnableSearchAddressSubmit(""))
         assertTrue(shouldEnableSearchAddressSubmit("역"))
