@@ -207,7 +207,6 @@
     <string name="drone_detail_target_drone_not_found_error">Target drone not found.</string>
     <string name="drone_detail_delete_title">Delete Drone</string>
     <string name="drone_detail_delete_message">Are you sure you want to delete \'%s\'?</string>
-    <string name="drone_detail_shape_count_loading">Checking linked shapes…</string>
     <string name="drone_detail_shape_handling_title">Handle Connected Shapes</string>
     <plurals name="drone_detail_delete_with_shapes_message">
         <item quantity="one">How would you like to handle %2$d shape connected to \'%1$s\'?</item>

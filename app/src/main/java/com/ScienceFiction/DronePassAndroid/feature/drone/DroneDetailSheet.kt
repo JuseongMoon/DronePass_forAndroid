@@ -140,10 +140,9 @@ fun DroneDetailSheet(
                     },
                     onDelete = {
                         showMoreMenu = false
-                        shapeCount = resetDroneDeleteShapeCountForPrompt()
-                        showDeleteDialog = true
                         coroutineScope.launch {
                             shapeCount = getShapeCount(drone.id)
+                            showDeleteDialog = true
                         }
                     },
                 )
@@ -240,57 +239,53 @@ fun DroneDetailSheet(
     }
 
     if (showDeleteDialog) {
-        when (resolveDroneDeleteDialogType(shapeCount)) {
-            DroneDeleteDialogType.Loading -> {
-                AlertDialog(
-                    onDismissRequest = { showDeleteDialog = false },
-                    title = { Text(stringResource(R.string.drone_detail_delete_title)) },
-                    text = { Text(stringResource(R.string.drone_detail_shape_count_loading)) },
-                    confirmButton = {
-                        TextButton(onClick = { showDeleteDialog = false }) {
-                            Text(stringResource(R.string.common_cancel))
-                        }
-                    },
-                )
-            }
-            DroneDeleteDialogType.ConfirmDelete -> {
-                AlertDialog(
-                    onDismissRequest = { showDeleteDialog = false },
-                    title = { Text(stringResource(R.string.drone_detail_delete_title)) },
-                    text = {
-                        Text(stringResource(R.string.drone_detail_delete_message, drone.name))
-                    },
-                    confirmButton = {
-                        TextButton(
-                            onClick = {
-                                showDeleteDialog = false
-                                onDelete(ShapeHandling.DeleteAll)
+        val resolvedShapeCount = shapeCount
+        if (resolvedShapeCount != null) {
+            when (resolveDroneDeleteDialogType(resolvedShapeCount)) {
+                DroneDeleteDialogType.ConfirmDelete -> {
+                    AlertDialog(
+                        onDismissRequest = { showDeleteDialog = false },
+                        title = { Text(stringResource(R.string.drone_detail_delete_title)) },
+                        text = {
+                            Text(stringResource(R.string.drone_detail_delete_message, drone.name))
+                        },
+                        confirmButton = {
+                            TextButton(
+                                onClick = {
+                                    showDeleteDialog = false
+                                    onDelete(ShapeHandling.DeleteAll)
+                                }
+                            ) {
+                                Text(
+                                    stringResource(R.string.common_delete),
+                                    color = MaterialTheme.colorScheme.error,
+                                )
                             }
-                        ) {
-                            Text(stringResource(R.string.common_delete), color = MaterialTheme.colorScheme.error)
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { showDeleteDialog = false }) {
+                                Text(stringResource(R.string.common_cancel))
+                            }
+                        },
+                    )
+                }
+                DroneDeleteDialogType.ShapeHandling -> {
+                    DroneDeleteWithShapesActionSheet(
+                        drone = drone,
+                        shapeCount = resolvedShapeCount,
+                        onMoveToOtherDrone = {
+                            showDeleteDialog = false
+                            showMoveTargetSheet = true
+                        },
+                        onDeleteAll = {
+                            showDeleteDialog = false
+                            onDelete(ShapeHandling.DeleteAll)
+                        },
+                        onDismiss = {
+                            showDeleteDialog = false
                         }
-                    },
-                    dismissButton = {
-                        TextButton(onClick = { showDeleteDialog = false }) {
-                            Text(stringResource(R.string.common_cancel))
-                        }
-                    },
-                )
-            }
-            DroneDeleteDialogType.ShapeHandling -> {
-                DroneDeleteWithShapesActionSheet(
-                    drone = drone,
-                    shapeCount = shapeCount ?: 0,
-                    onMoveToOtherDrone = {
-                        showDeleteDialog = false
-                        showMoveTargetSheet = true
-                    },
-                    onDeleteAll = {
-                        showDeleteDialog = false
-                        onDelete(ShapeHandling.DeleteAll)
-                    },
-                    onDismiss = { showDeleteDialog = false },
-                )
+                    )
+                }
             }
         }
     }
@@ -392,23 +387,19 @@ private fun DroneDetailEllipsisCircleIcon(
 }
 
 internal enum class DroneDeleteDialogType {
-    Loading,
     ConfirmDelete,
     ShapeHandling,
 }
 
-internal fun resolveDroneDeleteDialogType(shapeCount: Int?): DroneDeleteDialogType {
+internal fun resolveDroneDeleteDialogType(shapeCount: Int): DroneDeleteDialogType {
     return when {
-        shapeCount == null -> DroneDeleteDialogType.Loading
         shapeCount == 0 -> DroneDeleteDialogType.ConfirmDelete
         else -> DroneDeleteDialogType.ShapeHandling
     }
 }
 
-internal fun resetDroneDeleteShapeCountForPrompt(): Int? = null
-
 internal fun shouldShowDroneDeleteShapeHandlingActionSheet(shapeCount: Int?): Boolean =
-    resolveDroneDeleteDialogType(shapeCount) == DroneDeleteDialogType.ShapeHandling
+    shapeCount != null && resolveDroneDeleteDialogType(shapeCount) == DroneDeleteDialogType.ShapeHandling
 
 internal const val DroneDeleteShapeHandlingSkipPartiallyExpanded = true
 

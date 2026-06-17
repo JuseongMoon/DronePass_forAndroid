@@ -103,22 +103,6 @@ class DroneDeleteValidationTest {
     }
 
     @Test
-    fun `삭제 다이얼로그는 연결 도형 확인 중이면 로딩 상태다`() {
-        assertEquals(
-            DroneDeleteDialogType.Loading,
-            resolveDroneDeleteDialogType(shapeCount = null),
-        )
-    }
-
-    @Test
-    fun `삭제 메뉴를 누르면 iOS처럼 연결 도형 수를 새로 확인할 때까지 로딩 상태로 시작한다`() {
-        assertEquals(
-            DroneDeleteDialogType.Loading,
-            resolveDroneDeleteDialogType(resetDroneDeleteShapeCountForPrompt()),
-        )
-    }
-
-    @Test
     fun `연결 도형이 없으면 iOS처럼 일반 삭제 확인을 보여준다`() {
         assertEquals(
             DroneDeleteDialogType.ConfirmDelete,
