@@ -69,6 +69,10 @@ import com.naver.maps.map.util.FusedLocationSource
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 
+internal fun shouldHandleMapLongClickForShapeCreation(
+    isSketchMode: Boolean,
+): Boolean = !isSketchMode
+
 /**
  * 지도 메인 화면.
  *
@@ -408,7 +412,13 @@ fun MapScreen(
                         cameraIdleListener = cameraListener
 
                         val longClickListener = NaverMap.OnMapLongClickListener { _, latLng ->
-                            viewModel.onCreateShapeAtCoordinate(Coordinate.fromLatLng(latLng))
+                            if (
+                                shouldHandleMapLongClickForShapeCreation(
+                                    isSketchMode = sketchViewModel.isSketchMode.value,
+                                )
+                            ) {
+                                viewModel.onCreateShapeAtCoordinate(Coordinate.fromLatLng(latLng))
+                            }
                         }
                         map.setOnMapLongClickListener(longClickListener)
                         mapLongClickListener = longClickListener

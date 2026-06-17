@@ -631,6 +631,12 @@ class MapCameraFocusTest {
     }
 
     @Test
+    fun `스케치 모드 중 지도 롱프레스는 iOS처럼 새 도형 생성을 열지 않는다`() {
+        assertEquals(false, shouldHandleMapLongClickForShapeCreation(isSketchMode = true))
+        assertEquals(true, shouldHandleMapLongClickForShapeCreation(isSketchMode = false))
+    }
+
+    @Test
     fun `롱프레스 역지오코딩 성공은 iOS처럼 새 도형 확인창을 준비한다`() {
         val coordinate = Coordinate(37.5665, 126.9780)
         val request = pendingNewShapeRequestForReverseGeocodeResult(
