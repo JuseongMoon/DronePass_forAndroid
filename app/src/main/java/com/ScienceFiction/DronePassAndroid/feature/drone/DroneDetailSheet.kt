@@ -82,6 +82,9 @@ internal val DroneDetailMoreCircleStrokeWidth = 1.5.dp
 internal val DroneDetailMoreDotsSize = 18.dp
 internal val DroneMoveTargetNavigationHeaderHeight = 44.dp
 internal val DroneMoveTargetNavigationHeaderSideWidth = 88.dp
+internal val DroneMoveTargetColorIndicatorSize = 16.dp
+internal val DroneMoveTargetColorIndicatorBorderWidth = 1.dp
+internal val DroneMoveTargetCheckmarkSize = 20.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -606,11 +609,11 @@ private fun DroneMoveTargetRow(
         drone.paletteColor?.takeIf(::shouldShowDroneMoveTargetColorIndicator)?.let { paletteColor ->
             Box(
                 modifier = Modifier
-                    .size(16.dp)
+                    .size(DroneMoveTargetColorIndicatorSize)
                     .clip(CircleShape)
                     .background(paletteColor.composeColor)
                     .border(
-                        width = 1.dp,
+                        width = DroneMoveTargetColorIndicatorBorderWidth,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f),
                         shape = CircleShape,
                     ),
@@ -627,7 +630,7 @@ private fun DroneMoveTargetRow(
                 imageVector = Icons.Default.Check,
                 contentDescription = stringResource(R.string.drone_select_selected, drone.name),
                 tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(20.dp),
+                modifier = Modifier.size(DroneMoveTargetCheckmarkSize),
             )
         }
     }

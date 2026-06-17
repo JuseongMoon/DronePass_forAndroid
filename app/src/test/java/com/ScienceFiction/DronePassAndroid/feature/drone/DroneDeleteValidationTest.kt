@@ -185,6 +185,13 @@ class DroneDeleteValidationTest {
     }
 
     @Test
+    fun `재할당 대상 드론 행 토큰은 iOS DroneSelectionSheet 치수를 따른다`() {
+        assertEquals(16.dp, DroneMoveTargetColorIndicatorSize)
+        assertEquals(1.dp, DroneMoveTargetColorIndicatorBorderWidth)
+        assertEquals(20.dp, DroneMoveTargetCheckmarkSize)
+    }
+
+    @Test
     fun `드론 상세 선택 필드는 iOS처럼 nil일 때만 placeholder로 표시한다`() {
         assertEquals("미입력", droneDetailOptionalText(null, emptyFallback = "미입력"))
         assertTrue(isDroneDetailPlaceholder(null))

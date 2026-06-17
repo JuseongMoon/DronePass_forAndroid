@@ -1,6 +1,6 @@
 # DronePass Android 작업 이어가기
 
-> 마지막 업데이트: 2026-06-17
+> 마지막 업데이트: 2026-06-18
 > 브랜치: `fix/critical-pri0-fixes`
 > 상태: iOS 동작 대조와 Android 출시 하드닝 진행 중
 
@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 2026-06-18 도형 연결 드론 삭제 재할당 대상 선택 시트의 행 토큰을 iOS `DroneSelectionSheet`처럼 16dp color circle, 1dp border, 20dp checkmark로 상수화하고 테스트로 고정했다. `:app:testDebugUnitTest --tests "*DroneDeleteValidationTest" --tests "*DroneListScreenTest" --tests "*DroneEditSheetTest"`, `:app:assembleDebug` 통과.
 - 2026-06-17 주소 검색 시트의 로딩/에러/안내/결과 표시를 iOS `SearchAddressView`처럼 서로 배타적인 콘텐츠 상태로 정리했다. Android는 기존에 에러 뷰를 표시한 뒤 아래에 빈 결과 영역을 남길 수 있었지만, 이제 `SearchAddressContentMode`로 로딩 우선, 에러, 안내, 결과 중 하나만 렌더링하며 에러/로딩은 남은 시트 높이를 채운다. `:app:testDebugUnitTest --tests "*SearchAddressSheetTest" --tests "*ShapeEditDefaultsTest" --tests "*StringResourceCoverageTest"`, `:app:assembleDebug` 통과.
 - 2026-06-17 도형 편집 Form의 주소 행 trailing 값을 iOS `BasicInfoSection`처럼 한 줄로 제한하고 말줄임 처리하도록 맞췄다. 공통 clickable row는 label 뒤 남은 폭 안에서 값을 오른쪽 정렬해 긴 주소가 chevron이나 행 폭을 밀지 않게 했고, 주소 행만 `lineLimit(1)` 계약을 상수/테스트로 고정했다. `:app:testDebugUnitTest --tests "*ShapeEditDefaultsTest" --tests "*SearchAddressSheetTest" --tests "*StringResourceCoverageTest"`, `:app:assembleDebug` 통과.
 - 2026-06-17 로그아웃/탈퇴 후 지도 상태 정리 범위를 iOS `ClearMapOverlays` 흐름처럼 선택/하이라이트 해제로 고정했다. iOS `clearAllOverlays()`는 로컬 도형 데이터를 지우지 않고 중복 오버레이 정리와 `highlightedShapeID` 해제만 수행하므로, Android도 계정 세션 종료 시 `clearSelection` + 하이라이트 clear event만 내보내고 로컬 shape overlay/data 삭제 정책은 사용하지 않도록 `MapAccountSessionEndCleanup` 계약 테스트를 추가했다. `:app:testDebugUnitTest --tests "*MapCameraFocusTest" --tests "*MapScreenLayersTest" --tests "*ProfileViewModelTest" --tests "*ProfileSheetParityTest"`, `:app:assembleDebug` 통과.
