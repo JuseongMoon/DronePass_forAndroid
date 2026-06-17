@@ -25,6 +25,12 @@ class VWorldZoneDetailSheetTest {
     }
 
     @Test
+    fun `zone type marker uses iOS filled circle without border`() {
+        assertEquals(12.dp, VWorldZoneDetailZoneTypeMarkerSize)
+        assertEquals(0.dp, VWorldZoneDetailZoneTypeMarkerBorderWidth)
+    }
+
+    @Test
     fun `dynamic sheet heights match iOS VWorldZoneDetail detents by layer`() {
         assertEquals(680.dp, resolveVWorldZoneDetailSheetMinHeight(FlightZoneLayer.CULTURAL_HERITAGE))
         assertEquals(550.dp, resolveVWorldZoneDetailSheetMinHeight(FlightZoneLayer.TEMPORARY_PROHIBITED))

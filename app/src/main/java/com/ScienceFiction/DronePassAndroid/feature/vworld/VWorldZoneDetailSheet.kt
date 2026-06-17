@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.Intent
 import androidx.core.net.toUri
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -94,6 +93,8 @@ internal fun resolvePublicContactLookupName(zone: DroneZoneFeature): String? =
 
 internal val VWorldZoneDetailRowMinHeight = 44.dp
 internal val VWorldZoneDetailRowDividerThickness = 0.5.dp
+internal val VWorldZoneDetailZoneTypeMarkerSize = 12.dp
+internal val VWorldZoneDetailZoneTypeMarkerBorderWidth = 0.dp
 
 internal fun resolveVWorldZoneDetailSheetMinHeight(layer: FlightZoneLayer): Dp = when (layer) {
     FlightZoneLayer.CULTURAL_HERITAGE -> 680.dp
@@ -384,10 +385,9 @@ private fun ZoneTypeRow(layer: FlightZoneLayer) {
         ) {
             Box(
                 modifier = Modifier
-                    .size(12.dp)
+                    .size(VWorldZoneDetailZoneTypeMarkerSize)
                     .clip(CircleShape)
                     .background(Color(layer.fillColor.toInt()))
-                    .border(width = 1.dp, color = Color(layer.borderColor.toInt()), shape = CircleShape)
             )
             Text(
                 text = stringResource(layer.displayNameRes),
