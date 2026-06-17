@@ -2,8 +2,6 @@
     <string name="app_name">DronePass</string>
 
     <!-- Common -->
-    <string name="common_back">뒤로</string>
-    <string name="common_refresh">새로고침</string>
     <string name="common_cancel">취소</string>
     <string name="common_confirm">확인</string>
     <string name="common_save">저장</string>
@@ -20,11 +18,8 @@
     <string name="common_memo">메모</string>
 
     <!-- Navigation / Screen titles -->
-    <string name="screen_login">로그인</string>
     <string name="screen_map">지도</string>
     <string name="screen_saved_list">저장 목록</string>
-    <string name="screen_kp_forecast">KP 지수</string>
-    <string name="screen_weather">날씨</string>
     <string name="screen_settings">설정</string>
 
     <!-- Floating tab bar labels (iOS main.tab.* 동등) -->

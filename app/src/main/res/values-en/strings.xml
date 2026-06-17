@@ -2,8 +2,6 @@
     <string name="app_name">DronePass</string>
 
     <!-- Common -->
-    <string name="common_back">Back</string>
-    <string name="common_refresh">Refresh</string>
     <string name="common_cancel">Cancel</string>
     <string name="common_confirm">OK</string>
     <string name="common_save">Save</string>
@@ -20,7 +18,6 @@
     <string name="common_memo">Memo</string>
 
     <!-- Navigation / Screen titles -->
-    <string name="screen_login">Login</string>
     <string name="screen_map">Map</string>
     <string name="screen_saved_list">Saved List</string>
     <string name="screen_settings">Settings</string>
@@ -443,8 +440,6 @@
     <string name="patch_notes_error_message">Please try again later.</string>
 
     <!-- Resource parity backfill -->
-    <string name="screen_kp_forecast">KP Index</string>
-    <string name="screen_weather">Weather</string>
 
     <string name="shape_edit_date_only_mode">Day mode</string>
     <string name="date_time_done">Done</string>

@@ -830,7 +830,6 @@ class StringResourceCoverageTest {
 
     @Test
     fun `KP forecast sheet strings match iOS localizations`() {
-        assertEquals("KP 지수", stringResourceValue("values/strings.xml", "screen_kp_forecast"))
         assertEquals("KP 지수", stringResourceValue("values/strings.xml", "kp_title"))
         assertEquals("현재 KP 지수", stringResourceValue("values/strings.xml", "kp_current"))
         assertEquals("데이터가 없습니다", stringResourceValue("values/strings.xml", "kp_no_data"))
@@ -852,7 +851,6 @@ class StringResourceCoverageTest {
         assertEquals("G4 (8–9)", stringResourceValue("values/strings.xml", "kp_legend_g4"))
         assertEquals("G5 (≥9)", stringResourceValue("values/strings.xml", "kp_legend_g5"))
 
-        assertEquals("KP Index", stringResourceValue("values-en/strings.xml", "screen_kp_forecast"))
         assertEquals("KP Index", stringResourceValue("values-en/strings.xml", "kp_title"))
         assertEquals("Current KP Index", stringResourceValue("values-en/strings.xml", "kp_current"))
         assertEquals("No data available", stringResourceValue("values-en/strings.xml", "kp_no_data"))

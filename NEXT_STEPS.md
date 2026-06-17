@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 2026-06-17 삭제된 full-screen route 와 공통 toolbar 경로에서 남은 미사용 문자열 `common_back`/`common_refresh`/`screen_login`/`screen_kp_forecast`/`screen_weather`를 제거해 `UnusedResources` lint warning 5건을 정리했다. `:app:testDebugUnitTest --tests "*StringResourceCoverageTest"`, `:app:lintDebug` 통과 및 lint report `No issues found.` 확인.
 - 2026-06-17 앱 정보 시트의 빌드 번호 행 아이콘을 iOS `AppInfoView`의 `number.circle` 의미와 맞춰 태그 아이콘에서 숫자 아이콘으로 보정했다. `AppInfoBuildNumberIcon`을 상수화하고 `AppInfoScreenTest`에 아이콘 계약을 고정했다. `:app:testDebugUnitTest --tests "*AppInfoScreenTest" --tests "*StringResourceCoverageTest"`, `:app:assembleDebug` 통과.
 - 2026-06-17 앱 정보 시트의 주소 검색 기능 아이콘 색상을 iOS `AppInfoView`의 `.mint` 의미와 맞춰 초록 `#34C759`에서 mint `#00C7BE`로 분리했다. `AppInfoSearchIconColor`를 상수화하고 `AppInfoScreenTest`에 ARGB 계약을 고정했다. `:app:testDebugUnitTest --tests "*AppInfoScreenTest" --tests "*StringResourceCoverageTest"`, `:app:assembleDebug` 통과.
 - 2026-06-17 패치노트 로딩 문자열도 iOS `PatchNotesView`/String Catalog 계약에 맞춰 `불러오는 중...`/`Loading...` ASCII 점 3개로 보정했다. `patch_notes_title`/로딩/오류 문구를 `StringResourceCoverageTest`에 함께 고정해 약관 문서 시트와 같은 문자열 회귀를 막는다. `:app:testDebugUnitTest --tests "*StringResourceCoverageTest" --tests "*PatchNotesContentTest" --tests "*DocumentEntryPolicyTest"`, `:app:assembleDebug`, `:app:lintDebug` 통과.
