@@ -177,14 +177,14 @@ private fun TableView(table: TableData) {
         )
         HorizontalDivider(thickness = 0.5.dp, color = border)
         // 데이터 행
-        table.rows.forEachIndexed { index, row ->
+        table.rows.forEach { row ->
             TableRow(
                 cells = row,
                 isHeader = false,
                 totalColumns = table.headers.size,
                 border = border,
             )
-            if (index < table.rows.lastIndex) {
+            if (shouldShowMarkdownTableHorizontalDividerAfterDataRow()) {
                 HorizontalDivider(thickness = 0.5.dp, color = border)
             }
         }
@@ -204,15 +204,13 @@ private fun TableRow(
             .height(IntrinsicSize.Min),
     ) {
         // 실제 셀
-        cells.forEachIndexed { index, cell ->
+        cells.forEach { cell ->
             TableCell(
                 text = cell,
                 isHeader = isHeader,
                 modifier = Modifier.weight(1f),
             )
-            // 셀 간 vertical separator (마지막 셀 + 빈 셀 모두 끝나기 전까지)
-            val isLastWithFill = index == cells.lastIndex && cells.size >= totalColumns
-            if (!isLastWithFill) {
+            if (shouldShowMarkdownTableVerticalDividerAfterCell()) {
                 VerticalDivider(border)
             }
         }
@@ -224,14 +222,17 @@ private fun TableRow(
                     isHeader = isHeader,
                     modifier = Modifier.weight(1f),
                 )
-                val isVeryLast = fillIndex == (totalColumns - cells.size - 1)
-                if (!isVeryLast) {
+                if (shouldShowMarkdownTableVerticalDividerAfterCell()) {
                     VerticalDivider(border)
                 }
             }
         }
     }
 }
+
+internal fun shouldShowMarkdownTableVerticalDividerAfterCell(): Boolean = true
+
+internal fun shouldShowMarkdownTableHorizontalDividerAfterDataRow(): Boolean = true
 
 @Composable
 private fun TableCell(

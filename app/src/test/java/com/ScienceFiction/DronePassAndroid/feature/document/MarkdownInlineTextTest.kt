@@ -84,4 +84,10 @@ class MarkdownInlineTextTest {
             },
         )
     }
+
+    @Test
+    fun `markdown table separators match iOS table overlays`() {
+        assertTrue(shouldShowMarkdownTableVerticalDividerAfterCell())
+        assertTrue(shouldShowMarkdownTableHorizontalDividerAfterDataRow())
+    }
 }
