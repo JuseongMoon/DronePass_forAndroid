@@ -70,6 +70,8 @@ internal val FlightZoneLayerSelectorLegalNoticeBorderColor = Color(0x4D007AFF) /
 internal val FlightZoneLayerSelectorStatHeaderOuterHorizontalPadding = 0.dp
 internal val FlightZoneLayerSelectorStatHeaderOuterVerticalPadding = 0.dp
 internal val FlightZoneLayerSelectorDividerLeadingPadding = 60.dp
+internal val FlightZoneLayerSelectorActionIconSize = 15.dp
+internal val FlightZoneLayerSelectorActionTextSize = 15.sp
 
 internal fun sortedFlightZoneLayersForSelector(
     displayNameOf: (FlightZoneLayer) -> String,
@@ -348,13 +350,15 @@ private fun BigActionButton(
                 imageVector = icon,
                 contentDescription = null,
                 tint = contentColor,
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier.size(FlightZoneLayerSelectorActionIconSize)
             )
             Text(
                 text = text,
-                style = MaterialTheme.typography.bodyLarge,
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontSize = FlightZoneLayerSelectorActionTextSize,
+                    fontWeight = FontWeight.Medium,
+                ),
                 color = contentColor,
-                fontWeight = FontWeight.Medium
             )
         }
     }

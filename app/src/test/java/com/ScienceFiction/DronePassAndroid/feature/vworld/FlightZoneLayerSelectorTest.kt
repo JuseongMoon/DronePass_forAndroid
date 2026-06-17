@@ -2,6 +2,7 @@ package com.ScienceFiction.DronePassAndroid.feature.vworld
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.FlightZoneLayer
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -47,6 +48,12 @@ class FlightZoneLayerSelectorTest {
     fun `통계 헤더는 iOS처럼 전체 폭 배경 밴드로 표시한다`() {
         assertEquals(0.dp, FlightZoneLayerSelectorStatHeaderOuterHorizontalPadding)
         assertEquals(0.dp, FlightZoneLayerSelectorStatHeaderOuterVerticalPadding)
+    }
+
+    @Test
+    fun `전체 선택 버튼은 iOS subheadline Label 크기를 따른다`() {
+        assertEquals(15.dp, FlightZoneLayerSelectorActionIconSize)
+        assertEquals(15.sp, FlightZoneLayerSelectorActionTextSize)
     }
 
     @Test
