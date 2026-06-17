@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.shape
 
+import android.text.format.DateFormat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -66,6 +67,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -102,6 +104,10 @@ internal val CoordinateGuideCardVerticalSpacing = 8.dp
 internal val ShapeEditMemoMinHeight = 170.dp
 internal val ShapeEditNavigationHeaderHeight = 44.dp
 internal val ShapeEditNavigationActionSlotWidth = 80.dp
+
+internal fun shapeDateTimeSelectionUses24HourClock(systemUses24HourClock: Boolean): Boolean {
+    return systemUses24HourClock
+}
 
 /**
  * 도형 편집 화면 — iOS ShapeEditView 1:1 정합.
@@ -1280,6 +1286,10 @@ private fun ShapeDateTimeSelectionSheet(
     val initialCalendar = remember(initialDateMillis) {
         Calendar.getInstance().apply { timeInMillis = initialDateMillis }
     }
+    val context = LocalContext.current
+    val use24HourClock = shapeDateTimeSelectionUses24HourClock(
+        DateFormat.is24HourFormat(context),
+    )
     val datePickerState = rememberDatePickerState(
         initialSelectedDateMillis = shapeEditDatePickerMillisFromLocalMillis(initialDateMillis),
         selectableDates = selectableDates ?: object : SelectableDates {},
@@ -1287,7 +1297,7 @@ private fun ShapeDateTimeSelectionSheet(
     val timePickerState = rememberTimePickerState(
         initialHour = initialCalendar.get(Calendar.HOUR_OF_DAY),
         initialMinute = initialCalendar.get(Calendar.MINUTE),
-        is24Hour = true,
+        is24Hour = use24HourClock,
     )
 
     ModalBottomSheet(

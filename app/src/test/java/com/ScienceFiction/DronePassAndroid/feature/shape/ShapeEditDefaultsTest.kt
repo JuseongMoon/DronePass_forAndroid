@@ -188,6 +188,12 @@ class ShapeEditDefaultsTest {
     }
 
     @Test
+    fun `날짜 시간 선택 시트는 iOS처럼 시스템 12 24시간 설정을 따른다`() {
+        assertTrue(shapeDateTimeSelectionUses24HourClock(systemUses24HourClock = true))
+        assertFalse(shapeDateTimeSelectionUses24HourClock(systemUses24HourClock = false))
+    }
+
+    @Test
     fun `도형 편집 메모 입력 높이는 iOS MemoSection의 170pt 최소 높이를 따른다`() {
         assertEquals(170.dp, ShapeEditMemoMinHeight)
     }
