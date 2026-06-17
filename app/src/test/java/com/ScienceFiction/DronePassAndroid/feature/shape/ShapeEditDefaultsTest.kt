@@ -1239,6 +1239,30 @@ class ShapeEditDefaultsTest {
     }
 
     @Test
+    fun `도형 편집 충돌은 날짜와 고도도 iOS 필드 충돌 규칙을 따른다`() {
+        val original = baseConflictShape()
+        val latest = original.copy(
+            flightStartDate = 30L,
+            flightEndDate = 40L,
+            height = 80.0,
+        )
+        val edited = original.copy(
+            flightStartDate = 50L,
+            title = "edited title",
+        )
+
+        val resolved = resolveShapeEditConflict(
+            editedShape = edited,
+            originalShape = original,
+            latestShape = latest,
+        )
+
+        assertEquals(50L, resolved.flightStartDate)
+        assertEquals(40L, resolved.flightEndDate)
+        assertEquals(80.0, resolved.height)
+    }
+
+    @Test
     fun `도형 편집 충돌은 원격 soft delete 를 보존해 삭제 도형을 되살리지 않는다`() {
         val original = baseConflictShape()
         val latest = original.copy(
