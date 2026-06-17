@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 2026-06-17 VWorld 비행구역 레이어 선택 시트의 영어 UI 문자열을 iOS String Catalog의 Title Case와 맞췄다. Android `Select all`/`Deselect all`/`Selected layers`/`Displayed zones`를 `Select All`/`Deselect All`/`Selected Layers`/`Displayed Zones`로 보정하고 `StringResourceCoverageTest`에 회귀 계약을 추가했다. `:app:testDebugUnitTest --tests "*StringResourceCoverageTest"`, `:app:assembleDebug` 통과.
 - 2026-06-17 도형 편집의 날짜/시간 선택 시트가 iOS `DateTimeSelectionView`처럼 사용자 시스템 12/24시간 설정을 따르도록 보정했다. Android `TimePicker`의 `is24Hour` 고정을 제거하고 `DateFormat.is24HourFormat` 정책을 테스트로 고정했다. `:app:testDebugUnitTest --tests "*ShapeEditDefaultsTest"`, `:app:assembleDebug` 통과.
 - 2026-06-17 삭제된 full-screen route 와 공통 toolbar 경로에서 남은 미사용 문자열 `common_back`/`common_refresh`/`screen_login`/`screen_kp_forecast`/`screen_weather`를 제거해 `UnusedResources` lint warning 5건을 정리했다. `:app:testDebugUnitTest --tests "*StringResourceCoverageTest"`, `:app:lintDebug` 통과 및 lint report `No issues found.` 확인.
 - 2026-06-17 앱 정보 시트의 빌드 번호 행 아이콘을 iOS `AppInfoView`의 `number.circle` 의미와 맞춰 태그 아이콘에서 숫자 아이콘으로 보정했다. `AppInfoBuildNumberIcon`을 상수화하고 `AppInfoScreenTest`에 아이콘 계약을 고정했다. `:app:testDebugUnitTest --tests "*AppInfoScreenTest" --tests "*StringResourceCoverageTest"`, `:app:assembleDebug` 통과.

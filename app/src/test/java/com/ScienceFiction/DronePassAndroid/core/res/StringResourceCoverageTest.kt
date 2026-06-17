@@ -526,6 +526,10 @@ class StringResourceCoverageTest {
             "This service provides information based on the Korean government's Digital Twin National Land data. Users are responsible for actual flight permits and safety.",
             androidDisplayStringResourceValue("values-en/strings.xml", "flight_zone_legal_disclaimer"),
         )
+        assertEquals("Select All", stringResourceValue("values-en/strings.xml", "flight_zone_select_all"))
+        assertEquals("Deselect All", stringResourceValue("values-en/strings.xml", "flight_zone_deselect_all"))
+        assertEquals("Selected Layers", stringResourceValue("values-en/strings.xml", "flight_zone_stats_selected"))
+        assertEquals("Displayed Zones", stringResourceValue("values-en/strings.xml", "flight_zone_stats_displayed"))
         assertEquals("Boundary Zone", stringResourceValue("values-en/strings.xml", "flight_zone_layer_boundary_zone"))
         assertEquals(
             "Cultural Heritage Protection Zone",
