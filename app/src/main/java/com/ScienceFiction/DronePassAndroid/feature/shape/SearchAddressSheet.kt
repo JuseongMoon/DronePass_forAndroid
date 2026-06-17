@@ -80,6 +80,7 @@ internal val SearchAddressBarBackgroundColor = Color(0xFFF2F2F7)
 internal val SearchAddressBarIconColor = Color(0xFF8E8E93)
 internal val SearchAddressResultCardShadowElevation = 8.dp
 internal val SearchAddressResultCardShadowColor = Color.Black.copy(alpha = 0.06f)
+internal val SearchAddressGuideCardBackgroundColor = Color(0xFFF2F2F7)
 internal val SearchAddressGuideCardCornerRadius = 20.dp
 internal val SearchAddressGuideCardMaxWidth = 500.dp
 internal val SearchAddressGuideCardPadding = 16.dp
@@ -413,7 +414,7 @@ private fun SearchAddressGuideCard(
             .widthIn(max = SearchAddressGuideCardMaxWidth)
             .fillMaxWidth()
             .background(
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+                color = SearchAddressGuideCardBackgroundColor,
                 shape = RoundedCornerShape(SearchAddressGuideCardCornerRadius),
             )
             .padding(SearchAddressGuideCardPadding),

@@ -97,6 +97,7 @@ internal val CoordinateAddressResultCardCornerRadius = 12.dp
 internal val CoordinateAddressResultCardShadowElevation = 5.dp
 internal val CoordinateAddressResultCardShadowColor = Color.Black.copy(alpha = 0.10f)
 internal val CoordinateResolvingIndicatorHeight = 180.dp
+internal val CoordinateGuideCardBackgroundColor = Color(0xFFF2F2F7)
 internal val CoordinateGuideCardCornerRadius = 20.dp
 internal val CoordinateGuideCardMaxWidth = 500.dp
 internal val CoordinateGuideCardPadding = 16.dp
@@ -1204,7 +1205,7 @@ private fun CoordinateGuideCard(
             .widthIn(max = CoordinateGuideCardMaxWidth)
             .fillMaxWidth()
             .background(
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+                color = CoordinateGuideCardBackgroundColor,
                 shape = RoundedCornerShape(CoordinateGuideCardCornerRadius),
             )
             .padding(CoordinateGuideCardPadding),

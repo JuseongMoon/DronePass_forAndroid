@@ -56,6 +56,7 @@ class SearchAddressSheetTest {
 
     @Test
     fun `주소 검색 안내 카드는 iOS처럼 500dp 최대 폭과 20dp 모서리를 사용한다`() {
+        assertEquals(0xFFF2F2F7.toInt(), SearchAddressGuideCardBackgroundColor.toArgb())
         assertEquals(500.dp, SearchAddressGuideCardMaxWidth)
         assertEquals(20.dp, SearchAddressGuideCardCornerRadius)
         assertEquals(16.dp, SearchAddressGuideCardPadding)
