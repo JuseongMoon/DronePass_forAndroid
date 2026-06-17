@@ -101,4 +101,20 @@ class DroneSelectionDropdownTest {
         assertEquals(emptyList<Int>(), layout.lineWidths)
         assertEquals(emptyList<DroneDropdownChipPlacement>(), layout.placements)
     }
+
+    @Test
+    fun `첫 줄 칩이 예약 폭보다 길어도 iOS처럼 chevron 앞에 오른쪽 끝을 맞춘다`() {
+        val layout = computeDroneDropdownChipFlowLayout(
+            itemSizes = listOf(IntSize(width = 210, height = 32)),
+            maxWidth = 220,
+            firstLineReservedWidth = 40,
+            horizontalSpacing = 8,
+            lineSpacing = 4,
+        )
+
+        assertEquals(listOf(210), layout.lineWidths)
+        assertEquals(listOf(DroneDropdownChipPlacement(x = -30, y = 0)), layout.placements)
+        assertEquals(180, layout.placements.single().x + layout.lineWidths.single())
+        assertEquals(32, layout.height)
+    }
 }

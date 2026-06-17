@@ -463,7 +463,7 @@ internal fun computeDroneDropdownChipFlowLayout(
         } else {
             safeMaxWidth
         }
-        var currentX = (availableWidth - lineWidths[lineIndex]).coerceAtLeast(0)
+        var currentX = availableWidth - lineWidths[lineIndex]
 
         indices.forEach { itemIndex ->
             placements[itemIndex] = DroneDropdownChipPlacement(currentX, currentY)
