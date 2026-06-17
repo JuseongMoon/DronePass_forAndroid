@@ -19,8 +19,10 @@ import javax.inject.Singleton
  *
  * iOS `FetchWebDocuments` 정합:
  *  - 언어별 파일명 (`{base}.txt` 한 / `{base}_en.txt` 영)
- *  - Terms/Privacy: 30분 메모리 캐시
  *  - PatchNotes: `Cache-Control: no-cache` 헤더 + 캐시 우회 (iOS `.reloadIgnoringLocalCacheData`)
+ *
+ * Terms/Privacy 는 같은 언어 경로에서 반복 네트워크 호출을 줄이기 위해 Android 쪽에서만
+ * 짧은 메모리 캐시를 둔다. 언어별 경로와 파싱 결과는 iOS와 같은 형식을 유지한다.
  *
  * 사용자가 언어 변경 시 [invalidateCache] 호출 권장.
  */
