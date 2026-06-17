@@ -47,9 +47,42 @@ class MapScreenLayersTest {
 
     @Test
     fun `스케치 모드에서는 iOS처럼 비행구역 오버레이도 렌더하지 않는다`() {
-        assertEquals(false, shouldRenderFlightZoneOverlays(mapReady = true, isSketchMode = true))
-        assertEquals(true, shouldRenderFlightZoneOverlays(mapReady = true, isSketchMode = false))
-        assertEquals(false, shouldRenderFlightZoneOverlays(mapReady = false, isSketchMode = false))
+        assertEquals(
+            false,
+            shouldRenderFlightZoneOverlays(
+                mapReady = true,
+                isSketchMode = true,
+                koreaFeaturesEnabled = true,
+            ),
+        )
+        assertEquals(
+            true,
+            shouldRenderFlightZoneOverlays(
+                mapReady = true,
+                isSketchMode = false,
+                koreaFeaturesEnabled = true,
+            ),
+        )
+        assertEquals(
+            false,
+            shouldRenderFlightZoneOverlays(
+                mapReady = false,
+                isSketchMode = false,
+                koreaFeaturesEnabled = true,
+            ),
+        )
+    }
+
+    @Test
+    fun `한국 특화 기능이 꺼져 있으면 iOS처럼 비행구역 오버레이를 렌더하지 않는다`() {
+        assertEquals(
+            false,
+            shouldRenderFlightZoneOverlays(
+                mapReady = true,
+                isSketchMode = false,
+                koreaFeaturesEnabled = false,
+            ),
+        )
     }
 
     @Test
@@ -208,6 +241,7 @@ class MapScreenLayersTest {
                 visibleLayers = selectedLayers,
                 mapReady = true,
                 isSketchMode = true,
+                koreaFeaturesEnabled = true,
             ),
         )
         assertEquals(
@@ -216,6 +250,25 @@ class MapScreenLayersTest {
                 visibleLayers = selectedLayers,
                 mapReady = true,
                 isSketchMode = false,
+                koreaFeaturesEnabled = true,
+            ),
+        )
+    }
+
+    @Test
+    fun `한국 특화 기능이 꺼져 있으면 선택된 레이어도 렌더 대상으로 복원하지 않는다`() {
+        val selectedLayers = setOf(
+            FlightZoneLayer.PROHIBITED,
+            FlightZoneLayer.CONTROL_ZONE,
+        )
+
+        assertEquals(
+            emptySet<FlightZoneLayer>(),
+            visibleFlightZoneLayersForRender(
+                visibleLayers = selectedLayers,
+                mapReady = true,
+                isSketchMode = false,
+                koreaFeaturesEnabled = false,
             ),
         )
     }
@@ -281,6 +334,38 @@ class MapScreenLayersTest {
             resolveInitialVisibleFlightZoneLayers(
                 koreaFeaturesEnabled = true,
                 storedLayerIds = storedLayerIds,
+            ),
+        )
+    }
+
+    @Test
+    fun `한국 특화 기능이 꺼져 있으면 새 레이어 요청도 비운다`() {
+        val requestedLayers = setOf(
+            FlightZoneLayer.PROHIBITED,
+            FlightZoneLayer.CONTROL_ZONE,
+        )
+
+        assertEquals(
+            emptySet<FlightZoneLayer>(),
+            resolveRequestedFlightZoneLayers(
+                koreaFeaturesEnabled = false,
+                requestedLayers = requestedLayers,
+            ),
+        )
+    }
+
+    @Test
+    fun `한국 특화 기능이 켜져 있으면 새 레이어 요청을 유지한다`() {
+        val requestedLayers = setOf(
+            FlightZoneLayer.PROHIBITED,
+            FlightZoneLayer.CONTROL_ZONE,
+        )
+
+        assertEquals(
+            requestedLayers,
+            resolveRequestedFlightZoneLayers(
+                koreaFeaturesEnabled = true,
+                requestedLayers = requestedLayers,
             ),
         )
     }

@@ -99,6 +99,7 @@ internal fun MapOverlayEffects(
     val flightZones by viewModel.flightZones.collectAsStateWithLifecycle()
     val visibleLayers by viewModel.visibleLayers.collectAsStateWithLifecycle()
     val currentMapBounds by viewModel.currentMapBounds.collectAsStateWithLifecycle()
+    val koreaFeaturesEnabled by viewModel.koreaFeaturesEnabled.collectAsStateWithLifecycle()
 
     val isSketchMode by sketchViewModel.isSketchMode.collectAsStateWithLifecycle()
     val activeSketches by sketchViewModel.activeSketches.collectAsStateWithLifecycle()
@@ -120,9 +121,15 @@ internal fun MapOverlayEffects(
     // visibleLayers 변경에 따른 fetch 는 MapViewModel.flightZoneLoadCollector 가
     // (visibleLayers, currentMapBounds) combine 으로 처리한다. 여기서는 fetch 결과인
     // flightZones 의 변경만 오버레이에 반영한다.
-    LaunchedEffect(flightZones, mapReady, visibleLayers, isSketchMode) {
-        if (!shouldRenderFlightZoneOverlays(mapReady = mapReady, isSketchMode = isSketchMode)) {
-            if (mapReady && isSketchMode) {
+    LaunchedEffect(flightZones, mapReady, visibleLayers, isSketchMode, koreaFeaturesEnabled) {
+        if (
+            !shouldRenderFlightZoneOverlays(
+                mapReady = mapReady,
+                isSketchMode = isSketchMode,
+                koreaFeaturesEnabled = koreaFeaturesEnabled,
+            )
+        ) {
+            if (mapReady) {
                 flightZoneOverlayManager.clearAllOverlays()
             }
             return@LaunchedEffect
@@ -353,7 +360,8 @@ internal fun shouldRenderShapeOverlays(
 internal fun shouldRenderFlightZoneOverlays(
     mapReady: Boolean,
     isSketchMode: Boolean,
-): Boolean = mapReady && !isSketchMode
+    koreaFeaturesEnabled: Boolean = true,
+): Boolean = mapReady && !isSketchMode && koreaFeaturesEnabled
 
 internal fun shouldShowFlightZoneLayerSelector(
     koreaFeaturesEnabled: Boolean,
@@ -369,8 +377,15 @@ internal fun visibleFlightZoneLayersForRender(
     visibleLayers: Set<FlightZoneLayer>,
     mapReady: Boolean,
     isSketchMode: Boolean,
+    koreaFeaturesEnabled: Boolean = true,
 ): Set<FlightZoneLayer> {
-    return if (shouldRenderFlightZoneOverlays(mapReady = mapReady, isSketchMode = isSketchMode)) {
+    return if (
+        shouldRenderFlightZoneOverlays(
+            mapReady = mapReady,
+            isSketchMode = isSketchMode,
+            koreaFeaturesEnabled = koreaFeaturesEnabled,
+        )
+    ) {
         visibleLayers
     } else {
         emptySet()

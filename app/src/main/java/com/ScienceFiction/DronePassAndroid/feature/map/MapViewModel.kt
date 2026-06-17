@@ -233,6 +233,13 @@ internal fun resolveInitialVisibleFlightZoneLayers(
     }.toSet()
 }
 
+internal fun resolveRequestedFlightZoneLayers(
+    koreaFeaturesEnabled: Boolean,
+    requestedLayers: Set<FlightZoneLayer>,
+): Set<FlightZoneLayer> {
+    return if (koreaFeaturesEnabled) requestedLayers else emptySet()
+}
+
 internal fun shouldApplyFlightZoneLayerResult(
     layer: FlightZoneLayer,
     currentVisibleLayers: Set<FlightZoneLayer>,
@@ -997,10 +1004,16 @@ class MapViewModel @Inject constructor(
 
     @OptIn(FlowPreview::class)
     private val flightZoneLoadCollector: Job = viewModelScope.launch {
-        combine(_visibleLayers, _currentMapBounds) { layers, bounds -> layers to bounds }
+        combine(_visibleLayers, _currentMapBounds, koreaFeaturesEnabled) { layers, bounds, enabled ->
+            Triple(layers, bounds, enabled)
+        }
             .debounce(DEBOUNCE_MS)
             .distinctUntilChanged()
-            .collectLatest { (layers, bounds) ->
+            .collectLatest { (layers, bounds, enabled) ->
+                if (!enabled) {
+                    _flightZones.value = emptyMap()
+                    return@collectLatest
+                }
                 if (bounds == null || layers.isEmpty()) return@collectLatest
                 loadFlightZones(
                     southWestLat = bounds.southWestLatitude,
@@ -1015,6 +1028,10 @@ class MapViewModel @Inject constructor(
      * 레이어 토글
      */
     fun toggleLayer(layer: FlightZoneLayer) {
+        if (!koreaFeaturesEnabled.value) {
+            hideAllLayers()
+            return
+        }
         val current = _visibleLayers.value.toMutableSet()
         if (current.contains(layer)) {
             current.remove(layer)
@@ -1028,6 +1045,10 @@ class MapViewModel @Inject constructor(
      * 모든 레이어 표시
      */
     fun showAllLayers() {
+        if (!koreaFeaturesEnabled.value) {
+            hideAllLayers()
+            return
+        }
         setVisibleLayers(FlightZoneLayer.entries.toSet())
     }
 
@@ -1046,15 +1067,24 @@ class MapViewModel @Inject constructor(
     }
 
     private fun setVisibleLayers(layers: Set<FlightZoneLayer>) {
-        _visibleLayers.value = layers
-        _flightZones.update { current -> filterFlightZoneCacheForVisibleLayers(current, layers) }
-        viewModelScope.launch { saveVisibleLayersToStorage(layers) }
+        val resolvedLayers = resolveRequestedFlightZoneLayers(
+            koreaFeaturesEnabled = koreaFeaturesEnabled.value,
+            requestedLayers = layers,
+        )
+        _visibleLayers.value = resolvedLayers
+        _flightZones.update { current -> filterFlightZoneCacheForVisibleLayers(current, resolvedLayers) }
+        viewModelScope.launch { saveVisibleLayersToStorage(resolvedLayers) }
     }
 
     private suspend fun loadVisibleLayersFromStorage() {
-        val storedLayerIds = dataStore.data.first()[KEY_VISIBLE_FLIGHT_ZONE_LAYERS]
+        val preferences = dataStore.data.first()
+        val storedLayerIds = preferences[KEY_VISIBLE_FLIGHT_ZONE_LAYERS]
+        val enabled = resolveKoreaFeaturesEnabled(
+            storedValue = storedKoreaFeaturesEnabled(preferences),
+            language = resolveCurrentAppLanguage(appContext),
+        )
         val layers = resolveInitialVisibleFlightZoneLayers(
-            koreaFeaturesEnabled = koreaFeaturesEnabled.value,
+            koreaFeaturesEnabled = enabled,
             storedLayerIds = storedLayerIds,
         )
         _visibleLayers.value = layers
@@ -1075,6 +1105,10 @@ class MapViewModel @Inject constructor(
      * 레이어 선택 시트 표시/숨기기
      */
     fun toggleLayerSelector() {
+        if (!koreaFeaturesEnabled.value) {
+            clearFlightZoneUiForKoreaFeatureChange()
+            return
+        }
         _showLayerSelector.value = !_showLayerSelector.value
     }
 
@@ -1086,6 +1120,11 @@ class MapViewModel @Inject constructor(
      * 비행구역 상세 시트 표시
      */
     fun onZoneSelected(zone: DroneZoneFeature) {
+        if (!koreaFeaturesEnabled.value) {
+            _selectedZone.value = null
+            _showZoneDetail.value = false
+            return
+        }
         _selectedZone.value = zone
         _showZoneDetail.value = true
     }
@@ -1130,6 +1169,11 @@ class MapViewModel @Inject constructor(
         northEastLat: Double,
         northEastLon: Double
     ) {
+        if (!koreaFeaturesEnabled.value) {
+            _flightZones.value = emptyMap()
+            _flightZonesLoading.value = false
+            return
+        }
         val layers = _visibleLayers.value
         if (layers.isEmpty()) {
             _flightZones.value = emptyMap()
