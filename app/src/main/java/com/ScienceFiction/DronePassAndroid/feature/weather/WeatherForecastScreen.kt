@@ -46,7 +46,7 @@ import com.ScienceFiction.DronePassAndroid.domain.model.WeatherData
 import com.ScienceFiction.DronePassAndroid.ui.component.IosToastMessageDurationMs
 import com.ScienceFiction.DronePassAndroid.ui.component.IosToastMessageOverlay
 import kotlinx.coroutines.delay
-import java.text.SimpleDateFormat
+import java.text.DateFormat
 import java.time.Instant
 import java.time.ZoneId
 import java.time.ZoneOffset
@@ -205,9 +205,7 @@ private fun WeatherForecastBody(
         // ④ 마지막 업데이트 시간
         if (lastUpdateTime != null) {
             item {
-                val formatted = remember(lastUpdateTime) {
-                    SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(lastUpdateTime))
-                }
+                val formatted = remember(lastUpdateTime) { formatWeatherLastUpdateTime(lastUpdateTime) }
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -242,6 +240,14 @@ private fun WeatherForecastBody(
             }
         }
     }
+}
+
+internal fun formatWeatherLastUpdateTime(
+    timestamp: Long,
+    locale: Locale = Locale.getDefault(),
+): String {
+    val formatter = DateFormat.getTimeInstance(DateFormat.SHORT, locale)
+    return formatter.format(Date(timestamp))
 }
 
 internal const val WeatherForecastDays = 3

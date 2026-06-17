@@ -20,6 +20,8 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.text.DateFormat
+import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
 import java.time.ZoneOffset
@@ -146,6 +148,20 @@ class WeatherForecastParityTest {
     fun `forecast refresh action stays enabled while loading like iOS toolbar`() {
         assertTrue(isWeatherRefreshActionEnabled(isLoading = false))
         assertTrue(isWeatherRefreshActionEnabled(isLoading = true))
+    }
+
+    @Test
+    fun `last update time uses iOS localized short time style without forced seconds`() {
+        val timestamp = 1_700_000_000_000L
+
+        assertEquals(
+            DateFormat.getTimeInstance(DateFormat.SHORT, Locale.US).format(Date(timestamp)),
+            formatWeatherLastUpdateTime(timestamp, Locale.US),
+        )
+        assertEquals(
+            DateFormat.getTimeInstance(DateFormat.SHORT, Locale.KOREA).format(Date(timestamp)),
+            formatWeatherLastUpdateTime(timestamp, Locale.KOREA),
+        )
     }
 
     @Test
