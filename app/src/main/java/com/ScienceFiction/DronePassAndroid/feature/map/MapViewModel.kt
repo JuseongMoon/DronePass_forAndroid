@@ -139,6 +139,20 @@ internal fun resolveShapeOverlayTapAction(
     )
 }
 
+internal data class MapAccountSessionEndCleanup(
+    val clearSelection: Boolean,
+    val emitHighlightClearEvent: Boolean,
+    val clearLocalShapeOverlays: Boolean,
+)
+
+internal fun resolveMapAccountSessionEndCleanup(): MapAccountSessionEndCleanup {
+    return MapAccountSessionEndCleanup(
+        clearSelection = true,
+        emitHighlightClearEvent = true,
+        clearLocalShapeOverlays = false,
+    )
+}
+
 internal fun shouldConsumeMissingMapShapeRequest(activeShapes: List<ShapeModel>): Boolean =
     activeShapes.isNotEmpty()
 
@@ -551,8 +565,13 @@ class MapViewModel @Inject constructor(
      * 로그아웃/탈퇴 시 로컬 도형은 보존하고 지도 하이라이트/상세 선택만 정리한다.
      */
     fun clearMapHighlightForAccountSessionEnd() {
-        clearSelection()
-        _clearMapHighlightEvent.tryEmit(Unit)
+        val cleanup = resolveMapAccountSessionEndCleanup()
+        if (cleanup.clearSelection) {
+            clearSelection()
+        }
+        if (cleanup.emitHighlightClearEvent) {
+            _clearMapHighlightEvent.tryEmit(Unit)
+        }
     }
 
     /**

@@ -80,6 +80,18 @@ class MapCameraFocusTest {
     }
 
     @Test
+    fun `계정 종료 지도 정리는 iOS ClearMapOverlays처럼 선택과 하이라이트만 지운다`() {
+        assertEquals(
+            MapAccountSessionEndCleanup(
+                clearSelection = true,
+                emitHighlightClearEvent = true,
+                clearLocalShapeOverlays = false,
+            ),
+            resolveMapAccountSessionEndCleanup(),
+        )
+    }
+
+    @Test
     fun `도형 포커스 오프셋은 iOS phone과 iPad 값을 따른다`() {
         assertEquals(ShapeFocusOffsets(x = 0.dp, y = 200.dp), resolveShapeFocusOffsets(isTablet = false))
         assertEquals(ShapeFocusOffsets(x = (-100).dp, y = 0.dp), resolveShapeFocusOffsets(isTablet = true))
