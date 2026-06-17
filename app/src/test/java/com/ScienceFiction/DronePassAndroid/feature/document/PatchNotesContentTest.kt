@@ -25,6 +25,7 @@ class PatchNotesContentTest {
         assertEquals(12.dp, PatchNoteFeatureGroupSpacing)
         assertEquals(6.dp, PatchNoteFeatureItemSpacing)
         assertEquals(3.dp, PatchNoteFeatureDescriptionBulletSpacing)
+        assertEquals(1f, PatchNoteFeatureTextWeight, 0f)
         assertEquals(50.dp, PatchNotesEmptyStateIconSize)
         assertEquals(12.dp, PatchNotesEmptyStateSpacing)
     }

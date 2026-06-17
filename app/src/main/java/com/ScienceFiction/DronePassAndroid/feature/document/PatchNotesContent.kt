@@ -48,6 +48,7 @@ internal val PatchNoteFeatureDescriptionLeadingPadding = 20.dp
 internal val PatchNoteFeatureGroupSpacing = 12.dp
 internal val PatchNoteFeatureItemSpacing = 6.dp
 internal val PatchNoteFeatureDescriptionBulletSpacing = 3.dp
+internal const val PatchNoteFeatureTextWeight = 1f
 internal val PatchNotesEmptyStateIconSize = 50.dp
 internal val PatchNotesEmptyStateSpacing = 12.dp
 
@@ -187,6 +188,7 @@ private fun PatchNoteHeader(note: PatchNote) {
 @Composable
 private fun FeatureTitleRow(title: String) {
     Row(
+        modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
@@ -200,6 +202,7 @@ private fun FeatureTitleRow(title: String) {
             text = title,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(PatchNoteFeatureTextWeight),
         )
     }
 }
@@ -211,7 +214,9 @@ private fun FeatureDescription(description: String?) {
         ?.split("\n")
         ?.forEach { line ->
             Row(
-                modifier = Modifier.padding(start = PatchNoteFeatureDescriptionLeadingPadding),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = PatchNoteFeatureDescriptionLeadingPadding),
                 horizontalArrangement = Arrangement.spacedBy(PatchNoteFeatureDescriptionBulletSpacing),
                 verticalAlignment = Alignment.Top,
             ) {
@@ -224,6 +229,7 @@ private fun FeatureDescription(description: String?) {
                     text = line,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(PatchNoteFeatureTextWeight),
                 )
             }
         }
