@@ -21,6 +21,18 @@ class SunEventTimeTest {
     }
 
     @Test
+    fun afterSunsetWithoutTomorrowSunriseFallsBackToPlaceholderLikeIos() {
+        val event = nextSunEvent(
+            sunriseIsoList = listOf("2026-06-04T05:10"),
+            sunsetIsoList = listOf("2026-06-04T19:40"),
+            now = LocalDateTime.parse("2026-06-04T20:30"),
+        )
+
+        assertTrue(event.isNextSunset)
+        assertEquals("--:--", event.timeUntilFormatted)
+    }
+
+    @Test
     fun daytimeUsesSameDaySunset() {
         val event = nextSunEvent(
             sunriseIsoList = listOf("2026-06-04T05:10", "2026-06-05T05:05"),

@@ -76,7 +76,7 @@ fun nextSunEvent(
         sunriseIsoList = sunriseIsoList,
         sunsetIsoList = sunsetIsoList,
         now = now,
-        useSameDayFallback = true,
+        useSameDayFallback = false,
     )
 }
 
