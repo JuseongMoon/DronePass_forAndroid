@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 2026-06-18 현재 날씨 카드 헤더와 드론 카테고리 메뉴 텍스트/아이콘 토큰을 iOS `WeatherForecastView`의 `.title3.semibold`, `.subheadline`, `.caption`, `.caption2` 기준으로 맞췄다. 섹션 제목 20sp semibold, 드론 무게/카테고리 라벨 15sp, 예시 11sp, 메뉴 chevron 11dp, checkmark 15dp와 버튼 padding/background alpha 계약을 테스트로 고정했다. `:app:testDebugUnitTest --tests "*WeatherForecastParityTest" --tests "*WeatherOverlayCardTest" --tests "*KpChartsTest"`, `:app:assembleDebug` 통과.
 - 2026-06-18 현재 날씨 프리뷰 블록의 온도/상태/최고·최저 온도 폰트와 최고·최저 행 간격을 iOS `WeatherForecastView`처럼 온도 32sp semibold, 상태 20sp, 최고·최저 15sp, spacing 8dp로 고정했다. 기존 Android `headlineMedium`/`titleMedium`/`bodyMedium` 의존은 iOS보다 작거나 다른 간격이 될 수 있어 명시 토큰으로 대체했다. `:app:testDebugUnitTest --tests "*WeatherForecastParityTest" --tests "*WeatherOverlayCardTest" --tests "*KpChartsTest"`, `:app:assembleDebug` 통과.
 - 2026-06-18 현재 날씨 데이터 카드의 라벨/값/서브텍스트 폰트 토큰을 iOS `WeatherForecastView.weatherDataCard`의 `.headline`/`.title3.weight(.semibold)` 및 서브텍스트 상태의 `.subheadline`/`.body.weight(.semibold)`/`.caption2`와 맞췄다. Android Material 기본 `bodySmall`/`titleSmall` 의존을 제거해 날씨 카드 텍스트가 iOS보다 작아지는 문제를 막고, 크기/weight 계약을 테스트로 고정했다. `:app:testDebugUnitTest --tests "*WeatherForecastParityTest" --tests "*WeatherOverlayCardTest" --tests "*KpChartsTest"`, `:app:assembleDebug` 통과.
 - 2026-06-18 도형 연결 드론 삭제 재할당 대상 선택 시트의 행 토큰을 iOS `DroneSelectionSheet`처럼 16dp color circle, 1dp border, 20dp checkmark로 상수화하고 테스트로 고정했다. `:app:testDebugUnitTest --tests "*DroneDeleteValidationTest" --tests "*DroneListScreenTest" --tests "*DroneEditSheetTest"`, `:app:assembleDebug` 통과.

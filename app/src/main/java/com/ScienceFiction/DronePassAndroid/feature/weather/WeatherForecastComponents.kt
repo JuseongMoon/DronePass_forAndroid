@@ -81,6 +81,21 @@ internal val IosWeatherForecastCardCornerRadius = 16.dp
 internal val IosWeatherForecastCardPadding = 16.dp
 internal val IosWeatherForecastCardSpacing = 12.dp
 internal val IosWeatherForecastCardContainerColor = Color(0xFFF2F2F7)
+internal val IosCurrentWeatherHeaderTitleFontSize = 20.sp
+internal val IosCurrentWeatherHeaderDroneWeightFontSize = 15.sp
+internal val IosCurrentWeatherHeaderTitleFontWeight = FontWeight.SemiBold
+internal val IosCurrentWeatherHeaderRegularFontWeight = FontWeight.Normal
+internal val IosWeatherDroneCategoryButtonCornerRadius = 8.dp
+internal val IosWeatherDroneCategoryButtonHorizontalPadding = 10.dp
+internal val IosWeatherDroneCategoryButtonVerticalPadding = 6.dp
+internal val IosWeatherDroneCategoryButtonSpacing = 4.dp
+internal const val IosWeatherDroneCategoryButtonBackgroundAlpha = 0.1f
+internal val IosWeatherDroneCategoryLeadingIconSize = 12.dp
+internal val IosWeatherDroneCategoryChevronIconSize = 11.dp
+internal val IosWeatherDroneCategoryLabelFontSize = 15.sp
+internal val IosWeatherDroneCategoryLabelFontWeight = FontWeight.Medium
+internal val IosWeatherDroneCategoryCheckmarkSize = 15.dp
+internal val IosWeatherDroneCategoryExampleFontSize = 11.sp
 internal val IosCurrentWeatherEmptyStateHeight = 200.dp
 internal val IosCurrentWeatherPreviewCornerRadius = 12.dp
 internal val IosCurrentWeatherPreviewPadding = 16.dp
@@ -248,14 +263,15 @@ internal fun CurrentWeatherSection(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = stringResource(R.string.weather_section_current),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
+                    fontSize = IosCurrentWeatherHeaderTitleFontSize,
+                    fontWeight = IosCurrentWeatherHeaderTitleFontWeight,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Spacer(modifier = Modifier.weight(1f))
                 Text(
                     text = stringResource(R.string.weather_drone_weight_label),
-                    style = MaterialTheme.typography.bodyMedium,
+                    fontSize = IosCurrentWeatherHeaderDroneWeightFontSize,
+                    fontWeight = IosCurrentWeatherHeaderRegularFontWeight,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Spacer(modifier = Modifier.width(6.dp))
@@ -473,32 +489,35 @@ private fun DroneCategoryMenu(
     var expanded by remember { mutableStateOf(false) }
     Box {
         Surface(
-            shape = RoundedCornerShape(8.dp),
-            color = WeatherIconBlue.copy(alpha = 0.1f),
+            shape = RoundedCornerShape(IosWeatherDroneCategoryButtonCornerRadius),
+            color = WeatherIconBlue.copy(alpha = IosWeatherDroneCategoryButtonBackgroundAlpha),
             onClick = { expanded = true },
         ) {
             Row(
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                modifier = Modifier.padding(
+                    horizontal = IosWeatherDroneCategoryButtonHorizontalPadding,
+                    vertical = IosWeatherDroneCategoryButtonVerticalPadding,
+                ),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(IosWeatherDroneCategoryButtonSpacing),
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.Send,
                     contentDescription = null,
                     tint = WeatherIconBlue,
-                    modifier = Modifier.size(12.dp),
+                    modifier = Modifier.size(IosWeatherDroneCategoryLeadingIconSize),
                 )
                 Text(
                     text = stringResource(category.labelRes),
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Medium,
+                    fontSize = IosWeatherDroneCategoryLabelFontSize,
+                    fontWeight = IosWeatherDroneCategoryLabelFontWeight,
                     color = WeatherIconBlue,
                 )
                 Icon(
                     imageVector = Icons.Default.ExpandMore,
                     contentDescription = null,
                     tint = WeatherIconBlue,
-                    modifier = Modifier.size(12.dp),
+                    modifier = Modifier.size(IosWeatherDroneCategoryChevronIconSize),
                 )
             }
         }
@@ -513,7 +532,8 @@ private fun DroneCategoryMenu(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(
                                     text = stringResource(entry.labelRes),
-                                    fontWeight = FontWeight.Medium,
+                                    fontSize = IosWeatherDroneCategoryLabelFontSize,
+                                    fontWeight = IosWeatherDroneCategoryLabelFontWeight,
                                 )
                                 if (entry == category) {
                                     Spacer(modifier = Modifier.weight(1f))
@@ -521,13 +541,14 @@ private fun DroneCategoryMenu(
                                         imageVector = Icons.Default.Check,
                                         contentDescription = null,
                                         tint = WeatherIconBlue,
-                                        modifier = Modifier.size(16.dp),
+                                        modifier = Modifier.size(IosWeatherDroneCategoryCheckmarkSize),
                                     )
                                 }
                             }
                             Text(
                                 text = stringResource(entry.examplesRes),
-                                style = MaterialTheme.typography.bodySmall,
+                                fontSize = IosWeatherDroneCategoryExampleFontSize,
+                                fontWeight = IosCurrentWeatherHeaderRegularFontWeight,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
