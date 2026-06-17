@@ -36,7 +36,7 @@ data class GeoJSONFeature(
 
 /**
  * GeoJSON Geometry
- * type: Polygon, MultiPolygon
+ * type: Point, LineString, Polygon, MultiPolygon
  * coordinates: 중첩 배열 (Any로 처리 후 수동 파싱)
  */
 @JsonClass(generateAdapter = true)
@@ -70,7 +70,12 @@ data class DroneZoneFeature(
      * Polygon/MultiPolygon 의 전체 ring 목록. 각 polygon 의 첫 ring 은 외곽선이고,
      * 이후 ring 은 iOS `NMGPolygon(interiorRings:)` 와 동일하게 지도 hole 로 렌더링한다.
      */
-    val polygonRings: List<List<List<Pair<Double, Double>>>> = polygons.map { listOf(it) }
+    val polygonRings: List<List<List<Pair<Double, Double>>>> = polygons.map { listOf(it) },
+    /**
+     * iOS `GeoJSONGeometry.centerCoordinate` 와 같은 상세 표시용 중심 좌표.
+     * LineString 처럼 렌더 가능한 polygon 이 없는 geometry 도 상세 좌표를 보존한다.
+     */
+    val geometryCenterCoordinate: Pair<Double, Double>? = null
 )
 
 /** properties Map 에서 iOS `as? String` 과 같이 String 값만 그대로 꺼낸다. */
@@ -406,6 +411,7 @@ val DroneZoneFeature.formattedLowerAltitude: String?
  */
 val DroneZoneFeature.centerCoordinate: Pair<Double, Double>
     get() {
+        geometryCenterCoordinate?.let { return it }
         val firstRing = polygons.firstOrNull()
         if (firstRing.isNullOrEmpty()) return 0.0 to 0.0
         val avgLat = firstRing.sumOf { it.first } / firstRing.size

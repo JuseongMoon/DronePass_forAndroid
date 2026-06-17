@@ -239,6 +239,24 @@ class VWorldModelsTest {
     }
 
     @Test
+    fun `상세 중심 좌표는 렌더 가능한 폴리곤이 없어도 iOS geometry center를 사용한다`() {
+        val zone = DroneZoneFeature(
+            id = "line.1",
+            layer = FlightZoneLayer.ATZ,
+            polygons = emptyList(),
+            zoneCode = null,
+            upperAltitude = null,
+            lowerAltitude = null,
+            zoneName = "LineString 구역",
+            geometryCenterCoordinate = 37.25 to 126.75,
+        )
+
+        assertEquals(37.25 to 126.75, zone.centerCoordinate)
+        assertEquals("37.2500° N, 126.7500° E", formatCoordinate(37.25, 126.75))
+        assertEquals("37.2500° S, 126.7500° W", formatCoordinate(-37.25, -126.75))
+    }
+
+    @Test
     fun `NOTAM two digit years are parsed as 2000 based years like iOS`() {
         val zone = DroneZoneFeature(
             id = "notam.1",

@@ -198,8 +198,6 @@ class VWorldRepository @Inject constructor(
         val geometry = feature.geometry ?: return null
         val parsedGeometry = parseFlightZoneGeometry(geometry.type, geometry.coordinates) ?: return null
 
-        if (parsedGeometry.polygons.isEmpty()) return null
-
         val props = feature.properties ?: emptyMap()
 
         val zoneCode = resolveParsedVWorldZoneCode(layer, feature.id, props)
@@ -218,7 +216,8 @@ class VWorldRepository @Inject constructor(
             lowerAltitude = parseDoubleProperty(props, "low_alt", "lower_alt", "lowerAlt"),
             zoneName = zoneName,
             properties = props,
-            polygonRings = parsedGeometry.polygonRings
+            polygonRings = parsedGeometry.polygonRings,
+            geometryCenterCoordinate = parsedGeometry.centerCoordinate,
         )
     }
 
@@ -245,7 +244,8 @@ class VWorldRepository @Inject constructor(
 
 internal data class ParsedFlightZoneGeometry(
     val polygons: List<List<Pair<Double, Double>>>,
-    val polygonRings: List<List<List<Pair<Double, Double>>>>
+    val polygonRings: List<List<List<Pair<Double, Double>>>>,
+    val centerCoordinate: Pair<Double, Double>?,
 )
 
 /**
@@ -263,12 +263,30 @@ internal fun parseFlightZoneGeometry(
 
     return runCatching {
         when (type) {
+            "Point" -> {
+                val point = parseGeoJsonCoordinate(coordinates as? List<*> ?: return null)
+                    ?: return null
+                ParsedFlightZoneGeometry(
+                    polygons = listOf(listOf(point)),
+                    polygonRings = listOf(listOf(listOf(point))),
+                    centerCoordinate = point,
+                )
+            }
+            "LineString" -> {
+                val line = parseCoordinateRing(coordinates as? List<*> ?: return null)
+                ParsedFlightZoneGeometry(
+                    polygons = emptyList(),
+                    polygonRings = emptyList(),
+                    centerCoordinate = averageCoordinate(line) ?: (0.0 to 0.0),
+                )
+            }
             "Polygon" -> {
                 val rings = parsePolygonRings(coordinates as? List<*> ?: return null)
                     ?: return null
                 ParsedFlightZoneGeometry(
                     polygons = listOf(rings.first()),
-                    polygonRings = listOf(rings)
+                    polygonRings = listOf(rings),
+                    centerCoordinate = averageCoordinate(rings.first()) ?: (0.0 to 0.0),
                 )
             }
             "MultiPolygon" -> {
@@ -281,7 +299,8 @@ internal fun parseFlightZoneGeometry(
                 } else {
                     ParsedFlightZoneGeometry(
                         polygons = polygonRings.map { it.first() },
-                        polygonRings = polygonRings
+                        polygonRings = polygonRings,
+                        centerCoordinate = averageCoordinate(polygonRings.first().first()) ?: (0.0 to 0.0),
                     )
                 }
             }
@@ -300,10 +319,20 @@ private fun parsePolygonRings(rings: List<*>): List<List<Pair<Double, Double>>>?
 
 private fun parseCoordinateRing(ring: List<*>): List<Pair<Double, Double>> {
     return ring.mapNotNull { point ->
-        val coords = point as? List<*> ?: return@mapNotNull null
-        if (coords.size < 2) return@mapNotNull null
-        val lon = (coords[0] as? Number)?.toDouble() ?: return@mapNotNull null
-        val lat = (coords[1] as? Number)?.toDouble() ?: return@mapNotNull null
-        Pair(lat, lon)
+        parseGeoJsonCoordinate(point as? List<*> ?: return@mapNotNull null)
     }
+}
+
+private fun parseGeoJsonCoordinate(point: List<*>): Pair<Double, Double>? {
+    if (point.size < 2) return null
+    val lon = (point[0] as? Number)?.toDouble() ?: return null
+    val lat = (point[1] as? Number)?.toDouble() ?: return null
+    return lat to lon
+}
+
+private fun averageCoordinate(points: List<Pair<Double, Double>>): Pair<Double, Double>? {
+    if (points.isEmpty()) return null
+    val avgLat = points.sumOf { it.first } / points.size
+    val avgLon = points.sumOf { it.second } / points.size
+    return avgLat to avgLon
 }

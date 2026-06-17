@@ -114,10 +114,8 @@ class FlightZoneOverlayManager {
                     Log.e(TAG, "폴리곤 오버레이 생성 실패: ${e.message}")
                 }
             }
-            if (zoneOverlays.isNotEmpty()) {
-                layerCache[zone.id] = zoneOverlays
-                added++
-            }
+            layerCache[zone.id] = zoneOverlays
+            if (zoneOverlays.isNotEmpty()) added++
         }
 
         Log.d(TAG, "${layer.displayName}: 신규=$added, 유지=${currentIds.intersect(newZoneIds).size}, 제거=${removedIds.size}")

@@ -31,6 +31,7 @@ class VWorldGeometryParserTest {
             ),
             parsed.polygons.single()
         )
+        assertEquals(37.25 to 126.5, parsed.centerCoordinate)
         assertEquals(2, parsed.polygonRings.single().size)
         assertEquals(
             listOf(
@@ -77,9 +78,37 @@ class VWorldGeometryParserTest {
         assertEquals(2, parsed.polygons.size)
         assertEquals(listOf(37.0 to 126.0, 37.0 to 127.0, 38.0 to 127.0, 37.0 to 126.0), parsed.polygons[0])
         assertEquals(listOf(35.0 to 128.0, 35.0 to 129.0, 36.0 to 129.0, 35.0 to 128.0), parsed.polygons[1])
+        assertEquals(37.25 to 126.5, parsed.centerCoordinate)
         assertEquals(1, parsed.polygonRings[0].size)
         assertEquals(2, parsed.polygonRings[1].size)
         assertEquals(listOf(35.2 to 128.2, 35.2 to 128.4, 35.4 to 128.4, 35.2 to 128.2), parsed.polygonRings[1][1])
+    }
+
+    @Test
+    fun `Point parser preserves feature center like iOS GeoJSONGeometry`() {
+        val parsed = requireNotNull(parseFlightZoneGeometry("Point", listOf(126.75, 37.25)))
+
+        assertEquals(listOf(listOf(37.25 to 126.75)), parsed.polygons)
+        assertEquals(listOf(listOf(listOf(37.25 to 126.75))), parsed.polygonRings)
+        assertEquals(37.25 to 126.75, parsed.centerCoordinate)
+    }
+
+    @Test
+    fun `LineString parser keeps detail center without renderable polygons like iOS`() {
+        val parsed = requireNotNull(
+            parseFlightZoneGeometry(
+                "LineString",
+                listOf(
+                    listOf(126.0, 37.0),
+                    listOf(127.0, 38.0),
+                    listOf(128.0, 36.0),
+                ),
+            ),
+        )
+
+        assertEquals(emptyList<List<Pair<Double, Double>>>(), parsed.polygons)
+        assertEquals(emptyList<List<List<Pair<Double, Double>>>>(), parsed.polygonRings)
+        assertEquals(37.0 to 127.0, parsed.centerCoordinate)
     }
 
     @Test
