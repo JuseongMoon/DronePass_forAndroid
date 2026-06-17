@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -59,9 +60,10 @@ import kotlinx.coroutines.delay
 internal val WeatherGuideCategoryMenuHorizontalPadding = 8.dp
 internal val WeatherGuideCategoryMenuVerticalPadding = 4.dp
 internal val WeatherGuideCategoryMenuIconSize = 12.dp
+internal val InfoGuideHeaderHeight = 44.dp
 internal val InfoGuideHeaderActionWidth = 72.dp
-internal val InfoGuideHeaderHorizontalPadding = 4.dp
-internal val InfoGuideHeaderVerticalPadding = 8.dp
+internal val InfoGuideHeaderHorizontalPadding = 8.dp
+internal val InfoGuideHeaderDividerThickness = 0.5.dp
 
 @Composable
 internal fun KpInfoGuideSheet(onDismiss: () -> Unit) {
@@ -144,10 +146,8 @@ private fun InfoGuideScaffold(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(
-                    horizontal = InfoGuideHeaderHorizontalPadding,
-                    vertical = InfoGuideHeaderVerticalPadding,
-                ),
+                .height(InfoGuideHeaderHeight)
+                .padding(horizontal = InfoGuideHeaderHorizontalPadding),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(modifier = Modifier.width(InfoGuideHeaderActionWidth))
@@ -168,7 +168,7 @@ private fun InfoGuideScaffold(
             }
         }
         HorizontalDivider(
-            thickness = 0.5.dp,
+            thickness = InfoGuideHeaderDividerThickness,
             color = MaterialTheme.colorScheme.outlineVariant,
         )
         LazyColumn(

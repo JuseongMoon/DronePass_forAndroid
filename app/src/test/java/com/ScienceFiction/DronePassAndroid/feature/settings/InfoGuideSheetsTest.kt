@@ -116,9 +116,10 @@ class InfoGuideSheetsTest {
 
     @Test
     fun `info guide header uses iOS inline title action slots`() {
+        assertEquals(44.dp, InfoGuideHeaderHeight)
         assertEquals(72.dp, InfoGuideHeaderActionWidth)
-        assertEquals(4.dp, InfoGuideHeaderHorizontalPadding)
-        assertEquals(8.dp, InfoGuideHeaderVerticalPadding)
+        assertEquals(8.dp, InfoGuideHeaderHorizontalPadding)
+        assertEquals(0.5f, InfoGuideHeaderDividerThickness.value, 0f)
     }
 
     @Test
