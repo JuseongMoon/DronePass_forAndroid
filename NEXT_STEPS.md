@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 2026-06-18 도형 편집 날짜/시간 선택 시트의 닫기 동작을 iOS `DateTimeSelectionView`의 `@Binding DatePicker` 동작과 맞췄다. iOS는 DatePicker 변경이 즉시 부모 선택값에 반영되어 Cancel/Done/드래그 닫기 모두 현재 선택값을 남기므로, Android도 Done뿐 아니라 Cancel과 외부 닫기에서 현재 picker 값을 같은 helper로 적용하도록 보정했다. `:app:testDebugUnitTest --tests "*ShapeEditDefaultsTest" --tests "*StringResourceCoverageTest"`, `:app:assembleDebug` 통과.
 - 2026-06-18 VWorld 비행구역 레이어 선택 시트의 전체 선택/전체 해제 버튼을 iOS `LayerSelectionSheet`의 `.subheadline` Label 기준으로 보정했다. Android는 기존에 Material `bodyLarge`와 20dp 아이콘을 사용해 버튼 텍스트/아이콘이 iOS보다 크게 보일 수 있었고, 이제 15sp 텍스트와 15dp 아이콘 토큰을 상수/테스트로 고정했다. `:app:testDebugUnitTest --tests "*FlightZoneLayerSelectorTest" --tests "*VWorldZoneDetailSheetTest" --tests "*MapScreenLayersTest"`, `:app:assembleDebug` 통과.
 - 2026-06-18 좌표 입력/주소 검색 시트의 상단 헤더를 iOS `CoordinateView`/`SearchAddressView` inline NavigationView toolbar 기준으로 보정했다. 좌표 입력 헤더는 52dp 직접 Row에서 44dp 헤더 상수로 낮췄고, 주소 검색 시트도 44dp 헤더와 검색바 위 8dp 간격을 명시해 최근 정리한 다른 inline 시트들과 같은 기준을 쓰게 했다. `:app:testDebugUnitTest --tests "*ShapeEditDefaultsTest" --tests "*SearchAddressSheetTest" --tests "*StringResourceCoverageTest"`, `:app:assembleDebug` 통과.
 - 2026-06-18 드론 관리 목록의 `새 드론 추가` 행을 iOS `DroneListView`의 `plus.circle.fill` 행 토큰에 맞춰 보정했다. Android 아이콘은 22dp, 텍스트 간격은 12dp였지만 SwiftUI 기본 행에서는 20pt 아이콘과 8pt 간격에 가까우므로 `DroneListAddIconSize = 20.dp`, `DroneListAddIconTextSpacing = 8.dp`로 상수화하고 테스트로 고정했다. `:app:testDebugUnitTest --tests "*DroneListScreenTest" --tests "*DroneEditSheetTest" --tests "*DroneDeleteValidationTest"`, `:app:assembleDebug` 통과.

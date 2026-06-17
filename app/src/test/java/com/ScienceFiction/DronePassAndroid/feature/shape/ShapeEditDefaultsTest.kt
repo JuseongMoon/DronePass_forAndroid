@@ -1015,6 +1015,78 @@ class ShapeEditDefaultsTest {
     }
 
     @Test
+    fun `DateTimeSelectionSheet 닫기는 iOS Binding 처럼 현재 picker 값을 적용한다`() {
+        val initialDate = localMillis(year = 2026, month = Calendar.JUNE, day = 3, hour = 9, minute = 15)
+        val selectedDate = shapeEditDatePickerMillisFromLocalMillis(
+            localMillis(year = 2026, month = Calendar.JUNE, day = 4, hour = 0, minute = 0),
+        )
+
+        val selectedLocalDateTime = shapeEditSelectedLocalMillisFromDateTimePicker(
+            selectedDateMillis = selectedDate,
+            initialDateMillis = initialDate,
+            hour = 16,
+            minute = 45,
+            isDateOnly = false,
+        )
+
+        Calendar.getInstance().apply {
+            timeInMillis = selectedLocalDateTime
+            assertEquals(2026, get(Calendar.YEAR))
+            assertEquals(Calendar.JUNE, get(Calendar.MONTH))
+            assertEquals(4, get(Calendar.DAY_OF_MONTH))
+            assertEquals(16, get(Calendar.HOUR_OF_DAY))
+            assertEquals(45, get(Calendar.MINUTE))
+        }
+    }
+
+    @Test
+    fun `날짜 전용 DateTimeSelectionSheet 닫기는 iOS처럼 선택일 자정 값을 만든다`() {
+        val initialDate = localMillis(year = 2026, month = Calendar.JUNE, day = 3, hour = 9, minute = 15)
+        val selectedDate = shapeEditDatePickerMillisFromLocalMillis(
+            localMillis(year = 2026, month = Calendar.JUNE, day = 4, hour = 0, minute = 0),
+        )
+
+        val selectedLocalDate = shapeEditSelectedLocalMillisFromDateTimePicker(
+            selectedDateMillis = selectedDate,
+            initialDateMillis = initialDate,
+            hour = 16,
+            minute = 45,
+            isDateOnly = true,
+        )
+
+        Calendar.getInstance().apply {
+            timeInMillis = selectedLocalDate
+            assertEquals(2026, get(Calendar.YEAR))
+            assertEquals(Calendar.JUNE, get(Calendar.MONTH))
+            assertEquals(4, get(Calendar.DAY_OF_MONTH))
+            assertEquals(0, get(Calendar.HOUR_OF_DAY))
+            assertEquals(0, get(Calendar.MINUTE))
+        }
+    }
+
+    @Test
+    fun `DateTimeSelectionSheet 선택일이 비어 있으면 iOS처럼 초기 날짜를 유지한다`() {
+        val initialDate = localMillis(year = 2026, month = Calendar.JUNE, day = 3, hour = 9, minute = 15)
+
+        val selectedLocalDateTime = shapeEditSelectedLocalMillisFromDateTimePicker(
+            selectedDateMillis = null,
+            initialDateMillis = initialDate,
+            hour = 16,
+            minute = 45,
+            isDateOnly = false,
+        )
+
+        Calendar.getInstance().apply {
+            timeInMillis = selectedLocalDateTime
+            assertEquals(2026, get(Calendar.YEAR))
+            assertEquals(Calendar.JUNE, get(Calendar.MONTH))
+            assertEquals(3, get(Calendar.DAY_OF_MONTH))
+            assertEquals(16, get(Calendar.HOUR_OF_DAY))
+            assertEquals(45, get(Calendar.MINUTE))
+        }
+    }
+
+    @Test
     fun `단일 날짜 시간 선택 결과는 시작 종료 규칙에 맞게 저장된다`() {
         val selected = localMillis(year = 2026, month = Calendar.JUNE, day = 3, hour = 9, minute = 15)
 

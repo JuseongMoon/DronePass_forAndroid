@@ -471,6 +471,22 @@ internal fun shapeEditDatePickerMillisFromLocalMillis(localMillis: Long): Long {
     }.timeInMillis
 }
 
+internal fun shapeEditSelectedLocalMillisFromDateTimePicker(
+    selectedDateMillis: Long?,
+    initialDateMillis: Long,
+    hour: Int,
+    minute: Int,
+    isDateOnly: Boolean,
+): Long {
+    val selectedDate = selectedDateMillis
+        ?: shapeEditDatePickerMillisFromLocalMillis(initialDateMillis)
+    return shapeEditLocalMillisFromDatePicker(
+        dateMillis = selectedDate,
+        hour = if (isDateOnly) 0 else hour,
+        minute = if (isDateOnly) 0 else minute,
+    )
+}
+
 internal fun selectedStartShapeEditDate(
     selectedDate: Long,
     isDateOnly: Boolean,

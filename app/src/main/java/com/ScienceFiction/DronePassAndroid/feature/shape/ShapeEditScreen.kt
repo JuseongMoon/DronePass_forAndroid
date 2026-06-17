@@ -783,7 +783,6 @@ fun ShapeEditScreen(
             initialDateMillis = flightStartDate,
             isDateOnly = isDateOnly,
             title = stringResource(R.string.shape_edit_start_date_select),
-            onDismiss = { showStartDatePicker = false },
             onDateSelected = { selectedDate ->
                 val newStart = selectedStartShapeEditDate(
                     selectedDate = selectedDate,
@@ -823,7 +822,6 @@ fun ShapeEditScreen(
             isDateOnly = isDateOnly,
             title = stringResource(R.string.shape_edit_end_date_select),
             selectableDates = endDateSelectableDates,
-            onDismiss = { showEndDatePicker = false },
             onDateSelected = { selectedDate ->
                 val proposedEnd = selectedEndShapeEditDate(
                     selectedDate = selectedDate,
@@ -1289,7 +1287,6 @@ private fun ShapeDateTimeSelectionSheet(
     isDateOnly: Boolean,
     title: String,
     selectableDates: SelectableDates? = null,
-    onDismiss: () -> Unit,
     onDateSelected: (Long) -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(
@@ -1311,9 +1308,19 @@ private fun ShapeDateTimeSelectionSheet(
         initialMinute = initialCalendar.get(Calendar.MINUTE),
         is24Hour = use24HourClock,
     )
+    fun applyCurrentSelectionAndDismiss() {
+        val selectedLocalMillis = shapeEditSelectedLocalMillisFromDateTimePicker(
+            selectedDateMillis = datePickerState.selectedDateMillis,
+            initialDateMillis = initialDateMillis,
+            hour = timePickerState.hour,
+            minute = timePickerState.minute,
+            isDateOnly = isDateOnly,
+        )
+        onDateSelected(selectedLocalMillis)
+    }
 
     ModalBottomSheet(
-        onDismissRequest = onDismiss,
+        onDismissRequest = { applyCurrentSelectionAndDismiss() },
         sheetState = sheetState,
     ) {
         Column(
@@ -1328,7 +1335,10 @@ private fun ShapeDateTimeSelectionSheet(
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                TextButton(onClick = onDismiss, modifier = Modifier.width(64.dp)) {
+                TextButton(
+                    onClick = { applyCurrentSelectionAndDismiss() },
+                    modifier = Modifier.width(64.dp),
+                ) {
                     Text(stringResource(R.string.common_cancel))
                 }
                 Text(
@@ -1364,16 +1374,7 @@ private fun ShapeDateTimeSelectionSheet(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 12.dp)
                     .height(48.dp),
-                onClick = {
-                    val selectedDateMillis = datePickerState.selectedDateMillis
-                        ?: shapeEditDatePickerMillisFromLocalMillis(initialDateMillis)
-                    val selectedLocalMillis = shapeEditLocalMillisFromDatePicker(
-                        dateMillis = selectedDateMillis,
-                        hour = if (isDateOnly) 0 else timePickerState.hour,
-                        minute = if (isDateOnly) 0 else timePickerState.minute,
-                    )
-                    onDateSelected(selectedLocalMillis)
-                },
+                onClick = { applyCurrentSelectionAndDismiss() },
             ) {
                 Text(stringResource(R.string.date_time_done))
             }
