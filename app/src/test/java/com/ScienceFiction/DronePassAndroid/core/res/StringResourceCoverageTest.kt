@@ -429,7 +429,7 @@ class StringResourceCoverageTest {
         assertEquals("KP 지수 정보", stringResourceValue("values/strings.xml", "kp_info_title"))
         assertEquals("KP 지수란?", stringResourceValue("values/strings.xml", "kp_info_what_title"))
         assertEquals("KP 지수는 지구 자기장 교란 정도를 나타냅니다.", stringResourceValue("values/strings.xml", "kp_info_what_body"))
-        assertEquals("범위: 0–9 (0: 매우 조용함, 9: 극도로 활발함)", stringResourceValue("values/strings.xml", "kp_info_what_bullet_range"))
+        assertEquals("범위: 0-9 (0: 매우 조용함, 9: 극도로 활발함)", stringResourceValue("values/strings.xml", "kp_info_what_bullet_range"))
         assertEquals("지자기 활동은 GPS 신호의 정확도에 직접적인 영향을 미칩니다.", stringResourceValue("values/strings.xml", "kp_info_drone_body"))
         assertEquals("KP 5 이상: 드론 비행 시 특히 주의 필요", stringResourceValue("values/strings.xml", "kp_info_relation_bullet_kp5"))
         assertEquals("GFZ (독일): 전 세계 13개 관측소 실시간 측정치 (3시간 단위)", stringResourceValue("values/strings.xml", "kp_info_source_gfz"))
@@ -444,6 +444,7 @@ class StringResourceCoverageTest {
 
         assertEquals("KP Index Information", stringResourceValue("values-en/strings.xml", "kp_info_title"))
         assertEquals("What is KP Index?", stringResourceValue("values-en/strings.xml", "kp_info_what_title"))
+        assertEquals("Range: 0-9 (0: Very quiet, 9: Extremely active)", stringResourceValue("values-en/strings.xml", "kp_info_what_bullet_range"))
         assertEquals(
             "KP Index represents the level of disturbance in Earth's magnetic field.",
             androidDisplayStringResourceValue("values-en/strings.xml", "kp_info_what_body"),
@@ -848,11 +849,11 @@ class StringResourceCoverageTest {
         assertEquals("UTC 기준", stringResourceValue("values/strings.xml", "kp_forecast27_note"))
         assertEquals("Data: GFZ Potsdam", stringResourceValue("values/strings.xml", "kp_data_source_gfz"))
         assertEquals("Data: NOAA SWPC", stringResourceValue("values/strings.xml", "kp_data_source_noaa"))
-        assertEquals("Normal (0–5)", stringResourceValue("values/strings.xml", "kp_legend_normal"))
-        assertEquals("G1 (5–6)", stringResourceValue("values/strings.xml", "kp_legend_g1"))
-        assertEquals("G2 (6–7)", stringResourceValue("values/strings.xml", "kp_legend_g2"))
-        assertEquals("G3 (7–8)", stringResourceValue("values/strings.xml", "kp_legend_g3"))
-        assertEquals("G4 (8–9)", stringResourceValue("values/strings.xml", "kp_legend_g4"))
+        assertEquals("Normal (0-5)", stringResourceValue("values/strings.xml", "kp_legend_normal"))
+        assertEquals("G1 (5-6)", stringResourceValue("values/strings.xml", "kp_legend_g1"))
+        assertEquals("G2 (6-7)", stringResourceValue("values/strings.xml", "kp_legend_g2"))
+        assertEquals("G3 (7-8)", stringResourceValue("values/strings.xml", "kp_legend_g3"))
+        assertEquals("G4 (8-9)", stringResourceValue("values/strings.xml", "kp_legend_g4"))
         assertEquals("G5 (≥9)", stringResourceValue("values/strings.xml", "kp_legend_g5"))
 
         assertEquals("KP Index", stringResourceValue("values-en/strings.xml", "kp_title"))
@@ -872,11 +873,11 @@ class StringResourceCoverageTest {
         assertEquals("UTC time", stringResourceValue("values-en/strings.xml", "kp_forecast27_note"))
         assertEquals("Data: GFZ Potsdam", stringResourceValue("values-en/strings.xml", "kp_data_source_gfz"))
         assertEquals("Data: NOAA SWPC", stringResourceValue("values-en/strings.xml", "kp_data_source_noaa"))
-        assertEquals("Normal (0–5)", stringResourceValue("values-en/strings.xml", "kp_legend_normal"))
-        assertEquals("G1 (5–6)", stringResourceValue("values-en/strings.xml", "kp_legend_g1"))
-        assertEquals("G2 (6–7)", stringResourceValue("values-en/strings.xml", "kp_legend_g2"))
-        assertEquals("G3 (7–8)", stringResourceValue("values-en/strings.xml", "kp_legend_g3"))
-        assertEquals("G4 (8–9)", stringResourceValue("values-en/strings.xml", "kp_legend_g4"))
+        assertEquals("Normal (0-5)", stringResourceValue("values-en/strings.xml", "kp_legend_normal"))
+        assertEquals("G1 (5-6)", stringResourceValue("values-en/strings.xml", "kp_legend_g1"))
+        assertEquals("G2 (6-7)", stringResourceValue("values-en/strings.xml", "kp_legend_g2"))
+        assertEquals("G3 (7-8)", stringResourceValue("values-en/strings.xml", "kp_legend_g3"))
+        assertEquals("G4 (8-9)", stringResourceValue("values-en/strings.xml", "kp_legend_g4"))
         assertEquals("G5 (≥9)", stringResourceValue("values-en/strings.xml", "kp_legend_g5"))
     }
 
