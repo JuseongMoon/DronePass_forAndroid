@@ -162,6 +162,11 @@ class ShapeDetailDroneResolutionTest {
     }
 
     @Test
+    fun `메모 텍스트는 iOS HyperlinkTextView처럼 선택 가능하다`() {
+        assertTrue(ShapeDetailMemoTextIsSelectable)
+    }
+
+    @Test
     fun `상세 주소 표시는 iOS처럼 nil 일 때만 대시로 대체한다`() {
         assertEquals("-", formatShapeDetailAddress(null))
         assertEquals("", formatShapeDetailAddress(""))

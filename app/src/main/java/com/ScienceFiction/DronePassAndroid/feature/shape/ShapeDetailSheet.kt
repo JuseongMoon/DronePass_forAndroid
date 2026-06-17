@@ -683,6 +683,7 @@ internal const val ShapeDetailMemoWebAllowFileAccessFromFileUrls = false
 internal const val ShapeDetailMemoWebAllowUniversalAccessFromFileUrls = false
 internal const val ShapeDetailMemoWebSafeBrowsingEnabled = true
 internal const val ShapeDetailMemoWebMixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
+internal const val ShapeDetailMemoTextIsSelectable = true
 
 @Composable
 private fun ShapeDetailCopyToast(
@@ -752,6 +753,7 @@ private fun MemoLinkifyView(
                 setTextColor(textColor)
                 autoLinkMask = ShapeDetailMemoAutoLinkMask
                 linksClickable = true
+                setTextIsSelectable(ShapeDetailMemoTextIsSelectable)
                 movementMethod = LinkMovementMethod.getInstance()
                 setPadding(0, 8, 0, 8)
             }
