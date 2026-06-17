@@ -241,19 +241,7 @@ class SettingsViewModel @Inject constructor(
                 preferences.remove(NotificationPreferenceKeys.LEGACY_SUNRISE_ALARM_ENABLED)
             }
             if (value) {
-                val location = getUserLocationOrNull()
-                if (location != null) {
-                    val (lat, lon) = location
-                    val weatherData = try {
-                        weatherRepository.fetchWeather(lat, lon).getOrNull()
-                    } catch (e: Exception) {
-                        null
-                    }
-                    notificationScheduler.scheduleSunriseAlarms(
-                        sunriseTimeStrings = weatherData?.sunriseTimes,
-                        utcOffsetSeconds = weatherData?.utcOffsetSeconds,
-                    )
-                }
+                rescheduleEnabledSunAlarms()
             } else {
                 notificationScheduler.cancelSunriseAlarms()
             }
@@ -270,19 +258,7 @@ class SettingsViewModel @Inject constructor(
                 preferences.remove(NotificationPreferenceKeys.LEGACY_SUNSET_ALARM_ENABLED)
             }
             if (value) {
-                val location = getUserLocationOrNull()
-                if (location != null) {
-                    val (lat, lon) = location
-                    val weatherData = try {
-                        weatherRepository.fetchWeather(lat, lon).getOrNull()
-                    } catch (e: Exception) {
-                        null
-                    }
-                    notificationScheduler.scheduleSunsetAlarms(
-                        sunsetTimeStrings = weatherData?.sunsetTimes,
-                        utcOffsetSeconds = weatherData?.utcOffsetSeconds,
-                    )
-                }
+                rescheduleEnabledSunAlarms()
             } else {
                 notificationScheduler.cancelSunsetAlarms()
             }
@@ -326,6 +302,40 @@ class SettingsViewModel @Inject constructor(
         }
 
         return resolved
+    }
+
+    /**
+     * iOS `SettingManager.scheduleSunriseSunsetAlarms` 정합.
+     * 일출/일몰 중 하나를 ON으로 바꿀 때 현재 켜져 있는 두 알림을 같은 날씨 snapshot으로 재예약한다.
+     */
+    private suspend fun rescheduleEnabledSunAlarms() {
+        val preferences = dataStore.data.first()
+        val targets = enabledSunAlarmTargetsForReschedule(
+            sunriseAlarmEnabled = storedSunriseAlarmEnabled(preferences),
+            sunsetAlarmEnabled = storedSunsetAlarmEnabled(preferences),
+        )
+        if (!targets.hasAnyEnabled) return
+
+        val location = getUserLocationOrNull() ?: return
+        val (lat, lon) = location
+        val weatherData = try {
+            weatherRepository.fetchWeather(lat, lon).getOrNull()
+        } catch (e: Exception) {
+            null
+        }
+
+        if (targets.sunrise) {
+            notificationScheduler.scheduleSunriseAlarms(
+                sunriseTimeStrings = weatherData?.sunriseTimes,
+                utcOffsetSeconds = weatherData?.utcOffsetSeconds,
+            )
+        }
+        if (targets.sunset) {
+            notificationScheduler.scheduleSunsetAlarms(
+                sunsetTimeStrings = weatherData?.sunsetTimes,
+                utcOffsetSeconds = weatherData?.utcOffsetSeconds,
+            )
+        }
     }
 
     /**
@@ -396,4 +406,21 @@ class SettingsViewModel @Inject constructor(
 
     // signOut / deleteAccount / saveAnonymizedStats / deleteFirestoreUserData 함수는
     // ProfileViewModel 로 이전되어 ProfileView 시트(약관/계정 관리 섹션)에서 호출된다.
+}
+
+internal data class SunAlarmRescheduleTargets(
+    val sunrise: Boolean,
+    val sunset: Boolean,
+) {
+    val hasAnyEnabled: Boolean = sunrise || sunset
+}
+
+internal fun enabledSunAlarmTargetsForReschedule(
+    sunriseAlarmEnabled: Boolean,
+    sunsetAlarmEnabled: Boolean,
+): SunAlarmRescheduleTargets {
+    return SunAlarmRescheduleTargets(
+        sunrise = sunriseAlarmEnabled,
+        sunset = sunsetAlarmEnabled,
+    )
 }
