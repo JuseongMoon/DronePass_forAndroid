@@ -153,12 +153,12 @@ class ShapeDetailDroneResolutionTest {
     }
 
     @Test
-    fun `메모 자동 감지는 iOS처럼 웹 링크 전화번호 이메일을 사용한다`() {
+    fun `메모 자동 감지는 iOS처럼 웹 링크와 전화번호만 사용한다`() {
         assertEquals(
-            Linkify.WEB_URLS or Linkify.PHONE_NUMBERS or Linkify.EMAIL_ADDRESSES,
+            Linkify.WEB_URLS or Linkify.PHONE_NUMBERS,
             ShapeDetailMemoAutoLinkMask,
         )
-        assertTrue(ShapeDetailMemoAutoLinkMask and Linkify.EMAIL_ADDRESSES != 0)
+        assertFalse(ShapeDetailMemoAutoLinkMask and Linkify.EMAIL_ADDRESSES != 0)
     }
 
     @Test
