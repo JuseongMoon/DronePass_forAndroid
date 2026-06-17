@@ -79,6 +79,8 @@ internal val LoginButtonCornerRadius = 12.dp
 internal val LoginProviderIconSize = 18.dp
 internal val LoginProviderIconTextSpacing = 8.dp
 internal val LoginProviderTextSize = 19.sp
+internal val LoginTitleTextSize = 20.sp
+internal val LoginTermsTextSize = 13.sp
 internal val LoginGoogleButtonTopSpacing = 8.dp
 internal val LoginGoogleButtonShadowElevation = 3.dp
 internal val LoginTermsTopSpacing = 8.dp
@@ -165,7 +167,7 @@ fun LoginScreen(
 
             Text(
                 text = stringResource(R.string.login_title),
-                style = MaterialTheme.typography.titleLarge,
+                fontSize = LoginTitleTextSize,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
             )
@@ -397,7 +399,7 @@ private fun LoginTermsNotice(
     ) {
         Text(
             text = stringResource(R.string.login_terms_intro),
-            style = MaterialTheme.typography.bodySmall,
+            fontSize = LoginTermsTextSize,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
@@ -407,32 +409,32 @@ private fun LoginTermsNotice(
         ) {
             Text(
                 text = stringResource(R.string.login_terms_service),
-                style = MaterialTheme.typography.bodySmall,
+                fontSize = LoginTermsTextSize,
                 color = MaterialTheme.colorScheme.primary,
                 textDecoration = TextDecoration.Underline,
                 modifier = Modifier.clickable(onClick = onTermsClick),
             )
             Text(
                 text = ", ",
-                style = MaterialTheme.typography.bodySmall,
+                fontSize = LoginTermsTextSize,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
                 text = stringResource(R.string.login_terms_privacy),
-                style = MaterialTheme.typography.bodySmall,
+                fontSize = LoginTermsTextSize,
                 color = MaterialTheme.colorScheme.primary,
                 textDecoration = TextDecoration.Underline,
                 modifier = Modifier.clickable(onClick = onPrivacyClick),
             )
             Text(
                 text = stringResource(R.string.login_terms_middle),
-                style = MaterialTheme.typography.bodySmall,
+                fontSize = LoginTermsTextSize,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
         Text(
             text = stringResource(R.string.login_terms_agree),
-            style = MaterialTheme.typography.bodySmall,
+            fontSize = LoginTermsTextSize,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
