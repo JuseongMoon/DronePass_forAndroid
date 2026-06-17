@@ -170,6 +170,14 @@ class KpChartsTest {
     }
 
     @Test
+    fun `KP sheet header matches iOS inline navigation toolbar`() {
+        assertEquals(44.dp, KpSheetNavigationHeaderHeight)
+        assertEquals(44.dp, KpSheetNavigationHeaderActionWidth)
+        assertEquals(8.dp, KpSheetNavigationHeaderHorizontalPadding)
+        assertEquals(0.5f, KpSheetNavigationHeaderDividerThickness.value, 0f)
+    }
+
+    @Test
     fun `current KP card value keeps iOS hyphen fallback when data is missing`() {
         assertEquals("-", formatCurrentKpValue(null))
         assertEquals(

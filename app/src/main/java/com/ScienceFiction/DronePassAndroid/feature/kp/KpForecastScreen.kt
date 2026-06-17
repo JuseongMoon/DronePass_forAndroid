@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -76,6 +75,10 @@ internal val IosCurrentKpLevelNameFontSize = 20.sp
 internal val IosCurrentKpLevelDescriptionFontSize = 12.sp
 internal val IosCurrentKpDataSourceFontSize = 11.sp
 internal const val IosCurrentKpCardBackgroundAlpha = 0.1f
+internal val KpSheetNavigationHeaderHeight = 44.dp
+internal val KpSheetNavigationHeaderActionWidth = 44.dp
+internal val KpSheetNavigationHeaderHorizontalPadding = 8.dp
+internal val KpSheetNavigationHeaderDividerThickness = 0.5.dp
 
 @Suppress("UNUSED_PARAMETER")
 internal fun isKpRefreshActionEnabled(isLoading: Boolean): Boolean = true
@@ -94,19 +97,26 @@ fun KpSheetHeader(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 4.dp),
+                .height(KpSheetNavigationHeaderHeight)
+                .padding(horizontal = KpSheetNavigationHeaderHorizontalPadding),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            if (onInfo != null) {
-                IconButton(onClick = onInfo) {
-                    Icon(
-                        imageVector = Icons.Default.Info,
-                        contentDescription = stringResource(R.string.kp_info_button),
-                        tint = MaterialTheme.colorScheme.primary,
-                    )
+            Box(
+                modifier = Modifier.width(KpSheetNavigationHeaderActionWidth),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (onInfo != null) {
+                    IconButton(
+                        onClick = onInfo,
+                        modifier = Modifier.size(KpSheetNavigationHeaderActionWidth),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Info,
+                            contentDescription = stringResource(R.string.kp_info_button),
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                    }
                 }
-            } else {
-                Spacer(modifier = Modifier.padding(start = 48.dp))
             }
             Text(
                 text = stringResource(R.string.kp_navigation_title),
@@ -115,16 +125,25 @@ fun KpSheetHeader(
                 modifier = Modifier.weight(1f),
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
             )
-            IconButton(onClick = onRefresh, enabled = isKpRefreshActionEnabled(isLoading)) {
-                Icon(
-                    imageVector = Icons.Default.Refresh,
-                    contentDescription = stringResource(R.string.kp_refresh),
-                    tint = MaterialTheme.colorScheme.primary,
-                )
+            Box(
+                modifier = Modifier.width(KpSheetNavigationHeaderActionWidth),
+                contentAlignment = Alignment.Center,
+            ) {
+                IconButton(
+                    onClick = onRefresh,
+                    enabled = isKpRefreshActionEnabled(isLoading),
+                    modifier = Modifier.size(KpSheetNavigationHeaderActionWidth),
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Refresh,
+                        contentDescription = stringResource(R.string.kp_refresh),
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                }
             }
         }
         HorizontalDivider(
-            thickness = 0.5.dp,
+            thickness = KpSheetNavigationHeaderDividerThickness,
             color = MaterialTheme.colorScheme.outlineVariant,
         )
     }
