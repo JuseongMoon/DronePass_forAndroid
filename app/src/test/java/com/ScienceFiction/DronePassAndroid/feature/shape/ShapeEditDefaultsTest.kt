@@ -200,6 +200,11 @@ class ShapeEditDefaultsTest {
     }
 
     @Test
+    fun `도형 편집 주소 행 값은 iOS처럼 한 줄로 제한한다`() {
+        assertEquals(1, ShapeEditAddressRowValueMaxLines)
+    }
+
+    @Test
     fun `도형 편집 기본값 키 이름은 iOS UserDefaults 이름과 동일하게 유지한다`() {
         assertEquals("lastSelectedDroneId", ShapeEditPreferenceKeys.LAST_SELECTED_DRONE_ID.name)
         assertEquals("lastRadius", ShapeEditPreferenceKeys.LAST_RADIUS.name)

@@ -105,6 +105,7 @@ internal val CoordinateGuideCardVerticalSpacing = 8.dp
 internal val ShapeEditMemoMinHeight = 170.dp
 internal val ShapeEditNavigationHeaderHeight = 44.dp
 internal val ShapeEditNavigationActionSlotWidth = 80.dp
+internal const val ShapeEditAddressRowValueMaxLines = 1
 
 internal fun shapeDateTimeSelectionUses24HourClock(systemUses24HourClock: Boolean): Boolean {
     return systemUses24HourClock
@@ -509,6 +510,8 @@ fun ShapeEditScreen(
                         } else {
                             MaterialTheme.colorScheme.onSurface
                         },
+                        valueMaxLines = ShapeEditAddressRowValueMaxLines,
+                        valueOverflow = TextOverflow.Ellipsis,
                         onClick = { showAddressSearch = true },
                     )
                 } else {
@@ -1240,6 +1243,8 @@ private fun EditFormClickableRow(
     label: String,
     value: String,
     valueColor: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onSurface,
+    valueMaxLines: Int = Int.MAX_VALUE,
+    valueOverflow: TextOverflow = TextOverflow.Clip,
     onClick: () -> Unit,
 ) {
     Row(
@@ -1255,11 +1260,15 @@ private fun EditFormClickableRow(
             style = MaterialTheme.typography.bodyLarge,
             fontWeight = FontWeight.Bold,
         )
-        Spacer(modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.width(12.dp))
         Text(
             text = value,
             style = MaterialTheme.typography.bodyMedium,
             color = valueColor,
+            modifier = Modifier.weight(1f),
+            textAlign = TextAlign.End,
+            maxLines = valueMaxLines,
+            overflow = valueOverflow,
         )
         Spacer(modifier = Modifier.width(4.dp))
         Icon(
