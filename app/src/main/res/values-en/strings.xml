@@ -97,6 +97,7 @@
     <string name="weather_unknown">Unknown</string>
     <string name="weather_gust_difference">Gust difference</string>
     <string name="weather_precipitation">Precipitation</string>
+    <string name="weather_snowfall">Snowfall</string>
     <string name="weather_cri">Condensation Risk (CRI)</string>
     <string name="weather_gust_warning">Local gust risk</string>
 

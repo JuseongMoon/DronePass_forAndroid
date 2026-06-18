@@ -96,6 +96,7 @@
     <string name="weather_unknown">알 수 없음</string>
     <string name="weather_gust_difference">돌풍 차이</string>
     <string name="weather_precipitation">강수량</string>
+    <string name="weather_snowfall">강설량</string>
     <string name="weather_cri">결로 위험 (CRI)</string>
     <string name="weather_gust_warning">국지 돌풍 위험</string>
 

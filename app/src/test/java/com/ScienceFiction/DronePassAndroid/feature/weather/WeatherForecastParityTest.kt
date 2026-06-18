@@ -422,8 +422,19 @@ class WeatherForecastParityTest {
         assertEquals("5.2 m/s", formatIosMetersPerSecond(5.24))
         assertEquals("-", formatIosPrecipitationIntensity(null))
         assertEquals("1.2 mm/h", formatIosPrecipitationIntensity(1.24))
+        assertEquals("0.1 cm/h", formatIosPrecipitationIntensity(1.24, isSnowing = true))
         assertEquals("-", formatIosCri(null))
         assertEquals("43", formatIosCri(42.6))
+    }
+
+    @Test
+    fun `current precipitation label and unit switch to snowfall for iOS snow conditions`() {
+        assertFalse(isSnowingWeatherCode(61))
+        assertEquals(R.string.weather_precipitation, resolvePrecipitationLabelRes(61))
+
+        assertTrue(isSnowingWeatherCode(71))
+        assertTrue(isSnowingWeatherCode(86))
+        assertEquals(R.string.weather_snowfall, resolvePrecipitationLabelRes(71))
     }
 
     @Test

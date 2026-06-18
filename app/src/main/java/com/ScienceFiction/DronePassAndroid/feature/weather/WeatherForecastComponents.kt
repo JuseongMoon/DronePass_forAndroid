@@ -191,6 +191,14 @@ internal fun resolveGustDifferenceSubTextRes(level: GustDifferenceLevel): Int? =
 
 internal fun resolveCurrentWeatherVisibility(data: WeatherData): Double? = data.current?.visibility
 
+internal fun isSnowingWeatherCode(weatherCode: Int?): Boolean = when (weatherCode) {
+    71, 73, 75, 77, 85, 86 -> true
+    else -> false
+}
+
+internal fun resolvePrecipitationLabelRes(weatherCode: Int?): Int =
+    if (isSnowingWeatherCode(weatherCode)) R.string.weather_snowfall else R.string.weather_precipitation
+
 internal fun resolveCurrentWeatherContentState(
     hourlyForecast: List<HourlyWeatherData>,
     isLoading: Boolean,
@@ -352,8 +360,11 @@ internal fun CurrentWeatherSection(
                                         modifier = Modifier.weight(1f),
                                         icon = Icons.Default.WaterDrop,
                                         iconColor = PrecipitationBlue,
-                                        label = stringResource(R.string.weather_precipitation),
-                                        value = formatIosPrecipitationIntensity(current?.precipitation),
+                                        label = stringResource(resolvePrecipitationLabelRes(current?.weatherCode)),
+                                        value = formatIosPrecipitationIntensity(
+                                            precipitation = current?.precipitation,
+                                            isSnowing = isSnowingWeatherCode(current?.weatherCode),
+                                        ),
                                         warningIcon = precipWarning,
                                         onClick = { onWeatherInfoRequested(WeatherInfoTopic.Precipitation) },
                                     )
@@ -772,8 +783,14 @@ internal fun formatIosVisibilityKilometers(visibilityKm: Double): String =
 internal fun formatIosMetersPerSecond(value: Double?): String =
     value?.let { "%.1f m/s".format(Locale.ROOT, it) } ?: MissingWeatherValueText
 
-internal fun formatIosPrecipitationIntensity(precipitation: Double?): String =
-    precipitation?.let { "%.1f mm/h".format(Locale.ROOT, it) } ?: MissingWeatherValueText
+internal fun formatIosPrecipitationIntensity(
+    precipitation: Double?,
+    isSnowing: Boolean = false,
+): String = precipitation?.let {
+    val value = if (isSnowing) it / 10.0 else it
+    val unit = if (isSnowing) "cm/h" else "mm/h"
+    "%.1f %s".format(Locale.ROOT, value, unit)
+} ?: MissingWeatherValueText
 
 internal fun formatIosCri(cri: Double?): String =
     cri?.let { "%.0f".format(Locale.ROOT, it) } ?: MissingWeatherValueText
