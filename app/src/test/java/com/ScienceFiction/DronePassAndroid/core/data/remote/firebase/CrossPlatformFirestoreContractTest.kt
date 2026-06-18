@@ -5,6 +5,8 @@ import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeType
 import com.ScienceFiction.DronePassAndroid.domain.model.SketchModel
+import com.ScienceFiction.DronePassAndroid.domain.model.isValidForFirebasePersistence
+import com.ScienceFiction.DronePassAndroid.domain.model.isValidForFirebaseRead
 import com.google.firebase.Timestamp
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -178,6 +180,24 @@ class CrossPlatformFirestoreContractTest {
         assertTrue(data["flightEndDate"] is Timestamp)
         assertFalse(data.containsKey("startedAt"))
         assertFalse(data.containsKey("expireDate"))
+    }
+
+    @Test
+    fun `Android circle shape write requires radius so iOS can render the overlay`() {
+        val shapeWithoutRadius = ShapeModel(
+            id = SHAPE_ID,
+            title = "Android Circle Without Radius",
+            shapeType = ShapeType.CIRCLE,
+            baseCoordinate = Coordinate(37.5665, 126.978),
+            radius = null,
+            color = "#007AFF",
+            createdAt = 1_700_000_000_000L,
+            updatedAt = 1_700_000_060_000L,
+            flightStartDate = 1_700_000_000_000L,
+        )
+
+        assertTrue(shapeWithoutRadius.isValidForFirebaseRead())
+        assertFalse(shapeWithoutRadius.isValidForFirebasePersistence())
     }
 
     @Test

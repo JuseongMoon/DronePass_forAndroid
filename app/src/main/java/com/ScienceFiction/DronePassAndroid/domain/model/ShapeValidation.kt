@@ -21,6 +21,7 @@ fun ShapeModel.validateForLocalPersistence(): ShapeValidationResult {
     return validateShape(
         maxRadiusMeters = null,
         maxCoordinateCount = null,
+        requireCircleRadius = false,
         requireTypedGeometry = false,
         requireRenderableGeometry = false,
         requireNonEmptyTitle = true,
@@ -35,6 +36,7 @@ fun ShapeModel.validateForFirebasePersistence(): ShapeValidationResult {
     return validateShape(
         maxRadiusMeters = MAX_FIREBASE_RADIUS_METERS,
         maxCoordinateCount = MAX_FIREBASE_COORDINATE_COUNT,
+        requireCircleRadius = true,
         requireTypedGeometry = true,
         requireRenderableGeometry = true,
         requireNonEmptyTitle = true,
@@ -49,6 +51,7 @@ fun ShapeModel.validateForFirebaseRead(): ShapeValidationResult {
     return validateShape(
         maxRadiusMeters = MAX_FIREBASE_RADIUS_METERS,
         maxCoordinateCount = MAX_FIREBASE_COORDINATE_COUNT,
+        requireCircleRadius = false,
         requireTypedGeometry = true,
         requireRenderableGeometry = false,
         requireNonEmptyTitle = false,
@@ -95,6 +98,7 @@ private fun isValidFirebaseShapeId(id: String): Boolean {
 private fun ShapeModel.validateShape(
     maxRadiusMeters: Double?,
     maxCoordinateCount: Int?,
+    requireCircleRadius: Boolean,
     requireTypedGeometry: Boolean,
     requireRenderableGeometry: Boolean,
     requireNonEmptyTitle: Boolean,
@@ -117,7 +121,11 @@ private fun ShapeModel.validateShape(
     }
 
     return when (shapeType) {
-        ShapeType.CIRCLE -> validateCircleRadius(radius, maxRadiusMeters)
+        ShapeType.CIRCLE -> validateCircleRadius(
+            radius = radius,
+            maxRadiusMeters = maxRadiusMeters,
+            required = requireCircleRadius,
+        )
         ShapeType.RECTANGLE -> validateRectangleCoordinate(
             baseCoordinate = baseCoordinate,
             secondCoordinate = secondCoordinate,
@@ -146,8 +154,14 @@ private fun ShapeModel.validateShape(
 private fun validateCircleRadius(
     radius: Double?,
     maxRadiusMeters: Double?,
+    required: Boolean,
 ): ShapeValidationResult {
-    if (radius == null) return ShapeValidationResult(isValid = true)
+    if (radius == null) {
+        return ShapeValidationResult(
+            isValid = !required,
+            reason = "missing radius".takeIf { required },
+        )
+    }
     if (!radius.isFinite() || radius <= 0.0) {
         return ShapeValidationResult(isValid = false, reason = "invalid radius")
     }

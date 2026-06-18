@@ -65,8 +65,14 @@ class ShapeValidationTest {
     }
 
     @Test
-    fun `원형 반경은 없으면 통과하지만 0 이하와 Firebase 50km 초과는 거부한다`() {
+    fun `원형 반경은 로컬과 읽기에서는 누락을 허용하지만 Firebase 쓰기에서는 필수다`() {
         assertTrue(validCircle().copy(radius = null).isValidForLocalPersistence())
+        assertTrue(validCircle().copy(radius = null).isValidForFirebaseRead())
+        assertFalse(validCircle().copy(radius = null).isValidForFirebasePersistence())
+    }
+
+    @Test
+    fun `원형 반경은 0 이하와 Firebase 50km 초과를 거부한다`() {
         assertFalse(validCircle().copy(radius = 0.0).isValidForLocalPersistence())
         assertTrue(validCircle().copy(radius = 60_000.0).isValidForLocalPersistence())
         assertFalse(validCircle().copy(radius = 60_000.0).isValidForFirebasePersistence())
