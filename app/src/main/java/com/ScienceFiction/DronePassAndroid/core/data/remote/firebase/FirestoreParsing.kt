@@ -3,7 +3,7 @@ package com.ScienceFiction.DronePassAndroid.core.data.remote.firebase
 import com.google.firebase.Timestamp
 
 internal fun firestoreOptionalDouble(value: Any?): Double? {
-    return (value as? Number)?.toDouble()
+    return value as? Double
 }
 
 internal fun hasInvalidFirestoreTimestampField(

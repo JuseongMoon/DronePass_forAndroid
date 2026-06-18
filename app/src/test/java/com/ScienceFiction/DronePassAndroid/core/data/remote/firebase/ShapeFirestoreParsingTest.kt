@@ -92,7 +92,7 @@ class ShapeFirestoreParsingTest {
     }
 
     @Test
-    fun `Firestore 파싱은 iOS처럼 optional 정수 숫자를 Double 로 읽는다`() {
+    fun `Firestore 파싱은 iOS처럼 optional 정수 숫자를 누락값으로 본다`() {
         val shape = shapeFromFirestoreData(
             validDocument() + mapOf(
                 "radius" to 100,
@@ -101,8 +101,8 @@ class ShapeFirestoreParsingTest {
         )
 
         requireNotNull(shape)
-        assertEquals(100.0, shape.radius ?: 0.0, 0.0)
-        assertEquals(120.0, shape.height ?: 0.0, 0.0)
+        assertNull(shape.radius)
+        assertNull(shape.height)
     }
 
     @Test
