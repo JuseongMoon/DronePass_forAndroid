@@ -22,6 +22,7 @@ import com.ScienceFiction.DronePassAndroid.feature.settings.storedHideExpiredSha
 import com.ScienceFiction.DronePassAndroid.feature.settings.storedHideNotStartedShapes
 import com.ScienceFiction.DronePassAndroid.feature.settings.storedKoreaFeaturesEnabled
 import com.ScienceFiction.DronePassAndroid.feature.shape.ShapeEditDefaults
+import com.ScienceFiction.DronePassAndroid.feature.shape.resolveSelectedShapeSnapshot
 import com.ScienceFiction.DronePassAndroid.feature.shape.resolveShapeEditDefaultColor
 import com.ScienceFiction.DronePassAndroid.feature.shape.resolveShapeEditConflict
 import com.ScienceFiction.DronePassAndroid.feature.shape.shapeEditSaveFailureMessage
@@ -341,7 +342,7 @@ class SavedListViewModel @Inject constructor(
     val selectedShape: StateFlow<ShapeModel?> = combine(
         _selectedShapeId, activeShapes
     ) { shapeId, shapes ->
-        shapeId?.let { id -> shapes.find { it.id == id } }
+        resolveSelectedShapeSnapshot(shapeId, shapes)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     val primarySelectedDroneId: StateFlow<String?> = combine(

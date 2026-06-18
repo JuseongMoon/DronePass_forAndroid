@@ -36,6 +36,7 @@ import com.ScienceFiction.DronePassAndroid.feature.settings.storedHideNotStarted
 import com.ScienceFiction.DronePassAndroid.feature.settings.storedKeepScreenAwake
 import com.ScienceFiction.DronePassAndroid.feature.settings.storedKoreaFeaturesEnabled
 import com.ScienceFiction.DronePassAndroid.feature.shape.ShapeEditDefaults
+import com.ScienceFiction.DronePassAndroid.feature.shape.resolveSelectedShapeSnapshot
 import com.ScienceFiction.DronePassAndroid.feature.shape.resolveShapeEditConflict
 import com.ScienceFiction.DronePassAndroid.feature.shape.shapeEditSaveFailureMessage
 import com.ScienceFiction.DronePassAndroid.feature.shape.storedShapeEditDefaults
@@ -518,7 +519,7 @@ class MapViewModel @Inject constructor(
         _selectedShapeId,
         activeShapes
     ) { shapeId, shapes ->
-        shapeId?.let { id -> shapes.find { it.id == id } }
+        resolveSelectedShapeSnapshot(shapeId, shapes)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     /**

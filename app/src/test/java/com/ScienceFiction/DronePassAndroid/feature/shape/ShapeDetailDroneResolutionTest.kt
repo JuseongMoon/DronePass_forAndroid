@@ -6,6 +6,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.unit.dp
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.PaletteColor
+import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -74,6 +75,32 @@ class ShapeDetailDroneResolutionTest {
         )
 
         assertEquals(firstDrone, result)
+    }
+
+    @Test
+    fun `상세 시트 선택 도형은 iOS ShapeRealtimeObserver처럼 최신 active snapshot을 따른다`() {
+        val original = ShapeModel(id = "shape-a", title = "Original", updatedAt = 1_000L)
+        val updated = original.copy(title = "Updated", updatedAt = 2_000L)
+
+        assertEquals(
+            updated,
+            resolveSelectedShapeSnapshot(
+                selectedShapeId = "shape-a",
+                activeShapes = listOf(updated),
+            ),
+        )
+        assertNull(
+            resolveSelectedShapeSnapshot(
+                selectedShapeId = "shape-a",
+                activeShapes = emptyList(),
+            ),
+        )
+        assertNull(
+            resolveSelectedShapeSnapshot(
+                selectedShapeId = null,
+                activeShapes = listOf(updated),
+            ),
+        )
     }
 
     @Test
