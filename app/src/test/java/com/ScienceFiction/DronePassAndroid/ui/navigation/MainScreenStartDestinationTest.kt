@@ -246,6 +246,9 @@ class MainScreenStartDestinationTest {
     fun `포그라운드 알림 팝업 치수와 전환값은 iOS PushNotificationPopupView 를 따른다`() {
         assertEquals(320.dp, PhoneNotificationPopupMaxWidth)
         assertEquals(400.dp, TabletNotificationPopupMaxWidth)
+        assertEquals(300.dp, resolveNotificationPopupWidth(screenWidth = 300.dp, isTablet = false))
+        assertEquals(320.dp, resolveNotificationPopupWidth(screenWidth = 360.dp, isTablet = false))
+        assertEquals(400.dp, resolveNotificationPopupWidth(screenWidth = 900.dp, isTablet = true))
         assertEquals(24.dp, NotificationPopupContentPadding)
         assertEquals(20.dp, NotificationPopupSpacing)
         assertEquals(8.dp, NotificationPopupIconTopPadding)

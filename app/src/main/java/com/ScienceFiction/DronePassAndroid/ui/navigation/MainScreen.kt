@@ -36,7 +36,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDownward
@@ -297,6 +296,18 @@ internal fun notificationPopupExitTransition(): ExitTransition {
             targetScale = NotificationPopupInitialScale,
             animationSpec = tween(durationMillis = NotificationPopupAnimationDurationMs),
         )
+}
+
+internal fun resolveNotificationPopupWidth(
+    screenWidth: Dp,
+    isTablet: Boolean,
+): Dp {
+    val maxWidth = if (isTablet) {
+        TabletNotificationPopupMaxWidth
+    } else {
+        PhoneNotificationPopupMaxWidth
+    }
+    return minOf(screenWidth, maxWidth)
 }
 
 internal fun mainOverlayEnterTransition(isTablet: Boolean): EnterTransition {
@@ -772,11 +783,10 @@ private fun PushNotificationOverlay(
     isTablet: Boolean,
     onDismiss: () -> Unit,
 ) {
-    val popupMaxWidth = if (isTablet) {
-        TabletNotificationPopupMaxWidth
-    } else {
-        PhoneNotificationPopupMaxWidth
-    }
+    val popupWidth = resolveNotificationPopupWidth(
+        screenWidth = currentWindowSizeDp().width,
+        isTablet = isTablet,
+    )
 
     Box(
         modifier = Modifier
@@ -791,9 +801,7 @@ private fun PushNotificationOverlay(
     ) {
         Surface(
             modifier = Modifier
-                .padding(horizontal = 32.dp)
-                .widthIn(max = popupMaxWidth)
-                .fillMaxWidth()
+                .width(popupWidth)
                 .clickable(
                     indication = null,
                     interactionSource = remember { MutableInteractionSource() },
