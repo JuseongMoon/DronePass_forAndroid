@@ -83,6 +83,33 @@ class DroneEditSheetTest {
     }
 
     @Test
+    fun `추가 모드 선택 사양 필드는 iOS처럼 공백뿐이면 null 로 저장한다`() {
+        assertNull(resolveDroneEditOptionalFieldForSave(value = "", existingValue = null))
+        assertNull(resolveDroneEditOptionalFieldForSave(value = " \n\t ", existingValue = null))
+        assertEquals("  SN-01  ", resolveDroneEditOptionalFieldForSave(value = "  SN-01  ", existingValue = null))
+    }
+
+    @Test
+    fun `편집 모드 선택 사양 필드는 iOS처럼 공백으로 기존 값을 지우지 않는다`() {
+        assertEquals(
+            "SN-OLD",
+            resolveDroneEditOptionalFieldForSave(value = "", existingValue = "SN-OLD"),
+        )
+        assertEquals(
+            "memo old",
+            resolveDroneEditOptionalFieldForSave(value = " \n\t ", existingValue = "memo old"),
+        )
+    }
+
+    @Test
+    fun `편집 모드 선택 사양 필드는 새 입력값이 있으면 iOS처럼 원문으로 덮어쓴다`() {
+        assertEquals(
+            "  SN-NEW  ",
+            resolveDroneEditOptionalFieldForSave(value = "  SN-NEW  ", existingValue = "SN-OLD"),
+        )
+    }
+
+    @Test
     fun `메모 입력 영역은 iOS TextEditor처럼 최소 100dp 높이를 가진다`() {
         assertEquals(100.dp, DroneEditMemoMinHeight)
     }
