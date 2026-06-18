@@ -599,6 +599,8 @@
     <string name="weather_temperature_low_prefix">Low:</string>
     <string name="weather_until_sunset">Until sunset</string>
     <string name="weather_until_sunrise">Until sunrise</string>
+    <string name="weather_time_hours" tools:ignore="PluralsCandidate">%1$d hours %2$d minutes</string>
+    <string name="weather_time_minutes" tools:ignore="PluralsCandidate">%1$d minutes</string>
     <string name="weather_remaining">remaining</string>
     <string name="weather_disclaimer">Caution and warning icons are for reference only. Always check on-site conditions before flight.</string>
     <string name="weather_last_update">Last updated: %1$s</string>

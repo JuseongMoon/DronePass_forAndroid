@@ -942,6 +942,8 @@ class StringResourceCoverageTest {
         assertEquals("우박을 동반한 뇌우", stringResourceValue("values/strings.xml", "weather_condition_thunderstorm_hail"))
         assertEquals("일몰까지", stringResourceValue("values/strings.xml", "weather_until_sunset"))
         assertEquals("일출까지", stringResourceValue("values/strings.xml", "weather_until_sunrise"))
+        assertEquals("%1\$d시간 %2\$d분", stringResourceValue("values/strings.xml", "weather_time_hours"))
+        assertEquals("%1\$d분", stringResourceValue("values/strings.xml", "weather_time_minutes"))
         assertEquals("남음", stringResourceValue("values/strings.xml", "weather_remaining"))
         assertEquals(
             "주의 및 경고 아이콘은 참고용입니다. 비행 전 현장 상황을 반드시 확인하세요.",
@@ -995,6 +997,8 @@ class StringResourceCoverageTest {
         assertEquals("Thunderstorm with Hail", stringResourceValue("values-en/strings.xml", "weather_condition_thunderstorm_hail"))
         assertEquals("Until sunset", stringResourceValue("values-en/strings.xml", "weather_until_sunset"))
         assertEquals("Until sunrise", stringResourceValue("values-en/strings.xml", "weather_until_sunrise"))
+        assertEquals("%1\$d hours %2\$d minutes", stringResourceValue("values-en/strings.xml", "weather_time_hours"))
+        assertEquals("%1\$d minutes", stringResourceValue("values-en/strings.xml", "weather_time_minutes"))
         assertEquals("remaining", stringResourceValue("values-en/strings.xml", "weather_remaining"))
         assertEquals(
             "Caution and warning icons are for reference only. Always check on-site conditions before flight.",

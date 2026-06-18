@@ -66,6 +66,15 @@ class SunTimelineStateTest {
     }
 
     @Test
+    fun `remaining time parser matches iOS detail card formatting input`() {
+        assertEquals(SunTimelineRemainingTime(hours = 7, minutes = 40), parseSunTimelineRemainingTime("07:40"))
+        assertEquals(SunTimelineRemainingTime(hours = 0, minutes = 20), parseSunTimelineRemainingTime("00:20"))
+        assertEquals(SunTimelineRemainingTime(hours = 0, minutes = 0), parseSunTimelineRemainingTime("00:00"))
+        assertEquals(null, parseSunTimelineRemainingTime("--:--"))
+        assertEquals(null, parseSunTimelineRemainingTime("07"))
+    }
+
+    @Test
     fun `night marker is midnight within the active night interval`() {
         val state = resolveSunTimelineState(
             sunriseIsoList = sunriseTimes,

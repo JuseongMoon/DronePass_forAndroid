@@ -513,6 +513,8 @@
     <string name="weather_temperature_low_prefix">최저:</string>
     <string name="weather_until_sunset">일몰까지</string>
     <string name="weather_until_sunrise">일출까지</string>
+    <string name="weather_time_hours" tools:ignore="PluralsCandidate">%1$d시간 %2$d분</string>
+    <string name="weather_time_minutes" tools:ignore="PluralsCandidate">%1$d분</string>
     <string name="weather_remaining">남음</string>
     <string name="weather_disclaimer">주의 및 경고 아이콘은 참고용입니다. 비행 전 현장 상황을 반드시 확인하세요.</string>
     <string name="weather_last_update">마지막 업데이트: %1$s</string>

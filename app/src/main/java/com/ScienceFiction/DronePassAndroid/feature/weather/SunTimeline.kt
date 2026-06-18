@@ -153,7 +153,7 @@ fun SunTimeline(
                         color = MaterialTheme.colorScheme.onSurface,
                     )
                     Text(
-                        text = timelineState.nextEvent.timeUntilFormatted,
+                        text = sunTimelineRemainingText(timelineState.nextEvent.timeUntilFormatted),
                         fontSize = IosSunTimelineRemainingFontSize,
                         fontWeight = IosSunTimelineSemiboldFontWeight,
                         color = SunEventColor,
@@ -167,6 +167,16 @@ fun SunTimeline(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun sunTimelineRemainingText(timeUntilFormatted: String): String {
+    val remainingTime = parseSunTimelineRemainingTime(timeUntilFormatted) ?: return timeUntilFormatted
+    return if (remainingTime.hours > 0) {
+        stringResource(R.string.weather_time_hours, remainingTime.hours, remainingTime.minutes)
+    } else {
+        stringResource(R.string.weather_time_minutes, remainingTime.minutes)
     }
 }
 
@@ -320,6 +330,19 @@ internal fun sunTimelineEndpointImageVector(endpointIcon: SunTimelineEndpointIco
         SunTimelineEndpointIcon.Sunrise -> Icons.Default.WbSunny
         SunTimelineEndpointIcon.Sunset -> Icons.Default.WbTwilight
     }
+
+internal data class SunTimelineRemainingTime(
+    val hours: Int,
+    val minutes: Int,
+)
+
+internal fun parseSunTimelineRemainingTime(timeUntilFormatted: String): SunTimelineRemainingTime? {
+    val components = timeUntilFormatted.split(":")
+    if (components.size != 2) return null
+    val hours = components[0].toIntOrNull() ?: return null
+    val minutes = components[1].toIntOrNull() ?: return null
+    return SunTimelineRemainingTime(hours = hours, minutes = minutes)
+}
 
 internal data class SunTimelineState(
     val isDaytime: Boolean,
