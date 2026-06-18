@@ -15,7 +15,7 @@ import java.util.Calendar
 import java.util.Locale
 import java.util.TimeZone
 
-internal const val DefaultShapeEditDateOnlyMode = true
+internal const val DefaultShapeEditDateOnlyMode = false
 internal const val ShowShapeEditFlightPeriodSectionHeader = false
 
 data class ShapeEditDefaults(
