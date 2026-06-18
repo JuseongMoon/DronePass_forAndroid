@@ -846,7 +846,7 @@ internal fun MapBottomSheets(
                 onDismiss = { showWeatherInfoSheet = false },
                 initialTopic = selectedWeatherInfoTopic,
                 category = selectedCategory,
-                onCategoryChanged = { weatherViewModel.setCategory(it) },
+                onCategoryChanged = { weatherViewModel.setCategory(it, refreshWeather = false) },
                 isUsingGps = isUsingGps,
                 locationAccuracyMeters = locationAccuracyMeters,
             )

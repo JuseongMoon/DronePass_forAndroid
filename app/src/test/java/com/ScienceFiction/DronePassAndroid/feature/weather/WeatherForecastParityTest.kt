@@ -620,6 +620,17 @@ class WeatherForecastParityTest {
     }
 
     @Test
+    fun `weather info guide category selection only updates the stored category like iOS WeatherInfoView`() {
+        assertFalse(
+            shouldFetchWeatherAfterCategorySelection(
+                latitude = 37.5665,
+                longitude = 126.9780,
+                refreshWeather = false,
+            ),
+        )
+    }
+
+    @Test
     fun `weather location lookup does not fall back to Seoul when iOS has no location`() {
         assertEquals(
             WeatherLocationFetchSource.CurrentLocation,

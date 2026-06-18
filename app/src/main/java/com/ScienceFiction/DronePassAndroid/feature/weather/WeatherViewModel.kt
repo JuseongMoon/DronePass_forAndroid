@@ -46,8 +46,12 @@ internal fun storedWeatherDroneCategory(preferences: Preferences): DroneCategory
         ?: DroneCategory.IosDefault
 }
 
-internal fun shouldFetchWeatherAfterCategorySelection(latitude: Double, longitude: Double): Boolean {
-    return latitude != 0.0 || longitude != 0.0
+internal fun shouldFetchWeatherAfterCategorySelection(
+    latitude: Double,
+    longitude: Double,
+    refreshWeather: Boolean = true,
+): Boolean {
+    return refreshWeather && (latitude != 0.0 || longitude != 0.0)
 }
 
 internal enum class WeatherLocationFetchSource {
@@ -122,16 +126,25 @@ class WeatherViewModel @Inject constructor(
     }
 
     /**
-     * 드론 카테고리 변경
+     * 드론 카테고리 변경.
+     *
+     * iOS 는 WeatherForecastView 의 현재 날씨 카드에서 선택할 때만 날씨를 다시 가져오고,
+     * WeatherInfoView 의 설명용 선택 메뉴에서는 저장값만 바꾼다.
      */
-    fun setCategory(category: DroneCategory) {
+    fun setCategory(category: DroneCategory, refreshWeather: Boolean = true) {
         viewModelScope.launch {
             dataStore.edit { preferences ->
                 preferences[WeatherDroneCategoryPreferenceKey] = category.iosRawValue
                 preferences.remove(LegacyWeatherDroneCategoryPreferenceKey)
             }
             // 카테고리 변경 시 날씨 데이터 재계산
-            if (shouldFetchWeatherAfterCategorySelection(currentLatitude, currentLongitude)) {
+            if (
+                shouldFetchWeatherAfterCategorySelection(
+                    latitude = currentLatitude,
+                    longitude = currentLongitude,
+                    refreshWeather = refreshWeather,
+                )
+            ) {
                 _isLoading.value = true
                 _error.value = null
                 weatherRepository.invalidateCache()
