@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 2026-06-18 좌표 파서 패리티 테스트 커밋 `da49926` 이후 최신 HEAD 기준 전체 `:app:testDebugUnitTest`, `:app:assembleDebug`, `:app:minifyReleaseWithR8`를 재실행해 모두 통과 확인했다. R8는 기존과 같은 Naver Maps SDK stack map table warning과 Play Services Location companion warning만 출력하며 build failure는 아니다.
 - 2026-06-18 좌표 입력/파싱 흐름을 iOS `CoordinateManager`/`CoordinateView`/`SearchCoordinateViewModel` 기준으로 다시 대조했다. Android는 iOS가 지원하는 DMS, 십진도, 단순 십진수, Geo URI 입력과 검색 성공 시 결과 카드 선택, 주소 검색 실패 시 fallback 주소 저장 흐름을 유지한다. iOS의 MGRS/Plus Code 파서는 현재 stub으로 `nil`을 반환하므로 Android도 해당 문자열을 좌표로 오인하지 않는 회귀 테스트를 추가했다. Android 파서는 기존대로 위경도 범위 검증과 십진수 전체 문자열 anchoring을 유지해 iOS보다 더 안전하게 손상 입력을 거부한다. `:app:testDebugUnitTest --tests "*CoordinateParserTest" --tests "*ShapeEditDefaultsTest"` 통과.
 - 2026-06-18 앱 정보 화면의 feature title/description 전체를 iOS `AppInfoView`/`Localizable.xcstrings` 기준으로 다시 대조했다. Android 화면의 섹션 순서와 다중 드론/비행구역/알림/날씨/KP/일출일몰/도형/복제/주소검색/클라우드/드론원스톱 문구는 현재 iOS 최신 키와 일치하며, 기존에 일부만 고정하던 `StringResourceCoverageTest`를 전체 feature 문자열로 확장해 회귀를 막았다. `:app:testDebugUnitTest --tests "*StringResourceCoverageTest" --tests "*AppInfoScreenTest"` 통과.
 - 2026-06-18 도형 편집 날짜/시간 선택 시트를 iOS `DateTimeSelectionView`/`DateSection`과 다시 대조했다. Android는 시작일 변경 시 종료일을 시작일 이후로 보정하고, 종료일 DatePicker도 시작일 이전 날짜를 선택 불가로 제한하며, 시트 dismiss/완료 모두 iOS Binding처럼 현재 picker 값을 적용한다. iOS iPhone12 전용 시트 호출부는 `DateTimeSelectionView`의 `minimumDate` 인자를 넘기지 않는 상태로 보여 Android 완화가 아니라 iOS 호출부 보강 후보로 남긴다. `:app:testDebugUnitTest --tests "*ShapeEditDefaultsTest" --tests "*ShapeDateFormatsTest"` 통과.
