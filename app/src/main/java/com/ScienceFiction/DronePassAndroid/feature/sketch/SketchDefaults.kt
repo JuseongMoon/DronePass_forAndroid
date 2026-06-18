@@ -10,6 +10,7 @@ internal const val DefaultSketchColor = "#FF0000"
 internal const val DefaultSketchStrokeWidth = 4.0
 internal const val DefaultSketchOpacity = 1.0
 internal const val RecordSketchUndoWhenExitingMode = true
+internal const val CancelSketchDrawingWhenTogglingEraser = false
 
 internal object SketchPreferenceKeys {
     val CURRENT_COLOR = stringPreferencesKey("sketchCurrentColor")

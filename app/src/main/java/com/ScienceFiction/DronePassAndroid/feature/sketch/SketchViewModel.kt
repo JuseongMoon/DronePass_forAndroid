@@ -276,8 +276,7 @@ class SketchViewModel @Inject constructor(
      */
     fun toggleEraserMode() {
         _isEraserMode.value = !_isEraserMode.value
-        // 지우개 모드 진입 시 진행 중인 그리기 취소
-        if (_isEraserMode.value) {
+        if (CancelSketchDrawingWhenTogglingEraser && _isEraserMode.value) {
             cancelDrawing()
         }
     }
