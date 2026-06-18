@@ -209,6 +209,12 @@ class ProfileViewModelTest {
     }
 
     @Test
+    fun `프로필 클라우드 백업 토글은 iOS처럼 동기화 중에는 무시된다`() {
+        assertTrue(shouldAcceptProfileCloudBackupToggle(isSyncing = false))
+        assertTrue(!shouldAcceptProfileCloudBackupToggle(isSyncing = true))
+    }
+
+    @Test
     fun `프로필 오류 문구는 iOS처럼 null일 때만 fallback을 사용한다`() {
         assertEquals("message", profileErrorDescription("message", fallback = "fallback"))
         assertEquals("", profileErrorDescription("", fallback = "fallback"))

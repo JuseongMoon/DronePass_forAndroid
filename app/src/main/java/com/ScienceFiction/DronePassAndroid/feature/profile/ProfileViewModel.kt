@@ -83,6 +83,8 @@ internal fun shouldNotifyProfileSyncResultForCloudToggle(
     return enabled && isLoggedIn
 }
 
+internal fun shouldAcceptProfileCloudBackupToggle(isSyncing: Boolean): Boolean = !isSyncing
+
 internal fun profileErrorDescription(localizedMessage: String?, fallback: String): String {
     return localizedMessage ?: fallback
 }
@@ -316,6 +318,12 @@ class ProfileViewModel @Inject constructor(
      */
     fun setCloudBackupEnabled(enabled: Boolean) {
         viewModelScope.launch {
+            val syncInProgress = isProfileSyncInProgress(
+                manualSyncing = _isSyncing.value,
+                realtimeSyncState = realtimeSyncManager.syncState.value,
+            )
+            if (!shouldAcceptProfileCloudBackupToggle(syncInProgress)) return@launch
+
             dataStore.edit {
                 it[ProfilePreferenceKeys.CLOUD_BACKUP_ENABLED] = enabled
                 it.remove(ProfilePreferenceKeys.LEGACY_CLOUD_BACKUP_ENABLED)
