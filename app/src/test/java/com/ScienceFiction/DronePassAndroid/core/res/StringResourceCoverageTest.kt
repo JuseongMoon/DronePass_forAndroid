@@ -36,6 +36,7 @@ class StringResourceCoverageTest {
     fun `login strings match iOS localizations`() {
         assertEquals("로그인 / 회원가입", stringResourceValue("values/strings.xml", "login_title"))
         assertEquals("Apple로 계속하기", stringResourceValue("values/strings.xml", "login_apple"))
+        assertEquals("Google로 로그인", stringResourceValue("values/strings.xml", "login_google"))
         assertEquals(
             "\\u0020and",
             stringResourceValue("values-en/strings.xml", "login_terms_middle"),
@@ -63,6 +64,7 @@ class StringResourceCoverageTest {
         assertEquals("Google 로고", stringResourceValue("values/strings.xml", "login_google_logo_description"))
         assertEquals("Sign In / Sign Up", stringResourceValue("values-en/strings.xml", "login_title"))
         assertEquals("Continue with Apple", stringResourceValue("values-en/strings.xml", "login_apple"))
+        assertEquals("Sign in with Google", stringResourceValue("values-en/strings.xml", "login_google"))
         assertEquals("Google logo", stringResourceValue("values-en/strings.xml", "login_google_logo_description"))
         assertEquals("Login Error", stringResourceValue("values-en/strings.xml", "login_error_title"))
         assertEquals("Unknown error", stringResourceValue("values-en/strings.xml", "login_error_unknown"))
