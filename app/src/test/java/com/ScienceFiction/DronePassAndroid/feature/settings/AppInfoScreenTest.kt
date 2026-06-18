@@ -8,10 +8,10 @@ import org.junit.Test
 class AppInfoScreenTest {
 
     @Test
-    fun `앱 버전 행은 iOS처럼 버전명과 빌드 번호를 함께 표시한다`() {
-        val value = appInfoVersionValue("1.2.3", 45)
+    fun `앱 버전 행은 iOS처럼 버전명만 표시한다`() {
+        val value = appInfoVersionValue("1.2.3")
 
-        assertEquals("1.2.3 (45)", value)
+        assertEquals("1.2.3", value)
     }
 
     @Test
