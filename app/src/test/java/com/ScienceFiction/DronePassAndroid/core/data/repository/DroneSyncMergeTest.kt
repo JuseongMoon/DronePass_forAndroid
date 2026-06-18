@@ -5,6 +5,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.util.Locale
 
 class DroneSyncMergeTest {
 
@@ -135,6 +136,22 @@ class DroneSyncMergeTest {
                 isLoggedIn = false,
                 deferWhenLoggedIn = false,
             )
+        )
+    }
+
+    @Test
+    fun `활성 드론 목록은 iOS activeDrones 처럼 이름 자연 정렬을 적용한다`() {
+        val drones = listOf(
+            drone(id = "created-latest", updatedAt = 30L, name = "드론 10"),
+            drone(id = "created-oldest", updatedAt = 10L, name = "드론 1"),
+            drone(id = "created-middle", updatedAt = 20L, name = "드론 2"),
+        )
+
+        val sorted = sortActiveDronesForIosList(drones, locale = Locale.KOREAN)
+
+        assertEquals(
+            listOf("드론 1", "드론 2", "드론 10"),
+            sorted.map { it.name },
         )
     }
 

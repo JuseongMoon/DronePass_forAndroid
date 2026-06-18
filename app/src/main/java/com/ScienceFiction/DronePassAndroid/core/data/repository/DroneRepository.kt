@@ -76,6 +76,15 @@ internal fun shouldCreateDefaultDrone(
     return !(deferWhenLoggedIn && isLoggedIn)
 }
 
+internal fun sortActiveDronesForIosList(
+    drones: List<DroneModel>,
+    locale: Locale = Locale.getDefault(),
+): List<DroneModel> {
+    return drones.sortedWith { first, second ->
+        compareIosLocalizedStandardStrings(first.name, second.name, locale)
+    }
+}
+
 @Singleton
 class DroneRepository @Inject constructor(
     private val droneDao: DroneDao,
@@ -95,8 +104,10 @@ class DroneRepository @Inject constructor(
     fun getActiveDrones(): Flow<List<DroneModel>> {
         val locale = Locale.getDefault()
         return droneDao.getActiveDrones().map { entities ->
-            entities.map { it.toDomain() }
-                .sortedWith { a, b -> compareIosLocalizedStandardStrings(a.name, b.name, locale) }
+            sortActiveDronesForIosList(
+                drones = entities.map { it.toDomain() },
+                locale = locale,
+            )
         }
     }
 
