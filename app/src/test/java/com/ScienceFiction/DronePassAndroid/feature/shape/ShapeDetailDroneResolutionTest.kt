@@ -134,6 +134,17 @@ class ShapeDetailDroneResolutionTest {
     }
 
     @Test
+    fun `메모 웹 시트는 iOS SafariView처럼 http https URL만 로드한다`() {
+        assertEquals("https://example.com", normalizedShapeDetailMemoWebUrl(" https://example.com "))
+        assertEquals("HTTP://example.com", normalizedShapeDetailMemoWebUrl("HTTP://example.com"))
+        assertNull(normalizedShapeDetailMemoWebUrl(""))
+        assertNull(normalizedShapeDetailMemoWebUrl("javascript:alert(1)"))
+        assertNull(normalizedShapeDetailMemoWebUrl("file:///sdcard/secret.txt"))
+        assertNull(normalizedShapeDetailMemoWebUrl("content://com.example.provider/item"))
+        assertNull(normalizedShapeDetailMemoWebUrl("intent://scan/#Intent;scheme=zxing;end"))
+    }
+
+    @Test
     fun `메모 웹 링크 WebView는 임의 URL에 대한 JavaScript 로컬 접근과 혼합 콘텐츠를 차단한다`() {
         assertFalse(ShapeDetailMemoWebJavaScriptEnabled)
         assertTrue(ShapeDetailMemoWebDomStorageEnabled)

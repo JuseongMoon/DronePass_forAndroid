@@ -13,6 +13,7 @@ import android.text.style.URLSpan
 import android.text.util.Linkify
 import android.view.View
 import android.webkit.WebSettings
+import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.TextView
@@ -774,6 +775,7 @@ private fun ShapeDetailMemoWebSheet(
     url: String,
     onDismiss: () -> Unit,
 ) {
+    val safeUrl = remember(url) { normalizedShapeDetailMemoWebUrl(url) } ?: return
     val sheetHeight = currentWindowSizeDp().height * ShapeDetailMemoWebSheetHeightFraction
     val sheetState = rememberModalBottomSheetState(
         skipPartiallyExpanded = ShapeDetailMemoWebSheetSkipPartiallyExpanded,
@@ -792,7 +794,7 @@ private fun ShapeDetailMemoWebSheet(
             TopAppBar(
                 title = {
                     Text(
-                        text = url,
+                        text = safeUrl,
                         style = MaterialTheme.typography.bodyMedium,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -811,7 +813,7 @@ private fun ShapeDetailMemoWebSheet(
                     .weight(1f),
                 factory = { context ->
                     WebView(context).apply {
-                        webViewClient = WebViewClient()
+                        webViewClient = ShapeDetailMemoWebViewClient()
                         settings.javaScriptEnabled = ShapeDetailMemoWebJavaScriptEnabled
                         settings.domStorageEnabled = ShapeDetailMemoWebDomStorageEnabled
                         settings.javaScriptCanOpenWindowsAutomatically =
@@ -823,7 +825,7 @@ private fun ShapeDetailMemoWebSheet(
                             ShapeDetailMemoWebAllowUniversalAccessFromFileUrls
                         settings.safeBrowsingEnabled = ShapeDetailMemoWebSafeBrowsingEnabled
                         settings.mixedContentMode = ShapeDetailMemoWebMixedContentMode
-                        loadUrl(url)
+                        loadUrl(safeUrl)
                     }
                 },
                 update = {},
@@ -838,14 +840,31 @@ internal enum class ShapeDetailMemoLinkAction {
 }
 
 internal fun resolveShapeDetailMemoLinkAction(url: String): ShapeDetailMemoLinkAction {
-    val normalized = url.trim()
-    return if (
-        normalized.startsWith("https://", ignoreCase = true) ||
-        normalized.startsWith("http://", ignoreCase = true)
-    ) {
+    return if (normalizedShapeDetailMemoWebUrl(url) != null) {
         ShapeDetailMemoLinkAction.IN_APP_WEB
     } else {
         ShapeDetailMemoLinkAction.SYSTEM_INTENT
+    }
+}
+
+internal fun normalizedShapeDetailMemoWebUrl(url: String): String? {
+    val normalized = url.trim()
+    if (normalized.isEmpty()) return null
+    val lowercased = normalized.lowercase()
+    return normalized.takeIf {
+        lowercased.startsWith("http://") ||
+            lowercased.startsWith("https://")
+    }
+}
+
+private class ShapeDetailMemoWebViewClient : WebViewClient() {
+    override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
+        return normalizedShapeDetailMemoWebUrl(request?.url?.toString().orEmpty()) == null
+    }
+
+    @Deprecated("Deprecated in Android framework")
+    override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
+        return normalizedShapeDetailMemoWebUrl(url.orEmpty()) == null
     }
 }
 
