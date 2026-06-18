@@ -230,14 +230,14 @@ class StringResourceCoverageTest {
 
     @Test
     fun `shape detail labels match iOS localizations`() {
-        assertEquals("상세정보", stringResourceValue("values/strings.xml", "shape_detail_navigation_title"))
-        assertEquals("고도", stringResourceValue("values/strings.xml", "shape_detail_altitude"))
+        assertEquals("상세 정보", stringResourceValue("values/strings.xml", "shape_detail_navigation_title"))
+        assertEquals("고도(m)", stringResourceValue("values/strings.xml", "shape_detail_altitude"))
         assertEquals("길찾기 앱 선택", stringResourceValue("values/strings.xml", "shape_detail_open_external_map"))
-        assertEquals("네이버 지도", stringResourceValue("values/strings.xml", "shape_detail_open_naver_map"))
+        assertEquals("네이버지도", stringResourceValue("values/strings.xml", "shape_detail_open_naver_map"))
         assertEquals("티맵", stringResourceValue("values/strings.xml", "shape_detail_open_tmap"))
-        assertEquals("구글 지도", stringResourceValue("values/strings.xml", "shape_detail_open_google_map"))
-        assertEquals("편집", stringResourceValue("values/strings.xml", "shape_detail_edit"))
-        assertEquals("복제", stringResourceValue("values/strings.xml", "shape_detail_duplicate"))
+        assertEquals("구글맵", stringResourceValue("values/strings.xml", "shape_detail_open_google_map"))
+        assertEquals("수정하기", stringResourceValue("values/strings.xml", "shape_detail_edit"))
+        assertEquals("복제하기", stringResourceValue("values/strings.xml", "shape_detail_duplicate"))
         assertEquals("삭제된 드론", stringResourceValue("values/strings.xml", "shape_detail_drone_deleted"))
         assertEquals("드론 미지정", stringResourceValue("values/strings.xml", "shape_detail_drone_unassigned"))
         assertEquals("아래 앱으로 길찾기를 시작합니다.", stringResourceValue("values/strings.xml", "shape_detail_navigation_message"))
