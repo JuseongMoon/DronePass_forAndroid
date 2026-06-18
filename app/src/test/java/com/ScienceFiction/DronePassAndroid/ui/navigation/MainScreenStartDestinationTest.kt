@@ -171,10 +171,10 @@ class MainScreenStartDestinationTest {
     }
 
     @Test
-    fun `하단 탭바 bottom padding은 폰에서 내비게이션 바 위로 중복 여백을 더하지 않는다`() {
-        assertEquals(0.dp, TabBarPhoneBottomPadding)
+    fun `하단 탭바 bottom padding은 iOS처럼 phone 15dp tablet 20dp 이다`() {
+        assertEquals(15.dp, TabBarPhoneBottomPadding)
         assertEquals(20.dp, TabBarTabletBottomPadding)
-        assertEquals(0.dp, resolveTabBarBottomPadding(isTablet = false))
+        assertEquals(15.dp, resolveTabBarBottomPadding(isTablet = false))
         assertEquals(20.dp, resolveTabBarBottomPadding(isTablet = true))
     }
 

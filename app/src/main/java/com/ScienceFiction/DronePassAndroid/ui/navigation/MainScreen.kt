@@ -31,7 +31,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -100,12 +99,11 @@ import com.ScienceFiction.DronePassAndroid.service.ForegroundNotificationBus
 import kotlinx.coroutines.delay
 
 // MARK: - iOS MainTabView 와 동등한 시각/치수 토큰
-// navigationBarsPadding keeps the tab bar above the Android system bar. Phone should
-// not add the iOS extra 15dp on top of that because it visually lifts the bar too high.
+// iOS: width 210, height 60, cornerRadius 30, shadow radius 10, bottom padding phone 15 / iPad 20
 private val TabBarWidth = 210.dp
 private val TabBarHeight = 60.dp
 private val TabBarCornerRadius = 30.dp
-internal val TabBarPhoneBottomPadding = 0.dp
+internal val TabBarPhoneBottomPadding = 15.dp
 internal val TabBarTabletBottomPadding = 20.dp
 private val TabBarShadowElevation = 8.dp
 private val TabButtonWidth = 60.dp
@@ -738,8 +736,8 @@ internal fun MainScreen(
                 },
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    // System bar inset only, then tablet keeps its extra iOS margin.
-                    .navigationBarsPadding()
+                    // iOS bottom padding token only. navigationBarsPadding visually lifts
+                    // the floating Map/Saved/Settings control on Android.
                     .padding(bottom = resolveTabBarBottomPadding(isTablet)),
             )
         }
