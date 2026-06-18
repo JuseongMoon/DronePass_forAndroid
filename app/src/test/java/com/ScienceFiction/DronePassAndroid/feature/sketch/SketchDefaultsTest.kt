@@ -161,6 +161,9 @@ class SketchDefaultsTest {
         assertEquals(16.dp, SketchToolbarDoneCornerRadius)
         assertEquals(14.sp, SketchToolbarDoneFontSize)
         assertEquals(9.sp, SketchDeleteBadgeFontSize)
+        assertEquals(14.dp, SketchDeleteBadgeMinSize)
+        assertEquals(4.dp, SketchDeleteBadgeOffsetX)
+        assertEquals((-4).dp, SketchDeleteBadgeOffsetY)
     }
 
     @Test

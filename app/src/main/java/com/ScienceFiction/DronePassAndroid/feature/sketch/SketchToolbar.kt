@@ -18,8 +18,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -30,8 +32,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.automirrored.filled.Redo
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.Badge
-import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -82,6 +82,9 @@ internal val SketchToolbarDoneVerticalPadding = 8.dp
 internal val SketchToolbarDoneCornerRadius = 16.dp
 internal val SketchToolbarDoneFontSize = 14.sp
 internal val SketchDeleteBadgeFontSize = 9.sp
+internal val SketchDeleteBadgeMinSize = 14.dp
+internal val SketchDeleteBadgeOffsetX = 4.dp
+internal val SketchDeleteBadgeOffsetY = (-4).dp
 @DrawableRes
 internal val SketchEraserIconRes = R.drawable.ic_eraser
 internal val SketchPenPickerCardCornerRadius = 16.dp
@@ -467,24 +470,29 @@ private fun DeleteAllButton(
         contentAlignment = Alignment.Center,
     ) {
         if (sketchCount > 0) {
-            BadgedBox(
-                badge = {
-                    Badge(
-                        containerColor = MaterialTheme.colorScheme.error,
-                        contentColor = MaterialTheme.colorScheme.onError
-                    ) {
-                        Text(
-                            text = formatSketchDeleteBadgeCount(sketchCount),
-                            fontSize = SketchDeleteBadgeFontSize,
-                        )
-                    }
-                }
+            Icon(
+                imageVector = Icons.Default.Delete,
+                contentDescription = stringResource(R.string.sketch_delete_all),
+                tint = MaterialTheme.colorScheme.error,
+                modifier = Modifier.size(SketchToolbarIconSize),
+            )
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .offset(x = SketchDeleteBadgeOffsetX, y = SketchDeleteBadgeOffsetY)
+                    .defaultMinSize(
+                        minWidth = SketchDeleteBadgeMinSize,
+                        minHeight = SketchDeleteBadgeMinSize,
+                    )
+                    .background(MaterialTheme.colorScheme.error, CircleShape),
+                contentAlignment = Alignment.Center,
             ) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = stringResource(R.string.sketch_delete_all),
-                    tint = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.size(SketchToolbarIconSize),
+                Text(
+                    text = formatSketchDeleteBadgeCount(sketchCount),
+                    fontSize = SketchDeleteBadgeFontSize,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onError,
+                    textAlign = TextAlign.Center,
                 )
             }
         } else {
