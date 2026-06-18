@@ -228,6 +228,66 @@ internal data class MainOverlayVisibility(
     val showSettingsOverlay: Boolean,
 )
 
+internal data class MainTabSelectionResult(
+    val overlayVisibility: MainOverlayVisibility,
+    val shouldNavigateToMap: Boolean,
+)
+
+internal fun resolveMainTabSelection(
+    screen: Screen,
+    currentRoute: String?,
+    showSavedListOverlay: Boolean,
+    showSettingsOverlay: Boolean,
+): MainTabSelectionResult {
+    return when (screen) {
+        Screen.SavedList -> {
+            if (showSavedListOverlay) {
+                MainTabSelectionResult(
+                    overlayVisibility = MainOverlayVisibility(
+                        showSavedListOverlay = false,
+                        showSettingsOverlay = false,
+                    ),
+                    shouldNavigateToMap = false,
+                )
+            } else {
+                MainTabSelectionResult(
+                    overlayVisibility = MainOverlayVisibility(
+                        showSavedListOverlay = true,
+                        showSettingsOverlay = false,
+                    ),
+                    shouldNavigateToMap = currentRoute != Screen.Map.route,
+                )
+            }
+        }
+        Screen.Settings -> {
+            if (showSettingsOverlay) {
+                MainTabSelectionResult(
+                    overlayVisibility = MainOverlayVisibility(
+                        showSavedListOverlay = false,
+                        showSettingsOverlay = false,
+                    ),
+                    shouldNavigateToMap = false,
+                )
+            } else {
+                MainTabSelectionResult(
+                    overlayVisibility = MainOverlayVisibility(
+                        showSavedListOverlay = false,
+                        showSettingsOverlay = true,
+                    ),
+                    shouldNavigateToMap = currentRoute != Screen.Map.route,
+                )
+            }
+        }
+        Screen.Map -> MainTabSelectionResult(
+            overlayVisibility = MainOverlayVisibility(
+                showSavedListOverlay = false,
+                showSettingsOverlay = false,
+            ),
+            shouldNavigateToMap = true,
+        )
+    }
+}
+
 internal fun resolveMainOverlayVisibilityAfterSketchModeChange(
     isSketchMode: Boolean,
     showSavedListOverlay: Boolean,
@@ -997,51 +1057,22 @@ private fun handleTabSelection(
     showSettingsOverlay: Boolean,
     onSettingsOverlayChange: (Boolean) -> Unit,
 ) {
-    when (screen) {
-        Screen.SavedList -> {
-            if (showSavedListOverlay) {
-                onSavedListOverlayChange(false)
-            } else {
-                onSettingsOverlayChange(false)
-                onSavedListOverlayChange(true)
-                if (currentRoute != Screen.Map.route) {
-                    navController.navigate(Screen.Map.route) {
-                        popUpTo(navController.graph.findStartDestination().id) {
-                            saveState = true
-                        }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                }
+    val result = resolveMainTabSelection(
+        screen = screen,
+        currentRoute = currentRoute,
+        showSavedListOverlay = showSavedListOverlay,
+        showSettingsOverlay = showSettingsOverlay,
+    )
+    onSavedListOverlayChange(result.overlayVisibility.showSavedListOverlay)
+    onSettingsOverlayChange(result.overlayVisibility.showSettingsOverlay)
+
+    if (result.shouldNavigateToMap) {
+        navController.navigate(Screen.Map.route) {
+            popUpTo(navController.graph.findStartDestination().id) {
+                saveState = true
             }
-        }
-        Screen.Settings -> {
-            if (showSettingsOverlay) {
-                onSettingsOverlayChange(false)
-            } else {
-                onSavedListOverlayChange(false)
-                onSettingsOverlayChange(true)
-                if (currentRoute != Screen.Map.route) {
-                    navController.navigate(Screen.Map.route) {
-                        popUpTo(navController.graph.findStartDestination().id) {
-                            saveState = true
-                        }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                }
-            }
-        }
-        Screen.Map -> {
-            onSavedListOverlayChange(false)
-            onSettingsOverlayChange(false)
-            navController.navigate(screen.route) {
-                popUpTo(navController.graph.findStartDestination().id) {
-                    saveState = true
-                }
-                launchSingleTop = true
-                restoreState = true
-            }
+            launchSingleTop = true
+            restoreState = true
         }
     }
 }

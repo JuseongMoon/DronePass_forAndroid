@@ -48,6 +48,123 @@ class MainScreenStartDestinationTest {
     }
 
     @Test
+    fun `저장 탭 선택은 iOS처럼 설정 오버레이를 닫고 저장 오버레이를 연다`() {
+        assertEquals(
+            MainTabSelectionResult(
+                overlayVisibility = MainOverlayVisibility(
+                    showSavedListOverlay = true,
+                    showSettingsOverlay = false,
+                ),
+                shouldNavigateToMap = false,
+            ),
+            resolveMainTabSelection(
+                screen = Screen.SavedList,
+                currentRoute = Screen.Map.route,
+                showSavedListOverlay = false,
+                showSettingsOverlay = true,
+            ),
+        )
+    }
+
+    @Test
+    fun `저장 탭을 다시 선택하면 iOS처럼 저장 오버레이를 닫는다`() {
+        assertEquals(
+            MainTabSelectionResult(
+                overlayVisibility = MainOverlayVisibility(
+                    showSavedListOverlay = false,
+                    showSettingsOverlay = false,
+                ),
+                shouldNavigateToMap = false,
+            ),
+            resolveMainTabSelection(
+                screen = Screen.SavedList,
+                currentRoute = Screen.Map.route,
+                showSavedListOverlay = true,
+                showSettingsOverlay = false,
+            ),
+        )
+    }
+
+    @Test
+    fun `설정 탭 선택은 iOS처럼 저장 오버레이를 닫고 설정 오버레이를 연다`() {
+        assertEquals(
+            MainTabSelectionResult(
+                overlayVisibility = MainOverlayVisibility(
+                    showSavedListOverlay = false,
+                    showSettingsOverlay = true,
+                ),
+                shouldNavigateToMap = false,
+            ),
+            resolveMainTabSelection(
+                screen = Screen.Settings,
+                currentRoute = Screen.Map.route,
+                showSavedListOverlay = true,
+                showSettingsOverlay = false,
+            ),
+        )
+    }
+
+    @Test
+    fun `설정 탭을 다시 선택하면 iOS처럼 설정 오버레이를 닫는다`() {
+        assertEquals(
+            MainTabSelectionResult(
+                overlayVisibility = MainOverlayVisibility(
+                    showSavedListOverlay = false,
+                    showSettingsOverlay = false,
+                ),
+                shouldNavigateToMap = false,
+            ),
+            resolveMainTabSelection(
+                screen = Screen.Settings,
+                currentRoute = Screen.Map.route,
+                showSavedListOverlay = false,
+                showSettingsOverlay = true,
+            ),
+        )
+    }
+
+    @Test
+    fun `지도 탭 선택은 iOS처럼 모든 오버레이를 닫고 지도로 이동한다`() {
+        assertEquals(
+            MainTabSelectionResult(
+                overlayVisibility = MainOverlayVisibility(
+                    showSavedListOverlay = false,
+                    showSettingsOverlay = false,
+                ),
+                shouldNavigateToMap = true,
+            ),
+            resolveMainTabSelection(
+                screen = Screen.Map,
+                currentRoute = Screen.SavedList.route,
+                showSavedListOverlay = true,
+                showSettingsOverlay = true,
+            ),
+        )
+    }
+
+    @Test
+    fun `저장 또는 설정 탭을 맵 밖에서 열 때는 iOS처럼 배경을 지도 경로로 되돌린다`() {
+        assertEquals(
+            true,
+            resolveMainTabSelection(
+                screen = Screen.SavedList,
+                currentRoute = Screen.Settings.route,
+                showSavedListOverlay = false,
+                showSettingsOverlay = false,
+            ).shouldNavigateToMap,
+        )
+        assertEquals(
+            true,
+            resolveMainTabSelection(
+                screen = Screen.Settings,
+                currentRoute = Screen.SavedList.route,
+                showSavedListOverlay = false,
+                showSettingsOverlay = false,
+            ).shouldNavigateToMap,
+        )
+    }
+
+    @Test
     fun `하단 탭바는 iOS처럼 스케치 모드에서 숨긴다`() {
         assertEquals(true, shouldShowFloatingTabBar(isSketchMode = false))
         assertEquals(false, shouldShowFloatingTabBar(isSketchMode = true))
