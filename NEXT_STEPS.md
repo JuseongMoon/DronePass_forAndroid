@@ -12,11 +12,12 @@
 |---|---|
 | 워킹 트리 | clean |
 | 주요 검증 | `:app:testDebugUnitTest`, `:app:lintDebug`, `:app:assembleDebug`, `:app:minifyReleaseWithR8`, `:app:connectedDebugAndroidTest`, `:app:shapeParsingCoverageVerification`, `:app:testDebugUnitTest --tests "*MainScreenStartDestinationTest"`, `:app:testDebugUnitTest --tests "*MapScreenLayersTest"`, `:app:testDebugUnitTest --tests "*SettingsPreferenceKeysTest"`, `:app:testDebugUnitTest --tests "*SettingsPreferenceKeysTest" --tests "*NotificationPreferenceKeysTest" --tests "*SettingsEndDateAlarmPlanTest" --tests "*MainActivityKeepScreenAwakeTest"`, `:app:testDebugUnitTest --tests "*Auth*Test" --tests "*StringResourceCoverageTest"` 통과 |
-| Release readiness | 2026-06-18에 실제 `keystore.properties`, `WEB_CLIENT_ID`, Firebase Android `oauth_client`가 없으면 `assembleRelease`가 의도적으로 실패함을 재확인 |
+| Release readiness | 2026-06-19에 `:app:minifyReleaseWithR8` 통과, 실제 `keystore.properties`, `WEB_CLIENT_ID`, Firebase Android `oauth_client`가 없으면 `assembleRelease`/`bundleRelease`가 의도적으로 실패함을 재확인 |
 | 남은 성격 | 실기기 전체 회귀, 콘솔/스토어 운영 설정, 최종 iOS 동기화 검증 |
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 2026-06-19 최신 HEAD `f77e600` 기준 release shrink와 release artifact 차단 경로를 재확인했다. `JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home" ./gradlew :app:minifyReleaseWithR8`는 Crashlytics mapping upload까지 `BUILD SUCCESSFUL`로 통과했고, 출력 경고는 기존과 같은 Naver Maps SDK stack map table warning 및 Play Services Location companion warning만 남았다. `:app:assembleRelease`와 `:app:bundleRelease`는 각각 1초/473ms 안에 산출물 생성 전 차단됐으며, 실패 사유는 release signing 미설정, Google `WEB_CLIENT_ID` 미설정, Firebase Android `oauth_client` 미설정 세 가지로 의도한 메시지를 함께 출력했다.
 - 2026-06-19 최신 HEAD `ebfc404` 기준 Android 15 실기기 `SM-A346N - 15`에서 `:app:connectedDebugAndroidTest`를 재실행해 instrumentation 10 tests가 모두 통과했다.
 - 2026-06-19 최신 HEAD `ad508a8` 기준 전체 로컬 게이트를 다시 실행했다. `:app:testDebugUnitTest :app:lintDebug :app:assembleDebug`는 `BUILD SUCCESSFUL`로 통과했고, lint debug report는 `app/build/reports/lint-results-debug.html`에 갱신됐다.
 - 2026-06-19 Android/iOS 로그인 화면을 대조해 Apple → Google → 약관 순서, 버튼 크기/간격, provider 후처리 필드(`appleUserID`/`googleUserID`)가 현재 맞는 것을 확인했다. 구현 변경은 없고 `LoginScreenContractTest`를 추가해 Apple 버튼이 Google 버튼보다 먼저 나오고 두 버튼이 실제 로그인 경로에 연결되며 약관 문구 순서가 iOS `LoginView`와 같음을 고정했다. `StringResourceCoverageTest`에는 `login_google` 한국어/영어 값을 추가로 잠갔다. `:app:testDebugUnitTest --tests "com.ScienceFiction.DronePassAndroid.feature.auth.AuthViewModelForegroundSyncTest" --tests "com.ScienceFiction.DronePassAndroid.feature.auth.AuthRepositoryUserDocumentTest" --tests "com.ScienceFiction.DronePassAndroid.feature.auth.LoginScreenContractTest" --tests "com.ScienceFiction.DronePassAndroid.core.res.StringResourceCoverageTest" :app:assembleDebug` 통과.
@@ -964,9 +965,9 @@ export PATH="$JAVA_HOME/bin:$PATH"
 - 2026-06-16에 iOS `SettingView`/`SettingManager.initializeAppLanguage`/`FetchWebDocuments`를 Android 설정 언어 경로와 다시 대조했다. iOS는 언어 선택 시 저장값만 갱신하고 재시작 안내를 띄우며, 문서 URL은 저장된 `AppLanguage`를 즉시 사용한다. Android도 `pending_app_language_tag`를 추가해 선택값은 즉시 저장하고 런타임 locale은 다음 앱 시작 때 적용하도록 맞췄다. 문서 경로는 pending 선택값을 읽어 iOS처럼 재시작 전에도 새 언어 파일을 사용한다. `:app:testDebugUnitTest --tests "*SettingsLanguageSelectionTest" --tests "*DocumentRepositoryTest"` 통과 확인.
 - 2026-06-16에 iOS `ProfileView.syncToCloud` 성공 alert 문구와 Android 프로필 동기화 성공 문구를 다시 대조했다. iOS 영어 원문은 단수/복수 분기 없이 `Sync completed for %d shapes.`를 쓰므로, Android도 `plurals`가 아니라 단일 `profile_sync_success` string으로 맞췄다. `:app:testDebugUnitTest --tests "*Profile*Test" --tests "*StringResourceCoverageTest"`, `:app:assembleDebug` 통과 확인.
 - 2026-06-16 위 설정/프로필 패리티 보정 후 최신 debug APK를 실기기 `RFCW324TZ0Z`에 데이터 유지 재설치하고 런처 smoke를 재수행했다. 앱 PID `28371`, focus `com.ScienceFiction.DronePassAndroid/.MainActivity` 유지, `dumpsys window lastanr`는 `<no ANR has occurred since boot>`. UIAutomator XML에서 Naver Map controls, 현위치/확대·축소/NAVER logo, 상단 `내 드론`/`드론 2`/드롭다운 원, `비행구역 레이어`, `스케치`, KP/날씨 카드, `새 도형 추가`, 하단 `지도`/`저장`/`설정` 렌더링을 확인했다. 상단 드론 선택 요소 bounds는 `[401,195][657,285]`, `[680,195][922,285]`, `[945,195][1035,285]`로 y=195·height=90이 일치했다. `AndroidRuntime:E` fatal 로그 없음. PID error 로그는 기존 OEM/SDK 잡음(`setpriority`, resource package ID, QT file)만 확인.
-- `:app:minifyReleaseWithR8`는 현재 성공합니다.
+- `:app:minifyReleaseWithR8`는 2026-06-19 최신 HEAD `f77e600` 기준 성공합니다.
 - Naver Maps SDK와 Play Services Location에서 R8 warning이 여러 줄 출력될 수 있지만, 현재는 build failure가 아닙니다.
-- `assembleRelease`와 `bundleRelease`는 실제 release signing, `WEB_CLIENT_ID`, Firebase Android `oauth_client` 설정 전까지 의도적으로 차단되며, 2026-06-16에 세 실패 경로를 함께 재확인했습니다.
+- `assembleRelease`와 `bundleRelease`는 실제 release signing, `WEB_CLIENT_ID`, Firebase Android `oauth_client` 설정 전까지 의도적으로 차단되며, 2026-06-19에 세 실패 경로를 함께 재확인했습니다.
 - OS Auto Backup은 비활성화되어 있으며, 앱 데이터 백업/동기화는 Firebase 흐름 기준으로 검증합니다.
 
 ## 5. 다음에 바로 볼 후보
