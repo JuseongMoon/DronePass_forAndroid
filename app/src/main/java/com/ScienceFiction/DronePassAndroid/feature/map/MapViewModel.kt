@@ -472,7 +472,7 @@ class MapViewModel @Inject constructor(
      * 드론 선택/해제 토글
      */
     fun toggleDroneSelection(droneId: String) {
-        droneSelectionState.toggleDroneSelection(droneId)
+        droneSelectionState.toggleDroneSelectionFromMainDropdown(droneId)
     }
 
     /**

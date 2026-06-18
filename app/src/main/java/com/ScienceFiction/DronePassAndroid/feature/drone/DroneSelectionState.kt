@@ -151,6 +151,20 @@ class DroneSelectionState private constructor(
         saveSelectedDroneIds(next)
     }
 
+    /**
+     * iOS `DroneSelectionDropdown` button action 정합.
+     *
+     * `DroneManager.toggleDroneSelection()` 자체는 강조 상태를 직접 건드리지 않지만,
+     * 메인 드롭다운 UI는 체크 해제 직후 해당 드론이 강조 중이면 강조도 함께 해제한다.
+     */
+    @Synchronized
+    fun toggleDroneSelectionFromMainDropdown(droneId: String) {
+        toggleDroneSelection(droneId)
+        if (droneId !in _selectedDroneIds.value && droneId in _highlightedDroneIds.value) {
+            _highlightedDroneIds.value = _highlightedDroneIds.value - droneId
+        }
+    }
+
     @Synchronized
     fun addDroneToSelection(droneId: String) {
         hasExplicitRuntimeSelection = true

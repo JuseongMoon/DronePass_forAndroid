@@ -317,7 +317,7 @@ class DroneSelectionStateTest {
     }
 
     @Test
-    fun `드론 선택 해제는 iOS처럼 강조 상태를 보존한다`() {
+    fun `상태 레벨 드론 선택 해제는 iOS DroneManager 처럼 강조 상태를 보존한다`() {
         val state = DroneSelectionState()
         val drones = listOf(DroneModel(id = "drone-a", name = "A"))
         state.syncActiveDrones(drones)
@@ -332,6 +332,37 @@ class DroneSelectionStateTest {
 
         assertEquals(setOf("drone-a"), state.selectedDroneIds.value)
         assertEquals(setOf("drone-a"), state.highlightedDroneIds.value)
+    }
+
+    @Test
+    fun `메인 드롭다운 드론 선택 해제는 iOS 버튼 액션처럼 강조 상태도 제거한다`() {
+        val state = DroneSelectionState()
+        val drones = listOf(DroneModel(id = "drone-a", name = "A"))
+        state.syncActiveDrones(drones)
+
+        state.toggleDroneHighlight("drone-a")
+        state.toggleDroneSelectionFromMainDropdown("drone-a")
+
+        assertTrue(state.selectedDroneIds.value.isEmpty())
+        assertTrue(state.highlightedDroneIds.value.isEmpty())
+    }
+
+    @Test
+    fun `메인 드롭다운 드론 선택은 iOS처럼 다른 드론 강조 상태를 유지한다`() {
+        val state = DroneSelectionState()
+        state.syncActiveDrones(
+            listOf(
+                DroneModel(id = "drone-a", name = "A"),
+                DroneModel(id = "drone-b", name = "B"),
+            )
+        )
+
+        state.toggleDroneHighlight("drone-a")
+        state.toggleDroneHighlight("drone-b")
+        state.toggleDroneSelectionFromMainDropdown("drone-a")
+
+        assertEquals(setOf("drone-b"), state.selectedDroneIds.value)
+        assertEquals(setOf("drone-b"), state.highlightedDroneIds.value)
     }
 
     @Test
