@@ -1117,7 +1117,6 @@ private fun SavedListOverlay(
             } else {
                 Modifier
                     .align(Alignment.BottomCenter)
-                    .navigationBarsPadding()
                     .padding(
                         start = OverlaySideMargin,
                         end = OverlaySideMargin,
@@ -1291,7 +1290,6 @@ private fun SettingsOverlay(
             } else {
                 Modifier
                     .align(Alignment.BottomCenter)
-                    .navigationBarsPadding()
                     .padding(
                         start = OverlaySideMargin,
                         end = OverlaySideMargin,
