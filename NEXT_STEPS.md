@@ -1,6 +1,6 @@
 # DronePass Android 작업 이어가기
 
-> 마지막 업데이트: 2026-06-18
+> 마지막 업데이트: 2026-06-19
 > 브랜치: `fix/critical-pri0-fixes`
 > 상태: iOS 동작 대조와 Android 출시 하드닝 진행 중
 
@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 2026-06-19 사용자 피드백 기준으로 저장/설정 phone 오버레이를 다시 낮췄다. 원인은 두 오버레이의 닫힌 높이와 설정 오버레이의 닫힘/축소 복귀값이 공통 `SheetFractionDefault`로 묶여 있어 이 값이 커지면 저장/설정이 동시에 위로 올라가는 구조였기 때문이다. Android phone 기본값을 20%에서 18%로 조정했고, `MainScreenStartDestinationTest` 계약도 18% 기준으로 갱신했다. `:app:testDebugUnitTest --tests "com.ScienceFiction.DronePassAndroid.ui.navigation.MainScreenStartDestinationTest" :app:assembleDebug` 통과. debug APK를 Android 15 실기기 `RFCW324TZ0Z`에 데이터 유지 재설치한 뒤 저장/설정 오버레이가 모두 `[45,1919][1035,2340]`로 내려온 것을 XML로 확인했다.
 - 2026-06-18 도형 편집 `일단위 입력` 최초 기본값을 실제 코드에서도 iOS 앱 시작 등록값과 다시 일치시켰다. iOS `DronePassApp`은 `UserDefaults.register(["isDateOnlyMode": true])`로 새 설치 기본값을 ON으로 두는데, Android 코드가 여전히 `DefaultShapeEditDateOnlyMode = false`라 빈 DataStore/새 `ShapeEditDefaults()`에서 시간 입력 모드로 시작할 수 있었다. Android 기본값을 true로 바꾸고, 빈 DataStore와 새 defaults가 true를 반환하도록 `ShapeEditDefaultsTest`를 갱신했다. 명시 저장값 및 legacy `is_date_only_mode` fallback 우선순위는 유지한다. `:app:testDebugUnitTest --tests "*ShapeEditDefaultsTest" --tests "*ShapeDateFormatsTest" --tests "*MapCameraFocusTest" :app:assembleDebug` 통과.
 - 2026-06-18 사용자 피드백 기준으로 저장/설정 phone 오버레이를 한 단계 더 낮췄다. 원인은 저장/설정 두 오버레이의 닫힌 높이가 공통 `SheetFractionDefault`로 묶여 있어 이 값이 올라가면 두 화면이 동시에 위로 올라가는 구조였기 때문이다. Android phone 기본값을 22%에서 20%로 조정했고, 설정 오버레이가 닫히거나 확장 상태에서 축소될 때도 20%로 돌아오도록 `MainScreenStartDestinationTest` 계약을 갱신했다. `:app:testDebugUnitTest --tests "com.ScienceFiction.DronePassAndroid.ui.navigation.MainScreenStartDestinationTest" :app:assembleDebug` 통과. debug APK를 Android 15 실기기 `RFCW324TZ0Z`에 데이터 유지 재설치한 뒤 저장/설정 오버레이가 모두 `[45,1872][1035,2340]`로 내려온 것을 XML로 확인했다.
 - 2026-06-18 최신 HEAD `9136edd` 기준 로컬/실기기 회귀를 재확인했다. `:app:testDebugUnitTest :app:lintDebug :app:assembleDebug`는 `BUILD SUCCESSFUL`로 통과했다. 최신 debug APK를 Android 15 실기기 `RFCW324TZ0Z`에 데이터 유지 재설치했고, `MainActivity` cold launch는 `LaunchState: COLD`, `TotalTime: 1911`, `WaitTime: 1913`으로 완료됐다. 홈 XML에서 Naver Map controls, 상단 `내 드론`/`드론 목록 열기`, `비행구역 레이어`, `스케치`, KP/날씨 카드, `새 도형 추가`, 하단 `지도`/`저장`/`설정` 렌더링을 확인했다. 드론 선택 버튼 bounds `[666,195][922,285]`와 드롭다운 원 bounds `[945,195][1035,285]`는 top y=195, height=90으로 일치했고, 저장/설정 오버레이는 모두 `[45,1825][1035,2340]`로 낮은 위치를 유지했다. `mCurrentFocus`/`mFocusedApp`는 `com.ScienceFiction.DronePassAndroid/.MainActivity`, `dumpsys window lastanr`는 `<no ANR has occurred since boot>`, logcat에는 `NaverMapDebug: 네이버 지도 준비 완료`가 있으며 좁힌 `FATAL EXCEPTION`/`E AndroidRuntime`/`ThemeUtils`/`ANR` 필터 결과는 없었다.
