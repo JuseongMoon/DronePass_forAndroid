@@ -49,6 +49,12 @@ Optional shape fields:
 - `droneId`, `memo`, `address`: strings.
 - `height`: `Double`.
 
+Numeric fields must be stored with the Firestore double wire type. Do not write integer
+numbers for `radius`, `height`, coordinate latitude/longitude, sketch `strokeWidth`, or
+sketch `opacity`. Android reads optional numeric fields with the same effective rule as
+iOS `as? Double`: an integer number is treated as missing/default, not widened to a
+Double.
+
 For each `shapeType`, its matching geometry field is required for that type to render and sync correctly:
 
 - `circle`: `radius`
@@ -77,6 +83,8 @@ Sketch and drone documents follow the same cross-platform principles:
 - IDs are UUID strings.
 - Colors are `#RRGGBB`.
 - Enum-like wire values must write lowercase raw values and read case-insensitively when legacy data exists.
+- Sketch `strokeWidth` and `opacity` are Firestore doubles. Integer numbers are not
+  canonical and read back as iOS-compatible default values.
 
 ## Schema Evolution
 

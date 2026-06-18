@@ -201,6 +201,31 @@ class CrossPlatformFirestoreContractTest {
     }
 
     @Test
+    fun `shared Firestore integer numeric fields are not widened to Double on Android read`() {
+        val shape = shapeFromFirestoreDocument(
+            documentId = SHAPE_ID,
+            data = iosCircleShapeDocument() + mapOf(
+                "radius" to 120,
+                "height" to 45L,
+            ),
+        )
+        val sketch = sketchFromFirestoreDocument(
+            documentId = SKETCH_ID,
+            data = iosSketchDocument() + mapOf(
+                "strokeWidth" to 4,
+                "opacity" to 0L,
+            ),
+        )
+
+        requireNotNull(shape)
+        assertNull(shape.radius)
+        assertNull(shape.height)
+        requireNotNull(sketch)
+        assertEquals(3.0, sketch.strokeWidth, 0.0)
+        assertEquals(1.0, sketch.opacity, 0.0)
+    }
+
+    @Test
     fun `Android non circle shape writes canonical geometry for iOS`() {
         val rectangleData = shapeToFirestoreDocumentData(
             androidShape(
