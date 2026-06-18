@@ -157,10 +157,10 @@ private val SortOptionChipColor = Color(0xFF007AFF)
 private val SortDirectionChipColor = Color(0xFFFF9500)
 
 // MARK: - iOS SavedListOverlayView / SettingsOverlayView 와 동등한 카드 토큰
-// 모서리 40pt, 좌우/하단 16pt 마진
+// 모서리 40pt, 좌우 16pt 마진. 폰 하단 시트는 화면 하단에 붙인다.
 private val OverlayCornerRadius = 40.dp
 private val OverlaySideMargin = 16.dp
-private val OverlayBottomMargin = 16.dp
+private val OverlayBottomMargin = 0.dp
 private val OverlayShadowElevation = 12.dp
 private const val TabletBreakpointDp = 600
 private val TabletOverlayLeadingMargin = 20.dp
