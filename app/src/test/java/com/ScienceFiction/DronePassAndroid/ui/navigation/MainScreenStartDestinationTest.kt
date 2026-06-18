@@ -62,6 +62,20 @@ class MainScreenStartDestinationTest {
     }
 
     @Test
+    fun `하단 탭 버튼 토큰은 iOS CustomTabButton 과 일치한다`() {
+        assertEquals(1.1f, TabSelectedScale, 0f)
+        assertEquals(1.0f, TabUnselectedScale, 0f)
+        assertEquals(0.7f, TabScaleDampingRatio, 0f)
+        assertEquals(1.1f, resolveFloatingTabButtonScale(isSelected = true), 0f)
+        assertEquals(1.0f, resolveFloatingTabButtonScale(isSelected = false), 0f)
+        assertEquals(20.dp, TabIconSize)
+        assertEquals(24.dp, TabIconFrameHeight)
+        assertEquals(16.dp, TabLabelFrameHeight)
+        assertEquals(11.sp, TabLabelTextSize)
+        assertEquals(11.sp, TabLabelLineHeight)
+    }
+
+    @Test
     fun `스케치 모드 진입 시 iOS처럼 저장과 설정 오버레이를 모두 닫는다`() {
         assertEquals(
             MainOverlayVisibility(showSavedListOverlay = false, showSettingsOverlay = false),

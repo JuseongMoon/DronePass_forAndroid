@@ -110,7 +110,14 @@ private val TabBarShadowElevation = 8.dp
 private val TabButtonWidth = 60.dp
 
 // iOS .font(.system(size: 20, weight: .medium)) 와 정확히 일치
-private val TabIconSize = 20.dp
+internal val TabIconSize = 20.dp
+internal val TabIconFrameHeight = 24.dp
+internal val TabLabelFrameHeight = 16.dp
+internal val TabLabelTextSize = 11.sp
+internal val TabLabelLineHeight = 11.sp
+internal const val TabSelectedScale = 1.1f
+internal const val TabUnselectedScale = 1.0f
+internal const val TabScaleDampingRatio = 0.7f
 
 // iOS systemBlue / systemGray (라이트 모드)
 private val TabSelectedColor = Color(0xFF007AFF)
@@ -207,6 +214,10 @@ internal fun resolveMainSelectedTabRoute(
 internal fun shouldShowFloatingTabBar(
     isSketchMode: Boolean,
 ): Boolean = !isSketchMode
+
+internal fun resolveFloatingTabButtonScale(isSelected: Boolean): Float {
+    return if (isSelected) TabSelectedScale else TabUnselectedScale
+}
 
 internal fun resolveTabBarBottomPadding(isTablet: Boolean): Dp {
     return if (isTablet) TabBarTabletBottomPadding else TabBarPhoneBottomPadding
@@ -912,9 +923,9 @@ private fun FloatingTabButton(
     modifier: Modifier = Modifier,
 ) {
     val scale by animateFloatAsState(
-        targetValue = if (isSelected) 1.1f else 1.0f,
+        targetValue = resolveFloatingTabButtonScale(isSelected),
         animationSpec = spring(
-            dampingRatio = 0.7f,
+            dampingRatio = TabScaleDampingRatio,
             stiffness = Spring.StiffnessMediumLow,
         ),
         label = "floating_tab_scale",
@@ -944,7 +955,7 @@ private fun FloatingTabButton(
         ) {
             // iOS .frame(height: 24)
             Box(
-                modifier = Modifier.height(24.dp),
+                modifier = Modifier.height(TabIconFrameHeight),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
@@ -956,14 +967,14 @@ private fun FloatingTabButton(
             }
             // iOS .frame(height: 16)
             Box(
-                modifier = Modifier.height(16.dp),
+                modifier = Modifier.height(TabLabelFrameHeight),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
                     text = labelText,
                     color = color,
-                    fontSize = 11.sp,
-                    lineHeight = 11.sp,
+                    fontSize = TabLabelTextSize,
+                    lineHeight = TabLabelLineHeight,
                     fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
                 )
             }
