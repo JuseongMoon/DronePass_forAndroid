@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.core.util
 
+import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AcUnit
 import androidx.compose.material.icons.filled.Cloud
@@ -10,31 +11,33 @@ import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material.icons.filled.WbCloudy
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.ScienceFiction.DronePassAndroid.R
 
 /**
  * WMO 날씨 코드 -> 설명/아이콘 매핑
  */
 object WeatherCodeMapper {
 
-    fun weatherCodeToDescription(code: Int): String = when (code) {
-        0 -> "맑음"
-        1 -> "대체로 맑음"
-        2 -> "구름 조금"
-        3 -> "흐림"
-        4, 5 -> "연무" // WMO 04: smoke / 05: haze (Open-Meteo 외 표준 코드 호환)
-        10 -> "옅은 안개" // WMO 10: mist
-        45, 48 -> "안개"
-        51, 53, 55 -> "이슬비"
-        56, 57 -> "어는 이슬비"
-        61, 63, 65 -> "비"
-        66, 67 -> "어는 비"
-        71, 73, 75 -> "눈"
-        77 -> "싸라기눈"
-        80, 81, 82 -> "소나기"
-        85, 86 -> "눈소나기"
-        95 -> "뇌우"
-        96, 99 -> "우박을 동반한 뇌우"
-        else -> "알 수 없음"
+    @StringRes
+    fun weatherCodeToDescriptionRes(code: Int): Int = when (code) {
+        0 -> R.string.weather_condition_clear
+        1 -> R.string.weather_condition_mostly_clear
+        2 -> R.string.weather_condition_partly_cloudy
+        3 -> R.string.weather_condition_overcast
+        4, 5 -> R.string.weather_condition_haze // WMO 04: smoke / 05: haze
+        10 -> R.string.weather_condition_mist
+        45, 48 -> R.string.weather_condition_fog
+        51, 53, 55 -> R.string.weather_condition_drizzle
+        56, 57 -> R.string.weather_condition_freezing_drizzle
+        61, 63, 65 -> R.string.weather_condition_rain
+        66, 67 -> R.string.weather_condition_freezing_rain
+        71, 73, 75 -> R.string.weather_condition_snow
+        77 -> R.string.weather_condition_snow_grains
+        80, 81, 82 -> R.string.weather_condition_showers
+        85, 86 -> R.string.weather_condition_snow_showers
+        95 -> R.string.weather_condition_thunderstorm
+        96, 99 -> R.string.weather_condition_thunderstorm_hail
+        else -> R.string.weather_unknown
     }
 
     fun weatherCodeToIcon(code: Int): ImageVector = when (code) {

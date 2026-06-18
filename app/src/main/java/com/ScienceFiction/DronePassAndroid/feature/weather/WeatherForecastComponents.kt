@@ -304,7 +304,7 @@ internal fun CurrentWeatherSection(
                             PreviewBlock(
                                 weatherIcon = WeatherCodeMapper.weatherCodeToIcon(current?.weatherCode ?: Int.MIN_VALUE),
                                 conditionText = current?.weatherCode
-                                    ?.let(WeatherCodeMapper::weatherCodeToDescription)
+                                    ?.let { stringResource(WeatherCodeMapper.weatherCodeToDescriptionRes(it)) }
                                     ?: stringResource(R.string.weather_unknown),
                                 temperatureText = formatNullableIosTemperatureDegrees(current?.temperature),
                                 temperatureColor = current?.temperature?.let(::interpolateTemperatureColor) ?: Color.Gray,
