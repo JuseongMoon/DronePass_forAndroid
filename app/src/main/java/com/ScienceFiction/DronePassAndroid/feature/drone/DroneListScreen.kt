@@ -47,6 +47,8 @@ import com.ScienceFiction.DronePassAndroid.domain.model.PaletteColor
 
 internal val DroneListAddIconSize = 20.dp
 internal val DroneListAddIconTextSpacing = 8.dp
+internal val DroneListEmptyFooterHorizontalPadding = 16.dp
+internal val DroneListEmptyFooterVerticalPadding = 8.dp
 
 /**
  * 드론 관리 목록 화면
@@ -89,9 +91,12 @@ fun DroneListScreen(
                 item {
                     Text(
                         text = stringResource(R.string.drone_list_empty),
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                        modifier = Modifier.padding(
+                            horizontal = DroneListEmptyFooterHorizontalPadding,
+                            vertical = DroneListEmptyFooterVerticalPadding,
+                        ),
                     )
                 }
             } else {

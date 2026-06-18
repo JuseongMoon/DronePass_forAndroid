@@ -16,6 +16,12 @@ class DroneListScreenTest {
     }
 
     @Test
+    fun `빈 드론 목록 안내는 iOS section footer 처럼 작은 보조 텍스트 여백을 따른다`() {
+        assertEquals(16.dp, DroneListEmptyFooterHorizontalPadding)
+        assertEquals(8.dp, DroneListEmptyFooterVerticalPadding)
+    }
+
+    @Test
     fun `드론 목록 색상 원은 iOS처럼 팔레트 색상이 있을 때만 표시한다`() {
         assertTrue(shouldShowDroneListColorIndicator(PaletteColor.BLUE))
         assertFalse(shouldShowDroneListColorIndicator(null))
