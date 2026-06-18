@@ -148,16 +148,16 @@
     <!-- ShapeEditScreen -->
     <string name="shape_edit_label_coordinate" tools:ignore="UnusedResources">좌표</string>
     <string name="shape_edit_label_address">주소</string>
-    <string name="shape_edit_placeholder_address">주소 검색</string>
+    <string name="shape_edit_placeholder_address">주소를 검색하세요</string>
     <string name="shape_edit_section_flight_period">비행 기간</string>
     <string name="shape_edit_start_date">시작일</string>
     <string name="shape_edit_end_date">종료일</string>
     <string name="shape_edit_start_date_select">시작일 선택</string>
     <string name="shape_edit_end_date_select">종료일 선택</string>
-    <string name="shape_edit_date_only_mode">날짜만 표시</string>
+    <string name="shape_edit_date_only_mode">일단위 입력</string>
     <string name="date_time_done">선택 완료</string>
     <string name="shape_edit_label_memo">메모</string>
-    <string name="shape_edit_placeholder_memo">메모 입력</string>
+    <string name="shape_edit_placeholder_memo">메모를 입력하세요</string>
     <string name="shape_edit_default_title">새 도형</string>
     <string name="shape_edit_navigation_cancel">취소</string>
     <string name="shape_edit_navigation_save">저장</string>
@@ -172,14 +172,14 @@
     <string name="shape_edit_error_add_failed">도형 추가 중 오류가 발생했습니다: %1$s</string>
     <string name="shape_edit_error_update_failed">도형 수정 중 오류가 발생했습니다: %1$s</string>
     <string name="shape_edit_title_label">제목</string>
-    <string name="shape_edit_title_placeholder">제목 입력</string>
+    <string name="shape_edit_title_placeholder">제목을 입력하세요</string>
     <string name="shape_edit_coordinate_label">좌표</string>
-    <string name="shape_edit_coordinate_placeholder">좌표 입력</string>
-    <string name="shape_edit_address_search_placeholder">주소 검색</string>
-    <string name="shape_edit_radius_label">반경 (m)</string>
-    <string name="shape_edit_radius_placeholder">반경 입력</string>
-    <string name="shape_edit_altitude_label">고도 (m)</string>
-    <string name="shape_edit_altitude_placeholder">고도 입력</string>
+    <string name="shape_edit_coordinate_placeholder">좌표를 입력하세요</string>
+    <string name="shape_edit_address_search_placeholder">주소를 검색하세요</string>
+    <string name="shape_edit_radius_label">반경(m)</string>
+    <string name="shape_edit_radius_placeholder">반경을 입력하세요</string>
+    <string name="shape_edit_altitude_label">고도(m)</string>
+    <string name="shape_edit_altitude_placeholder">비행 고도를 입력해주세요</string>
     <string name="shape_edit_drone_label">드론 선택</string>
     <string name="shape_edit_drone_placeholder">드론 선택</string>
     <string name="coordinate_title">좌표 입력</string>
