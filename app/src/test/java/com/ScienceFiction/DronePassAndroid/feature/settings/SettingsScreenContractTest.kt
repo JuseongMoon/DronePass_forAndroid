@@ -1,12 +1,69 @@
 package com.ScienceFiction.DronePassAndroid.feature.settings
 
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.File
 
 class SettingsScreenContractTest {
 
     @Test
     fun `설정 로그인 시트는 iOS SettingView처럼 로그인 없이 시작 버튼을 숨긴다`() {
         assertFalse(SettingsLoginSheetShowSkipLogin)
+    }
+
+    @Test
+    fun `설정 목록 순서는 iOS SettingView 섹션 순서를 유지한다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsScreen.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsScreen.kt",
+        ).readText()
+
+        assertAppearsInOrder(
+            source = source,
+            tokens = listOf(
+                "R.string.settings_section_my_info",
+                "R.string.profile_title",
+                "R.string.login_title",
+                "R.string.settings_drone_manage",
+                "R.string.settings_section_flight_environment",
+                "R.string.settings_kp_index_current",
+                "R.string.settings_weather_current",
+                "R.string.settings_section_notifications",
+                "R.string.settings_end_date_alarm",
+                "R.string.settings_sunrise_alarm",
+                "R.string.settings_sunset_alarm",
+                "R.string.settings_section_map_display",
+                "R.string.settings_keep_screen_awake",
+                "R.string.settings_hide_not_started",
+                "R.string.settings_hide_expired",
+                "R.string.settings_delete_expired_shapes",
+                "R.string.settings_section_app_info",
+                "R.string.settings_language",
+                "R.string.settings_korea_features",
+                "R.string.settings_app_intro",
+                "R.string.settings_patch_notes",
+            ),
+        )
+    }
+
+    private fun assertAppearsInOrder(source: String, tokens: List<String>) {
+        var previousIndex = -1
+        for (token in tokens) {
+            val index = source.indexOf(token, startIndex = previousIndex + 1)
+            assertTrue(
+                "$token should appear after index $previousIndex in SettingsScreen.kt",
+                index > previousIndex,
+            )
+            previousIndex = index
+        }
+    }
+
+    private fun resolveProjectFile(vararg candidates: String): File {
+        val userDir = File(requireNotNull(System.getProperty("user.dir")))
+        return candidates
+            .map { File(userDir, it) }
+            .firstOrNull { it.exists() }
+            ?: error("Project file not found: ${candidates.joinToString()}")
     }
 }
