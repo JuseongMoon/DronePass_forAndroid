@@ -698,7 +698,7 @@ internal fun MainScreen(
             )
         }
 
-        // Settings 오버레이 — iOS 와 동일하게 태블릿은 좌측 패널, 폰은 50%/90% 하단 시트
+        // Settings 오버레이 — iOS 와 동일하게 태블릿은 좌측 패널, 폰은 낮은 기본 높이/90% 하단 시트
         AnimatedVisibility(
             visible = showSettingsOverlay,
             enter = mainOverlayEnterTransition(isTablet),
@@ -1276,7 +1276,7 @@ private fun SavedListOverlay(
 /**
  * iOS SettingsOverlayView 와 동등.
  * - 태블릿: 좌측 패널, 화면 폭 40%/최대 400dp, 높이 80%, 오른쪽 드래그 닫기
- * - 폰: 50% 시작 / 위로 드래그시 90% 확장 / 아래 드래그 닫기 또는 축소
+ * - 폰: 낮은 기본 높이 시작 / 위로 드래그시 90% 확장 / 아래 드래그 닫기 또는 축소
  */
 @Composable
 private fun SettingsOverlay(
