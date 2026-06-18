@@ -3,7 +3,9 @@ package com.ScienceFiction.DronePassAndroid.feature.settings
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.File
 
 class AppInfoScreenTest {
 
@@ -30,6 +32,44 @@ class AppInfoScreenTest {
         assertEquals(4.dp, AppInfoFeatureTitleDescriptionSpacing)
         assertEquals(4.dp, AppInfoFeatureVerticalPadding)
         assertEquals(16.dp, AppInfoFeatureHorizontalPadding)
+    }
+
+    @Test
+    fun `앱 정보 섹션과 기능 행 순서는 iOS AppInfoView 를 따른다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/AppInfoScreen.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/AppInfoScreen.kt",
+        ).readText()
+
+        assertAppearsInOrder(
+            source = source,
+            tokens = listOf(
+                "R.string.app_info_section_intro",
+                "R.string.app_info_description",
+                "R.string.app_info_section_drone_management",
+                "R.string.app_info_feature_multi_drone_title",
+                "R.string.app_info_feature_visualization_title",
+                "R.string.app_info_feature_expiration_alert_title",
+                "R.string.app_info_section_environmental_info",
+                "R.string.app_info_feature_weather_title",
+                "R.string.app_info_feature_kp_index_title",
+                "R.string.app_info_feature_sunrise_sunset_title",
+                "R.string.app_info_section_shapes_and_map",
+                "R.string.app_info_feature_shape_management_title",
+                "R.string.app_info_feature_shape_duplicate_title",
+                "R.string.app_info_feature_search_title",
+                "R.string.app_info_section_cloud_and_data",
+                "R.string.app_info_feature_cloud_sync_title",
+                "R.string.app_info_feature_drone_onestop_title",
+                "R.string.app_info_section_version",
+                "R.string.app_info_version_app",
+                "R.string.app_info_version_build",
+                "R.string.app_info_section_contact",
+                "R.string.app_info_contact_company",
+                "R.string.app_info_contact_email",
+                "R.string.app_info_contact_message",
+            ),
+        )
     }
 
     @Test
@@ -83,5 +123,25 @@ class AppInfoScreenTest {
     @Test
     fun `주소 검색 기능 아이콘 색상은 iOS mint 와 맞춘다`() {
         assertEquals(0xFF00C7BE.toInt(), AppInfoSearchIconColor.toArgb())
+    }
+
+    private fun assertAppearsInOrder(source: String, tokens: List<String>) {
+        var previousIndex = -1
+        for (token in tokens) {
+            val index = source.indexOf(token, startIndex = previousIndex + 1)
+            assertTrue(
+                "$token should appear after index $previousIndex in AppInfoScreen.kt",
+                index > previousIndex,
+            )
+            previousIndex = index
+        }
+    }
+
+    private fun resolveProjectFile(vararg candidates: String): File {
+        val userDir = File(requireNotNull(System.getProperty("user.dir")))
+        return candidates
+            .map { File(userDir, it) }
+            .firstOrNull { it.exists() }
+            ?: error("Project file not found: ${candidates.joinToString()}")
     }
 }
