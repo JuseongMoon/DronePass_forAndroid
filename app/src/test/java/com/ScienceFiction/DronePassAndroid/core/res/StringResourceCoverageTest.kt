@@ -1096,9 +1096,9 @@ class StringResourceCoverageTest {
         assertEquals("내 드론 관리하기", stringResourceValue("values/strings.xml", "settings_drone_manage"))
         assertEquals("Manage My Drones", stringResourceValue("values-en/strings.xml", "settings_drone_manage"))
 
-        assertEquals("드론 관리", stringResourceValue("values/strings.xml", "drone_list_title"))
-        assertEquals("Manage Drones", stringResourceValue("values-en/strings.xml", "drone_list_title"))
-        assertEquals("내 드론 목록", stringResourceValue("values/strings.xml", "drone_list_section_my"))
+        assertEquals("내 드론 관리하기", stringResourceValue("values/strings.xml", "drone_list_title"))
+        assertEquals("Manage My Drones", stringResourceValue("values-en/strings.xml", "drone_list_title"))
+        assertEquals("내 드론", stringResourceValue("values/strings.xml", "drone_list_section_my"))
         assertEquals("My Drones", stringResourceValue("values-en/strings.xml", "drone_list_section_my"))
         assertEquals("새 드론 추가", stringResourceValue("values/strings.xml", "drone_list_add"))
         assertEquals("Add New Drone", stringResourceValue("values-en/strings.xml", "drone_list_add"))
@@ -1111,27 +1111,27 @@ class StringResourceCoverageTest {
         assertEquals("Orange", stringResourceValue("values-en/strings.xml", "palette_color_orange"))
         assertEquals("Teal", stringResourceValue("values-en/strings.xml", "palette_color_teal"))
 
-        assertEquals("제작 번호", stringResourceValue("values/strings.xml", "drone_detail_serial_number"))
-        assertEquals("이륙 무게", stringResourceValue("values/strings.xml", "drone_detail_takeoff_weight"))
-        assertEquals("메모가 없습니다", stringResourceValue("values/strings.xml", "drone_detail_memo_empty"))
+        assertEquals("시리얼 번호", stringResourceValue("values/strings.xml", "drone_detail_serial_number"))
+        assertEquals("이륙 중량", stringResourceValue("values/strings.xml", "drone_detail_takeoff_weight"))
+        assertEquals("메모 없음", stringResourceValue("values/strings.xml", "drone_detail_memo_empty"))
         assertEquals(
-            "정말로 '%s'을(를) 삭제하시겠습니까?",
+            "'%s'을(를) 삭제하시겠습니까?",
             androidDisplayStringResourceValue("values/strings.xml", "drone_detail_delete_message"),
         )
         assertEquals(
-            "'%1\$s'에 연결된 %2\$d개의 도형을 어떻게 처리하시겠습니까?",
+            "'%1\$s'에 연결된 %2\$d개의 도형을 어떻게 처리할까요?",
             androidDisplayPluralResourceValue("values/strings.xml", "drone_detail_delete_with_shapes_message", "other"),
         )
 
-        assertEquals("한 줄을 넘어가지 않도록 입력해주세요", stringResourceValue("values/strings.xml", "drone_edit_section_basic_footer"))
-        assertEquals("제작 번호 입력 (선택)", stringResourceValue("values/strings.xml", "drone_edit_serial_placeholder"))
-        assertEquals("제작 번호", stringResourceValue("values/strings.xml", "drone_edit_section_serial"))
+        assertEquals("한 줄 이내로 입력해주세요", stringResourceValue("values/strings.xml", "drone_edit_section_basic_footer"))
+        assertEquals("시리얼 번호 입력 (선택)", stringResourceValue("values/strings.xml", "drone_edit_serial_placeholder"))
+        assertEquals("시리얼 번호", stringResourceValue("values/strings.xml", "drone_edit_section_serial"))
         assertEquals(
-            "드론의 제작 번호 또는 시리얼 번호를 입력하세요",
+            "드론의 제조번호 또는 시리얼 번호를 입력하세요",
             androidDisplayStringResourceValue("values/strings.xml", "drone_edit_section_serial_footer"),
         )
-        assertEquals("드론의 이륙 무게와 크기를 입력하세요", stringResourceValue("values/strings.xml", "drone_edit_section_specs_footer"))
-        assertEquals("이미 존재하는 드론 이름입니다.", stringResourceValue("values/strings.xml", "drone_edit_alert_name_duplicate"))
+        assertEquals("드론의 이륙 중량과 크기를 입력하세요", stringResourceValue("values/strings.xml", "drone_edit_section_specs_footer"))
+        assertEquals("이미 사용 중인 드론 이름입니다.", stringResourceValue("values/strings.xml", "drone_edit_alert_name_duplicate"))
         assertEquals("내 드론", stringResourceValue("values/strings.xml", "drone_edit_default_name_first"))
 
         assertEquals("Serial Number", stringResourceValue("values-en/strings.xml", "drone_detail_serial_number"))
