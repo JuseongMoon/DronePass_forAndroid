@@ -23,26 +23,26 @@ class ShapeTypeTest {
     }
 
     @Test
-    fun `iOS raw value 를 파싱한다`() {
-        assertEquals(ShapeType.CIRCLE, ShapeType.fromWireValue("circle"))
-        assertEquals(ShapeType.RECTANGLE, ShapeType.fromWireValue("rectangle"))
-        assertEquals(ShapeType.POLYGON, ShapeType.fromWireValue("polygon"))
-        assertEquals(ShapeType.POLYLINE, ShapeType.fromWireValue("polyline"))
+    fun `로컬 저장소 값은 iOS raw value 를 파싱한다`() {
+        assertEquals(ShapeType.CIRCLE, ShapeType.fromLocalStorageValue("circle"))
+        assertEquals(ShapeType.RECTANGLE, ShapeType.fromLocalStorageValue("rectangle"))
+        assertEquals(ShapeType.POLYGON, ShapeType.fromLocalStorageValue("polygon"))
+        assertEquals(ShapeType.POLYLINE, ShapeType.fromLocalStorageValue("polyline"))
     }
 
     @Test
-    fun `Android 레거시 enum name 도 파싱한다`() {
-        assertEquals(ShapeType.CIRCLE, ShapeType.fromWireValue("CIRCLE"))
-        assertEquals(ShapeType.RECTANGLE, ShapeType.fromWireValue("RECTANGLE"))
-        assertEquals(ShapeType.POLYGON, ShapeType.fromWireValue("POLYGON"))
-        assertEquals(ShapeType.POLYLINE, ShapeType.fromWireValue("POLYLINE"))
+    fun `로컬 저장소 값은 Android 레거시 enum name 도 파싱한다`() {
+        assertEquals(ShapeType.CIRCLE, ShapeType.fromLocalStorageValue("CIRCLE"))
+        assertEquals(ShapeType.RECTANGLE, ShapeType.fromLocalStorageValue("RECTANGLE"))
+        assertEquals(ShapeType.POLYGON, ShapeType.fromLocalStorageValue("POLYGON"))
+        assertEquals(ShapeType.POLYLINE, ShapeType.fromLocalStorageValue("POLYLINE"))
     }
 
     @Test
-    fun `알 수 없는 shapeType 은 원형으로 폴백한다`() {
-        assertEquals(ShapeType.CIRCLE, ShapeType.fromWireValue(null))
-        assertEquals(ShapeType.CIRCLE, ShapeType.fromWireValue(""))
-        assertEquals(ShapeType.CIRCLE, ShapeType.fromWireValue("unknown"))
+    fun `로컬 저장소 손상 shapeType 은 원형으로 폴백한다`() {
+        assertEquals(ShapeType.CIRCLE, ShapeType.fromLocalStorageValue(null))
+        assertEquals(ShapeType.CIRCLE, ShapeType.fromLocalStorageValue(""))
+        assertEquals(ShapeType.CIRCLE, ShapeType.fromLocalStorageValue("unknown"))
     }
 
     @Test

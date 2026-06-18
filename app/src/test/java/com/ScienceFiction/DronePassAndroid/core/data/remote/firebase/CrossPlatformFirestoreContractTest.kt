@@ -8,6 +8,7 @@ import com.ScienceFiction.DronePassAndroid.domain.model.SketchModel
 import com.google.firebase.Timestamp
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.util.Date
@@ -42,6 +43,16 @@ class CrossPlatformFirestoreContractTest {
 
         requireNotNull(shape)
         assertEquals(ShapeType.CIRCLE, shape.shapeType)
+    }
+
+    @Test
+    fun `future unknown shapeType fixture is skipped instead of coerced to circle`() {
+        val shape = shapeFromFirestoreDocument(
+            documentId = SHAPE_ID,
+            data = iosCircleShapeDocument(shapeType = "ellipse"),
+        )
+
+        assertNull(shape)
     }
 
     @Test

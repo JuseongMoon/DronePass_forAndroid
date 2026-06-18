@@ -28,7 +28,13 @@ enum class ShapeType(val rawValue: String, val koreanName: String) {
             }
         }
 
-        fun fromWireValue(value: String?): ShapeType {
+        /**
+         * Room 에 저장된 로컬 값 복구 전용.
+         *
+         * Firestore 읽기 경로는 unknown shapeType 을 원형으로 오인하면 안 되므로
+         * 반드시 [parseWireValue]를 직접 사용하고 null 일 때 문서를 스킵한다.
+         */
+        fun fromLocalStorageValue(value: String?): ShapeType {
             return parseWireValue(value) ?: CIRCLE
         }
     }
