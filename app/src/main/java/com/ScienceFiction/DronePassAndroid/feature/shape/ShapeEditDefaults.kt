@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.shape
 
+import androidx.annotation.DrawableRes
 import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
@@ -17,6 +18,8 @@ import java.util.TimeZone
 
 internal const val DefaultShapeEditDateOnlyMode = false
 internal const val ShowShapeEditFlightPeriodSectionHeader = false
+@DrawableRes
+internal val ShapeEditDronePlaceholderIconRes = R.drawable.ic_drone
 
 data class ShapeEditDefaults(
     val selectedDroneId: String? = null,

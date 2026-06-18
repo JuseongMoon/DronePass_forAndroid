@@ -607,6 +607,11 @@ class ShapeEditDefaultsTest {
     }
 
     @Test
+    fun `도형 편집 드론 placeholder 아이콘은 iOS처럼 드론 아이콘을 사용한다`() {
+        assertEquals(R.drawable.ic_drone, ShapeEditDronePlaceholderIconRes)
+    }
+
+    @Test
     fun `도형 편집 드론 메뉴는 iOS처럼 현재 선택 드론에만 체크마크를 표시한다`() {
         assertTrue(shouldShowShapeEditDroneSelectionCheckmark("drone-a", "drone-a"))
         assertFalse(shouldShowShapeEditDroneSelectionCheckmark("drone-a", "drone-b"))
