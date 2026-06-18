@@ -317,7 +317,7 @@ class DroneSelectionStateTest {
     }
 
     @Test
-    fun `드론 선택 해제는 강조 상태도 지운다`() {
+    fun `드론 선택 해제는 iOS처럼 강조 상태를 보존한다`() {
         val state = DroneSelectionState()
         val drones = listOf(DroneModel(id = "drone-a", name = "A"))
         state.syncActiveDrones(drones)
@@ -326,7 +326,12 @@ class DroneSelectionStateTest {
         state.toggleDroneSelection("drone-a")
 
         assertTrue(state.selectedDroneIds.value.isEmpty())
-        assertTrue(state.highlightedDroneIds.value.isEmpty())
+        assertEquals(setOf("drone-a"), state.highlightedDroneIds.value)
+
+        state.toggleDroneSelection("drone-a")
+
+        assertEquals(setOf("drone-a"), state.selectedDroneIds.value)
+        assertEquals(setOf("drone-a"), state.highlightedDroneIds.value)
     }
 
     @Test

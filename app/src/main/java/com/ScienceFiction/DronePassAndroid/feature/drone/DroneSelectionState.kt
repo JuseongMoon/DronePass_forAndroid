@@ -144,7 +144,6 @@ class DroneSelectionState private constructor(
         val next = _selectedDroneIds.value.toMutableSet()
         if (next.contains(droneId)) {
             next.remove(droneId)
-            _highlightedDroneIds.value = _highlightedDroneIds.value - droneId
         } else {
             next.add(droneId)
         }
