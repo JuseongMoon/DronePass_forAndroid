@@ -1,5 +1,7 @@
 package com.ScienceFiction.DronePassAndroid.feature.map.component
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Draw
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -41,6 +43,11 @@ class MapFloatingButtonsTest {
         assertEquals(45.dp, MapSketchButtonSize)
         assertEquals(21.dp, MapSketchIconSize)
         assertEquals(4.dp, MapSketchButtonShadowElevation)
+    }
+
+    @Test
+    fun `sketch FAB icon matches iOS pencil tip drawing action`() {
+        assertEquals(Icons.Default.Draw, MapSketchButtonIcon)
     }
 
     @Test

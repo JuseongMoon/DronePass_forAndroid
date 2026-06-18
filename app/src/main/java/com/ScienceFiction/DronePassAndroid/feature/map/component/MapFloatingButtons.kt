@@ -14,7 +14,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Draw
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material3.FloatingActionButton
@@ -29,6 +29,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
@@ -56,6 +57,7 @@ internal val MapCreateShapeButtonShadowElevation = 6.dp
 internal val MapSketchButtonSize = 45.dp
 internal val MapSketchIconSize = 21.dp
 internal val MapSketchButtonShadowElevation = 4.dp
+internal val MapSketchButtonIcon: ImageVector = Icons.Default.Draw
 internal val MapStatusGroupSpacing = 8.dp
 internal val MapKpButtonHorizontalPadding = 12.dp
 internal val MapKpButtonVerticalPadding = 8.dp
@@ -163,7 +165,7 @@ fun MapFloatingButtons(
                 ),
             ) {
                 Icon(
-                    imageVector = Icons.Default.Edit,
+                    imageVector = MapSketchButtonIcon,
                     contentDescription = stringResource(R.string.map_fab_sketch),
                     modifier = Modifier.size(MapSketchIconSize)
                 )
