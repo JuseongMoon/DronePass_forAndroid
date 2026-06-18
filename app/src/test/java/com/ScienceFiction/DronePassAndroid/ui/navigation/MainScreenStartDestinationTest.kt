@@ -250,13 +250,13 @@ class MainScreenStartDestinationTest {
     }
 
     @Test
-    fun `저장 목록 폰 오버레이 높이는 지도 컨트롤을 덜 가리도록 화면 14퍼센트와 500dp 중 작은 값이다`() {
-        assertEquals(112f, resolveSavedOverlayPhoneBaseHeight(800.dp).value, 0.001f)
-        assertEquals(168f, resolveSavedOverlayPhoneBaseHeight(1_200.dp).value, 0.001f)
-        assertEquals(196f, resolveSavedOverlayPhoneBaseHeight(1_400.dp).value, 0.001f)
-        assertEquals(210f, resolveSavedOverlayPhoneBaseHeight(1_500.dp).value, 0.001f)
-        assertEquals(252f, resolveSavedOverlayPhoneBaseHeight(1_800.dp).value, 0.001f)
-        assertEquals(308f, resolveSavedOverlayPhoneBaseHeight(2_200.dp).value, 0.001f)
+    fun `저장 목록 폰 오버레이 높이는 지도 컨트롤을 덜 가리도록 화면 12퍼센트와 500dp 중 작은 값이다`() {
+        assertEquals(96f, resolveSavedOverlayPhoneBaseHeight(800.dp).value, 0.001f)
+        assertEquals(144f, resolveSavedOverlayPhoneBaseHeight(1_200.dp).value, 0.001f)
+        assertEquals(168f, resolveSavedOverlayPhoneBaseHeight(1_400.dp).value, 0.001f)
+        assertEquals(180f, resolveSavedOverlayPhoneBaseHeight(1_500.dp).value, 0.001f)
+        assertEquals(216f, resolveSavedOverlayPhoneBaseHeight(1_800.dp).value, 0.001f)
+        assertEquals(264f, resolveSavedOverlayPhoneBaseHeight(2_200.dp).value, 0.001f)
     }
 
     @Test
@@ -288,7 +288,7 @@ class MainScreenStartDestinationTest {
     fun `설정 폰 오버레이는 위로 드래그하면 iOS처럼 90퍼센트로 확장한다`() {
         val result = resolveSettingsOverlayPhoneDragEnd(
             translation = -51f,
-            currentSheetHeightFraction = 0.14f,
+            currentSheetHeightFraction = 0.12f,
             dismissThreshold = 100f,
             expandThreshold = 50f,
         )
@@ -306,7 +306,7 @@ class MainScreenStartDestinationTest {
             expandThreshold = 50f,
         )
 
-        assertEquals(0.14f, result.sheetHeightFraction, 0f)
+        assertEquals(0.12f, result.sheetHeightFraction, 0f)
         assertEquals(true, result.shouldDismiss)
     }
 
@@ -319,7 +319,7 @@ class MainScreenStartDestinationTest {
             expandThreshold = 50f,
         )
 
-        assertEquals(0.14f, result.sheetHeightFraction, 0f)
+        assertEquals(0.12f, result.sheetHeightFraction, 0f)
         assertEquals(false, result.shouldDismiss)
     }
 
@@ -327,12 +327,12 @@ class MainScreenStartDestinationTest {
     fun `설정 폰 오버레이는 iOS처럼 임계값 미만 드래그는 현재 높이를 유지한다`() {
         val result = resolveSettingsOverlayPhoneDragEnd(
             translation = -20f,
-            currentSheetHeightFraction = 0.14f,
+            currentSheetHeightFraction = 0.12f,
             dismissThreshold = 100f,
             expandThreshold = 50f,
         )
 
-        assertEquals(0.14f, result.sheetHeightFraction, 0f)
+        assertEquals(0.12f, result.sheetHeightFraction, 0f)
         assertEquals(false, result.shouldDismiss)
     }
 
