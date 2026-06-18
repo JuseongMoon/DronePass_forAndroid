@@ -619,6 +619,38 @@ class WeatherForecastParityTest {
         assertTrue(shouldFetchWeatherAfterCategorySelection(latitude = 0.0, longitude = 126.9780))
     }
 
+    @Test
+    fun `weather location lookup does not fall back to Seoul when iOS has no location`() {
+        assertEquals(
+            WeatherLocationFetchSource.CurrentLocation,
+            resolveWeatherLocationFetchSource(
+                hasCurrentLocation = true,
+                hasLastKnownLocation = false,
+            ),
+        )
+        assertEquals(
+            WeatherLocationFetchSource.CurrentLocation,
+            resolveWeatherLocationFetchSource(
+                hasCurrentLocation = true,
+                hasLastKnownLocation = true,
+            ),
+        )
+        assertEquals(
+            WeatherLocationFetchSource.LastKnownLocation,
+            resolveWeatherLocationFetchSource(
+                hasCurrentLocation = false,
+                hasLastKnownLocation = true,
+            ),
+        )
+        assertEquals(
+            WeatherLocationFetchSource.Unavailable,
+            resolveWeatherLocationFetchSource(
+                hasCurrentLocation = false,
+                hasLastKnownLocation = false,
+            ),
+        )
+    }
+
     private fun assertThresholdLines(
         thresholdLines: List<WeatherThresholdLine>,
         values: List<Double>,

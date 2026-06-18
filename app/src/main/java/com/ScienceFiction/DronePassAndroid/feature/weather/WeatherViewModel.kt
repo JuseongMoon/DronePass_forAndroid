@@ -50,6 +50,21 @@ internal fun shouldFetchWeatherAfterCategorySelection(latitude: Double, longitud
     return latitude != 0.0 || longitude != 0.0
 }
 
+internal enum class WeatherLocationFetchSource {
+    CurrentLocation,
+    LastKnownLocation,
+    Unavailable,
+}
+
+internal fun resolveWeatherLocationFetchSource(
+    hasCurrentLocation: Boolean,
+    hasLastKnownLocation: Boolean,
+): WeatherLocationFetchSource = when {
+    hasCurrentLocation -> WeatherLocationFetchSource.CurrentLocation
+    hasLastKnownLocation -> WeatherLocationFetchSource.LastKnownLocation
+    else -> WeatherLocationFetchSource.Unavailable
+}
+
 @HiltViewModel
 class WeatherViewModel @Inject constructor(
     private val weatherRepository: WeatherRepository,
@@ -61,8 +76,6 @@ class WeatherViewModel @Inject constructor(
 
     companion object {
         private const val AUTO_REFRESH_INTERVAL_MS = 3 * 60 * 1000L // 3분
-        private const val DEFAULT_LATITUDE = 37.5665
-        private const val DEFAULT_LONGITUDE = 126.9780
     }
 
     private val _weatherData = MutableStateFlow<WeatherData?>(null)
@@ -182,64 +195,42 @@ class WeatherViewModel @Inject constructor(
                 Priority.PRIORITY_BALANCED_POWER_ACCURACY,
                 cancellationToken.token
             ).await()
-
-            if (location != null) {
-                currentLatitude = location.latitude
-                currentLongitude = location.longitude
-                currentWeatherUsesUserLocation = true
-                updateLocationAccuracy(location)
-                fetchWeatherInternal(
-                    latitude = location.latitude,
-                    longitude = location.longitude,
-                    category = selectedCategory.value,
-                    isUserLocationBacked = true,
-                )
+            val lastLocation = if (location == null) {
+                fusedLocationClient.lastLocation.await()
             } else {
-                // 마지막 알려진 위치 시도
-                val lastLocation = fusedLocationClient.lastLocation.await()
-                if (lastLocation != null) {
-                    currentLatitude = lastLocation.latitude
-                    currentLongitude = lastLocation.longitude
-                    currentWeatherUsesUserLocation = true
-                    updateLocationAccuracy(lastLocation)
-                    fetchWeatherInternal(
-                        latitude = lastLocation.latitude,
-                        longitude = lastLocation.longitude,
-                        category = selectedCategory.value,
-                        isUserLocationBacked = true,
-                    )
-                } else {
-                    // 기본 위치 (서울)
-                    currentLatitude = DEFAULT_LATITUDE
-                    currentLongitude = DEFAULT_LONGITUDE
-                    currentWeatherUsesUserLocation = false
-                    clearLocationAccuracy()
-                    fetchWeatherInternal(
-                        latitude = DEFAULT_LATITUDE,
-                        longitude = DEFAULT_LONGITUDE,
-                        category = selectedCategory.value,
-                        isUserLocationBacked = false,
-                    )
-                }
+                null
+            }
+
+            when (resolveWeatherLocationFetchSource(location != null, lastLocation != null)) {
+                WeatherLocationFetchSource.CurrentLocation -> fetchWeatherForUserLocation(requireNotNull(location))
+                WeatherLocationFetchSource.LastKnownLocation -> fetchWeatherForUserLocation(requireNotNull(lastLocation))
+                WeatherLocationFetchSource.Unavailable -> failWeatherLocation(WeatherError.LocationUnavailable)
             }
         } catch (e: SecurityException) {
-            _error.value = WeatherError.LocationPermission
-            // 기본 위치로 시도
-            currentLatitude = DEFAULT_LATITUDE
-            currentLongitude = DEFAULT_LONGITUDE
-            currentWeatherUsesUserLocation = false
-            clearLocationAccuracy()
-            fetchWeatherInternal(
-                latitude = DEFAULT_LATITUDE,
-                longitude = DEFAULT_LONGITUDE,
-                category = selectedCategory.value,
-                isUserLocationBacked = false,
-            )
+            failWeatherLocation(WeatherError.LocationPermission)
         } catch (e: Exception) {
-            _error.value = WeatherError.LocationUnavailable
-            clearLocationAccuracy()
-            _isLoading.value = false
+            failWeatherLocation(WeatherError.LocationUnavailable)
         }
+    }
+
+    private suspend fun fetchWeatherForUserLocation(location: Location) {
+        currentLatitude = location.latitude
+        currentLongitude = location.longitude
+        currentWeatherUsesUserLocation = true
+        updateLocationAccuracy(location)
+        fetchWeatherInternal(
+            latitude = location.latitude,
+            longitude = location.longitude,
+            category = selectedCategory.value,
+            isUserLocationBacked = true,
+        )
+    }
+
+    private fun failWeatherLocation(error: WeatherError) {
+        _error.value = error
+        currentWeatherUsesUserLocation = false
+        clearLocationAccuracy()
+        _isLoading.value = false
     }
 
     private fun updateLocationAccuracy(location: Location) {
