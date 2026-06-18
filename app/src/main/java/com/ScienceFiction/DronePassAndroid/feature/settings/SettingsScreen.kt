@@ -57,6 +57,8 @@ internal data class LanguageSelectionAction(
     val showRestartAlert: Boolean,
 )
 
+internal const val SettingsLoginSheetShowSkipLogin = false
+
 internal fun resolveLanguageSelectionAction(
     selectedLanguage: AppLanguage,
     currentLanguage: AppLanguage,
@@ -421,6 +423,7 @@ private fun SettingsMainContent(
                     showLoginSheet = false
                     settingsViewModel.checkAuthState()
                 },
+                showSkipLogin = SettingsLoginSheetShowSkipLogin,
             )
         }
     }
