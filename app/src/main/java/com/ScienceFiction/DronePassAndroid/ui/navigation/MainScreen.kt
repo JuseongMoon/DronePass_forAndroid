@@ -99,11 +99,13 @@ import com.ScienceFiction.DronePassAndroid.service.ForegroundNotificationBus
 import kotlinx.coroutines.delay
 
 // MARK: - iOS MainTabView 와 동등한 시각/치수 토큰
-// iOS: width 210, height 60, cornerRadius 30, shadow radius 10, bottom padding phone 15 / iPad 20
+// iOS: width 210, height 60, cornerRadius 30, shadow radius 10.
+// Android edge-to-edge gesture navigation already leaves a visual bottom band, so phone
+// uses a smaller bottom gap than iOS while tablet preserves the iPad 20dp margin.
 private val TabBarWidth = 210.dp
 private val TabBarHeight = 60.dp
 private val TabBarCornerRadius = 30.dp
-internal val TabBarPhoneBottomPadding = 15.dp
+internal val TabBarPhoneBottomPadding = 8.dp
 internal val TabBarTabletBottomPadding = 20.dp
 private val TabBarShadowElevation = 8.dp
 private val TabButtonWidth = 60.dp

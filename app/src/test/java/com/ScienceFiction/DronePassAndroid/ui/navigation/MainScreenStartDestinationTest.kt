@@ -171,10 +171,10 @@ class MainScreenStartDestinationTest {
     }
 
     @Test
-    fun `하단 탭바 bottom padding은 iOS처럼 phone 15dp tablet 20dp 이다`() {
-        assertEquals(15.dp, TabBarPhoneBottomPadding)
+    fun `하단 탭바 bottom padding은 Android 폰에서 낮게 두고 tablet은 iOS처럼 20dp 이다`() {
+        assertEquals(8.dp, TabBarPhoneBottomPadding)
         assertEquals(20.dp, TabBarTabletBottomPadding)
-        assertEquals(15.dp, resolveTabBarBottomPadding(isTablet = false))
+        assertEquals(8.dp, resolveTabBarBottomPadding(isTablet = false))
         assertEquals(20.dp, resolveTabBarBottomPadding(isTablet = true))
     }
 
