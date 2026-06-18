@@ -131,10 +131,12 @@ fun VWorldZoneDetailSheet(
     }
     val scrollState = rememberScrollState()
 
-    // 사전협의구역 외 모든 레이어에 대해 publicContact lookup (iOS 정합)
-    val publicContact: PublicContactInfo? = remember(zone) {
-        if (zone.layer == FlightZoneLayer.PRIOR_CONSULTATION) null
-        else findContact(resolvePublicContactLookupName(zone))
+    // 사전협의구역 외 모든 레이어에 대해 publicContact lookup (iOS 정합).
+    // 연락처 캐시가 시트 표시 뒤 로드될 수 있으므로 recomposition 마다 최신 snapshot 으로 계산한다.
+    val publicContact: PublicContactInfo? = if (zone.layer == FlightZoneLayer.PRIOR_CONSULTATION) {
+        null
+    } else {
+        findContact(resolvePublicContactLookupName(zone))
     }
     val formattedUpperAltitude = zone.formattedUpperAltitude
     val formattedLowerAltitude = zone.formattedLowerAltitude

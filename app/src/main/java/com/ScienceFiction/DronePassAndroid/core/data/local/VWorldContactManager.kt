@@ -29,6 +29,17 @@ data class PublicContactInfo(
     val phoneNumber: String,
 )
 
+internal fun findVWorldContact(
+    contacts: Map<String, PublicContactInfo>,
+    name: String?,
+): PublicContactInfo? {
+    if (name.isNullOrBlank()) return null
+    contacts[name]?.let { return it }
+    return contacts.entries.firstOrNull { (organizationName, _) ->
+        name.contains(organizationName) || organizationName.contains(name)
+    }?.value
+}
+
 /**
  * VWorld 공공기관 연락처 매니저. iOS `VWorldContactManager` 매핑.
  *
@@ -101,13 +112,7 @@ class VWorldContactManager @Inject constructor(
      * 구역명 또는 기관명으로 연락처 lookup. 정확 일치 → 부분 일치 순.
      */
     fun findContact(name: String?): PublicContactInfo? {
-        if (name.isNullOrBlank()) return null
-        val map = _contacts.value
-        map[name]?.let { return it }
-        // 양방향 contains (iOS 와 동일)
-        return map.entries.firstOrNull { (org, _) ->
-            name.contains(org) || org.contains(name)
-        }?.value
+        return findVWorldContact(_contacts.value, name)
     }
 
     private suspend fun isCacheValid(): Boolean {

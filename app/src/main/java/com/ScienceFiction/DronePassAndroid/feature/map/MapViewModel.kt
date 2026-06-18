@@ -332,9 +332,6 @@ class MapViewModel @Inject constructor(
      */
     val vWorldContacts: StateFlow<Map<String, PublicContactInfo>> = vWorldContactManager.contacts
 
-    /** 구역명으로 공공기관 연락처 검색 (정확 → 부분 일치). */
-    fun findContact(name: String?): PublicContactInfo? = vWorldContactManager.findContact(name)
-
     /**
      * 지도에 표시할 활성(삭제되지 않은) 도형 목록
      */

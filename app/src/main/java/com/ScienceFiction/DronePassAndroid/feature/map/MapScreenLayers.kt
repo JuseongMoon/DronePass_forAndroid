@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ScienceFiction.DronePassAndroid.core.ui.currentWindowSizeDp
+import com.ScienceFiction.DronePassAndroid.core.data.local.findVWorldContact
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.DroneZoneFeature
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.FlightZoneLayer
 import com.ScienceFiction.DronePassAndroid.domain.model.Coordinate
@@ -671,6 +672,7 @@ internal fun MapBottomSheets(
     val showZoneDetail by viewModel.showZoneDetail.collectAsStateWithLifecycle()
     val koreaFeaturesEnabled by viewModel.koreaFeaturesEnabled.collectAsStateWithLifecycle()
     val selectedZone by viewModel.selectedZone.collectAsStateWithLifecycle()
+    val vWorldContacts by viewModel.vWorldContacts.collectAsStateWithLifecycle()
     var showKpInfoSheet by remember { mutableStateOf(false) }
     var showWeatherInfoSheet by remember { mutableStateOf(false) }
     var selectedWeatherInfoTopic by remember { mutableStateOf<WeatherInfoTopic?>(null) }
@@ -763,7 +765,7 @@ internal fun MapBottomSheets(
         selectedZone?.let { zone ->
             VWorldZoneDetailSheet(
                 zone = zone,
-                findContact = { name -> viewModel.findContact(name) },
+                findContact = { name -> findVWorldContact(vWorldContacts, name) },
                 onDismiss = {
                     flightZoneOverlayManager.clearSelection()
                     viewModel.dismissZoneDetail()
