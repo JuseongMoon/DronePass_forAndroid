@@ -19,6 +19,7 @@ data class CurrentWeather(
     @Json(name = "wind_direction_10m") val windDirection: Double?,
     @Json(name = "wind_gusts_10m") val windGusts: Double?,
     val precipitation: Double?,
+    val visibility: Double?,
     @Json(name = "weather_code") val weatherCode: Int?
 )
 

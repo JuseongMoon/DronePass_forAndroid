@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.preferencesOf
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.core.util.DroneCategory
 import com.ScienceFiction.DronePassAndroid.core.util.GustDifferenceLevel
+import com.ScienceFiction.DronePassAndroid.domain.model.CurrentWeatherData
 import com.ScienceFiction.DronePassAndroid.domain.model.HourlyWeatherData
 import com.ScienceFiction.DronePassAndroid.domain.model.WeatherData
 import com.ScienceFiction.DronePassAndroid.ui.component.IosToastMessageAnimationDurationMs
@@ -403,6 +404,18 @@ class WeatherForecastParityTest {
     }
 
     @Test
+    fun `current weather visibility uses current conditions instead of first hourly forecast`() {
+        val weatherData = WeatherData(
+            current = currentWeather(visibility = 2.4),
+            hourlyForecast = listOf(hourlyWeather(visibility = 10.0)),
+            sunrise = null,
+            sunset = null,
+        )
+
+        assertEquals(2.4, resolveCurrentWeatherVisibility(weatherData) ?: -1.0, 0.0)
+    }
+
+    @Test
     fun `current weather fallback strings match iOS manager computed values`() {
         assertEquals("-", MissingWeatherValueText)
         assertEquals("-", formatIosMetersPerSecond(null))
@@ -674,6 +687,7 @@ class WeatherForecastParityTest {
     private fun hourlyWeather(
         time: Long = 0L,
         temperature: Double = 20.0,
+        visibility: Double = 10.0,
     ): HourlyWeatherData = HourlyWeatherData(
         time = time,
         temperature = temperature,
@@ -682,9 +696,24 @@ class WeatherForecastParityTest {
         windGusts = null,
         gustDifference = 0.0,
         precipitation = 0.0,
-        visibility = 10.0,
+        visibility = visibility,
         dewPoint = 10.0,
         cri = 0.0,
+    )
+
+    private fun currentWeather(
+        visibility: Double?,
+    ): CurrentWeatherData = CurrentWeatherData(
+        temperature = 20.0,
+        dewPoint = 10.0,
+        windSpeed = 1.0,
+        windDirection = 0.0,
+        windGusts = null,
+        precipitation = 0.0,
+        visibility = visibility,
+        weatherCode = 0,
+        cri = 0.0,
+        gustDifferenceLevel = GustDifferenceLevel.SAFE,
     )
 
     private companion object {

@@ -189,6 +189,8 @@ internal fun resolveCriWarningIcon(cri: Double): WarningIconType = when {
 internal fun resolveGustDifferenceSubTextRes(level: GustDifferenceLevel): Int? =
     if (level == GustDifferenceLevel.LOCALIZED_GUST) R.string.weather_gust_warning else null
 
+internal fun resolveCurrentWeatherVisibility(data: WeatherData): Double? = data.current?.visibility
+
 internal fun resolveCurrentWeatherContentState(
     hourlyForecast: List<HourlyWeatherData>,
     isLoading: Boolean,
@@ -218,7 +220,7 @@ internal fun CurrentWeatherSection(
     val temperatureRange = resolveForecastTemperatureRange(data.hourlyForecast)
     val maxTemperatureText = formatNullableIosTemperatureDegrees(temperatureRange?.first ?: current?.temperature)
     val minTemperatureText = formatNullableIosTemperatureDegrees(temperatureRange?.second ?: current?.temperature)
-    val visibility = data.hourlyForecast.firstOrNull()?.visibility
+    val visibility = resolveCurrentWeatherVisibility(data)
     val gustDiff = current?.let { GustDifferenceCalculator.calculateGustDifference(it.windSpeed, it.windGusts) }
 
     val (windCaution, windDanger) = iosWindSpeedThresholds(category)

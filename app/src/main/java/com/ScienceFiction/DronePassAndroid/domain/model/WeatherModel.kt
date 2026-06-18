@@ -19,6 +19,7 @@ data class CurrentWeatherData(
     val windDirection: Double,     // degrees
     val windGusts: Double?,        // m/s (nullable)
     val precipitation: Double,     // mm
+    val visibility: Double?,       // km
     val weatherCode: Int,
     val cri: Double,               // Condensation Risk Index 0-100
     val gustDifferenceLevel: GustDifferenceLevel

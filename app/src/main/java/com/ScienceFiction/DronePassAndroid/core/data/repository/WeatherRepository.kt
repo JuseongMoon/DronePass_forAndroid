@@ -104,6 +104,7 @@ class WeatherRepository @Inject constructor(
                 windDirection = current.windDirection ?: 0.0,
                 windGusts = gusts,
                 precipitation = current.precipitation ?: 0.0,
+                visibility = current.visibility?.div(1000.0),
                 weatherCode = current.weatherCode ?: 0,
                 cri = currentCriSmoother.smooth(CRICalculator.calculateUnrounded(temp, dewPt, wind)),
                 gustDifferenceLevel = GustDifferenceCalculator.evaluate(wind, gusts, category)

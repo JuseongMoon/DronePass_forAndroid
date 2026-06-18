@@ -10,6 +10,7 @@ import java.time.ZoneOffset
 import kotlin.math.roundToInt
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class WeatherRepositoryTest {
@@ -112,6 +113,26 @@ class WeatherRepositoryTest {
         assertEquals(2.0, observedData.hourlyForecast[1].gustDifference, 0.0)
     }
 
+    @Test
+    fun `current visibility is requested and mapped like iOS current weather visibility`() = runBlocking {
+        val api = FakeWeatherApi(
+            weatherResponse(
+                current = currentWeather(
+                    temperature = 20.0,
+                    dewPoint = 10.0,
+                    windSpeed = 1.0,
+                    visibility = 2400.0,
+                ),
+            ),
+        )
+        val repository = WeatherRepository(api)
+
+        val data = repository.fetchWeather(latitude = 37.0, longitude = 127.0).getOrThrow()
+
+        assertTrue(api.lastCurrentQuery?.contains("visibility") == true)
+        assertEquals(2.4, data.current?.visibility ?: -1.0, 0.0)
+    }
+
     private fun weatherResponse(
         current: CurrentWeather? = null,
         hourly: HourlyWeather? = null,
@@ -126,6 +147,7 @@ class WeatherRepositoryTest {
         temperature: Double,
         dewPoint: Double,
         windSpeed: Double,
+        visibility: Double? = 10000.0,
     ): CurrentWeather = CurrentWeather(
         temperature = temperature,
         dewPoint = dewPoint,
@@ -133,6 +155,7 @@ class WeatherRepositoryTest {
         windDirection = 0.0,
         windGusts = null,
         precipitation = 0.0,
+        visibility = visibility,
         weatherCode = 0,
     )
 
@@ -156,6 +179,8 @@ class WeatherRepositoryTest {
     private class FakeWeatherApi(
         var response: WeatherResponse,
     ) : WeatherApi {
+        var lastCurrentQuery: String? = null
+
         override suspend fun getWeather(
             latitude: Double,
             longitude: Double,
@@ -165,6 +190,9 @@ class WeatherRepositoryTest {
             timezone: String,
             forecastDays: Int,
             windSpeedUnit: String,
-        ): WeatherResponse = response
+        ): WeatherResponse {
+            lastCurrentQuery = current
+            return response
+        }
     }
 }
