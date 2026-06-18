@@ -115,6 +115,16 @@ class CoordinateParserTest {
 
     // endregion
 
+    // region iOS unsupported formats
+
+    @Test
+    fun `iOS stub 형식인 MGRS와 Plus Code는 좌표로 파싱하지 않는다`() {
+        assertNull(CoordinateParser.parse("52S DF 24174 67282"))
+        assertNull(CoordinateParser.parse("8Q98FXC7+M2"))
+    }
+
+    // endregion
+
     // region 위경도 범위 위반
 
     @Test
