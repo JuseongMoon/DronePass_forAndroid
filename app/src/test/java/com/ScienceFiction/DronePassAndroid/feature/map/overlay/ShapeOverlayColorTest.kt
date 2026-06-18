@@ -91,14 +91,6 @@ class ShapeOverlayColorTest {
     }
 
     @Test
-    fun `선 도형 드론 하이라이트 두께는 iOS 원형 outline 강조 두께와 같다`() {
-        val active = shape()
-
-        assertEquals(3, calculateMapPolylineWidth(active, emptySet()))
-        assertEquals(5, calculateMapPolylineWidth(active, setOf("drone-a")))
-    }
-
-    @Test
     fun `선택 도형 포커스 하이라이트 색상은 iOS system red 이다`() {
         assertEquals(0xFFFF3B30.toInt(), parseMapOverlayColorSafe(MapOverlayFocusHighlightHex))
     }

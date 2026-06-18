@@ -9,8 +9,6 @@ import com.naver.maps.geometry.LatLng
 import com.naver.maps.map.NaverMap
 import com.naver.maps.map.overlay.CircleOverlay
 import com.naver.maps.map.overlay.Overlay
-import com.naver.maps.map.overlay.PolygonOverlay
-import com.naver.maps.map.overlay.PolylineOverlay
 
 internal fun parseMapOverlayColorSafe(colorString: String): Int {
     return parseIosOpaqueRgbHexColor(colorString) ?: Color.BLACK
@@ -22,17 +20,14 @@ internal fun shouldRenderMapCircleOverlay(shape: ShapeModel): Boolean {
 
 internal enum class MapShapeOverlayKind {
     CIRCLE,
-    RECTANGLE,
-    POLYGON,
-    POLYLINE,
 }
 
 internal fun resolveMapShapeOverlayKind(shape: ShapeModel): MapShapeOverlayKind? {
     return when (shape.shapeType) {
         ShapeType.CIRCLE -> if (shape.radius != null) MapShapeOverlayKind.CIRCLE else null
-        ShapeType.RECTANGLE -> if (shape.hasRenderableRectangleGeometry()) MapShapeOverlayKind.RECTANGLE else null
-        ShapeType.POLYGON -> if (shape.polygonCoordinates.hasAtLeastDistinctCoordinates(3)) MapShapeOverlayKind.POLYGON else null
-        ShapeType.POLYLINE -> if (shape.polylineCoordinates.hasAtLeastDistinctCoordinates(2)) MapShapeOverlayKind.POLYLINE else null
+        ShapeType.RECTANGLE,
+        ShapeType.POLYGON,
+        ShapeType.POLYLINE -> null
     }
 }
 
@@ -40,31 +35,9 @@ internal fun shouldRenderMapShapeOverlay(shape: ShapeModel): Boolean {
     return resolveMapShapeOverlayKind(shape) != null
 }
 
-private fun ShapeModel.hasRenderableRectangleGeometry(): Boolean {
-    val second = secondCoordinate ?: return false
-    return baseCoordinate.latitude != second.latitude && baseCoordinate.longitude != second.longitude
-}
-
-private fun List<Coordinate>?.hasAtLeastDistinctCoordinates(minCount: Int): Boolean {
-    return this?.distinct()?.size?.let { it >= minCount } ?: false
-}
-
-internal fun rectangleOverlayCoordinates(shape: ShapeModel): List<Coordinate>? {
-    val second = shape.secondCoordinate ?: return null
-    return listOf(
-        shape.baseCoordinate,
-        shape.baseCoordinate.copy(longitude = second.longitude),
-        second,
-        second.copy(longitude = shape.baseCoordinate.longitude),
-    )
-}
-
 internal fun shapeOverlayCoordinates(shape: ShapeModel): List<Coordinate>? {
     return when (resolveMapShapeOverlayKind(shape)) {
         MapShapeOverlayKind.CIRCLE -> listOf(shape.baseCoordinate)
-        MapShapeOverlayKind.RECTANGLE -> rectangleOverlayCoordinates(shape)
-        MapShapeOverlayKind.POLYGON -> shape.polygonCoordinates
-        MapShapeOverlayKind.POLYLINE -> shape.polylineCoordinates
         null -> null
     }
 }
@@ -72,17 +45,6 @@ internal fun shapeOverlayCoordinates(shape: ShapeModel): List<Coordinate>? {
 internal fun resolveMapCircleHighlightRadius(shape: ShapeModel): Double? {
     if (!shouldRenderMapCircleOverlay(shape)) return null
     return (shape.radius ?: return null) + 2
-}
-
-internal fun resolveMapShapeHighlightCoordinates(shape: ShapeModel): List<Coordinate>? {
-    val coordinates = when (resolveMapShapeOverlayKind(shape)) {
-        MapShapeOverlayKind.RECTANGLE,
-        MapShapeOverlayKind.POLYGON -> shapeOverlayCoordinates(shape)?.closeIfNeeded()
-        MapShapeOverlayKind.POLYLINE -> shapeOverlayCoordinates(shape)
-        MapShapeOverlayKind.CIRCLE,
-        null -> null
-    } ?: return null
-    return coordinates.takeIf { it.size >= 2 }
 }
 
 internal const val MapOverlaySystemGrayHex = "#8E8E93"
@@ -123,13 +85,6 @@ internal fun calculateMapOverlayOutlineWidth(shape: ShapeModel): Int {
     return if (shape.isNotStarted) 1 else 2
 }
 
-internal fun calculateMapPolylineWidth(
-    shape: ShapeModel,
-    highlightedDroneIds: Set<String>,
-): Int {
-    return if (isMapDroneHighlighted(shape, highlightedDroneIds)) 5 else 3
-}
-
 private fun mainMapOverlayColorFor(shape: ShapeModel): Int {
     return if (shape.isExpired) {
         parseMapOverlayColorSafe(MapOverlaySystemGrayHex)
@@ -149,11 +104,6 @@ private fun withMapOverlayAlpha(color: Int, alpha: Int): Int {
     return ((alpha and 0xFF) shl 24) or (color and 0x00FFFFFF)
 }
 
-private fun List<Coordinate>.closeIfNeeded(): List<Coordinate> {
-    if (isEmpty() || first() == last()) return this
-    return this + first()
-}
-
 internal fun uniqueMapOverlayShapesByFirstId(shapes: List<ShapeModel>): List<ShapeModel> {
     return shapes.distinctBy { it.id }
 }
@@ -161,7 +111,7 @@ internal fun uniqueMapOverlayShapesByFirstId(shapes: List<ShapeModel>): List<Sha
 /**
  * 네이버 Maps SDK 오버레이를 관리하는 클래스.
  *
- * NaverMap 인스턴스를 받아서 ShapeModel 리스트를 오버레이로 렌더링한다.
+ * NaverMap 인스턴스를 받아서 iOS MapViewModel 과 같이 원형 ShapeModel 만 오버레이로 렌더링한다.
  * 도형 탭 이벤트, 하이라이트 표시, 오버레이 갱신/제거를 담당한다.
  */
 class ShapeOverlayManager {
@@ -281,24 +231,6 @@ class ShapeOverlayManager {
                     this.outlineWidth = calculateOutlineWidth(shape)
                 }
             }
-            MapShapeOverlayKind.RECTANGLE,
-            MapShapeOverlayKind.POLYGON -> {
-                val coordinates = shapeOverlayCoordinates(shape) ?: return
-                PolygonOverlay().apply {
-                    this.coords = coordinates.toLatLngs()
-                    this.color = calculateFillColor(shape)
-                    this.outlineColor = calculateOutlineColor(shape)
-                    this.outlineWidth = calculateOutlineWidth(shape)
-                }
-            }
-            MapShapeOverlayKind.POLYLINE -> {
-                val coordinates = shapeOverlayCoordinates(shape) ?: return
-                PolylineOverlay().apply {
-                    this.coords = coordinates.toLatLngs()
-                    this.color = calculateOutlineColor(shape)
-                    this.width = calculatePolylineWidth(shape)
-                }
-            }
             null -> return
         }.apply {
             this.globalZIndex = 50
@@ -339,16 +271,6 @@ class ShapeOverlayManager {
                     this.outlineWidth = 5
                 }
             }
-            MapShapeOverlayKind.RECTANGLE,
-            MapShapeOverlayKind.POLYGON,
-            MapShapeOverlayKind.POLYLINE -> {
-                val coordinates = resolveMapShapeHighlightCoordinates(shape) ?: return
-                PolylineOverlay().apply {
-                    this.coords = coordinates.toLatLngs()
-                    this.color = parseColorSafe(MapOverlayFocusHighlightHex)
-                    this.width = 5
-                }
-            }
             null -> return
         }?.apply {
             this.globalZIndex = 60
@@ -382,10 +304,6 @@ class ShapeOverlayManager {
         return calculateMapOverlayOutlineWidth(shape)
     }
 
-    private fun calculatePolylineWidth(shape: ShapeModel): Int {
-        return calculateMapPolylineWidth(shape, highlightedDroneIds)
-    }
-
     /**
      * 색상 문자열을 안전하게 파싱한다.
      * iOS MapViewModel 의 `UIColor(hex:) ?? .black` fallback 과 동일하게 검정색을 반환한다.
@@ -393,9 +311,6 @@ class ShapeOverlayManager {
     private fun parseColorSafe(colorString: String): Int {
         return parseMapOverlayColorSafe(colorString)
     }
-
-    private fun List<Coordinate>.toLatLngs(): List<LatLng> =
-        map { it.toLatLng() }
 
     // ──────────────────────────────────────────────
     // 오버레이 제거
