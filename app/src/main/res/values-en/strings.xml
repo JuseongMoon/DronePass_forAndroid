@@ -177,7 +177,7 @@
     <string name="shape_edit_address_search_placeholder">Search address</string>
     <string name="shape_edit_radius_label">Radius (m)</string>
     <string name="shape_edit_radius_placeholder">Enter radius</string>
-    <string name="shape_edit_altitude_label">Altitude</string>
+    <string name="shape_edit_altitude_label">Altitude (m)</string>
     <string name="shape_edit_altitude_placeholder">Enter altitude</string>
     <string name="shape_edit_drone_label">Select Drone</string>
     <string name="shape_edit_drone_placeholder">Select drone</string>
