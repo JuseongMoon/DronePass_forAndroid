@@ -269,6 +269,11 @@ class MainScreenStartDestinationTest {
     }
 
     @Test
+    fun `저장과 설정 폰 오버레이는 iOS처럼 화면 하단에 붙는다`() {
+        assertEquals(0.dp, OverlayBottomMargin)
+    }
+
+    @Test
     fun `저장 목록 폰 오버레이는 iOS처럼 드래그 중 높이를 줄이지 않고 아래로 이동한다`() {
         assertEquals(120.dp, resolveSavedOverlayPhoneDragOffset(120.dp, isDragging = true))
         assertEquals(0.dp, resolveSavedOverlayPhoneDragOffset((-40).dp, isDragging = true))
