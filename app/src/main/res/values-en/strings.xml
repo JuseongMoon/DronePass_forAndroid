@@ -213,6 +213,7 @@
     <string name="drone_detail_color">Color</string>
     <string name="drone_detail_section_basic">Basic Info</string>
     <string name="drone_detail_section_specs">Specifications</string>
+    <string name="drone_detail_section_memo">Memo</string>
     <string name="drone_detail_not_entered">Not entered</string>
     <string name="drone_detail_memo_empty">No memo</string>
     <string name="drone_detail_clipboard_label">Drone info</string>

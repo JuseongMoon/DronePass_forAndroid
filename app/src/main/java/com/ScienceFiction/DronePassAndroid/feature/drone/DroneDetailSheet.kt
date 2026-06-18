@@ -211,7 +211,7 @@ fun DroneDetailSheet(
                     )
 
                     Spacer(modifier = Modifier.height(12.dp))
-                    DroneDetailSectionHeader(text = stringResource(R.string.common_memo))
+                    DroneDetailSectionHeader(text = stringResource(R.string.drone_detail_section_memo))
                     val memoText = droneDetailOptionalText(
                         drone.memo,
                         emptyFallback = stringResource(R.string.drone_detail_memo_empty),
