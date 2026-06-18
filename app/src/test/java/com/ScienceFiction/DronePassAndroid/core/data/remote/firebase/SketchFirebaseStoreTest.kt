@@ -186,11 +186,20 @@ class SketchFirebaseStoreTest {
     }
 
     @Test
-    fun `스케치 숫자 선택 필드가 Firebase 저장 검증 범위를 어기면 invalid 이다`() {
-        assertNull(sketchFromFirestoreData(validDocument() + ("strokeWidth" to 0.0)))
-        assertNull(sketchFromFirestoreData(validDocument() + ("strokeWidth" to 50.1)))
-        assertNull(sketchFromFirestoreData(validDocument() + ("opacity" to -0.1)))
-        assertNull(sketchFromFirestoreData(validDocument() + ("opacity" to Double.NaN)))
+    fun `스케치 숫자 선택 필드가 저장 검증 범위를 벗어나도 iOS처럼 Firestore 읽기에서는 보존한다`() {
+        val sketch = sketchFromFirestoreData(
+            validDocument() + mapOf(
+                "strokeWidth" to 50.1,
+                "opacity" to -0.1,
+            ),
+        )
+        val nanOpacity = sketchFromFirestoreData(validDocument() + ("opacity" to Double.NaN))
+
+        requireNotNull(sketch)
+        assertEquals(50.1, sketch.strokeWidth, 0.0)
+        assertEquals(-0.1, sketch.opacity, 0.0)
+        requireNotNull(nanOpacity)
+        assertTrue(nanOpacity.opacity.isNaN())
     }
 
     @Test

@@ -3,7 +3,6 @@ package com.ScienceFiction.DronePassAndroid.core.data.remote.firebase
 import android.util.Log
 import com.ScienceFiction.DronePassAndroid.domain.model.Coordinate
 import com.ScienceFiction.DronePassAndroid.domain.model.SketchModel
-import com.ScienceFiction.DronePassAndroid.domain.model.isValidForFirebasePersistence
 import com.ScienceFiction.DronePassAndroid.domain.model.isValidShapeCoordinate
 import com.ScienceFiction.DronePassAndroid.domain.model.normalizeFirebaseHexColorForRead
 import com.ScienceFiction.DronePassAndroid.domain.model.normalizeFirebaseHexColorForWrite
@@ -110,7 +109,7 @@ internal fun sketchFromFirestoreData(
         createdAt = createdAt,
         updatedAt = updatedAt,
         deletedAt = deletedAt
-    ).takeIf { it.isValidForFirebasePersistence() }
+    )
 }
 
 internal fun sketchFromFirestoreDocument(documentId: String, data: Map<String, Any?>): SketchModel? {
