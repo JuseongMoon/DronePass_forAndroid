@@ -357,8 +357,8 @@ fun ShapeDetailSheet(
                 }
 
                 // iOS Section 2 — 메모. 값이 없어도 "-" 로 180dp 섹션을 항상 표시한다.
-                // AndroidView(TextView) + Linkify 로 URL/전화번호를 자동 감지.
-                // 웹 링크는 iOS SafariView처럼 앱 내부 시트로 열고, 전화는 시스템 앱으로 전달한다.
+                // AndroidView(TextView) + Linkify 로 URL/전화번호/이메일을 자동 감지.
+                // 웹 링크는 iOS SafariView처럼 앱 내부 시트로 열고, 전화/메일은 시스템 앱으로 전달한다.
                 Spacer(modifier = Modifier.height(12.dp))
                 HorizontalDivider()
                 Spacer(modifier = Modifier.height(12.dp))
@@ -734,8 +734,8 @@ internal fun resolveShapeDetailDrone(
 /**
  * iOS HyperlinkTextView + SafariView 정합.
  *
- * AndroidView 로 TextView 호스팅 + autoLinkMask 로 URL/전화번호를 자동 감지한다.
- * 웹 링크는 앱 내부 웹 시트로, 전화 등은 시스템 앱으로 전달한다.
+ * AndroidView 로 TextView 호스팅 + autoLinkMask 로 URL/전화번호/이메일을 자동 감지한다.
+ * 웹 링크는 앱 내부 웹 시트로, 전화/메일 등은 시스템 앱으로 전달한다.
  * 180dp 고정 높이 (iOS minHeight: 180 / maxHeight: 180 정합) + 내부 스크롤.
  */
 @Composable
@@ -1007,7 +1007,7 @@ private fun DroneStatusValue(drone: DroneModel?, droneId: String?) {
 internal fun shouldShowShapeDetailDroneColorIndicator(color: PaletteColor?): Boolean = color != null
 
 internal const val ShapeDetailMemoAutoLinkMask =
-    Linkify.WEB_URLS or Linkify.PHONE_NUMBERS
+    Linkify.WEB_URLS or Linkify.PHONE_NUMBERS or Linkify.EMAIL_ADDRESSES
 
 private fun copyToClipboard(context: Context, text: String) {
     val clipboardManager = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
