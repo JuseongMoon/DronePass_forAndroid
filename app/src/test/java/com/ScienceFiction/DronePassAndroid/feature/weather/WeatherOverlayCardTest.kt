@@ -1,5 +1,8 @@
 package com.ScienceFiction.DronePassAndroid.feature.weather
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Cloud
+import androidx.compose.material.icons.filled.Umbrella
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.junit.Assert.assertEquals
@@ -26,16 +29,16 @@ class WeatherOverlayCardTest {
     @Test
     fun `weather icon falls back to iOS cloud when current weather is unavailable`() {
         assertEquals(
-            WeatherOverlayWeatherIcon.DefaultCloud,
-            resolveWeatherOverlayWeatherIcon(weatherCode = null),
+            Icons.Default.Cloud.name,
+            resolveWeatherOverlayWeatherIcon(weatherCode = null, precipitation = null).name,
         )
     }
 
     @Test
-    fun `weather icon uses weather code when current weather is available`() {
+    fun `weather icon uses iOS precipitation aware weather code when current weather is available`() {
         assertEquals(
-            WeatherOverlayWeatherIcon.WeatherCode,
-            resolveWeatherOverlayWeatherIcon(weatherCode = 0),
+            Icons.Default.Umbrella.name,
+            resolveWeatherOverlayWeatherIcon(weatherCode = 61, precipitation = 0.1).name,
         )
     }
 

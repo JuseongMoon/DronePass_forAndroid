@@ -302,7 +302,10 @@ internal fun CurrentWeatherSection(
                     Box {
                         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                             PreviewBlock(
-                                weatherIcon = WeatherCodeMapper.weatherCodeToIcon(current?.weatherCode ?: Int.MIN_VALUE),
+                                weatherIcon = WeatherCodeMapper.weatherCodeToIosPrecipitationIcon(
+                                    code = current?.weatherCode,
+                                    precipitation = current?.precipitation,
+                                ),
                                 conditionText = current?.weatherCode
                                     ?.let { stringResource(WeatherCodeMapper.weatherCodeToDescriptionRes(it)) }
                                     ?: stringResource(R.string.weather_unknown),

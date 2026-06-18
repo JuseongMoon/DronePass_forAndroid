@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowUpward
-import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material.icons.filled.WbTwilight
 import androidx.compose.material3.Icon
@@ -21,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -52,13 +52,10 @@ internal enum class SunEventOverlayIcon {
 internal fun resolveSunEventOverlayIcon(isNextSunset: Boolean): SunEventOverlayIcon =
     if (isNextSunset) SunEventOverlayIcon.Sunset else SunEventOverlayIcon.Sunrise
 
-internal enum class WeatherOverlayWeatherIcon {
-    DefaultCloud,
-    WeatherCode,
-}
-
-internal fun resolveWeatherOverlayWeatherIcon(weatherCode: Int?): WeatherOverlayWeatherIcon =
-    if (weatherCode == null) WeatherOverlayWeatherIcon.DefaultCloud else WeatherOverlayWeatherIcon.WeatherCode
+internal fun resolveWeatherOverlayWeatherIcon(
+    weatherCode: Int?,
+    precipitation: Double?,
+): ImageVector = WeatherCodeMapper.weatherCodeToIosPrecipitationIcon(weatherCode, precipitation)
 
 internal fun weatherOverlayTemperatureText(temperature: Double?): String =
     temperature?.let {
@@ -118,11 +115,10 @@ fun WeatherOverlayCard(
                 horizontalArrangement = Arrangement.spacedBy(WeatherOverlayCardRowSpacing),
             ) {
                 Icon(
-                    imageVector = when (resolveWeatherOverlayWeatherIcon(currentWeather?.weatherCode)) {
-                        WeatherOverlayWeatherIcon.DefaultCloud -> Icons.Default.Cloud
-                        WeatherOverlayWeatherIcon.WeatherCode ->
-                            WeatherCodeMapper.weatherCodeToIcon(currentWeather?.weatherCode ?: 0)
-                    },
+                    imageVector = resolveWeatherOverlayWeatherIcon(
+                        weatherCode = currentWeather?.weatherCode,
+                        precipitation = currentWeather?.precipitation,
+                    ),
                     contentDescription = null,
                     tint = WeatherIconColor,
                     modifier = Modifier.size(WeatherOverlayCardIconSize),

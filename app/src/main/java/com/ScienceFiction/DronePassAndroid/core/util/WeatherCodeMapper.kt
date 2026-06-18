@@ -55,4 +55,33 @@ object WeatherCodeMapper {
         96, 99 -> Icons.Default.FlashOn
         else -> Icons.Default.Cloud
     }
+
+    /**
+     * iOS `WeatherManager.precipitationIconName` 대응.
+     *
+     * iOS 는 WeatherCondition 이 비/눈이어도 실제 precipitationIntensity 가 0 이면
+     * 강수 아이콘 대신 일반 상태 아이콘으로 폴백한다. Open-Meteo 의 WMO code 와
+     * 현재 precipitation 값을 함께 사용해 같은 표시 의도를 맞춘다.
+     */
+    fun weatherCodeToIosPrecipitationIcon(code: Int?, precipitation: Double?): ImageVector {
+        if (code == null) return Icons.Default.Cloud
+
+        val hasPrecipitation = (precipitation ?: 0.0) > 0.0
+        if (hasPrecipitation) {
+            return when (code) {
+                51, 53, 55, 56, 57 -> Icons.Default.Grain
+                61, 63, 65, 66, 67, 80, 81, 82 -> Icons.Default.Umbrella
+                71, 73, 75, 77, 85, 86 -> Icons.Default.AcUnit
+                95, 96, 99 -> Icons.Default.FlashOn
+                else -> Icons.Default.Umbrella
+            }
+        }
+
+        return when (code) {
+            0, 1 -> Icons.Default.WbSunny
+            2 -> Icons.Default.WbCloudy
+            95, 96, 99 -> Icons.Default.FlashOn
+            else -> Icons.Default.Cloud
+        }
+    }
 }
