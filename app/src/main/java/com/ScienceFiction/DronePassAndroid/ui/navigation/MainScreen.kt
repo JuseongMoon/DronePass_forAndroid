@@ -192,8 +192,8 @@ private val DismissDragThreshold = 100.dp
 private val ExpandDragThreshold = 50.dp
 
 // iOS 기본값은 0.5지만 Android phone은 지도 하단 컨트롤과 시각적으로 겹치므로
-// 초기 저장/설정 오버레이를 더 낮게 둔다. 위로 드래그하면 iOS처럼 0.9까지 확장된다.
-private const val SheetFractionDefault = 0.22f
+// 초기 저장/설정 오버레이를 낮은 하단 위치에 둔다. 위로 드래그하면 iOS처럼 0.9까지 확장된다.
+private const val SheetFractionDefault = 0.20f
 private const val SheetFractionExpanded = 0.9f
 private const val SheetFractionExpandTrigger = 0.7f
 private val SavedOverlayPhoneMaxHeight = 500.dp
