@@ -197,7 +197,7 @@ class FlightZoneOverlayManager {
      * 현재 표시 중인 모든 구역 목록 반환
      */
     fun getAllDisplayedZones(): List<DroneZoneFeature> {
-        return overlayToZoneMap.values.toList()
+        return deduplicateDisplayedFlightZones(overlayToZoneMap.values)
     }
 
     /**
@@ -242,4 +242,11 @@ class FlightZoneOverlayManager {
         selectedOverlay = overlay
         selectedOverlay?.outlineWidth = 4
     }
+}
+
+internal fun deduplicateDisplayedFlightZones(
+    zones: Iterable<DroneZoneFeature>
+): List<DroneZoneFeature> {
+    val seen = mutableSetOf<Pair<FlightZoneLayer, String>>()
+    return zones.filter { zone -> seen.add(zone.layer to zone.id) }
 }
