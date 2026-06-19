@@ -83,9 +83,8 @@ internal val AppInfoDroneOnestopIcon: ImageVector = Icons.Default.Verified
 internal val AppInfoBuildNumberIcon: ImageVector = Icons.Default.Numbers
 internal val AppInfoSearchIconColor = Color(0xFF00C7BE)
 
-internal fun appInfoVersionValue(versionName: String): String {
-    return versionName
-}
+internal fun appInfoVersionValue(versionName: String, versionCode: Int): String =
+    "$versionName ($versionCode)"
 
 internal fun appInfoBuildNumberValue(versionCode: Int): String = versionCode.toString()
 
@@ -230,7 +229,7 @@ fun AppInfoScreen(
             InfoRow(
                 icon = Icons.Default.Info,
                 title = stringResource(R.string.app_info_version_app),
-                value = appInfoVersionValue(BuildConfig.VERSION_NAME),
+                value = appInfoVersionValue(BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE),
             )
             HorizontalDivider(modifier = Modifier.padding(start = 64.dp))
             InfoRow(
