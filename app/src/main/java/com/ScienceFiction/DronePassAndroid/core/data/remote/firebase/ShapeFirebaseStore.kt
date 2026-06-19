@@ -117,6 +117,14 @@ internal fun shapeToFirestoreMergeData(shape: ShapeModel): Map<String, Any> {
     return data
 }
 
+internal fun shapeSoftDeleteFirestoreUpdateData(deletedAtMillis: Long): Map<String, Any> {
+    val tombstone = Timestamp(Date(deletedAtMillis))
+    return mapOf(
+        "deletedAt" to tombstone,
+        "updatedAt" to tombstone,
+    )
+}
+
 internal fun shapeFromFirestoreData(data: Map<String, Any?>): ShapeModel? {
     val id = data["id"] as? String ?: return null
     if (!isValidShapeId(id)) return null
@@ -315,12 +323,8 @@ class ShapeFirebaseStore @Inject constructor(
      */
     suspend fun softDeleteShape(userId: String, shapeId: String) {
         try {
-            val now = Timestamp(Date(System.currentTimeMillis()))
             shapesCollection(userId).document(shapeId).update(
-                mapOf(
-                    "deletedAt" to now,
-                    "updatedAt" to now
-                )
+                shapeSoftDeleteFirestoreUpdateData(System.currentTimeMillis())
             ).await()
         } catch (e: Exception) {
             if (isMissingFirestoreDocument(e)) {

@@ -222,6 +222,17 @@ class CrossPlatformFirestoreContractTest {
     }
 
     @Test
+    fun `Android soft delete writes iOS readable tombstone timestamps`() {
+        val data = shapeSoftDeleteFirestoreUpdateData(deletedAtMillis = 1_700_000_999_000L)
+
+        val deletedAt = data["deletedAt"] as Timestamp
+        val updatedAt = data["updatedAt"] as Timestamp
+        assertEquals(1_700_000_999_000L, deletedAt.toDate().time)
+        assertEquals(1_700_000_999_000L, updatedAt.toDate().time)
+        assertFalse(data.containsKey("deleted"))
+    }
+
+    @Test
     fun `shared Firestore integer numeric fields are not widened to Double on Android read`() {
         val shape = shapeFromFirestoreDocument(
             documentId = SHAPE_ID,
