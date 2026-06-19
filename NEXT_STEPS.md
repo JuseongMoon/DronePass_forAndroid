@@ -13,10 +13,11 @@
 | 워킹 트리 | clean |
 | 주요 검증 | `:app:testDebugUnitTest`, `:app:lintDebug`, `:app:assembleDebug`, `:app:minifyReleaseWithR8`, `:app:connectedDebugAndroidTest`, `:app:shapeParsingCoverageVerification`, `:app:testDebugUnitTest --tests "*MainScreenStartDestinationTest"`, `:app:testDebugUnitTest --tests "*MapScreenLayersTest"`, `:app:testDebugUnitTest --tests "*SettingsPreferenceKeysTest"`, `:app:testDebugUnitTest --tests "*SettingsPreferenceKeysTest" --tests "*NotificationPreferenceKeysTest" --tests "*SettingsEndDateAlarmPlanTest" --tests "*MainActivityKeepScreenAwakeTest"`, `:app:testDebugUnitTest --tests "*Auth*Test" --tests "*StringResourceCoverageTest"` 통과 |
 | Release readiness | 2026-06-19에 `:app:minifyReleaseWithR8` 통과, 실제 `keystore.properties`, `WEB_CLIENT_ID`, Firebase Android `oauth_client`가 없으면 `assembleRelease`/`bundleRelease`가 의도적으로 실패함을 재확인 |
-| 남은 성격 | 실기기 전체 회귀, 콘솔/스토어 운영 설정, 최종 iOS 동기화 검증 |
+| 남은 성격 | 공유 Firebase iOS↔Android 실계정 검증, 콘솔/스토어 운영 설정, 최종 release artifact 생성 |
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 2026-06-19 최신 HEAD `69e4b72` 기준 debug APK를 Android 15 실기기 `RFCW324TZ0Z`에 설치하고 cold launch/home/saved/settings smoke를 재확인했다. 기기에 앱 패키지가 없는 상태였으므로 `adb install -r app/build/outputs/apk/debug/app-debug.apk`로 설치했고, 최초 위치 권한 프롬프트는 앱 사용 중 허용으로 진행했다. `MainActivity` cold launch는 `LaunchState: COLD`, `TotalTime: 2111`, PID `16239`로 완료됐다. 홈 XML에서 Naver Map controls, 상단 `내 드론` 버튼 `[666,195][922,285]`와 드롭다운 원 `[945,195][1035,285]`의 top/height 정렬, `비행구역 레이어`, `스케치`, KP/날씨 카드, `새 도형 추가`, 하단 `지도`/`저장`/`설정` 렌더링을 확인했다. 저장/설정 오버레이는 둘 다 `[45,2129][1035,2340]`로 최신 9% 위치를 유지했고, `mCurrentFocus`/`mFocusedApp`는 `com.ScienceFiction.DronePassAndroid/.MainActivity`였다. `AndroidRuntime`/`ThemeUtils` 오류 필터는 비어 있었고 `dumpsys window lastanr`는 `<no ANR has occurred since boot>`였다.
 - 2026-06-19 최신 HEAD `b4a4153` 기준 release artifact 차단 경로를 재확인했다. `:app:assembleRelease`와 `:app:bundleRelease`는 각각 1초/760ms 안에 산출물 생성 전 차단됐으며, 실패 사유는 release signing 미설정, Google `WEB_CLIENT_ID` 미설정, Firebase Android `oauth_client` 미설정 세 가지로 의도한 메시지를 함께 출력했다.
 - 2026-06-19 최신 HEAD `7ef3e1a` 기준 release shrink를 재확인했다. `:app:minifyReleaseWithR8`는 Crashlytics mapping upload까지 `BUILD SUCCESSFUL`로 통과했고, 출력 경고는 기존과 같은 Naver Maps SDK stack map table warning 및 Play Services Location companion warning만 남았다.
 - 2026-06-19 최신 HEAD `a9756f3` 기준 전체 로컬 게이트를 다시 실행했다. `:app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:shapeParsingCoverageVerification`는 `BUILD SUCCESSFUL`로 통과했고, lint debug report는 최신 결과로 유지됐다.
