@@ -97,6 +97,7 @@ internal const val SketchPenPickerTransformOriginPivotY = 1f
 internal val SketchPenPickerButtonSize = 44.dp
 internal val SketchPenPickerButtonSpacing = 4.dp
 internal val SketchPenPickerContentWidth = 236.dp
+internal val SketchPenStrokeWidthOptions = listOf(2.0, 4.0, 6.0, 8.0, 10.0)
 internal val SketchOpacityCheckerboardSquareSize = 6.dp
 internal const val SketchOpacityCheckerboardDarkAlpha = 0.3f
 internal val SketchGradientSliderHeight = 30.dp
@@ -882,14 +883,12 @@ private fun StrokeWidthSelector(
     currentWidth: Double,
     onWidthChanged: (Double) -> Unit
 ) {
-    val widthOptions = listOf(2.0, 4.0, 6.0, 8.0, 10.0)
-
     Row(
         modifier = Modifier.width(SketchPenPickerContentWidth),
         horizontalArrangement = Arrangement.spacedBy(SketchPenPickerButtonSpacing),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        widthOptions.forEach { width ->
+        SketchPenStrokeWidthOptions.forEach { width ->
             val isSelected = width == currentWidth
             PenStrokeOptionButton(
                 width = width,

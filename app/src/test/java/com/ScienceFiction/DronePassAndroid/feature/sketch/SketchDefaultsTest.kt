@@ -10,6 +10,13 @@ import org.junit.Test
 class SketchDefaultsTest {
 
     @Test
+    fun `스케치 기본 펜 설정은 iOS SketchManager 초기값과 맞춘다`() {
+        assertEquals("#FF0000", DefaultSketchColor)
+        assertEquals(4.0, DefaultSketchStrokeWidth, 0.0)
+        assertEquals(1.0, DefaultSketchOpacity, 0.0)
+    }
+
+    @Test
     fun `스케치 설정 키는 iOS UserDefaults 이름과 동일하게 유지한다`() {
         assertEquals("sketchCurrentColor", SketchPreferenceKeys.CURRENT_COLOR.name)
         assertEquals("sketchCurrentStrokeWidth", SketchPreferenceKeys.CURRENT_STROKE_WIDTH.name)
@@ -185,6 +192,11 @@ class SketchDefaultsTest {
         assertEquals(44.dp, SketchPenPickerButtonSize)
         assertEquals(4.dp, SketchPenPickerButtonSpacing)
         assertEquals(236.dp, SketchPenPickerContentWidth)
+    }
+
+    @Test
+    fun `스케치 펜 굵기 선택지는 iOS PenPickerCard 와 맞춘다`() {
+        assertEquals(listOf(2.0, 4.0, 6.0, 8.0, 10.0), SketchPenStrokeWidthOptions)
     }
 
     @Test
