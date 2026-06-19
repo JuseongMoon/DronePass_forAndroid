@@ -244,7 +244,7 @@ class FcmServiceTest {
     }
 
     @Test
-    fun `FCM data-only 표시 제목 본문은 로컬 extra 키도 iOS처럼 사용한다`() {
+    fun `FCM data-only 제목 본문 파서는 로컬 extra 키도 iOS 알림 extras처럼 사용한다`() {
         val data = mapOf(
             NotificationScheduler.EXTRA_NOTIFICATION_TITLE to "도형 종료일 알림",
             NotificationScheduler.EXTRA_NOTIFICATION_BODY to "도형이 곧 종료됩니다.",
@@ -257,7 +257,7 @@ class FcmServiceTest {
     }
 
     @Test
-    fun `FCM data-only 표시 제목 본문도 첫 키가 빈 문자열이면 fallback 하지 않는다`() {
+    fun `FCM data-only 제목 본문 파서는 첫 키가 빈 문자열이어도 fallback 하지 않는다`() {
         val data = mapOf(
             NotificationScheduler.EXTRA_NOTIFICATION_TITLE to "",
             NotificationScheduler.EXTRA_NOTIFICATION_BODY to " ",
@@ -267,6 +267,11 @@ class FcmServiceTest {
 
         assertEquals("", extractNotificationTitle(data))
         assertEquals(" ", extractNotificationBody(data))
+    }
+
+    @Test
+    fun `FCM data-only 원격 메시지는 iOS처럼 직접 시스템 알림이나 팝업을 만들지 않는다`() {
+        assertFalse(shouldDisplayRemoteDataOnlyNotification())
     }
 
     @Test

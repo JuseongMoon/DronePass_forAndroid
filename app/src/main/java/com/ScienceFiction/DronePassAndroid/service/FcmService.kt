@@ -289,7 +289,10 @@ class FcmService : FirebaseMessagingService() {
         if (message.data.isNotEmpty()) {
             val title = extractNotificationTitle(message.data) ?: getString(R.string.app_name)
             val body = extractNotificationBody(message.data) ?: ""
-            if (message.notification == null) {
+            if (
+                message.notification == null &&
+                shouldDisplayRemoteDataOnlyNotification()
+            ) {
                 publishForegroundNotification(title = title, body = body, shapeId = shapeId)
                 showNotification(title = title, body = body, shapeId = shapeId)
             }

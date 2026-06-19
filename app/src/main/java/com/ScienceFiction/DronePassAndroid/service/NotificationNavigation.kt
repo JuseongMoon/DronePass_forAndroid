@@ -140,6 +140,10 @@ internal fun foregroundNotificationForRemoteDelivery(
     )
 }
 
+internal fun shouldDisplayRemoteDataOnlyNotification(): Boolean {
+    return false
+}
+
 internal fun notificationClickExtras(
     shapeId: String? = null,
     title: String? = null,
