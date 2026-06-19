@@ -68,6 +68,19 @@ class AndroidManifestContractTest {
     }
 
     @Test
+    fun `Naver Maps SDK 는 신규 NCP key metadata 를 사용한다`() {
+        val manifest = parseManifest()
+        val application = manifest.findApplication()
+
+        assertEquals(
+            "\${NAVER_MAP_KEY_ID}",
+            application.findMetaData("com.naver.maps.map.NCP_KEY_ID").getAttribute("android:value"),
+        )
+        assertTrue(application.findMetaDataOrNull("com.naver.maps.map.NCP_CLIENT_ID") == null)
+        assertTrue(application.findMetaDataOrNull("com.naver.maps.map.CLIENT_ID") == null)
+    }
+
+    @Test
     fun `FCM 과 로컬 알림 리시버는 외부에서 직접 실행되지 않는다`() {
         val manifest = parseManifest()
 
@@ -154,6 +167,14 @@ class AndroidManifestContractTest {
     private fun Element.hasIntentAction(name: String): Boolean {
         return descendantsByTagName("action")
             .any { action -> action.getAttribute("android:name") == name }
+    }
+
+    private fun Element.findMetaData(name: String): Element =
+        findMetaDataOrNull(name) ?: error("meta-data not found in manifest application: $name")
+
+    private fun Element.findMetaDataOrNull(name: String): Element? {
+        return childElementsByTagName("meta-data")
+            .firstOrNull { metaData -> metaData.getAttribute("android:name") == name }
     }
 
     private fun Element.childElementsByTagName(tagName: String): Sequence<Element> {
