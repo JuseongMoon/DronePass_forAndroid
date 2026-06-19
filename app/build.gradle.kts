@@ -69,8 +69,8 @@ fun Properties.localProperty(vararg names: String): String =
 fun String.asBuildConfigString(): String =
     "\"${replace("\\", "\\\\").replace("\"", "\\\"")}\""
 
-val naverMapKeyId = localProperties.localProperty("NAVER_MAP_KEY_ID", "NAVER_MAP_CLIENT_ID")
-val naverMapKeySecret = localProperties.localProperty("NAVER_MAP_KEY_SECRET", "NAVER_MAP_CLIENT_SECRET")
+val naverMapKeyId = localProperties.localProperty("NAVER_MAP_KEY_ID")
+val naverMapKeySecret = localProperties.localProperty("NAVER_MAP_KEY_SECRET")
 val vworldApiKey = localProperties.localProperty("VWORLD_API_KEY")
 val webClientId = localProperties.getProperty("WEB_CLIENT_ID")?.trim().orEmpty()
 
