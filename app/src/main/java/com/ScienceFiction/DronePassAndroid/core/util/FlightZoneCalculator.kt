@@ -100,7 +100,8 @@ object FlightZoneCalculator {
     fun checkFlightPermission(
         lat: Double,
         lon: Double,
-        zones: List<DroneZoneFeature>
+        zones: List<DroneZoneFeature>,
+        text: FlightPermissionText = FlightPermissionText.Korean
     ): FlightPermissionResult {
         val prohibitedZones = mutableListOf<DroneZoneFeature>()
         val restrictedZones = mutableListOf<DroneZoneFeature>()
@@ -125,28 +126,28 @@ object FlightZoneCalculator {
                 canFly = false,
                 level = FlightRestrictionLevel.PROHIBITED,
                 zones = prohibitedZones,
-                message = "${prohibitedZones.layerNames()} 구역입니다. 비행이 금지되어 있습니다.",
-                details = prohibitedZones.permissionDetails(),
+                message = text.prohibitedMessage(prohibitedZones.layerNames(text)),
+                details = prohibitedZones.permissionDetails(text),
             )
             restrictedZones.isNotEmpty() -> FlightPermissionResult(
                 canFly = false,
                 level = FlightRestrictionLevel.RESTRICTED,
                 zones = restrictedZones,
-                message = "${restrictedZones.layerNames()} 구역입니다. 비행 승인이 필요합니다.",
-                details = restrictedZones.permissionDetails(),
+                message = text.restrictedMessage(restrictedZones.layerNames(text)),
+                details = restrictedZones.permissionDetails(text),
             )
             advisoryZones.isNotEmpty() -> FlightPermissionResult(
                 canFly = true,
                 level = FlightRestrictionLevel.ADVISORY,
                 zones = advisoryZones,
-                message = "비행 가능하나 주의가 필요한 지역입니다.",
-                details = advisoryZones.permissionDetails(),
+                message = text.advisoryMessage,
+                details = advisoryZones.permissionDetails(text),
             )
             else -> FlightPermissionResult(
                 canFly = true,
                 level = FlightRestrictionLevel.ADVISORY,
                 zones = emptyList(),
-                message = "해당 지역은 비행 가능합니다.",
+                message = text.allowedMessage,
                 details = emptyList(),
             )
         }
@@ -196,11 +197,31 @@ object FlightZoneCalculator {
     }
 }
 
-private fun List<DroneZoneFeature>.layerNames(): String =
-    joinToString(separator = ", ") { it.layer.displayName }
+private fun List<DroneZoneFeature>.layerNames(text: FlightPermissionText): String =
+    joinToString(separator = ", ") { zone -> text.layerName(zone) }
 
-private fun List<DroneZoneFeature>.permissionDetails(): List<String> =
-    map { zone -> "${zone.layer.displayName}: ${zone.zoneCode ?: zone.layer.displayName}" }
+private fun List<DroneZoneFeature>.permissionDetails(text: FlightPermissionText): List<String> =
+    map { zone -> "${text.layerName(zone)}: ${text.detailName(zone)}" }
+
+data class FlightPermissionText(
+    val allowedMessage: String,
+    val advisoryMessage: String,
+    val prohibitedMessage: (String) -> String,
+    val restrictedMessage: (String) -> String,
+    val layerName: (DroneZoneFeature) -> String,
+    val detailName: (DroneZoneFeature) -> String
+) {
+    companion object {
+        val Korean = FlightPermissionText(
+            allowedMessage = "해당 지역은 비행 가능합니다.",
+            advisoryMessage = "비행 가능하나 주의가 필요한 지역입니다.",
+            prohibitedMessage = { layerNames -> "$layerNames 구역입니다. 비행이 금지되어 있습니다." },
+            restrictedMessage = { layerNames -> "$layerNames 구역입니다. 비행 승인이 필요합니다." },
+            layerName = { zone -> zone.layer.displayName },
+            detailName = { zone -> zone.zoneCode ?: zone.layer.displayName },
+        )
+    }
+}
 
 /**
  * 비행 가능 여부 판정 결과

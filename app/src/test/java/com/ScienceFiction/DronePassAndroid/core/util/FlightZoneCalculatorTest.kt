@@ -358,6 +358,52 @@ class FlightZoneCalculatorTest {
         assertEquals(listOf("국립자연공원: 국립자연공원"), result.details)
     }
 
+    @Test
+    fun `비행 가능 판정 메시지와 상세 이름은 iOS 로컬라이즈 값을 주입할 수 있다`() {
+        val zone = DroneZoneFeature(
+            id = "alert-zone",
+            layer = FlightZoneLayer.ALERT,
+            polygons = listOf(unitSquare),
+            zoneCode = "A1",
+            upperAltitude = null,
+            lowerAltitude = null,
+            zoneName = "경계구역",
+        )
+        val englishText = FlightPermissionText(
+            allowedMessage = "Flight is allowed in this area.",
+            advisoryMessage = "Flight allowed but caution required.",
+            prohibitedMessage = { layerNames -> "$layerNames zone. Flight is prohibited." },
+            restrictedMessage = { layerNames -> "$layerNames zone. Flight approval required." },
+            layerName = { feature ->
+                when (feature.layer) {
+                    FlightZoneLayer.ALERT -> "Alert Zone"
+                    else -> feature.layer.displayName
+                }
+            },
+            detailName = { feature -> feature.zoneCode ?: "Unknown" },
+        )
+
+        val restricted = FlightZoneCalculator.checkFlightPermission(
+            lat = 37.5,
+            lon = 126.5,
+            zones = listOf(zone),
+            text = englishText,
+        )
+        val allowed = FlightZoneCalculator.checkFlightPermission(
+            lat = 39.0,
+            lon = 126.5,
+            zones = emptyList(),
+            text = englishText,
+        )
+
+        assertFalse(restricted.canFly)
+        assertEquals("Alert Zone zone. Flight approval required.", restricted.message)
+        assertEquals(listOf("Alert Zone: A1"), restricted.details)
+        assertTrue(allowed.canFly)
+        assertEquals("Flight is allowed in this area.", allowed.message)
+        assertEquals(emptyList<String>(), allowed.details)
+    }
+
     // endregion
 
     // region distance 메서드 회귀 (Haversine)

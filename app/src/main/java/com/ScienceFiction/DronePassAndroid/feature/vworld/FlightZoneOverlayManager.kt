@@ -3,6 +3,9 @@ package com.ScienceFiction.DronePassAndroid.feature.vworld
 import android.util.Log
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.DroneZoneFeature
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.FlightZoneLayer
+import com.ScienceFiction.DronePassAndroid.core.util.FlightPermissionResult
+import com.ScienceFiction.DronePassAndroid.core.util.FlightPermissionText
+import com.ScienceFiction.DronePassAndroid.core.util.FlightZoneCalculator
 import com.naver.maps.geometry.LatLng
 import com.naver.maps.geometry.LatLngBounds
 import com.naver.maps.map.NaverMap
@@ -195,6 +198,25 @@ class FlightZoneOverlayManager {
      */
     fun getAllDisplayedZones(): List<DroneZoneFeature> {
         return overlayToZoneMap.values.toList()
+    }
+
+    /**
+     * 특정 좌표의 비행 가능 여부 확인.
+     *
+     * iOS `FlightZoneOverlayManager.checkFlightPermission(at:)` 와 같은 공개 진입점이다.
+     * 현재 Android 는 지도에 반영된 구역 목록을 기준으로 판정한다.
+     */
+    fun checkFlightPermission(
+        lat: Double,
+        lon: Double,
+        text: FlightPermissionText = FlightPermissionText.Korean
+    ): FlightPermissionResult {
+        return FlightZoneCalculator.checkFlightPermission(
+            lat = lat,
+            lon = lon,
+            zones = getAllDisplayedZones(),
+            text = text,
+        )
     }
 
     private fun selectOverlay(overlay: PolygonOverlay) {
