@@ -30,4 +30,10 @@ class ProfileSheetParityTest {
         assertEquals(2.dp, ProfileInfoDividerVerticalPadding)
         assertEquals(16.dp, ProfileInfoValueLeadingSpacing)
     }
+
+    @Test
+    fun `계정 관리 섹션은 iOS ProfileView처럼 로그인 상태와 무관하게 표시한다`() {
+        assertEquals(true, shouldShowProfileAccountSection(isLoggedIn = true))
+        assertEquals(true, shouldShowProfileAccountSection(isLoggedIn = false))
+    }
 }

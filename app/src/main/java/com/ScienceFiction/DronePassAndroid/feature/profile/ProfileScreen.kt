@@ -245,7 +245,7 @@ fun ProfileScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             // ===== 4. 계정 관리 섹션 (회원 탈퇴만) =====
-            if (isLoggedIn) {
+            if (shouldShowProfileAccountSection(isLoggedIn)) {
                 SectionHeader(title = stringResource(R.string.profile_section_account))
 
                 SettingsItem(
@@ -531,6 +531,10 @@ internal fun shouldEnableProfileManualBackup(isSyncing: Boolean): Boolean = !isS
 
 internal fun shouldEnableProfileAccountAction(isAccountActionInProgress: Boolean): Boolean =
     !isAccountActionInProgress
+
+internal fun shouldShowProfileAccountSection(isLoggedIn: Boolean): Boolean {
+    return true
+}
 
 private fun ProfileLoginProvider.displayText(): String {
     return when (this) {
