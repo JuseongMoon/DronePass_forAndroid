@@ -1,6 +1,6 @@
 # DronePass Android 작업 이어가기
 
-> 마지막 업데이트: 2026-06-19
+> 마지막 업데이트: 2026-06-20
 > 브랜치: `fix/critical-pri0-fixes`
 > 상태: iOS 동작 대조와 Android 출시 하드닝 진행 중
 
@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 2026-06-20 최신 HEAD `6991b6b` 기준 debug APK를 Android 15 실기기 `RFCW324TZ0Z`에 데이터 유지 재설치하고 cold launch/home/saved/settings smoke를 재확인했다. `adb install -r app/build/outputs/apk/debug/app-debug.apk`는 성공했고, `MainActivity` launch는 `Status: ok`, `LaunchState: COLD`, `TotalTime: 1906`, PID `19152`로 완료됐다. 홈 XML에서 Naver Map controls, `NaverMapDebug: 네이버 지도 준비 완료`, 상단 드론 선택 버튼 `[666,195][922,285]`와 드롭다운 원 `[945,195][1035,285]`의 top/height 정렬, `비행구역 레이어`, `스케치`, KP/날씨 카드, `새 도형 추가`, 하단 `지도`/`저장`/`설정` 렌더링을 확인했다. 저장/설정 오버레이는 둘 다 `[45,2153][1035,2340]`로 하단에 붙었고 각각 `저장 목록`/`설정` 선택 상태가 보였다. `mCurrentFocus`/`mFocusedApp`는 `com.ScienceFiction.DronePassAndroid/.MainActivity`, `dumpsys activity lastanr`는 `<no ANR has occurred since boot>`, DronePass PID 필터 logcat에는 지도 준비 로그 외 `FATAL EXCEPTION`/`AndroidRuntime`/`ThemeUtils`/ANR 항목이 없었다.
 - 2026-06-19 현재 작업 기준 NCP Maps Android SDK 인증 메타데이터 회귀를 테스트로 고정했다. `AndroidManifest.xml`은 신규 Maps SDK 3.x 계약인 `com.naver.maps.map.NCP_KEY_ID`와 `${NAVER_MAP_KEY_ID}` placeholder만 사용해야 하며, 구 AI NAVER API 방식의 `com.naver.maps.map.NCP_CLIENT_ID`/`CLIENT_ID` 메타데이터가 재도입되지 않도록 `AndroidManifestContractTest`에 계약을 추가했다. REST Geocoding 헤더 회귀와 함께 `:app:testDebugUnitTest --tests "*AndroidManifestContractTest" --tests "*NetworkModuleTest" :app:assembleDebug` 통과.
 - 2026-06-19 현재 작업 기준 `FlightZoneCalculator.createBoundingBox`의 좌표 반경 bbox 계산을 iOS `FlightZoneCalculator.createBoundingBox(around:radiusMeters:)`와 같은 WGS84 반지름 공식으로 맞췄다. 기존 Android는 111km/degree 근사와 km 입력 계약이었지만, iOS처럼 meters 입력과 `6378137.0` 반지름 기반 `latDelta/lonDelta`를 사용한다. `:app:testDebugUnitTest --tests "com.ScienceFiction.DronePassAndroid.core.util.FlightZoneCalculatorTest"` 및 `:app:testDebugUnitTest :app:lintDebug :app:assembleDebug` 통과.
 - 2026-06-19 현재 작업 기준 VWorld 주변 구역 검색 공개 API를 iOS `FlightZoneCalculator.findZonesNearby`/`FlightZoneOverlayManager.findNearbyZones(at:radius:)`와 맞췄다. Android 계산기도 polygon/ring 전체 vertex를 기준으로 radius 이내 구역을 찾고 layer priority 오름차순으로 반환하며, overlay manager에는 기본 1000m 반경 공개 진입점을 추가했다. `:app:testDebugUnitTest --tests "com.ScienceFiction.DronePassAndroid.core.util.FlightZoneCalculatorTest"` 및 `:app:testDebugUnitTest :app:lintDebug :app:assembleDebug` 통과.
