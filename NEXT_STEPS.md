@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 2026-06-19 최신 HEAD `a9756f3` 기준 전체 로컬 게이트를 다시 실행했다. `:app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:shapeParsingCoverageVerification`는 `BUILD SUCCESSFUL`로 통과했고, lint debug report는 최신 결과로 유지됐다.
 - 2026-06-19 최신 HEAD `b811373` 기준 Android 15 실기기 `SM-A346N - 15`에서 `:app:connectedDebugAndroidTest`를 재실행해 instrumentation 10 tests가 모두 통과했다.
 - 2026-06-19 VWorld 상세/레이어 선택을 iOS `VWorldZoneDetailView`/`FlightZoneLayerSelector` 기준으로 다시 대조했다. 문화재 상세의 `문화재명`은 iOS가 `zoneCode`를 표시하지만 `zoneCode` 자체가 `alias ?? remark`이고 Android `heritageName`도 같은 값을 쓰므로 사용자 표시값은 일치한다. 이 필드 계약을 `VWorldModelsTest`에 추가로 고정했고, 용도지역(`uname`), 행정구역(`sido_name` + `sigg_name`), 고시연도/번호도 함께 검증한다. `:app:testDebugUnitTest --tests "*VWorldModelsTest" --tests "*VWorldZoneDetailSheetTest" --tests "*FlightZoneLayerSelectorTest"` 통과.
 - 2026-06-19 사용자 피드백 기준으로 저장/설정 phone 오버레이를 한 번 더 낮췄다. 원인은 두 오버레이의 닫힌 높이와 설정 오버레이의 닫힘/축소 복귀값이 공통 `SheetFractionDefault`에 묶여 있어 이 값이 커지면 저장/설정 오버레이 상단이 동시에 위로 올라가는 구조이기 때문이다. Android phone 기본값을 10%에서 9%로 조정했고, `MainScreenStartDestinationTest` 계약도 9% 기준으로 갱신했다. `:app:testDebugUnitTest --tests "com.ScienceFiction.DronePassAndroid.ui.navigation.MainScreenStartDestinationTest" :app:assembleDebug` 통과. debug APK를 Android 15 실기기 `RFCW324TZ0Z`에 데이터 유지 재설치한 뒤 저장/설정 오버레이가 모두 `[45,2129][1035,2340]`로 내려온 것을 XML로 확인했다.
