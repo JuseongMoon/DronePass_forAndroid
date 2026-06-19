@@ -57,9 +57,21 @@ plugins {
 val localProperties = Properties().apply {
     val localPropertiesFile = rootProject.file("local.properties")
     if (localPropertiesFile.exists()) {
-        load(localPropertiesFile.inputStream())
+        localPropertiesFile.inputStream().use(::load)
     }
 }
+
+fun Properties.localProperty(vararg names: String): String =
+    names.firstNotNullOfOrNull { name ->
+        getProperty(name)?.trim()?.takeIf { it.isNotEmpty() }
+    }.orEmpty()
+
+fun String.asBuildConfigString(): String =
+    "\"${replace("\\", "\\\\").replace("\"", "\\\"")}\""
+
+val naverMapKeyId = localProperties.localProperty("NAVER_MAP_KEY_ID", "NAVER_MAP_CLIENT_ID")
+val naverMapKeySecret = localProperties.localProperty("NAVER_MAP_KEY_SECRET", "NAVER_MAP_CLIENT_SECRET")
+val vworldApiKey = localProperties.localProperty("VWORLD_API_KEY")
 val webClientId = localProperties.getProperty("WEB_CLIENT_ID")?.trim().orEmpty()
 
 // keystore.properties 에서 Release 서명 정보 로드 (CI/로컬 모두 지원)
@@ -93,6 +105,9 @@ val releaseSigningErrorMessage =
 val releaseWebClientIdErrorMessage =
     "Google sign-in WEB_CLIENT_ID is not configured. Set WEB_CLIENT_ID in " +
         "local.properties to the Firebase Web client ID before building release artifacts."
+val releaseNaverMapKeyErrorMessage =
+    "Naver Maps credentials are not configured. Set NAVER_MAP_KEY_ID and " +
+        "NAVER_MAP_KEY_SECRET in local.properties before building release artifacts."
 val googleServicesOauthClientErrorMessage =
     "Firebase Android OAuth client is not configured in app/google-services.json. Register the " +
         "debug/release SHA fingerprints in Firebase Console, download the updated google-services.json, " +
@@ -105,6 +120,9 @@ val releaseReadinessErrorMessage: String?
     get() = listOfNotNull(
         releaseSigningErrorMessage.takeUnless { hasReleaseSigningConfig },
         releaseWebClientIdErrorMessage.takeUnless { isGoogleWebClientIdConfigured(webClientId) },
+        releaseNaverMapKeyErrorMessage.takeUnless {
+            naverMapKeyId.isNotBlank() && naverMapKeySecret.isNotBlank()
+        },
         googleServicesOauthClientErrorMessage.takeUnless { hasGoogleServicesAndroidOauthClient },
     ).takeIf { it.isNotEmpty() }?.joinToString(separator = "\n")
 
@@ -124,13 +142,13 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         // Manifest placeholders (AndroidManifest.xml에서 사용)
-        manifestPlaceholders["NAVER_MAP_CLIENT_ID"] = localProperties.getProperty("NAVER_MAP_CLIENT_ID", "")
+        manifestPlaceholders["NAVER_MAP_KEY_ID"] = naverMapKeyId
 
         // API 키 (local.properties에서 로드)
-        buildConfigField("String", "NAVER_MAP_CLIENT_ID", "\"${localProperties.getProperty("NAVER_MAP_CLIENT_ID", "")}\"")
-        buildConfigField("String", "NAVER_MAP_CLIENT_SECRET", "\"${localProperties.getProperty("NAVER_MAP_CLIENT_SECRET", "")}\"")
-        buildConfigField("String", "VWORLD_API_KEY", "\"${localProperties.getProperty("VWORLD_API_KEY", "")}\"")
-        buildConfigField("String", "WEB_CLIENT_ID", "\"$webClientId\"")
+        buildConfigField("String", "NAVER_MAP_KEY_ID", naverMapKeyId.asBuildConfigString())
+        buildConfigField("String", "NAVER_MAP_KEY_SECRET", naverMapKeySecret.asBuildConfigString())
+        buildConfigField("String", "VWORLD_API_KEY", vworldApiKey.asBuildConfigString())
+        buildConfigField("String", "WEB_CLIENT_ID", webClientId.asBuildConfigString())
     }
 
     bundle {

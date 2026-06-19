@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 2026-06-19 현재 작업 기준 iOS의 NCP Maps 콘솔 키 이전을 Android에도 반영했다. Android Maps SDK 3.23.1은 기존처럼 `com.naver.maps.map.NCP_KEY_ID`와 `NaverMapSdk.NcpKeyClient(...)`를 사용하되, 로컬 설정명을 `NAVER_MAP_KEY_ID`/`NAVER_MAP_KEY_SECRET`로 갱신하고 Manifest placeholder와 REST Geocoding/Reverse Geocoding `BuildConfig` 헤더가 모두 새 이름을 보도록 정리했다. 실제 키는 `.gitignore`된 `local.properties`에만 남기고 README/CLAUDE의 구버전 `CLIENT_ID` 하드코딩 예시는 제거했다. `:app:testDebugUnitTest --tests "*NetworkModuleTest" :app:assembleDebug` 통과.
 - 2026-06-19 현재 작업 기준 프로필 시트의 계정 관리 섹션 노출 조건을 iOS `ProfileView`와 다시 맞췄다. iOS는 `ProfileView` 내부에서 로그인 상태 조건 없이 회원 탈퇴 섹션을 항상 렌더링하므로, Android도 프로필 시트가 열린 상태에서는 계정 관리 섹션을 로그인 상태와 무관하게 표시한다. `ProfileSheetParityTest`에 이 계약을 추가했고, `:app:testDebugUnitTest --tests "*ProfileSheetParityTest" --tests "*ProfileViewModelTest" :app:assembleDebug` 통과.
 - 2026-06-19 현재 작업 기준 크로스플랫폼 대량 동기화 게이트(TC-CROSS-04)의 로컬 회귀망을 보강했다. 실제 공유 Firebase 100개 E2E는 실계정/콘솔 설정 후 `CROSS_PLATFORM_E2E_RUNBOOK.md`로 검증해야 하지만, Android 쪽에서는 iOS wire-format Shape fixture 100개가 document id 손실 없이 모두 파싱되는지와 서버 100개 항목이 full sync/filterServerNewer 적용 대상으로 빠짐없이 보존되는지를 테스트로 고정했다. `:app:testDebugUnitTest --tests "*CrossPlatformFirestoreContractTest" --tests "*SyncMergeTest"` 통과.
 - 2026-06-19 현재 작업 기준 주소 검색 시트의 geocoding 응답 처리를 iOS `SearchAddressView`/`NaverGeocodingService.geocode`/`ShapeEditView`와 맞췄다. Android는 기존에 `status != OK`를 빈 결과 안내로 숨기고, x/y 좌표가 없는 주소 결과를 사전 필터링하거나 클릭 시 무시했지만, iOS는 malformed 응답은 오류로 노출하고 선택된 주소는 좌표 파싱 성공 여부와 별개로 반영한다. 이제 Android도 `status != OK` 또는 `addresses` 누락은 오류로 처리하고, x/y가 깨진 결과도 목록/선택 주소는 유지하되 좌표와 좌표 텍스트만 기존 값을 보존한다. `:app:testDebugUnitTest --tests "*GeocodingRepositoryTest" --tests "*SearchAddressSheetTest" --tests "*ShapeEditDefaultsTest"` 및 `:app:assembleDebug` 통과.
@@ -740,14 +741,14 @@ iOS와 Android가 공유하는 `users/{uid}/shapes`, `users/{uid}/sketches`, `us
 - Firebase Android 앱 SHA-1/SHA-256 등록
 - Firebase Apple provider OAuth 설정 확인
 - Firebase Web client id를 `local.properties`의 `WEB_CLIENT_ID`에 설정
-- Naver Cloud Android 앱 패키지명/SHA-1 등록
+- NCP Maps Android 앱 패키지명/SHA-1 등록
 - VWorld API key 운영 키 확인
 - FCM 서버 payload의 `shapeId` 또는 `shape_id`, `title`, `body` 형식 확인
 
 2026-06-09 로컬 설정 확인:
 
 - `applicationId`와 `app/google-services.json`의 `package_name`은 `com.ScienceFiction.DronePassAndroid`로 일치
-- `local.properties`의 `NAVER_MAP_CLIENT_ID`, `NAVER_MAP_CLIENT_SECRET`, `VWORLD_API_KEY`는 값이 있음
+- `local.properties`의 `NAVER_MAP_KEY_ID`, `NAVER_MAP_KEY_SECRET`, `VWORLD_API_KEY`는 값이 있음
 - `local.properties`의 `WEB_CLIENT_ID`는 현재 비어 있음
   - Android Google 로그인은 이 값이 설정되어야 동작함
   - 값이 비어 있으면 앱은 Google 로그인 시 명시적인 설정 누락 오류를 표시하도록 보강됨

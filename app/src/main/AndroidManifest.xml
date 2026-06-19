@@ -64,7 +64,7 @@
         <!-- 네이버 지도 NCP 키 (local.properties에서 로드) -->
         <meta-data
             android:name="com.naver.maps.map.NCP_KEY_ID"
-            android:value="${NAVER_MAP_CLIENT_ID}" />
+            android:value="${NAVER_MAP_KEY_ID}" />
 
         <!-- AppCompat per-app language 저장 (Android 12 이하 포함) -->
         <service

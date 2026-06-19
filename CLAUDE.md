@@ -87,7 +87,7 @@ DronePass Android는 iOS DronePass의 Android 포팅 프로젝트입니다. 드�
 - Lifecycle Runtime KTX
 - Jetpack Compose (UI, Material3, Tooling)
 - Activity Compose
-- **네이버 Maps SDK 3.19.1**
+- **네이버 Maps SDK 3.23.1**
 - **Google Play Services Location 21.3.0**
 - **Accompanist Permissions 0.36.0**
 - JUnit (Unit Testing)
@@ -95,15 +95,23 @@ DronePass Android는 iOS DronePass의 Android 포팅 프로젝트입니다. 드�
 
 ## Important Configuration
 
-### Naver Maps Client ID
-`app/src/main/AndroidManifest.xml`에서 네이버 지도 클라이언트 ID 설정:
+### Naver Maps NCP Key
+네이버 지도 SDK key id는 `local.properties`의 `NAVER_MAP_KEY_ID`를 통해
+`app/src/main/AndroidManifest.xml`의 manifest placeholder로 주입합니다. 실제 키는
+커밋하지 않습니다.
+
 ```xml
 <meta-data
-    android:name="com.naver.maps.map.CLIENT_ID"
-    android:value="47b5di8weq" />
+    android:name="com.naver.maps.map.NCP_KEY_ID"
+    android:value="${NAVER_MAP_KEY_ID}" />
 ```
 
-⚠️ **주의**: 네이버 클라우드 플랫폼에서 Android 앱(`com.ScienceFiction.DronePassAndroid`)으로 등록 및 클라이언트 ID 발급 필요
+Geocoding/Reverse Geocoding REST API는 `NAVER_MAP_KEY_ID`와
+`NAVER_MAP_KEY_SECRET`을 `BuildConfig`로 주입해 `X-NCP-APIGW-API-KEY-ID` /
+`X-NCP-APIGW-API-KEY` 헤더에 사용합니다.
+
+⚠️ **주의**: NCP Maps Console에서 Android 앱(`com.ScienceFiction.DronePassAndroid`)으로
+등록하고 현재 설치 APK 서명 인증서의 SHA-1을 등록해야 합니다.
 
 ### Permissions
 앱이 요구하는 권한:

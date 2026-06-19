@@ -68,8 +68,8 @@ object NetworkModule {
             .readTimeout(30, TimeUnit.SECONDS)
             .addInterceptor { chain ->
                 val request = chain.request().newBuilder()
-                    .addHeader(NaverApiKeyIdHeader, BuildConfig.NAVER_MAP_CLIENT_ID)
-                    .addHeader(NaverApiKeyHeader, BuildConfig.NAVER_MAP_CLIENT_SECRET)
+                    .addHeader(NaverApiKeyIdHeader, BuildConfig.NAVER_MAP_KEY_ID)
+                    .addHeader(NaverApiKeyHeader, BuildConfig.NAVER_MAP_KEY_SECRET)
                     .build()
                 chain.proceed(request)
             }

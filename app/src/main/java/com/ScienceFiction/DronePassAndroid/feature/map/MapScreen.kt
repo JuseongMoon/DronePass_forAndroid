@@ -104,7 +104,7 @@ fun MapScreen(
 
     val mapView = remember {
         NaverMapSdk.getInstance(context).client =
-            NaverMapSdk.NcpKeyClient(BuildConfig.NAVER_MAP_CLIENT_ID)
+            NaverMapSdk.NcpKeyClient(BuildConfig.NAVER_MAP_KEY_ID)
         MapView(context)
     }
     var naverMap by remember { mutableStateOf<NaverMap?>(null) }

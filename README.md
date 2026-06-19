@@ -63,15 +63,17 @@ app/src/main/java/com/ScienceFiction/DronePassAndroid/
 프로젝트 루트의 `local.properties`에 로컬 전용 키를 설정합니다. 실제 키는 커밋하지 않습니다.
 
 ```properties
-NAVER_MAP_CLIENT_ID=YOUR_NAVER_MAP_CLIENT_ID
-NAVER_MAP_CLIENT_SECRET=YOUR_NAVER_MAP_CLIENT_SECRET
+NAVER_MAP_KEY_ID=YOUR_NCP_MAPS_KEY_ID
+NAVER_MAP_KEY_SECRET=YOUR_NCP_MAPS_KEY_SECRET
 VWORLD_API_KEY=YOUR_VWORLD_API_KEY
 WEB_CLIENT_ID=YOUR_FIREBASE_WEB_CLIENT_ID
 ```
 
 Firebase 사용을 위해 `app/google-services.json`도 필요합니다.
 
-네이버 지도 키는 `AndroidManifest.xml`의 `com.naver.maps.map.NCP_KEY_ID` 메타데이터에 Gradle manifest placeholder로 주입됩니다. Naver Cloud Console에는 Android 앱 패키지명과 SHA-1 지문을 등록해야 합니다.
+네이버 지도 SDK 키는 `AndroidManifest.xml`의 `com.naver.maps.map.NCP_KEY_ID` 메타데이터에 Gradle manifest placeholder로 주입됩니다. Geocoding/Reverse Geocoding REST API 키도 같은 `local.properties` 값에서 `BuildConfig`로 주입됩니다. 실제 키는 커밋하지 않습니다.
+
+NCP Maps Console에는 Android 앱 패키지명과 SHA-1 지문을 등록해야 합니다.
 
 - 패키지명: `com.ScienceFiction.DronePassAndroid`
 - Debug SHA-1 확인:
@@ -137,9 +139,9 @@ Android 13 이상에서는 알림 권한을 허용해야 FCM/로컬 알림을 �
 
 지도가 표시되지 않는 경우:
 
-- `local.properties`에 `NAVER_MAP_CLIENT_ID`가 설정되어 있는지 확인합니다.
-- Naver Cloud Console의 Android 앱 등록 패키지명이 `com.ScienceFiction.DronePassAndroid`인지 확인합니다.
-- 현재 설치한 앱 서명 인증서의 SHA-1이 Naver Cloud Console에 등록되어 있는지 확인합니다.
+- `local.properties`에 `NAVER_MAP_KEY_ID`와 `NAVER_MAP_KEY_SECRET`이 설정되어 있는지 확인합니다.
+- NCP Maps Console의 Android 앱 등록 패키지명이 `com.ScienceFiction.DronePassAndroid`인지 확인합니다.
+- 현재 설치한 앱 서명 인증서의 SHA-1이 NCP Maps Console에 등록되어 있는지 확인합니다.
 - 디바이스 또는 에뮬레이터의 인터넷 연결을 확인합니다.
 - `adb logcat | grep -i naver`로 지도 SDK 로그를 확인합니다.
 
