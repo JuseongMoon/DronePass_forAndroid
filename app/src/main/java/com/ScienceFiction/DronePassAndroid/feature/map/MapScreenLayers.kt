@@ -250,7 +250,7 @@ internal fun MapFloatingControls(
         // iOS `droneDropdownView`: .padding(.top, safeAreaInsets.top + dropdownTopPadding)
         // dropdownTopPadding 은 화면 크기별 40~60dp. 안드로이드는 statusBarsPadding 으로
         // 상태바 영역을 보호한 뒤, iOS iPhone 12/13/14/15 기준값(40dp) 을 추가 오프셋으로 사용한다.
-        if (!isSketchMode && mapReady) {
+        if (shouldShowMapDroneDropdown(isSketchMode = isSketchMode)) {
             DroneSelectionDropdown(
                 activeDrones = activeDrones,
                 selectedDroneIds = selectedDroneIds,
@@ -363,6 +363,10 @@ internal fun shouldRenderFlightZoneOverlays(
     isSketchMode: Boolean,
     koreaFeaturesEnabled: Boolean = true,
 ): Boolean = mapReady && !isSketchMode && koreaFeaturesEnabled
+
+internal fun shouldShowMapDroneDropdown(
+    isSketchMode: Boolean,
+): Boolean = !isSketchMode
 
 internal fun shouldShowFlightZoneLayerSelector(
     koreaFeaturesEnabled: Boolean,

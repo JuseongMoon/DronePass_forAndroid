@@ -46,6 +46,12 @@ class MapScreenLayersTest {
     }
 
     @Test
+    fun `상단 드론 드롭다운은 iOS처럼 지도 준비 전에도 표시한다`() {
+        assertEquals(true, shouldShowMapDroneDropdown(isSketchMode = false))
+        assertEquals(false, shouldShowMapDroneDropdown(isSketchMode = true))
+    }
+
+    @Test
     fun `스케치 모드에서는 iOS처럼 비행구역 오버레이도 렌더하지 않는다`() {
         assertEquals(
             false,
