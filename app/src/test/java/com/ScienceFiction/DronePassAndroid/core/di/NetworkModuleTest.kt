@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.core.di
 
+import com.ScienceFiction.DronePassAndroid.BuildConfig
 import okhttp3.Call
 import okhttp3.Connection
 import okhttp3.Interceptor
@@ -15,6 +16,33 @@ import org.junit.Test
 import java.util.concurrent.TimeUnit
 
 class NetworkModuleTest {
+
+    @Test
+    fun `Naver 전용 OkHttpClient는 NCP Maps APIGW 인증 헤더를 부착한다`() {
+        var capturedRequest: Request? = null
+        val client = NetworkModule.provideNaverOkHttpClient()
+            .newBuilder()
+            .addInterceptor { chain ->
+                capturedRequest = chain.request()
+                Response.Builder()
+                    .request(chain.request())
+                    .protocol(Protocol.HTTP_1_1)
+                    .code(200)
+                    .message("OK")
+                    .body("{}".toResponseBody())
+                    .build()
+            }
+            .build()
+        val request = Request.Builder()
+            .url("https://maps.apigw.ntruss.com/map-geocode/v2/geocode?query=Seoul")
+            .build()
+
+        client.newCall(request).execute().close()
+
+        val authenticatedRequest = requireNotNull(capturedRequest)
+        assertTrue(authenticatedRequest.header(NetworkModule.NaverApiKeyIdHeader) == BuildConfig.NAVER_MAP_KEY_ID)
+        assertTrue(authenticatedRequest.header(NetworkModule.NaverApiKeyHeader) == BuildConfig.NAVER_MAP_KEY_SECRET)
+    }
 
     @Test
     fun `Naver debug HTTP logger는 API key header 값을 redaction한다`() {
