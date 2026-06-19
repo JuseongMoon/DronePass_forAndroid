@@ -152,7 +152,13 @@ Android 13 이상에서는 알림 권한을 허용해야 FCM/로컬 알림을 �
 - `WEB_CLIENT_ID`가 Firebase Web client id와 일치하는지 확인합니다.
 - Apple 로그인은 OAuth 설정과 redirect 흐름을 함께 확인합니다.
 
-실제 iOS/Android 공유 Firestore 동기화 검증은 `CROSS_PLATFORM_E2E_RUNBOOK.md` 절차를 기준으로 수행합니다.
+실제 iOS/Android 공유 Firestore 동기화 검증 전에는 Android 설정 preflight를 먼저 실행합니다.
+
+```bash
+./gradlew :app:verifyCrossPlatformE2ePrerequisites
+```
+
+preflight가 통과하면 `CROSS_PLATFORM_E2E_RUNBOOK.md` 절차를 기준으로 실계정/실기기 검증을 수행합니다.
 
 Release 빌드가 실패하는 경우:
 

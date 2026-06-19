@@ -18,6 +18,14 @@ Unit tests such as `CrossPlatformFirestoreContractTest` protect the wire format.
 - Cloud backup/sync is enabled for the test account in both apps.
 - Any existing test data with the chosen prefix is safe to delete.
 
+Before starting the manual device steps, run the Android-side preflight:
+
+```bash
+./gradlew :app:verifyCrossPlatformE2ePrerequisites
+```
+
+This task must pass before the real iOS -> Android receipt test can close the migration gate. It only checks Android-local configuration; it does not replace the shared Firebase account/device verification below.
+
 Use a unique title prefix for all created data:
 
 ```text

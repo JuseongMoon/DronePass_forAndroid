@@ -125,6 +125,15 @@ val releaseReadinessErrorMessage: String?
         },
         googleServicesOauthClientErrorMessage.takeUnless { hasGoogleServicesAndroidOauthClient },
     ).takeIf { it.isNotEmpty() }?.joinToString(separator = "\n")
+val crossPlatformE2ePrerequisitesErrorMessage: String?
+    get() = listOfNotNull(
+        "Google sign-in WEB_CLIENT_ID is not configured. Set WEB_CLIENT_ID in local.properties to the Firebase Web client ID."
+            .takeUnless { isGoogleWebClientIdConfigured(webClientId) },
+        "Naver Maps credentials are not configured. Set NAVER_MAP_KEY_ID and NAVER_MAP_KEY_SECRET in local.properties."
+            .takeUnless { naverMapKeyId.isNotBlank() && naverMapKeySecret.isNotBlank() },
+        "Firebase Android OAuth client is not configured in app/google-services.json. Register the debug/release SHA fingerprints in Firebase Console, download the updated google-services.json, and verify oauth_client contains a client_type=1 entry for $dronepassApplicationId before running the cross-platform E2E runbook."
+            .takeUnless { hasGoogleServicesAndroidOauthClient },
+    ).takeIf { it.isNotEmpty() }?.joinToString(separator = "\n")
 
 android {
     namespace = "com.ScienceFiction.DronePassAndroid"
@@ -350,6 +359,18 @@ val validateReleaseReadiness by tasks.registering {
         releaseReadinessErrorMessage?.let { errorMessage ->
             throw GradleException(errorMessage)
         }
+    }
+}
+
+val verifyCrossPlatformE2ePrerequisites by tasks.registering {
+    group = "verification"
+    description = "Verifies Android-side configuration required before running CROSS_PLATFORM_E2E_RUNBOOK.md."
+
+    doLast {
+        crossPlatformE2ePrerequisitesErrorMessage?.let { errorMessage ->
+            throw GradleException(errorMessage)
+        }
+        logger.lifecycle("Android-side cross-platform E2E prerequisites are configured. Continue with CROSS_PLATFORM_E2E_RUNBOOK.md.")
     }
 }
 
