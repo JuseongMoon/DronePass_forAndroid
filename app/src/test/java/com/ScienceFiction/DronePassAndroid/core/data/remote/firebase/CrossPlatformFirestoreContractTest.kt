@@ -223,13 +223,20 @@ class CrossPlatformFirestoreContractTest {
 
     @Test
     fun `Android soft delete writes iOS readable tombstone timestamps`() {
-        val data = shapeSoftDeleteFirestoreUpdateData(deletedAtMillis = 1_700_000_999_000L)
+        val tombstoneMillis = 1_700_000_999_000L
+        val payloads = listOf(
+            shapeSoftDeleteFirestoreUpdateData(deletedAtMillis = tombstoneMillis),
+            sketchSoftDeleteFirestoreUpdateData(deletedAtMillis = tombstoneMillis),
+            droneSoftDeleteFirestoreUpdateData(deletedAtMillis = tombstoneMillis),
+        )
 
-        val deletedAt = data["deletedAt"] as Timestamp
-        val updatedAt = data["updatedAt"] as Timestamp
-        assertEquals(1_700_000_999_000L, deletedAt.toDate().time)
-        assertEquals(1_700_000_999_000L, updatedAt.toDate().time)
-        assertFalse(data.containsKey("deleted"))
+        payloads.forEach { data ->
+            val deletedAt = data["deletedAt"] as Timestamp
+            val updatedAt = data["updatedAt"] as Timestamp
+            assertEquals(tombstoneMillis, deletedAt.toDate().time)
+            assertEquals(tombstoneMillis, updatedAt.toDate().time)
+            assertFalse(data.containsKey("deleted"))
+        }
     }
 
     @Test

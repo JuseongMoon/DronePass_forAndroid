@@ -84,6 +84,14 @@ internal fun sketchToFirestoreMergeData(sketch: SketchModel): Map<String, Any> {
     return data
 }
 
+internal fun sketchSoftDeleteFirestoreUpdateData(deletedAtMillis: Long): Map<String, Any> {
+    val tombstone = Timestamp(Date(deletedAtMillis))
+    return mapOf(
+        "deletedAt" to tombstone,
+        "updatedAt" to tombstone,
+    )
+}
+
 internal fun sketchFromFirestoreData(
     data: Map<String, Any?>,
     nowMillis: Long = System.currentTimeMillis(),
@@ -235,12 +243,8 @@ class SketchFirebaseStore @Inject constructor(
      */
     suspend fun softDeleteSketch(userId: String, sketchId: String) {
         try {
-            val now = Timestamp(Date(System.currentTimeMillis()))
             sketchesCollection(userId).document(sketchId).update(
-                mapOf(
-                    "deletedAt" to now,
-                    "updatedAt" to now
-                )
+                sketchSoftDeleteFirestoreUpdateData(System.currentTimeMillis())
             ).await()
         } catch (e: Exception) {
             if (isMissingFirestoreDocument(e)) {

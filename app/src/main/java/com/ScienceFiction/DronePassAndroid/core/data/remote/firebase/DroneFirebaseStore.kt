@@ -63,6 +63,14 @@ internal fun droneToFirestoreMergeData(drone: DroneModel): Map<String, Any> {
     return data
 }
 
+internal fun droneSoftDeleteFirestoreUpdateData(deletedAtMillis: Long): Map<String, Any> {
+    val tombstone = Timestamp(Date(deletedAtMillis))
+    return mapOf(
+        "deletedAt" to tombstone,
+        "updatedAt" to tombstone,
+    )
+}
+
 internal fun droneFromFirestoreData(data: Map<String, Any?>): DroneModel? {
     val id = data["id"] as? String ?: return null
     if (!isValidDroneId(id)) return null
@@ -211,12 +219,8 @@ class DroneFirebaseStore @Inject constructor(
      */
     suspend fun deleteDrone(userId: String, droneId: String) {
         try {
-            val now = Timestamp(Date(System.currentTimeMillis()))
             dronesCollection(userId).document(droneId).update(
-                mapOf(
-                    "deletedAt" to now,
-                    "updatedAt" to now
-                )
+                droneSoftDeleteFirestoreUpdateData(System.currentTimeMillis())
             ).await()
         } catch (e: Exception) {
             if (isMissingFirestoreDocument(e)) {
