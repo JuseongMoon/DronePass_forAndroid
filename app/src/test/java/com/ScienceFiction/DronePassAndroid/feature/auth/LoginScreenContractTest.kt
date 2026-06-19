@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.auth
 
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
@@ -56,6 +57,42 @@ class LoginScreenContractTest {
                 "R.string.login_terms_agree",
             ),
         )
+    }
+
+    @Test
+    fun `로그인 약관 링크는 iOS처럼 이용약관과 개인정보 시트를 연다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/auth/LoginScreen.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/auth/LoginScreen.kt",
+        ).readText()
+
+        assertAppearsInOrder(
+            source = source,
+            tokens = listOf(
+                "LoginDocTarget.Terms -> TermsOfServiceScreen",
+                "LoginDocTarget.Privacy -> PrivacyPolicyScreen",
+            ),
+        )
+        assertEquals(
+            LoginDocumentPresentation.Sheet,
+            resolveLoginDocumentPresentation(LoginDocTarget.Terms),
+        )
+        assertEquals(
+            LoginDocumentPresentation.Sheet,
+            resolveLoginDocumentPresentation(LoginDocTarget.Privacy),
+        )
+        assertEquals(LoginDocumentPresentation.Hidden, resolveLoginDocumentPresentation(null))
+    }
+
+    @Test
+    fun `로그인 위치기반서비스 약관은 iOS 현재 코드처럼 노출하지 않는다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/auth/LoginScreen.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/auth/LoginScreen.kt",
+        ).readText()
+
+        assertTrue(!source.contains("LocationTerms"))
+        assertTrue(!source.contains("login_terms_location"))
     }
 
     private fun assertAppearsInOrder(source: String, tokens: List<String>) {
