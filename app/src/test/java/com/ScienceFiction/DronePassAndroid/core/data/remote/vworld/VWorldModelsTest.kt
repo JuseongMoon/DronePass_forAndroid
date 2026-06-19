@@ -217,6 +217,60 @@ class VWorldModelsTest {
     }
 
     @Test
+    fun `문화재 상세 필드는 iOS VWorldZoneDetailView 와 같은 properties 를 사용한다`() {
+        val properties = mapOf(
+            "alias" to "경복궁",
+            "remark" to "remark fallback",
+            "sido_name" to "서울특별시",
+            "sigg_name" to "종로구",
+            "uname" to "역사문화환경 보존지역",
+            "dyear" to "1963",
+            "dnum" to "117",
+        )
+        val zone = DroneZoneFeature(
+            id = "lt_c_uo301.1",
+            layer = FlightZoneLayer.CULTURAL_HERITAGE,
+            polygons = emptyList(),
+            zoneCode = FlightZoneLayer.CULTURAL_HERITAGE.resolveZoneCode(
+                featureId = "lt_c_uo301.1",
+                properties = properties,
+            ),
+            upperAltitude = null,
+            lowerAltitude = null,
+            zoneName = properties["uname"] as String,
+            properties = properties,
+        )
+
+        assertEquals("경복궁", zone.zoneCode)
+        assertEquals("경복궁", zone.heritageName)
+        assertEquals("서울특별시 종로구", zone.fullAddress)
+        assertEquals("역사문화환경 보존지역", zone.heritageZoneName)
+        assertEquals("1963", zone.designationYear)
+        assertEquals("117", zone.designationNumber)
+    }
+
+    @Test
+    fun `문화재 이름 fallback 은 iOS zoneCode 처럼 alias 가 없을 때 remark 를 사용한다`() {
+        val properties = mapOf("remark" to "문화재 비고명")
+        val zone = DroneZoneFeature(
+            id = "lt_c_uo301.2",
+            layer = FlightZoneLayer.CULTURAL_HERITAGE,
+            polygons = emptyList(),
+            zoneCode = FlightZoneLayer.CULTURAL_HERITAGE.resolveZoneCode(
+                featureId = "lt_c_uo301.2",
+                properties = properties,
+            ),
+            upperAltitude = null,
+            lowerAltitude = null,
+            zoneName = null,
+            properties = properties,
+        )
+
+        assertEquals("문화재 비고명", zone.zoneCode)
+        assertEquals("문화재 비고명", zone.heritageName)
+    }
+
+    @Test
     fun `iOS가 코드 행을 표시하지 않는 기본 레이어는 null을 유지한다`() {
         assertNull(
             FlightZoneLayer.ATZ.resolveZoneCode(
