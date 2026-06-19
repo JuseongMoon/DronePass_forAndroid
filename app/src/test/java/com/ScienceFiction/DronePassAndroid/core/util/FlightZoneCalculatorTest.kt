@@ -494,6 +494,24 @@ class FlightZoneCalculatorTest {
 
     // endregion
 
+    // region BoundingBox 정합
+
+    @Test
+    fun `좌표 반경 bbox 는 iOS FlightZoneCalculator WGS84 공식을 따른다`() {
+        val bbox = FlightZoneCalculator.createBoundingBox(
+            lat = 37.0,
+            lon = 126.0,
+            radiusMeters = 1_000.0,
+        )
+
+        assertEquals(
+            "125.98875187400488,36.991016847158804,126.01124812599512,37.008983152841196",
+            bbox,
+        )
+    }
+
+    // endregion
+
     // region distance 메서드 회귀 (Haversine)
 
     @Test

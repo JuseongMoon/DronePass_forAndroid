@@ -2,7 +2,6 @@ package com.ScienceFiction.DronePassAndroid.core.util
 
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.DroneZoneFeature
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.FlightRestrictionLevel
-import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.sin
@@ -203,25 +202,20 @@ object FlightZoneCalculator {
      *
      * @param lat 중심 위도
      * @param lon 중심 경도
-     * @param radiusKm 반경 (킬로미터)
+     * @param radiusMeters 반경 (미터)
      * @return bbox 문자열 (minLon,minLat,maxLon,maxLat)
      */
-    fun createBoundingBox(lat: Double, lon: Double, radiusKm: Double): String {
-        // 위도 1° ≈ 111.32km (WGS-84 평균). 단축 표기로 111.0 사용 — bbox 는 안전 마진이
-        // 있어 0.3% 오차 허용 가능. 정밀 거리 비교에는 [distance] 사용.
-        val latDelta = radiusKm / KM_PER_DEGREE_LAT
-        val lonDelta = radiusKm / (KM_PER_DEGREE_LAT * cos(Math.toRadians(lat)))
+    fun createBoundingBox(lat: Double, lon: Double, radiusMeters: Double): String {
+        val latDelta = (radiusMeters / EARTH_RADIUS_M) * (180.0 / Math.PI)
+        val lonDelta = latDelta / cos(Math.toRadians(lat))
 
         val minLat = lat - latDelta
         val maxLat = lat + latDelta
-        val minLon = lon - abs(lonDelta)
-        val maxLon = lon + abs(lonDelta)
+        val minLon = lon - lonDelta
+        val maxLon = lon + lonDelta
 
         return "$minLon,$minLat,$maxLon,$maxLat"
     }
-
-    /** 위도 1° 당 거리 (km), bbox 근사 계산용. */
-    private const val KM_PER_DEGREE_LAT = 111.0
 
     /**
      * 네이버 지도 영역(LatLngBounds)으로부터 bbox 문자열 생성
