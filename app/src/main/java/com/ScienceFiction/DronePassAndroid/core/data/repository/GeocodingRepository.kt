@@ -20,6 +20,10 @@ internal fun reverseGeocodingResultsToAddress(results: List<ReverseGeocodingResu
         ?: ""
 }
 
+internal fun hasReverseGeocodingAddressResult(results: List<ReverseGeocodingResult>): Boolean {
+    return results.any { it.name == "roadaddr" || it.name == "addr" }
+}
+
 private fun buildRoadAddress(result: ReverseGeocodingResult): String {
     val parts = mutableListOf<String>()
 
@@ -116,7 +120,12 @@ class GeocodingRepository @Inject constructor(
                 )
             }
 
-            // 1. "roadaddr" 결과 찾기
+            if (!hasReverseGeocodingAddressResult(response.results)) {
+                return Result.failure(
+                    Exception("Reverse Geocoding 실패: 주소 결과가 없습니다.")
+                )
+            }
+
             Result.success(reverseGeocodingResultsToAddress(response.results))
         } catch (e: Exception) {
             Result.failure(e)

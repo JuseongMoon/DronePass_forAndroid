@@ -1,11 +1,17 @@
 package com.ScienceFiction.DronePassAndroid.core.data.repository
 
+import com.ScienceFiction.DronePassAndroid.core.data.remote.NaverGeocodingApi
+import com.ScienceFiction.DronePassAndroid.core.data.remote.model.GeocodingResponse
 import com.ScienceFiction.DronePassAndroid.core.data.remote.model.LandAddition
 import com.ScienceFiction.DronePassAndroid.core.data.remote.model.ReverseGeocodingLand
 import com.ScienceFiction.DronePassAndroid.core.data.remote.model.ReverseGeocodingRegion
+import com.ScienceFiction.DronePassAndroid.core.data.remote.model.ReverseGeocodingResponse
 import com.ScienceFiction.DronePassAndroid.core.data.remote.model.ReverseGeocodingResult
+import com.ScienceFiction.DronePassAndroid.core.data.remote.model.ReverseGeocodingStatus
 import com.ScienceFiction.DronePassAndroid.core.data.remote.model.RegionArea
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class GeocodingRepositoryTest {
@@ -127,6 +133,30 @@ class GeocodingRepositoryTest {
         assertEquals("서울특별시 강남구 역삼동  -2", address)
     }
 
+    @Test
+    fun `역지오코딩 성공 응답에 주소 후보가 없으면 iOS처럼 실패로 처리한다`() = runBlocking {
+        val api = FakeNaverGeocodingApi(
+            reverseResponse = ReverseGeocodingResponse(
+                status = ReverseGeocodingStatus(code = 0, name = "ok", message = "done"),
+                results = listOf(result(name = "admcode")),
+            ),
+        )
+        val repository = GeocodingRepository(api = api)
+
+        val result = repository.reverseGeocode(latitude = 37.5665, longitude = 126.9780)
+
+        assertTrue(result.isFailure)
+        assertEquals("126.978,37.5665", api.lastReverseCoords)
+    }
+
+    @Test
+    fun `역지오코딩 주소 후보 판정은 iOS roadaddr addr 결과만 허용한다`() {
+        assertEquals(true, hasReverseGeocodingAddressResult(listOf(result(name = "roadaddr"))))
+        assertEquals(true, hasReverseGeocodingAddressResult(listOf(result(name = "addr"))))
+        assertEquals(false, hasReverseGeocodingAddressResult(emptyList()))
+        assertEquals(false, hasReverseGeocodingAddressResult(listOf(result(name = "admcode"))))
+    }
+
     private fun result(
         name: String,
         region: ReverseGeocodingRegion = region(),
@@ -169,5 +199,25 @@ class GeocodingRepositoryTest {
             addition1 = null,
             addition2 = null,
         )
+    }
+
+    private class FakeNaverGeocodingApi(
+        private val reverseResponse: ReverseGeocodingResponse,
+    ) : NaverGeocodingApi {
+        var lastReverseCoords: String? = null
+            private set
+
+        override suspend fun geocode(address: String): GeocodingResponse {
+            return GeocodingResponse(status = "OK", meta = null, addresses = emptyList())
+        }
+
+        override suspend fun reverseGeocode(
+            coords: String,
+            orders: String,
+            output: String,
+        ): ReverseGeocodingResponse {
+            lastReverseCoords = coords
+            return reverseResponse
+        }
     }
 }
