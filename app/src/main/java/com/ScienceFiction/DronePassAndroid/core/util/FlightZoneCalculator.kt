@@ -154,6 +154,51 @@ object FlightZoneCalculator {
     }
 
     /**
+     * 특정 반경 내 모든 구역 찾기.
+     *
+     * iOS `FlightZoneCalculator.findZonesNearby` 와 같이 모든 polygon/ring 의 vertex 를
+     * 검사하고, 반경 내 vertex 가 하나라도 있으면 nearby 로 포함한다.
+     *
+     * @param lat 중심 위도
+     * @param lon 중심 경도
+     * @param radiusMeters 반경 (미터)
+     * @param zones 검색할 구역 리스트
+     * @return 반경 내 구역 목록, layer priority 오름차순
+     */
+    fun findZonesNearby(
+        lat: Double,
+        lon: Double,
+        radiusMeters: Double,
+        zones: List<DroneZoneFeature>
+    ): List<DroneZoneFeature> {
+        return zones
+            .filter { zone ->
+                isFeatureNearby(
+                    lat = lat,
+                    lon = lon,
+                    radiusMeters = radiusMeters,
+                    feature = zone,
+                )
+            }
+            .sortedBy { zone -> zone.layer.priority }
+    }
+
+    fun isFeatureNearby(
+        lat: Double,
+        lon: Double,
+        radiusMeters: Double,
+        feature: DroneZoneFeature
+    ): Boolean {
+        return feature.polygonRings.any { polygon ->
+            polygon.any { ring ->
+                ring.any { (vertexLat, vertexLon) ->
+                    distance(lat, lon, vertexLat, vertexLon) <= radiusMeters
+                }
+            }
+        }
+    }
+
+    /**
      * 좌표와 반경으로 바운딩 박스 생성
      *
      * @param lat 중심 위도

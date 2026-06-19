@@ -406,6 +406,94 @@ class FlightZoneCalculatorTest {
 
     // endregion
 
+    // region nearby zone 검색 정합
+
+    @Test
+    fun `특정 반경 내 구역은 iOS처럼 모든 vertex 거리 기준으로 찾고 priority 순으로 정렬한다`() {
+        val advisory = DroneZoneFeature(
+            id = "park-zone",
+            layer = FlightZoneLayer.NATIONAL_PARK,
+            polygons = listOf(
+                listOf(
+                    Pair(37.0, 126.0),
+                    Pair(37.0, 126.01),
+                    Pair(37.01, 126.0),
+                ),
+            ),
+            zoneCode = "PARK",
+            upperAltitude = null,
+            lowerAltitude = null,
+            zoneName = null,
+        )
+        val restricted = advisory.copy(
+            id = "control-zone",
+            layer = FlightZoneLayer.CONTROL_ZONE,
+            zoneCode = "CTR",
+        )
+        val far = DroneZoneFeature(
+            id = "far-prohibited-zone",
+            layer = FlightZoneLayer.PROHIBITED,
+            polygons = listOf(
+                listOf(
+                    Pair(38.0, 127.0),
+                    Pair(38.0, 127.01),
+                    Pair(38.01, 127.0),
+                ),
+            ),
+            zoneCode = "FAR",
+            upperAltitude = null,
+            lowerAltitude = null,
+            zoneName = null,
+        )
+
+        val nearby = FlightZoneCalculator.findZonesNearby(
+            lat = 37.0,
+            lon = 126.0,
+            radiusMeters = 200.0,
+            zones = listOf(advisory, far, restricted),
+        )
+
+        assertEquals(listOf("control-zone", "park-zone"), nearby.map { it.id })
+    }
+
+    @Test
+    fun `feature nearby 판정은 iOS처럼 polygonRings 의 내부 ring vertex 도 검사한다`() {
+        val feature = DroneZoneFeature(
+            id = "ring-zone",
+            layer = FlightZoneLayer.NATIONAL_PARK,
+            polygons = listOf(unitSquare),
+            zoneCode = "RING",
+            upperAltitude = null,
+            lowerAltitude = null,
+            zoneName = null,
+            polygonRings = listOf(
+                listOf(
+                    listOf(
+                        Pair(38.0, 127.0),
+                        Pair(38.0, 127.01),
+                        Pair(38.01, 127.0),
+                    ),
+                    listOf(
+                        Pair(37.0, 126.0),
+                        Pair(37.0, 126.01),
+                        Pair(37.01, 126.0),
+                    ),
+                ),
+            ),
+        )
+
+        assertTrue(
+            FlightZoneCalculator.isFeatureNearby(
+                lat = 37.0,
+                lon = 126.0,
+                radiusMeters = 200.0,
+                feature = feature,
+            ),
+        )
+    }
+
+    // endregion
+
     // region distance 메서드 회귀 (Haversine)
 
     @Test

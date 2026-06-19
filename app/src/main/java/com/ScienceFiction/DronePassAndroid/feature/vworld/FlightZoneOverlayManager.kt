@@ -219,6 +219,24 @@ class FlightZoneOverlayManager {
         )
     }
 
+    /**
+     * 특정 반경 내 표시 구역 찾기.
+     *
+     * iOS `FlightZoneOverlayManager.findNearbyZones(at:radius:)` 와 같은 공개 진입점이다.
+     */
+    fun findNearbyZones(
+        lat: Double,
+        lon: Double,
+        radiusMeters: Double = 1_000.0
+    ): List<DroneZoneFeature> {
+        return FlightZoneCalculator.findZonesNearby(
+            lat = lat,
+            lon = lon,
+            radiusMeters = radiusMeters,
+            zones = getAllDisplayedZones(),
+        )
+    }
+
     private fun selectOverlay(overlay: PolygonOverlay) {
         selectedOverlay?.outlineWidth = 2
         selectedOverlay = overlay
