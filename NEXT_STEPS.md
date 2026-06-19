@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 2026-06-19 최신 HEAD `b4a4153` 기준 release artifact 차단 경로를 재확인했다. `:app:assembleRelease`와 `:app:bundleRelease`는 각각 1초/760ms 안에 산출물 생성 전 차단됐으며, 실패 사유는 release signing 미설정, Google `WEB_CLIENT_ID` 미설정, Firebase Android `oauth_client` 미설정 세 가지로 의도한 메시지를 함께 출력했다.
 - 2026-06-19 최신 HEAD `7ef3e1a` 기준 release shrink를 재확인했다. `:app:minifyReleaseWithR8`는 Crashlytics mapping upload까지 `BUILD SUCCESSFUL`로 통과했고, 출력 경고는 기존과 같은 Naver Maps SDK stack map table warning 및 Play Services Location companion warning만 남았다.
 - 2026-06-19 최신 HEAD `a9756f3` 기준 전체 로컬 게이트를 다시 실행했다. `:app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:shapeParsingCoverageVerification`는 `BUILD SUCCESSFUL`로 통과했고, lint debug report는 최신 결과로 유지됐다.
 - 2026-06-19 최신 HEAD `b811373` 기준 Android 15 실기기 `SM-A346N - 15`에서 `:app:connectedDebugAndroidTest`를 재실행해 instrumentation 10 tests가 모두 통과했다.
