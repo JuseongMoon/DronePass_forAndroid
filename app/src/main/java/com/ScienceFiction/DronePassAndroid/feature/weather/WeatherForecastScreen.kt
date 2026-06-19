@@ -48,10 +48,6 @@ import com.ScienceFiction.DronePassAndroid.ui.component.IosToastMessageDurationM
 import com.ScienceFiction.DronePassAndroid.ui.component.IosToastMessageOverlay
 import kotlinx.coroutines.delay
 import java.text.DateFormat
-import java.time.Instant
-import java.time.ZoneId
-import java.time.ZoneOffset
-import java.time.temporal.ChronoUnit
 import java.util.Date
 import java.util.Locale
 
@@ -193,10 +189,9 @@ private fun WeatherForecastBody(
             )
         }
 
-        // ③ 6개 예보 차트 (현재 정시부터 3일)
+        // ③ 6개 예보 차트 (iOS WeatherManager: 현재 1시간 전부터 3일 뒤까지)
         val chartHours = resolveWeatherForecastChartHours(
             hourlyForecast = data.hourlyForecast,
-            utcOffsetSeconds = data.utcOffsetSeconds,
         )
         if (shouldShowWeatherForecastCharts(chartHours)) {
             item { TemperatureChart(hourlyData = chartHours) }
@@ -257,36 +252,19 @@ internal fun formatWeatherLastUpdateTime(
 
 internal const val WeatherForecastDays = 3
 internal const val WeatherForecastChartHours = WeatherForecastDays * 24
+internal const val WeatherForecastLookbackMs = 60L * 60L * 1000L
+internal const val WeatherForecastWindowMs = WeatherForecastDays * 24L * 60L * 60L * 1000L
 
 internal fun resolveWeatherForecastChartHours(
     hourlyForecast: List<HourlyWeatherData>,
     nowMillis: Long = System.currentTimeMillis(),
-    utcOffsetSeconds: Int? = null,
 ): List<HourlyWeatherData> {
-    val zoneId = resolveWeatherForecastChartZone(utcOffsetSeconds)
-    val currentHourStart = resolveCurrentWeatherForecastHourStartMillis(nowMillis, zoneId)
+    val startMillis = nowMillis - WeatherForecastLookbackMs
+    val endMillis = nowMillis + WeatherForecastWindowMs
     return hourlyForecast
         .asSequence()
-        .filter { it.time >= currentHourStart }
-        .take(WeatherForecastChartHours)
+        .filter { it.time in startMillis..endMillis }
         .toList()
-}
-
-internal fun resolveCurrentWeatherForecastHourStartMillis(
-    nowMillis: Long,
-    zoneId: ZoneId = ZoneId.systemDefault(),
-): Long {
-    return Instant.ofEpochMilli(nowMillis)
-        .atZone(zoneId)
-        .truncatedTo(ChronoUnit.HOURS)
-        .toInstant()
-        .toEpochMilli()
-}
-
-private fun resolveWeatherForecastChartZone(utcOffsetSeconds: Int?): ZoneId {
-    return runCatching {
-        utcOffsetSeconds?.let(ZoneOffset::ofTotalSeconds)
-    }.getOrNull() ?: ZoneId.systemDefault()
 }
 
 internal fun shouldShowWeatherForecastCharts(

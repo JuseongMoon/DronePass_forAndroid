@@ -27,70 +27,40 @@ import java.text.DateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
-import java.time.ZoneOffset
 
 class WeatherForecastParityTest {
 
     @Test
-    fun `forecast charts use iOS three day hourly data window from current hour`() {
+    fun `forecast charts use iOS three day hourly data window from one hour before now`() {
         assertEquals(3, WeatherForecastDays)
         assertEquals(72, WeatherForecastChartHours)
+        assertEquals(HourMs, WeatherForecastLookbackMs)
+        assertEquals(72 * HourMs, WeatherForecastWindowMs)
 
-        val hourly = (0 until 90).map { index ->
+        val hourly = (0 until 100).map { index ->
             hourlyWeather(time = index * HourMs, temperature = index.toDouble())
         }
         val nowMillis = 10 * HourMs + 42 * 60 * 1000L
 
         val chartHours = resolveWeatherForecastChartHours(hourly, nowMillis = nowMillis)
 
-        assertEquals(72, chartHours.size)
+        assertEquals(73, chartHours.size)
         assertEquals(10 * HourMs, chartHours.first().time)
-        assertEquals(81 * HourMs, chartHours.last().time)
+        assertEquals(82 * HourMs, chartHours.last().time)
     }
 
     @Test
-    fun `forecast charts use weather response timezone for current hour`() {
-        val halfHourMs = 30 * 60 * 1000L
-        val hourly = (0 until 90).map { index ->
-            hourlyWeather(time = index * HourMs + halfHourMs, temperature = index.toDouble())
+    fun `forecast charts match iOS inclusive boundary when now is exactly on the hour`() {
+        val hourly = (0 until 100).map { index ->
+            hourlyWeather(time = index * HourMs, temperature = index.toDouble())
         }
-        val nowMillis = 10 * HourMs + 42 * 60 * 1000L
+        val nowMillis = 10 * HourMs
 
-        val chartHours = resolveWeatherForecastChartHours(
-            hourlyForecast = hourly,
-            nowMillis = nowMillis,
-            utcOffsetSeconds = 5 * 60 * 60 + 30 * 60,
-        )
+        val chartHours = resolveWeatherForecastChartHours(hourly, nowMillis = nowMillis)
 
-        assertEquals(72, chartHours.size)
-        assertEquals(10 * HourMs + halfHourMs, chartHours.first().time)
-        assertEquals(81 * HourMs + halfHourMs, chartHours.last().time)
-    }
-
-    @Test
-    fun `forecast current hour start floors to the local hour`() {
-        val nowMillis = 10 * HourMs + 42 * 60 * 1000L + 12_345L
-
-        assertEquals(
-            10 * HourMs,
-            resolveCurrentWeatherForecastHourStartMillis(
-                nowMillis = nowMillis,
-                zoneId = ZoneOffset.UTC,
-            ),
-        )
-    }
-
-    @Test
-    fun `forecast current hour start honors fractional timezone offsets`() {
-        val nowMillis = 10 * HourMs + 42 * 60 * 1000L + 12_345L
-
-        assertEquals(
-            10 * HourMs + 30 * 60 * 1000L,
-            resolveCurrentWeatherForecastHourStartMillis(
-                nowMillis = nowMillis,
-                zoneId = ZoneOffset.ofHoursMinutes(5, 30),
-            ),
-        )
+        assertEquals(74, chartHours.size)
+        assertEquals(9 * HourMs, chartHours.first().time)
+        assertEquals(82 * HourMs, chartHours.last().time)
     }
 
     @Test
