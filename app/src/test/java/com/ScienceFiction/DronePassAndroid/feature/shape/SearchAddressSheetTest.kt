@@ -4,8 +4,10 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
 import com.ScienceFiction.DronePassAndroid.core.data.remote.model.GeocodingAddress
 import com.ScienceFiction.DronePassAndroid.core.data.remote.model.GeocodingAddressElement
+import com.ScienceFiction.DronePassAndroid.domain.model.Coordinate
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -129,6 +131,39 @@ class SearchAddressSheetTest {
         )
 
         assertEquals("   ", resolveSelectedAddressForShapeEdit(address))
+    }
+
+    @Test
+    fun `주소 검색 선택 좌표는 x y 가 숫자일 때만 생성한다`() {
+        val address = GeocodingAddress(
+            roadAddress = "서울특별시 서초구 서초대로78길 24",
+            jibunAddress = "서울특별시 서초구 서초동 1305-6",
+            englishAddress = null,
+            x = "127.027",
+            y = "37.497",
+            distance = null,
+        )
+
+        assertEquals(Coordinate(37.497, 127.027), resolveSearchAddressCoordinate(address))
+    }
+
+    @Test
+    fun `주소 검색 선택은 iOS처럼 좌표가 깨져도 주소 선택 자체를 막지 않는다`() {
+        val missingLatitude = GeocodingAddress(
+            roadAddress = "도로명",
+            jibunAddress = "지번",
+            englishAddress = null,
+            x = "127.027",
+            y = null,
+            distance = null,
+        )
+        val blankLongitude = missingLatitude.copy(x = "")
+        val invalidLatitude = missingLatitude.copy(y = "not-a-number")
+
+        assertEquals("지번", resolveSelectedAddressForShapeEdit(missingLatitude))
+        assertNull(resolveSearchAddressCoordinate(missingLatitude))
+        assertNull(resolveSearchAddressCoordinate(blankLongitude))
+        assertNull(resolveSearchAddressCoordinate(invalidLatitude))
     }
 
     @Test

@@ -2,9 +2,18 @@ package com.ScienceFiction.DronePassAndroid.core.data.repository
 
 import com.ScienceFiction.DronePassAndroid.core.data.remote.NaverGeocodingApi
 import com.ScienceFiction.DronePassAndroid.core.data.remote.model.GeocodingAddress
+import com.ScienceFiction.DronePassAndroid.core.data.remote.model.GeocodingResponse
 import com.ScienceFiction.DronePassAndroid.core.data.remote.model.ReverseGeocodingResult
 import javax.inject.Inject
 import javax.inject.Singleton
+
+internal fun geocodingResponseToAddresses(response: GeocodingResponse): Result<List<GeocodingAddress>> {
+    if (response.status != "OK") {
+        return Result.failure(Exception("Geocoding 실패: status=${response.status ?: "(unknown)"}"))
+    }
+    return response.addresses?.let { Result.success(it) }
+        ?: Result.failure(Exception("Geocoding 실패: addresses 누락"))
+}
 
 internal fun reverseGeocodingResultsToAddress(results: List<ReverseGeocodingResult>): String {
     val roadAddress = results
@@ -86,15 +95,7 @@ class GeocodingRepository @Inject constructor(
     suspend fun geocode(address: String): Result<List<GeocodingAddress>> {
         return try {
             val response = api.geocode(address)
-            if (response.status == "OK") {
-                // x/y 가 누락된 결과(에러 응답의 부분 결과)는 사용 불가하므로 필터링.
-                val valid = response.addresses
-                    ?.filter { !it.x.isNullOrBlank() && !it.y.isNullOrBlank() }
-                    .orEmpty()
-                Result.success(valid)
-            } else {
-                Result.failure(Exception("Geocoding 실패: status=${response.status ?: "(unknown)"}"))
-            }
+            geocodingResponseToAddresses(response)
         } catch (e: Exception) {
             Result.failure(e)
         }

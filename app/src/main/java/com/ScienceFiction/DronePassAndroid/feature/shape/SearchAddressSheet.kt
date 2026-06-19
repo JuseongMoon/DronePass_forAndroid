@@ -57,6 +57,7 @@ import androidx.compose.ui.unit.dp
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.core.data.remote.NaverGeocodingApi
 import com.ScienceFiction.DronePassAndroid.core.data.remote.model.GeocodingAddress
+import com.ScienceFiction.DronePassAndroid.core.data.repository.geocodingResponseToAddresses
 import com.ScienceFiction.DronePassAndroid.domain.model.Coordinate
 import kotlinx.coroutines.launch
 
@@ -65,7 +66,7 @@ import kotlinx.coroutines.launch
  */
 data class AddressSearchResult(
     val address: String,
-    val coordinate: Coordinate
+    val coordinate: Coordinate?
 )
 
 internal const val SearchAddressSheetSkipPartiallyExpanded = false
@@ -119,6 +120,12 @@ internal fun addressBuildingName(address: GeocodingAddress): String? {
         ?.firstOrNull { element -> element.types?.contains("BUILDING_NAME") == true }
         ?.longName
         ?.takeIf { it.isNotEmpty() }
+}
+
+internal fun resolveSearchAddressCoordinate(address: GeocodingAddress): Coordinate? {
+    val lat = address.y?.toDoubleOrNull() ?: return null
+    val lon = address.x?.toDoubleOrNull() ?: return null
+    return Coordinate(lat, lon)
 }
 
 internal enum class SearchAddressContentMode {
@@ -196,14 +203,7 @@ fun SearchAddressSheet(
             errorMessage = null
             try {
                 val response = geocodingApi.geocode(query)
-                results = if (response.status == "OK") {
-                    // x/y 가 없는 결과는 표시해도 클릭 시 좌표 변환이 실패하므로 사전 필터링.
-                    response.addresses
-                        ?.filter { !it.x.isNullOrBlank() && !it.y.isNullOrBlank() }
-                        .orEmpty()
-                } else {
-                    emptyList()
-                }
+                results = geocodingResponseToAddresses(response).getOrThrow()
             } catch (e: Exception) {
                 errorMessage = formatSearchAddressErrorMessage(
                     causeMessage = e.message,
@@ -322,14 +322,10 @@ fun SearchAddressSheet(
                             AddressResultItem(
                                 address = addressItem,
                                 onClick = {
-                                    // x/y 가 nullable 이지만 위 collectLatest 에서 사전 필터링했으므로
-                                    // 여기서는 빈 문자열에 대한 toDoubleOrNull null 분기만으로 충분.
-                                    val lat = addressItem.y?.toDoubleOrNull() ?: return@AddressResultItem
-                                    val lon = addressItem.x?.toDoubleOrNull() ?: return@AddressResultItem
                                     onAddressSelected(
                                         AddressSearchResult(
                                             address = resolveSelectedAddressForShapeEdit(addressItem),
-                                            coordinate = Coordinate(lat, lon)
+                                            coordinate = resolveSearchAddressCoordinate(addressItem),
                                         )
                                     )
                                 }

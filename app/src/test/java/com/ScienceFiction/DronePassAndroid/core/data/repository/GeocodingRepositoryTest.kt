@@ -1,6 +1,7 @@
 package com.ScienceFiction.DronePassAndroid.core.data.repository
 
 import com.ScienceFiction.DronePassAndroid.core.data.remote.NaverGeocodingApi
+import com.ScienceFiction.DronePassAndroid.core.data.remote.model.GeocodingAddress
 import com.ScienceFiction.DronePassAndroid.core.data.remote.model.GeocodingResponse
 import com.ScienceFiction.DronePassAndroid.core.data.remote.model.LandAddition
 import com.ScienceFiction.DronePassAndroid.core.data.remote.model.ReverseGeocodingLand
@@ -11,6 +12,7 @@ import com.ScienceFiction.DronePassAndroid.core.data.remote.model.ReverseGeocodi
 import com.ScienceFiction.DronePassAndroid.core.data.remote.model.RegionArea
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -157,6 +159,67 @@ class GeocodingRepositoryTest {
         assertEquals(false, hasReverseGeocodingAddressResult(listOf(result(name = "admcode"))))
     }
 
+    @Test
+    fun `지오코딩 응답 status 가 OK 가 아니면 iOS처럼 실패로 처리한다`() {
+        val result = geocodingResponseToAddresses(
+            GeocodingResponse(status = "INVALID_REQUEST", meta = null, addresses = emptyList()),
+        )
+
+        assertTrue(result.isFailure)
+        assertEquals(
+            "Geocoding 실패: status=INVALID_REQUEST",
+            result.exceptionOrNull()?.message,
+        )
+    }
+
+    @Test
+    fun `지오코딩 성공 응답에 addresses 가 없으면 iOS처럼 실패로 처리한다`() {
+        val result = geocodingResponseToAddresses(
+            GeocodingResponse(status = "OK", meta = null, addresses = null),
+        )
+
+        assertTrue(result.isFailure)
+        assertEquals("Geocoding 실패: addresses 누락", result.exceptionOrNull()?.message)
+    }
+
+    @Test
+    fun `지오코딩 응답은 iOS처럼 좌표가 비어 있는 주소 결과도 보존한다`() {
+        val address = GeocodingAddress(
+            roadAddress = "서울특별시 서초구 서초대로78길 24",
+            jibunAddress = "서울특별시 서초구 서초동 1305-6",
+            englishAddress = null,
+            x = "",
+            y = null,
+            distance = null,
+        )
+
+        val result = geocodingResponseToAddresses(
+            GeocodingResponse(status = "OK", meta = null, addresses = listOf(address)),
+        )
+
+        assertTrue(result.isSuccess)
+        assertEquals(listOf(address), result.getOrThrow())
+    }
+
+    @Test
+    fun `repository geocode 는 malformed 응답 실패를 전파한다`() = runBlocking {
+        val api = FakeNaverGeocodingApi(
+            geocodeResponse = GeocodingResponse(
+                status = "OK",
+                meta = null,
+                addresses = null,
+            ),
+        )
+        val repository = GeocodingRepository(api = api)
+
+        val result = repository.geocode("서초동")
+
+        assertTrue(result.isFailure)
+        assertFalse(result.isSuccess)
+        assertEquals("서초동", api.lastGeocodeAddress)
+        assertEquals("Geocoding 실패: addresses 누락", result.exceptionOrNull()?.message)
+    }
+
     private fun result(
         name: String,
         region: ReverseGeocodingRegion = region(),
@@ -202,13 +265,24 @@ class GeocodingRepositoryTest {
     }
 
     private class FakeNaverGeocodingApi(
-        private val reverseResponse: ReverseGeocodingResponse,
+        private val reverseResponse: ReverseGeocodingResponse = ReverseGeocodingResponse(
+            status = ReverseGeocodingStatus(code = 0, name = "ok", message = "done"),
+            results = emptyList(),
+        ),
+        private val geocodeResponse: GeocodingResponse = GeocodingResponse(
+            status = "OK",
+            meta = null,
+            addresses = emptyList(),
+        ),
     ) : NaverGeocodingApi {
         var lastReverseCoords: String? = null
             private set
+        var lastGeocodeAddress: String? = null
+            private set
 
         override suspend fun geocode(address: String): GeocodingResponse {
-            return GeocodingResponse(status = "OK", meta = null, addresses = emptyList())
+            lastGeocodeAddress = address
+            return geocodeResponse
         }
 
         override suspend fun reverseGeocode(

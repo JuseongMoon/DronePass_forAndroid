@@ -843,8 +843,10 @@ fun ShapeEditScreen(
             geocodingApi = geocodingApi,
             onAddressSelected = { result ->
                 address = result.address
-                coordinate = result.coordinate
-                coordinateText = formatShapeEditCoordinateText(result.coordinate)
+                result.coordinate?.let { selectedCoordinate ->
+                    coordinate = selectedCoordinate
+                    coordinateText = formatShapeEditCoordinateText(selectedCoordinate)
+                }
                 showAddressSearch = false
             },
             onDismiss = { showAddressSearch = false },

@@ -8,8 +8,8 @@ import com.squareup.moshi.JsonClass
  *
  * 모든 필드를 nullable 로 정의한다. Naver API 가 에러 응답을 반환하거나
  * 부분 결과(addresses 없음, x/y 누락)를 반환하는 경우 Moshi 디코딩이
- * JsonDataException 으로 실패하는 것을 방지한다. 호출자(GeocodingRepository)는
- * x/y 의 null 여부를 명시적으로 검증해야 한다.
+ * JsonDataException 으로 실패하는 것을 방지한다. 호출자는 malformed 응답을
+ * 에러로 노출하거나, 주소 결과의 nullable 좌표를 명시적으로 처리한다.
  */
 @JsonClass(generateAdapter = true)
 data class GeocodingResponse(
