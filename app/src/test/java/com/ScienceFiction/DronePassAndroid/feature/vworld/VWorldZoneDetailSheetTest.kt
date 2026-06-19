@@ -6,6 +6,7 @@ import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.DroneZoneFeature
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.FlightZoneLayer
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.NotamStatus
+import com.ScienceFiction.DronePassAndroid.core.util.AltitudeUnit
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertFalse
@@ -61,6 +62,20 @@ class VWorldZoneDetailSheetTest {
         assertEquals(R.string.zone_detail_notam_status_active, NotamStatus.ACTIVE.displayNameRes)
         assertEquals(R.string.zone_detail_notam_status_expired, NotamStatus.EXPIRED.displayNameRes)
         assertEquals(R.string.zone_detail_notam_status_unknown, NotamStatus.UNKNOWN.displayNameRes)
+    }
+
+    @Test
+    fun `altitude unit descriptions use iOS localization keys`() {
+        assertEquals(R.string.altitude_unit_amsl, AltitudeUnit.AMSL.descriptionRes)
+        assertEquals(R.string.altitude_unit_agl, AltitudeUnit.AGL.descriptionRes)
+        assertEquals(R.string.altitude_unit_msl, AltitudeUnit.MSL.descriptionRes)
+        assertEquals(R.string.altitude_unit_fl, AltitudeUnit.FL.descriptionRes)
+        assertEquals(R.string.altitude_unit_ft_height, AltitudeUnit.FT_HEIGHT.descriptionRes)
+        assertEquals(R.string.altitude_unit_ft_altitude, AltitudeUnit.FT_ALT.descriptionRes)
+        assertEquals(R.string.altitude_value_unlimited, AltitudeUnit.UNL.descriptionRes)
+        assertEquals(R.string.altitude_value_ground, AltitudeUnit.GND.descriptionRes)
+        assertEquals(R.string.altitude_value_surface, AltitudeUnit.SFC.descriptionRes)
+        assertNull(AltitudeUnit.UNKNOWN.descriptionRes)
     }
 
     @Test

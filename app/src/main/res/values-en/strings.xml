@@ -492,6 +492,15 @@
     <string name="zone_detail_zone_type">Zone Type</string>
     <string name="zone_detail_coordinates">Coordinates</string>
     <string name="zone_detail_altitude_limit">Altitude Limit</string>
+    <string name="altitude_unit_agl">above ground level</string>
+    <string name="altitude_unit_amsl">above mean sea level</string>
+    <string name="altitude_unit_fl">flight level</string>
+    <string name="altitude_unit_ft_altitude">altitude</string>
+    <string name="altitude_unit_ft_height">height</string>
+    <string name="altitude_unit_msl">mean sea level</string>
+    <string name="altitude_value_ground">ground</string>
+    <string name="altitude_value_surface">surface</string>
+    <string name="altitude_value_unlimited">unlimited</string>
     <string name="zone_detail_notam_title">NOTAM Information</string>
     <string name="zone_detail_notam_status">Status</string>
     <string name="zone_detail_notam_start">Start</string>

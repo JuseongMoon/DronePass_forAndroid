@@ -56,8 +56,8 @@ import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.daysRemaining
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.designationNumber
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.designationYear
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.formatCoordinate
-import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.formattedLowerAltitude
-import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.formattedUpperAltitude
+import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.formatLowerAltitude
+import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.formatUpperAltitude
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.fullAddress
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.heritageName
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.heritageZoneName
@@ -66,6 +66,7 @@ import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.notamStartDat
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.notamStatus
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.operatingInstitution
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.phoneNumber
+import com.ScienceFiction.DronePassAndroid.core.util.AltitudeUnit
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -87,6 +88,20 @@ internal fun resolveNotamStatusValueColor(status: NotamStatus): Color? = when (s
 
 internal fun shouldShowAltitudeRow(upper: String?, lower: String?): Boolean =
     upper != null && lower != null
+
+internal val AltitudeUnit.descriptionRes: Int?
+    get() = when (this) {
+        AltitudeUnit.AMSL -> R.string.altitude_unit_amsl
+        AltitudeUnit.AGL -> R.string.altitude_unit_agl
+        AltitudeUnit.MSL -> R.string.altitude_unit_msl
+        AltitudeUnit.FL -> R.string.altitude_unit_fl
+        AltitudeUnit.FT_HEIGHT -> R.string.altitude_unit_ft_height
+        AltitudeUnit.FT_ALT -> R.string.altitude_unit_ft_altitude
+        AltitudeUnit.UNL -> R.string.altitude_value_unlimited
+        AltitudeUnit.GND -> R.string.altitude_value_ground
+        AltitudeUnit.SFC -> R.string.altitude_value_surface
+        AltitudeUnit.UNKNOWN -> null
+    }
 
 internal fun resolvePublicContactLookupName(zone: DroneZoneFeature): String? =
     zone.zoneCode ?: zone.layer.displayName
@@ -138,8 +153,9 @@ fun VWorldZoneDetailSheet(
     } else {
         findContact(resolvePublicContactLookupName(zone))
     }
-    val formattedUpperAltitude = zone.formattedUpperAltitude
-    val formattedLowerAltitude = zone.formattedLowerAltitude
+    val altitudeUnitDescription = rememberAltitudeUnitDescriptionResolver()
+    val formattedUpperAltitude = zone.formatUpperAltitude(altitudeUnitDescription)
+    val formattedLowerAltitude = zone.formatLowerAltitude(altitudeUnitDescription)
 
     val estimatedHeight: Dp = remember(zone.layer) {
         resolveVWorldZoneDetailSheetMinHeight(zone.layer)
@@ -321,6 +337,46 @@ fun VWorldZoneDetailSheet(
                         phone = publicContact.phoneNumber
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun rememberAltitudeUnitDescriptionResolver(): (AltitudeUnit) -> String {
+    val amsl = stringResource(R.string.altitude_unit_amsl)
+    val agl = stringResource(R.string.altitude_unit_agl)
+    val msl = stringResource(R.string.altitude_unit_msl)
+    val flightLevel = stringResource(R.string.altitude_unit_fl)
+    val ftHeight = stringResource(R.string.altitude_unit_ft_height)
+    val ftAltitude = stringResource(R.string.altitude_unit_ft_altitude)
+    val unlimited = stringResource(R.string.altitude_value_unlimited)
+    val ground = stringResource(R.string.altitude_value_ground)
+    val surface = stringResource(R.string.altitude_value_surface)
+
+    return remember(
+        amsl,
+        agl,
+        msl,
+        flightLevel,
+        ftHeight,
+        ftAltitude,
+        unlimited,
+        ground,
+        surface,
+    ) {
+        { unit: AltitudeUnit ->
+            when (unit) {
+                AltitudeUnit.AMSL -> amsl
+                AltitudeUnit.AGL -> agl
+                AltitudeUnit.MSL -> msl
+                AltitudeUnit.FL -> flightLevel
+                AltitudeUnit.FT_HEIGHT -> ftHeight
+                AltitudeUnit.FT_ALT -> ftAltitude
+                AltitudeUnit.UNL -> unlimited
+                AltitudeUnit.GND -> ground
+                AltitudeUnit.SFC -> surface
+                AltitudeUnit.UNKNOWN -> ""
             }
         }
     }

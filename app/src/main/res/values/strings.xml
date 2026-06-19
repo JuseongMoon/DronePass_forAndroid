@@ -346,6 +346,15 @@
     <string name="zone_detail_zone_type">구역 유형</string>
     <string name="zone_detail_coordinates">좌표</string>
     <string name="zone_detail_altitude_limit">고도 제한</string>
+    <string name="altitude_unit_agl">지상 기준</string>
+    <string name="altitude_unit_amsl">평균 해수면 기준</string>
+    <string name="altitude_unit_fl">비행고도층 기준</string>
+    <string name="altitude_unit_ft_altitude">고도 기준</string>
+    <string name="altitude_unit_ft_height">높이 기준</string>
+    <string name="altitude_unit_msl">평균 해수면 기준</string>
+    <string name="altitude_value_ground">지상</string>
+    <string name="altitude_value_surface">표면</string>
+    <string name="altitude_value_unlimited">제한없음</string>
 
     <!-- Notification -->
     <string name="notification_sunrise_30min_title">일출 30분 전</string>

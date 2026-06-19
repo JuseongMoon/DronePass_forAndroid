@@ -10,17 +10,17 @@ import kotlin.math.roundToInt
  */
 enum class AltitudeUnit(val label: String, val description: String) {
     /** Above Mean Sea Level - 평균 해수면 */
-    AMSL("AMSL", "평균 해수면"),
+    AMSL("AMSL", "평균 해수면 기준"),
     /** Above Ground Level - 지상 기준 */
     AGL("AGL", "지상 기준"),
     /** Mean Sea Level - 평균 해수면 */
-    MSL("MSL", "평균 해수면"),
+    MSL("MSL", "평균 해수면 기준"),
     /** Flight Level - 비행고도층 */
-    FL("FL", "비행고도층"),
+    FL("FL", "비행고도층 기준"),
     /** Feet Height - 높이 */
-    FT_HEIGHT("FT HEI", "높이"),
+    FT_HEIGHT("FT HEI", "높이 기준"),
     /** Feet Altitude - 고도 */
-    FT_ALT("FT ALT", "고도"),
+    FT_ALT("FT ALT", "고도 기준"),
     /** Unlimited - 제한없음 */
     UNL("UNL", "제한없음"),
     /** Ground - 지상 */
@@ -177,14 +177,20 @@ object AltitudeFormatter {
      * - "GND" -> "GND (지상)"
      * - "SFC" -> "SFC (표면)"
      */
-    fun format(altitudeString: String?): String? {
+    fun format(altitudeString: String?): String? =
+        format(altitudeString) { unit -> unit.description }
+
+    fun format(
+        altitudeString: String?,
+        unitDescription: (AltitudeUnit) -> String
+    ): String? {
         val parsed = parse(altitudeString) ?: return altitudeString
 
         return when (parsed.unit) {
             AltitudeUnit.UNL, AltitudeUnit.GND, AltitudeUnit.SFC ->
-                "${parsed.rawValue} (${parsed.unit.description})"
+                "${parsed.rawValue} (${unitDescription(parsed.unit)})"
             else -> parsed.meters?.let { meters ->
-                "${parsed.rawValue} (${formatMetersIos(meters)}m, ${parsed.unit.description})"
+                "${parsed.rawValue} (${formatMetersIos(meters)}m, ${unitDescription(parsed.unit)})"
             } ?: parsed.rawValue
         }
     }
@@ -196,12 +202,25 @@ object AltitudeFormatter {
      * @param isAgl 지상 기준 여부 (true=AGL, false=MSL)
      */
     fun format(ft: Double, isAgl: Boolean = true): String {
+        return format(ft, isAgl) { unit ->
+            when (unit) {
+                AltitudeUnit.AGL -> "지상 기준"
+                AltitudeUnit.MSL -> "해수면 기준"
+                else -> unit.description
+            }
+        }
+    }
+
+    fun format(
+        ft: Double,
+        isAgl: Boolean = true,
+        unitDescription: (AltitudeUnit) -> String
+    ): String {
         val ftInt = ft.roundToInt()
         val meters = (ft * FEET_TO_METERS).roundToInt()
         val formattedFt = formatNumberWithSpace(ftInt)
-        val reference = if (isAgl) "AGL" else "MSL"
-        val referenceKor = if (isAgl) "지상 기준" else "해수면 기준"
-        return "${formattedFt}ft $reference (${meters}m, $referenceKor)"
+        val unit = if (isAgl) AltitudeUnit.AGL else AltitudeUnit.MSL
+        return "${formattedFt}ft ${unit.label} (${meters}m, ${unitDescription(unit)})"
     }
 
     /**

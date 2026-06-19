@@ -1,6 +1,7 @@
 package com.ScienceFiction.DronePassAndroid.core.data.remote.vworld
 
 import com.ScienceFiction.DronePassAndroid.core.util.AltitudeFormatter
+import com.ScienceFiction.DronePassAndroid.core.util.AltitudeUnit
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 import java.util.Calendar
@@ -366,18 +367,11 @@ val DroneZoneFeature.fullAddress: String?
  * AltitudeFormatter로 포맷팅합니다.
  */
 val DroneZoneFeature.formattedUpperAltitude: String?
-    get() {
-        val altStr = when (layer) {
-            FlightZoneLayer.PROHIBITED, FlightZoneLayer.TEMPORARY_PROHIBITED ->
-                properties.stringProp("prh_lbl_2")
-            FlightZoneLayer.RESTRICTED -> properties.stringProp("res_lbl_2")
-            FlightZoneLayer.DANGER -> properties.stringProp("dng_lbl_2")
-            FlightZoneLayer.ALERT -> properties.stringProp("alt_lbl_2")
-            FlightZoneLayer.ULTRALIGHT -> properties.stringProp("uac_lbl_2")
-            else -> null
-        }
-        return AltitudeFormatter.format(altStr)
-    }
+    get() = formatUpperAltitude { unit -> unit.description }
+
+fun DroneZoneFeature.formatUpperAltitude(
+    unitDescription: (AltitudeUnit) -> String
+): String? = AltitudeFormatter.format(upperAltitudeLabel(), unitDescription)
 
 /**
  * 레이어별 하한 고도를 포맷팅된 문자열로 반환합니다.
@@ -386,18 +380,31 @@ val DroneZoneFeature.formattedUpperAltitude: String?
  * AltitudeFormatter로 포맷팅합니다.
  */
 val DroneZoneFeature.formattedLowerAltitude: String?
-    get() {
-        val altStr = when (layer) {
-            FlightZoneLayer.PROHIBITED, FlightZoneLayer.TEMPORARY_PROHIBITED ->
-                properties.stringProp("prh_lbl_3")
-            FlightZoneLayer.RESTRICTED -> properties.stringProp("res_lbl_3")
-            FlightZoneLayer.DANGER -> properties.stringProp("dng_lbl_3")
-            FlightZoneLayer.ALERT -> properties.stringProp("alt_lbl_3")
-            FlightZoneLayer.ULTRALIGHT -> properties.stringProp("uac_lbl_3")
-            else -> null
-        }
-        return AltitudeFormatter.format(altStr)
-    }
+    get() = formatLowerAltitude { unit -> unit.description }
+
+fun DroneZoneFeature.formatLowerAltitude(
+    unitDescription: (AltitudeUnit) -> String
+): String? = AltitudeFormatter.format(lowerAltitudeLabel(), unitDescription)
+
+private fun DroneZoneFeature.upperAltitudeLabel(): String? = when (layer) {
+    FlightZoneLayer.PROHIBITED, FlightZoneLayer.TEMPORARY_PROHIBITED ->
+        properties.stringProp("prh_lbl_2")
+    FlightZoneLayer.RESTRICTED -> properties.stringProp("res_lbl_2")
+    FlightZoneLayer.DANGER -> properties.stringProp("dng_lbl_2")
+    FlightZoneLayer.ALERT -> properties.stringProp("alt_lbl_2")
+    FlightZoneLayer.ULTRALIGHT -> properties.stringProp("uac_lbl_2")
+    else -> null
+}
+
+private fun DroneZoneFeature.lowerAltitudeLabel(): String? = when (layer) {
+    FlightZoneLayer.PROHIBITED, FlightZoneLayer.TEMPORARY_PROHIBITED ->
+        properties.stringProp("prh_lbl_3")
+    FlightZoneLayer.RESTRICTED -> properties.stringProp("res_lbl_3")
+    FlightZoneLayer.DANGER -> properties.stringProp("dng_lbl_3")
+    FlightZoneLayer.ALERT -> properties.stringProp("alt_lbl_3")
+    FlightZoneLayer.ULTRALIGHT -> properties.stringProp("uac_lbl_3")
+    else -> null
+}
 
 // ============================================================
 // DroneZoneFeature Extension Properties - 중심 좌표 (iOS 정합)
