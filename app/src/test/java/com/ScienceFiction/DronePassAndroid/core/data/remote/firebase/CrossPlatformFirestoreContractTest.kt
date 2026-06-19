@@ -104,6 +104,27 @@ class CrossPlatformFirestoreContractTest {
     }
 
     @Test
+    fun `one hundred iOS shape fixtures parse without losing ids on Android`() {
+        val ids = (0 until 100).map { index -> fixtureUuid(200 + index) }
+
+        val parsedShapes = ids.mapIndexed { index, id ->
+            shapeFromFirestoreDocument(
+                documentId = id,
+                data = iosCircleShapeDocument(
+                    id = id,
+                    title = "iOS Circle $index",
+                ),
+            )
+        }.map { shape -> requireNotNull(shape) }
+
+        assertEquals(100, parsedShapes.size)
+        assertEquals(ids.toSet(), parsedShapes.map { it.id }.toSet())
+        assertEquals("iOS Circle 42", parsedShapes.single { it.id == ids[42] }.title)
+        assertTrue(parsedShapes.all { it.shapeType == ShapeType.CIRCLE })
+        assertTrue(parsedShapes.all { it.baseCoordinate == Coordinate(37.5665, 126.978) })
+    }
+
+    @Test
     fun `iOS sketch fixture parses on Android`() {
         val sketch = sketchFromFirestoreDocument(
             documentId = SKETCH_ID,
@@ -336,10 +357,14 @@ class CrossPlatformFirestoreContractTest {
         assertFalse(droneData.containsKey("deletedAt"))
     }
 
-    private fun iosCircleShapeDocument(shapeType: String = "circle"): Map<String, Any?> {
+    private fun iosCircleShapeDocument(
+        id: String = SHAPE_ID,
+        title: String = "iOS Circle",
+        shapeType: String = "circle",
+    ): Map<String, Any?> {
         return mapOf(
-            "id" to SHAPE_ID,
-            "title" to "iOS Circle",
+            "id" to id,
+            "title" to title,
             "shapeType" to shapeType,
             "baseCoordinate" to mapOf(
                 "latitude" to 37.5665,
@@ -499,6 +524,10 @@ class CrossPlatformFirestoreContractTest {
 
     private fun timestamp(millis: Long): Timestamp {
         return Timestamp(Date(millis))
+    }
+
+    private fun fixtureUuid(index: Int): String {
+        return "00000000-0000-0000-0000-${index.toString().padStart(12, '0')}"
     }
 
     private companion object {

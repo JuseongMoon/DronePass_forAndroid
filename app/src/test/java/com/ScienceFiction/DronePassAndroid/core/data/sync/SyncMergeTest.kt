@@ -152,6 +152,31 @@ class SyncMergeTest {
     }
 
     @Test
+    fun `one hundred iOS server items are applied without loss`() {
+        val server = (0 until 100).map { index ->
+            syncItem(
+                id = "shape-$index",
+                updatedAt = 1_700_000_000_000L + index,
+                value = "server-shape-$index",
+            )
+        }
+
+        val result = merge(local = emptyList(), server = server)
+        val toApply = filterServerNewer(
+            local = emptyList(),
+            server = server,
+            idOf = { it.id },
+            updatedAtOf = { it.updatedAt },
+        )
+
+        assertEquals(100, result.merged.size)
+        assertEquals(100, toApply.size)
+        assertEquals(server.map { it.id }.toSet(), result.merged.map { it.id }.toSet())
+        assertEquals(server.map { it.id }.toSet(), toApply.map { it.id }.toSet())
+        assertEquals(emptyList<SyncItem>(), result.toUpload)
+    }
+
+    @Test
     fun `full sync metadata is updated only when local winners are uploaded`() {
         assertTrue(shouldUpdateServerMetadataAfterFullSync(uploadedItemCount = 1))
         assertFalse(shouldUpdateServerMetadataAfterFullSync(uploadedItemCount = 0))
