@@ -345,8 +345,8 @@ private fun WeatherOverviewCard(
 
             HorizontalDivider()
 
-            if (!isUsingGps && locationAccuracyMeters != null) {
-                WeatherLocationAccuracyCard(accuracyMeters = locationAccuracyMeters)
+            if (shouldShowWeatherLocationAccuracyWarning(isUsingGps, locationAccuracyMeters)) {
+                WeatherLocationAccuracyCard(accuracyMeters = requireNotNull(locationAccuracyMeters))
 
                 HorizontalDivider()
             }
@@ -372,6 +372,13 @@ private fun WeatherOverviewCard(
             }
         }
     }
+}
+
+internal fun shouldShowWeatherLocationAccuracyWarning(
+    isUsingGps: Boolean,
+    locationAccuracyMeters: Double?,
+): Boolean {
+    return !isUsingGps && locationAccuracyMeters != null
 }
 
 @Composable

@@ -10,6 +10,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.File
 
 class InfoGuideSheetsTest {
 
@@ -35,6 +36,29 @@ class InfoGuideSheetsTest {
         assertTrue(isKpLevelAdviceDanger(KpLevel.G3))
         assertTrue(isKpLevelAdviceDanger(KpLevel.G4))
         assertTrue(isKpLevelAdviceDanger(KpLevel.G5))
+    }
+
+    @Test
+    fun `KP guide overview keeps iOS source section order`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/InfoGuideSheets.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/InfoGuideSheets.kt",
+        ).readText()
+
+        assertAppearsInOrder(
+            source = source,
+            tokens = listOf(
+                "R.string.kp_info_sources_title",
+                "R.string.kp_info_sources_body",
+                "R.string.kp_info_source_gfz",
+                "R.string.kp_info_source_noaa",
+                "R.string.kp_info_source_difference",
+                "R.string.kp_info_source_reason_station",
+                "R.string.kp_info_source_reason_interval",
+                "R.string.kp_info_source_reason_forecast",
+                "R.string.kp_info_source_note",
+            ),
+        )
     }
 
     @Test
@@ -78,6 +102,28 @@ class InfoGuideSheetsTest {
         assertEquals(6.0 to 8.5, weatherGuideGustDifferenceThresholds(DroneCategory.CLASS4))
         assertEquals(7.0 to 9.5, weatherGuideGustDifferenceThresholds(DroneCategory.CLASS3))
         assertEquals(9.0 to 12.0, weatherGuideGustDifferenceThresholds(DroneCategory.CLASS2))
+    }
+
+    @Test
+    fun `weather guide location warning follows iOS GPS and accuracy guard`() {
+        assertTrue(
+            shouldShowWeatherLocationAccuracyWarning(
+                isUsingGps = false,
+                locationAccuracyMeters = 120.0,
+            ),
+        )
+        assertFalse(
+            shouldShowWeatherLocationAccuracyWarning(
+                isUsingGps = true,
+                locationAccuracyMeters = 120.0,
+            ),
+        )
+        assertFalse(
+            shouldShowWeatherLocationAccuracyWarning(
+                isUsingGps = false,
+                locationAccuracyMeters = null,
+            ),
+        )
     }
 
     @Test
@@ -144,5 +190,25 @@ class InfoGuideSheetsTest {
                 """.trimIndent(),
             ),
         )
+    }
+
+    private fun assertAppearsInOrder(source: String, tokens: List<String>) {
+        var previousIndex = -1
+        for (token in tokens) {
+            val index = source.indexOf(token, startIndex = previousIndex + 1)
+            assertTrue(
+                "$token should appear after index $previousIndex in InfoGuideSheets.kt",
+                index > previousIndex,
+            )
+            previousIndex = index
+        }
+    }
+
+    private fun resolveProjectFile(vararg candidates: String): File {
+        val userDir = File(requireNotNull(System.getProperty("user.dir")))
+        return candidates
+            .map { File(userDir, it) }
+            .firstOrNull { it.exists() }
+            ?: error("Project file not found: ${candidates.joinToString()}")
     }
 }
