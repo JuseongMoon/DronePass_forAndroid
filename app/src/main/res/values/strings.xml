@@ -654,7 +654,7 @@
     <string name="kp_info_title">KP 지수 정보</string>
     <string name="kp_info_what_title">KP 지수란?</string>
     <string name="kp_info_what_body">KP 지수는 지구 자기장 교란 정도를 나타냅니다.</string>
-    <string name="kp_info_what_bullet_range">범위: 0-9 (0: 매우 조용함, 9: 극도로 활발함)</string>
+    <string name="kp_info_what_bullet_range" tools:ignore="TypographyDashes">범위: 0-9 (0: 매우 조용함, 9: 극도로 활발함)</string>
     <string name="kp_info_what_bullet_measure">태양풍과 지자기 활동의 영향을 측정</string>
     <string name="kp_info_drone_title">드론 비행과의 관계</string>
     <string name="kp_info_drone_body">지자기 활동은 GPS 신호의 정확도에 직접적인 영향을 미칩니다.</string>
@@ -697,11 +697,11 @@
     <string name="kp_info_level_g5_desc">극심한 지자기 폭풍 - 광범위한 전력망 붕괴 가능, 위성 통신 및 항법 장애</string>
     <string name="kp_info_level_g5_advice">비행 자제 권장, GPS 사용 불가능</string>
     <string name="kp_refresh">새로고침</string>
-    <string name="kp_legend_normal">Normal (0-5)</string>
-    <string name="kp_legend_g1">G1 (5-6)</string>
-    <string name="kp_legend_g2">G2 (6-7)</string>
-    <string name="kp_legend_g3">G3 (7-8)</string>
-    <string name="kp_legend_g4">G4 (8-9)</string>
+    <string name="kp_legend_normal" tools:ignore="TypographyDashes">Normal (0-5)</string>
+    <string name="kp_legend_g1" tools:ignore="TypographyDashes">G1 (5-6)</string>
+    <string name="kp_legend_g2" tools:ignore="TypographyDashes">G2 (6-7)</string>
+    <string name="kp_legend_g3" tools:ignore="TypographyDashes">G3 (7-8)</string>
+    <string name="kp_legend_g4" tools:ignore="TypographyDashes">G4 (8-9)</string>
     <string name="kp_legend_g5">G5 (≥9)</string>
     <string name="kp_level_normal_desc">지자기 활동이 낮은 상태입니다</string>
     <string name="kp_level_g1_desc">약한 지자기 폭풍</string>

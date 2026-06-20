@@ -728,7 +728,7 @@
     <string name="kp_info_title">KP Index Information</string>
     <string name="kp_info_what_title">What is KP Index?</string>
     <string name="kp_info_what_body">KP Index represents the level of disturbance in Earth\'s magnetic field.</string>
-    <string name="kp_info_what_bullet_range">Range: 0-9 (0: Very quiet, 9: Extremely active)</string>
+    <string name="kp_info_what_bullet_range" tools:ignore="TypographyDashes">Range: 0-9 (0: Very quiet, 9: Extremely active)</string>
     <string name="kp_info_what_bullet_measure">Measures the impact of solar wind and geomagnetic activity</string>
     <string name="kp_info_drone_title">Relationship with Drone Flight</string>
     <string name="kp_info_drone_body">Geomagnetic activity directly affects GPS signal accuracy.</string>
@@ -771,11 +771,11 @@
     <string name="kp_info_level_g5_desc">Extreme geomagnetic storm - Possible widespread power grid collapse, satellite communication and navigation failure</string>
     <string name="kp_info_level_g5_advice">Avoid flight recommended, GPS unusable</string>
     <string name="kp_refresh">Refresh</string>
-    <string name="kp_legend_normal">Normal (0-5)</string>
-    <string name="kp_legend_g1">G1 (5-6)</string>
-    <string name="kp_legend_g2">G2 (6-7)</string>
-    <string name="kp_legend_g3">G3 (7-8)</string>
-    <string name="kp_legend_g4">G4 (8-9)</string>
+    <string name="kp_legend_normal" tools:ignore="TypographyDashes">Normal (0-5)</string>
+    <string name="kp_legend_g1" tools:ignore="TypographyDashes">G1 (5-6)</string>
+    <string name="kp_legend_g2" tools:ignore="TypographyDashes">G2 (6-7)</string>
+    <string name="kp_legend_g3" tools:ignore="TypographyDashes">G3 (7-8)</string>
+    <string name="kp_legend_g4" tools:ignore="TypographyDashes">G4 (8-9)</string>
     <string name="kp_legend_g5">G5 (≥9)</string>
     <string name="kp_level_normal_desc">Low geomagnetic activity</string>
     <string name="kp_level_g1_desc">Minor geomagnetic storm</string>
