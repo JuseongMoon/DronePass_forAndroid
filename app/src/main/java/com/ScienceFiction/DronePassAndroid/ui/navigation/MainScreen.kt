@@ -1003,9 +1003,9 @@ private fun PushNotificationOverlay(
 private fun FloatingTabBar(
     tabs: List<Screen>,
     selectedRoute: String?,
-    onVerticalDragEnd: ((Float) -> Unit)? = null,
     onTabClick: (Screen) -> Unit,
     modifier: Modifier = Modifier,
+    onVerticalDragEnd: ((Float) -> Unit)? = null,
 ) {
     var dragOffsetPx by remember { mutableFloatStateOf(0f) }
     val dragModifier = if (onVerticalDragEnd == null) {
