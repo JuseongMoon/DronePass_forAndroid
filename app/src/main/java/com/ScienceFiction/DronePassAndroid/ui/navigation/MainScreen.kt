@@ -316,6 +316,14 @@ internal data class SavedOverlayFocusTarget(
     val delayedShapeId: String?,
 )
 
+internal data class SavedOverlayDismissCleanup(
+    val showSavedListOverlay: Boolean,
+    val selectionShapeId: String?,
+    val immediateFocusShapeId: String?,
+    val delayedFocusShapeId: String?,
+    val clearMapSelection: Boolean,
+)
+
 internal fun resolveSavedOverlayFocusTarget(
     shapeId: String,
     wasOverlayClosed: Boolean,
@@ -333,6 +341,16 @@ internal fun resolveSavedOverlayFocusTarget(
             delayedShapeId = null,
         )
     }
+}
+
+internal fun resolveSavedOverlayDismissCleanup(): SavedOverlayDismissCleanup {
+    return SavedOverlayDismissCleanup(
+        showSavedListOverlay = false,
+        selectionShapeId = null,
+        immediateFocusShapeId = null,
+        delayedFocusShapeId = null,
+        clearMapSelection = true,
+    )
 }
 
 internal fun shouldDismissSavedOverlayAfterShapeTapInOverlay(): Boolean = false
@@ -524,11 +542,14 @@ internal fun MainScreen(
     var foregroundSyncDialog by remember { mutableStateOf<ForegroundSyncDialogState?>(null) }
 
     fun dismissSavedListOverlay() {
-        showSavedListOverlay = false
-        savedOverlaySelectionShapeId = null
-        savedOverlayFocusShapeId = null
-        delayedSavedOverlayFocusShapeId = null
-        mapViewModel.clearSelection()
+        val cleanup = resolveSavedOverlayDismissCleanup()
+        showSavedListOverlay = cleanup.showSavedListOverlay
+        savedOverlaySelectionShapeId = cleanup.selectionShapeId
+        savedOverlayFocusShapeId = cleanup.immediateFocusShapeId
+        delayedSavedOverlayFocusShapeId = cleanup.delayedFocusShapeId
+        if (cleanup.clearMapSelection) {
+            mapViewModel.clearSelection()
+        }
     }
 
     LaunchedEffect(delayedSavedOverlayFocusShapeId, showSavedListOverlay) {

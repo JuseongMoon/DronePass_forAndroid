@@ -240,6 +240,20 @@ class MainScreenStartDestinationTest {
     }
 
     @Test
+    fun `저장 오버레이 닫기는 iOS처럼 목록 선택과 지도 하이라이트를 함께 해제한다`() {
+        assertEquals(
+            SavedOverlayDismissCleanup(
+                showSavedListOverlay = false,
+                selectionShapeId = null,
+                immediateFocusShapeId = null,
+                delayedFocusShapeId = null,
+                clearMapSelection = true,
+            ),
+            resolveSavedOverlayDismissCleanup(),
+        )
+    }
+
+    @Test
     fun `저장 오버레이 안에서 도형을 탭하면 iOS처럼 오버레이를 닫지 않는다`() {
         assertEquals(false, shouldDismissSavedOverlayAfterShapeTapInOverlay())
     }
