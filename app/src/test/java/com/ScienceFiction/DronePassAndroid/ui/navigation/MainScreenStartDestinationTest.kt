@@ -203,6 +203,12 @@ class MainScreenStartDestinationTest {
     }
 
     @Test
+    fun `하단 탭바는 저장과 설정 오버레이보다 위에서 입력을 받는다`() {
+        assertTrue(MainFloatingTabBarZIndex > MainOverlayZIndex)
+        assertTrue(MainNotificationPopupZIndex > MainFloatingTabBarZIndex)
+    }
+
+    @Test
     fun `하단 탭 버튼 토큰은 iOS CustomTabButton 과 일치한다`() {
         assertEquals(1.1f, TabSelectedScale, 0f)
         assertEquals(1.0f, TabUnselectedScale, 0f)

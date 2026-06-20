@@ -73,6 +73,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -198,6 +199,9 @@ private const val SheetFractionExpanded = 0.9f
 private const val SheetFractionExpandTrigger = 0.7f
 private val SavedOverlayPhoneMaxHeight = 500.dp
 internal const val SavedOverlayInitialFocusDelayMs = 500L
+internal const val MainOverlayZIndex = 1f
+internal const val MainFloatingTabBarZIndex = 2f
+internal const val MainNotificationPopupZIndex = 3f
 
 internal fun resolveMainStartDestination(): String = Screen.Map.route
 
@@ -719,6 +723,7 @@ internal fun MainScreen(
             visible = showSavedListOverlay,
             enter = mainOverlayEnterTransition(isTablet),
             exit = mainOverlayExitTransition(isTablet),
+            modifier = Modifier.zIndex(MainOverlayZIndex),
         ) {
             SavedListOverlay(
                 isTablet = isTablet,
@@ -752,6 +757,7 @@ internal fun MainScreen(
             visible = showSettingsOverlay,
             enter = mainOverlayEnterTransition(isTablet),
             exit = mainOverlayExitTransition(isTablet),
+            modifier = Modifier.zIndex(MainOverlayZIndex),
         ) {
             SettingsOverlay(
                 isTablet = isTablet,
@@ -799,6 +805,7 @@ internal fun MainScreen(
                     )
                 },
                 modifier = Modifier
+                    .zIndex(MainFloatingTabBarZIndex)
                     .align(Alignment.BottomCenter)
                     // iOS bottom padding token only. navigationBarsPadding visually lifts
                     // the floating Map/Saved/Settings control on Android.
@@ -810,6 +817,7 @@ internal fun MainScreen(
             visible = foregroundNotification != null,
             enter = notificationPopupEnterTransition(),
             exit = notificationPopupExitTransition(),
+            modifier = Modifier.zIndex(MainNotificationPopupZIndex),
         ) {
             displayedForegroundNotification?.let { notification ->
                 PushNotificationOverlay(
