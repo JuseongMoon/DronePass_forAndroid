@@ -217,6 +217,11 @@ internal fun shouldShowFloatingTabBar(
     isSketchMode: Boolean,
 ): Boolean = !isSketchMode
 
+internal fun shouldAttachSettingsOverlayDragToTabBar(
+    isTablet: Boolean,
+    showSettingsOverlay: Boolean,
+): Boolean = showSettingsOverlay && !isTablet
+
 internal fun resolveFloatingTabButtonScale(isSelected: Boolean): Float {
     return if (isSelected) TabSelectedScale else TabUnselectedScale
 }
@@ -525,6 +530,7 @@ internal fun MainScreen(
     val currentRoute = navBackStackEntry?.destination?.route
     val windowSize = currentWindowSizeDp()
     val isTablet = windowSize.width >= TabletBreakpointDp.dp
+    val density = LocalDensity.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
     var pendingFocusShapeId by remember { mutableStateOf<String?>(null) }
@@ -536,10 +542,13 @@ internal fun MainScreen(
     var delayedSavedOverlayFocusShapeId by remember { mutableStateOf<String?>(null) }
     var showSavedListOverlay by remember { mutableStateOf(false) }
     var showSettingsOverlay by remember { mutableStateOf(false) }
+    var settingsSheetHeightFraction by remember { mutableFloatStateOf(SheetFractionDefault) }
     var foregroundNotification by remember { mutableStateOf<ForegroundNotification?>(null) }
     var displayedForegroundNotification by remember { mutableStateOf<ForegroundNotification?>(null) }
     var showForegroundSyncConfirmation by remember { mutableStateOf(false) }
     var foregroundSyncDialog by remember { mutableStateOf<ForegroundSyncDialogState?>(null) }
+    val settingsDismissThresholdPx = with(density) { DismissDragThreshold.toPx() }
+    val settingsExpandThresholdPx = with(density) { ExpandDragThreshold.toPx() }
 
     fun dismissSavedListOverlay() {
         val cleanup = resolveSavedOverlayDismissCleanup()
@@ -549,6 +558,25 @@ internal fun MainScreen(
         delayedSavedOverlayFocusShapeId = cleanup.delayedFocusShapeId
         if (cleanup.clearMapSelection) {
             mapViewModel.clearSelection()
+        }
+    }
+
+    fun applySettingsOverlayPhoneDragEnd(translation: Float) {
+        val dragEnd = resolveSettingsOverlayPhoneDragEnd(
+            translation = translation,
+            currentSheetHeightFraction = settingsSheetHeightFraction,
+            dismissThreshold = settingsDismissThresholdPx,
+            expandThreshold = settingsExpandThresholdPx,
+        )
+        settingsSheetHeightFraction = dragEnd.sheetHeightFraction
+        if (dragEnd.shouldDismiss) {
+            showSettingsOverlay = false
+        }
+    }
+
+    LaunchedEffect(showSettingsOverlay) {
+        if (!showSettingsOverlay) {
+            settingsSheetHeightFraction = SheetFractionDefault
         }
     }
 
@@ -727,6 +755,8 @@ internal fun MainScreen(
         ) {
             SettingsOverlay(
                 isTablet = isTablet,
+                sheetHeightFraction = settingsSheetHeightFraction,
+                onSheetHeightFractionChange = { settingsSheetHeightFraction = it },
                 onDismiss = { showSettingsOverlay = false },
                 onAccountSessionEnded = {
                     mapViewModel.clearMapHighlightForAccountSessionEnd()
@@ -741,6 +771,16 @@ internal fun MainScreen(
             FloatingTabBar(
                 tabs = tabScreens,
                 selectedRoute = selectedTabRoute,
+                onVerticalDragEnd = if (
+                    shouldAttachSettingsOverlayDragToTabBar(
+                        isTablet = isTablet,
+                        showSettingsOverlay = showSettingsOverlay,
+                    )
+                ) {
+                    ::applySettingsOverlayPhoneDragEnd
+                } else {
+                    null
+                },
                 onTabClick = { screen ->
                     handleTabSelection(
                         screen = screen,
@@ -963,11 +1003,37 @@ private fun PushNotificationOverlay(
 private fun FloatingTabBar(
     tabs: List<Screen>,
     selectedRoute: String?,
+    onVerticalDragEnd: ((Float) -> Unit)? = null,
     onTabClick: (Screen) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var dragOffsetPx by remember { mutableFloatStateOf(0f) }
+    val dragModifier = if (onVerticalDragEnd == null) {
+        Modifier
+    } else {
+        Modifier.pointerInput(onVerticalDragEnd) {
+            detectVerticalDragGestures(
+                onDragStart = {
+                    dragOffsetPx = 0f
+                },
+                onDragEnd = {
+                    onVerticalDragEnd(dragOffsetPx)
+                    dragOffsetPx = 0f
+                },
+                onDragCancel = {
+                    dragOffsetPx = 0f
+                },
+                onVerticalDrag = { change, dragAmount ->
+                    change.consume()
+                    dragOffsetPx += dragAmount
+                },
+            )
+        }
+    }
+
     Surface(
         modifier = modifier
+            .then(dragModifier)
             .width(TabBarWidth)
             .height(TabBarHeight),
         shape = RoundedCornerShape(TabBarCornerRadius),
@@ -1302,6 +1368,8 @@ private fun SavedListOverlay(
 @Composable
 private fun SettingsOverlay(
     isTablet: Boolean,
+    sheetHeightFraction: Float,
+    onSheetHeightFractionChange: (Float) -> Unit,
     onDismiss: () -> Unit,
     onAccountSessionEnded: () -> Unit = {},
 ) {
@@ -1313,7 +1381,6 @@ private fun SettingsOverlay(
     val dismissThresholdPx = with(density) { DismissDragThreshold.toPx() }
     val expandThresholdPx = with(density) { ExpandDragThreshold.toPx() }
 
-    var sheetHeightFraction by remember { mutableFloatStateOf(SheetFractionDefault) }
     var dragOffsetPx by remember { mutableFloatStateOf(0f) }
     var isDragging by remember { mutableStateOf(false) }
 
@@ -1420,7 +1487,7 @@ private fun SettingsOverlay(
                                             dismissThreshold = dismissThresholdPx,
                                             expandThreshold = expandThresholdPx,
                                         )
-                                        sheetHeightFraction = dragEnd.sheetHeightFraction
+                                        onSheetHeightFractionChange(dragEnd.sheetHeightFraction)
                                         if (dragEnd.shouldDismiss) {
                                             onDismiss()
                                         }

@@ -10,6 +10,8 @@ import androidx.compose.ui.unit.sp
 import com.ScienceFiction.DronePassAndroid.feature.saved.SortDirection
 import com.ScienceFiction.DronePassAndroid.feature.saved.SortOption
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class MainScreenStartDestinationTest {
@@ -168,6 +170,28 @@ class MainScreenStartDestinationTest {
     fun `하단 탭바는 iOS처럼 스케치 모드에서 숨긴다`() {
         assertEquals(true, shouldShowFloatingTabBar(isSketchMode = false))
         assertEquals(false, shouldShowFloatingTabBar(isSketchMode = true))
+    }
+
+    @Test
+    fun `설정 폰 오버레이가 열리면 하단 탭바도 드래그 확장 입력을 받는다`() {
+        assertTrue(
+            shouldAttachSettingsOverlayDragToTabBar(
+                isTablet = false,
+                showSettingsOverlay = true,
+            ),
+        )
+        assertFalse(
+            shouldAttachSettingsOverlayDragToTabBar(
+                isTablet = false,
+                showSettingsOverlay = false,
+            ),
+        )
+        assertFalse(
+            shouldAttachSettingsOverlayDragToTabBar(
+                isTablet = true,
+                showSettingsOverlay = true,
+            ),
+        )
     }
 
     @Test
