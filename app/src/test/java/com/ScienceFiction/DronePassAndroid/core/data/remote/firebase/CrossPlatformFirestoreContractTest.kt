@@ -240,6 +240,24 @@ class CrossPlatformFirestoreContractTest {
     }
 
     @Test
+    fun `iOS tombstone shape fixture parses as deleted on Android`() {
+        val deletedAtMillis = 1_700_000_999_000L
+        val shape = shapeFromFirestoreDocument(
+            documentId = SHAPE_ID,
+            data = iosCircleShapeDocument() + mapOf(
+                "deletedAt" to timestamp(deletedAtMillis),
+                "updatedAt" to timestamp(deletedAtMillis),
+            ),
+        )
+
+        requireNotNull(shape)
+        assertEquals(deletedAtMillis, shape.deletedAt)
+        assertEquals(deletedAtMillis, shape.updatedAt)
+        assertTrue(shape.isDeleted)
+        assertEquals(emptyList<ShapeModel>(), listOf(shape).filter { it.deletedAt == null })
+    }
+
+    @Test
     fun `shared Firestore integer numeric fields are not widened to Double on Android read`() {
         val shape = shapeFromFirestoreDocument(
             documentId = SHAPE_ID,
