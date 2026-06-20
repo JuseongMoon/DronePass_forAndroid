@@ -195,10 +195,11 @@ class MainScreenStartDestinationTest {
     }
 
     @Test
-    fun `하단 탭바 bottom padding은 Android 폰에서 낮게 두고 tablet은 iOS처럼 20dp 이다`() {
-        assertEquals(8.dp, TabBarPhoneBottomPadding)
+    fun `하단 탭바는 Android 시스템 바를 inset 으로 피하고 tablet은 iOS처럼 20dp 를 더한다`() {
+        assertTrue(FloatingTabBarUsesNavigationBarsPadding)
+        assertEquals(0.dp, TabBarPhoneBottomPadding)
         assertEquals(20.dp, TabBarTabletBottomPadding)
-        assertEquals(8.dp, resolveTabBarBottomPadding(isTablet = false))
+        assertEquals(0.dp, resolveTabBarBottomPadding(isTablet = false))
         assertEquals(20.dp, resolveTabBarBottomPadding(isTablet = true))
     }
 
@@ -294,13 +295,14 @@ class MainScreenStartDestinationTest {
     }
 
     @Test
-    fun `저장 목록 폰 오버레이 높이는 지도 컨트롤을 덜 가리도록 화면 8퍼센트와 500dp 중 작은 값이다`() {
-        assertEquals(64f, resolveSavedOverlayPhoneBaseHeight(800.dp).value, 0.001f)
-        assertEquals(96f, resolveSavedOverlayPhoneBaseHeight(1_200.dp).value, 0.001f)
-        assertEquals(112f, resolveSavedOverlayPhoneBaseHeight(1_400.dp).value, 0.001f)
-        assertEquals(120f, resolveSavedOverlayPhoneBaseHeight(1_500.dp).value, 0.001f)
-        assertEquals(144f, resolveSavedOverlayPhoneBaseHeight(1_800.dp).value, 0.001f)
-        assertEquals(176f, resolveSavedOverlayPhoneBaseHeight(2_200.dp).value, 0.001f)
+    fun `저장 목록 폰 오버레이 높이는 iOS처럼 화면 절반과 500dp 중 작은 값이다`() {
+        assertTrue(MainOverlaysUseNavigationBarsPadding)
+        assertEquals(400f, resolveSavedOverlayPhoneBaseHeight(800.dp).value, 0.001f)
+        assertEquals(500f, resolveSavedOverlayPhoneBaseHeight(1_200.dp).value, 0.001f)
+        assertEquals(500f, resolveSavedOverlayPhoneBaseHeight(1_400.dp).value, 0.001f)
+        assertEquals(500f, resolveSavedOverlayPhoneBaseHeight(1_500.dp).value, 0.001f)
+        assertEquals(500f, resolveSavedOverlayPhoneBaseHeight(1_800.dp).value, 0.001f)
+        assertEquals(500f, resolveSavedOverlayPhoneBaseHeight(2_200.dp).value, 0.001f)
     }
 
     @Test
@@ -332,7 +334,7 @@ class MainScreenStartDestinationTest {
     fun `설정 폰 오버레이는 위로 드래그하면 iOS처럼 90퍼센트로 확장한다`() {
         val result = resolveSettingsOverlayPhoneDragEnd(
             translation = -51f,
-            currentSheetHeightFraction = 0.08f,
+            currentSheetHeightFraction = 0.5f,
             dismissThreshold = 100f,
             expandThreshold = 50f,
         )
@@ -350,7 +352,7 @@ class MainScreenStartDestinationTest {
             expandThreshold = 50f,
         )
 
-        assertEquals(0.08f, result.sheetHeightFraction, 0f)
+        assertEquals(0.5f, result.sheetHeightFraction, 0f)
         assertEquals(true, result.shouldDismiss)
     }
 
@@ -363,7 +365,7 @@ class MainScreenStartDestinationTest {
             expandThreshold = 50f,
         )
 
-        assertEquals(0.08f, result.sheetHeightFraction, 0f)
+        assertEquals(0.5f, result.sheetHeightFraction, 0f)
         assertEquals(false, result.shouldDismiss)
     }
 
@@ -371,12 +373,12 @@ class MainScreenStartDestinationTest {
     fun `설정 폰 오버레이는 iOS처럼 임계값 미만 드래그는 현재 높이를 유지한다`() {
         val result = resolveSettingsOverlayPhoneDragEnd(
             translation = -20f,
-            currentSheetHeightFraction = 0.08f,
+            currentSheetHeightFraction = 0.5f,
             dismissThreshold = 100f,
             expandThreshold = 50f,
         )
 
-        assertEquals(0.08f, result.sheetHeightFraction, 0f)
+        assertEquals(0.5f, result.sheetHeightFraction, 0f)
         assertEquals(false, result.shouldDismiss)
     }
 

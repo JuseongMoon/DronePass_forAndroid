@@ -31,6 +31,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -101,13 +102,14 @@ import kotlinx.coroutines.delay
 
 // MARK: - iOS MainTabView 와 동등한 시각/치수 토큰
 // iOS: width 210, height 60, cornerRadius 30, shadow radius 10.
-// Android edge-to-edge gesture navigation already leaves a visual bottom band, so phone
-// uses a smaller bottom gap than iOS while tablet preserves the iPad 20dp margin.
+// Android still has a system navigation/gesture area at the bottom. Keep the iOS
+// floating control token, but lift it with navigationBarsPadding at the call site.
 private val TabBarWidth = 210.dp
 private val TabBarHeight = 60.dp
 private val TabBarCornerRadius = 30.dp
-internal val TabBarPhoneBottomPadding = 8.dp
+internal val TabBarPhoneBottomPadding = 0.dp
 internal val TabBarTabletBottomPadding = 20.dp
+internal const val FloatingTabBarUsesNavigationBarsPadding = true
 private val TabBarShadowElevation = 8.dp
 private val TabButtonWidth = 60.dp
 
@@ -192,12 +194,13 @@ private const val TabletOverlayHeightFraction = 0.8f
 private val DismissDragThreshold = 100.dp
 private val ExpandDragThreshold = 50.dp
 
-// iOS 기본값은 0.5지만 Android phone은 지도 하단 컨트롤과 시각적으로 겹치므로
-// 초기 저장/설정 오버레이를 더 낮은 하단 위치에 둔다. 위로 드래그하면 iOS처럼 0.9까지 확장된다.
-private const val SheetFractionDefault = 0.08f
+// iOS 기본값. 열린 저장/설정 오버레이가 실제 콘텐츠 영역으로 보여야 하므로
+// 폰에서도 절반 높이에서 시작하고, 시스템 내비게이션 바만 inset 으로 피한다.
+private const val SheetFractionDefault = 0.5f
 private const val SheetFractionExpanded = 0.9f
 private const val SheetFractionExpandTrigger = 0.7f
 private val SavedOverlayPhoneMaxHeight = 500.dp
+internal const val MainOverlaysUseNavigationBarsPadding = true
 internal const val SavedOverlayInitialFocusDelayMs = 500L
 internal const val MainOverlayZIndex = 1f
 internal const val MainFloatingTabBarZIndex = 2f
@@ -807,8 +810,7 @@ internal fun MainScreen(
                 modifier = Modifier
                     .zIndex(MainFloatingTabBarZIndex)
                     .align(Alignment.BottomCenter)
-                    // iOS bottom padding token only. navigationBarsPadding visually lifts
-                    // the floating Map/Saved/Settings control on Android.
+                    .navigationBarsPadding()
                     .padding(bottom = resolveTabBarBottomPadding(isTablet)),
             )
         }
@@ -1265,6 +1267,7 @@ private fun SavedListOverlay(
             } else {
                 Modifier
                     .align(Alignment.BottomCenter)
+                    .navigationBarsPadding()
                     .padding(
                         start = OverlaySideMargin,
                         end = OverlaySideMargin,
@@ -1439,6 +1442,7 @@ private fun SettingsOverlay(
             } else {
                 Modifier
                     .align(Alignment.BottomCenter)
+                    .navigationBarsPadding()
                     .padding(
                         start = OverlaySideMargin,
                         end = OverlaySideMargin,
