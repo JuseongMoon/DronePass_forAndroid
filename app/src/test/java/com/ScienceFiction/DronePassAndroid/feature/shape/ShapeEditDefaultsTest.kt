@@ -790,6 +790,54 @@ class ShapeEditDefaultsTest {
     }
 
     @Test
+    fun `기존 polyline 도형 저장은 좌표 변경량만큼 전체 geometry를 이동한다`() {
+        val original = ShapeModel(
+            id = "shape-polyline",
+            title = "기존 선",
+            shapeType = ShapeType.POLYLINE,
+            baseCoordinate = Coordinate(37.0, 127.0),
+            radius = null,
+            polylineCoordinates = listOf(
+                Coordinate(37.0, 127.0),
+                Coordinate(37.5, 127.5),
+            ),
+            createdAt = 1_000L,
+        )
+
+        val saved = buildShapeEditSavedShape(
+            originalShape = original,
+            isDuplicateMode = false,
+            generatedId = "generated-shape",
+            title = original.title,
+            defaultTitle = "새 도형",
+            coordinate = Coordinate(36.0, 126.0),
+            address = "",
+            noAddressFallback = "주소를 찾을 수 없습니다",
+            radius = "",
+            height = "",
+            memo = "",
+            selectedColor = "#123456",
+            selectedDroneId = null,
+            flightStartDate = 3_000L,
+            flightEndDate = 4_000L,
+            now = 5_000L,
+        )
+
+        assertEquals(ShapeType.POLYLINE, saved.shapeType)
+        assertEquals(Coordinate(36.0, 126.0), saved.baseCoordinate)
+        assertNull(saved.radius)
+        assertNull(saved.secondCoordinate)
+        assertNull(saved.polygonCoordinates)
+        assertEquals(
+            listOf(
+                Coordinate(36.0, 126.0),
+                Coordinate(36.5, 126.5),
+            ),
+            saved.polylineCoordinates,
+        )
+    }
+
+    @Test
     fun `복제 저장은 iOS처럼 새 id와 새 createdAt을 사용한다`() {
         val original = ShapeModel(
             id = "original-shape",
