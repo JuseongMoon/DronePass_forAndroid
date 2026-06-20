@@ -240,11 +240,25 @@ class CrossPlatformFirestoreContractTest {
     }
 
     @Test
-    fun `iOS tombstone shape fixture parses as deleted on Android`() {
+    fun `iOS tombstone fixtures parse as deleted on Android`() {
         val deletedAtMillis = 1_700_000_999_000L
         val shape = shapeFromFirestoreDocument(
             documentId = SHAPE_ID,
             data = iosCircleShapeDocument() + mapOf(
+                "deletedAt" to timestamp(deletedAtMillis),
+                "updatedAt" to timestamp(deletedAtMillis),
+            ),
+        )
+        val sketch = sketchFromFirestoreDocument(
+            documentId = SKETCH_ID,
+            data = iosSketchDocument() + mapOf(
+                "deletedAt" to timestamp(deletedAtMillis),
+                "updatedAt" to timestamp(deletedAtMillis),
+            ),
+        )
+        val drone = droneFromFirestoreDocument(
+            documentId = DRONE_ID,
+            data = iosDroneDocument() + mapOf(
                 "deletedAt" to timestamp(deletedAtMillis),
                 "updatedAt" to timestamp(deletedAtMillis),
             ),
@@ -255,6 +269,18 @@ class CrossPlatformFirestoreContractTest {
         assertEquals(deletedAtMillis, shape.updatedAt)
         assertTrue(shape.isDeleted)
         assertEquals(emptyList<ShapeModel>(), listOf(shape).filter { it.deletedAt == null })
+
+        requireNotNull(sketch)
+        assertEquals(deletedAtMillis, sketch.deletedAt)
+        assertEquals(deletedAtMillis, sketch.updatedAt)
+        assertTrue(sketch.isDeleted)
+        assertEquals(emptyList<SketchModel>(), listOf(sketch).filter { it.deletedAt == null })
+
+        requireNotNull(drone)
+        assertEquals(deletedAtMillis, drone.deletedAt)
+        assertEquals(deletedAtMillis, drone.updatedAt)
+        assertTrue(drone.isDeleted)
+        assertEquals(emptyList<DroneModel>(), listOf(drone).filter { it.deletedAt == null })
     }
 
     @Test
