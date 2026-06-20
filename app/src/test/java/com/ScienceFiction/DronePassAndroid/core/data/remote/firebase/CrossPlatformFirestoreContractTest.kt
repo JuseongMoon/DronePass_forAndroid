@@ -189,6 +189,30 @@ class CrossPlatformFirestoreContractTest {
     }
 
     @Test
+    fun `shared Firestore fixtures with mismatched document ids are skipped on Android`() {
+        val mismatchedId = "00000000-0000-0000-0000-000000000999"
+
+        assertNull(
+            shapeFromFirestoreDocument(
+                documentId = mismatchedId,
+                data = iosCircleShapeDocument(),
+            ),
+        )
+        assertNull(
+            sketchFromFirestoreDocument(
+                documentId = mismatchedId,
+                data = iosSketchDocument(),
+            ),
+        )
+        assertNull(
+            droneFromFirestoreDocument(
+                documentId = mismatchedId,
+                data = iosDroneDocument(),
+            ),
+        )
+    }
+
+    @Test
     fun `Android shape write remains canonical for iOS`() {
         val data = shapeToFirestoreDocumentData(
             ShapeModel(
