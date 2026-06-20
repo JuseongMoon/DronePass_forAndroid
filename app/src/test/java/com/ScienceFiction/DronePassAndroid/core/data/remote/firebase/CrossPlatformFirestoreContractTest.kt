@@ -37,14 +37,36 @@ class CrossPlatformFirestoreContractTest {
     }
 
     @Test
-    fun `legacy uppercase shapeType fixture still parses on Android`() {
-        val shape = shapeFromFirestoreDocument(
-            documentId = SHAPE_ID,
-            data = iosCircleShapeDocument(shapeType = "CIRCLE"),
+    fun `legacy uppercase shapeType fixtures still parse on Android`() {
+        val fixtures = listOf(
+            Triple(
+                SHAPE_ID,
+                iosCircleShapeDocument(shapeType = "CIRCLE"),
+                ShapeType.CIRCLE,
+            ),
+            Triple(
+                RECTANGLE_SHAPE_ID,
+                iosRectangleShapeDocument() + ("shapeType" to "RECTANGLE"),
+                ShapeType.RECTANGLE,
+            ),
+            Triple(
+                POLYGON_SHAPE_ID,
+                iosPolygonShapeDocument() + ("shapeType" to "POLYGON"),
+                ShapeType.POLYGON,
+            ),
+            Triple(
+                POLYLINE_SHAPE_ID,
+                iosPolylineShapeDocument() + ("shapeType" to "POLYLINE"),
+                ShapeType.POLYLINE,
+            ),
         )
 
-        requireNotNull(shape)
-        assertEquals(ShapeType.CIRCLE, shape.shapeType)
+        fixtures.forEach { (documentId, data, expectedType) ->
+            val shape = shapeFromFirestoreDocument(documentId = documentId, data = data)
+
+            requireNotNull(shape)
+            assertEquals(expectedType, shape.shapeType)
+        }
     }
 
     @Test
