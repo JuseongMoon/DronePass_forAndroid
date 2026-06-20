@@ -153,6 +153,7 @@ Android 13 이상에서는 알림 권한을 허용해야 FCM/로컬 알림을 �
 - Apple 로그인은 OAuth 설정과 redirect 흐름을 함께 확인합니다.
 
 실제 iOS/Android 공유 Firestore 동기화 검증 전에는 Android 설정 preflight를 먼저 실행합니다.
+이 preflight는 Naver Maps 키, NCP Maps에 등록해야 하는 Android applicationId, `google-services.json`의 Android package entry와 `client_type=1` OAuth client, `WEB_CLIENT_ID`를 확인합니다.
 
 ```bash
 ./gradlew :app:verifyCrossPlatformE2ePrerequisites

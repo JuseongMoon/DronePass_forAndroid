@@ -12,6 +12,7 @@ Unit tests such as `CrossPlatformFirestoreContractTest` protect the wire format.
 - iOS and Android builds point at the same Firebase project.
 - A disposable real test account is available on both platforms.
 - Android Google sign-in is operational:
+  - Android `applicationId`, NCP Maps Console Android package, and Firebase Android app package are all `com.ScienceFiction.DronePassAndroid`.
   - `local.properties` has a real `WEB_CLIENT_ID`.
   - Firebase Console has the Android debug/release SHA-1 and SHA-256 fingerprints.
   - `app/google-services.json` has a `client_type=1` Android `oauth_client` for `com.ScienceFiction.DronePassAndroid`.

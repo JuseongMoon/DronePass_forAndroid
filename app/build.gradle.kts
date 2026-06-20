@@ -8,30 +8,42 @@ import org.gradle.testing.jacoco.tasks.JacocoCoverageVerification
 import org.gradle.testing.jacoco.tasks.JacocoReport
 
 val dronepassApplicationId = "com.ScienceFiction.DronePassAndroid"
+val ncpMapsConsolePackageName = "com.ScienceFiction.DronePassAndroid"
+
+private fun googleServicesAndroidClients(file: File): List<Map<*, *>> {
+    if (!file.isFile) return emptyList()
+    return runCatching {
+        val root = JsonSlurper().parse(file) as? Map<*, *> ?: return@runCatching emptyList()
+        val clients = root["client"] as? List<*> ?: return@runCatching emptyList()
+        clients.mapNotNull { it as? Map<*, *> }
+    }.getOrDefault(emptyList())
+}
+
+private fun googleServicesHasAndroidClientPackage(file: File, packageName: String): Boolean {
+    return googleServicesAndroidClients(file).any clientMatches@ { client ->
+        val clientInfo = client["client_info"] as? Map<*, *>
+        val androidClientInfo = clientInfo?.get("android_client_info") as? Map<*, *>
+        androidClientInfo?.get("package_name") == packageName
+    }
+}
 
 private fun googleServicesHasAndroidOauthClient(file: File, packageName: String): Boolean {
-    if (!file.isFile) return false
-    return runCatching {
-        val root = JsonSlurper().parse(file) as? Map<*, *> ?: return@runCatching false
-        val clients = root["client"] as? List<*> ?: return@runCatching false
-        clients.any clientMatches@ { rawClient ->
-            val client = rawClient as? Map<*, *> ?: return@clientMatches false
-            val clientInfo = client["client_info"] as? Map<*, *>
-            val androidClientInfo = clientInfo?.get("android_client_info") as? Map<*, *>
-            val oauthClients = client["oauth_client"] as? List<*>
-            androidClientInfo?.get("package_name") == packageName &&
-                oauthClients.orEmpty().any oauthClientMatches@ { rawOauthClient ->
-                    val oauthClient = rawOauthClient as? Map<*, *> ?: return@oauthClientMatches false
-                    val oauthAndroidInfo = oauthClient["android_info"] as? Map<*, *>
-                    val clientType = when (val value = oauthClient["client_type"]) {
-                        is Number -> value.toInt()
-                        is String -> value.toIntOrNull()
-                        else -> null
-                    }
-                    clientType == 1 && oauthAndroidInfo?.get("package_name") == packageName
+    return googleServicesAndroidClients(file).any clientMatches@ { client ->
+        val clientInfo = client["client_info"] as? Map<*, *>
+        val androidClientInfo = clientInfo?.get("android_client_info") as? Map<*, *>
+        val oauthClients = client["oauth_client"] as? List<*>
+        androidClientInfo?.get("package_name") == packageName &&
+            oauthClients.orEmpty().any oauthClientMatches@ { rawOauthClient ->
+                val oauthClient = rawOauthClient as? Map<*, *> ?: return@oauthClientMatches false
+                val oauthAndroidInfo = oauthClient["android_info"] as? Map<*, *>
+                val clientType = when (val value = oauthClient["client_type"]) {
+                    is Number -> value.toInt()
+                    is String -> value.toIntOrNull()
+                    else -> null
                 }
-        }
-    }.getOrDefault(false)
+                clientType == 1 && oauthAndroidInfo?.get("package_name") == packageName
+            }
+    }
 }
 
 private fun isGoogleWebClientIdConfigured(clientId: String?): Boolean {
@@ -108,10 +120,20 @@ val releaseWebClientIdErrorMessage =
 val releaseNaverMapKeyErrorMessage =
     "Naver Maps credentials are not configured. Set NAVER_MAP_KEY_ID and " +
         "NAVER_MAP_KEY_SECRET in local.properties before building release artifacts."
+val ncpMapsPackageNameErrorMessage =
+    "Android applicationId must stay $ncpMapsConsolePackageName because that is the " +
+        "package registered for the NCP Maps Console application."
+val googleServicesAndroidPackageErrorMessage =
+    "Firebase Android client package is not configured in app/google-services.json. Download " +
+        "google-services.json for the Android app whose package_name is $dronepassApplicationId."
 val googleServicesOauthClientErrorMessage =
     "Firebase Android OAuth client is not configured in app/google-services.json. Register the " +
         "debug/release SHA fingerprints in Firebase Console, download the updated google-services.json, " +
         "and verify oauth_client contains a client_type=1 entry for $dronepassApplicationId before building release artifacts."
+val hasGoogleServicesAndroidClientPackage = googleServicesHasAndroidClientPackage(
+    file = project.file("google-services.json"),
+    packageName = dronepassApplicationId,
+)
 val hasGoogleServicesAndroidOauthClient = googleServicesHasAndroidOauthClient(
     file = project.file("google-services.json"),
     packageName = dronepassApplicationId,
@@ -123,6 +145,8 @@ val releaseReadinessErrorMessage: String?
         releaseNaverMapKeyErrorMessage.takeUnless {
             naverMapKeyId.isNotBlank() && naverMapKeySecret.isNotBlank()
         },
+        ncpMapsPackageNameErrorMessage.takeUnless { dronepassApplicationId == ncpMapsConsolePackageName },
+        googleServicesAndroidPackageErrorMessage.takeUnless { hasGoogleServicesAndroidClientPackage },
         googleServicesOauthClientErrorMessage.takeUnless { hasGoogleServicesAndroidOauthClient },
     ).takeIf { it.isNotEmpty() }?.joinToString(separator = "\n")
 val crossPlatformE2ePrerequisitesErrorMessage: String?
@@ -131,6 +155,9 @@ val crossPlatformE2ePrerequisitesErrorMessage: String?
             .takeUnless { isGoogleWebClientIdConfigured(webClientId) },
         "Naver Maps credentials are not configured. Set NAVER_MAP_KEY_ID and NAVER_MAP_KEY_SECRET in local.properties."
             .takeUnless { naverMapKeyId.isNotBlank() && naverMapKeySecret.isNotBlank() },
+        ncpMapsPackageNameErrorMessage.takeUnless { dronepassApplicationId == ncpMapsConsolePackageName },
+        "Firebase Android client package is not configured in app/google-services.json. Download google-services.json for the Android app whose package_name is $dronepassApplicationId."
+            .takeUnless { hasGoogleServicesAndroidClientPackage },
         "Firebase Android OAuth client is not configured in app/google-services.json. Register the debug/release SHA fingerprints in Firebase Console, download the updated google-services.json, and verify oauth_client contains a client_type=1 entry for $dronepassApplicationId before running the cross-platform E2E runbook."
             .takeUnless { hasGoogleServicesAndroidOauthClient },
     ).takeIf { it.isNotEmpty() }?.joinToString(separator = "\n")
