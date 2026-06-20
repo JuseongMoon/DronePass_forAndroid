@@ -8,6 +8,7 @@ import com.ScienceFiction.DronePassAndroid.domain.model.SketchModel
 import com.ScienceFiction.DronePassAndroid.domain.model.isValidForFirebasePersistence
 import com.ScienceFiction.DronePassAndroid.domain.model.isValidForFirebaseRead
 import com.google.firebase.Timestamp
+import com.google.firebase.firestore.GeoPoint
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -352,6 +353,39 @@ class CrossPlatformFirestoreContractTest {
         requireNotNull(sketch)
         assertEquals(3.0, sketch.strokeWidth, 0.0)
         assertEquals(1.0, sketch.opacity, 0.0)
+    }
+
+    @Test
+    fun `shared Firestore GeoPoint coordinates are not treated as valid Android coordinates`() {
+        val geoPoint = GeoPoint(37.5665, 126.978)
+        val shapeWithGeoPointBase = shapeFromFirestoreDocument(
+            documentId = SHAPE_ID,
+            data = iosCircleShapeDocument() + ("baseCoordinate" to geoPoint),
+        )
+        val rectangleWithGeoPointSecond = shapeFromFirestoreDocument(
+            documentId = RECTANGLE_SHAPE_ID,
+            data = iosRectangleShapeDocument() + ("secondCoordinate" to geoPoint),
+        )
+        val polygonWithGeoPointCoordinates = shapeFromFirestoreDocument(
+            documentId = POLYGON_SHAPE_ID,
+            data = iosPolygonShapeDocument() + (
+                "polygonCoordinates" to listOf(
+                    GeoPoint(37.5665, 126.978),
+                    GeoPoint(37.567, 126.979),
+                    GeoPoint(37.566, 126.98),
+                )
+            ),
+        )
+        val sketchWithGeoPoint = sketchFromFirestoreDocument(
+            documentId = SKETCH_ID,
+            data = iosSketchDocument() + ("points" to listOf(geoPoint)),
+        )
+
+        assertNull(shapeWithGeoPointBase)
+        assertNull(rectangleWithGeoPointSecond)
+        assertNull(polygonWithGeoPointCoordinates)
+        requireNotNull(sketchWithGeoPoint)
+        assertEquals(emptyList<Coordinate>(), sketchWithGeoPoint.points)
     }
 
     @Test
