@@ -389,6 +389,38 @@ class CrossPlatformFirestoreContractTest {
     }
 
     @Test
+    fun `shared Firestore short coordinate keys are not treated as canonical Android coordinates`() {
+        val shortKeyCoordinate = mapOf("lat" to 37.5665, "lng" to 126.978)
+        val shapeWithShortKeyBase = shapeFromFirestoreDocument(
+            documentId = SHAPE_ID,
+            data = iosCircleShapeDocument() + ("baseCoordinate" to shortKeyCoordinate),
+        )
+        val rectangleWithShortKeySecond = shapeFromFirestoreDocument(
+            documentId = RECTANGLE_SHAPE_ID,
+            data = iosRectangleShapeDocument() + ("secondCoordinate" to shortKeyCoordinate),
+        )
+        val polylineWithShortKeyCoordinates = shapeFromFirestoreDocument(
+            documentId = POLYLINE_SHAPE_ID,
+            data = iosPolylineShapeDocument() + (
+                "polylineCoordinates" to listOf(
+                    mapOf("lat" to 37.565, "lng" to 126.977),
+                    mapOf("lat" to 37.566, "lng" to 126.978),
+                )
+            ),
+        )
+        val sketchWithShortKeyPoint = sketchFromFirestoreDocument(
+            documentId = SKETCH_ID,
+            data = iosSketchDocument() + ("points" to listOf(shortKeyCoordinate)),
+        )
+
+        assertNull(shapeWithShortKeyBase)
+        assertNull(rectangleWithShortKeySecond)
+        assertNull(polylineWithShortKeyCoordinates)
+        requireNotNull(sketchWithShortKeyPoint)
+        assertEquals(emptyList<Coordinate>(), sketchWithShortKeyPoint.points)
+    }
+
+    @Test
     fun `Android non circle shape writes canonical geometry for iOS`() {
         val rectangleData = shapeToFirestoreDocumentData(
             androidShape(
