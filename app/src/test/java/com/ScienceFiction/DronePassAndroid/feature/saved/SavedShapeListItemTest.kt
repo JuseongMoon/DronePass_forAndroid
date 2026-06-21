@@ -2,16 +2,39 @@ package com.ScienceFiction.DronePassAndroid.feature.saved
 
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
-import org.junit.Assert.assertEquals
-import org.junit.Test
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.TimeZone
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import org.junit.Test
 
 class SavedShapeListItemTest {
 
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.KOREA).apply {
         timeZone = TimeZone.getTimeZone("Asia/Seoul")
+    }
+
+    @Test
+    fun `저장 목록 행 날짜 formatter 는 iOS DateFormatter 처럼 호출 Locale 을 따른다`() {
+        val formatter = savedShapeListDateFormat(Locale.US).apply {
+            timeZone = TimeZone.getTimeZone("Asia/Seoul")
+        }
+
+        assertEquals("2025-01-01", formatter.format(1_735_657_200_000L))
+    }
+
+    @Test
+    fun `저장 목록 행은 날짜 Locale 을 한국어로 강제하지 않는다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/saved/SavedShapeListItem.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/saved/SavedShapeListItem.kt",
+        ).readText()
+
+        assertTrue(source.contains("savedShapeListDateFormat(currentLocale)"))
+        assertFalse(source.contains("Locale.KOREA"))
     }
 
     @Test
@@ -103,5 +126,13 @@ class SavedShapeListItemTest {
         assertEquals(true, isSavedShapeListItemExpired(flightEndDateMillis = 999L, now = 1_000L))
         assertEquals(false, isSavedShapeListItemExpired(flightEndDateMillis = 1_001L, now = 1_000L))
         assertEquals(false, isSavedShapeListItemExpired(flightEndDateMillis = null, now = 1_000L))
+    }
+
+    private fun resolveProjectFile(vararg candidates: String): File {
+        val userDir = File(requireNotNull(System.getProperty("user.dir")))
+        return candidates
+            .map { File(userDir, it) }
+            .firstOrNull { it.exists() }
+            ?: error("Project file not found: ${candidates.joinToString()}")
     }
 }

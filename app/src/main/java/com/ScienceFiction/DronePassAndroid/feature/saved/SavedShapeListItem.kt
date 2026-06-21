@@ -46,8 +46,8 @@ fun SavedShapeListItem(
     onDetailClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    // 한국 시장 타겟이므로 Locale.KOREA 명시. 매 호출 SimpleDateFormat 생성 부담 회피.
-    val dateFormat = remember { SimpleDateFormat("yyyy-MM-dd", Locale.KOREA) }
+    val currentLocale = Locale.getDefault()
+    val dateFormat = remember(currentLocale) { savedShapeListDateFormat(currentLocale) }
     val shapeColor = resolveSavedShapeDisplayColor(shape.color)
     val isExpired = isSavedShapeListItemExpired(shape.flightEndDate, now = System.currentTimeMillis())
     val displayColor = if (isExpired) SavedShapeExpiredIndicatorColor else shapeColor
@@ -154,6 +154,10 @@ internal val SavedShapeColorIndicatorHeight = 35.dp
 internal val SavedShapeColorIndicatorCornerRadius = 15.dp
 internal val SavedShapeColorIndicatorShadowElevation = 1.dp
 internal val SavedShapeExpiredIndicatorColor = Color(0xFF8E8E93)
+
+internal fun savedShapeListDateFormat(
+    locale: Locale = Locale.getDefault(),
+): SimpleDateFormat = SimpleDateFormat("yyyy-MM-dd", locale)
 
 internal fun formatSavedShapeDateRange(
     startDateMillis: Long,
