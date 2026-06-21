@@ -2,6 +2,7 @@ package com.ScienceFiction.DronePassAndroid.core.util
 
 import java.io.File
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -44,6 +45,18 @@ class AnalyticsLoggerTest {
         assertEquals("shape_type", AnalyticsParamShapeType)
         assertEquals("layer_name", AnalyticsParamLayerName)
         assertEquals("app_name", AnalyticsParamAppName)
+    }
+
+    @Test
+    fun `주소 검색 analytics 는 iOS처럼 검색어 원문을 남기지 않는다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/core/util/AnalyticsLogger.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/core/util/AnalyticsLogger.kt",
+        ).readText()
+
+        assertTrue(source.contains("fun logSearchAddress()"))
+        assertFalse(source.contains("fun logSearchAddress(query"))
+        assertFalse(source.contains("FirebaseAnalytics.Param.SEARCH_TERM"))
     }
 
     @Test

@@ -120,11 +120,9 @@ class AnalyticsLogger @Inject constructor() {
         analytics.logEvent(AnalyticsEventKpViewed, null)
     }
 
-    /** 주소 검색 이벤트 */
-    fun logSearchAddress(query: String) {
-        analytics.logEvent(AnalyticsEventSearchAddress) {
-            param(FirebaseAnalytics.Param.SEARCH_TERM, query)
-        }
+    /** 주소 검색 이벤트. 실제 주소/검색어 원문은 Analytics에 남기지 않는다. */
+    fun logSearchAddress() {
+        analytics.logEvent(AnalyticsEventSearchAddress, null)
     }
 
     /** 외부 지도 앱 열기 이벤트 */
