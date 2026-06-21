@@ -1,6 +1,6 @@
 # DronePass Android 작업 이어가기
 
-> 마지막 업데이트: 2026-06-21
+> 마지막 업데이트: 2026-06-22
 > 브랜치: `fix/critical-pri0-fixes`
 > 상태: iOS 동작 대조와 Android 출시 하드닝 진행 중
 
@@ -17,6 +17,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 2026-06-22 현재 작업 기준 한국 특화 기능 최초 기본값 저장 경로를 iOS `SettingManager.loadKoreaFeaturesSetting`와 더 직접적으로 맞췄다. Android의 화면 노출용 `koreaFeaturesEnabled` Flow는 저장된 앱 언어를 보지만, 최초 DataStore 값을 굳히는 private init 경로는 컨텍스트 없는 런타임 Locale helper를 사용할 수 있어 초기화 순서가 바뀌면 앱 언어 저장값과 다른 기본값을 저장할 여지가 있었다. 컨텍스트 없는 `defaultKoreaFeaturesEnabled()`/`resolveCurrentAppLanguage()` helper를 제거하고 `SettingsViewModel.initializeKoreaFeaturesSetting()`도 `defaultKoreaFeaturesEnabled(appContext)`만 사용하도록 정리했다. `:app:testDebugUnitTest --tests "*SettingsPreferenceKeysTest" --tests "*SettingsLanguageSelectionTest" --tests "*SettingsScreenContractTest"` 통과.
 - 2026-06-21 현재 작업 기준 한국 특화 기능 토글의 설정 화면 계약을 iOS `SettingView`와 더 직접적으로 고정했다. Android 구현은 이미 토글 시 `toggleKoreaFeatures(newValue)`로 상태를 저장하고 MapViewModel이 비행구역 UI/레이어를 비운 뒤 ON/OFF 안내 다이얼로그를 띄우는 흐름을 유지했지만, 설정 화면 테스트는 섹션 순서와 문자열만 확인했다. `SettingsScreenContractTest`에 `settings_korea_features` 토글 → 상태 변경 → ON/OFF title/message 다이얼로그 순서를 명시해 iOS `HideAllFlightZones` + `showKoreaFeaturesOnAlert/OffAlert` 흐름이 깨지지 않도록 했다. `:app:testDebugUnitTest --tests "*SettingsScreenContractTest" --tests "*MapScreenLayersTest" --tests "*StringResourceCoverageTest"` 통과.
 - 2026-06-21 현재 작업 기준 기존 로그인 사용자 루트 문서 patch를 iOS `AuthManager.updateUserMetadata`와 맞췄다. iOS는 동일 UID/기존 사용자 재로그인 시 `lastLogin`과 provider User ID만 merge하고 `email`은 덮어쓰지 않으므로, Android `buildExistingUserDocumentPatch`도 기존 사용자 patch에서 `email`을 제외한다. 신규 사용자 생성과 UID 마이그레이션은 기존처럼 email을 유지한다. `:app:testDebugUnitTest --tests "*AuthRepositoryUserDocumentTest" --tests "*AuthViewModelForegroundSyncTest" --tests "*LoginScreenContractTest"` 통과.
 - 2026-06-21 현재 작업 기준 저장 목록 행 탭 → 지도 포커스 흐름의 반경 계약을 iOS `SavedTableListView.ShapeListRow.handleShapeTap`/`MapViewModel.moveCameraToShape` 기준으로 다시 대조했다. Android 구현은 이미 `shape.radius ?: 100m`를 shapeType과 무관하게 사용해 iOS `MoveToShapeData(radius: shape.radius ?? 100.0)`와 맞았지만, 기존 테스트는 사각형/다각형의 `radius == null` 기본값만 확인해 레거시/공유 데이터에 radius가 남아 있는 비원형 도형의 줌 회귀를 놓칠 수 있었다. 사각형 도형도 radius 필드가 있으면 해당 값으로 줌을 계산하는 계약을 `MapCameraFocusTest`에 추가했다. `:app:testDebugUnitTest --tests "*MapCameraFocusTest" --tests "*SavedListSectionsTest"` 통과.

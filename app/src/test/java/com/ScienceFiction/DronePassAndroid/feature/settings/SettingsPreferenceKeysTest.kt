@@ -1,6 +1,7 @@
 package com.ScienceFiction.DronePassAndroid.feature.settings
 
 import androidx.datastore.preferences.core.preferencesOf
+import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -98,5 +99,24 @@ class SettingsPreferenceKeysTest {
                 language = AppLanguage.English,
             )
         )
+    }
+
+    @Test
+    fun `한국 특화 기능 초기 저장값은 런타임 Locale 이 아닌 앱 언어 저장값을 따른다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsViewModel.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsViewModel.kt",
+        ).readText()
+
+        assertTrue(source.contains("legacyValue ?: defaultKoreaFeaturesEnabled(appContext)"))
+        assertFalse(source.contains("legacyValue ?: defaultKoreaFeaturesEnabled()"))
+    }
+
+    private fun resolveProjectFile(vararg candidates: String): File {
+        val userDir = File(requireNotNull(System.getProperty("user.dir")))
+        return candidates
+            .map { File(userDir, it) }
+            .firstOrNull { it.exists() }
+            ?: error("Project file not found: ${candidates.joinToString()}")
     }
 }

@@ -176,7 +176,7 @@ class SettingsViewModel @Inject constructor(
                 if (preferences[SettingsPreferenceKeys.KOREA_FEATURES_ENABLED] == null) {
                     val legacyValue = preferences[SettingsPreferenceKeys.LEGACY_KOREA_FEATURES_ENABLED]
                     preferences[SettingsPreferenceKeys.KOREA_FEATURES_ENABLED] =
-                        legacyValue ?: defaultKoreaFeaturesEnabled()
+                        legacyValue ?: defaultKoreaFeaturesEnabled(appContext)
                     preferences.remove(SettingsPreferenceKeys.LEGACY_KOREA_FEATURES_ENABLED)
                 }
             }

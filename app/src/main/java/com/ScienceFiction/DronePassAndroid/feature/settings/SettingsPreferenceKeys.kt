@@ -1,10 +1,8 @@
 package com.ScienceFiction.DronePassAndroid.feature.settings
 
 import android.content.Context
-import androidx.appcompat.app.AppCompatDelegate
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
-import java.util.Locale
 
 internal object SettingsPreferenceKeys {
     val KOREA_FEATURES_ENABLED = booleanPreferencesKey("KoreaFeaturesEnabled")
@@ -41,26 +39,12 @@ internal fun storedKeepScreenAwake(preferences: Preferences): Boolean {
         ?: false
 }
 
-internal fun resolveCurrentAppLanguage(): AppLanguage {
-    val locales = AppCompatDelegate.getApplicationLocales()
-    val tag = if (!locales.isEmpty) {
-        locales.get(0)?.language
-    } else {
-        Locale.getDefault().language
-    }
-    return AppLanguage.fromTag(tag)
-}
-
 internal fun resolveCurrentAppLanguage(context: Context): AppLanguage {
     return resolvePersistedOrInitialAppLanguage(context)
 }
 
 internal fun defaultKoreaFeaturesEnabled(language: AppLanguage): Boolean {
     return language == AppLanguage.Korean
-}
-
-internal fun defaultKoreaFeaturesEnabled(): Boolean {
-    return defaultKoreaFeaturesEnabled(resolveCurrentAppLanguage())
 }
 
 internal fun defaultKoreaFeaturesEnabled(context: Context): Boolean {
