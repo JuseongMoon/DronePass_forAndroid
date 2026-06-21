@@ -10,6 +10,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.File
 
 class SearchAddressSheetTest {
 
@@ -69,6 +70,25 @@ class SearchAddressSheetTest {
         assertEquals(20.dp, SearchAddressGuideCardCornerRadius)
         assertEquals(16.dp, SearchAddressGuideCardPadding)
         assertEquals(8.dp, SearchAddressGuideCardVerticalSpacing)
+    }
+
+    @Test
+    fun `주소 검색 안내 예시는 iOS SearchAddressView 순서를 유지한다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/shape/SearchAddressSheet.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/shape/SearchAddressSheet.kt",
+        ).readText()
+
+        assertAppearsInOrder(
+            source = source,
+            tokens = listOf(
+                "R.string.search_address_example",
+                "R.string.search_address_example_road_1",
+                "R.string.search_address_example_jibun_1",
+                "R.string.search_address_example_road_2",
+                "R.string.search_address_example_jibun_2",
+            ),
+        )
     }
 
     @Test
@@ -422,5 +442,25 @@ class SearchAddressSheetTest {
                 fallback = "주소 검색 중 오류가 발생했습니다",
             ),
         )
+    }
+
+    private fun assertAppearsInOrder(source: String, tokens: List<String>) {
+        var previousIndex = -1
+        for (token in tokens) {
+            val index = source.indexOf(token, startIndex = previousIndex + 1)
+            assertTrue(
+                "$token should appear after index $previousIndex in SearchAddressSheet.kt",
+                index > previousIndex,
+            )
+            previousIndex = index
+        }
+    }
+
+    private fun resolveProjectFile(vararg candidates: String): File {
+        val userDir = File(requireNotNull(System.getProperty("user.dir")))
+        return candidates
+            .map { File(userDir, it) }
+            .firstOrNull { it.exists() }
+            ?: error("Project file not found: ${candidates.joinToString()}")
     }
 }
