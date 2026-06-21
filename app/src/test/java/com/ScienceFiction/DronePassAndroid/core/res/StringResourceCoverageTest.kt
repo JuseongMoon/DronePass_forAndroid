@@ -690,9 +690,25 @@ class StringResourceCoverageTest {
             "본 서비스는 국토교통부 디지털트윈국토 정보를 기반으로 제공하며, 실제 비행 허가 및 안전에 대한 책임은 사용자에게 있습니다.",
             stringResourceValue("values/strings.xml", "flight_zone_legal_disclaimer"),
         )
+        assertEquals("드론 비행 구역", stringResourceValue("values/strings.xml", "flight_zone_navigation_title"))
+        assertEquals("완료", stringResourceValue("values/strings.xml", "flight_zone_navigation_done"))
+        assertEquals("전체 선택", stringResourceValue("values/strings.xml", "flight_zone_select_all"))
+        assertEquals("전체 해제", stringResourceValue("values/strings.xml", "flight_zone_deselect_all"))
+        assertEquals("선택된 레이어", stringResourceValue("values/strings.xml", "flight_zone_stats_selected"))
+        assertEquals("표시된 구역", stringResourceValue("values/strings.xml", "flight_zone_stats_displayed"))
+        assertEquals("%1\$d / %2\$d", stringResourceValue("values/strings.xml", "flight_zone_stats_count_format"))
+        assertEquals("경계구역", stringResourceValue("values/strings.xml", "flight_zone_layer_boundary_zone"))
+        assertEquals("관제권", stringResourceValue("values/strings.xml", "flight_zone_layer_control_zone"))
+        assertEquals("위험지역", stringResourceValue("values/strings.xml", "flight_zone_layer_danger_zone"))
+        assertEquals("경량항공기 이착륙장", stringResourceValue("values/strings.xml", "flight_zone_layer_light_aircraft_zone"))
+        assertEquals("국립자연공원", stringResourceValue("values/strings.xml", "flight_zone_layer_national_park"))
+        assertEquals("장애물공역", stringResourceValue("values/strings.xml", "flight_zone_layer_obstacle_zone"))
+        assertEquals("비행제한구역", stringResourceValue("values/strings.xml", "flight_zone_layer_restricted_zone"))
+        assertEquals("비행장교통구역", stringResourceValue("values/strings.xml", "flight_zone_layer_traffic_zone"))
         assertEquals("문화재보호구역", stringResourceValue("values/strings.xml", "flight_zone_layer_cultural_heritage"))
         assertEquals("비행금지구역", stringResourceValue("values/strings.xml", "flight_zone_layer_prohibited_zone"))
         assertEquals("사전협의구역", stringResourceValue("values/strings.xml", "flight_zone_layer_consultation_zone"))
+        assertEquals("임시비행금지구역", stringResourceValue("values/strings.xml", "flight_zone_layer_temporary_prohibited"))
         assertEquals("초경량비행장치공역", stringResourceValue("values/strings.xml", "flight_zone_layer_ultra_light_zone"))
         assertEquals(
             "비행구역 데이터를 불러올 수 없습니다",
@@ -703,17 +719,29 @@ class StringResourceCoverageTest {
             "This service provides information based on the Korean government's Digital Twin National Land data. Users are responsible for actual flight permits and safety.",
             androidDisplayStringResourceValue("values-en/strings.xml", "flight_zone_legal_disclaimer"),
         )
+        assertEquals("Drone Flight Zones", stringResourceValue("values-en/strings.xml", "flight_zone_navigation_title"))
+        assertEquals("Done", stringResourceValue("values-en/strings.xml", "flight_zone_navigation_done"))
         assertEquals("Select All", stringResourceValue("values-en/strings.xml", "flight_zone_select_all"))
         assertEquals("Deselect All", stringResourceValue("values-en/strings.xml", "flight_zone_deselect_all"))
         assertEquals("Selected Layers", stringResourceValue("values-en/strings.xml", "flight_zone_stats_selected"))
         assertEquals("Displayed Zones", stringResourceValue("values-en/strings.xml", "flight_zone_stats_displayed"))
+        assertEquals("%1\$d / %2\$d", stringResourceValue("values-en/strings.xml", "flight_zone_stats_count_format"))
+        assertEquals("Aerodrome Traffic Zone", stringResourceValue("values-en/strings.xml", "flight_zone_layer_traffic_zone"))
         assertEquals("Boundary Zone", stringResourceValue("values-en/strings.xml", "flight_zone_layer_boundary_zone"))
+        assertEquals("Control Zone", stringResourceValue("values-en/strings.xml", "flight_zone_layer_control_zone"))
+        assertEquals("Danger Zone", stringResourceValue("values-en/strings.xml", "flight_zone_layer_danger_zone"))
         assertEquals(
             "Cultural Heritage Protection Zone",
             stringResourceValue("values-en/strings.xml", "flight_zone_layer_cultural_heritage"),
         )
         assertEquals("Light Aircraft Airfield", stringResourceValue("values-en/strings.xml", "flight_zone_layer_light_aircraft_zone"))
+        assertEquals("National Park", stringResourceValue("values-en/strings.xml", "flight_zone_layer_national_park"))
+        assertEquals("Obstacle Zone", stringResourceValue("values-en/strings.xml", "flight_zone_layer_obstacle_zone"))
+        assertEquals("Prior Consultation Zone", stringResourceValue("values-en/strings.xml", "flight_zone_layer_consultation_zone"))
+        assertEquals("Prohibited Zone", stringResourceValue("values-en/strings.xml", "flight_zone_layer_prohibited_zone"))
+        assertEquals("Restricted Zone", stringResourceValue("values-en/strings.xml", "flight_zone_layer_restricted_zone"))
         assertEquals("Temporary Prohibited Zone", stringResourceValue("values-en/strings.xml", "flight_zone_layer_temporary_prohibited"))
+        assertEquals("Ultralight Aircraft Zone", stringResourceValue("values-en/strings.xml", "flight_zone_layer_ultra_light_zone"))
         assertEquals(
             "Unable to load flight zone data",
             stringResourceValue("values-en/strings.xml", "map_flight_zones_error_load_failed"),
