@@ -64,6 +64,33 @@ class MarkdownParserTest {
     }
 
     @Test
+    fun parseMarkdownHandlesWindowsNewlinesLikeIosNewlines() {
+        val parsed = MarkdownParser.parseMarkdown(
+            "# Title\r\n" +
+                "Paragraph\r\n" +
+                "| Header A | Header B |\r\n" +
+                "|---|---|\r\n" +
+                "| Value A | Value B |\r\n" +
+                "- Dash item",
+        )
+
+        assertEquals(
+            listOf(
+                MarkdownElementType.Header,
+                MarkdownElementType.Paragraph,
+                MarkdownElementType.Table,
+                MarkdownElementType.ListItem,
+            ),
+            parsed.elements.map { it.type },
+        )
+        assertEquals("Title", parsed.elements[0].content)
+        assertEquals("Paragraph", parsed.elements[1].content)
+        assertEquals(listOf("Header A", "Header B"), parsed.tables.single().headers)
+        assertEquals(listOf("Value A", "Value B"), parsed.tables.single().rows.single())
+        assertEquals("Dash item", parsed.elements[3].content)
+    }
+
+    @Test
     fun parsePatchNotesPreservesIosFeatureStructure() {
         val content = """
             v1.2.3 (2025-07-01): Title: with colon
@@ -102,5 +129,27 @@ class MarkdownParserTest {
         assertEquals(1, notes.size)
         assertEquals("v1.0.0", notes[0].version)
         assertEquals("Initial feature", notes[0].features.single().title)
+    }
+
+    @Test
+    fun parsePatchNotesHandlesWindowsNewlinesLikeIosNewlines() {
+        val notes = MarkdownParser.parsePatchNotes(
+            "v1.2.3 (2025-07-01): Release title\r\n" +
+                "- Feature A\r\n" +
+                "    - First description line\r\n" +
+                "    - Second description line\r\n" +
+                "\r\n" +
+                "v1.2.2 (2025-06-01): Previous release\r\n" +
+                "- Previous feature",
+        )
+
+        assertEquals(2, notes.size)
+        assertEquals("v1.2.3", notes[0].version)
+        assertEquals("2025-07-01", notes[0].date)
+        assertEquals("Release title", notes[0].title)
+        assertEquals("Feature A", notes[0].features.single().title)
+        assertEquals("First description line\nSecond description line", notes[0].features.single().description)
+        assertEquals("Previous release", notes[1].title)
+        assertEquals("Previous feature", notes[1].features.single().title)
     }
 }

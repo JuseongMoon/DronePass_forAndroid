@@ -25,7 +25,7 @@ object MarkdownParser {
         val elements = mutableListOf<MarkdownElement>()
         val tables = mutableListOf<TableData>()
 
-        val lines = content.split("\n", "\r\n", "\r")
+        val lines = content.lines()
         var i = 0
 
         while (i < lines.size) {
@@ -162,7 +162,7 @@ object MarkdownParser {
             }
 
         for (block in blocks) {
-            val lines = block.split("\n", "\r\n", "\r")
+            val lines = block.lines()
             val headerLine = lines.firstOrNull() ?: continue
 
             // 헤더 split: "v1.0.0 (2025-01-15): 제목" → ["v1.0.0 (2025-01-15)", "제목"]
