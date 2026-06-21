@@ -68,6 +68,18 @@ class AnalyticsLoggerTest {
         assertTrue(source.contains("analyticsLogger.logFlightZoneLayerToggled(layer.typeName)"))
     }
 
+    @Test
+    fun `저장 목록 analytics 이벤트는 상세 복제 삭제 경로에서도 수집한다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/saved/SavedListViewModel.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/saved/SavedListViewModel.kt",
+        ).readText()
+
+        assertTrue(source.contains("private val analyticsLogger: AnalyticsLogger"))
+        assertTrue(source.contains("analyticsLogger.logShapeDuplicated()"))
+        assertTrue(source.contains("analyticsLogger.logShapeDeleted()"))
+    }
+
     private fun resolveProjectFile(vararg candidates: String): File {
         val roots = listOf(File("."), File("app"))
         for (root in roots) {

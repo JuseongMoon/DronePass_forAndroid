@@ -10,6 +10,7 @@ import androidx.lifecycle.viewModelScope
 import com.ScienceFiction.DronePassAndroid.core.data.remote.NaverGeocodingApi
 import com.ScienceFiction.DronePassAndroid.core.data.repository.DroneRepository
 import com.ScienceFiction.DronePassAndroid.core.data.repository.ShapeRepository
+import com.ScienceFiction.DronePassAndroid.core.util.AnalyticsLogger
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 import com.ScienceFiction.DronePassAndroid.feature.drone.DroneSelectionState
@@ -191,6 +192,7 @@ class SavedListViewModel @Inject constructor(
     private val droneSelectionState: DroneSelectionState,
     private val dataStore: DataStore<Preferences>,
     val naverGeocodingApi: NaverGeocodingApi,
+    private val analyticsLogger: AnalyticsLogger,
     @ApplicationContext private val appContext: Context,
 ) : ViewModel() {
 
@@ -443,6 +445,9 @@ class SavedListViewModel @Inject constructor(
                 )
                 val updatedShape = resolvedShape.copy(updatedAt = System.currentTimeMillis())
                 shapeRepository.insertShape(updatedShape)
+                if (isDuplicate) {
+                    analyticsLogger.logShapeDuplicated()
+                }
 
                 _showShapeEdit.value = false
                 _isDuplicateMode.value = false
@@ -498,6 +503,7 @@ class SavedListViewModel @Inject constructor(
     private fun deleteShape(shape: ShapeModel, source: SavedShapeDeleteSource) {
         viewModelScope.launch {
             shapeRepository.softDeleteShape(shape)
+            analyticsLogger.logShapeDeleted()
             val presentationUpdate = resolveSavedShapeDeletePresentationUpdate(source)
             if (presentationUpdate.dismissDetailAndClearSelection) {
                 _showShapeEdit.value = false
