@@ -37,11 +37,19 @@ class StringResourceCoverageTest {
         assertEquals("로그인 / 회원가입", stringResourceValue("values/strings.xml", "login_title"))
         assertEquals("Apple로 계속하기", stringResourceValue("values/strings.xml", "login_apple"))
         assertEquals("Google로 로그인", stringResourceValue("values/strings.xml", "login_google"))
+        assertEquals("로그인 / 회원가입 시", stringResourceValue("values/strings.xml", "login_terms_intro"))
+        assertEquals("이용약관", stringResourceValue("values/strings.xml", "login_terms_service"))
+        assertEquals("개인정보 취급방침", stringResourceValue("values/strings.xml", "login_terms_privacy"))
+        assertEquals("에", stringResourceValue("values/strings.xml", "login_terms_middle"))
+        assertEquals("\\u0020동의하게 됩니다.", stringResourceValue("values/strings.xml", "login_terms_agree"))
+        assertEquals("By signing in/up, you agree to", stringResourceValue("values-en/strings.xml", "login_terms_intro"))
+        assertEquals("Terms of Service", stringResourceValue("values-en/strings.xml", "login_terms_service"))
+        assertEquals("Privacy Policy", stringResourceValue("values-en/strings.xml", "login_terms_privacy"))
         assertEquals(
             "\\u0020and",
             stringResourceValue("values-en/strings.xml", "login_terms_middle"),
         )
-        assertEquals("\\u0020동의하게 됩니다.", stringResourceValue("values/strings.xml", "login_terms_agree"))
+        assertEquals(".", stringResourceValue("values-en/strings.xml", "login_terms_agree"))
         assertEquals("로그인 오류", stringResourceValue("values/strings.xml", "login_error_title"))
         assertEquals("알 수 없는 오류", stringResourceValue("values/strings.xml", "login_error_unknown"))
         assertEquals("알 수 없는 오류가 발생했습니다.", stringResourceValue("values/strings.xml", "common_unknown_error"))
