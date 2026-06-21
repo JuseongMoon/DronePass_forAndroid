@@ -93,6 +93,14 @@ class ExternalMapTargetTest {
         )
 
         assertEquals(
+            "nmap://route/public?dlat=37.5&dlng=127.0&dname=Drone%20Zone%201",
+            targets.first { it.provider == ExternalMapProvider.NAVER }.appUri,
+        )
+        assertEquals(
+            "tmap://route?goalname=Drone%20Zone%201&goalx=127.0&goaly=37.5",
+            targets.first { it.provider == ExternalMapProvider.TMAP }.appUri,
+        )
+        assertEquals(
             "google.navigation:q=37.5,127.0&mode=d",
             targets.first { it.provider == ExternalMapProvider.GOOGLE }.appUri,
         )
