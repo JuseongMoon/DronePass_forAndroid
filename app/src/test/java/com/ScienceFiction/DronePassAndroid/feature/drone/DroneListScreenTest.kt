@@ -4,6 +4,7 @@ import androidx.compose.ui.unit.dp
 import com.ScienceFiction.DronePassAndroid.domain.model.PaletteColor
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -32,5 +33,23 @@ class DroneListScreenTest {
         assertEquals("network", droneDeleteFailureMessage("network"))
         assertEquals("", droneDeleteFailureMessage(""))
         assertEquals(" ", droneDeleteFailureMessage(" "))
+    }
+
+    @Test
+    fun `드론 상세 placeholder 는 iOS처럼 nil 값에만 적용한다`() {
+        assertEquals("미입력", droneDetailOptionalText(null, emptyFallback = "미입력"))
+        assertEquals("", droneDetailOptionalText("", emptyFallback = "미입력"))
+        assertEquals(" ", droneDetailOptionalText(" ", emptyFallback = "미입력"))
+        assertTrue(isDroneDetailPlaceholder(null))
+        assertFalse(isDroneDetailPlaceholder(""))
+        assertFalse(isDroneDetailPlaceholder(" "))
+    }
+
+    @Test
+    fun `드론 상세 복사는 iOS CopyableTextModifier 처럼 nil 과 빈 문자열을 무시한다`() {
+        assertNull(copyableDroneDetailText(null))
+        assertNull(copyableDroneDetailText(""))
+        assertEquals(" ", copyableDroneDetailText(" "))
+        assertEquals("SN-01", copyableDroneDetailText("SN-01"))
     }
 }
