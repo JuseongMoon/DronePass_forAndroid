@@ -4,6 +4,9 @@ import androidx.compose.ui.unit.dp
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import java.text.DateFormat
+import java.util.Date
+import java.util.Locale
 
 class ProfileSheetParityTest {
 
@@ -29,6 +32,34 @@ class ProfileSheetParityTest {
         assertEquals(8.dp, ProfileInfoRowSpacing)
         assertEquals(2.dp, ProfileInfoDividerVerticalPadding)
         assertEquals(16.dp, ProfileInfoValueLeadingSpacing)
+    }
+
+    @Test
+    fun `프로필 가입일은 iOS DateFormatter long date style 을 사용한다`() {
+        val timestamp = 1_700_000_000_000L
+
+        assertEquals(
+            DateFormat.getDateInstance(DateFormat.LONG, Locale.KOREA).format(Date(timestamp)),
+            formatProfileJoinDate(timestamp, Locale.KOREA),
+        )
+        assertEquals(
+            DateFormat.getDateInstance(DateFormat.LONG, Locale.US).format(Date(timestamp)),
+            formatProfileJoinDate(timestamp, Locale.US),
+        )
+    }
+
+    @Test
+    fun `프로필 동기화 시간은 iOS localizedDateTime 처럼 medium date 와 short time 을 사용한다`() {
+        val timestamp = 1_700_000_000_000L
+
+        assertEquals(
+            DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT, Locale.KOREA).format(Date(timestamp)),
+            formatProfileSyncDateTime(timestamp, Locale.KOREA),
+        )
+        assertEquals(
+            DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT, Locale.US).format(Date(timestamp)),
+            formatProfileSyncDateTime(timestamp, Locale.US),
+        )
     }
 
     @Test

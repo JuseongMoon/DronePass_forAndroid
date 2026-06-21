@@ -137,7 +137,7 @@ fun ProfileScreen(
             ProfileInfoSection(
                 email = profileEmail ?: stringResource(R.string.profile_info_email_hidden),
                 loginProvider = profileLoginProvider.displayText(),
-                joinDate = joinDateMillis?.let(::formatJoinDate)
+                joinDate = joinDateMillis?.let(::formatProfileJoinDate)
                     ?: stringResource(R.string.profile_info_join_unknown),
                 shapeCount = stringResource(R.string.profile_info_count_unit, activeShapeCount),
                 sketchCount = stringResource(R.string.profile_info_count_unit, activeSketchCount),
@@ -172,9 +172,9 @@ fun ProfileScreen(
             // 마지막 동기화 시간 — iOS lastSyncTimeText 라벨 분기 정합.
             val lastSyncDisplay = when {
                 lastRealtimeSyncTime.hasSyncTimestamp() ->
-                    stringResource(R.string.profile_sync_last_sync, formatLastSync(lastRealtimeSyncTime))
+                    stringResource(R.string.profile_sync_last_sync, formatProfileSyncDateTime(lastRealtimeSyncTime))
                 lastBackupTime.hasSyncTimestamp() ->
-                    stringResource(R.string.profile_backup_last_backup, formatLastSync(lastBackupTime))
+                    stringResource(R.string.profile_backup_last_backup, formatProfileSyncDateTime(lastBackupTime))
                 else ->
                     stringResource(R.string.profile_sync_no_history)
             }
@@ -546,12 +546,18 @@ private fun ProfileLoginProvider.displayText(): String {
 
 private fun Long?.hasSyncTimestamp(): Boolean = this != null && this != 0L
 
-private fun formatJoinDate(timestamp: Long): String {
-    val formatter = DateFormat.getDateInstance(DateFormat.LONG, Locale.getDefault())
+internal fun formatProfileJoinDate(
+    timestamp: Long,
+    locale: Locale = Locale.getDefault(),
+): String {
+    val formatter = DateFormat.getDateInstance(DateFormat.LONG, locale)
     return formatter.format(Date(timestamp))
 }
 
-private fun formatLastSync(timestamp: Long?): String {
-    val formatter = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT, Locale.getDefault())
+internal fun formatProfileSyncDateTime(
+    timestamp: Long?,
+    locale: Locale = Locale.getDefault(),
+): String {
+    val formatter = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT, locale)
     return formatter.format(Date(timestamp ?: 0L))
 }
