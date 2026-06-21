@@ -1,6 +1,8 @@
 package com.ScienceFiction.DronePassAndroid.core.util
 
+import java.io.File
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class AnalyticsLoggerTest {
@@ -42,5 +44,38 @@ class AnalyticsLoggerTest {
         assertEquals("shape_type", AnalyticsParamShapeType)
         assertEquals("layer_name", AnalyticsParamLayerName)
         assertEquals("app_name", AnalyticsParamAppName)
+    }
+
+    @Test
+    fun `드론 analytics 이벤트는 성공한 생성 삭제 경로에서 수집한다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/drone/DroneViewModel.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/drone/DroneViewModel.kt",
+        ).readText()
+
+        assertTrue(source.contains("private val analyticsLogger: AnalyticsLogger"))
+        assertTrue(source.contains("analyticsLogger.logDroneCreated()"))
+        assertTrue(source.contains("analyticsLogger.logDroneDeleted()"))
+    }
+
+    @Test
+    fun `비행구역 analytics layer_name 은 현지화 문구가 아닌 VWorld typeName 을 수집한다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/map/MapViewModel.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/map/MapViewModel.kt",
+        ).readText()
+
+        assertTrue(source.contains("analyticsLogger.logFlightZoneLayerToggled(layer.typeName)"))
+    }
+
+    private fun resolveProjectFile(vararg candidates: String): File {
+        val roots = listOf(File("."), File("app"))
+        for (root in roots) {
+            for (candidate in candidates) {
+                val file = File(root, candidate)
+                if (file.exists()) return file
+            }
+        }
+        error("Could not resolve any of: ${candidates.joinToString()}")
     }
 }

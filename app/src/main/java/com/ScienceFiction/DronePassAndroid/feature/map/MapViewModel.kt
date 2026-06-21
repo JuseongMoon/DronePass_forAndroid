@@ -1062,6 +1062,7 @@ class MapViewModel @Inject constructor(
             current.add(layer)
         }
         setVisibleLayers(current)
+        analyticsLogger.logFlightZoneLayerToggled(layer.typeName)
     }
 
     /**

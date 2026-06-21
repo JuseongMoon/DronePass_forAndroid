@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ScienceFiction.DronePassAndroid.core.data.repository.DroneRepository
 import com.ScienceFiction.DronePassAndroid.core.data.repository.ShapeRepository
+import com.ScienceFiction.DronePassAndroid.core.util.AnalyticsLogger
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.PaletteColor
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -37,6 +38,7 @@ class DroneViewModel @Inject constructor(
     private val droneRepository: DroneRepository,
     private val shapeRepository: ShapeRepository,
     private val droneSelectionState: DroneSelectionState,
+    private val analyticsLogger: AnalyticsLogger,
 ) : ViewModel() {
 
     /**
@@ -94,6 +96,7 @@ class DroneViewModel @Inject constructor(
             )
             droneRepository.insertDrone(drone)
             droneSelectionState.addDroneToSelection(drone.id)
+            analyticsLogger.logDroneCreated()
         }
     }
 
@@ -148,6 +151,7 @@ class DroneViewModel @Inject constructor(
 
                 // 드론 소프트 삭제 (Repository 내부에서 softDelete() 로 updatedAt 갱신됨 — stale 가드 불필요)
                 droneRepository.softDeleteDrone(drone)
+                analyticsLogger.logDroneDeleted()
 
                 // 상세/편집 시트 닫기
                 _showDroneDetail.value = false
