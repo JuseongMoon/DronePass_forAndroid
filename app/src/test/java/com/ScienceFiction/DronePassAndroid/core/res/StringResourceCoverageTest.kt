@@ -141,16 +141,22 @@ class StringResourceCoverageTest {
         assertEquals("활성화", stringResourceValue("values/strings.xml", "saved_section_active"))
         assertEquals("시작 전", stringResourceValue("values/strings.xml", "saved_section_not_started"))
         assertEquals("만료됨", stringResourceValue("values/strings.xml", "saved_section_expired"))
+        assertEquals("제목순", stringResourceValue("values/strings.xml", "saved_sort_title"))
+        assertEquals("생성일순", stringResourceValue("values/strings.xml", "saved_sort_date_created"))
+        assertEquals("비행시작일순", stringResourceValue("values/strings.xml", "saved_sort_flight_start"))
+        assertEquals("비행종료일순", stringResourceValue("values/strings.xml", "saved_sort_flight_end"))
         assertEquals("오름차순", stringResourceValue("values/strings.xml", "saved_sort_ascending"))
         assertEquals("내림차순", stringResourceValue("values/strings.xml", "saved_sort_descending"))
         assertEquals("Saved List", stringResourceValue("values-en/strings.xml", "screen_saved_list"))
+        assertEquals("Active", stringResourceValue("values-en/strings.xml", "saved_section_active"))
+        assertEquals("Not Started", stringResourceValue("values-en/strings.xml", "saved_section_not_started"))
+        assertEquals("Expired", stringResourceValue("values-en/strings.xml", "saved_section_expired"))
         assertEquals("By Title", stringResourceValue("values-en/strings.xml", "saved_sort_title"))
         assertEquals("By Date Created", stringResourceValue("values-en/strings.xml", "saved_sort_date_created"))
         assertEquals("By Flight Start", stringResourceValue("values-en/strings.xml", "saved_sort_flight_start"))
         assertEquals("By Flight End", stringResourceValue("values-en/strings.xml", "saved_sort_flight_end"))
         assertEquals("Ascending", stringResourceValue("values-en/strings.xml", "saved_sort_ascending"))
         assertEquals("Descending", stringResourceValue("values-en/strings.xml", "saved_sort_descending"))
-        assertEquals("Not Started", stringResourceValue("values-en/strings.xml", "saved_section_not_started"))
     }
 
     @Test
