@@ -743,7 +743,7 @@
     <string name="profile_info_sketches">스케치</string>
     <string name="profile_info_drones">드론</string>
     <string name="profile_info_expired_shapes">만료된 도형</string>
-    <string name="profile_info_count_unit">%1$d개</string>
+    <string name="profile_info_count_unit">%d개</string>
 
     <string name="profile_sync_cloud">실시간 클라우드 동기화</string>
     <string name="profile_sync_in_progress" tools:ignore="TypographyEllipsis">동기화 중...</string>

@@ -396,7 +396,7 @@
     <string name="profile_info_sketches">Sketches</string>
     <string name="profile_info_drones">Drones</string>
     <string name="profile_info_expired_shapes">Expired Shapes</string>
-    <string name="profile_info_count_unit">%1$d</string>
+    <string name="profile_info_count_unit">%d</string>
 
     <string name="profile_sync_cloud">Real-time cloud sync</string>
     <string name="profile_sync_in_progress" tools:ignore="TypographyEllipsis">Syncing...</string>
