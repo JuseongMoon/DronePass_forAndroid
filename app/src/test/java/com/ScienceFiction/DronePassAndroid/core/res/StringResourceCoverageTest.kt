@@ -296,8 +296,18 @@ class StringResourceCoverageTest {
         assertEquals("일단위 입력", stringResourceValue("values/strings.xml", "shape_edit_date_only_mode"))
         assertEquals("취소", stringResourceValue("values/strings.xml", "common_cancel"))
         assertEquals("선택 완료", stringResourceValue("values/strings.xml", "date_time_done"))
+        assertEquals("좌표 입력", stringResourceValue("values/strings.xml", "coordinate_title"))
+        assertEquals("취소", stringResourceValue("values/strings.xml", "coordinate_cancel"))
+        assertEquals("확인", stringResourceValue("values/strings.xml", "coordinate_confirm"))
         assertEquals("좌표 입력", stringResourceValue("values/strings.xml", "coordinate_placeholder"))
+        assertEquals("유효한 좌표 형식입니다", stringResourceValue("values/strings.xml", "coordinate_validation_valid"))
         assertEquals("잘못된 좌표 형식입니다", stringResourceValue("values/strings.xml", "coordinate_validation_invalid"))
+        assertEquals("주소 검색 실패", stringResourceValue("values/strings.xml", "coordinate_alert_address_not_found_title"))
+        assertEquals(
+            "주소가 검색되지 않습니다. 이대로 좌표를 입력할까요?\\n(길찾기는 좌표를 기반으로 진행됩니다)",
+            stringResourceValue("values/strings.xml", "coordinate_alert_address_not_found_message"),
+        )
+        assertEquals("주소를 찾을 수 없습니다", stringResourceValue("values/strings.xml", "coordinate_alert_address_not_found_fallback"))
         assertEquals("주소 검색", stringResourceValue("values/strings.xml", "search_address_title"))
         assertEquals("도로명 또는 지번 주소로 검색", stringResourceValue("values/strings.xml", "search_address_placeholder"))
         assertEquals("도로명 주소와 지번 주소 모두 검색 가능합니다", stringResourceValue("values/strings.xml", "search_address_guide"))
@@ -319,6 +329,9 @@ class StringResourceCoverageTest {
         assertEquals("Day mode", stringResourceValue("values-en/strings.xml", "shape_edit_date_only_mode"))
         assertEquals("Cancel", stringResourceValue("values-en/strings.xml", "common_cancel"))
         assertEquals("Done", stringResourceValue("values-en/strings.xml", "date_time_done"))
+        assertEquals("Enter Coordinates", stringResourceValue("values-en/strings.xml", "coordinate_title"))
+        assertEquals("Cancel", stringResourceValue("values-en/strings.xml", "coordinate_cancel"))
+        assertEquals("Confirm", stringResourceValue("values-en/strings.xml", "coordinate_confirm"))
         assertEquals("Enter coordinates", stringResourceValue("values-en/strings.xml", "coordinate_placeholder"))
         assertEquals(
             "Enter flight coordinates in one of the supported formats",
@@ -341,7 +354,14 @@ class StringResourceCoverageTest {
             "• Geo URI: geo:37.648611,126.686667",
             stringResourceValue("values-en/strings.xml", "coordinate_example_geo_uri"),
         )
+        assertEquals("Valid coordinate format", stringResourceValue("values-en/strings.xml", "coordinate_validation_valid"))
         assertEquals("Invalid coordinate format", stringResourceValue("values-en/strings.xml", "coordinate_validation_invalid"))
+        assertEquals("Address Not Found", stringResourceValue("values-en/strings.xml", "coordinate_alert_address_not_found_title"))
+        assertEquals(
+            "Address not found. Continue with coordinates?\\n(Navigation will use coordinates)",
+            stringResourceValue("values-en/strings.xml", "coordinate_alert_address_not_found_message"),
+        )
+        assertEquals("Address not found", stringResourceValue("values-en/strings.xml", "coordinate_alert_address_not_found_fallback"))
         assertEquals("Search Address", stringResourceValue("values-en/strings.xml", "search_address_title"))
         assertEquals("Search by road or lot address", stringResourceValue("values-en/strings.xml", "search_address_placeholder"))
         assertEquals("Both road and lot addresses are searchable", stringResourceValue("values-en/strings.xml", "search_address_guide"))
