@@ -69,11 +69,9 @@ class StringResourceCoverageTest {
             pluralResourceValue("values/strings.xml", "login_account_switch_message", "other"),
         )
         assertEquals("계속(삭제)", stringResourceValue("values/strings.xml", "login_account_switch_confirm"))
-        assertEquals("Google 로고", stringResourceValue("values/strings.xml", "login_google_logo_description"))
         assertEquals("Sign In / Sign Up", stringResourceValue("values-en/strings.xml", "login_title"))
         assertEquals("Continue with Apple", stringResourceValue("values-en/strings.xml", "login_apple"))
         assertEquals("Sign in with Google", stringResourceValue("values-en/strings.xml", "login_google"))
-        assertEquals("Google logo", stringResourceValue("values-en/strings.xml", "login_google_logo_description"))
         assertEquals("Login Error", stringResourceValue("values-en/strings.xml", "login_error_title"))
         assertEquals("Unknown error", stringResourceValue("values-en/strings.xml", "login_error_unknown"))
         assertEquals("An unknown error occurred.", stringResourceValue("values-en/strings.xml", "common_unknown_error"))

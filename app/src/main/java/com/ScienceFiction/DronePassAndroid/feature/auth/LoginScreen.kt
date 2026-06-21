@@ -209,7 +209,7 @@ fun LoginScreen(
             ) {
                 Icon(
                     painter = painterResource(R.drawable.ic_apple_logo),
-                    contentDescription = stringResource(R.string.login_apple_logo_description),
+                    contentDescription = null,
                     tint = if (providerButtonsEnabled) {
                         Color.White
                     } else {
@@ -252,7 +252,7 @@ fun LoginScreen(
             ) {
                 Image(
                     painter = painterResource(R.drawable.ic_google_logo),
-                    contentDescription = stringResource(R.string.login_google_logo_description),
+                    contentDescription = null,
                     modifier = Modifier.size(LoginProviderIconSize),
                 )
                 Spacer(modifier = Modifier.size(LoginProviderIconTextSpacing))

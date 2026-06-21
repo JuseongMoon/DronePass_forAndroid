@@ -41,6 +41,33 @@ class LoginScreenContractTest {
     }
 
     @Test
+    fun `로그인 provider 아이콘은 iOS처럼 버튼 라벨을 중복해서 읽지 않는다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/auth/LoginScreen.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/auth/LoginScreen.kt",
+        ).readText()
+
+        assertAppearsInOrder(
+            source = source,
+            tokens = listOf(
+                "painterResource(R.drawable.ic_apple_logo)",
+                "contentDescription = null",
+                "stringResource(R.string.login_apple)",
+            ),
+        )
+        assertAppearsInOrder(
+            source = source,
+            tokens = listOf(
+                "painterResource(R.drawable.ic_google_logo)",
+                "contentDescription = null",
+                "stringResource(R.string.login_google)",
+            ),
+        )
+        assertTrue(!source.contains("login_apple_logo_description"))
+        assertTrue(!source.contains("login_google_logo_description"))
+    }
+
+    @Test
     fun `로그인 약관 문구 순서는 iOS LoginView 와 동일하다`() {
         val source = resolveProjectFile(
             "src/main/java/com/ScienceFiction/DronePassAndroid/feature/auth/LoginScreen.kt",

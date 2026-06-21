@@ -31,9 +31,7 @@
     <string name="login_logo_description">DronePass 로고</string>
     <string name="login_title">로그인 / 회원가입</string>
     <string name="login_google">Google로 로그인</string>
-    <string name="login_google_logo_description">Google 로고</string>
     <string name="login_apple">Apple로 계속하기</string>
-    <string name="login_apple_logo_description">Apple 로고</string>
     <string name="login_error_title">로그인 오류</string>
     <string name="login_error_unknown" tools:ignore="UnusedResources">알 수 없는 오류</string>
     <string name="login_google_error">Google 로그인 중 오류가 발생했습니다.</string>
