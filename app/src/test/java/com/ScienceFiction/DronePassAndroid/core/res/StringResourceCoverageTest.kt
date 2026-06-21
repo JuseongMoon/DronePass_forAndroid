@@ -269,6 +269,22 @@ class StringResourceCoverageTest {
             androidDisplayStringResourceValue("values/strings.xml", "coordinate_guide"),
         )
         assertEquals("지원하는 좌표 형식:", stringResourceValue("values/strings.xml", "coordinate_format_title"))
+        assertEquals(
+            "• 도/분/초: 37° 38′ 55″ N 126° 41′ 12″ E",
+            stringResourceValue("values/strings.xml", "coordinate_example_dms"),
+        )
+        assertEquals(
+            "• 십진도: 37.648611°, 126.686667°",
+            stringResourceValue("values/strings.xml", "coordinate_example_decimal_degrees"),
+        )
+        assertEquals(
+            "• 단순 십진수: 37.3855 126.4142",
+            stringResourceValue("values/strings.xml", "coordinate_example_simple_decimal"),
+        )
+        assertEquals(
+            "• Geo URI: geo:37.648611,126.686667",
+            stringResourceValue("values/strings.xml", "coordinate_example_geo_uri"),
+        )
         assertEquals("일단위 입력", stringResourceValue("values/strings.xml", "shape_edit_date_only_mode"))
         assertEquals("선택 완료", stringResourceValue("values/strings.xml", "date_time_done"))
         assertEquals("좌표 입력", stringResourceValue("values/strings.xml", "coordinate_placeholder"))
@@ -291,6 +307,27 @@ class StringResourceCoverageTest {
         assertEquals("Select End Date", stringResourceValue("values-en/strings.xml", "shape_edit_end_date_select"))
         assertEquals("Done", stringResourceValue("values-en/strings.xml", "date_time_done"))
         assertEquals("Enter coordinates", stringResourceValue("values-en/strings.xml", "coordinate_placeholder"))
+        assertEquals(
+            "Enter flight coordinates in one of the supported formats",
+            stringResourceValue("values-en/strings.xml", "coordinate_guide"),
+        )
+        assertEquals("Supported formats:", stringResourceValue("values-en/strings.xml", "coordinate_format_title"))
+        assertEquals(
+            "• 도/분/초: 37° 38′ 55″ N 126° 41′ 12″ E",
+            stringResourceValue("values-en/strings.xml", "coordinate_example_dms"),
+        )
+        assertEquals(
+            "• 십진도: 37.648611°, 126.686667°",
+            stringResourceValue("values-en/strings.xml", "coordinate_example_decimal_degrees"),
+        )
+        assertEquals(
+            "• 단순 십진수: 37.3855 126.4142",
+            stringResourceValue("values-en/strings.xml", "coordinate_example_simple_decimal"),
+        )
+        assertEquals(
+            "• Geo URI: geo:37.648611,126.686667",
+            stringResourceValue("values-en/strings.xml", "coordinate_example_geo_uri"),
+        )
         assertEquals("Invalid coordinate format", stringResourceValue("values-en/strings.xml", "coordinate_validation_invalid"))
         assertEquals("Search Address", stringResourceValue("values-en/strings.xml", "search_address_title"))
         assertEquals("Search by road or lot address", stringResourceValue("values-en/strings.xml", "search_address_placeholder"))
