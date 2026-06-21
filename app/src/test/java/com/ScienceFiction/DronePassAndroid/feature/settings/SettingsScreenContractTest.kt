@@ -79,6 +79,27 @@ class SettingsScreenContractTest {
         )
     }
 
+    @Test
+    fun `한국 특화 기능 토글은 iOS처럼 상태 변경 후 ON OFF 안내를 띄운다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsScreen.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsScreen.kt",
+        ).readText()
+
+        assertAppearsInOrder(
+            source = source,
+            tokens = listOf(
+                "R.string.settings_korea_features",
+                "settingsViewModel.toggleKoreaFeatures(newValue)",
+                "koreaFeaturesAlertOn = newValue",
+                "if (isOn) R.string.settings_korea_features_on_title",
+                "else R.string.settings_korea_features_off_title",
+                "if (isOn) R.string.settings_korea_features_on_message",
+                "else R.string.settings_korea_features_off_message",
+            ),
+        )
+    }
+
     private fun assertAppearsInOrder(source: String, tokens: List<String>) {
         var previousIndex = -1
         for (token in tokens) {
