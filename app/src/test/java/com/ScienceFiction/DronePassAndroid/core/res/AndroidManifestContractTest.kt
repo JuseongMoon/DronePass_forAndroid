@@ -81,6 +81,15 @@ class AndroidManifestContractTest {
     }
 
     @Test
+    fun `Firebase Analytics 수집은 Android manifest 에서 비활성화하지 않는다`() {
+        val manifest = parseManifest()
+        val application = manifest.findApplication()
+        val analyticsCollection = application.findMetaDataOrNull("firebase_analytics_collection_enabled")
+
+        assertTrue(analyticsCollection == null || analyticsCollection.getAttribute("android:value") != "false")
+    }
+
+    @Test
     fun `FCM 과 로컬 알림 리시버는 외부에서 직접 실행되지 않는다`() {
         val manifest = parseManifest()
 

@@ -25,24 +25,55 @@ class AppIdentityContractTest {
         assertTrue(googleServicesAndroidPackageNames().contains(BuildConfig.APPLICATION_ID))
     }
 
-    private fun googleServicesAndroidPackageNames(): List<String> {
-        val mapType = Types.newParameterizedType(
-            Map::class.java,
-            String::class.java,
-            Any::class.java,
+    @Test
+    fun googleServicesJsonKeepsSharedFirebaseProjectAndAndroidAppStream() {
+        val root = googleServicesRoot()
+        val projectInfo = root["project_info"] as? Map<*, *> ?: error("project_info missing")
+
+        assertEquals("dronepass-91564", projectInfo["project_id"])
+        assertEquals("307728758098", projectInfo["project_number"])
+
+        val clientInfo = googleServicesAndroidClientInfo()
+        assertEquals(
+            "1:307728758098:android:248e79a064ad7aed99768b",
+            clientInfo["mobilesdk_app_id"],
         )
-        val root = Moshi.Builder()
-            .build()
-            .adapter<Map<String, Any>>(mapType)
-            .fromJson(resolveProjectFile("google-services.json", "app/google-services.json").readText())
-            ?: return emptyList()
-        val clients = root["client"] as? List<*> ?: return emptyList()
+    }
+
+    private fun googleServicesAndroidPackageNames(): List<String> {
+        val clients = googleServicesClients()
         return clients.mapNotNull { rawClient ->
             val client = rawClient as? Map<*, *> ?: return@mapNotNull null
             val clientInfo = client["client_info"] as? Map<*, *>
             val androidClientInfo = clientInfo?.get("android_client_info") as? Map<*, *>
             androidClientInfo?.get("package_name") as? String
         }
+    }
+
+    private fun googleServicesAndroidClientInfo(): Map<*, *> {
+        val clients = googleServicesClients()
+        return clients.firstNotNullOfOrNull { rawClient ->
+            val client = rawClient as? Map<*, *> ?: return@firstNotNullOfOrNull null
+            client["client_info"] as? Map<*, *>
+        } ?: error("client_info missing")
+    }
+
+    private fun googleServicesClients(): List<*> {
+        val root = googleServicesRoot()
+        return root["client"] as? List<*> ?: return emptyList<Any>()
+    }
+
+    private fun googleServicesRoot(): Map<String, Any> {
+        val mapType = Types.newParameterizedType(
+            Map::class.java,
+            String::class.java,
+            Any::class.java,
+        )
+        return Moshi.Builder()
+            .build()
+            .adapter<Map<String, Any>>(mapType)
+            .fromJson(resolveProjectFile("google-services.json", "app/google-services.json").readText())
+            ?: error("Could not parse google-services.json")
     }
 
     private fun resolveProjectFile(vararg candidates: String): File {

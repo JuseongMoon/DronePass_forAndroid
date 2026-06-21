@@ -12,10 +12,24 @@ internal const val AnalyticsEventSketchModeExit = "sketch_mode_exit"
 internal const val AnalyticsEventSketchCreated = "sketch_created"
 internal const val AnalyticsEventSketchDeleted = "sketch_deleted"
 internal const val AnalyticsEventSketchAllCleared = "sketch_all_cleared"
+internal const val AnalyticsEventShapeCreated = "shape_created"
+internal const val AnalyticsEventShapeDeleted = "shape_deleted"
+internal const val AnalyticsEventShapeDuplicated = "shape_duplicated"
+internal const val AnalyticsEventDroneCreated = "drone_created"
+internal const val AnalyticsEventDroneDeleted = "drone_deleted"
+internal const val AnalyticsEventFlightZoneLayerToggled = "flight_zone_layer_toggled"
+internal const val AnalyticsEventWeatherViewed = "weather_viewed"
+internal const val AnalyticsEventKpViewed = "kp_viewed"
+internal const val AnalyticsEventSearchAddress = "search_address"
+internal const val AnalyticsEventExternalMapOpened = "external_map_opened"
+internal const val AnalyticsEventLogout = "logout"
 internal const val AnalyticsParamDurationSeconds = "duration_seconds"
 internal const val AnalyticsParamTotalCount = "total_count"
 internal const val AnalyticsParamActiveCount = "active_count"
 internal const val AnalyticsParamDeletedCount = "deleted_count"
+internal const val AnalyticsParamShapeType = "shape_type"
+internal const val AnalyticsParamLayerName = "layer_name"
+internal const val AnalyticsParamAppName = "app_name"
 
 /**
  * Firebase Analytics 이벤트 로깅 헬퍼
@@ -30,19 +44,19 @@ class AnalyticsLogger @Inject constructor() {
 
     /** 도형 생성 이벤트 */
     fun logShapeCreated(shapeType: String) {
-        analytics.logEvent("shape_created") {
-            param("shape_type", shapeType)
+        analytics.logEvent(AnalyticsEventShapeCreated) {
+            param(AnalyticsParamShapeType, shapeType)
         }
     }
 
     /** 도형 삭제 이벤트 */
     fun logShapeDeleted() {
-        analytics.logEvent("shape_deleted", null)
+        analytics.logEvent(AnalyticsEventShapeDeleted, null)
     }
 
     /** 도형 복제 이벤트 */
     fun logShapeDuplicated() {
-        analytics.logEvent("shape_duplicated", null)
+        analytics.logEvent(AnalyticsEventShapeDuplicated, null)
     }
 
     /** 스케치 모드 진입 이벤트 */
@@ -81,42 +95,42 @@ class AnalyticsLogger @Inject constructor() {
 
     /** 드론 생성 이벤트 */
     fun logDroneCreated() {
-        analytics.logEvent("drone_created", null)
+        analytics.logEvent(AnalyticsEventDroneCreated, null)
     }
 
     /** 드론 삭제 이벤트 */
     fun logDroneDeleted() {
-        analytics.logEvent("drone_deleted", null)
+        analytics.logEvent(AnalyticsEventDroneDeleted, null)
     }
 
     /** 비행구역 레이어 토글 이벤트 */
     fun logFlightZoneLayerToggled(layerName: String) {
-        analytics.logEvent("flight_zone_layer_toggled") {
-            param("layer_name", layerName)
+        analytics.logEvent(AnalyticsEventFlightZoneLayerToggled) {
+            param(AnalyticsParamLayerName, layerName)
         }
     }
 
     /** 날씨 화면 조회 이벤트 */
     fun logWeatherViewed() {
-        analytics.logEvent("weather_viewed", null)
+        analytics.logEvent(AnalyticsEventWeatherViewed, null)
     }
 
     /** Kp 지수 화면 조회 이벤트 */
     fun logKpViewed() {
-        analytics.logEvent("kp_viewed", null)
+        analytics.logEvent(AnalyticsEventKpViewed, null)
     }
 
     /** 주소 검색 이벤트 */
     fun logSearchAddress(query: String) {
-        analytics.logEvent("search_address") {
+        analytics.logEvent(AnalyticsEventSearchAddress) {
             param(FirebaseAnalytics.Param.SEARCH_TERM, query)
         }
     }
 
     /** 외부 지도 앱 열기 이벤트 */
     fun logExternalMapOpened(appName: String) {
-        analytics.logEvent("external_map_opened") {
-            param("app_name", appName)
+        analytics.logEvent(AnalyticsEventExternalMapOpened) {
+            param(AnalyticsParamAppName, appName)
         }
     }
 
@@ -129,6 +143,6 @@ class AnalyticsLogger @Inject constructor() {
 
     /** 로그아웃 이벤트 */
     fun logLogout() {
-        analytics.logEvent("logout", null)
+        analytics.logEvent(AnalyticsEventLogout, null)
     }
 }
