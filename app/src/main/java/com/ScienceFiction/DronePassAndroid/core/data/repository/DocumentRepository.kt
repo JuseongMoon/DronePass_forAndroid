@@ -138,8 +138,10 @@ class DocumentRepository @Inject constructor(
 
 internal fun localizedDocumentPath(base: String, languageTag: String?): String {
     val primaryLanguage = languageTag
+        ?.takeIf { it.isNotBlank() }
         ?.substringBefore('-')
         ?.lowercase(Locale.ROOT)
+        ?: "ko"
     return if (primaryLanguage == "ko") "$base.txt" else "${base}_en.txt"
 }
 

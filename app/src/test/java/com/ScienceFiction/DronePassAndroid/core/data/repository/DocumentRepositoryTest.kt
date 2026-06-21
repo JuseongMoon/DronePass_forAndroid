@@ -22,6 +22,14 @@ class DocumentRepositoryTest {
             "dronepass/version-patches.txt",
             localizedDocumentPath("dronepass/version-patches", "ko-KR"),
         )
+        assertEquals(
+            "dronepass/version-patches.txt",
+            localizedDocumentPath("dronepass/version-patches", null),
+        )
+        assertEquals(
+            "dronepass/version-patches.txt",
+            localizedDocumentPath("dronepass/version-patches", ""),
+        )
     }
 
     @Test
@@ -33,10 +41,6 @@ class DocumentRepositoryTest {
         assertEquals(
             "dronepass/version-patches_en.txt",
             localizedDocumentPath("dronepass/version-patches", "ja-JP"),
-        )
-        assertEquals(
-            "dronepass/version-patches_en.txt",
-            localizedDocumentPath("dronepass/version-patches", null),
         )
     }
 
