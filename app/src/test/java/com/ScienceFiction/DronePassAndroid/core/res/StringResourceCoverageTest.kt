@@ -270,6 +270,8 @@ class StringResourceCoverageTest {
         assertEquals("비행 고도를 입력해주세요", stringResourceValue("values/strings.xml", "shape_edit_altitude_placeholder"))
         assertEquals("메모", stringResourceValue("values/strings.xml", "shape_edit_label_memo"))
         assertEquals("메모를 입력하세요", stringResourceValue("values/strings.xml", "shape_edit_placeholder_memo"))
+        assertEquals("시작일", stringResourceValue("values/strings.xml", "shape_edit_start_date"))
+        assertEquals("종료일", stringResourceValue("values/strings.xml", "shape_edit_end_date"))
         assertEquals("시작일 선택", stringResourceValue("values/strings.xml", "shape_edit_start_date_select"))
         assertEquals("종료일 선택", stringResourceValue("values/strings.xml", "shape_edit_end_date_select"))
         assertEquals(
@@ -294,6 +296,7 @@ class StringResourceCoverageTest {
             stringResourceValue("values/strings.xml", "coordinate_example_geo_uri"),
         )
         assertEquals("일단위 입력", stringResourceValue("values/strings.xml", "shape_edit_date_only_mode"))
+        assertEquals("취소", stringResourceValue("values/strings.xml", "common_cancel"))
         assertEquals("선택 완료", stringResourceValue("values/strings.xml", "date_time_done"))
         assertEquals("좌표 입력", stringResourceValue("values/strings.xml", "coordinate_placeholder"))
         assertEquals("잘못된 좌표 형식입니다", stringResourceValue("values/strings.xml", "coordinate_validation_invalid"))
@@ -311,8 +314,12 @@ class StringResourceCoverageTest {
         assertEquals("Altitude", stringResourceValue("values-en/strings.xml", "shape_edit_altitude_label"))
         assertEquals("Memo", stringResourceValue("values-en/strings.xml", "shape_edit_label_memo"))
         assertEquals("Select Drone", stringResourceValue("values-en/strings.xml", "shape_edit_drone_label"))
+        assertEquals("Start Date", stringResourceValue("values-en/strings.xml", "shape_edit_start_date"))
+        assertEquals("End Date", stringResourceValue("values-en/strings.xml", "shape_edit_end_date"))
         assertEquals("Select Start Date", stringResourceValue("values-en/strings.xml", "shape_edit_start_date_select"))
         assertEquals("Select End Date", stringResourceValue("values-en/strings.xml", "shape_edit_end_date_select"))
+        assertEquals("Day mode", stringResourceValue("values-en/strings.xml", "shape_edit_date_only_mode"))
+        assertEquals("Cancel", stringResourceValue("values-en/strings.xml", "common_cancel"))
         assertEquals("Done", stringResourceValue("values-en/strings.xml", "date_time_done"))
         assertEquals("Enter coordinates", stringResourceValue("values-en/strings.xml", "coordinate_placeholder"))
         assertEquals(
