@@ -59,6 +59,26 @@ class SettingsScreenContractTest {
         assertFalse(source.contains("palette_color"))
     }
 
+    @Test
+    fun `Android 알림 권한 카드는 iOS 알림 섹션 순서를 깨지 않는다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsScreen.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsScreen.kt",
+        ).readText()
+
+        assertAppearsInOrder(
+            source = source,
+            tokens = listOf(
+                "R.string.settings_section_notifications",
+                "NotificationPermissionRequest()",
+                "R.string.settings_end_date_alarm",
+                "R.string.settings_sunrise_alarm",
+                "R.string.settings_sunset_alarm",
+                "R.string.settings_section_map_display",
+            ),
+        )
+    }
+
     private fun assertAppearsInOrder(source: String, tokens: List<String>) {
         var previousIndex = -1
         for (token in tokens) {
