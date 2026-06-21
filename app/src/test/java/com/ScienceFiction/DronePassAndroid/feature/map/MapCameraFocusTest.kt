@@ -21,7 +21,7 @@ class MapCameraFocusTest {
     }
 
     @Test
-    fun `최초 사용자 위치 센터링은 iOS CenterOnUserLocation처럼 줌 16을 사용한다`() {
+    fun `사용자 위치 센터링 알림 경로는 iOS MainView CenterOnUserLocation처럼 줌 16을 사용한다`() {
         assertEquals(16.0, MapUserLocationZoomLevel, 0.0)
     }
 
