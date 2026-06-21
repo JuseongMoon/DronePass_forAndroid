@@ -1,5 +1,12 @@
 package com.ScienceFiction.DronePassAndroid.feature.settings
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Block
+import androidx.compose.material.icons.filled.Brightness6
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Circle
+import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.ui.unit.dp
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.core.util.DroneCategory
@@ -36,6 +43,16 @@ class InfoGuideSheetsTest {
         assertTrue(isKpLevelAdviceDanger(KpLevel.G3))
         assertTrue(isKpLevelAdviceDanger(KpLevel.G4))
         assertTrue(isKpLevelAdviceDanger(KpLevel.G5))
+    }
+
+    @Test
+    fun `KP guide level icons map to iOS KPLevel symbols`() {
+        assertEquals(Icons.Default.CheckCircle, kpInfoLevelIcon(KpLevel.NORMAL))
+        assertEquals(Icons.Default.Circle, kpInfoLevelIcon(KpLevel.G1))
+        assertEquals(Icons.Default.Brightness6, kpInfoLevelIcon(KpLevel.G2))
+        assertEquals(Icons.Default.Error, kpInfoLevelIcon(KpLevel.G3))
+        assertEquals(Icons.Default.Warning, kpInfoLevelIcon(KpLevel.G4))
+        assertEquals(Icons.Default.Block, kpInfoLevelIcon(KpLevel.G5))
     }
 
     @Test
@@ -127,14 +144,14 @@ class InfoGuideSheetsTest {
     }
 
     @Test
-    fun `weather guide category notes use localized iOS category names`() {
+    fun `weather guide category notes use iOS raw category values`() {
         val items = weatherElementGuideItems(DroneCategory.CLASS3)
 
         val wind = items.first { it.topic == WeatherInfoTopic.WindSpeed }
         val gust = items.first { it.topic == WeatherInfoTopic.GustDifference }
 
-        assertEquals(StringResourceArg(R.string.weather_drone_category_class3), wind.noteArgs.first())
-        assertEquals(StringResourceArg(R.string.weather_drone_category_class3), gust.noteArgs.first())
+        assertEquals("2kg~7kg", wind.noteArgs.first())
+        assertEquals("2kg~7kg", gust.noteArgs.first())
     }
 
     @Test
@@ -166,6 +183,13 @@ class InfoGuideSheetsTest {
         assertEquals(72.dp, InfoGuideHeaderActionWidth)
         assertEquals(8.dp, InfoGuideHeaderHorizontalPadding)
         assertEquals(0.5f, InfoGuideHeaderDividerThickness.value, 0f)
+    }
+
+    @Test
+    fun `info guide cards use iOS leading icon and note spacing tokens`() {
+        assertEquals(50.dp, InfoGuideLeadingIconSlotWidth)
+        assertEquals(30.dp, InfoGuideLeadingIconSize)
+        assertEquals(8.dp, InfoGuideElementNoteTopPadding)
     }
 
     @Test

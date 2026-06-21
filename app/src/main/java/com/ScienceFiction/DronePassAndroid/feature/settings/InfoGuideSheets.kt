@@ -20,13 +20,19 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Air
+import androidx.compose.material.icons.filled.Block
+import androidx.compose.material.icons.filled.Brightness6
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Circle
+import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Opacity
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Storm
 import androidx.compose.material.icons.filled.Thermostat
 import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -64,6 +70,9 @@ internal val InfoGuideHeaderHeight = 44.dp
 internal val InfoGuideHeaderActionWidth = 72.dp
 internal val InfoGuideHeaderHorizontalPadding = 8.dp
 internal val InfoGuideHeaderDividerThickness = 0.5.dp
+internal val InfoGuideLeadingIconSlotWidth = 50.dp
+internal val InfoGuideLeadingIconSize = 30.dp
+internal val InfoGuideElementNoteTopPadding = 8.dp
 
 @Composable
 internal fun KpInfoGuideSheet(onDismiss: () -> Unit) {
@@ -449,15 +458,21 @@ private fun WeatherElementGuideCard(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Row(
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Icon(
-                    imageVector = item.icon,
-                    contentDescription = null,
-                    tint = item.iconColor,
-                    modifier = Modifier.size(32.dp),
-                )
+                Box(
+                    modifier = Modifier.width(InfoGuideLeadingIconSlotWidth),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = item.icon,
+                        contentDescription = null,
+                        tint = item.iconColor,
+                        modifier = Modifier.size(InfoGuideLeadingIconSize),
+                    )
+                }
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = stringResource(item.titleRes),
@@ -489,7 +504,12 @@ private fun WeatherElementGuideCard(
                 }
             }
 
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = InfoGuideElementNoteTopPadding),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
                 Text(
                     text = stringResource(R.string.weather_info_element_note),
                     style = MaterialTheme.typography.bodySmall,
@@ -650,14 +670,21 @@ private fun KpLevelGuideCard(item: KpLevelGuideItem) {
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Row(
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Box(
-                    modifier = Modifier
-                        .size(30.dp)
-                        .background(item.color, CircleShape),
-                )
+                    modifier = Modifier.width(InfoGuideLeadingIconSlotWidth),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = kpInfoLevelIcon(item.level),
+                        contentDescription = null,
+                        tint = item.color,
+                        modifier = Modifier.size(InfoGuideLeadingIconSize),
+                    )
+                }
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = stringResource(item.nameRes),
@@ -961,6 +988,15 @@ internal fun isKpLevelAdviceDanger(level: KpLevel): Boolean {
     return level == KpLevel.G3 || level == KpLevel.G4 || level == KpLevel.G5
 }
 
+internal fun kpInfoLevelIcon(level: KpLevel): ImageVector = when (level) {
+    KpLevel.NORMAL -> Icons.Default.CheckCircle
+    KpLevel.G1 -> Icons.Default.Circle
+    KpLevel.G2 -> Icons.Default.Brightness6
+    KpLevel.G3 -> Icons.Default.Error
+    KpLevel.G4 -> Icons.Default.Warning
+    KpLevel.G5 -> Icons.Default.Block
+}
+
 internal fun weatherElementGuideItems(category: DroneCategory): List<WeatherElementGuideItem> {
     val (windCaution, windDanger) = weatherGuideWindSpeedThresholds(category)
     val (gustCaution, gustDanger) = weatherGuideGustDifferenceThresholds(category)
@@ -1002,7 +1038,7 @@ internal fun weatherElementGuideItems(category: DroneCategory): List<WeatherElem
                 ),
             ),
             noteRes = R.string.weather_info_wind_note,
-            noteArgs = listOf(StringResourceArg(category.labelRes), maxWindResistance, windDanger),
+            noteArgs = listOf(category.iosRawValue, maxWindResistance, windDanger),
             showCategorySelector = true,
         ),
         WeatherElementGuideItem(
@@ -1036,7 +1072,7 @@ internal fun weatherElementGuideItems(category: DroneCategory): List<WeatherElem
                 ),
             ),
             noteRes = R.string.weather_info_gust_note,
-            noteArgs = listOf(StringResourceArg(category.labelRes), gustCaution, gustDanger),
+            noteArgs = listOf(category.iosRawValue, gustCaution, gustDanger),
             showCategorySelector = true,
         ),
         WeatherElementGuideItem(
