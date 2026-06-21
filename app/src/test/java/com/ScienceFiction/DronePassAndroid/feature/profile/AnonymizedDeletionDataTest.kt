@@ -79,12 +79,80 @@ class AnonymizedDeletionDataTest {
     }
 
     @Test
+    fun `도형 익명 데이터는 iOS AnalyticsDataGenerator 의 선택 필드를 모두 보존한다`() {
+        val data = shapeToAnonymizedData(
+            shape(
+                id = "shape-full",
+                shapeType = ShapeType.POLYGON,
+                deletedAt = 1_700_000_030_000L,
+            ).copy(
+                memo = "memo",
+                address = "address",
+                flightEndDate = 1_700_000_040_000L,
+                droneId = "drone-full",
+                radius = 120.0,
+                secondCoordinate = Coordinate(37.3, 127.3),
+                polygonCoordinates = listOf(Coordinate(37.4, 127.4), Coordinate(37.5, 127.5)),
+                polylineCoordinates = listOf(Coordinate(37.6, 127.6), Coordinate(37.7, 127.7)),
+            ),
+        )
+
+        assertEquals("shape-full", data["id"])
+        assertEquals("Shape shape-full", data["title"])
+        assertEquals("polygon", data["shapeType"])
+        assertEquals(mapOf("latitude" to 37.0, "longitude" to 127.0), data["baseCoordinate"])
+        assertEquals("memo", data["memo"])
+        assertEquals("address", data["address"])
+        assertEquals("#007AFF", data["color"])
+        assertEquals("drone-full", data["droneId"])
+        assertEquals(120.0, data["radius"])
+        assertEquals(mapOf("latitude" to 37.3, "longitude" to 127.3), data["secondCoordinate"])
+        assertEquals(
+            listOf(
+                mapOf("latitude" to 37.4, "longitude" to 127.4),
+                mapOf("latitude" to 37.5, "longitude" to 127.5),
+            ),
+            data["polygonCoordinates"],
+        )
+        assertEquals(
+            listOf(
+                mapOf("latitude" to 37.6, "longitude" to 127.6),
+                mapOf("latitude" to 37.7, "longitude" to 127.7),
+            ),
+            data["polylineCoordinates"],
+        )
+        assertEquals(1_700_000_000_000L, timestampMillis(data, "createdAt"))
+        assertEquals(1_700_000_001_000L, timestampMillis(data, "flightStartDate"))
+        assertEquals(1_700_000_002_000L, timestampMillis(data, "updatedAt"))
+        assertEquals(1_700_000_030_000L, timestampMillis(data, "deletedAt"))
+        assertEquals(1_700_000_040_000L, timestampMillis(data, "flightEndDate"))
+        assertFalse(data.containsKey("height"))
+    }
+
+    @Test
     fun `드론 익명 데이터는 삭제 상태를 포함한다`() {
         val data = droneToAnonymizedData(drone(id = "drone-1", deletedAt = 1_700_000_020_000L))
 
         assertEquals("drone-1", data["id"])
         assertEquals(true, data["isDeleted"])
         assertEquals(1_700_000_020_000L, (data["deletedAt"] as Timestamp).toDate().time)
+    }
+
+    @Test
+    fun `드론 익명 데이터는 iOS AnalyticsDataGenerator 와 같은 필수 필드만 쓴다`() {
+        val data = droneToAnonymizedData(drone(id = "drone-active", deletedAt = null))
+
+        assertEquals("drone-active", data["id"])
+        assertEquals("Drone drone-active", data["name"])
+        assertEquals("#007AFF", data["color"])
+        assertEquals(false, data["isDeleted"])
+        assertEquals(1_700_000_000_000L, timestampMillis(data, "createdAt"))
+        assertEquals(1_700_000_002_000L, timestampMillis(data, "updatedAt"))
+        assertFalse(data.containsKey("deletedAt"))
+        assertFalse(data.containsKey("serialNumber"))
+        assertFalse(data.containsKey("takeoffWeight"))
+        assertFalse(data.containsKey("size"))
+        assertFalse(data.containsKey("memo"))
     }
 
     private fun shape(
@@ -114,5 +182,9 @@ class AnonymizedDeletionDataTest {
             updatedAt = 1_700_000_002_000L,
             deletedAt = deletedAt,
         )
+    }
+
+    private fun timestampMillis(data: Map<String, Any>, key: String): Long {
+        return (data[key] as Timestamp).toDate().time
     }
 }
