@@ -513,6 +513,10 @@ class SavedListViewModel @Inject constructor(
         }
     }
 
+    fun logExternalMapOpened(appName: String) {
+        analyticsLogger.logExternalMapOpened(appName)
+    }
+
     /**
      * 드론 ID 로 DroneModel 조회. ShapeDetailSheet 의 드론 3상태(정상/삭제됨/미할당) 분기에 사용.
      */

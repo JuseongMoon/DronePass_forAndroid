@@ -94,11 +94,11 @@ import com.ScienceFiction.DronePassAndroid.domain.model.PaletteColor
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 import java.util.Date
 
-internal enum class ExternalMapProvider(@StringRes val labelRes: Int) {
-    NAVER(R.string.shape_detail_open_naver_map),
-    KAKAO(R.string.shape_detail_open_kakao_map),
-    TMAP(R.string.shape_detail_open_tmap),
-    GOOGLE(R.string.shape_detail_open_google_map),
+internal enum class ExternalMapProvider(@StringRes val labelRes: Int, val analyticsName: String) {
+    NAVER(R.string.shape_detail_open_naver_map, "naver"),
+    KAKAO(R.string.shape_detail_open_kakao_map, "kakao"),
+    TMAP(R.string.shape_detail_open_tmap, "tmap"),
+    GOOGLE(R.string.shape_detail_open_google_map, "google"),
 }
 
 internal data class ExternalMapTarget(
@@ -168,6 +168,7 @@ fun ShapeDetailSheet(
     drone: DroneModel? = null,
     activeDrones: List<DroneModel> = emptyList(),
     koreaFeaturesEnabled: Boolean = true,
+    onExternalMapOpened: (String) -> Unit = {},
 ) {
     val context = LocalContext.current
     val hapticFeedback = LocalHapticFeedback.current
@@ -432,6 +433,7 @@ fun ShapeDetailSheet(
             longitude = shape.baseCoordinate.longitude,
             destinationName = shapeDetailTitleText(shape.title),
             koreaFeaturesEnabled = koreaFeaturesEnabled,
+            onExternalMapOpened = onExternalMapOpened,
             onDismiss = { showExternalMapDialog = false }
         )
     }
@@ -549,6 +551,7 @@ private fun ExternalMapActionSheet(
     longitude: Double,
     destinationName: String,
     koreaFeaturesEnabled: Boolean,
+    onExternalMapOpened: (String) -> Unit,
     onDismiss: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -594,7 +597,9 @@ private fun ExternalMapActionSheet(
                 TextButton(
                     onClick = {
                         onDismiss()
-                        openExternalMap(context = context, target = target)
+                        if (openExternalMap(context = context, target = target)) {
+                            onExternalMapOpened(target.provider.analyticsName)
+                        }
                     },
                     modifier = Modifier.fillMaxWidth(),
                 ) {
@@ -627,18 +632,18 @@ private fun ExternalMapActionSheet(
 private fun openExternalMap(
     context: Context,
     target: ExternalMapTarget,
-) {
+): Boolean {
     val appIntent = Intent(Intent.ACTION_VIEW, target.appUri.toUri()).apply {
         setPackage(target.packageName)
     }
-    if (tryStartActivity(context, appIntent)) return
+    if (tryStartActivity(context, appIntent)) return true
 
-    if (tryStartActivity(context, Intent(Intent.ACTION_VIEW, target.marketUri.toUri()))) return
-    if (tryStartActivity(context, Intent(Intent.ACTION_VIEW, target.playStoreUri.toUri()))) return
+    if (tryStartActivity(context, Intent(Intent.ACTION_VIEW, target.marketUri.toUri()))) return true
+    if (tryStartActivity(context, Intent(Intent.ACTION_VIEW, target.playStoreUri.toUri()))) return true
 
-    target.webFallbackUri?.let { fallback ->
+    return target.webFallbackUri?.let { fallback ->
         tryStartActivity(context, Intent(Intent.ACTION_VIEW, fallback.toUri()))
-    }
+    } ?: false
 }
 
 private fun tryStartActivity(context: Context, intent: Intent): Boolean = try {

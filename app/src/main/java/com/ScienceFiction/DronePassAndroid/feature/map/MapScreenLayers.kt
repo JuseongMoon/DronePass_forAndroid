@@ -703,6 +703,7 @@ internal fun MapBottomSheets(
                 drone = viewModel.getDroneById(shape.droneId),
                 activeDrones = activeDrones,
                 koreaFeaturesEnabled = koreaFeaturesEnabled,
+                onExternalMapOpened = viewModel::logExternalMapOpened,
             )
         }
     }

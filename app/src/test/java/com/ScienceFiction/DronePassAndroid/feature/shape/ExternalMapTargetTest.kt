@@ -39,6 +39,14 @@ class ExternalMapTargetTest {
     }
 
     @Test
+    fun `외부 지도 analytics 이름은 표시 언어와 무관한 provider id 를 사용한다`() {
+        assertEquals(
+            listOf("naver", "kakao", "tmap", "google"),
+            ExternalMapProvider.entries.map { it.analyticsName },
+        )
+    }
+
+    @Test
     fun `외부 지도 target 은 Android Play Store 폴백 패키지를 가진다`() {
         val targets = buildExternalMapTargets(
             latitude = 37.5,

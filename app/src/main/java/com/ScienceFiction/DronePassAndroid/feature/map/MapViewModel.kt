@@ -799,6 +799,10 @@ class MapViewModel @Inject constructor(
         }
     }
 
+    fun logExternalMapOpened(appName: String) {
+        analyticsLogger.logExternalMapOpened(appName)
+    }
+
     /**
      * 도형 위치로 카메라 이동
      * 도형의 반경에 따라 줌 레벨을 자동 계산

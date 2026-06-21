@@ -80,6 +80,27 @@ class AnalyticsLoggerTest {
         assertTrue(source.contains("analyticsLogger.logShapeDeleted()"))
     }
 
+    @Test
+    fun `외부 지도 analytics 이벤트는 지도와 저장 목록 상세 경로에서 provider id 로 수집한다`() {
+        val shapeDetailSource = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/shape/ShapeDetailSheet.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/shape/ShapeDetailSheet.kt",
+        ).readText()
+        val mapSource = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/map/MapScreenLayers.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/map/MapScreenLayers.kt",
+        ).readText()
+        val savedSource = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/saved/SavedListScreen.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/saved/SavedListScreen.kt",
+        ).readText()
+
+        assertTrue(shapeDetailSource.contains("onExternalMapOpened(target.provider.analyticsName)"))
+        assertTrue(shapeDetailSource.contains("if (openExternalMap(context = context, target = target))"))
+        assertTrue(mapSource.contains("onExternalMapOpened = viewModel::logExternalMapOpened"))
+        assertTrue(savedSource.contains("onExternalMapOpened = viewModel::logExternalMapOpened"))
+    }
+
     private fun resolveProjectFile(vararg candidates: String): File {
         val roots = listOf(File("."), File("app"))
         for (root in roots) {
