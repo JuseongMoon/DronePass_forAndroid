@@ -68,13 +68,11 @@ internal fun buildNewUserDocumentData(
 }
 
 internal fun buildExistingUserDocumentPatch(
-    email: String?,
     appleUserId: String?,
     googleUserId: String?,
     nowMillis: Long,
 ): Map<String, Any?> = buildMap {
     put("lastLogin", Timestamp(Date(nowMillis)))
-    if (email != null) put("email", email)
     if (appleUserId != null) put(APPLE_USER_ID_FIELD, appleUserId)
     if (googleUserId != null) put(GOOGLE_USER_ID_FIELD, googleUserId)
 }
@@ -432,7 +430,6 @@ class AuthRepository @Inject constructor(
 
         if (snapshot.exists()) {
             val patch = buildExistingUserDocumentPatch(
-                email = user.email,
                 appleUserId = appleUserId,
                 googleUserId = googleUserId,
                 nowMillis = now,

@@ -69,7 +69,6 @@ class AuthRepositoryUserDocumentTest {
     @Test
     fun `기존 사용자 patch 는 createdAt 을 덮어쓰지 않고 현재 Apple User ID 를 반영한다`() {
         val patch = buildExistingUserDocumentPatch(
-            email = null,
             appleUserId = "current-apple-user",
             googleUserId = null,
             nowMillis = 1_700_000_000_000L,
@@ -82,16 +81,15 @@ class AuthRepositoryUserDocumentTest {
     }
 
     @Test
-    fun `기존 Google 사용자 patch 는 iOS처럼 현재 googleUserID 를 반영한다`() {
+    fun `기존 Google 사용자 patch 는 iOS처럼 email 을 덮지 않고 현재 googleUserID 만 반영한다`() {
         val patch = buildExistingUserDocumentPatch(
-            email = "user@example.com",
             appleUserId = null,
             googleUserId = "current-google-user",
             nowMillis = 1_700_000_000_000L,
         )
 
         assertFalse(patch.containsKey("createdAt"))
-        assertEquals("user@example.com", patch["email"])
+        assertFalse(patch.containsKey("email"))
         assertEquals("current-google-user", patch["googleUserID"])
         assertFalse(patch.containsKey("appleUserID"))
         assertTrue(patch["lastLogin"] is Timestamp)
