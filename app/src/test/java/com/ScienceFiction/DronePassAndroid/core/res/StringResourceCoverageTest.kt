@@ -1176,6 +1176,8 @@ class StringResourceCoverageTest {
 
     @Test
     fun `document and terms strings match iOS localizations`() {
+        assertEquals("닫기", stringResourceValue("values/strings.xml", "common_close"))
+        assertEquals("다시 시도", stringResourceValue("values/strings.xml", "common_retry"))
         assertEquals("개인정보 취급방침", stringResourceValue("values/strings.xml", "login_terms_privacy"))
         assertEquals("개인정보 취급방침", stringResourceValue("values/strings.xml", "profile_terms_privacy"))
         assertEquals("이용약관", stringResourceValue("values/strings.xml", "document_terms_service_title"))
@@ -1201,6 +1203,8 @@ class StringResourceCoverageTest {
             stringResourceValue("values-en/strings.xml", "document_terms_privacy_error_title"),
         )
         assertEquals("Please try again later", stringResourceValue("values-en/strings.xml", "document_terms_privacy_error_message"))
+        assertEquals("Close", stringResourceValue("values-en/strings.xml", "common_close"))
+        assertEquals("Retry", stringResourceValue("values-en/strings.xml", "common_retry"))
 
         assertEquals("패치노트", stringResourceValue("values/strings.xml", "patch_notes_title"))
         assertEquals("불러오는 중...", stringResourceValue("values/strings.xml", "patch_notes_loading"))
