@@ -396,6 +396,10 @@ class StringResourceCoverageTest {
     @Test
     fun `app info strings match iOS localizations`() {
         assertEquals("앱 정보", stringResourceValue("values/strings.xml", "app_info_title"))
+        assertEquals(
+            "DronePass는\\n드론 비행에 필요한 모든 정보를 제공하는\\n통합 관리 어플입니다.\\n\\n비행 허가지 시각화부터 실시간 날씨, KP 지수,\\n일출/일몰 정보까지 한 번에 확인하세요.",
+            stringResourceValue("values/strings.xml", "app_info_description"),
+        )
         assertEquals("앱 소개", stringResourceValue("values/strings.xml", "app_info_section_intro"))
         assertEquals("드론 관리", stringResourceValue("values/strings.xml", "app_info_section_drone_management"))
         assertEquals("환경 정보", stringResourceValue("values/strings.xml", "app_info_section_environmental_info"))
@@ -428,9 +432,17 @@ class StringResourceCoverageTest {
             "드론 원스톱 서비스 연계를 위한 데이터 구조",
             stringResourceValue("values/strings.xml", "app_info_feature_drone_onestop_desc"),
         )
+        assertEquals("앱 버전", stringResourceValue("values/strings.xml", "app_info_version_app"))
+        assertEquals("빌드 번호", stringResourceValue("values/strings.xml", "app_info_version_build"))
+        assertEquals("Science Fiction Inc.", stringResourceValue("values/strings.xml", "app_info_contact_company"))
+        assertEquals("support@sciencefiction.co.kr", stringResourceValue("values/strings.xml", "app_info_contact_email"))
         assertEquals("문의사항이 있으시면 언제든지 연락해주세요.", stringResourceValue("values/strings.xml", "app_info_contact_message"))
 
         assertEquals("App Info", stringResourceValue("values-en/strings.xml", "app_info_title"))
+        assertEquals(
+            "DronePass is\\nan integrated management app\\nthat provides all the information you need for drone flight.\\n\\nCheck flight zones, real-time weather, KP index,\\nand sunrise/sunset times all at once.",
+            stringResourceValue("values-en/strings.xml", "app_info_description"),
+        )
         assertEquals("About the App", stringResourceValue("values-en/strings.xml", "app_info_section_intro"))
         assertEquals("Drone Management", stringResourceValue("values-en/strings.xml", "app_info_section_drone_management"))
         assertEquals("Environmental Information", stringResourceValue("values-en/strings.xml", "app_info_section_environmental_info"))
@@ -463,6 +475,10 @@ class StringResourceCoverageTest {
             "Data structure optimized for flight permit applications",
             stringResourceValue("values-en/strings.xml", "app_info_feature_drone_onestop_desc"),
         )
+        assertEquals("App Version", stringResourceValue("values-en/strings.xml", "app_info_version_app"))
+        assertEquals("Build Number", stringResourceValue("values-en/strings.xml", "app_info_version_build"))
+        assertEquals("Science Fiction Inc.", stringResourceValue("values-en/strings.xml", "app_info_contact_company"))
+        assertEquals("support@sciencefiction.co.kr", stringResourceValue("values-en/strings.xml", "app_info_contact_email"))
         assertEquals("Please feel free to contact us with any questions.", stringResourceValue("values-en/strings.xml", "app_info_contact_message"))
     }
 
