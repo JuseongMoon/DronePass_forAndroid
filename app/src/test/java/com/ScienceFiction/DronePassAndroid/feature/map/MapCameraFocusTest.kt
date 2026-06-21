@@ -281,7 +281,7 @@ class MapCameraFocusTest {
     }
 
     @Test
-    fun `사각형 도형 포커스는 iOS처럼 baseCoordinate와 기본 반경을 사용한다`() {
+    fun `사각형 도형 포커스는 반경이 없으면 iOS처럼 baseCoordinate와 기본 반경을 사용한다`() {
         val target = shape(
             id = "rectangle",
             coordinate = Coordinate(37.0, 127.0),
@@ -301,6 +301,35 @@ class MapCameraFocusTest {
             CameraEvent.MoveToShape(
                 coordinate = target.baseCoordinate,
                 zoom = calculateShapeFocusZoomLevel(ShapeFocusDefaultRadiusMeters),
+                highlightShapeId = target.id,
+            ),
+            resolveShapeFocusCameraEvent(
+                currentSelectedShape = null,
+                targetShape = target,
+                skipIfAlreadyFocused = false,
+            ),
+        )
+    }
+
+    @Test
+    fun `사각형 도형 포커스는 radius 필드가 있으면 iOS MoveToShapeData 처럼 해당 반경을 사용한다`() {
+        val target = shape(
+            id = "rectangle",
+            coordinate = Coordinate(37.0, 127.0),
+            start = 1L,
+            end = 2L,
+        ).copy(
+            shapeType = ShapeType.RECTANGLE,
+            secondCoordinate = Coordinate(37.02, 127.04),
+            radius = 2_000.0,
+        )
+
+        assertEquals(target.baseCoordinate, calculateShapeFocusCoordinate(target))
+        assertEquals(2_000.0, calculateShapeFocusRadiusMeters(target), 0.0)
+        assertEquals(
+            CameraEvent.MoveToShape(
+                coordinate = target.baseCoordinate,
+                zoom = calculateShapeFocusZoomLevel(2_000.0),
                 highlightShapeId = target.id,
             ),
             resolveShapeFocusCameraEvent(
