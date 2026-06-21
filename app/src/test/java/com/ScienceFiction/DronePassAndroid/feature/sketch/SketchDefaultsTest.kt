@@ -5,7 +5,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ScienceFiction.DronePassAndroid.R
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.File
 
 class SketchDefaultsTest {
 
@@ -179,6 +181,27 @@ class SketchDefaultsTest {
     }
 
     @Test
+    fun `스케치 툴바 버튼 순서는 iOS SketchToolbarView 와 맞춘다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/sketch/SketchToolbar.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/sketch/SketchToolbar.kt",
+        ).readText()
+
+        assertAppearsInOrder(
+            source = source,
+            tokens = listOf(
+                "PenButton(",
+                "painter = painterResource(SketchEraserIconRes)",
+                "icon = Icons.AutoMirrored.Filled.Undo",
+                "icon = Icons.AutoMirrored.Filled.Redo",
+                ".height(SketchToolbarDividerHeight)",
+                "DeleteAllButton(",
+                "DoneButton(",
+            ),
+        )
+    }
+
+    @Test
     fun `전체 삭제 뱃지는 iOS처럼 실제 스케치 개수를 그대로 표시한다`() {
         assertEquals("3", formatSketchDeleteBadgeCount(3))
         assertEquals("120", formatSketchDeleteBadgeCount(120))
@@ -294,5 +317,25 @@ class SketchDefaultsTest {
             ),
             0f,
         )
+    }
+
+    private fun assertAppearsInOrder(source: String, tokens: List<String>) {
+        var previousIndex = -1
+        tokens.forEach { token ->
+            val index = source.indexOf(token, startIndex = previousIndex + 1)
+            assertTrue(
+                "Expected token '$token' after index $previousIndex",
+                index >= 0,
+            )
+            previousIndex = index
+        }
+    }
+
+    private fun resolveProjectFile(vararg candidates: String): File {
+        val userDir = File(requireNotNull(System.getProperty("user.dir")))
+        return candidates
+            .map { File(userDir, it) }
+            .firstOrNull { it.exists() }
+            ?: error("Could not resolve project file from: ${candidates.joinToString()}")
     }
 }
