@@ -22,6 +22,54 @@ class AppInfoScreenTest {
     }
 
     @Test
+    fun `앱 정보 연락처 행은 iOS처럼 비어있는 회사명과 이메일을 숨긴다`() {
+        assertEquals(
+            AppInfoContactDisplay(
+                showCompany = true,
+                showEmail = true,
+                showDivider = true,
+                emailUri = "mailto:support@sciencefiction.co.kr",
+            ),
+            appInfoContactDisplay(
+                companyName = "Science Fiction Inc.",
+                email = "support@sciencefiction.co.kr",
+            ),
+        )
+        assertEquals(
+            AppInfoContactDisplay(
+                showCompany = false,
+                showEmail = true,
+                showDivider = false,
+                emailUri = "mailto:support@sciencefiction.co.kr",
+            ),
+            appInfoContactDisplay(
+                companyName = "",
+                email = "support@sciencefiction.co.kr",
+            ),
+        )
+        assertEquals(
+            AppInfoContactDisplay(
+                showCompany = true,
+                showEmail = false,
+                showDivider = false,
+                emailUri = null,
+            ),
+            appInfoContactDisplay(
+                companyName = "Science Fiction Inc.",
+                email = "",
+            ),
+        )
+    }
+
+    @Test
+    fun `앱 정보 이메일 링크는 iOS처럼 mailto 스킴을 사용한다`() {
+        assertEquals(
+            "mailto:support@sciencefiction.co.kr",
+            appInfoEmailUri("support@sciencefiction.co.kr"),
+        )
+    }
+
+    @Test
     fun `앱 정보 feature row 치수는 iOS AppInfoView 를 따른다`() {
         assertEquals(60.dp, AppInfoIntroIconSize)
         assertEquals(36.dp, AppInfoIntroSymbolSize)

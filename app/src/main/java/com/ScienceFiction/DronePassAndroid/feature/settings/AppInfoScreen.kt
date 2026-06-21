@@ -88,6 +88,26 @@ internal fun appInfoVersionValue(versionName: String, versionCode: Int): String 
 
 internal fun appInfoBuildNumberValue(versionCode: Int): String = versionCode.toString()
 
+internal data class AppInfoContactDisplay(
+    val showCompany: Boolean,
+    val showEmail: Boolean,
+    val showDivider: Boolean,
+    val emailUri: String?,
+)
+
+internal fun appInfoContactDisplay(companyName: String, email: String): AppInfoContactDisplay {
+    val showCompany = companyName.isNotEmpty()
+    val showEmail = email.isNotEmpty()
+    return AppInfoContactDisplay(
+        showCompany = showCompany,
+        showEmail = showEmail,
+        showDivider = showCompany && showEmail,
+        emailUri = email.takeIf { showEmail }?.let(::appInfoEmailUri),
+    )
+}
+
+internal fun appInfoEmailUri(email: String): String = "mailto:$email"
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppInfoScreen(
@@ -240,12 +260,21 @@ fun AppInfoScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
             SectionHeader(title = stringResource(R.string.app_info_section_contact))
-            InfoRow(
-                icon = Icons.Default.Business,
-                title = stringResource(R.string.app_info_contact_company),
-            )
-            HorizontalDivider(modifier = Modifier.padding(start = 64.dp))
-            ContactEmailRow(email = stringResource(R.string.app_info_contact_email))
+            val contactCompany = stringResource(R.string.app_info_contact_company)
+            val contactEmail = stringResource(R.string.app_info_contact_email)
+            val contactDisplay = appInfoContactDisplay(contactCompany, contactEmail)
+            if (contactDisplay.showCompany) {
+                InfoRow(
+                    icon = Icons.Default.Business,
+                    title = contactCompany,
+                )
+            }
+            if (contactDisplay.showDivider) {
+                HorizontalDivider(modifier = Modifier.padding(start = 64.dp))
+            }
+            if (contactDisplay.showEmail) {
+                ContactEmailRow(email = contactEmail)
+            }
             Text(
                 text = stringResource(R.string.app_info_contact_message),
                 style = MaterialTheme.typography.bodySmall,
@@ -394,7 +423,7 @@ private fun ContactEmailRow(email: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { openUriSafely(uriHandler, "mailto:$email") }
+            .clickable { openUriSafely(uriHandler, appInfoEmailUri(email)) }
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
