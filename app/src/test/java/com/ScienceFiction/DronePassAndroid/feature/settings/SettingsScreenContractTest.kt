@@ -47,6 +47,18 @@ class SettingsScreenContractTest {
         )
     }
 
+    @Test
+    fun `설정 전역 색상 선택은 iOS 현재 SettingView처럼 노출하지 않는다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsScreen.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsScreen.kt",
+        ).readText()
+
+        assertFalse(source.contains("ColorPicker"))
+        assertFalse(source.contains("showColorPicker"))
+        assertFalse(source.contains("palette_color"))
+    }
+
     private fun assertAppearsInOrder(source: String, tokens: List<String>) {
         var previousIndex = -1
         for (token in tokens) {
