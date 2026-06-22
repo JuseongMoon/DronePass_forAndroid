@@ -19,6 +19,8 @@ import com.ScienceFiction.DronePassAndroid.core.data.sync.buildAccountSwitchShap
 import com.ScienceFiction.DronePassAndroid.core.data.sync.encodeAccountSwitchShapeBaseline
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 import com.ScienceFiction.DronePassAndroid.feature.auth.AuthRepository
+import com.ScienceFiction.DronePassAndroid.feature.auth.AuthSignOutStep
+import com.ScienceFiction.DronePassAndroid.feature.auth.authSignOutSteps
 import com.ScienceFiction.DronePassAndroid.service.FcmService
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthException
@@ -398,14 +400,21 @@ class ProfileViewModel @Inject constructor(
                 }
                     .onFailure { Log.w(TAG, "로그아웃 전 동기화 실패", it) }
             }
-            // 2) FCM 토큰 비활성화 (userId 살아있는 동안)
-            runCatching { FcmService.deactivateToken(appContext) }
-                .onFailure { Log.w(TAG, "FCM 토큰 비활성화 실패", it) }
-            // 3) 실시간 동기화 리스너 중단
-            runCatching { realtimeSyncManager.stopListening() }
-                .onFailure { Log.w(TAG, "리스너 중단 실패", it) }
-            // 4) Firebase Auth 로그아웃
-            authRepository.signOut()
+            authSignOutSteps().forEach { step ->
+                when (step) {
+                    AuthSignOutStep.DEACTIVATE_FCM_TOKEN -> {
+                        runCatching { FcmService.deactivateTokenAndWait(appContext) }
+                            .onFailure { Log.w(TAG, "FCM 토큰 비활성화 실패", it) }
+                    }
+                    AuthSignOutStep.STOP_REALTIME_SYNC -> {
+                        runCatching { realtimeSyncManager.stopListening() }
+                            .onFailure { Log.w(TAG, "리스너 중단 실패", it) }
+                    }
+                    AuthSignOutStep.SIGN_OUT -> {
+                        authRepository.signOut()
+                    }
+                }
+            }
             _isAccountActionInProgress.value = false
             onComplete()
         }
@@ -431,7 +440,7 @@ class ProfileViewModel @Inject constructor(
             runCatching { saveAnonymizedStats() }
                 .onFailure { Log.e(TAG, "익명화 통계 저장 실패", it) }
 
-            runCatching { FcmService.deactivateToken(appContext) }
+            runCatching { FcmService.deactivateTokenAndWait(appContext) }
                 .onFailure { Log.w(TAG, "FCM 토큰 비활성화 실패", it) }
 
             if (userId != null) {

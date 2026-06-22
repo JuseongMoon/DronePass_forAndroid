@@ -10,8 +10,10 @@ import com.ScienceFiction.DronePassAndroid.core.data.sync.countAccountSwitchShap
 import com.ScienceFiction.DronePassAndroid.core.data.sync.decodeAccountSwitchShapeBaseline
 import com.ScienceFiction.DronePassAndroid.core.data.sync.encodeAccountSwitchShapeBaseline
 import com.ScienceFiction.DronePassAndroid.core.data.sync.hasUnsyncedLocalChanges
+import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class AuthViewModelForegroundSyncTest {
@@ -153,6 +155,29 @@ class AuthViewModelForegroundSyncTest {
     }
 
     @Test
+    fun `로그아웃은 FCM 비활성화 완료 후 리스너 중단과 Firebase 로그아웃을 수행한다`() {
+        assertEquals(
+            listOf(
+                AuthSignOutStep.DEACTIVATE_FCM_TOKEN,
+                AuthSignOutStep.STOP_REALTIME_SYNC,
+                AuthSignOutStep.SIGN_OUT,
+            ),
+            authSignOutSteps(),
+        )
+    }
+
+    @Test
+    fun `Auth 로그아웃은 Firestore FCM 비활성화 쓰기를 기다린다`() {
+        val source = resolveProjectFile(
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/auth/AuthViewModel.kt",
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/auth/AuthViewModel.kt",
+        ).readText()
+
+        assertTrue(source.contains("authSignOutSteps().forEach"))
+        assertTrue(source.contains("FcmService.deactivateTokenAndWait(appContext)"))
+    }
+
+    @Test
     fun `Google login cancellation is ignored like iOS user cancelled flow`() {
         assertEquals(
             true,
@@ -217,6 +242,13 @@ class AuthViewModelForegroundSyncTest {
             false,
             shouldRequestAccountSwitchConfirmation(hasUnsyncedLocalChanges = false),
         )
+    }
+
+    private fun resolveProjectFile(vararg candidates: String): File {
+        return candidates
+            .map(::File)
+            .firstOrNull { it.exists() }
+            ?: error("Project file not found. Tried: ${candidates.joinToString()}")
     }
 
     @Test

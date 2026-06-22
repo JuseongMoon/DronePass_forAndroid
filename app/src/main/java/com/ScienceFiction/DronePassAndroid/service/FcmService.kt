@@ -12,6 +12,7 @@ import androidx.core.content.edit
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.core.data.local.EncryptedPrefsHelper
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
@@ -20,6 +21,7 @@ import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import dagger.hilt.android.AndroidEntryPoint
 import java.util.UUID
+import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
 internal const val FCM_DEVICE_ID_PREFERENCE_KEY = "DeviceUUID"
@@ -129,32 +131,25 @@ class FcmService : FirebaseMessagingService() {
          * Firestore에서 해당 디바이스를 비활성 상태로 표시한다.
          */
         fun deactivateToken(context: Context) {
-            val userId = FirebaseAuth.getInstance().currentUser?.uid ?: run {
-                Log.d(TAG, "로그인 상태가 아니므로 FCM 토큰 비활성화를 건너뜁니다.")
-                return
-            }
-
-            val deviceId = getDeviceId(context) ?: run {
-                Log.d(TAG, "디바이스 ID가 없으므로 FCM 토큰 비활성화를 건너뜁니다.")
-                return
-            }
-
-            val firestore = FirebaseFirestore.getInstance()
-            val deviceRef = firestore
-                .collection("users")
-                .document(userId)
-                .collection("devices")
-                .document(deviceId)
-
-            val deactivateData = buildFcmDeactivateData()
-
-            deviceRef.update(deactivateData)
+            val target = resolveFcmDeviceDocumentForCurrentUser(context) ?: return
+            target.ref.update(buildFcmDeactivateData())
                 .addOnSuccessListener {
-                    Log.d(TAG, fcmTokenDeactivatedLogMessage(deviceId))
+                    Log.d(TAG, fcmTokenDeactivatedLogMessage(target.deviceId))
                 }
                 .addOnFailureListener { e ->
                     Log.e(TAG, "FCM 토큰 비활성화 실패", e)
                 }
+        }
+
+        /**
+         * 로그아웃/탈퇴 직전에는 Firestore rules 가 아직 인증 사용자를 볼 수 있을 때
+         * 비활성화 쓰기 완료를 기다린 뒤 Auth signOut/delete 로 넘어간다.
+         */
+        suspend fun deactivateTokenAndWait(context: Context): Boolean {
+            val target = resolveFcmDeviceDocumentForCurrentUser(context) ?: return false
+            target.ref.update(buildFcmDeactivateData()).await()
+            Log.d(TAG, fcmTokenDeactivatedLogMessage(target.deviceId))
+            return true
         }
 
         /**
@@ -209,6 +204,30 @@ class FcmService : FirebaseMessagingService() {
                 }
             }
             return selected
+        }
+
+        private data class FcmDeviceDocument(
+            val deviceId: String,
+            val ref: DocumentReference,
+        )
+
+        private fun resolveFcmDeviceDocumentForCurrentUser(context: Context): FcmDeviceDocument? {
+            val userId = FirebaseAuth.getInstance().currentUser?.uid ?: run {
+                Log.d(TAG, "로그인 상태가 아니므로 FCM 토큰 비활성화를 건너뜁니다.")
+                return null
+            }
+
+            val deviceId = getDeviceId(context) ?: run {
+                Log.d(TAG, "디바이스 ID가 없으므로 FCM 토큰 비활성화를 건너뜁니다.")
+                return null
+            }
+
+            val deviceRef = FirebaseFirestore.getInstance()
+                .collection("users")
+                .document(userId)
+                .collection("devices")
+                .document(deviceId)
+            return FcmDeviceDocument(deviceId = deviceId, ref = deviceRef)
         }
 
         private fun saveTokenToFirestore(context: Context, token: String) {

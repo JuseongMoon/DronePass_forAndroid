@@ -66,6 +66,18 @@ internal enum class ProviderLoginPreparationStep {
     FINALIZE_SIGN_IN,
 }
 
+internal enum class AuthSignOutStep {
+    DEACTIVATE_FCM_TOKEN,
+    STOP_REALTIME_SYNC,
+    SIGN_OUT,
+}
+
+internal fun authSignOutSteps(): List<AuthSignOutStep> = listOf(
+    AuthSignOutStep.DEACTIVATE_FCM_TOKEN,
+    AuthSignOutStep.STOP_REALTIME_SYNC,
+    AuthSignOutStep.SIGN_OUT,
+)
+
 data class AccountSwitchConfirmationRequest(
     val localDataCount: Int,
 )
@@ -408,17 +420,25 @@ class AuthViewModel @Inject constructor(
      * FCM 토큰 비활성화 -> 실시간 동기화 리스너 중단 -> Firebase Auth 로그아웃
      */
     fun signOut() {
-        // FCM 토큰 비활성화 (로그아웃 전에 userId가 필요하므로 먼저 호출)
-        FcmService.deactivateToken(appContext)
-        Log.d(TAG, "FCM 토큰 비활성화 요청")
-
-        // 실시간 동기화 리스너 중단
-        realtimeSyncManager.stopListening()
-        Log.d(TAG, "실시간 동기화 리스너 중단")
-
-        authRepository.signOut()
-        analyticsLogger.logLogout()
-        _authState.value = AuthState.LoggedOut
+        viewModelScope.launch {
+            authSignOutSteps().forEach { step ->
+                when (step) {
+                    AuthSignOutStep.DEACTIVATE_FCM_TOKEN -> {
+                        runCatching { FcmService.deactivateTokenAndWait(appContext) }
+                            .onFailure { Log.w(TAG, "FCM 토큰 비활성화 실패", it) }
+                    }
+                    AuthSignOutStep.STOP_REALTIME_SYNC -> {
+                        realtimeSyncManager.stopListening()
+                        Log.d(TAG, "실시간 동기화 리스너 중단")
+                    }
+                    AuthSignOutStep.SIGN_OUT -> {
+                        authRepository.signOut()
+                        analyticsLogger.logLogout()
+                        _authState.value = AuthState.LoggedOut
+                    }
+                }
+            }
+        }
     }
 
     fun confirmAccountSwitch() {

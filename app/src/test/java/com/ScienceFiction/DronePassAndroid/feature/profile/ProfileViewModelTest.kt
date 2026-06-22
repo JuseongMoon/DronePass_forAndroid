@@ -4,6 +4,7 @@ import androidx.datastore.preferences.core.preferencesOf
 import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncPreferenceKeys
 import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncState
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
+import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -187,6 +188,18 @@ class ProfileViewModelTest {
     }
 
     @Test
+    fun `프로필 로그아웃과 탈퇴는 FCM 비활성화 쓰기를 기다린다`() {
+        val source = resolveProjectFile(
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/profile/ProfileViewModel.kt",
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/profile/ProfileViewModel.kt",
+        ).readText()
+
+        assertTrue(source.contains("authSignOutSteps().forEach"))
+        assertTrue(source.contains("FcmService.deactivateTokenAndWait(appContext)"))
+        assertTrue(!source.contains("FcmService.deactivateToken(appContext)"))
+    }
+
+    @Test
     fun `클라우드 동기화 토글 ON은 iOS처럼 로그인 상태에서 백업 결과 알림을 표시한다`() {
         assertTrue(
             shouldNotifyProfileSyncResultForCloudToggle(
@@ -220,6 +233,13 @@ class ProfileViewModelTest {
         assertEquals("", profileErrorDescription("", fallback = "fallback"))
         assertEquals("   ", profileErrorDescription("   ", fallback = "fallback"))
         assertEquals("fallback", profileErrorDescription(null, fallback = "fallback"))
+    }
+
+    private fun resolveProjectFile(vararg candidates: String): File {
+        return candidates
+            .map(::File)
+            .firstOrNull { it.exists() }
+            ?: error("Project file not found. Tried: ${candidates.joinToString()}")
     }
 
     @Test
