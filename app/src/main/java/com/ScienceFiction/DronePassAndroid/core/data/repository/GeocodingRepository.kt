@@ -16,16 +16,13 @@ internal fun geocodingResponseToAddresses(response: GeocodingResponse): Result<L
 }
 
 internal fun reverseGeocodingResultsToAddress(results: List<ReverseGeocodingResult>): String {
-    val roadAddress = results
+    results
         .firstOrNull { it.name == "roadaddr" }
-        ?.let(::buildRoadAddress)
-        ?.takeIf { it.isNotEmpty() }
-    if (roadAddress != null) return roadAddress
+        ?.let { return buildRoadAddress(it) }
 
     return results
         .firstOrNull { it.name == "addr" }
         ?.let(::buildJibunAddress)
-        ?.takeIf { it.isNotEmpty() }
         ?: ""
 }
 

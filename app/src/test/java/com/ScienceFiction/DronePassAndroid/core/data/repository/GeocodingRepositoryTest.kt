@@ -58,6 +58,28 @@ class GeocodingRepositoryTest {
     }
 
     @Test
+    fun `도로명 주소 결과가 비어 있어도 iOS처럼 지번 주소로 대체하지 않는다`() {
+        val address = reverseGeocodingResultsToAddress(
+            listOf(
+                result(
+                    name = "roadaddr",
+                    region = ReverseGeocodingRegion(
+                        area0 = null,
+                        area1 = null,
+                        area2 = null,
+                        area3 = null,
+                        area4 = null,
+                    ),
+                    land = null,
+                ),
+                result(name = "addr", land = land(number1 = "12", number2 = "3")),
+            ),
+        )
+
+        assertEquals("", address)
+    }
+
+    @Test
     fun `주소 구성 요소가 없으면 빈 문자열을 반환한다`() {
         val address = reverseGeocodingResultsToAddress(
             listOf(
