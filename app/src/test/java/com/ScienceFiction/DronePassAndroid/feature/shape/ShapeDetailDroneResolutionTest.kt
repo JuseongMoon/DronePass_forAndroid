@@ -141,6 +141,12 @@ class ShapeDetailDroneResolutionTest {
     }
 
     @Test
+    fun `상세 반경과 고도 값은 iOS처럼 정수 미터로 표시한다`() {
+        assertEquals("150 m", formatShapeDetailMeters(150.9))
+        assertEquals("100000 m", formatShapeDetailMeters(100_000.0))
+    }
+
+    @Test
     fun `메모 영역 높이는 iOS ShapeDetailView의 180pt 고정 높이와 맞춘다`() {
         assertEquals(180.dp, ShapeDetailMemoHeight)
     }

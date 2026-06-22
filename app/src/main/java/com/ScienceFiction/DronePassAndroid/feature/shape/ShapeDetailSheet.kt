@@ -316,7 +316,7 @@ fun ShapeDetailSheet(
                     ShapeDetailRowDivider()
                     ShapeDetailRow(label = stringResource(R.string.shape_detail_radius)) {
                         Text(
-                            text = formatMeters(shape.radius),
+                            text = formatShapeDetailMeters(shape.radius),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -328,7 +328,7 @@ fun ShapeDetailSheet(
                     ShapeDetailRowDivider()
                     ShapeDetailRow(label = stringResource(R.string.shape_detail_altitude)) {
                         Text(
-                            text = formatMeters(shape.height),
+                            text = formatShapeDetailMeters(shape.height),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -655,7 +655,7 @@ private fun tryStartActivity(context: Context, intent: Intent): Boolean = try {
     false
 }
 
-private fun formatMeters(value: Double): String = "${value.toInt()} m"
+internal fun formatShapeDetailMeters(value: Double): String = "${value.toInt()} m"
 
 internal fun formatShapeDetailAddress(address: String?): String {
     return address ?: "-"
