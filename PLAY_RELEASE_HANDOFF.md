@@ -3,7 +3,8 @@
 > Last updated: 2026-07-01  
 > Resume trigger: "앱 출시 과정 다시 이어나가자"  
 > Branch at handoff: `fix/critical-pri0-fixes`  
-> Latest release setup commit before this doc refresh: `8135932`
+> Latest release setup baseline commit: `8135932`
+> Latest code commit before this doc refresh: `c68c057`
 > Package name: `com.ScienceFiction.DronePassAndroid`
 
 This file captures the Google Play internal testing/release state so a later session can continue from this repository without re-discovering the setup. Do not paste secrets, keystore passwords, API secrets, or full OAuth client IDs into this file.
@@ -17,6 +18,8 @@ When the user says "앱 출시 과정 다시 이어나가자" from this director
 3. Confirm whether an Android test device is attached with `adb devices`.
 4. Continue from the Play Console/Firebase/NCP certificate steps below before rebuilding a new AAB.
 5. If a new AAB must be uploaded, bump `versionCode` to `103` and use release name `3.5.5 (103) internal-2`.
+
+The next external release task is not another local build by default. It is to register the Google Play app-signing certificate fingerprints in Firebase and NCP Maps, then verify the Play-installed internal-test build on a real Android device.
 
 ## Current Play Console State
 
@@ -36,11 +39,16 @@ When the user says "앱 출시 과정 다시 이어나가자" from this director
 
 ## Local Android State
 
-- Current documented release setup is committed through `8135932 Record Play internal test release setup`.
+- Release setup is committed through `8135932 Record Play internal test release setup`.
 - Version alignment was committed in `effbf74 Align Android version with iOS`.
   - `versionCode = 102`
   - `versionName = "3.5.5"`
   - This was matched to the iOS build number/marketing version that were available at the time.
+- Latest code parity commit before this document refresh:
+  - `c68c057 Align shape edit date mode default with iOS`
+  - Android shape-edit date-only default was changed to match iOS: absent setting defaults to date+time mode, not date-only mode.
+  - Targeted tests passed:
+    - `:app:testDebugUnitTest --tests "*ShapeEditDefaultsTest" --tests "*ShapeEditContractTest"`
 - Latest local release bundle path:
   - `app/build/outputs/bundle/release/app-release.aab`
   - Local bundle size: about `42 MB`
@@ -61,7 +69,7 @@ ndk {
 
 This setting was added while investigating the Play native-symbol warning. Rebuilding still did not produce a separate `native-debug-symbols.zip`, because the native `.so` libraries appear to come from third-party dependencies such as Naver Maps/AndroidX/DataStore rather than app-owned NDK code. The warning can be ignored for the current internal test.
 
-At the time of this handoff, the source tree had no known uncommitted release setup changes. Re-check with `git status --short` when resuming.
+At the time of this handoff refresh, the source tree had no known uncommitted application/release setup changes before this documentation edit. Re-check with `git status --short` when resuming.
 
 ## Local Build Commands
 
