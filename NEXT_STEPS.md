@@ -1,10 +1,10 @@
 # DronePass Android 작업 이어가기
 
-> Play Console 내부 테스트/출시 흐름을 이어갈 때는 먼저 `PLAY_RELEASE_HANDOFF.md`를 확인한다. 2026-07-01 기준 최신 출시 상태, 남은 콘솔 작업, 로컬 AAB/서명/Firebase 설정 메모와 재개 절차는 그 파일에 정리되어 있다.
+> Play Console 내부 테스트/출시 흐름을 이어갈 때는 먼저 `PLAY_RELEASE_HANDOFF.md`를 확인한다. 사용자가 이 디렉토리에서 "앱 출시 과정 다시 이어나가자"라고 말하면 해당 파일의 Resume Protocol부터 따른다. 2026-07-01 기준 최신 출시 상태, 남은 콘솔 작업, 로컬 AAB/서명/Firebase 설정 메모와 재개 절차는 그 파일에 정리되어 있다.
 
 > 마지막 업데이트: 2026-07-01
 > 브랜치: `fix/critical-pri0-fixes`
-> 상태: iOS 동작 대조와 Android 출시 하드닝 진행 중. Play 내부 테스트 출시 상태와 앱 출시 재개 절차는 `PLAY_RELEASE_HANDOFF.md`를 우선 확인한다.
+> 상태: iOS 동작 대조와 Android 출시 하드닝 진행 중. Play 내부 테스트 `3.5.5 (102) internal-1`은 이미 게시된 상태이며, 앱 출시 재개 절차는 `PLAY_RELEASE_HANDOFF.md`를 우선 확인한다.
 
 이 문서는 다음 세션에서 바로 이어가기 위한 현재 기준 핸드오프입니다. 오래된 Phase별 상세 이력은 `REFACTORING_PLAN.md`와 `MIGRATION_PLAN.md`에 남겨두고, 여기에는 지금 실제로 필요한 항목만 둡니다.
 

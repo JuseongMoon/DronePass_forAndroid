@@ -4,10 +4,19 @@
 > Resume trigger: "앱 출시 과정 다시 이어나가자"  
 > Branch at handoff: `fix/critical-pri0-fixes`  
 > Latest release setup baseline commit: `8135932`
-> Latest code commit before this doc refresh: `c68c057`
+> Latest code/parity commit before this save: `b69c38b`
 > Package name: `com.ScienceFiction.DronePassAndroid`
 
 This file captures the Google Play internal testing/release state so a later session can continue from this repository without re-discovering the setup. Do not paste secrets, keystore passwords, API secrets, or full OAuth client IDs into this file.
+
+## Current Stop Point
+
+The Play Console internal test release has already been created and published for `3.5.5 (102) internal-1`. When resuming, do not start by rebuilding or uploading the same AAB again. Start from the release-distribution side:
+
+1. Confirm the Play Console internal test version page still shows `3.5.5 (102) internal-1` as available to internal testers.
+2. Register the Google Play app-signing certificate fingerprints in Firebase and NCP Maps as needed.
+3. Add internal tester accounts and open the Play opt-in link on a real Android device.
+4. Install from Google Play and verify sign-in, Naver map auth, geocoding, sync, and overlay layout.
 
 ## Resume Protocol
 
@@ -16,8 +25,9 @@ When the user says "앱 출시 과정 다시 이어나가자" from this director
 1. Read this file first.
 2. Run `git status --short` and confirm no unexpected local changes.
 3. Confirm whether an Android test device is attached with `adb devices`.
-4. Continue from the Play Console/Firebase/NCP certificate steps below before rebuilding a new AAB.
-5. If a new AAB must be uploaded, bump `versionCode` to `103` and use release name `3.5.5 (103) internal-2`.
+4. Continue from the Play Console/Firebase/NCP certificate and internal tester steps below before rebuilding a new AAB.
+5. If Firebase/NCP certificate registration changes only console state, no local rebuild is required.
+6. If a new AAB must be uploaded because code/config changed, bump `versionCode` to `103` and use release name `3.5.5 (103) internal-2`.
 
 The next external release task is not another local build by default. It is to register the Google Play app-signing certificate fingerprints in Firebase and NCP Maps, then verify the Play-installed internal-test build on a real Android device.
 
@@ -36,6 +46,7 @@ The next external release task is not another local build by default. It is to r
   - Play Console showed availability for 15,419 device types.
   - Play optimized install size shown in console: about `15.2 MB`.
 - The native debug symbols warning appeared during Play review. It was non-blocking and the release was published.
+- Current resume point after the user pressed internal-test release: version detail page for `3.5.5 (102) internal-1`, showing the release is provided to internal testers.
 
 ## Local Android State
 
@@ -44,11 +55,15 @@ The next external release task is not another local build by default. It is to r
   - `versionCode = 102`
   - `versionName = "3.5.5"`
   - This was matched to the iOS build number/marketing version that were available at the time.
-- Latest code parity commit before this document refresh:
+- Latest code/parity commits before this save:
   - `c68c057 Align shape edit date mode default with iOS`
   - Android shape-edit date-only default was changed to match iOS: absent setting defaults to date+time mode, not date-only mode.
   - Targeted tests passed:
     - `:app:testDebugUnitTest --tests "*ShapeEditDefaultsTest" --tests "*ShapeEditContractTest"`
+  - `b69c38b Record saved list focus parity check`
+  - Saved-list-to-map focus was re-audited against iOS and documented. Android already matched the immediate selected shape, delayed scroll target, radius-based camera focus, and highlight behavior.
+  - Targeted tests passed:
+    - `:app:testDebugUnitTest --tests "*SavedListSectionsTest" --tests "*SavedShapeListItemTest" --tests "*MapCameraFocusTest" --tests "*MainScreenStartDestinationTest"`
 - Latest local release bundle path:
   - `app/build/outputs/bundle/release/app-release.aab`
   - Local bundle size: about `42 MB`
@@ -69,7 +84,7 @@ ndk {
 
 This setting was added while investigating the Play native-symbol warning. Rebuilding still did not produce a separate `native-debug-symbols.zip`, because the native `.so` libraries appear to come from third-party dependencies such as Naver Maps/AndroidX/DataStore rather than app-owned NDK code. The warning can be ignored for the current internal test.
 
-At the time of this handoff refresh, the source tree had no known uncommitted application/release setup changes before this documentation edit. Re-check with `git status --short` when resuming.
+At the time of this save, `git status --short` was clean before this documentation edit. Re-check with `git status --short` when resuming.
 
 ## Local Build Commands
 
@@ -109,7 +124,8 @@ Keep the upload key and `keystore.properties` backed up securely. Do not commit 
 7. Add tester Google account emails if they are not already present.
 8. Copy the internal test opt-in link and open it on the Android test device.
 9. Install from Google Play, not from `adb`, for the release-path verification.
-10. If a new AAB upload is needed after changing Firebase config, bump `versionCode` to `103` and use release name `3.5.5 (103) internal-2`.
+10. If the Play-installed app fails Google sign-in, Naver map auth, or Firebase auth callbacks, check Play app-signing SHA registration first.
+11. If a new AAB upload is needed after changing local code/config, bump `versionCode` to `103` and use release name `3.5.5 (103) internal-2`.
 
 ## First Device Verification Checklist
 
