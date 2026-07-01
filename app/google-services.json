@@ -12,7 +12,28 @@
           "package_name": "com.ScienceFiction.DronePassAndroid"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "307728758098-mkl9co7na7aqvjobf3u67fvhinpi6ulm.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.ScienceFiction.DronePassAndroid",
+            "certificate_hash": "2633b0cbf598f2ff77fc3a70f115ab930aeb646d"
+          }
+        },
+        {
+          "client_id": "307728758098-utopp41ennlj7vj1914is39g6aros6qn.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.ScienceFiction.DronePassAndroid",
+            "certificate_hash": "30c45af99183d96cf76c41319eda82e7598f2086"
+          }
+        },
+        {
+          "client_id": "307728758098-tbpk0kts38sefsdt0l6m335c2lfd65sn.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyCatBavlFo_9vGIV76h4tvCTW01H0I1xVo"
@@ -20,7 +41,20 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "307728758098-tbpk0kts38sefsdt0l6m335c2lfd65sn.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "307728758098-t43a41oi4ccu8p9vi6a3dufguc99qtbk.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.ScienceFiction.DronePass",
+                "app_store_id": "6746645489"
+              }
+            }
+          ]
         }
       }
     }
