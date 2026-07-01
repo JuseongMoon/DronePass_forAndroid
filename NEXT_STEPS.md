@@ -1,10 +1,10 @@
 # DronePass Android 작업 이어가기
 
-> Play Console 내부 테스트/출시 흐름을 이어갈 때는 먼저 `PLAY_RELEASE_HANDOFF.md`를 확인한다. 2026-07-01 기준 최신 출시 상태, 남은 콘솔 작업, 로컬 AAB/서명/Firebase 설정 메모는 그 파일에 정리되어 있다.
+> Play Console 내부 테스트/출시 흐름을 이어갈 때는 먼저 `PLAY_RELEASE_HANDOFF.md`를 확인한다. 2026-07-01 기준 최신 출시 상태, 남은 콘솔 작업, 로컬 AAB/서명/Firebase 설정 메모와 재개 절차는 그 파일에 정리되어 있다.
 
 > 마지막 업데이트: 2026-07-01
 > 브랜치: `fix/critical-pri0-fixes`
-> 상태: iOS 동작 대조와 Android 출시 하드닝 진행 중. Play 내부 테스트 출시 상태와 현재 dirty worktree는 `PLAY_RELEASE_HANDOFF.md`를 우선 확인한다.
+> 상태: iOS 동작 대조와 Android 출시 하드닝 진행 중. Play 내부 테스트 출시 상태와 앱 출시 재개 절차는 `PLAY_RELEASE_HANDOFF.md`를 우선 확인한다.
 
 이 문서는 다음 세션에서 바로 이어가기 위한 현재 기준 핸드오프입니다. 오래된 Phase별 상세 이력은 `REFACTORING_PLAN.md`와 `MIGRATION_PLAN.md`에 남겨두고, 여기에는 지금 실제로 필요한 항목만 둡니다.
 
@@ -12,7 +12,7 @@
 
 | 항목 | 값 |
 |---|---|
-| 워킹 트리 | dirty: `PLAY_RELEASE_HANDOFF.md`, `NEXT_STEPS.md`, `app/build.gradle.kts`, `app/google-services.json` |
+| 워킹 트리 | 2026-07-01 handoff 기준 release setup 변경분은 `8135932 Record Play internal test release setup`까지 커밋됨. 재개 시 `git status --short`로 실제 상태 확인 |
 | 주요 검증 | 2026-07-01 기준 `:app:verifyCrossPlatformE2ePrerequisites`, `:app:testDebugUnitTest --tests "*SavedListSectionsTest" --tests "*SavedShapeListItemTest"`, `:app:bundleRelease` 통과. 기존 `:app:testDebugUnitTest :app:lintDebug :app:assembleDebug`, `:app:minifyReleaseWithR8`, `:app:connectedDebugAndroidTest`, `:app:shapeParsingCoverageVerification`, feature별 회귀 테스트 통과 기록 유지 |
 | Release readiness | 2026-07-01 기준 로컬 release signing, `WEB_CLIENT_ID`, Firebase Android OAuth client, Naver Maps key 설정이 완료되어 `:app:verifyCrossPlatformE2ePrerequisites`와 `:app:bundleRelease`가 통과한다. AAB는 `app/build/outputs/bundle/release/app-release.aab`에 생성됨 |
 | 남은 성격 | Play 설치 앱의 앱 서명 SHA를 Firebase/NCP Maps에 등록한 뒤 실기기 Play 설치 경로에서 iOS↔Android 공유 Firebase 실계정 검증 수행 |

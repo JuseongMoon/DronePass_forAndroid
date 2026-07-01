@@ -3,10 +3,20 @@
 > Last updated: 2026-07-01  
 > Resume trigger: "앱 출시 과정 다시 이어나가자"  
 > Branch at handoff: `fix/critical-pri0-fixes`  
-> HEAD at handoff: `effbf74`  
+> Latest release setup commit before this doc refresh: `8135932`
 > Package name: `com.ScienceFiction.DronePassAndroid`
 
 This file captures the Google Play internal testing/release state so a later session can continue from this repository without re-discovering the setup. Do not paste secrets, keystore passwords, API secrets, or full OAuth client IDs into this file.
+
+## Resume Protocol
+
+When the user says "앱 출시 과정 다시 이어나가자" from this directory:
+
+1. Read this file first.
+2. Run `git status --short` and confirm no unexpected local changes.
+3. Confirm whether an Android test device is attached with `adb devices`.
+4. Continue from the Play Console/Firebase/NCP certificate steps below before rebuilding a new AAB.
+5. If a new AAB must be uploaded, bump `versionCode` to `103` and use release name `3.5.5 (103) internal-2`.
 
 ## Current Play Console State
 
@@ -26,6 +36,7 @@ This file captures the Google Play internal testing/release state so a later ses
 
 ## Local Android State
 
+- Current documented release setup is committed through `8135932 Record Play internal test release setup`.
 - Version alignment was committed in `effbf74 Align Android version with iOS`.
   - `versionCode = 102`
   - `versionName = "3.5.5"`
@@ -39,8 +50,8 @@ This file captures the Google Play internal testing/release state so a later ses
   - `keystore.properties`
 - Local API/sign-in values are intentionally ignored by git:
   - `local.properties`
-- `app/google-services.json` is tracked and currently modified with the Android Firebase app/OAuth configuration downloaded during Play setup.
-- `app/build.gradle.kts` is currently modified after the published release to add:
+- `app/google-services.json` is tracked and committed with the Android Firebase app/OAuth configuration downloaded during Play setup.
+- `app/build.gradle.kts` is committed with:
 
 ```kotlin
 ndk {
@@ -49,6 +60,8 @@ ndk {
 ```
 
 This setting was added while investigating the Play native-symbol warning. Rebuilding still did not produce a separate `native-debug-symbols.zip`, because the native `.so` libraries appear to come from third-party dependencies such as Naver Maps/AndroidX/DataStore rather than app-owned NDK code. The warning can be ignored for the current internal test.
+
+At the time of this handoff, the source tree had no known uncommitted release setup changes. Re-check with `git status --short` when resuming.
 
 ## Local Build Commands
 
@@ -79,15 +92,15 @@ Keep the upload key and `keystore.properties` backed up securely. Do not commit 
 
 ## Next Steps
 
-1. In Play Console, go to `테스트 및 출시 > 테스트 > 내부 테스트 > 테스터`.
-2. Add tester Google account emails.
-3. Copy the internal test opt-in link and open it on the Android test device.
-4. Install from Google Play, not from `adb`, for the release-path verification.
-5. In Play Console, go to `Google Play로 보호됨 > 앱 무결성`.
-6. Copy the `앱 서명 키 인증서` SHA-1 and SHA-256.
-7. Add the Play app-signing SHA-1/SHA-256 to Firebase Console for the Android app.
-8. Add the Play app-signing certificate fingerprint to NCP Maps Console if the console requires certificate restrictions for Android SDK auth.
-9. Re-download `google-services.json` after Firebase SHA changes and replace `app/google-services.json`.
+1. In Play Console, go to `Google Play로 보호됨 > 앱 무결성`.
+2. Copy the `앱 서명 키 인증서` SHA-1 and SHA-256. This is different from the local upload-key SHA.
+3. Add the Play app-signing SHA-1/SHA-256 to Firebase Console for the Android app.
+4. Add the Play app-signing certificate fingerprint to NCP Maps Console if the console requires certificate restrictions for Android SDK auth.
+5. Re-download `google-services.json` after Firebase SHA changes and replace `app/google-services.json` if Firebase generated a changed file.
+6. In Play Console, go to `테스트 및 출시 > 테스트 > 내부 테스트 > 테스터`.
+7. Add tester Google account emails if they are not already present.
+8. Copy the internal test opt-in link and open it on the Android test device.
+9. Install from Google Play, not from `adb`, for the release-path verification.
 10. If a new AAB upload is needed after changing Firebase config, bump `versionCode` to `103` and use release name `3.5.5 (103) internal-2`.
 
 ## First Device Verification Checklist
@@ -103,17 +116,10 @@ Keep the upload key and `keystore.properties` backed up securely. Do not commit 
 
 If Google sign-in or Naver map fails only for the Play-installed app, check the Play app-signing SHA registration first. The local upload-key SHA is not always the certificate used on devices after Google Play distribution.
 
-## Git/Commit Notes
-
-Current working tree had these changed files when this handoff was written/updated:
-
-- `PLAY_RELEASE_HANDOFF.md`
-- `NEXT_STEPS.md`
-- `app/google-services.json`
-- `app/build.gradle.kts`
-
-Before committing, review whether the Firebase config update should be committed and whether the `debugSymbolLevel` setting should stay. Do not commit:
+## Do Not Commit
 
 - `release.jks`
 - `keystore.properties`
 - `local.properties`
+
+These are intentionally ignored local files. Keep the keystore and password material backed up outside git.
