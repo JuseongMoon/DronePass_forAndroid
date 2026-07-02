@@ -273,6 +273,8 @@
 
     <!-- SettingsScreen -->
     <string name="settings_section_my_info">내 정보</string>
+    <string name="settings_profile_my">내 프로필</string>
+    <string name="settings_profile_login">로그인 / 회원가입</string>
     <string name="settings_drone_manage">내 드론 관리하기</string>
     <string name="settings_section_map_display">지도 표시</string>
     <string name="settings_hide_expired">만료된 도형 숨기기</string>

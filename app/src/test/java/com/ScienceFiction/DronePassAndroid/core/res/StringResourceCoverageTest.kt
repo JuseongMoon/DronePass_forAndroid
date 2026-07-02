@@ -907,6 +907,8 @@ class StringResourceCoverageTest {
     @Test
     fun `settings main row strings match iOS localizations`() {
         assertEquals("내 정보", stringResourceValue("values/strings.xml", "settings_section_my_info"))
+        assertEquals("내 프로필", stringResourceValue("values/strings.xml", "settings_profile_my"))
+        assertEquals("로그인 / 회원가입", stringResourceValue("values/strings.xml", "settings_profile_login"))
         assertEquals("내 프로필", stringResourceValue("values/strings.xml", "profile_title"))
         assertEquals("로그인 / 회원가입", stringResourceValue("values/strings.xml", "login_title"))
         assertEquals("내 드론 관리하기", stringResourceValue("values/strings.xml", "settings_drone_manage"))
@@ -970,6 +972,8 @@ class StringResourceCoverageTest {
         )
 
         assertEquals("My Info", stringResourceValue("values-en/strings.xml", "settings_section_my_info"))
+        assertEquals("My Profile", stringResourceValue("values-en/strings.xml", "settings_profile_my"))
+        assertEquals("Sign In / Sign Up", stringResourceValue("values-en/strings.xml", "settings_profile_login"))
         assertEquals("My Profile", stringResourceValue("values-en/strings.xml", "profile_title"))
         assertEquals("Sign In / Sign Up", stringResourceValue("values-en/strings.xml", "login_title"))
         assertEquals("Manage My Drones", stringResourceValue("values-en/strings.xml", "settings_drone_manage"))

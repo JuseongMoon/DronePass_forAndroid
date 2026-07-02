@@ -169,9 +169,9 @@ private fun SettingsMainContent(
             // 프로필 (iOS: 로그인 시 "My Profile" → ProfileView 시트, 비로그인 시 "Sign In / Sign Up" → LoginView)
             SettingsItem(
                 title = if (isLoggedIn) {
-                    stringResource(R.string.profile_title)
+                    stringResource(R.string.settings_profile_my)
                 } else {
-                    stringResource(R.string.login_title)
+                    stringResource(R.string.settings_profile_login)
                 },
                 onClick = {
                     if (isLoggedIn) {

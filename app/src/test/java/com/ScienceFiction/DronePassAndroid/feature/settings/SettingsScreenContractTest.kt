@@ -23,8 +23,8 @@ class SettingsScreenContractTest {
             source = source,
             tokens = listOf(
                 "R.string.settings_section_my_info",
-                "R.string.profile_title",
-                "R.string.login_title",
+                "R.string.settings_profile_my",
+                "R.string.settings_profile_login",
                 "R.string.settings_drone_manage",
                 "R.string.settings_section_flight_environment",
                 "R.string.settings_kp_index_current",

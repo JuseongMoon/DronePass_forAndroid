@@ -273,6 +273,8 @@
 
     <!-- SettingsScreen -->
     <string name="settings_section_my_info">My Info</string>
+    <string name="settings_profile_my">My Profile</string>
+    <string name="settings_profile_login">Sign In / Sign Up</string>
     <string name="settings_drone_manage">Manage My Drones</string>
     <string name="settings_section_map_display">Map Display</string>
     <string name="settings_hide_expired">Hide expired shapes</string>
