@@ -163,6 +163,28 @@ class SavedListSectionsTest {
     }
 
     @Test
+    fun `저장 목록은 iOS처럼 droneId 없는 레거시 도형을 첫 번째 활성 드론 도형으로 표시한다`() {
+        val sections = buildSavedShapeSections(
+            shapes = listOf(
+                shape(id = "shape-a", start = 1_000, end = 3_000, droneId = "drone-a"),
+                shape(id = "shape-b", start = 1_000, end = 3_000, droneId = "drone-b"),
+                shape(id = "shape-legacy", start = 1_000, end = 3_000, droneId = null),
+            ),
+            activeDrones = listOf(
+                DroneModel(id = "drone-a", name = "A"),
+                DroneModel(id = "drone-b", name = "B"),
+            ),
+            selectedDroneIds = setOf("drone-a"),
+            sortOption = SortOption.FLIGHT_START,
+            sortDirection = SortDirection.ASCENDING,
+            visibilitySettings = SavedShapeVisibilitySettings(),
+            now = 2_000,
+        )
+
+        assertEquals(listOf("shape-a", "shape-legacy"), sections.activeFiltered.map { it.id })
+    }
+
+    @Test
     fun `저장 목록은 iOS처럼 선택된 드론이 없으면 도형이 있어도 빈 상태다`() {
         val sections = buildSavedShapeSections(
             shapes = listOf(
