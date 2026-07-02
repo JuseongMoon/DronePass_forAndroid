@@ -1,22 +1,22 @@
 # DronePass Android Play Release Handoff
 
-> Last updated: 2026-07-02  
-> Resume trigger: "앱 출시 과정 다시 이어나가자"  
-> Branch at handoff: `fix/critical-pri0-fixes`  
+> Last updated: 2026-07-03
+> Resume trigger: "앱 출시 과정 다시 이어나가자"
+> Branch at handoff: `fix/critical-pri0-fixes`
 > Latest release setup baseline commit: `8135932`
-> Previous saved release-resume commit before this handoff: `8d0112d`
+> Previous saved release-resume commit before this handoff: `bd14082`
 > Latest E2E preflight doc commit before this edit: `2cbd5f3`
-> Latest code/parity commit at this handoff: `1d11ee0`
+> Latest code/parity commit at this handoff: `42f327e`
 > Package name: `com.ScienceFiction.DronePassAndroid`
 
 This file captures the Google Play internal testing/release state so a later session can continue from this repository without re-discovering the setup. Do not paste secrets, keystore passwords, API secrets, or full OAuth client IDs into this file.
 
 ## Latest Saved Resume Snapshot
 
-Saved at the user's request on 2026-07-02 from this repository after the Play Console internal-test release flow reached the published version detail page.
+Saved at the user's request on 2026-07-03 from this repository after the Play Console internal-test release flow reached the published version detail page and later Android/iOS parity audits continued.
 
 - Current working branch: `fix/critical-pri0-fixes`.
-- Current local HEAD before this documentation save: `eef4db6 Record shape edit default parity`.
+- Current local HEAD before this documentation save: `42f327e Record settings defaults parity audit`.
 - Working tree status before this documentation save: clean.
 - Play internal test version already published: `3.5.5 (102) internal-1`.
 - Do not rebuild or re-upload version code `102` just to resume the release process.
@@ -41,7 +41,7 @@ Rebuild only if local code/config has changed and a new Play build is intentiona
 
 ## Current Stop Point
 
-The Play Console internal test release has already been created and published for `3.5.5 (102) internal-1`. The latest user-visible stop point was the Play Console version detail page showing `3.5.5 (102) internal-1` as provided to internal testers. After that, local code/parity work continued through `1d11ee0`, but no newer AAB has been uploaded. When resuming, do not start by rebuilding or uploading the same AAB again unless code/config has changed and a new Play build is intentionally required. Start from the release-distribution side:
+The Play Console internal test release has already been created and published for `3.5.5 (102) internal-1`. The latest user-visible stop point was the Play Console version detail page showing `3.5.5 (102) internal-1` as provided to internal testers. After that, local code/parity work continued through `42f327e`, but no newer AAB has been uploaded. When resuming, do not start by rebuilding or uploading the same AAB again unless code/config has changed and a new Play build is intentionally required. Start from the release-distribution side:
 
 1. Confirm the Play Console internal test version page still shows `3.5.5 (102) internal-1` as available to internal testers.
 2. Register the Google Play app-signing certificate fingerprints in Firebase and NCP Maps as needed.
@@ -64,7 +64,7 @@ When the user says "앱 출시 과정 다시 이어나가자" from this director
 1. Read this file first.
 2. Run `git status --short` and confirm no unexpected local changes.
 3. Confirm whether an Android test device is attached with `adb devices`.
-4. Tell the user that the internal test build `3.5.5 (102) internal-1` is already live, while the latest local committed code/parity checkpoint at this handoff is `1d11ee0`. Treat the current HEAD commit containing this file as the latest saved release-resume checkpoint.
+4. Tell the user that the internal test build `3.5.5 (102) internal-1` is already live, while the latest local committed code/parity checkpoint at this handoff is `42f327e`. Treat the current HEAD commit containing this file as the latest saved release-resume checkpoint.
 5. If Firebase/NCP certificate registration changes only console state, no local rebuild is required.
 6. Continue from the Play Console/Firebase/NCP certificate and internal tester steps below before rebuilding a new AAB.
 7. If a new AAB must be uploaded because code/config changed, bump `versionCode` to `103` and use release name `3.5.5 (103) internal-2`.
@@ -92,12 +92,20 @@ The next external release task is not another local build by default. It is to r
 ## Local Android State
 
 - Release setup is committed through `8135932 Record Play internal test release setup`.
-- The previous release-resume documentation checkpoint was `8d0112d Save Play release resume checkpoint`; the current HEAD commit containing this file supersedes it.
+- The previous release-resume documentation checkpoint was `bd14082 Save release resume snapshot`; the current HEAD commit containing this file supersedes it.
 - Version alignment was committed in `effbf74 Align Android version with iOS`.
   - `versionCode = 102`
   - `versionName = "3.5.5"`
   - This was matched to the iOS build number/marketing version that were available at the time.
 - Latest code/parity commits before this save:
+  - `42f327e Record settings defaults parity audit`
+  - Settings/defaults/color/sketch/drone initialization were rechecked against current iOS source. Android matches `AppLanguage`, `KoreaFeaturesEnabled`, notification/hide/keep-awake defaults, default shape blue `#007AFF`, sketch defaults, Sketch Firestore missing `strokeWidth` fallback, drone color suggestion, default drone creation, and legacy `droneId == nil/null` first-drone migration.
+  - Targeted tests passed:
+    - `:app:testDebugUnitTest --tests "*SettingsPreferenceKeysTest" --tests "*SettingsLanguageSelectionTest" --tests "*NotificationPreferenceKeysTest" --tests "*SketchDefaultsTest" --tests "*SketchFirebaseStoreTest" --tests "*DroneNextColorTest" --tests "*DroneDeleteValidationTest" --tests "*ShapeRepositoryTest"`
+  - `bd14082 Save release resume snapshot`
+  - This Play release handoff was refreshed so the trigger phrase "앱 출시 과정 다시 이어나가자" resumes from Play app-signing SHA registration and Play-installed internal-test verification, not from rebuilding or re-uploading the already published `102` AAB.
+  - `eef4db6 Record shape edit default parity`
+  - Shape edit defaults/parity were documented after the Android `DefaultShapeEditDateOnlyMode` correction in `1d11ee0`.
   - `1d11ee0 Align shape edit date-only default`
   - Android shape editing now matches the current iOS `DronePassApp` startup registration: absent `isDateOnlyMode` defaults to `true`, so new installs open new-shape editing with day-mode input enabled. This supersedes the earlier `c68c057` false default.
   - Targeted tests passed:
@@ -203,9 +211,12 @@ At the time of the latest release-handoff save request, `git status --short` was
 The user switched from code work to saving this handoff while broader Android/iOS parity work was paused. This is not part of the Play release resume trigger, but it is useful context if the user later says to continue the paused implementation work.
 
 - Completed follow-up since the earlier auth pause: account-switch warning copy/count and auth cancellation behavior now match iOS through `f2dee60` and `a55b59d`.
-- Completed follow-up after the Play handoff: weather guide punctuation, drone dropdown empty label, detail copy-toast text size, KP/weather refresh interval contract, saved-list section sorting, sketch eraser touch completion, and saved-list legacy drone filtering are pinned through `14689d4`, `5346501`, `773e481`, `25a776f`, `902e1ed`, `f056476`, and `1beac1b`.
-- Latest paused implementation thread before this save: continue the broader iOS/Android parity audit by selecting the next high-impact user workflow after saved-list/sketch parity. Working tree was clean before this documentation update.
+- Completed follow-up after the Play handoff: weather guide punctuation, drone dropdown empty label, detail copy-toast text size, KP/weather refresh interval contract, saved-list section sorting, sketch eraser touch completion, saved-list legacy drone filtering, map highlight radius parity, drone optional field parity, shape edit date-only default, and settings/default initialization parity are pinned through `14689d4`, `5346501`, `773e481`, `25a776f`, `902e1ed`, `f056476`, `1beac1b`, `e2afb38`, `5decf36`, `1d11ee0`, and `42f327e`.
+- Latest paused implementation thread before this save: continue the broader iOS/Android parity audit by checking the main screen `+` new-shape button coordinate contract. iOS `MainFloatingButtonView.plusButtonView` uses the Naver map camera center as the new shape base coordinate, falls back to Seoul `37.5665, 126.9780` when `mapView` is unavailable, clears the new-shape address to `nil`, and opens shape edit. Working tree was clean before this documentation update.
   - Recent Android files audited or touched:
+    - `app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/map/component/MapFloatingButtons.kt`
+    - `app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/map/MapScreenLayers.kt`
+    - `app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/map/MapViewModel.kt`
     - `app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/sketch/SketchViewModel.kt`
     - `app/src/main/java/com/ScienceFiction/DronePassAndroid/domain/model/SketchModel.kt`
     - `app/src/main/java/com/ScienceFiction/DronePassAndroid/core/data/repository/SketchRepository.kt`
@@ -217,13 +228,19 @@ The user switched from code work to saving this handoff while broader Android/iO
     - `app/src/test/java/com/ScienceFiction/DronePassAndroid/feature/sketch/SketchDefaultsTest.kt`
     - `app/src/test/java/com/ScienceFiction/DronePassAndroid/core/res/StringResourceCoverageTest.kt`
   - Recent iOS references opened:
+    - `/Users/david/Development/Swift/myProjects/DronePass/DronePass/View/MainFloatingButtonView.swift`
+    - `/Users/david/Development/Swift/myProjects/DronePass/DronePass/MainView.swift`
     - `/Users/david/Development/Swift/myProjects/DronePass/DronePass/Manager/SketchManager.swift`
     - `/Users/david/Development/Swift/myProjects/DronePass/DronePass/Sketch/SketchModel.swift`
     - `/Users/david/Development/Swift/myProjects/DronePass/DronePass/Sketch/SketchRepository.swift`
     - `/Users/david/Development/Swift/myProjects/DronePass/DronePass/Sketch/SketchFileStore.swift`
     - `/Users/david/Development/Swift/myProjects/DronePass/DronePass/Sketch/View/SketchToolbarView.swift`
     - `/Users/david/Development/Swift/myProjects/DronePass/DronePass/Sketch/View/SketchCanvasView.swift`
-  - Audit status already established: default sketch color/stroke/opacity, stroke and opacity clamps, 5m point sampling, finish-only-when-two-points, undo/redo edit-session sync, toolbar ordering/dimensions, pen picker/sliders, delete-all dialog strings, touch input, eraser `up`/`cancel`, saved-list sorting, saved-list focus, and legacy `droneId == nil` filtering are aligned with iOS or pinned by tests.
+  - Audit status already established: default sketch color/stroke/opacity, stroke and opacity clamps, 5m point sampling, finish-only-when-two-points, undo/redo edit-session sync, toolbar ordering/dimensions, pen picker/sliders, delete-all dialog strings, touch input, eraser `up`/`cancel`, saved-list sorting, saved-list focus, legacy `droneId == nil` filtering, shape edit date-only default, drone optional edit preservation, map highlight radius behavior, and settings/default initialization are aligned with iOS or pinned by tests.
+  - Next code-audit command set to rerun if needed:
+    - `rg -n "onAddShape|newShape|showShapeEdit|cameraPosition|baseCoordinate|Seoul|37\\.5665|126\\.9780" app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/map app/src/test/java/com/ScienceFiction/DronePassAndroid/feature/map`
+    - `sed -n '1,140p' app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/map/component/MapFloatingButtons.kt`
+    - `sed -n '680,760p' app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/map/MapScreenLayers.kt`
 
 ## Local Build Commands
 

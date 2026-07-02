@@ -1,10 +1,10 @@
 # DronePass Android 작업 이어가기
 
-> Play Console 내부 테스트/출시 흐름을 이어갈 때는 먼저 `PLAY_RELEASE_HANDOFF.md`를 확인한다. 사용자가 이 디렉토리에서 "앱 출시 과정 다시 이어나가자"라고 말하면 해당 파일의 Quick Resume/Resume Protocol부터 따른다. 2026-07-02 기준 내부 테스트 `3.5.5 (102) internal-1`은 이미 게시되어 있고, 다음 작업은 새 AAB 업로드가 아니라 Play 앱 서명 인증서 SHA를 Firebase/NCP Maps에 등록한 뒤 테스터 opt-in 링크로 Play 설치 검증을 진행하는 것이다.
+> Play Console 내부 테스트/출시 흐름을 이어갈 때는 먼저 `PLAY_RELEASE_HANDOFF.md`를 확인한다. 사용자가 이 디렉토리에서 "앱 출시 과정 다시 이어나가자"라고 말하면 해당 파일의 Quick Resume/Resume Protocol부터 따른다. 2026-07-03 기준 내부 테스트 `3.5.5 (102) internal-1`은 이미 게시되어 있고, 다음 작업은 새 AAB 업로드가 아니라 Play 앱 서명 인증서 SHA를 Firebase/NCP Maps에 등록한 뒤 테스터 opt-in 링크로 Play 설치 검증을 진행하는 것이다.
 
-> 마지막 업데이트: 2026-07-02
+> 마지막 업데이트: 2026-07-03
 > 브랜치: `fix/critical-pri0-fixes`
-> 상태: iOS 동작 대조와 Android 출시 하드닝 진행 중. Play 내부 테스트 `3.5.5 (102) internal-1`은 이미 게시된 상태이며, 최신 코드/패리티 기준은 `1d11ee0 Align shape edit date-only default`다. 앱 출시 재개 절차는 `PLAY_RELEASE_HANDOFF.md`를 우선 확인한다.
+> 상태: iOS 동작 대조와 Android 출시 하드닝 진행 중. Play 내부 테스트 `3.5.5 (102) internal-1`은 이미 게시된 상태이며, 최신 코드/패리티 기준은 `42f327e Record settings defaults parity audit`다. 앱 출시 재개 절차는 `PLAY_RELEASE_HANDOFF.md`를 우선 확인한다.
 
 ## 앱 출시 재개 바로가기
 
@@ -22,13 +22,15 @@
 
 | 항목 | 값 |
 |---|---|
-| 워킹 트리 | 2026-07-02 handoff 기준 release setup 변경분은 `8135932 Record Play internal test release setup`까지 커밋됨. 이후 릴리스 재개 문서와 iOS 패리티 작업이 이어져 최신 코드/패리티 기준은 `1d11ee0 Align shape edit date-only default`까지 반영됨. 재개 시 `git status --short`로 실제 상태 확인 |
+| 워킹 트리 | 2026-07-03 handoff 기준 release setup 변경분은 `8135932 Record Play internal test release setup`까지 커밋됨. 이후 릴리스 재개 문서와 iOS 패리티 작업이 이어져 최신 코드/패리티 기준은 `42f327e Record settings defaults parity audit`까지 반영됨. 재개 시 `git status --short`로 실제 상태 확인 |
 | 주요 검증 | 2026-07-02 기준 `:app:verifyCrossPlatformE2ePrerequisites`, `:app:testDebugUnitTest --tests "*ShapeEditDefaultsTest" --tests "*ShapeDateFormatsTest" --tests "*MapCameraFocusTest"`, `:app:testDebugUnitTest --tests "*DroneListScreenTest" --tests "*DroneNameWidthLimitTest" --tests "*DroneNextColorTest" --tests "*DroneManagementContractTest" --tests "*DroneEditSheetTest" --tests "*DroneDeleteValidationTest" --tests "*DroneSelectionStateTest"`, `:app:testDebugUnitTest --tests "*ShapeOverlayRenderTest" --tests "*ShapeOverlayColorTest" --tests "*MapCameraFocusTest"`, `:app:testDebugUnitTest --tests "*SavedListSectionsTest" --tests "*DroneSelectionStateTest" --tests "*SavedShapeListItemTest" --tests "*MapCameraFocusTest"`, `:app:testDebugUnitTest --tests "*SketchTouchDecisionTest" --tests "*SketchDefaultsTest" --tests "*SketchEraserSelectionTest" --tests "*SketchOverlayColorTest" --tests "*SketchRepositoryTest" --tests "*SketchFirebaseStoreTest" --tests "*SketchSmoothingAlgorithmTest" --tests "*SketchPointsCacheTest" --tests "*StringResourceCoverageTest"`, `:app:testDebugUnitTest --tests "*WeatherForecastParityTest" --tests "*KpChartsTest"` 통과. 같은 시점 `adb devices`는 연결된 기기가 없어 Play 설치 실기기 검증은 남아 있음. 기존 `:app:testDebugUnitTest :app:lintDebug :app:assembleDebug`, `:app:minifyReleaseWithR8`, `:app:connectedDebugAndroidTest`, `:app:shapeParsingCoverageVerification`, feature별 회귀 테스트 통과 기록 유지 |
 | Release readiness | 2026-07-01 기준 로컬 release signing, `WEB_CLIENT_ID`, Firebase Android OAuth client, Naver Maps key 설정이 완료되어 `:app:verifyCrossPlatformE2ePrerequisites`와 `:app:bundleRelease`가 통과한다. AAB는 `app/build/outputs/bundle/release/app-release.aab`에 생성됨 |
 | 남은 성격 | Play 설치 앱의 앱 서명 SHA를 Firebase/NCP Maps에 등록한 뒤 실기기 Play 설치 경로에서 iOS↔Android 공유 Firebase 실계정 검증 수행 |
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 2026-07-03 현재 앱 출시 재개 상태를 다시 저장했다. 사용자가 이 디렉토리에서 "앱 출시 과정 다시 이어나가자"라고 말하면 `PLAY_RELEASE_HANDOFF.md`를 먼저 읽고, 이미 게시된 내부 테스트 `3.5.5 (102) internal-1`에서 이어간다. 다음 작업은 같은 `102` AAB 재빌드/재업로드가 아니라 Play 앱 서명 인증서 SHA-1/SHA-256을 Firebase/NCP Maps에 등록하고, 내부 테스터 opt-in 링크로 Play 설치 실기기 검증을 진행하는 것이다. 코드 작업 재개와 출시 작업 재개는 별도 흐름으로 본다.
+- 2026-07-03 현재 코드 작업은 다음 고위험 iOS/Android 패리티 감사로 이어가면 된다. 직전 감사 후보는 메인 화면 `+` 새 도형 버튼의 좌표 계약이다. iOS `MainFloatingButtonView.plusButtonView`는 Naver map camera center를 새 도형 기준 좌표로 쓰고, mapView가 없으면 서울 좌표 `37.5665, 126.9780`으로 fallback하며, 새 도형 주소는 `nil`로 시작한다. Android는 `MapFloatingButtons.kt`, `MapScreenLayers.kt`, `MapViewModel.kt`와 관련 테스트를 좁게 읽어 같은 계약인지 확인한 뒤 불일치가 있으면 수정한다.
 - 2026-07-02 현재 작업 기준 설정/기본값/색상/스케치/드론 초기화 계약을 iOS 소스와 다시 대조했다. Android는 `AppLanguage` 첫 실행 정책(한국어면 `ko`, 그 외 `en`), `KoreaFeaturesEnabled` 기본값(앱 언어 한국어면 ON), 알림/숨김/화면켜짐 기본 OFF, 도형 기본 파랑 `#007AFF`, 스케치 펜 기본 빨강/4.0/1.0, Sketch Firestore 누락 `strokeWidth` fallback 3.0, 드론 색상 추천 회색 제외, 기본 드론 생성, 레거시 `droneId == nil/null` 도형의 첫 활성 드론 연결 계약을 현재 iOS와 맞춰 유지한다. 코드 변경은 없었고 `:app:testDebugUnitTest --tests "*SettingsPreferenceKeysTest" --tests "*SettingsLanguageSelectionTest" --tests "*NotificationPreferenceKeysTest" --tests "*SketchDefaultsTest" --tests "*SketchFirebaseStoreTest" --tests "*DroneNextColorTest" --tests "*DroneDeleteValidationTest" --tests "*ShapeRepositoryTest"` 통과.
 - 2026-07-02 현재 작업 기준 도형 편집 `일단위 입력` 최초 기본값을 현재 iOS `DronePassApp`의 `UserDefaults.standard.register(defaults: ["isDateOnlyMode": true])`와 맞췄다. Android 새 설치/빈 DataStore의 `DefaultShapeEditDateOnlyMode`를 다시 true로 되돌려 첫 새 도형 작성 시 iOS처럼 일단위 입력이 기본 ON이 된다. 2026-07-01의 `c68c057` false 변경은 현재 iOS 앱 시작 등록값 기준으로 superseded 되었다. 명시 저장값과 legacy `is_date_only_mode` fallback 우선순위는 유지한다. `:app:testDebugUnitTest --tests "*ShapeEditDefaultsTest" --tests "*ShapeDateFormatsTest" --tests "*MapCameraFocusTest"` 통과. 커밋 `1d11ee0`.
 - 2026-07-02 현재 작업 기준 드론 편집 선택 필드 저장 계약을 iOS `DroneEditView.saveDrone()` + `DroneModel.update(...)` 실제 동작으로 다시 고정했다. iOS는 편집 모드에서 제작 번호/이륙 무게/크기/메모가 공백이면 `nil`을 넘기고 `DroneModel.update`가 nil 파라미터를 무시하므로 기존 값을 유지한다. Android도 이 계약으로 복구했고, 새 입력값이 있으면 공백 포함 원문으로 덮어쓴다. `d30bd45`의 clearing 변경은 `5decf36`에서 되돌려졌다. `:app:testDebugUnitTest --tests "*DroneListScreenTest" --tests "*DroneNameWidthLimitTest" --tests "*DroneNextColorTest" --tests "*DroneManagementContractTest" --tests "*DroneEditSheetTest" --tests "*DroneDeleteValidationTest" --tests "*DroneSelectionStateTest"` 통과. 커밋 `5decf36`.
