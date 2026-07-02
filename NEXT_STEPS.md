@@ -4,7 +4,7 @@
 
 > 마지막 업데이트: 2026-07-02
 > 브랜치: `fix/critical-pri0-fixes`
-> 상태: iOS 동작 대조와 Android 출시 하드닝 진행 중. Play 내부 테스트 `3.5.5 (102) internal-1`은 이미 게시된 상태이며, 최신 코드/패리티 기준은 `25a776f Pin weather auto refresh interval parity`, 최신 저장된 핸드오프/E2E 사전점검 문서 기준은 `2cbd5f3 Record latest E2E preflight status`다. 앱 출시 재개 절차는 `PLAY_RELEASE_HANDOFF.md`를 우선 확인한다.
+> 상태: iOS 동작 대조와 Android 출시 하드닝 진행 중. Play 내부 테스트 `3.5.5 (102) internal-1`은 이미 게시된 상태이며, 최신 코드/패리티 기준은 `902e1ed Align saved list section sorting with iOS`, 최신 저장된 Play 출시 핸드오프 기준은 `48e75da Save release resume checkpoint`다. 앱 출시 재개 절차는 `PLAY_RELEASE_HANDOFF.md`를 우선 확인한다.
 
 ## 앱 출시 재개 바로가기
 
@@ -22,13 +22,15 @@
 
 | 항목 | 값 |
 |---|---|
-| 워킹 트리 | 2026-07-02 handoff 기준 release setup 변경분은 `8135932 Record Play internal test release setup`까지 커밋됨. 이후 릴리스 재개 문서와 iOS 패리티 작업이 이어져 최신 코드/패리티 기준은 `25a776f Pin weather auto refresh interval parity`, 최신 저장된 핸드오프/E2E 사전점검 문서 기준은 `2cbd5f3 Record latest E2E preflight status`까지 반영됨. 재개 시 `git status --short`로 실제 상태 확인 |
-| 주요 검증 | 2026-07-02 기준 `:app:verifyCrossPlatformE2ePrerequisites`, `:app:testDebugUnitTest --tests "*WeatherForecastParityTest" --tests "*KpChartsTest"` 통과. 같은 시점 `adb devices`는 연결된 기기가 없어 Play 설치 실기기 검증은 남아 있음. 기존 `:app:testDebugUnitTest :app:lintDebug :app:assembleDebug`, `:app:minifyReleaseWithR8`, `:app:connectedDebugAndroidTest`, `:app:shapeParsingCoverageVerification`, feature별 회귀 테스트 통과 기록 유지 |
+| 워킹 트리 | 2026-07-02 handoff 기준 release setup 변경분은 `8135932 Record Play internal test release setup`까지 커밋됨. 이후 릴리스 재개 문서와 iOS 패리티 작업이 이어져 최신 코드/패리티 기준은 `902e1ed Align saved list section sorting with iOS`, 최신 저장된 Play 출시 핸드오프 기준은 `48e75da Save release resume checkpoint`까지 반영됨. 재개 시 `git status --short`로 실제 상태 확인 |
+| 주요 검증 | 2026-07-02 기준 `:app:verifyCrossPlatformE2ePrerequisites`, `:app:testDebugUnitTest --tests "*SavedListSectionsTest" --tests "*SavedShapeListItemTest" --tests "*MapCameraFocusTest" --tests "*MainScreenStartDestinationTest"`, `:app:testDebugUnitTest --tests "*WeatherForecastParityTest" --tests "*KpChartsTest"` 통과. 같은 시점 `adb devices`는 연결된 기기가 없어 Play 설치 실기기 검증은 남아 있음. 기존 `:app:testDebugUnitTest :app:lintDebug :app:assembleDebug`, `:app:minifyReleaseWithR8`, `:app:connectedDebugAndroidTest`, `:app:shapeParsingCoverageVerification`, feature별 회귀 테스트 통과 기록 유지 |
 | Release readiness | 2026-07-01 기준 로컬 release signing, `WEB_CLIENT_ID`, Firebase Android OAuth client, Naver Maps key 설정이 완료되어 `:app:verifyCrossPlatformE2ePrerequisites`와 `:app:bundleRelease`가 통과한다. AAB는 `app/build/outputs/bundle/release/app-release.aab`에 생성됨 |
 | 남은 성격 | Play 설치 앱의 앱 서명 SHA를 Firebase/NCP Maps에 등록한 뒤 실기기 Play 설치 경로에서 iOS↔Android 공유 Firebase 실계정 검증 수행 |
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 2026-07-02 현재 작업 기준 저장목록 섹션 정렬을 iOS `SavedTableListView`/정렬 흐름과 맞췄다. Android는 이제 `flightEndDate` 정렬에서 전체 도형을 먼저 정렬한 뒤 미시작/진행중/만료 섹션으로 나누고, 다른 정렬 옵션은 섹션 분리 후 섹션 내부에서 정렬한다. `:app:testDebugUnitTest --tests "*SavedListSectionsTest" --tests "*SavedShapeListItemTest" --tests "*MapCameraFocusTest" --tests "*MainScreenStartDestinationTest"` 통과. 커밋 `902e1ed`.
+- 2026-07-02 현재 앱 출시 재개 상태를 `PLAY_RELEASE_HANDOFF.md`에 저장했다. 사용자가 이 디렉토리에서 "앱 출시 과정 다시 이어나가자"라고 말하면 이미 게시된 내부 테스트 `3.5.5 (102) internal-1`에서 이어가며, 다음 작업은 Play 앱 서명 인증서 SHA-1/SHA-256을 Firebase/NCP Maps에 등록하고 opt-in 링크로 Play 설치 검증을 진행하는 것이다. 커밋 `48e75da`.
 - 2026-07-02 현재 작업 기준 KP/날씨 예보 시트의 refresh 동작을 iOS `KPForecastView`/`WeatherForecastView`/`WeatherManager`와 재대조했다. Android는 KP 초기 로드 토스트 없음, 수동/5분 자동 refresh 토스트 표시, 날씨 초기 로드 토스트 없음, 수동 refresh 토스트 표시, WeatherManager 대응 3분 자동 refresh 간격을 유지한다. 날씨 자동 refresh 간격을 테스트 가능한 `WeatherAutoRefreshIntervalMs`로 고정했고 `:app:testDebugUnitTest --tests "*WeatherForecastParityTest" --tests "*KpChartsTest"` 통과. 커밋 `25a776f`.
 - 2026-07-02 현재 로컬 `:app:verifyCrossPlatformE2ePrerequisites`는 통과한다. Android-side 공유 Firebase E2E 설정은 준비된 상태이며, 같은 시점 `adb devices`는 연결된 기기가 없어 실제 Play 설치/공유 Firestore 실기기 검증은 기기 연결 후 진행한다.
 - 2026-07-02 현재 작업 기준 도형/드론 상세 복사 토스트의 텍스트 크기를 iOS `CopyToastOverlay`와 맞췄다. Android는 이제 14sp medium 텍스트, capsule padding, 1.5초 표시 계약을 테스트로 고정한다. `:app:testDebugUnitTest --tests "*ShapeDetailDroneResolutionTest" --tests "*DroneDeleteValidationTest"` 통과. 커밋 `773e481`.

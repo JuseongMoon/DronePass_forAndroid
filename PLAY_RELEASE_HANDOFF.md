@@ -4,9 +4,9 @@
 > Resume trigger: "앱 출시 과정 다시 이어나가자"  
 > Branch at handoff: `fix/critical-pri0-fixes`  
 > Latest release setup baseline commit: `8135932`
-> Latest Play handoff commit before this edit: `833ec5c`
-> Latest repo checkpoint before this edit: `2cbd5f3`
-> Latest code/parity commit before this edit: `25a776f`
+> Latest Play handoff commit before this edit: `48e75da`
+> Latest E2E preflight doc commit before this edit: `2cbd5f3`
+> Latest code/parity commit before this edit: `902e1ed`
 > Package name: `com.ScienceFiction.DronePassAndroid`
 
 This file captures the Google Play internal testing/release state so a later session can continue from this repository without re-discovering the setup. Do not paste secrets, keystore passwords, API secrets, or full OAuth client IDs into this file.
@@ -28,7 +28,7 @@ Rebuild only if local code/config has changed and a new Play build is intentiona
 
 ## Current Stop Point
 
-The Play Console internal test release has already been created and published for `3.5.5 (102) internal-1`. The latest user-visible stop point was the Play Console version detail page showing `3.5.5 (102) internal-1` as provided to internal testers. After that, local code/parity work continued through `25a776f`, but no newer AAB has been uploaded. When resuming, do not start by rebuilding or uploading the same AAB again unless code/config has changed and a new Play build is intentionally required. Start from the release-distribution side:
+The Play Console internal test release has already been created and published for `3.5.5 (102) internal-1`. The latest user-visible stop point was the Play Console version detail page showing `3.5.5 (102) internal-1` as provided to internal testers. After that, local code/parity work continued through `902e1ed`, but no newer AAB has been uploaded. When resuming, do not start by rebuilding or uploading the same AAB again unless code/config has changed and a new Play build is intentionally required. Start from the release-distribution side:
 
 1. Confirm the Play Console internal test version page still shows `3.5.5 (102) internal-1` as available to internal testers.
 2. Register the Google Play app-signing certificate fingerprints in Firebase and NCP Maps as needed.
@@ -51,7 +51,7 @@ When the user says "앱 출시 과정 다시 이어나가자" from this director
 1. Read this file first.
 2. Run `git status --short` and confirm no unexpected local changes.
 3. Confirm whether an Android test device is attached with `adb devices`.
-4. Tell the user that the internal test build `3.5.5 (102) internal-1` is already live, while the latest local committed code/parity checkpoint is `25a776f` and the latest saved handoff/E2E-preflight documentation checkpoint before this edit is `2cbd5f3`.
+4. Tell the user that the internal test build `3.5.5 (102) internal-1` is already live, while the latest local committed code/parity checkpoint before this handoff refresh is `902e1ed` and the latest saved Play handoff checkpoint before this edit is `48e75da`.
 5. If Firebase/NCP certificate registration changes only console state, no local rebuild is required.
 6. Continue from the Play Console/Firebase/NCP certificate and internal tester steps below before rebuilding a new AAB.
 7. If a new AAB must be uploaded because code/config changed, bump `versionCode` to `103` and use release name `3.5.5 (103) internal-2`.
@@ -84,6 +84,14 @@ The next external release task is not another local build by default. It is to r
   - `versionName = "3.5.5"`
   - This was matched to the iOS build number/marketing version that were available at the time.
 - Latest code/parity commits before this save:
+  - `902e1ed Align saved list section sorting with iOS`
+  - Android saved-list section sorting now matches iOS: `flightEndDate` sorting is applied globally before splitting into not-started/active/expired sections, while the other sort modes split into sections first and sort inside each section.
+  - Targeted tests passed:
+    - `:app:testDebugUnitTest --tests "*SavedListSectionsTest" --tests "*SavedShapeListItemTest" --tests "*MapCameraFocusTest" --tests "*MainScreenStartDestinationTest"`
+  - `48e75da Save release resume checkpoint`
+  - Play release resume state was saved so the trigger phrase "앱 출시 과정 다시 이어나가자" resumes from Play app-signing SHA registration and Play-installed internal-test verification, not from rebuilding or re-uploading the already published `102` AAB.
+  - `2cbd5f3 Record latest E2E preflight status`
+  - The latest local `:app:verifyCrossPlatformE2ePrerequisites` status was captured. Android-side shared Firebase E2E prerequisites were ready, but no Android test device was attached, so Play-installed real-device verification remains open.
   - `25a776f Pin weather auto refresh interval parity`
   - KP/weather forecast refresh behavior was rechecked against iOS. Android keeps KP initial-load toast suppressed, KP manual/5-minute auto-refresh toast enabled, Weather initial-load toast suppressed, Weather manual refresh toast enabled, and the WeatherManager-equivalent 3-minute auto-refresh interval pinned by test.
   - Targeted tests passed:
@@ -159,20 +167,26 @@ At the time of the latest release-handoff save request, `git status --short` was
 The user switched from code work to saving this handoff while broader Android/iOS parity work was paused. This is not part of the Play release resume trigger, but it is useful context if the user later says to continue the paused implementation work.
 
 - Completed follow-up since the earlier auth pause: account-switch warning copy/count and auth cancellation behavior now match iOS through `f2dee60` and `a55b59d`.
-- Completed follow-up after the Play handoff: weather guide punctuation, drone dropdown empty label, detail copy-toast text size, and KP/weather refresh interval contract now match iOS through `14689d4`, `5346501`, `773e481`, and `25a776f`.
-- Latest paused implementation thread before this save: continue the broader iOS/Android screen parity audit from the saved-list row tap/focus/sort area. No code changes were made after starting this latest audit.
+- Completed follow-up after the Play handoff: weather guide punctuation, drone dropdown empty label, detail copy-toast text size, KP/weather refresh interval contract, and saved-list section sorting now match iOS through `14689d4`, `5346501`, `773e481`, `25a776f`, and `902e1ed`.
+- Latest paused implementation thread before this save: continue the broader iOS/Android parity audit from the sketch mode save/restore/toolbar/touch area. No code changes were made after starting this latest sketch audit.
   - Android files to resume from:
-    - `app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/saved/SavedListScreen.kt`
-    - `app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/saved/SavedListViewModel.kt`
-    - `app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/map/MapViewModel.kt`
-    - `app/src/test/java/com/ScienceFiction/DronePassAndroid/feature/saved/SavedListSectionsTest.kt`
-    - `app/src/test/java/com/ScienceFiction/DronePassAndroid/feature/saved/SavedShapeListItemTest.kt`
-    - `app/src/test/java/com/ScienceFiction/DronePassAndroid/feature/map/MapCameraFocusTest.kt`
-    - `app/src/test/java/com/ScienceFiction/DronePassAndroid/MainScreenStartDestinationTest.kt`
+    - `app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/sketch/SketchViewModel.kt`
+    - `app/src/main/java/com/ScienceFiction/DronePassAndroid/domain/model/SketchModel.kt`
+    - `app/src/main/java/com/ScienceFiction/DronePassAndroid/core/data/repository/SketchRepository.kt`
+    - `app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/sketch/SketchToolbar.kt`
+    - `app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/map/MapScreen.kt`
+    - `app/src/test/java/com/ScienceFiction/DronePassAndroid/feature/sketch/SketchRepositoryTest.kt`
+    - `app/src/test/java/com/ScienceFiction/DronePassAndroid/feature/sketch/SketchDefaultsTest.kt`
+    - `app/src/test/java/com/ScienceFiction/DronePassAndroid/feature/sketch/SketchTouchDecisionTest.kt`
+    - `app/src/test/java/com/ScienceFiction/DronePassAndroid/core/res/StringResourceCoverageTest.kt`
   - iOS references already opened:
-    - `/Users/david/Development/Swift/myProjects/DronePass/DronePass/Shape/View/SavedTableListView.swift`
-    - `/Users/david/Development/Swift/myProjects/DronePass/DronePass/MainTabView.swift`
-  - Re-run a focused audit of iOS `ShapeListContent`/row tap behavior and Android saved-list sections before changing code. Check that row tap does not open detail, detail button opens detail separately, selected shape is set immediately, scroll-to selection is delayed, `shape.radius ?? 100.0` is used for camera focus, selected-drone filtering treats legacy nil `droneId` like iOS, and `flightEndDate` sorting sorts before section split.
+    - `/Users/david/Development/Swift/myProjects/DronePass/DronePass/Manager/SketchManager.swift`
+    - `/Users/david/Development/Swift/myProjects/DronePass/DronePass/Sketch/SketchModel.swift`
+    - `/Users/david/Development/Swift/myProjects/DronePass/DronePass/Sketch/SketchRepository.swift`
+    - `/Users/david/Development/Swift/myProjects/DronePass/DronePass/Sketch/SketchFileStore.swift`
+    - `/Users/david/Development/Swift/myProjects/DronePass/DronePass/Sketch/View/SketchToolbarView.swift`
+    - `/Users/david/Development/Swift/myProjects/DronePass/DronePass/Sketch/View/SketchCanvasView.swift`
+  - Audit status already established: default sketch color/stroke/opacity, stroke and opacity clamps, 5m point sampling, finish-only-when-two-points, undo/redo edit-session sync, toolbar ordering/dimensions, pen picker/sliders, and delete-all dialog strings appear aligned with iOS and existing Android tests. Continue by reading Android `resolveSketchTouchEvent` and `MapScreen` pointer input, then add a focused regression test only if a real gap is found.
 
 ## Local Build Commands
 
@@ -194,6 +208,7 @@ The last release readiness check and `bundleRelease` passed after `google-servic
 
 2026-07-02 targeted parity verification after the Play handoff:
 
+- `:app:testDebugUnitTest --tests "*SavedListSectionsTest" --tests "*SavedShapeListItemTest" --tests "*MapCameraFocusTest" --tests "*MainScreenStartDestinationTest"` passed after aligning saved-list section sorting with iOS.
 - `:app:testDebugUnitTest --tests "*StringResourceCoverageTest" --tests "*InfoGuideSheetsTest"` passed.
 - `:app:testDebugUnitTest --tests "*StringResourceCoverageTest" --tests "*DroneSelectionDropdownTest" --tests "*MapFloatingButtonsTest"` passed.
 - `:app:testDebugUnitTest --tests "*ShapeDetailDroneResolutionTest" --tests "*DroneDeleteValidationTest"` passed.
