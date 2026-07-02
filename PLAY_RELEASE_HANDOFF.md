@@ -4,8 +4,9 @@
 > Resume trigger: "앱 출시 과정 다시 이어나가자"  
 > Branch at handoff: `fix/critical-pri0-fixes`  
 > Latest release setup baseline commit: `8135932`
-> Latest Play handoff commit before this save: `497007a`
-> Latest code/parity commit before this save: `25a776f`
+> Latest Play handoff commit before this edit: `833ec5c`
+> Latest repo checkpoint before this edit: `2cbd5f3`
+> Latest code/parity commit before this edit: `25a776f`
 > Package name: `com.ScienceFiction.DronePassAndroid`
 
 This file captures the Google Play internal testing/release state so a later session can continue from this repository without re-discovering the setup. Do not paste secrets, keystore passwords, API secrets, or full OAuth client IDs into this file.
@@ -50,7 +51,7 @@ When the user says "앱 출시 과정 다시 이어나가자" from this director
 1. Read this file first.
 2. Run `git status --short` and confirm no unexpected local changes.
 3. Confirm whether an Android test device is attached with `adb devices`.
-4. Tell the user that the internal test build `3.5.5 (102) internal-1` is already live, while the latest local committed code/parity checkpoint is `25a776f`.
+4. Tell the user that the internal test build `3.5.5 (102) internal-1` is already live, while the latest local committed code/parity checkpoint is `25a776f` and the latest saved handoff/E2E-preflight documentation checkpoint before this edit is `2cbd5f3`.
 5. If Firebase/NCP certificate registration changes only console state, no local rebuild is required.
 6. Continue from the Play Console/Firebase/NCP certificate and internal tester steps below before rebuilding a new AAB.
 7. If a new AAB must be uploaded because code/config changed, bump `versionCode` to `103` and use release name `3.5.5 (103) internal-2`.
@@ -159,16 +160,19 @@ The user switched from code work to saving this handoff while broader Android/iO
 
 - Completed follow-up since the earlier auth pause: account-switch warning copy/count and auth cancellation behavior now match iOS through `f2dee60` and `a55b59d`.
 - Completed follow-up after the Play handoff: weather guide punctuation, drone dropdown empty label, detail copy-toast text size, and KP/weather refresh interval contract now match iOS through `14689d4`, `5346501`, `773e481`, and `25a776f`.
-- Latest paused implementation thread before this save: compare KP/weather forecast refresh toast and navigation behavior against iOS.
+- Latest paused implementation thread before this save: continue the broader iOS/Android screen parity audit from the saved-list row tap/focus/sort area. No code changes were made after starting this latest audit.
   - Android files to resume from:
-    - `app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/weather/WeatherForecastScreen.kt`
-    - `app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/weather/WeatherViewModel.kt`
-    - `app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/kp/KpForecastScreen.kt`
-    - `app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/kp/KpViewModel.kt`
+    - `app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/saved/SavedListScreen.kt`
+    - `app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/saved/SavedListViewModel.kt`
+    - `app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/map/MapViewModel.kt`
+    - `app/src/test/java/com/ScienceFiction/DronePassAndroid/feature/saved/SavedListSectionsTest.kt`
+    - `app/src/test/java/com/ScienceFiction/DronePassAndroid/feature/saved/SavedShapeListItemTest.kt`
+    - `app/src/test/java/com/ScienceFiction/DronePassAndroid/feature/map/MapCameraFocusTest.kt`
+    - `app/src/test/java/com/ScienceFiction/DronePassAndroid/MainScreenStartDestinationTest.kt`
   - iOS references already opened:
-    - `/Users/david/Development/Swift/myProjects/DronePass/DronePass/Weather/WeatherForecastView.swift`
-    - `/Users/david/Development/Swift/myProjects/DronePass/DronePass/KP/KPForecastView.swift`
-  - Re-check whether Android `startAutoRefresh()` emits a refresh toast on first sheet open. iOS KP suppresses the initial fetch toast but shows later auto/manual refresh toasts; iOS Weather suppresses the initial view-entry toast and only shows refresh toasts after the initial state is loaded.
+    - `/Users/david/Development/Swift/myProjects/DronePass/DronePass/Shape/View/SavedTableListView.swift`
+    - `/Users/david/Development/Swift/myProjects/DronePass/DronePass/MainTabView.swift`
+  - Re-run a focused audit of iOS `ShapeListContent`/row tap behavior and Android saved-list sections before changing code. Check that row tap does not open detail, detail button opens detail separately, selected shape is set immediately, scroll-to selection is delayed, `shape.radius ?? 100.0` is used for camera focus, selected-drone filtering treats legacy nil `droneId` like iOS, and `flightEndDate` sorting sorts before section split.
 
 ## Local Build Commands
 
