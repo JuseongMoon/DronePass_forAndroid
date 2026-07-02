@@ -16,7 +16,7 @@ import java.util.Calendar
 import java.util.Locale
 import java.util.TimeZone
 
-internal const val DefaultShapeEditDateOnlyMode = false
+internal const val DefaultShapeEditDateOnlyMode = true
 internal const val ShowShapeEditFlightPeriodSectionHeader = false
 @DrawableRes
 internal val ShapeEditDronePlaceholderIconRes = R.drawable.ic_drone
