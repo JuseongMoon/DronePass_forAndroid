@@ -40,8 +40,8 @@
     <string name="login_sync_failed">Data sync failed. Please check your network connection.</string>
     <string name="login_account_switch_title">Switch to a different account?</string>
     <plurals name="login_account_switch_message">
-        <item quantity="one">There is %1$d local item not saved to the cloud. Continuing will permanently delete it with no way to recover. Log in again with the previous account to keep it.</item>
-        <item quantity="other">There are %1$d local items not saved to the cloud. Continuing will permanently delete them with no way to recover. Log in again with the previous account to keep them.</item>
+        <item quantity="one">There are %1$d modified shape(s) not saved to the cloud. Continuing will permanently delete them with no way to recover. Log in again with the previous account to keep them.</item>
+        <item quantity="other">There are %1$d modified shape(s) not saved to the cloud. Continuing will permanently delete them with no way to recover. Log in again with the previous account to keep them.</item>
     </plurals>
     <string name="login_account_switch_confirm">Continue (Discard)</string>
     <string name="login_skip">Continue without login</string>

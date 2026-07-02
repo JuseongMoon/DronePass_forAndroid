@@ -65,7 +65,7 @@ class StringResourceCoverageTest {
         )
         assertEquals("다른 계정으로 전환할까요?", stringResourceValue("values/strings.xml", "login_account_switch_title"))
         assertEquals(
-            "클라우드에 저장되지 않은 로컬 항목 %1\$d개가 있습니다. 계속하면 영구 삭제되어 복구할 수 없습니다. 기존 계정으로 다시 로그인하면 보존됩니다.",
+            "클라우드에 저장되지 않은 %1\$d개의 수정된 도형이 있습니다. 계속하면 영구 삭제되어 복구할 수 없습니다. 기존 계정으로 다시 로그인하면 보존됩니다.",
             pluralResourceValue("values/strings.xml", "login_account_switch_message", "other"),
         )
         assertEquals("계속(삭제)", stringResourceValue("values/strings.xml", "login_account_switch_confirm"))
@@ -93,11 +93,11 @@ class StringResourceCoverageTest {
         )
         assertEquals("Switch to a different account?", stringResourceValue("values-en/strings.xml", "login_account_switch_title"))
         assertEquals(
-            "There is %1\$d local item not saved to the cloud. Continuing will permanently delete it with no way to recover. Log in again with the previous account to keep it.",
+            "There are %1\$d modified shape(s) not saved to the cloud. Continuing will permanently delete them with no way to recover. Log in again with the previous account to keep them.",
             pluralResourceValue("values-en/strings.xml", "login_account_switch_message", "one"),
         )
         assertEquals(
-            "There are %1\$d local items not saved to the cloud. Continuing will permanently delete them with no way to recover. Log in again with the previous account to keep them.",
+            "There are %1\$d modified shape(s) not saved to the cloud. Continuing will permanently delete them with no way to recover. Log in again with the previous account to keep them.",
             pluralResourceValue("values-en/strings.xml", "login_account_switch_message", "other"),
         )
         assertEquals("Continue (Discard)", stringResourceValue("values-en/strings.xml", "login_account_switch_confirm"))

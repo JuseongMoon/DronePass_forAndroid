@@ -40,7 +40,7 @@
     <string name="login_sync_failed">데이터 동기화에 실패했습니다. 네트워크 상태를 확인해주세요.</string>
     <string name="login_account_switch_title">다른 계정으로 전환할까요?</string>
     <plurals name="login_account_switch_message">
-        <item quantity="other">클라우드에 저장되지 않은 로컬 항목 %1$d개가 있습니다. 계속하면 영구 삭제되어 복구할 수 없습니다. 기존 계정으로 다시 로그인하면 보존됩니다.</item>
+        <item quantity="other">클라우드에 저장되지 않은 %1$d개의 수정된 도형이 있습니다. 계속하면 영구 삭제되어 복구할 수 없습니다. 기존 계정으로 다시 로그인하면 보존됩니다.</item>
     </plurals>
     <string name="login_account_switch_confirm">계속(삭제)</string>
     <string name="login_skip">로그인 없이 시작</string>
