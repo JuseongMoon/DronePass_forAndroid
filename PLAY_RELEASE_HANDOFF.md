@@ -11,6 +11,19 @@
 
 This file captures the Google Play internal testing/release state so a later session can continue from this repository without re-discovering the setup. Do not paste secrets, keystore passwords, API secrets, or full OAuth client IDs into this file.
 
+## Latest Saved Resume Snapshot
+
+Saved at the user's request on 2026-07-02 from this repository after the Play Console internal-test release flow reached the published version detail page.
+
+- Current working branch: `fix/critical-pri0-fixes`.
+- Current local HEAD before this documentation save: `eef4db6 Record shape edit default parity`.
+- Working tree status before this documentation save: clean.
+- Play internal test version already published: `3.5.5 (102) internal-1`.
+- Do not rebuild or re-upload version code `102` just to resume the release process.
+- Resume phrase from this directory: `앱 출시 과정 다시 이어나가자`.
+- Resume target: continue from Play app-signing SHA registration, tester setup, and Play-installed real-device verification.
+- If a newer build is intentionally required later, use `versionCode = 103` and release name `3.5.5 (103) internal-2`.
+
 ## Quick Resume
 
 If the user later says "앱 출시 과정 다시 이어나가자" from this repository, do this first:
