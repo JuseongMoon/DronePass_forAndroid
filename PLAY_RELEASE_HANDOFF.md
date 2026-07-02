@@ -4,9 +4,9 @@
 > Resume trigger: "앱 출시 과정 다시 이어나가자"  
 > Branch at handoff: `fix/critical-pri0-fixes`  
 > Latest release setup baseline commit: `8135932`
-> Latest Play handoff commit before this edit: `48e75da`
+> Latest saved resume-doc commit before this edit: `fc8c8de`
 > Latest E2E preflight doc commit before this edit: `2cbd5f3`
-> Latest code/parity commit before this edit: `1beac1b`
+> Latest code/parity commit before this release save: `1beac1b`
 > Package name: `com.ScienceFiction.DronePassAndroid`
 
 This file captures the Google Play internal testing/release state so a later session can continue from this repository without re-discovering the setup. Do not paste secrets, keystore passwords, API secrets, or full OAuth client IDs into this file.
@@ -28,7 +28,7 @@ Rebuild only if local code/config has changed and a new Play build is intentiona
 
 ## Current Stop Point
 
-The Play Console internal test release has already been created and published for `3.5.5 (102) internal-1`. The latest user-visible stop point was the Play Console version detail page showing `3.5.5 (102) internal-1` as provided to internal testers. After that, local code/parity work continued through `1beac1b`, but no newer AAB has been uploaded. When resuming, do not start by rebuilding or uploading the same AAB again unless code/config has changed and a new Play build is intentionally required. Start from the release-distribution side:
+The Play Console internal test release has already been created and published for `3.5.5 (102) internal-1`. The latest user-visible stop point was the Play Console version detail page showing `3.5.5 (102) internal-1` as provided to internal testers. After that, local code/parity work continued through `1beac1b`, and resume documentation was refreshed through `fc8c8de`, but no newer AAB has been uploaded. When resuming, do not start by rebuilding or uploading the same AAB again unless code/config has changed and a new Play build is intentionally required. Start from the release-distribution side:
 
 1. Confirm the Play Console internal test version page still shows `3.5.5 (102) internal-1` as available to internal testers.
 2. Register the Google Play app-signing certificate fingerprints in Firebase and NCP Maps as needed.
@@ -51,7 +51,7 @@ When the user says "앱 출시 과정 다시 이어나가자" from this director
 1. Read this file first.
 2. Run `git status --short` and confirm no unexpected local changes.
 3. Confirm whether an Android test device is attached with `adb devices`.
-4. Tell the user that the internal test build `3.5.5 (102) internal-1` is already live, while the latest local committed code/parity checkpoint before this handoff refresh is `1beac1b` and the latest saved Play handoff checkpoint before this edit is `48e75da`.
+4. Tell the user that the internal test build `3.5.5 (102) internal-1` is already live, while the latest local committed code/parity checkpoint before this release save is `1beac1b` and the latest saved resume-doc checkpoint before this edit is `fc8c8de`.
 5. If Firebase/NCP certificate registration changes only console state, no local rebuild is required.
 6. Continue from the Play Console/Firebase/NCP certificate and internal tester steps below before rebuilding a new AAB.
 7. If a new AAB must be uploaded because code/config changed, bump `versionCode` to `103` and use release name `3.5.5 (103) internal-2`.
@@ -74,11 +74,12 @@ The next external release task is not another local build by default. It is to r
   - Play optimized install size shown in console: about `15.2 MB`.
 - The native debug symbols warning appeared during Play review. It was non-blocking and the release was published.
 - Current resume point after the user pressed internal-test release: version detail page for `3.5.5 (102) internal-1`, showing the release is provided to internal testers.
-- The user has completed Play app creation and internal-test release creation through the version summary screen. They asked to save the state before continuing the release process later.
+- The user has completed Play app creation and internal-test release creation through the version summary screen. They asked to save the state before continuing the release process later. The saved resume instruction is to continue from Play app-signing SHA registration, tester setup, and Play-installed real-device verification, not from rebuilding or re-uploading version `102`.
 
 ## Local Android State
 
 - Release setup is committed through `8135932 Record Play internal test release setup`.
+- The latest pre-save resume documentation commit is `fc8c8de Refresh parity resume notes`.
 - Version alignment was committed in `effbf74 Align Android version with iOS`.
   - `versionCode = 102`
   - `versionName = "3.5.5"`
