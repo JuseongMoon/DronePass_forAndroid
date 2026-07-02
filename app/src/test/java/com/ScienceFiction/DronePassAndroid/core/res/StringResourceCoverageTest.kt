@@ -210,6 +210,7 @@ class StringResourceCoverageTest {
     fun `map new shape alert strings match iOS localizations`() {
         assertEquals("예", stringResourceValue("values/strings.xml", "common_yes"))
         assertEquals("아니오", stringResourceValue("values/strings.xml", "common_no"))
+        assertEquals("드론 선택", stringResourceValue("values/strings.xml", "drone_dropdown_select"))
         assertEquals("새 도형 만들기", stringResourceValue("values/strings.xml", "map_new_shape_alert_title"))
         assertEquals("새 도형 추가", stringResourceValue("values/strings.xml", "map_fab_add_shape"))
         assertEquals(
@@ -231,6 +232,7 @@ class StringResourceCoverageTest {
             "Would you like to create a new shape at this location?",
             stringResourceValue("values-en/strings.xml", "map_new_shape_alert_message"),
         )
+        assertEquals("Select Drone", stringResourceValue("values-en/strings.xml", "drone_dropdown_select"))
         assertEquals("Address Search Failed", stringResourceValue("values-en/strings.xml", "map_address_search_failed_title"))
         assertEquals(
             "Unable to retrieve address for the selected location. Would you like to create the shape with coordinates only?",

@@ -72,7 +72,7 @@
     <string name="map_fab_add_shape">Add New Shape</string>
 
     <!-- DroneSelectionDropdown -->
-    <string name="drone_dropdown_select">Select drone</string>
+    <string name="drone_dropdown_select">Select Drone</string>
     <string name="drone_dropdown_toggle">Open drone list</string>
     <string name="drone_dropdown_collapse">Close drone list</string>
 
