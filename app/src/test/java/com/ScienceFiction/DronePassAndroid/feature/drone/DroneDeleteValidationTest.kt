@@ -2,6 +2,7 @@ package com.ScienceFiction.DronePassAndroid.feature.drone
 
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.PaletteColor
 import org.junit.Assert.assertEquals
@@ -175,6 +176,9 @@ class DroneDeleteValidationTest {
         assertEquals(300, DroneDetailCopyToastAnimationDurationMs)
         assertEquals(0.75f, DroneDetailCopyToastBackgroundAlpha, 0f)
         assertEquals(50f, DroneDetailCopyToastBottomPadding.value, 0f)
+        assertEquals(14.sp, DroneDetailCopyToastTextSize)
+        assertEquals(16.dp, DroneDetailCopyToastHorizontalPadding)
+        assertEquals(10.dp, DroneDetailCopyToastVerticalPadding)
         assertEquals(HapticFeedbackType.LongPress, DroneDetailCopyHapticFeedbackType)
     }
 

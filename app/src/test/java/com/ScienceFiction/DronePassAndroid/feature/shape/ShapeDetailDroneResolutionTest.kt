@@ -4,6 +4,7 @@ import android.text.util.Linkify
 import android.webkit.WebSettings
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.PaletteColor
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
@@ -109,6 +110,9 @@ class ShapeDetailDroneResolutionTest {
         assertEquals(300, ShapeDetailCopyToastAnimationDurationMs)
         assertEquals(0.75f, ShapeDetailCopyToastBackgroundAlpha, 0f)
         assertEquals(50f, ShapeDetailCopyToastBottomPadding.value, 0f)
+        assertEquals(14.sp, ShapeDetailCopyToastTextSize)
+        assertEquals(16.dp, ShapeDetailCopyToastHorizontalPadding)
+        assertEquals(10.dp, ShapeDetailCopyToastVerticalPadding)
         assertEquals(HapticFeedbackType.LongPress, ShapeDetailCopyHapticFeedbackType)
     }
 

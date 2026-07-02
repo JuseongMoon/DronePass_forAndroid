@@ -72,6 +72,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -673,6 +674,9 @@ internal const val ShapeDetailCopyToastDurationMs = 1_500L
 internal const val ShapeDetailCopyToastAnimationDurationMs = 300
 internal const val ShapeDetailCopyToastBackgroundAlpha = 0.75f
 internal val ShapeDetailCopyToastBottomPadding = 50.dp
+internal val ShapeDetailCopyToastTextSize = 14.sp
+internal val ShapeDetailCopyToastHorizontalPadding = 16.dp
+internal val ShapeDetailCopyToastVerticalPadding = 10.dp
 internal val ShapeDetailCopyHapticFeedbackType = HapticFeedbackType.LongPress
 internal val ShapeDetailRowMinHeight = 44.dp
 internal val ShapeDetailRowDividerThickness = 0.5.dp
@@ -711,7 +715,7 @@ private fun ShapeDetailCopyToast(
     ) {
         Text(
             text = message,
-            style = MaterialTheme.typography.bodySmall,
+            fontSize = ShapeDetailCopyToastTextSize,
             fontWeight = FontWeight.Medium,
             color = Color.White,
             modifier = Modifier
@@ -719,7 +723,10 @@ private fun ShapeDetailCopyToast(
                     color = Color.Black.copy(alpha = ShapeDetailCopyToastBackgroundAlpha),
                     shape = CircleShape,
                 )
-                .padding(horizontal = 16.dp, vertical = 10.dp),
+                .padding(
+                    horizontal = ShapeDetailCopyToastHorizontalPadding,
+                    vertical = ShapeDetailCopyToastVerticalPadding,
+                ),
         )
     }
 }

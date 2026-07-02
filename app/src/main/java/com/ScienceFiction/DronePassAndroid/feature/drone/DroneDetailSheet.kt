@@ -67,6 +67,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.PaletteColor
@@ -778,6 +779,9 @@ internal const val DroneDetailCopyToastDurationMs = 1_500L
 internal const val DroneDetailCopyToastAnimationDurationMs = 300
 internal const val DroneDetailCopyToastBackgroundAlpha = 0.75f
 internal val DroneDetailCopyToastBottomPadding = 50.dp
+internal val DroneDetailCopyToastTextSize = 14.sp
+internal val DroneDetailCopyToastHorizontalPadding = 16.dp
+internal val DroneDetailCopyToastVerticalPadding = 10.dp
 internal val DroneDetailCopyHapticFeedbackType = HapticFeedbackType.LongPress
 
 @Composable
@@ -800,7 +804,7 @@ private fun DroneDetailCopyToast(
     ) {
         Text(
             text = message,
-            style = MaterialTheme.typography.bodySmall,
+            fontSize = DroneDetailCopyToastTextSize,
             fontWeight = FontWeight.Medium,
             color = Color.White,
             modifier = Modifier
@@ -808,7 +812,10 @@ private fun DroneDetailCopyToast(
                     color = Color.Black.copy(alpha = DroneDetailCopyToastBackgroundAlpha),
                     shape = CircleShape,
                 )
-                .padding(horizontal = 16.dp, vertical = 10.dp),
+                .padding(
+                    horizontal = DroneDetailCopyToastHorizontalPadding,
+                    vertical = DroneDetailCopyToastVerticalPadding,
+                ),
         )
     }
 }
