@@ -4,14 +4,14 @@
 > Resume trigger: "앱 출시 과정 다시 이어나가자"  
 > Branch at handoff: `fix/critical-pri0-fixes`  
 > Latest release setup baseline commit: `8135932`
-> Latest code/parity commit before this save: `eaab70d`
+> Latest code/parity commit before this save: `f2dee60`
 > Package name: `com.ScienceFiction.DronePassAndroid`
 
 This file captures the Google Play internal testing/release state so a later session can continue from this repository without re-discovering the setup. Do not paste secrets, keystore passwords, API secrets, or full OAuth client IDs into this file.
 
 ## Current Stop Point
 
-The Play Console internal test release has already been created and published for `3.5.5 (102) internal-1`. The latest user-visible stop point was the Play Console version detail page showing `3.5.5 (102) internal-1` as provided to internal testers. When resuming, do not start by rebuilding or uploading the same AAB again. Start from the release-distribution side:
+The Play Console internal test release has already been created and published for `3.5.5 (102) internal-1`. The latest user-visible stop point was the Play Console version detail page showing `3.5.5 (102) internal-1` as provided to internal testers. After that, local code/parity documentation continued through `f2dee60`, but no newer AAB has been uploaded. When resuming, do not start by rebuilding or uploading the same AAB again unless code/config has changed and a new Play build is intentionally required. Start from the release-distribution side:
 
 1. Confirm the Play Console internal test version page still shows `3.5.5 (102) internal-1` as available to internal testers.
 2. Register the Google Play app-signing certificate fingerprints in Firebase and NCP Maps as needed.
@@ -34,9 +34,10 @@ When the user says "앱 출시 과정 다시 이어나가자" from this director
 1. Read this file first.
 2. Run `git status --short` and confirm no unexpected local changes.
 3. Confirm whether an Android test device is attached with `adb devices`.
-4. Tell the user that the internal test build `3.5.5 (102) internal-1` is already live, then continue from the Play Console/Firebase/NCP certificate and internal tester steps below before rebuilding a new AAB.
+4. Tell the user that the internal test build `3.5.5 (102) internal-1` is already live, while the latest local committed code/parity checkpoint is `f2dee60`.
 5. If Firebase/NCP certificate registration changes only console state, no local rebuild is required.
-6. If a new AAB must be uploaded because code/config changed, bump `versionCode` to `103` and use release name `3.5.5 (103) internal-2`.
+6. Continue from the Play Console/Firebase/NCP certificate and internal tester steps below before rebuilding a new AAB.
+7. If a new AAB must be uploaded because code/config changed, bump `versionCode` to `103` and use release name `3.5.5 (103) internal-2`.
 
 The next external release task is not another local build by default. It is to register the Google Play app-signing certificate fingerprints in Firebase and NCP Maps, then verify the Play-installed internal-test build on a real Android device.
 
@@ -66,6 +67,20 @@ The next external release task is not another local build by default. It is to r
   - `versionName = "3.5.5"`
   - This was matched to the iOS build number/marketing version that were available at the time.
 - Latest code/parity commits before this save:
+  - `f2dee60 Match account switch warning count to iOS`
+  - Android account-switch warning now counts only modified shape baseline changes, matching iOS `AuthManager.hasUnsyncedLocalChangesForAccountSwitch()` and the "modified shape(s)" warning copy. Dirty sketches/drones no longer inflate this specific account-switch warning count.
+  - Targeted tests passed:
+    - `:app:testDebugUnitTest --tests "*AuthViewModelForegroundSyncTest" --tests "*LoginScreenContractTest" --tests "*AuthRepositoryUserDocumentTest" --tests "*StringResourceCoverageTest"`
+  - `ec2a411 Use settings profile row resources`
+  - Android settings profile/login rows now use dedicated resources matching iOS `settings.profile.my` / `settings.profile.login` instead of reusing broader profile/login title keys.
+  - Targeted tests passed:
+    - `:app:testDebugUnitTest --tests "*SettingsScreenContractTest" --tests "*StringResourceCoverageTest" --tests "*ProfileSheetParityTest" --tests "*ProfileViewModelTest"`
+  - `abbddbc Align account switch warning copy with iOS`
+  - Android account-switch warning KO/EN copy was aligned with iOS `account.switch.warning.*` wording.
+  - Targeted tests passed:
+    - `:app:testDebugUnitTest --tests "*AuthViewModelForegroundSyncTest" --tests "*LoginScreenContractTest" --tests "*AuthRepositoryUserDocumentTest" --tests "*StringResourceCoverageTest"`
+  - `7485e58 Save Play release resume handoff update`
+  - Previous handoff refresh captured that the Play internal test build was already live and the next external work was certificate/tester verification.
   - `eaab70d Record shape detail edit parity audit`
   - Shape detail/edit parity was re-audited against the iOS source and documented. Android already matched the relevant detail rows, edit flow, date defaults, address search behavior, duplicate save behavior, conflict merge behavior, and the current circle-only map overlay rendering behavior.
   - Targeted tests passed:
@@ -98,19 +113,19 @@ ndk {
 
 This setting was added while investigating the Play native-symbol warning. Rebuilding still did not produce a separate `native-debug-symbols.zip`, because the native `.so` libraries appear to come from third-party dependencies such as Naver Maps/AndroidX/DataStore rather than app-owned NDK code. The warning can be ignored for the current internal test.
 
-At the time of this save, `git status --short` was clean before this documentation edit. Re-check with `git status --short` when resuming.
+At the time of the latest release-handoff save request, `git status --short` was clean before documentation edits. Re-check with `git status --short` when resuming.
 
 ## Paused Code Thread
 
-The user switched from code work to saving this handoff while an Android auth parity audit had just started. This is not part of the Play release resume trigger, but it is useful context if the user later says to continue the paused implementation work.
+The user switched from code work to saving this handoff while broader Android/iOS parity work was paused. This is not part of the Play release resume trigger, but it is useful context if the user later says to continue the paused implementation work.
 
 - Files already identified for the auth audit:
   - `app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/auth/LoginScreen.kt`
   - `app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/auth/AuthRepository.kt`
   - `app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/auth/AuthViewModel.kt`
   - iOS references under `/Users/david/Development/Swift/myProjects/DronePass/DronePass/Login/` and `DronePass/Manager/`
-- Initial finding: Android supports both Apple and Google login and mostly matches iOS button layout and account-switch flow.
-- Potential issue to confirm before editing: iOS suppresses visible errors when the user cancels Apple or Google sign-in. Android may currently route Google Credential Manager `NoCredentialException` or Apple OAuth cancellation into `AuthState.Error`, which would show an error dialog. Re-read `AuthViewModel.kt` and existing auth tests before changing this.
+- Completed follow-up since the earlier pause: account-switch warning copy and warning count now match iOS through `abbddbc` and `f2dee60`.
+- Remaining candidate to confirm before editing: iOS suppresses visible errors when the user cancels Apple or Google sign-in. Android may currently route Google Credential Manager `NoCredentialException` or Apple OAuth cancellation into `AuthState.Error`, which would show an error dialog. Re-read `AuthViewModel.kt` and existing auth tests before changing this.
 
 ## Local Build Commands
 
