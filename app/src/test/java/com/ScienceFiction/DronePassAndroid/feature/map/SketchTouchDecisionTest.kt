@@ -139,6 +139,39 @@ class SketchTouchDecisionTest {
     }
 
     @Test
+    fun `지우개 모드의 up 과 cancel 은 iOS처럼 추가 삭제 없이 터치만 종료한다`() {
+        val upDecision = resolveSketchTouchEvent(
+            eventType = SketchTouchEventType.Up,
+            pointerCount = 1,
+            isSketchTouchActive = true,
+            isEraserMode = true,
+        )
+        val cancelDecision = resolveSketchTouchEvent(
+            eventType = SketchTouchEventType.Cancel,
+            pointerCount = 1,
+            isSketchTouchActive = true,
+            isEraserMode = true,
+        )
+
+        assertEquals(
+            SketchTouchDecision(
+                consume = true,
+                nextIsSketchTouchActive = false,
+                action = null,
+            ),
+            upDecision,
+        )
+        assertEquals(
+            SketchTouchDecision(
+                consume = true,
+                nextIsSketchTouchActive = false,
+                action = null,
+            ),
+            cancelDecision,
+        )
+    }
+
+    @Test
     fun `지우개 모드의 멀티터치는 취소 액션 없이 지도에 전달한다`() {
         val decision = resolveSketchTouchEvent(
             eventType = SketchTouchEventType.Move,
