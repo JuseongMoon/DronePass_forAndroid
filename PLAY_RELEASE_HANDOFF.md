@@ -5,9 +5,25 @@
 > Branch at handoff: `fix/critical-pri0-fixes`  
 > Latest release setup baseline commit: `8135932`
 > Latest code/parity commit before this save: `a55b59d`
+> Latest handoff refresh before this save: `5d05add`
 > Package name: `com.ScienceFiction.DronePassAndroid`
 
 This file captures the Google Play internal testing/release state so a later session can continue from this repository without re-discovering the setup. Do not paste secrets, keystore passwords, API secrets, or full OAuth client IDs into this file.
+
+## Quick Resume
+
+If the user later says "앱 출시 과정 다시 이어나가자" from this repository, do this first:
+
+1. Read this file and run `git status --short`.
+2. Treat Play internal test release `3.5.5 (102) internal-1` as already published unless the Play Console says otherwise.
+3. Do not rebuild or re-upload the same AAB by default.
+4. Continue from Play app-signing certificate registration:
+   - Play Console: `Google Play로 보호됨 > 앱 무결성`.
+   - Copy the `앱 서명 키 인증서` SHA-1 and SHA-256.
+   - Register those SHA values in Firebase and NCP Maps.
+5. Add tester Gmail accounts, open the internal-test opt-in link on a real Android device, install from Google Play, and verify sign-in/map/sync.
+
+Rebuild only if local code/config has changed and a new Play build is intentionally needed. If that happens, bump `versionCode` to `103` and use release name `3.5.5 (103) internal-2`.
 
 ## Current Stop Point
 
