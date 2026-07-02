@@ -71,7 +71,15 @@ class ShapeOverlayRenderTest {
     }
 
     @Test
-    fun `비원형 도형은 반경 값이 있어도 지도 하이라이트를 만들지 않는다`() {
+    fun `선택 하이라이트는 iOS updateHighlight처럼 shapeType이 아니라 radius 기준으로 만든다`() {
+        val radius = resolveMapFocusHighlightRadius(
+            ShapeModel(
+                shapeType = ShapeType.POLYGON,
+                radius = 100.0,
+            ),
+        )
+
+        assertEquals(102.0, radius ?: -1.0, 0.0)
         assertNull(
             resolveMapCircleHighlightRadius(
                 ShapeModel(
@@ -86,6 +94,14 @@ class ShapeOverlayRenderTest {
     fun `반경 없는 원형 도형은 지도 하이라이트를 만들지 않는다`() {
         assertNull(
             resolveMapCircleHighlightRadius(
+                ShapeModel(
+                    shapeType = ShapeType.CIRCLE,
+                    radius = null,
+                ),
+            ),
+        )
+        assertNull(
+            resolveMapFocusHighlightRadius(
                 ShapeModel(
                     shapeType = ShapeType.CIRCLE,
                     radius = null,

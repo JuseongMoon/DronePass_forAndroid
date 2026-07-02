@@ -528,6 +528,35 @@ class MapCameraFocusTest {
     }
 
     @Test
+    fun `지도 포커스 요청은 iOS처럼 droneId 없는 레거시 도형을 첫 활성 드론 소속으로 본다`() {
+        val activeDrones = listOf(
+            DroneModel(id = "drone-a", name = "A"),
+            DroneModel(id = "drone-b", name = "B"),
+        )
+        val shapes = listOf(
+            shape(id = "legacy-shape", start = 1_000, end = 3_000, droneId = null),
+            shape(id = "second-drone-shape", start = 1_000, end = 3_000, droneId = "drone-b"),
+        )
+
+        val firstDroneVisibleShapes = filterShapesForSelectedDrones(
+            shapes = shapes,
+            activeDrones = activeDrones,
+            selectedDroneIds = setOf("drone-a"),
+        )
+        val secondDroneVisibleShapes = filterShapesForSelectedDrones(
+            shapes = shapes,
+            activeDrones = activeDrones,
+            selectedDroneIds = setOf("drone-b"),
+        )
+
+        assertEquals(
+            "legacy-shape",
+            resolvePendingMapShapeRequestTarget("legacy-shape", firstDroneVisibleShapes)?.id,
+        )
+        assertNull(resolvePendingMapShapeRequestTarget("legacy-shape", secondDroneVisibleShapes))
+    }
+
+    @Test
     fun `상세에서 편집한 도형은 iOS처럼 저장 후 상세 화면으로 돌아간다`() {
         assertEquals(
             ShapeEditPostSaveAction.RETURN_TO_DETAIL,
@@ -722,7 +751,7 @@ class MapCameraFocusTest {
         start: Long,
         end: Long,
         coordinate: Coordinate = Coordinate(37.0, 127.0),
-        droneId: String = "drone-a",
+        droneId: String? = "drone-a",
     ): ShapeModel {
         return ShapeModel(
             id = id,

@@ -47,6 +47,10 @@ internal fun resolveMapCircleHighlightRadius(shape: ShapeModel): Double? {
     return (shape.radius ?: return null) + 2
 }
 
+internal fun resolveMapFocusHighlightRadius(shape: ShapeModel): Double? {
+    return (shape.radius ?: return null) + 2
+}
+
 internal const val MapOverlaySystemGrayHex = "#8E8E93"
 internal const val MapOverlayFocusHighlightHex = "#FF3B30"
 internal const val MapOverlayDroneHighlightOutlineHex = "#333333"
@@ -260,19 +264,13 @@ class ShapeOverlayManager {
 
         val shape = shapes.find { it.id == shapeId } ?: return
 
-        highlightOverlay = when (resolveMapShapeOverlayKind(shape)) {
-            MapShapeOverlayKind.CIRCLE -> {
-                val radius = resolveMapCircleHighlightRadius(shape) ?: return
-                CircleOverlay().apply {
-                    this.center = shape.baseCoordinate.toLatLng()
-                    this.radius = radius
-                    this.color = Color.TRANSPARENT
-                    this.outlineColor = parseColorSafe(MapOverlayFocusHighlightHex)
-                    this.outlineWidth = 5
-                }
-            }
-            null -> return
-        }?.apply {
+        val radius = resolveMapFocusHighlightRadius(shape) ?: return
+        highlightOverlay = CircleOverlay().apply {
+            this.center = shape.baseCoordinate.toLatLng()
+            this.radius = radius
+            this.color = Color.TRANSPARENT
+            this.outlineColor = parseColorSafe(MapOverlayFocusHighlightHex)
+            this.outlineWidth = 5
             this.globalZIndex = 60
             this.map = naverMap
         }
