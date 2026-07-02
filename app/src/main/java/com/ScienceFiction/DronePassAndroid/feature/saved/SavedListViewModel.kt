@@ -112,20 +112,85 @@ internal fun buildSavedShapeSections(
     now: Long = System.currentTimeMillis(),
 ): SavedShapeSections {
     val droneFilteredShapes = filterShapesForSelectedDrones(shapes, activeDrones, selectedDroneIds)
-    val sorted = sortSavedShapes(droneFilteredShapes, sortOption, sortDirection)
 
-    val active = sorted.filter { !isSavedListNotStarted(it, now) && !isSavedListExpired(it, now) }
+    val sections = if (sortOption == SortOption.FLIGHT_END) {
+        buildSavedShapeSectionsFromGloballySortedShapes(
+            shapes = droneFilteredShapes,
+            sortOption = sortOption,
+            sortDirection = sortDirection,
+            visibilitySettings = visibilitySettings,
+            now = now,
+        )
+    } else {
+        buildSavedShapeSectionsFromIndividuallySortedSections(
+            shapes = droneFilteredShapes,
+            sortOption = sortOption,
+            sortDirection = sortDirection,
+            visibilitySettings = visibilitySettings,
+            now = now,
+        )
+    }
+
+    return SavedShapeSections(
+        activeFiltered = sections.activeFiltered,
+        notStarted = sections.notStarted,
+        expired = sections.expired,
+        total = sections.activeFiltered.size + sections.notStarted.size + sections.expired.size,
+    )
+}
+
+internal fun buildSavedShapeSectionsFromGloballySortedShapes(
+    shapes: List<ShapeModel>,
+    sortOption: SortOption,
+    sortDirection: SortDirection,
+    visibilitySettings: SavedShapeVisibilitySettings,
+    now: Long = System.currentTimeMillis(),
+): SavedShapeSections {
+    val sorted = sortSavedShapes(shapes, sortOption, sortDirection)
+    return splitSavedShapeSections(
+        shapes = sorted,
+        visibilitySettings = visibilitySettings,
+        now = now,
+    )
+}
+
+internal fun buildSavedShapeSectionsFromIndividuallySortedSections(
+    shapes: List<ShapeModel>,
+    sortOption: SortOption,
+    sortDirection: SortDirection,
+    visibilitySettings: SavedShapeVisibilitySettings,
+    now: Long = System.currentTimeMillis(),
+): SavedShapeSections {
+    val split = splitSavedShapeSections(
+        shapes = shapes,
+        visibilitySettings = visibilitySettings,
+        now = now,
+    )
+
+    return SavedShapeSections(
+        activeFiltered = sortSavedShapes(split.activeFiltered, sortOption, sortDirection),
+        notStarted = sortSavedShapes(split.notStarted, sortOption, sortDirection),
+        expired = sortSavedShapes(split.expired, sortOption, sortDirection),
+        total = split.total,
+    )
+}
+
+private fun splitSavedShapeSections(
+    shapes: List<ShapeModel>,
+    visibilitySettings: SavedShapeVisibilitySettings,
+    now: Long,
+): SavedShapeSections {
+    val active = shapes.filter { !isSavedListNotStarted(it, now) && !isSavedListExpired(it, now) }
     val notStarted = if (visibilitySettings.hideNotStarted) {
         emptyList()
     } else {
-        sorted.filter { isSavedListNotStarted(it, now) }
+        shapes.filter { isSavedListNotStarted(it, now) }
     }
     val expired = if (visibilitySettings.hideExpired) {
         emptyList()
     } else {
-        sorted.filter { isSavedListExpired(it, now) }
+        shapes.filter { isSavedListExpired(it, now) }
     }
-
     return SavedShapeSections(
         activeFiltered = active,
         notStarted = notStarted,

@@ -68,6 +68,72 @@ class SavedListSectionsTest {
     }
 
     @Test
+    fun `저장 목록 종료일순은 iOS처럼 전체 정렬 후 섹션을 분리한다`() {
+        val now = 10_000L
+        val shapes = listOf(
+            shape(id = "active-later", start = now - 5_000, end = now + 4_000),
+            shape(id = "expired", start = now - 5_000, end = now - 1_000),
+            shape(id = "not-started", start = now + 1_000, end = now + 2_000),
+            shape(id = "active-soon", start = now - 5_000, end = now + 1_000),
+        )
+        val expected = buildSavedShapeSectionsFromGloballySortedShapes(
+            shapes = shapes,
+            sortOption = SortOption.FLIGHT_END,
+            sortDirection = SortDirection.ASCENDING,
+            visibilitySettings = SavedShapeVisibilitySettings(),
+            now = now,
+        )
+
+        val actual = buildSavedShapeSections(
+            shapes = shapes,
+            activeDrones = listOf(DroneModel(id = "drone-a", name = "A")),
+            selectedDroneIds = setOf("drone-a"),
+            sortOption = SortOption.FLIGHT_END,
+            sortDirection = SortDirection.ASCENDING,
+            visibilitySettings = SavedShapeVisibilitySettings(),
+            now = now,
+        )
+
+        assertEquals(expected, actual)
+        assertEquals(listOf("active-soon", "active-later"), actual.activeFiltered.map { it.id })
+        assertEquals(listOf("not-started"), actual.notStarted.map { it.id })
+        assertEquals(listOf("expired"), actual.expired.map { it.id })
+    }
+
+    @Test
+    fun `저장 목록 종료일순 외 정렬은 iOS처럼 섹션 분리 후 각 섹션을 정렬한다`() {
+        val now = 10_000L
+        val shapes = listOf(
+            shape(id = "active-b", title = "B", address = null, start = now - 2_000, end = now + 4_000),
+            shape(id = "not-started-a", title = "A", address = null, start = now + 2_000, end = now + 5_000),
+            shape(id = "active-a", title = "A", address = null, start = now - 1_000, end = now + 3_000),
+            shape(id = "expired-c", title = "C", address = null, start = now - 5_000, end = now - 1_000),
+        )
+        val expected = buildSavedShapeSectionsFromIndividuallySortedSections(
+            shapes = shapes,
+            sortOption = SortOption.TITLE,
+            sortDirection = SortDirection.ASCENDING,
+            visibilitySettings = SavedShapeVisibilitySettings(),
+            now = now,
+        )
+
+        val actual = buildSavedShapeSections(
+            shapes = shapes,
+            activeDrones = listOf(DroneModel(id = "drone-a", name = "A")),
+            selectedDroneIds = setOf("drone-a"),
+            sortOption = SortOption.TITLE,
+            sortDirection = SortDirection.ASCENDING,
+            visibilitySettings = SavedShapeVisibilitySettings(),
+            now = now,
+        )
+
+        assertEquals(expected, actual)
+        assertEquals(listOf("active-a", "active-b"), actual.activeFiltered.map { it.id })
+        assertEquals(listOf("not-started-a"), actual.notStarted.map { it.id })
+        assertEquals(listOf("expired-c"), actual.expired.map { it.id })
+    }
+
+    @Test
     fun `저장 목록 포커스 후보는 iOS처럼 선택된 드론 도형만 포함한다`() {
         val sections = buildSavedShapeSections(
             shapes = listOf(
