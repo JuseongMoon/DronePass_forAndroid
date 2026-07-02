@@ -115,22 +115,10 @@ fun DroneEditSheet(
                 val resultDrone = (drone ?: DroneModel()).copy(
                     name = trimmedName,
                     color = selectedColor.hex,
-                    serialNumber = resolveDroneEditOptionalFieldForSave(
-                        value = serialNumber,
-                        existingValue = drone?.serialNumber,
-                    ),
-                    takeoffWeight = resolveDroneEditOptionalFieldForSave(
-                        value = takeoffWeight,
-                        existingValue = drone?.takeoffWeight,
-                    ),
-                    size = resolveDroneEditOptionalFieldForSave(
-                        value = size,
-                        existingValue = drone?.size,
-                    ),
-                    memo = resolveDroneEditOptionalFieldForSave(
-                        value = memo,
-                        existingValue = drone?.memo,
-                    ),
+                    serialNumber = resolveDroneEditOptionalFieldForSave(serialNumber),
+                    takeoffWeight = resolveDroneEditOptionalFieldForSave(takeoffWeight),
+                    size = resolveDroneEditOptionalFieldForSave(size),
+                    memo = resolveDroneEditOptionalFieldForSave(memo),
                     updatedAt = System.currentTimeMillis(),
                 )
                 onSave(resultDrone)
@@ -415,12 +403,8 @@ internal fun canSaveDroneEditName(name: String): Boolean =
 internal fun normalizeDroneEditOptionalField(value: String): String? =
     value.takeUnless { it.isBlank() }
 
-internal fun resolveDroneEditOptionalFieldForSave(
-    value: String,
-    existingValue: String?,
-): String? {
-    return normalizeDroneEditOptionalField(value) ?: existingValue
-}
+internal fun resolveDroneEditOptionalFieldForSave(value: String): String? =
+    normalizeDroneEditOptionalField(value)
 
 internal fun resolveDroneEditPlaceholderText(placeholder: String?): String? =
     placeholder?.takeIf { it.isNotEmpty() }
