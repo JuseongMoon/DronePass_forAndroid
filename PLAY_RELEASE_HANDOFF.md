@@ -5,7 +5,7 @@
 > Branch at handoff: `fix/critical-pri0-fixes`  
 > Latest release setup baseline commit: `8135932`
 > Latest Play handoff commit before this save: `497007a`
-> Latest code/parity commit before this save: `773e481`
+> Latest code/parity commit before this save: `25a776f`
 > Package name: `com.ScienceFiction.DronePassAndroid`
 
 This file captures the Google Play internal testing/release state so a later session can continue from this repository without re-discovering the setup. Do not paste secrets, keystore passwords, API secrets, or full OAuth client IDs into this file.
@@ -27,7 +27,7 @@ Rebuild only if local code/config has changed and a new Play build is intentiona
 
 ## Current Stop Point
 
-The Play Console internal test release has already been created and published for `3.5.5 (102) internal-1`. The latest user-visible stop point was the Play Console version detail page showing `3.5.5 (102) internal-1` as provided to internal testers. After that, local code/parity work continued through `773e481`, but no newer AAB has been uploaded. When resuming, do not start by rebuilding or uploading the same AAB again unless code/config has changed and a new Play build is intentionally required. Start from the release-distribution side:
+The Play Console internal test release has already been created and published for `3.5.5 (102) internal-1`. The latest user-visible stop point was the Play Console version detail page showing `3.5.5 (102) internal-1` as provided to internal testers. After that, local code/parity work continued through `25a776f`, but no newer AAB has been uploaded. When resuming, do not start by rebuilding or uploading the same AAB again unless code/config has changed and a new Play build is intentionally required. Start from the release-distribution side:
 
 1. Confirm the Play Console internal test version page still shows `3.5.5 (102) internal-1` as available to internal testers.
 2. Register the Google Play app-signing certificate fingerprints in Firebase and NCP Maps as needed.
@@ -50,7 +50,7 @@ When the user says "앱 출시 과정 다시 이어나가자" from this director
 1. Read this file first.
 2. Run `git status --short` and confirm no unexpected local changes.
 3. Confirm whether an Android test device is attached with `adb devices`.
-4. Tell the user that the internal test build `3.5.5 (102) internal-1` is already live, while the latest local committed code/parity checkpoint is `773e481`.
+4. Tell the user that the internal test build `3.5.5 (102) internal-1` is already live, while the latest local committed code/parity checkpoint is `25a776f`.
 5. If Firebase/NCP certificate registration changes only console state, no local rebuild is required.
 6. Continue from the Play Console/Firebase/NCP certificate and internal tester steps below before rebuilding a new AAB.
 7. If a new AAB must be uploaded because code/config changed, bump `versionCode` to `103` and use release name `3.5.5 (103) internal-2`.
@@ -83,6 +83,10 @@ The next external release task is not another local build by default. It is to r
   - `versionName = "3.5.5"`
   - This was matched to the iOS build number/marketing version that were available at the time.
 - Latest code/parity commits before this save:
+  - `25a776f Pin weather auto refresh interval parity`
+  - KP/weather forecast refresh behavior was rechecked against iOS. Android keeps KP initial-load toast suppressed, KP manual/5-minute auto-refresh toast enabled, Weather initial-load toast suppressed, Weather manual refresh toast enabled, and the WeatherManager-equivalent 3-minute auto-refresh interval pinned by test.
+  - Targeted tests passed:
+    - `:app:testDebugUnitTest --tests "*WeatherForecastParityTest" --tests "*KpChartsTest"`
   - `773e481 Match copy toast text size to iOS`
   - Android shape/drone detail copy toasts now use the same 14sp medium text size, capsule-style padding, and duration contract as iOS `CopyToastOverlay`.
   - Targeted tests passed:
@@ -154,7 +158,7 @@ At the time of the latest release-handoff save request, `git status --short` was
 The user switched from code work to saving this handoff while broader Android/iOS parity work was paused. This is not part of the Play release resume trigger, but it is useful context if the user later says to continue the paused implementation work.
 
 - Completed follow-up since the earlier auth pause: account-switch warning copy/count and auth cancellation behavior now match iOS through `f2dee60` and `a55b59d`.
-- Completed follow-up after the Play handoff: weather guide punctuation, drone dropdown empty label, and detail copy-toast text size now match iOS through `14689d4`, `5346501`, and `773e481`.
+- Completed follow-up after the Play handoff: weather guide punctuation, drone dropdown empty label, detail copy-toast text size, and KP/weather refresh interval contract now match iOS through `14689d4`, `5346501`, `773e481`, and `25a776f`.
 - Latest paused implementation thread before this save: compare KP/weather forecast refresh toast and navigation behavior against iOS.
   - Android files to resume from:
     - `app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/weather/WeatherForecastScreen.kt`
@@ -189,6 +193,8 @@ The last release readiness check and `bundleRelease` passed after `google-servic
 - `:app:testDebugUnitTest --tests "*StringResourceCoverageTest" --tests "*InfoGuideSheetsTest"` passed.
 - `:app:testDebugUnitTest --tests "*StringResourceCoverageTest" --tests "*DroneSelectionDropdownTest" --tests "*MapFloatingButtonsTest"` passed.
 - `:app:testDebugUnitTest --tests "*ShapeDetailDroneResolutionTest" --tests "*DroneDeleteValidationTest"` passed.
+- `:app:testDebugUnitTest --tests "*WeatherForecastParityTest" --tests "*KpChartsTest"` passed.
+- `:app:verifyCrossPlatformE2ePrerequisites` passed; no Android device was attached in `adb devices`, so Play-installed real-device verification still needs a connected device.
 
 ## Upload Key Fingerprints
 

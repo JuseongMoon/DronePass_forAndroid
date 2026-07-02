@@ -29,6 +29,8 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 2026-07-02 현재 작업 기준 KP/날씨 예보 시트의 refresh 동작을 iOS `KPForecastView`/`WeatherForecastView`/`WeatherManager`와 재대조했다. Android는 KP 초기 로드 토스트 없음, 수동/5분 자동 refresh 토스트 표시, 날씨 초기 로드 토스트 없음, 수동 refresh 토스트 표시, WeatherManager 대응 3분 자동 refresh 간격을 유지한다. 날씨 자동 refresh 간격을 테스트 가능한 `WeatherAutoRefreshIntervalMs`로 고정했고 `:app:testDebugUnitTest --tests "*WeatherForecastParityTest" --tests "*KpChartsTest"` 통과. 커밋 `25a776f`.
+- 2026-07-02 현재 로컬 `:app:verifyCrossPlatformE2ePrerequisites`는 통과한다. Android-side 공유 Firebase E2E 설정은 준비된 상태이며, 같은 시점 `adb devices`는 연결된 기기가 없어 실제 Play 설치/공유 Firestore 실기기 검증은 기기 연결 후 진행한다.
 - 2026-07-02 현재 작업 기준 도형/드론 상세 복사 토스트의 텍스트 크기를 iOS `CopyToastOverlay`와 맞췄다. Android는 이제 14sp medium 텍스트, capsule padding, 1.5초 표시 계약을 테스트로 고정한다. `:app:testDebugUnitTest --tests "*ShapeDetailDroneResolutionTest" --tests "*DroneDeleteValidationTest"` 통과. 커밋 `773e481`.
 - 2026-07-02 현재 작업 기준 드론 선택 드롭다운의 영어 빈 상태 라벨을 iOS와 같은 `Select Drone`으로 맞췄다. `:app:testDebugUnitTest --tests "*StringResourceCoverageTest" --tests "*DroneSelectionDropdownTest" --tests "*MapFloatingButtonsTest"` 통과. 커밋 `5346501`.
 - 2026-07-02 현재 작업 기준 날씨/KP 안내 시트의 범위 표기 문장부호를 iOS String Catalog와 맞춰 ASCII hyphen으로 정리했다. `:app:testDebugUnitTest --tests "*StringResourceCoverageTest" --tests "*InfoGuideSheetsTest"` 통과. 커밋 `14689d4`.
