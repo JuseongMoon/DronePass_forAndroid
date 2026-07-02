@@ -4,8 +4,8 @@
 > Resume trigger: "앱 출시 과정 다시 이어나가자"  
 > Branch at handoff: `fix/critical-pri0-fixes`  
 > Latest release setup baseline commit: `8135932`
-> Latest code/parity commit before this save: `a55b59d`
-> Latest handoff refresh before this save: `5d05add`
+> Latest Play handoff commit before this save: `497007a`
+> Latest code/parity commit before this save: `773e481`
 > Package name: `com.ScienceFiction.DronePassAndroid`
 
 This file captures the Google Play internal testing/release state so a later session can continue from this repository without re-discovering the setup. Do not paste secrets, keystore passwords, API secrets, or full OAuth client IDs into this file.
@@ -27,7 +27,7 @@ Rebuild only if local code/config has changed and a new Play build is intentiona
 
 ## Current Stop Point
 
-The Play Console internal test release has already been created and published for `3.5.5 (102) internal-1`. The latest user-visible stop point was the Play Console version detail page showing `3.5.5 (102) internal-1` as provided to internal testers. After that, local code/parity documentation continued through `a55b59d`, but no newer AAB has been uploaded. When resuming, do not start by rebuilding or uploading the same AAB again unless code/config has changed and a new Play build is intentionally required. Start from the release-distribution side:
+The Play Console internal test release has already been created and published for `3.5.5 (102) internal-1`. The latest user-visible stop point was the Play Console version detail page showing `3.5.5 (102) internal-1` as provided to internal testers. After that, local code/parity work continued through `773e481`, but no newer AAB has been uploaded. When resuming, do not start by rebuilding or uploading the same AAB again unless code/config has changed and a new Play build is intentionally required. Start from the release-distribution side:
 
 1. Confirm the Play Console internal test version page still shows `3.5.5 (102) internal-1` as available to internal testers.
 2. Register the Google Play app-signing certificate fingerprints in Firebase and NCP Maps as needed.
@@ -50,7 +50,7 @@ When the user says "앱 출시 과정 다시 이어나가자" from this director
 1. Read this file first.
 2. Run `git status --short` and confirm no unexpected local changes.
 3. Confirm whether an Android test device is attached with `adb devices`.
-4. Tell the user that the internal test build `3.5.5 (102) internal-1` is already live, while the latest local committed code/parity checkpoint is `a55b59d`.
+4. Tell the user that the internal test build `3.5.5 (102) internal-1` is already live, while the latest local committed code/parity checkpoint is `773e481`.
 5. If Firebase/NCP certificate registration changes only console state, no local rebuild is required.
 6. Continue from the Play Console/Firebase/NCP certificate and internal tester steps below before rebuilding a new AAB.
 7. If a new AAB must be uploaded because code/config changed, bump `versionCode` to `103` and use release name `3.5.5 (103) internal-2`.
@@ -83,6 +83,20 @@ The next external release task is not another local build by default. It is to r
   - `versionName = "3.5.5"`
   - This was matched to the iOS build number/marketing version that were available at the time.
 - Latest code/parity commits before this save:
+  - `773e481 Match copy toast text size to iOS`
+  - Android shape/drone detail copy toasts now use the same 14sp medium text size, capsule-style padding, and duration contract as iOS `CopyToastOverlay`.
+  - Targeted tests passed:
+    - `:app:testDebugUnitTest --tests "*ShapeDetailDroneResolutionTest" --tests "*DroneDeleteValidationTest"`
+  - `5346501 Align drone dropdown label with iOS`
+  - Android English empty drone-selection label now matches iOS `Select Drone`; KO remains `드론 선택`.
+  - Targeted tests passed:
+    - `:app:testDebugUnitTest --tests "*StringResourceCoverageTest" --tests "*DroneSelectionDropdownTest" --tests "*MapFloatingButtonsTest"`
+  - `14689d4 Align weather guide punctuation with iOS`
+  - Weather/KP info guide numeric ranges now use the same ASCII hyphen punctuation as iOS String Catalog values, and tests guard against dash regressions in CRI notes.
+  - Targeted tests passed:
+    - `:app:testDebugUnitTest --tests "*StringResourceCoverageTest" --tests "*InfoGuideSheetsTest"`
+  - `497007a Clarify Play release resume handoff`
+  - Play release handoff was clarified to resume from Play app-signing SHA registration and Play-installed internal-test verification, not from rebuilding/uploading the already published `102` AAB.
   - `a55b59d Verify auth cancellation parity`
   - Android auth cancellation handling was rechecked against iOS and the regression tests now pin the Apple Firebase web cancellation error-code path without constructing Firebase's Android-dependent exception in plain JVM tests.
   - Targeted tests passed:
@@ -139,13 +153,18 @@ At the time of the latest release-handoff save request, `git status --short` was
 
 The user switched from code work to saving this handoff while broader Android/iOS parity work was paused. This is not part of the Play release resume trigger, but it is useful context if the user later says to continue the paused implementation work.
 
-- Files already identified for the auth audit:
-  - `app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/auth/LoginScreen.kt`
-  - `app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/auth/AuthRepository.kt`
-  - `app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/auth/AuthViewModel.kt`
-  - iOS references under `/Users/david/Development/Swift/myProjects/DronePass/DronePass/Login/` and `DronePass/Manager/`
-- Completed follow-up since the earlier pause: account-switch warning copy and warning count now match iOS through `abbddbc` and `f2dee60`.
-- Auth cancellation follow-up was rechecked after the handoff: Android already suppresses Google Credential Manager cancellation/no-credential errors and Apple Firebase web cancellation errors by returning to `LoggedOut` instead of surfacing an error dialog, matching the iOS user-cancelled flow. Regression tests now pin the Apple Firebase web cancellation error-code path without constructing Firebase's Android-dependent exception in plain JVM tests.
+- Completed follow-up since the earlier auth pause: account-switch warning copy/count and auth cancellation behavior now match iOS through `f2dee60` and `a55b59d`.
+- Completed follow-up after the Play handoff: weather guide punctuation, drone dropdown empty label, and detail copy-toast text size now match iOS through `14689d4`, `5346501`, and `773e481`.
+- Latest paused implementation thread before this save: compare KP/weather forecast refresh toast and navigation behavior against iOS.
+  - Android files to resume from:
+    - `app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/weather/WeatherForecastScreen.kt`
+    - `app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/weather/WeatherViewModel.kt`
+    - `app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/kp/KpForecastScreen.kt`
+    - `app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/kp/KpViewModel.kt`
+  - iOS references already opened:
+    - `/Users/david/Development/Swift/myProjects/DronePass/DronePass/Weather/WeatherForecastView.swift`
+    - `/Users/david/Development/Swift/myProjects/DronePass/DronePass/KP/KPForecastView.swift`
+  - Re-check whether Android `startAutoRefresh()` emits a refresh toast on first sheet open. iOS KP suppresses the initial fetch toast but shows later auto/manual refresh toasts; iOS Weather suppresses the initial view-entry toast and only shows refresh toasts after the initial state is loaded.
 
 ## Local Build Commands
 
@@ -164,6 +183,12 @@ The last release readiness check and `bundleRelease` passed after `google-servic
 - `:app:testDebugUnitTest --tests "*SavedListSectionsTest" --tests "*SavedShapeListItemTest"` passed after re-checking saved-list behavior against the iOS source.
 - `:app:bundleRelease` passed and regenerated `app/build/outputs/bundle/release/app-release.aab`.
 - R8 still prints the existing Naver Maps SDK stack-map-table warnings and the Play Services Location companion warning. They are non-blocking.
+
+2026-07-02 targeted parity verification after the Play handoff:
+
+- `:app:testDebugUnitTest --tests "*StringResourceCoverageTest" --tests "*InfoGuideSheetsTest"` passed.
+- `:app:testDebugUnitTest --tests "*StringResourceCoverageTest" --tests "*DroneSelectionDropdownTest" --tests "*MapFloatingButtonsTest"` passed.
+- `:app:testDebugUnitTest --tests "*ShapeDetailDroneResolutionTest" --tests "*DroneDeleteValidationTest"` passed.
 
 ## Upload Key Fingerprints
 

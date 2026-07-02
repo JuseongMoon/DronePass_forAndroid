@@ -4,7 +4,7 @@
 
 > 마지막 업데이트: 2026-07-02
 > 브랜치: `fix/critical-pri0-fixes`
-> 상태: iOS 동작 대조와 Android 출시 하드닝 진행 중. Play 내부 테스트 `3.5.5 (102) internal-1`은 이미 게시된 상태이며, 최신 코드/패리티 기준은 `a55b59d Verify auth cancellation parity`까지 커밋되어 있다. 앱 출시 재개 절차는 `PLAY_RELEASE_HANDOFF.md`를 우선 확인한다.
+> 상태: iOS 동작 대조와 Android 출시 하드닝 진행 중. Play 내부 테스트 `3.5.5 (102) internal-1`은 이미 게시된 상태이며, 최신 코드/패리티 기준은 `773e481 Match copy toast text size to iOS`까지 커밋되어 있다. 앱 출시 재개 절차는 `PLAY_RELEASE_HANDOFF.md`를 우선 확인한다.
 
 ## 앱 출시 재개 바로가기
 
@@ -22,13 +22,17 @@
 
 | 항목 | 값 |
 |---|---|
-| 워킹 트리 | 2026-07-02 handoff 기준 release setup 변경분은 `8135932 Record Play internal test release setup`까지 커밋됨. 이후 릴리스 재개 문서와 iOS 패리티 작업이 이어져 최신 코드/패리티 기준은 `a55b59d Verify auth cancellation parity`까지 반영됨. 재개 시 `git status --short`로 실제 상태 확인 |
+| 워킹 트리 | 2026-07-02 handoff 기준 release setup 변경분은 `8135932 Record Play internal test release setup`까지 커밋됨. 이후 릴리스 재개 문서와 iOS 패리티 작업이 이어져 최신 코드/패리티 기준은 `773e481 Match copy toast text size to iOS`까지 반영됨. 재개 시 `git status --short`로 실제 상태 확인 |
 | 주요 검증 | 2026-07-01 기준 `:app:verifyCrossPlatformE2ePrerequisites`, `:app:testDebugUnitTest --tests "*SavedListSectionsTest" --tests "*SavedShapeListItemTest"`, `:app:bundleRelease` 통과. 기존 `:app:testDebugUnitTest :app:lintDebug :app:assembleDebug`, `:app:minifyReleaseWithR8`, `:app:connectedDebugAndroidTest`, `:app:shapeParsingCoverageVerification`, feature별 회귀 테스트 통과 기록 유지 |
 | Release readiness | 2026-07-01 기준 로컬 release signing, `WEB_CLIENT_ID`, Firebase Android OAuth client, Naver Maps key 설정이 완료되어 `:app:verifyCrossPlatformE2ePrerequisites`와 `:app:bundleRelease`가 통과한다. AAB는 `app/build/outputs/bundle/release/app-release.aab`에 생성됨 |
 | 남은 성격 | Play 설치 앱의 앱 서명 SHA를 Firebase/NCP Maps에 등록한 뒤 실기기 Play 설치 경로에서 iOS↔Android 공유 Firebase 실계정 검증 수행 |
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 2026-07-02 현재 작업 기준 도형/드론 상세 복사 토스트의 텍스트 크기를 iOS `CopyToastOverlay`와 맞췄다. Android는 이제 14sp medium 텍스트, capsule padding, 1.5초 표시 계약을 테스트로 고정한다. `:app:testDebugUnitTest --tests "*ShapeDetailDroneResolutionTest" --tests "*DroneDeleteValidationTest"` 통과. 커밋 `773e481`.
+- 2026-07-02 현재 작업 기준 드론 선택 드롭다운의 영어 빈 상태 라벨을 iOS와 같은 `Select Drone`으로 맞췄다. `:app:testDebugUnitTest --tests "*StringResourceCoverageTest" --tests "*DroneSelectionDropdownTest" --tests "*MapFloatingButtonsTest"` 통과. 커밋 `5346501`.
+- 2026-07-02 현재 작업 기준 날씨/KP 안내 시트의 범위 표기 문장부호를 iOS String Catalog와 맞춰 ASCII hyphen으로 정리했다. `:app:testDebugUnitTest --tests "*StringResourceCoverageTest" --tests "*InfoGuideSheetsTest"` 통과. 커밋 `14689d4`.
+- 2026-07-02 현재 출시 재개 기준을 다시 저장했다. Play 내부 테스트 `3.5.5 (102) internal-1`은 이미 게시된 상태이고, 다음 작업은 같은 AAB 재업로드가 아니라 Play 앱 서명 인증서 SHA-1/SHA-256을 Firebase/NCP Maps에 등록한 뒤 opt-in 링크로 Play 설치 검증을 진행하는 것이다. 새 빌드가 필요할 때만 `versionCode = 103`, release name `3.5.5 (103) internal-2`로 진행한다. 커밋 `497007a`.
 - 2026-07-02 현재 작업 기준 로그인 취소 흐름을 iOS `LoginView`/`AuthManager`의 user-cancelled 계약과 다시 대조했다. Android는 이미 Google Credential Manager 취소/자격 증명 없음(`GetCredentialCancellationException`, `NoCredentialException`)과 Apple Firebase web 취소(`FirebaseAuthWebException`의 `ERROR_WEB_CONTEXT_CANCELED/CANCELLED`)를 오류 다이얼로그로 띄우지 않고 `LoggedOut`으로 조용히 복귀하도록 구현되어 있었다. Firebase web 예외 생성자는 일반 JVM 단위 테스트에서 Android `TextUtils`를 요구하므로 직접 fixture로 만들지 않고, cancellation errorCode helper와 `FirebaseAuthWebException.errorCode` 소스 계약을 함께 고정했다.
 - 2026-07-02 현재 작업 기준 설정 화면의 프로필/로그인 진입 행 리소스 계약을 iOS `SettingView`의 `settings.profile.my`/`settings.profile.login` 키 구조와 맞췄다. Android는 기존에 값이 같은 `profile_title`/`login_title`을 재사용해 화면상 차이는 없었지만, iOS처럼 설정 전용 `settings_profile_my`/`settings_profile_login` 리소스를 추가하고 `SettingsScreen`이 이 키를 쓰도록 바꿨다. `StringResourceCoverageTest`와 `SettingsScreenContractTest`로 KO/EN 값과 섹션 순서를 고정했고, `:app:testDebugUnitTest --tests "*SettingsScreenContractTest" --tests "*StringResourceCoverageTest" --tests "*ProfileSheetParityTest" --tests "*ProfileViewModelTest"` 통과.
 - 2026-07-02 현재 작업 기준 로그인 계정 전환 경고 문구와 카운트 기준을 iOS `MainTabView`/`AuthManager.hasUnsyncedLocalChangesForAccountSwitch`/`Localizable.xcstrings`의 `account.switch.warning.*` 계약과 맞췄다. Android는 과거에 dirty sketch/drone까지 경고 개수에 포함했지만, iOS 경고는 마지막 클라우드 baseline 이후 수정된 도형 변경분만 세고 메시지도 "수정된 도형/modified shape(s)"을 말하므로 Android도 shape baseline 변경분만 경고하도록 정리했다. KO/EN `login_account_switch_message`와 `buildAccountSwitchLocalChangeState` 테스트로 이 계약을 고정했다. `:app:testDebugUnitTest --tests "*AuthViewModelForegroundSyncTest" --tests "*LoginScreenContractTest" --tests "*AuthRepositoryUserDocumentTest" --tests "*StringResourceCoverageTest"` 통과.
