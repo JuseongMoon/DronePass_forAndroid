@@ -157,6 +157,11 @@ class WeatherForecastParityTest {
     }
 
     @Test
+    fun `auto refresh interval matches iOS WeatherManager three minute timer`() {
+        assertEquals(3 * 60 * 1000L, WeatherAutoRefreshIntervalMs)
+    }
+
+    @Test
     fun `weather sheet header matches iOS inline navigation toolbar`() {
         assertEquals(44.dp, WeatherSheetNavigationHeaderHeight)
         assertEquals(44.dp, WeatherSheetNavigationHeaderActionWidth)

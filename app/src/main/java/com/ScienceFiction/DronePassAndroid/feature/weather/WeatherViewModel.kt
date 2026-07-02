@@ -39,6 +39,7 @@ private const val WEATHER_GPS_ACCURACY_THRESHOLD_METERS = 50.0
 
 internal val WeatherDroneCategoryPreferenceKey = stringPreferencesKey("selectedDroneCategory")
 internal val LegacyWeatherDroneCategoryPreferenceKey = stringPreferencesKey("weather_drone_category")
+internal const val WeatherAutoRefreshIntervalMs = 3 * 60 * 1000L
 
 internal fun storedWeatherDroneCategory(preferences: Preferences): DroneCategory {
     return DroneCategory.fromStoredValue(preferences[WeatherDroneCategoryPreferenceKey])
@@ -77,10 +78,6 @@ class WeatherViewModel @Inject constructor(
     private val analyticsLogger: AnalyticsLogger,
     private val notificationScheduleRestorer: NotificationScheduleRestorer,
 ) : ViewModel() {
-
-    companion object {
-        private const val AUTO_REFRESH_INTERVAL_MS = 3 * 60 * 1000L // 3분
-    }
 
     private val _weatherData = MutableStateFlow<WeatherData?>(null)
     val weatherData: StateFlow<WeatherData?> = _weatherData.asStateFlow()
@@ -180,7 +177,7 @@ class WeatherViewModel @Inject constructor(
         if (autoRefreshJob?.isActive == true) return
         autoRefreshJob = viewModelScope.launch {
             while (isActive) {
-                delay(AUTO_REFRESH_INTERVAL_MS)
+                delay(WeatherAutoRefreshIntervalMs)
                 fetchCurrentLocationAndWeather()
             }
         }
