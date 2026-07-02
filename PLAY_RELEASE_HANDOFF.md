@@ -4,9 +4,9 @@
 > Resume trigger: "앱 출시 과정 다시 이어나가자"  
 > Branch at handoff: `fix/critical-pri0-fixes`  
 > Latest release setup baseline commit: `8135932`
-> Latest saved resume-doc commit before this edit: `fc8c8de`
+> Previous saved release-resume commit before this handoff: `8d0112d`
 > Latest E2E preflight doc commit before this edit: `2cbd5f3`
-> Latest code/parity commit before this release save: `1beac1b`
+> Latest code/parity commit at this handoff: `e2afb38`
 > Package name: `com.ScienceFiction.DronePassAndroid`
 
 This file captures the Google Play internal testing/release state so a later session can continue from this repository without re-discovering the setup. Do not paste secrets, keystore passwords, API secrets, or full OAuth client IDs into this file.
@@ -28,7 +28,7 @@ Rebuild only if local code/config has changed and a new Play build is intentiona
 
 ## Current Stop Point
 
-The Play Console internal test release has already been created and published for `3.5.5 (102) internal-1`. The latest user-visible stop point was the Play Console version detail page showing `3.5.5 (102) internal-1` as provided to internal testers. After that, local code/parity work continued through `1beac1b`, and resume documentation was refreshed through `fc8c8de`, but no newer AAB has been uploaded. When resuming, do not start by rebuilding or uploading the same AAB again unless code/config has changed and a new Play build is intentionally required. Start from the release-distribution side:
+The Play Console internal test release has already been created and published for `3.5.5 (102) internal-1`. The latest user-visible stop point was the Play Console version detail page showing `3.5.5 (102) internal-1` as provided to internal testers. After that, local code/parity work continued through `e2afb38`, but no newer AAB has been uploaded. When resuming, do not start by rebuilding or uploading the same AAB again unless code/config has changed and a new Play build is intentionally required. Start from the release-distribution side:
 
 1. Confirm the Play Console internal test version page still shows `3.5.5 (102) internal-1` as available to internal testers.
 2. Register the Google Play app-signing certificate fingerprints in Firebase and NCP Maps as needed.
@@ -51,7 +51,7 @@ When the user says "앱 출시 과정 다시 이어나가자" from this director
 1. Read this file first.
 2. Run `git status --short` and confirm no unexpected local changes.
 3. Confirm whether an Android test device is attached with `adb devices`.
-4. Tell the user that the internal test build `3.5.5 (102) internal-1` is already live, while the latest local committed code/parity checkpoint before this release save is `1beac1b` and the latest saved resume-doc checkpoint before this edit is `fc8c8de`.
+4. Tell the user that the internal test build `3.5.5 (102) internal-1` is already live, while the latest local committed code/parity checkpoint at this handoff is `e2afb38`. Treat the current HEAD commit containing this file as the latest saved release-resume checkpoint.
 5. If Firebase/NCP certificate registration changes only console state, no local rebuild is required.
 6. Continue from the Play Console/Firebase/NCP certificate and internal tester steps below before rebuilding a new AAB.
 7. If a new AAB must be uploaded because code/config changed, bump `versionCode` to `103` and use release name `3.5.5 (103) internal-2`.
@@ -79,12 +79,18 @@ The next external release task is not another local build by default. It is to r
 ## Local Android State
 
 - Release setup is committed through `8135932 Record Play internal test release setup`.
-- The latest pre-save resume documentation commit is `fc8c8de Refresh parity resume notes`.
+- The previous release-resume documentation checkpoint was `8d0112d Save Play release resume checkpoint`; the current HEAD commit containing this file supersedes it.
 - Version alignment was committed in `effbf74 Align Android version with iOS`.
   - `versionCode = 102`
   - `versionName = "3.5.5"`
   - This was matched to the iOS build number/marketing version that were available at the time.
 - Latest code/parity commits before this save:
+  - `e2afb38 Align map highlight radius parity`
+  - Android map focus highlight now matches iOS `MapViewModel.updateHighlight`: normal map overlays remain circle-only, but selected focus highlights are created for any shape that has a `radius`, regardless of `shapeType`. Map focus filtering also directly pins legacy `droneId == null` shapes to the first active drone.
+  - Targeted tests passed:
+    - `:app:testDebugUnitTest --tests "*ShapeOverlayRenderTest" --tests "*ShapeOverlayColorTest" --tests "*MapCameraFocusTest"`
+  - `8d0112d Save Play release resume checkpoint`
+  - Play release resume state was refreshed so the trigger phrase "앱 출시 과정 다시 이어나가자" resumes from Play app-signing SHA registration and Play-installed internal-test verification, not from rebuilding or re-uploading the already published `102` AAB.
   - `1beac1b Pin saved list legacy drone filter parity`
   - Saved-list section building now has a regression test for the iOS legacy rule that shapes without `droneId` are treated as belonging to the first active drone.
   - Targeted tests passed:
