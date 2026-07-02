@@ -586,18 +586,11 @@ class AuthViewModel @Inject constructor(
             .first()
             .filter { !it.isDeleted }
             .associate { shape -> shape.id to shape.updatedAt }
-        val droneCount = droneRepository.getAllDrones().first().size
         return buildAccountSwitchLocalChangeState(
             currentShapeUpdatedAtById = currentShapeUpdatedAtById,
             syncedShapeBaseline = decodeAccountSwitchShapeBaseline(
                 preferences[SyncPreferenceKeys.SYNCED_SHAPE_BASELINE],
             ),
-            droneCount = droneCount,
-            lastLocalDroneModificationTime = preferences[SyncPreferenceKeys.LAST_LOCAL_DRONE_MODIFICATION_TIME],
-            lastSyncTime = preferences[SyncPreferenceKeys.LAST_SYNC_TIME],
-            sketchCount = sketchRepository.getAllSketches().first().size,
-            lastLocalSketchModificationTime = preferences[SyncPreferenceKeys.LAST_LOCAL_SKETCH_MODIFICATION_TIME],
-            lastSketchSyncTime = preferences[SyncPreferenceKeys.LAST_SKETCH_SYNC_TIME],
         )
     }
 

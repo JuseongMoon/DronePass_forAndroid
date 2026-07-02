@@ -9,7 +9,6 @@ import com.ScienceFiction.DronePassAndroid.core.data.sync.buildAccountSwitchLoca
 import com.ScienceFiction.DronePassAndroid.core.data.sync.countAccountSwitchShapeBaselineChanges
 import com.ScienceFiction.DronePassAndroid.core.data.sync.decodeAccountSwitchShapeBaseline
 import com.ScienceFiction.DronePassAndroid.core.data.sync.encodeAccountSwitchShapeBaseline
-import com.ScienceFiction.DronePassAndroid.core.data.sync.hasUnsyncedLocalChanges
 import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -279,42 +278,6 @@ class AuthViewModelForegroundSyncTest {
     }
 
     @Test
-    fun `account switch dirty check compares local modification time with last sync time`() {
-        assertEquals(
-            true,
-            hasUnsyncedLocalChanges(
-                lastLocalModificationTime = 200,
-                lastSyncTime = 100,
-                localItemCount = 1,
-            ),
-        )
-        assertEquals(
-            false,
-            hasUnsyncedLocalChanges(
-                lastLocalModificationTime = 100,
-                lastSyncTime = 200,
-                localItemCount = 1,
-            ),
-        )
-        assertEquals(
-            false,
-            hasUnsyncedLocalChanges(
-                lastLocalModificationTime = 200,
-                lastSyncTime = 100,
-                localItemCount = 0,
-            ),
-        )
-        assertEquals(
-            false,
-            hasUnsyncedLocalChanges(
-                lastLocalModificationTime = null,
-                lastSyncTime = null,
-                localItemCount = 1,
-            ),
-        )
-    }
-
-    @Test
     fun `account switch warning counts only shape changes since iOS baseline`() {
         val state = buildAccountSwitchLocalChangeState(
             currentShapeUpdatedAtById = mapOf(
@@ -327,9 +290,6 @@ class AuthViewModelForegroundSyncTest {
                 "modified" to 1_000,
                 "removed" to 700,
             ),
-            sketchCount = 0,
-            lastLocalSketchModificationTime = null,
-            lastSketchSyncTime = null,
         )
 
         assertEquals(true, state.hasUnsyncedLocalChanges)
@@ -337,34 +297,25 @@ class AuthViewModelForegroundSyncTest {
     }
 
     @Test
-    fun `account switch warning still includes dirty sketches because Android can lose them too`() {
+    fun `account switch warning ignores dirty sketches like iOS shape-only warning`() {
         val state = buildAccountSwitchLocalChangeState(
             currentShapeUpdatedAtById = mapOf("same" to 100),
             syncedShapeBaseline = mapOf("same" to 100),
-            sketchCount = 3,
-            lastLocalSketchModificationTime = 200,
-            lastSketchSyncTime = 100,
         )
 
-        assertEquals(true, state.hasUnsyncedLocalChanges)
-        assertEquals(3, state.atRiskCount)
+        assertEquals(false, state.hasUnsyncedLocalChanges)
+        assertEquals(0, state.atRiskCount)
     }
 
     @Test
-    fun `account switch warning includes dirty drones because Android clears them too`() {
+    fun `account switch warning ignores dirty drones like iOS shape-only warning`() {
         val state = buildAccountSwitchLocalChangeState(
             currentShapeUpdatedAtById = mapOf("same" to 100),
             syncedShapeBaseline = mapOf("same" to 100),
-            droneCount = 2,
-            lastLocalDroneModificationTime = 200,
-            lastSyncTime = 100,
-            sketchCount = 0,
-            lastLocalSketchModificationTime = null,
-            lastSketchSyncTime = null,
         )
 
-        assertEquals(true, state.hasUnsyncedLocalChanges)
-        assertEquals(2, state.atRiskCount)
+        assertEquals(false, state.hasUnsyncedLocalChanges)
+        assertEquals(0, state.atRiskCount)
     }
 
     @Test
@@ -391,12 +342,6 @@ class AuthViewModelForegroundSyncTest {
                 "shape-a" to 100,
                 "shape-b" to 200,
             ),
-            droneCount = 2,
-            lastLocalDroneModificationTime = 100,
-            lastSyncTime = 200,
-            sketchCount = 3,
-            lastLocalSketchModificationTime = 100,
-            lastSketchSyncTime = 200,
         )
 
         assertEquals(false, state.hasUnsyncedLocalChanges)
@@ -430,9 +375,6 @@ class AuthViewModelForegroundSyncTest {
                 "shape-b" to 200,
             ),
             syncedShapeBaseline = decodedBaseline,
-            sketchCount = 0,
-            lastLocalSketchModificationTime = null,
-            lastSketchSyncTime = null,
         )
 
         assertEquals(null, decodedBaseline)

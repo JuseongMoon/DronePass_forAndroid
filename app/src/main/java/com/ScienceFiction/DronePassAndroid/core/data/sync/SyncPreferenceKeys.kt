@@ -50,46 +50,18 @@ internal data class AccountSwitchLocalChangeState(
     val atRiskCount: Int,
 )
 
-internal fun hasUnsyncedLocalChanges(
-    lastLocalModificationTime: Long?,
-    lastSyncTime: Long?,
-    localItemCount: Int,
-): Boolean {
-    return localItemCount > 0 &&
-        lastLocalModificationTime != null &&
-        lastLocalModificationTime > (lastSyncTime ?: Long.MIN_VALUE)
-}
-
 internal fun buildAccountSwitchLocalChangeState(
     currentShapeUpdatedAtById: Map<String, Long>,
     syncedShapeBaseline: Map<String, Long>?,
-    droneCount: Int = 0,
-    lastLocalDroneModificationTime: Long? = null,
-    lastSyncTime: Long? = null,
-    sketchCount: Int,
-    lastLocalSketchModificationTime: Long?,
-    lastSketchSyncTime: Long?,
 ): AccountSwitchLocalChangeState {
     val unsyncedShapeCount = countAccountSwitchShapeBaselineChanges(
         currentShapeUpdatedAtById = currentShapeUpdatedAtById,
         syncedShapeBaseline = syncedShapeBaseline,
     )
-    val hasUnsyncedDrones = hasUnsyncedLocalChanges(
-        lastLocalModificationTime = lastLocalDroneModificationTime,
-        lastSyncTime = lastSyncTime,
-        localItemCount = droneCount,
-    )
-    val droneAtRiskCount = if (hasUnsyncedDrones) droneCount else 0
-    val hasUnsyncedSketches = hasUnsyncedLocalChanges(
-        lastLocalModificationTime = lastLocalSketchModificationTime,
-        lastSyncTime = lastSketchSyncTime,
-        localItemCount = sketchCount,
-    )
-    val sketchAtRiskCount = if (hasUnsyncedSketches) sketchCount else 0
 
     return AccountSwitchLocalChangeState(
-        hasUnsyncedLocalChanges = unsyncedShapeCount > 0 || hasUnsyncedDrones || hasUnsyncedSketches,
-        atRiskCount = unsyncedShapeCount + droneAtRiskCount + sketchAtRiskCount,
+        hasUnsyncedLocalChanges = unsyncedShapeCount > 0,
+        atRiskCount = unsyncedShapeCount,
     )
 }
 
