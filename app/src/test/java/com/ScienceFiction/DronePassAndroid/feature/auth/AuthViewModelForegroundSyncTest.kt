@@ -213,6 +213,21 @@ class AuthViewModelForegroundSyncTest {
     }
 
     @Test
+    fun `Apple login cancellation suppression uses Firebase web errorCode`() {
+        val source = resolveProjectFile(
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/auth/AuthViewModel.kt",
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/auth/AuthViewModel.kt",
+        ).readText()
+        val functionBody = source.substringAfter("internal fun shouldSuppressAppleSignInFailure")
+            .substringBefore("internal fun shouldResetLocalDataForAccountChange")
+
+        assertTrue(functionBody.contains("exception !is FirebaseAuthWebException"))
+        assertTrue(functionBody.contains("isAppleSignInCancellationErrorCode(exception.errorCode)"))
+        assertFalse(functionBody.contains("ERROR_WEB_NETWORK_REQUEST_FAILED"))
+        assertFalse(functionBody.contains("localizedMessage"))
+    }
+
+    @Test
     fun `login error dialog preserves empty and whitespace messages like iOS localizedDescription`() {
         assertEquals("", loginErrorDialogText(""))
         assertEquals("   ", loginErrorDialogText("   "))

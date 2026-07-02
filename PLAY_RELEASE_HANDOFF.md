@@ -125,7 +125,7 @@ The user switched from code work to saving this handoff while broader Android/iO
   - `app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/auth/AuthViewModel.kt`
   - iOS references under `/Users/david/Development/Swift/myProjects/DronePass/DronePass/Login/` and `DronePass/Manager/`
 - Completed follow-up since the earlier pause: account-switch warning copy and warning count now match iOS through `abbddbc` and `f2dee60`.
-- Remaining candidate to confirm before editing: iOS suppresses visible errors when the user cancels Apple or Google sign-in. Android may currently route Google Credential Manager `NoCredentialException` or Apple OAuth cancellation into `AuthState.Error`, which would show an error dialog. Re-read `AuthViewModel.kt` and existing auth tests before changing this.
+- Auth cancellation follow-up was rechecked after the handoff: Android already suppresses Google Credential Manager cancellation/no-credential errors and Apple Firebase web cancellation errors by returning to `LoggedOut` instead of surfacing an error dialog, matching the iOS user-cancelled flow. Regression tests now pin the Apple Firebase web cancellation error-code path without constructing Firebase's Android-dependent exception in plain JVM tests.
 
 ## Local Build Commands
 
