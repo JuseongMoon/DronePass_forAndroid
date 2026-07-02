@@ -6,7 +6,7 @@
 > Latest release setup baseline commit: `8135932`
 > Previous saved release-resume commit before this handoff: `8d0112d`
 > Latest E2E preflight doc commit before this edit: `2cbd5f3`
-> Latest code/parity commit at this handoff: `5decf36`
+> Latest code/parity commit at this handoff: `1d11ee0`
 > Package name: `com.ScienceFiction.DronePassAndroid`
 
 This file captures the Google Play internal testing/release state so a later session can continue from this repository without re-discovering the setup. Do not paste secrets, keystore passwords, API secrets, or full OAuth client IDs into this file.
@@ -28,7 +28,7 @@ Rebuild only if local code/config has changed and a new Play build is intentiona
 
 ## Current Stop Point
 
-The Play Console internal test release has already been created and published for `3.5.5 (102) internal-1`. The latest user-visible stop point was the Play Console version detail page showing `3.5.5 (102) internal-1` as provided to internal testers. After that, local code/parity work continued through `5decf36`, but no newer AAB has been uploaded. When resuming, do not start by rebuilding or uploading the same AAB again unless code/config has changed and a new Play build is intentionally required. Start from the release-distribution side:
+The Play Console internal test release has already been created and published for `3.5.5 (102) internal-1`. The latest user-visible stop point was the Play Console version detail page showing `3.5.5 (102) internal-1` as provided to internal testers. After that, local code/parity work continued through `1d11ee0`, but no newer AAB has been uploaded. When resuming, do not start by rebuilding or uploading the same AAB again unless code/config has changed and a new Play build is intentionally required. Start from the release-distribution side:
 
 1. Confirm the Play Console internal test version page still shows `3.5.5 (102) internal-1` as available to internal testers.
 2. Register the Google Play app-signing certificate fingerprints in Firebase and NCP Maps as needed.
@@ -51,7 +51,7 @@ When the user says "앱 출시 과정 다시 이어나가자" from this director
 1. Read this file first.
 2. Run `git status --short` and confirm no unexpected local changes.
 3. Confirm whether an Android test device is attached with `adb devices`.
-4. Tell the user that the internal test build `3.5.5 (102) internal-1` is already live, while the latest local committed code/parity checkpoint at this handoff is `5decf36`. Treat the current HEAD commit containing this file as the latest saved release-resume checkpoint.
+4. Tell the user that the internal test build `3.5.5 (102) internal-1` is already live, while the latest local committed code/parity checkpoint at this handoff is `1d11ee0`. Treat the current HEAD commit containing this file as the latest saved release-resume checkpoint.
 5. If Firebase/NCP certificate registration changes only console state, no local rebuild is required.
 6. Continue from the Play Console/Firebase/NCP certificate and internal tester steps below before rebuilding a new AAB.
 7. If a new AAB must be uploaded because code/config changed, bump `versionCode` to `103` and use release name `3.5.5 (103) internal-2`.
@@ -85,6 +85,10 @@ The next external release task is not another local build by default. It is to r
   - `versionName = "3.5.5"`
   - This was matched to the iOS build number/marketing version that were available at the time.
 - Latest code/parity commits before this save:
+  - `1d11ee0 Align shape edit date-only default`
+  - Android shape editing now matches the current iOS `DronePassApp` startup registration: absent `isDateOnlyMode` defaults to `true`, so new installs open new-shape editing with day-mode input enabled. This supersedes the earlier `c68c057` false default.
+  - Targeted tests passed:
+    - `:app:testDebugUnitTest --tests "*ShapeEditDefaultsTest" --tests "*ShapeDateFormatsTest" --tests "*MapCameraFocusTest"`
   - `5decf36 Restore drone edit optional field parity`
   - Android drone editing again matches the actual iOS `DroneEditView.saveDrone()` + `DroneModel.update(...)` contract: blank optional fields in edit mode pass through as nil and preserve the previous value; nonblank values preserve the original user-entered text. This supersedes the incorrect clearing change in `d30bd45`.
   - Targeted tests passed:
@@ -152,7 +156,7 @@ The next external release task is not another local build by default. It is to r
   - Targeted tests passed:
     - `:app:testDebugUnitTest --tests "*ShapeDetail*" --tests "*ShapeEdit*" --tests "*SearchAddressSheetTest" --tests "*ExternalMapTargetTest" --tests "*ShapeOverlayRenderTest"`
   - `c68c057 Align shape edit date mode default with iOS`
-  - Android shape-edit date-only default was changed to match iOS: absent setting defaults to date+time mode, not date-only mode.
+  - Superseded by `1d11ee0`: the current iOS app registers `isDateOnlyMode = true` at launch, so Android absent setting now defaults to day mode.
   - Targeted tests passed:
     - `:app:testDebugUnitTest --tests "*ShapeEditDefaultsTest" --tests "*ShapeEditContractTest"`
   - `b69c38b Record saved list focus parity check`
