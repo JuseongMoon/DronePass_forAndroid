@@ -657,10 +657,22 @@ class StringResourceCoverageTest {
         assertEquals("0-%1$.1f m/s (안전)", stringResourceValue("values/strings.xml", "weather_info_wind_safe_range"))
         assertEquals("순간 풍속 증가량", stringResourceValue("values/strings.xml", "weather_info_gust_title"))
         assertEquals("국지 돌풍 위험", stringResourceValue("values/strings.xml", "weather_gust_warning"))
+        assertEquals("0.1-1.0 mm", stringResourceValue("values/strings.xml", "weather_info_precipitation_range_caution"))
         assertEquals("방수 드론 외 비행 자제", stringResourceValue("values/strings.xml", "weather_info_precipitation_caution_advice"))
         assertEquals("%1\$d km 미만", stringResourceValue("values/strings.xml", "weather_info_visibility_range_danger"))
         assertEquals("%1\$d°C 미만, 40°C 이상", stringResourceValue("values/strings.xml", "weather_info_temperature_range_danger"))
         assertEquals("결로위험지수", stringResourceValue("values/strings.xml", "weather_info_cri_title"))
+        assertEquals("1-39 (안전)", stringResourceValue("values/strings.xml", "weather_info_cri_safe_range"))
+        assertEquals("40-69", stringResourceValue("values/strings.xml", "weather_info_cri_range_caution"))
+        assertEquals("70-100", stringResourceValue("values/strings.xml", "weather_info_cri_range_danger"))
+        assertEquals(
+            "습기가 많거나 온도차가 큰 상태 (습도 60-80%% 또는 온도차 3-6°C)",
+            stringResourceValue("values/strings.xml", "weather_info_cri_caution_desc"),
+        )
+        assertTrue(
+            "Korean CRI note should use iOS ASCII hyphen punctuation",
+            !stringResourceValue("values/strings.xml", "weather_info_cri_note").contains(Regex("[–−]")),
+        )
 
         assertEquals("Weather Information", stringResourceValue("values-en/strings.xml", "weather_info_title"))
         assertEquals("Weather & Drone Flight", stringResourceValue("values-en/strings.xml", "weather_info_importance_title"))
@@ -678,10 +690,22 @@ class StringResourceCoverageTest {
         assertEquals("0-%1$.1f m/s (Safe)", stringResourceValue("values-en/strings.xml", "weather_info_wind_safe_range"))
         assertEquals("Gust Difference", stringResourceValue("values-en/strings.xml", "weather_info_gust_title"))
         assertEquals("Local gust risk", stringResourceValue("values-en/strings.xml", "weather_gust_warning"))
+        assertEquals("0.1-1.0 mm", stringResourceValue("values-en/strings.xml", "weather_info_precipitation_range_caution"))
         assertEquals("1.0 mm or more", stringResourceValue("values-en/strings.xml", "weather_info_precipitation_range_danger"))
         assertEquals("Less than %1\$d km", stringResourceValue("values-en/strings.xml", "weather_info_visibility_range_danger"))
         assertEquals("Below %1\$d°C, above 40°C", stringResourceValue("values-en/strings.xml", "weather_info_temperature_range_danger"))
         assertEquals("CRI (Condensation Risk Index)", stringResourceValue("values-en/strings.xml", "weather_info_cri_title"))
+        assertEquals("1-39 (Safe)", stringResourceValue("values-en/strings.xml", "weather_info_cri_safe_range"))
+        assertEquals("40-69", stringResourceValue("values-en/strings.xml", "weather_info_cri_range_caution"))
+        assertEquals("70-100", stringResourceValue("values-en/strings.xml", "weather_info_cri_range_danger"))
+        assertEquals(
+            "High moisture or large temperature difference (60-80%% humidity or 3-6°C temperature difference)",
+            stringResourceValue("values-en/strings.xml", "weather_info_cri_caution_desc"),
+        )
+        assertTrue(
+            "English CRI note should use iOS ASCII hyphen punctuation",
+            !stringResourceValue("values-en/strings.xml", "weather_info_cri_note").contains(Regex("[–−]")),
+        )
     }
 
     @Test
