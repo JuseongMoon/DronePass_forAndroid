@@ -592,7 +592,16 @@ class ShapeEditDefaultsTest {
     }
 
     @Test
-    fun `도형 편집 반경 입력은 신규와 원형 도형에만 표시한다`() {
+    fun `도형 편집 반경 입력은 iOS BasicInfoSection 처럼 모든 타입에서 표시한다`() {
+        assertTrue(shouldShowShapeEditRadiusField(null))
+        assertTrue(shouldShowShapeEditRadiusField(ShapeModel(shapeType = ShapeType.CIRCLE)))
+        assertTrue(shouldShowShapeEditRadiusField(ShapeModel(shapeType = ShapeType.RECTANGLE)))
+        assertTrue(shouldShowShapeEditRadiusField(ShapeModel(shapeType = ShapeType.POLYGON)))
+        assertTrue(shouldShowShapeEditRadiusField(ShapeModel(shapeType = ShapeType.POLYLINE)))
+    }
+
+    @Test
+    fun `도형 편집 반경 저장 검증은 신규와 원형 도형에만 요구한다`() {
         assertTrue(shouldRequireShapeEditRadius(null))
         assertTrue(shouldRequireShapeEditRadius(ShapeModel(shapeType = ShapeType.CIRCLE)))
         assertFalse(shouldRequireShapeEditRadius(ShapeModel(shapeType = ShapeType.RECTANGLE)))

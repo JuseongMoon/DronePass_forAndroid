@@ -355,6 +355,9 @@ internal fun shouldRequireShapeEditRadius(shape: ShapeModel?): Boolean {
     }
 }
 
+@Suppress("UNUSED_PARAMETER")
+internal fun shouldShowShapeEditRadiusField(shape: ShapeModel?): Boolean = true
+
 internal fun resolveShapeEditSavedGeometry(
     originalShape: ShapeModel?,
     coordinate: Coordinate,

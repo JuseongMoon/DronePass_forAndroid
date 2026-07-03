@@ -251,7 +251,7 @@ fun ShapeEditScreen(
     var isDateOnly by remember(editKey, editDefaults.isDateOnly) {
         mutableStateOf(editDefaults.isDateOnly)
     }
-    val showRadiusField = shouldRequireShapeEditRadius(shape)
+    val showRadiusField = shouldShowShapeEditRadiusField(shape)
 
     val dateFormat = remember { shapeEditDateOnlyFormat() }
     val dateTimeFormat = remember { localizedShapeDateTimeFormat() }

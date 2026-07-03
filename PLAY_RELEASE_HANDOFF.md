@@ -1,6 +1,6 @@
 # DronePass Android Play Release Handoff
 
-> Last updated: 2026-07-03
+> Last updated: 2026-07-04
 > Resume trigger: "앱 출시 과정 다시 이어나가자"
 > Branch at handoff: `fix/critical-pri0-fixes`
 > Latest release setup baseline commit: `8135932`
@@ -13,18 +13,18 @@ This file captures the Google Play internal testing/release state so a later ses
 
 ## Latest Saved Resume Snapshot
 
-Saved at the user's request on 2026-07-03 from this repository after the Play Console internal-test release flow reached the published version detail page and later Android/iOS parity audits continued through the login/auth Apple and Google provider audit.
+Saved at the user's request on 2026-07-03 from this repository after the Play Console internal-test release flow reached the published version detail page. Local Android/iOS parity audits later continued through the 2026-07-04 Shape Edit coordinate-input and radius-row audit.
 
 - Current working branch: `fix/critical-pri0-fixes`.
-- Current local HEAD before this documentation save: `866be86 Record saved list focus parity audit`.
-- Working tree status before this documentation save: only the login/auth provider parity test additions were pending; this handoff save commits them with the documentation update.
+- Current local HEAD before this documentation save: `e1ddae8 Record login provider parity audit`.
+- Working tree status before this documentation save: only the Shape Edit radius-row parity change and related test updates were pending; this handoff save commits them with the documentation update.
 - Play internal test version already published: `3.5.5 (102) internal-1`.
 - Do not rebuild or re-upload version code `102` just to resume the release process.
 - Resume phrase from this directory: `앱 출시 과정 다시 이어나가자`.
 - Resume target: continue from Play app-signing SHA registration, tester setup, and Play-installed real-device verification.
 - If a newer build is intentionally required later, use `versionCode = 103` and release name `3.5.5 (103) internal-2`.
-- Latest completed parity audits before this save: main `+` new-shape flow, map long-press new-shape flow, App Info, Patch Notes, Terms, Privacy document screens, VWorld layer/detail/lifecycle behavior, notification/settings permission plus local notification scheduling, profile/account deletion behavior, Shape Detail screen behavior, Drone management list/detail/edit behavior, saved-list shape selection to map-focus behavior, and login/auth Apple·Google provider behavior.
-- Code-work resume point after this save: login/auth Apple·Google behavior has been rechecked against the current iOS source and pinned with additional provider-flow contract tests. Continue with another user-visible secondary screen or integration path that has not been recently rechecked, or Play-installed real-device verification when a device is available. If the user resumes the app release process, follow the Play release steps below.
+- Latest completed parity audits before this save: main `+` new-shape flow, map long-press new-shape flow, App Info, Patch Notes, Terms, Privacy document screens, VWorld layer/detail/lifecycle behavior, notification/settings permission plus local notification scheduling, profile/account deletion behavior, Shape Detail screen behavior, Drone management list/detail/edit behavior, saved-list shape selection to map-focus behavior, login/auth Apple·Google provider behavior, and Shape Edit coordinate-input/radius-row behavior.
+- Code-work resume point after this save: Shape Edit coordinate-input and radius-row behavior has been rechecked against the current iOS source. Continue with another user-visible secondary screen or integration path that has not been recently rechecked, or Play-installed real-device verification when a device is available. If the user resumes the app release process, follow the Play release steps below.
 
 ## Quick Resume
 
@@ -101,6 +101,9 @@ The next external release task is not another local build by default. It is to r
   - This was matched to the iOS build number/marketing version that were available at the time.
 - Latest code/parity commits before this save:
   - Current HEAD containing this file
+  - Shape Edit coordinate-input and radius-row behavior was rechecked against iOS `ShapeEditView`, `CoordinateView`, and `SearchCoordinateViewModel`. Android keeps the iOS coordinate sheet behavior where the search field opens empty, typing alone clears validation, search result parsing controls valid/invalid messaging, reverse-geocoding success produces a selectable result card, and reverse-geocoding failure uses the address-not-found confirmation fallback. Android now also shows the radius row for every shape type like iOS `BasicInfoSection`; the non-circle save validation and geometry preservation still do not require or apply radius.
+  - Targeted tests passed:
+    - `:app:testDebugUnitTest --tests "*ShapeEditDefaultsTest" --tests "*ShapeEditContractTest" --tests "*SearchAddressSheetTest"`
   - Login/auth screen and Apple/Google provider behavior were rechecked against iOS `LoginView`, `GoogleLoginManager`, `AppleLoginManager`, and `AuthManager`. Android keeps Apple before Google, hides location terms, hides the settings login skip button, suppresses duplicate/cancelled provider flows, preserves account-switch handling, and updates provider recovery keys plus the root user document with `appleUserID`/`googleUserID`. Source-order tests now pin Google Credential Manager to Firebase credential to `googleUserID`, Apple OAuthProvider to pending/custom-tabs flow to `appleUserID`, and provider-specific finalization.
   - Targeted tests passed:
     - `:app:testDebugUnitTest --tests "*LoginScreenContractTest" --tests "*AuthViewModelForegroundSyncTest" --tests "*AuthRepositoryUserDocumentTest" --tests "*StringResourceCoverageTest" --tests "*SettingsScreenContractTest"`
@@ -241,27 +244,25 @@ ndk {
 
 This setting was added while investigating the Play native-symbol warning. Rebuilding still did not produce a separate `native-debug-symbols.zip`, because the native `.so` libraries appear to come from third-party dependencies such as Naver Maps/AndroidX/DataStore rather than app-owned NDK code. The warning can be ignored for the current internal test.
 
-At the time of the latest release-handoff save request, `git status --short` only showed the login/auth provider parity test additions before documentation edits. This commit saves those additions with the handoff update. Re-check with `git status --short` when resuming.
+At the time of the latest release-handoff save request, `git status --short` only showed the Shape Edit radius-row parity change and related test updates before documentation edits. This commit saves those additions with the handoff update. Re-check with `git status --short` when resuming.
 
 ## Paused Code Thread
 
 The user switched from code work to saving this handoff while broader Android/iOS parity work was paused. This is not part of the Play release resume trigger, but it is useful context if the user later says to continue the paused implementation work.
 
 - Completed follow-up since the earlier auth pause: account-switch warning copy/count and auth cancellation behavior now match iOS through `f2dee60` and `a55b59d`.
-- Completed follow-up after the Play handoff: weather guide punctuation, drone dropdown empty label, detail copy-toast text size, KP/weather refresh interval contract, saved-list section sorting, sketch eraser touch completion, saved-list legacy drone filtering, map highlight radius parity, drone optional field parity, shape edit date-only default, settings/default initialization parity, main/new-shape/App Info/Patch Notes parity, document screen parity, VWorld layer/detail parity, notification/settings/local notification parity, profile/account deletion parity, Shape Detail screen behavior, drone management behavior, saved-list map-focus behavior, and login/auth Apple·Google provider behavior are pinned through the current HEAD containing this file.
-- Latest completed implementation thread before this save: login/auth Apple·Google behavior was rechecked against iOS `LoginView`, `GoogleLoginManager`, `AppleLoginManager`, and `AuthManager`. Android keeps the same button ordering and terms exposure, no location terms, no skip button in settings login, duplicate/cancel guard behavior, account-switch handling, provider recovery keys, and root user document updates. Source-order tests now pin Google and Apple provider repository flows plus provider-specific finalization.
-  - Android login/auth files to re-open:
-    - `app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/auth/LoginScreen.kt`
-    - `app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/auth/AuthViewModel.kt`
-    - `app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/auth/AuthRepository.kt`
-    - `app/src/test/java/com/ScienceFiction/DronePassAndroid/feature/auth/LoginScreenContractTest.kt`
-    - `app/src/test/java/com/ScienceFiction/DronePassAndroid/feature/auth/AuthViewModelForegroundSyncTest.kt`
-    - `app/src/test/java/com/ScienceFiction/DronePassAndroid/feature/auth/AuthRepositoryUserDocumentTest.kt`
-  - iOS login/auth references to re-open:
-    - `/Users/david/Development/Swift/myProjects/DronePass/DronePass/Login/LoginView.swift`
-    - `/Users/david/Development/Swift/myProjects/DronePass/DronePass/Manager/GoogleLoginManager.swift`
-    - `/Users/david/Development/Swift/myProjects/DronePass/DronePass/Manager/AppleLoginManager.swift`
-    - `/Users/david/Development/Swift/myProjects/DronePass/DronePass/Manager/AuthManager.swift`
+- Completed follow-up after the Play handoff: weather guide punctuation, drone dropdown empty label, detail copy-toast text size, KP/weather refresh interval contract, saved-list section sorting, sketch eraser touch completion, saved-list legacy drone filtering, map highlight radius parity, drone optional field parity, shape edit date-only default, settings/default initialization parity, main/new-shape/App Info/Patch Notes parity, document screen parity, VWorld layer/detail parity, notification/settings/local notification parity, profile/account deletion parity, Shape Detail screen behavior, drone management behavior, saved-list map-focus behavior, login/auth Apple·Google provider behavior, and Shape Edit coordinate-input/radius-row behavior are pinned through the current HEAD containing this file.
+- Latest completed implementation thread before this save: Shape Edit coordinate-input and radius-row behavior was rechecked against iOS `ShapeEditView`, `CoordinateView`, and `SearchCoordinateViewModel`. Android now shows the radius row for every shape type like iOS while still preserving non-circle geometry and not requiring radius at save time.
+  - Android Shape Edit files to re-open:
+    - `app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/shape/ShapeEditScreen.kt`
+    - `app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/shape/ShapeEditDefaults.kt`
+    - `app/src/test/java/com/ScienceFiction/DronePassAndroid/feature/shape/ShapeEditDefaultsTest.kt`
+    - `app/src/test/java/com/ScienceFiction/DronePassAndroid/feature/shape/ShapeEditContractTest.kt`
+    - `app/src/test/java/com/ScienceFiction/DronePassAndroid/feature/shape/SearchAddressSheetTest.kt`
+  - iOS Shape Edit references to re-open:
+    - `/Users/david/Development/Swift/myProjects/DronePass/DronePass/Shape/View/ShapeEditView.swift`
+    - `/Users/david/Development/Swift/myProjects/DronePass/DronePass/Shape/View/CoordinateView.swift`
+    - `/Users/david/Development/Swift/myProjects/DronePass/DronePass/Shape/View/CoordinateViewModel.swift`
   - Recent Android files audited or touched:
     - `app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/map/component/MapFloatingButtons.kt`
     - `app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/map/MapScreenLayers.kt`
@@ -285,7 +286,7 @@ The user switched from code work to saving this handoff while broader Android/iO
     - `/Users/david/Development/Swift/myProjects/DronePass/DronePass/Sketch/SketchFileStore.swift`
     - `/Users/david/Development/Swift/myProjects/DronePass/DronePass/Sketch/View/SketchToolbarView.swift`
     - `/Users/david/Development/Swift/myProjects/DronePass/DronePass/Sketch/View/SketchCanvasView.swift`
-  - Audit status already established: default sketch color/stroke/opacity, stroke and opacity clamps, 5m point sampling, finish-only-when-two-points, undo/redo edit-session sync, toolbar ordering/dimensions, pen picker/sliders, delete-all dialog strings, touch input, eraser `up`/`cancel`, saved-list sorting, saved-list focus, legacy `droneId == nil` filtering, shape edit date-only default, drone optional edit preservation, map highlight radius behavior, settings/default initialization, main `+` new-shape coordinate fallback, long-press new-shape confirm/failure flow, App Info strings, Patch Notes states, Terms/Privacy document rendering, VWorld layer selector/detail/lifecycle behavior, notification/settings/local notification scheduling, profile/account deletion behavior, Shape Detail behavior, drone management behavior, saved-list map-focus behavior, and login/auth Apple·Google provider behavior are aligned with iOS or pinned by tests.
+  - Audit status already established: default sketch color/stroke/opacity, stroke and opacity clamps, 5m point sampling, finish-only-when-two-points, undo/redo edit-session sync, toolbar ordering/dimensions, pen picker/sliders, delete-all dialog strings, touch input, eraser `up`/`cancel`, saved-list sorting, saved-list focus, legacy `droneId == nil` filtering, shape edit date-only default, Shape Edit coordinate-input/radius-row behavior, drone optional edit preservation, map highlight radius behavior, settings/default initialization, main `+` new-shape coordinate fallback, long-press new-shape confirm/failure flow, App Info strings, Patch Notes states, Terms/Privacy document rendering, VWorld layer selector/detail/lifecycle behavior, notification/settings/local notification scheduling, profile/account deletion behavior, Shape Detail behavior, drone management behavior, saved-list map-focus behavior, and login/auth Apple·Google provider behavior are aligned with iOS or pinned by tests.
   - Next code-audit candidate: continue with another user-visible secondary screen or integration path that has not been recently rechecked, or Play-installed real-device verification when a device is available. If the user says to resume the app release process instead, ignore this code-audit thread and follow the Play release steps above.
 
 ## Local Build Commands
@@ -320,6 +321,10 @@ The last release readiness check and `bundleRelease` passed after `google-servic
 2026-07-03 targeted parity verification after the latest handoff update:
 
 - `:app:testDebugUnitTest --tests "*LoginScreenContractTest" --tests "*AuthViewModelForegroundSyncTest" --tests "*AuthRepositoryUserDocumentTest" --tests "*StringResourceCoverageTest" --tests "*SettingsScreenContractTest"` passed after rechecking login/auth Apple and Google provider behavior against the iOS source.
+
+2026-07-04 targeted parity verification after the latest handoff update:
+
+- `:app:testDebugUnitTest --tests "*ShapeEditDefaultsTest" --tests "*ShapeEditContractTest" --tests "*SearchAddressSheetTest"` passed after rechecking Shape Edit coordinate-input and radius-row behavior against the iOS source.
 
 ## Upload Key Fingerprints
 
