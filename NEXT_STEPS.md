@@ -4,7 +4,7 @@
 
 > 마지막 업데이트: 2026-07-03
 > 브랜치: `fix/critical-pri0-fixes`
-> 상태: iOS 동작 대조와 Android 출시 하드닝 진행 중. Play 내부 테스트 `3.5.5 (102) internal-1`은 이미 게시된 상태이며, 최신 완료 코드/패리티 기준은 이 파일을 포함한 현재 HEAD의 Shape Detail 재감사까지다. 앱 출시 재개 절차는 `PLAY_RELEASE_HANDOFF.md`를 우선 확인한다.
+> 상태: iOS 동작 대조와 Android 출시 하드닝 진행 중. Play 내부 테스트 `3.5.5 (102) internal-1`은 이미 게시된 상태이며, 최신 완료 코드/패리티 기준은 이 파일을 포함한 현재 HEAD의 드론 목록/상세/편집 재감사까지다. 앱 출시 재개 절차는 `PLAY_RELEASE_HANDOFF.md`를 우선 확인한다.
 
 ## 앱 출시 재개 바로가기
 
@@ -29,6 +29,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 2026-07-03 현재 작업 기준 드론 목록/상세/편집 화면을 최신 iOS `DroneListView`/`DroneDetailView`/`DroneEditView`/`DroneModel.update`와 다시 대조했다. Android는 드론 목록 title/section/empty/usage/add 문자열을 iOS String Catalog와 맞췄고, 상세 화면의 이름/색상/제작 번호/이륙 무게/크기/메모 복사 가능 필드, 삭제 전 연결 도형 개수 조회, 도형 없음 삭제 확인, 도형 있음 처리 선택, 다른 드론 재할당 대상 필터/선택/확인 흐름, 편집 시 공백 선택 필드가 기존 값을 유지하는 iOS `nil` 무시 계약을 유지한다. `:app:testDebugUnitTest --tests "*DroneManagementContractTest" --tests "*DroneDeleteValidationTest" --tests "*DroneEditSheetTest" --tests "*DroneListScreenTest" --tests "*StringResourceCoverageTest"` 통과.
 - 2026-07-03 현재 작업 기준 Shape Detail 화면을 최신 iOS `ShapeDetailView`/`CopyableTextModifier`/`DateFormatter.localizedDateTime`와 다시 대조했다. Android는 드론 → 제목 → 좌표 → 주소 → 반경 → 고도 → 시작일 → 종료일 → 메모 행 순서, iOS `connectedDrone`의 정상/삭제됨/레거시 첫 드론 fallback/미지정 분기, 좌표 DMS 표시 + 십진수 long-press 복사, 주소 nil-only `-` 표시 + long-press 복사 + 탭 시 길찾기 앱 선택, 한국 기능 ON/OFF별 Naver/Kakao/TMAP/Google 순서, 0.8 상세 시트 높이, inline navigation title + `ellipsis.circle`형 더보기 버튼, 수정/복제/삭제 메뉴 순서, 삭제 확인 문구, 메모 180dp 고정 높이, 웹 링크 내부 웹 시트/전화번호 시스템 intent, 날짜 medium date + short time 표시를 현재 iOS 계약과 맞춰 유지한다. 코드 동작 변경은 없었고 좌표/주소/메모 상호작용 source-order 계약 테스트를 보강했다. `:app:testDebugUnitTest --tests "*ShapeDetailContractTest" --tests "*ShapeDetailDroneResolutionTest" --tests "*ExternalMapTargetTest" --tests "*ShapeDateFormatsTest" --tests "*StringResourceCoverageTest"` 통과.
 - 2026-07-03 현재 진행 내용을 출시 재개용으로 다시 저장했다. 사용자가 이 디렉토리에서 "앱 출시 과정 다시 이어나가자"라고 말하면 `PLAY_RELEASE_HANDOFF.md`의 Quick Resume/Resume Protocol을 먼저 따르고, 이미 게시된 내부 테스트 `3.5.5 (102) internal-1`에서 이어간다. 다음 작업은 같은 `102` AAB 재빌드/재업로드가 아니라 Play 앱 서명 인증서 SHA-1/SHA-256을 Firebase/NCP Maps에 등록하고, 내부 테스터 opt-in 링크로 Play 설치 실기기 검증을 진행하는 것이다.
 - 2026-07-03 현재 작업 기준 프로필/계정 삭제 화면을 iOS `ProfileView`/`AuthManager.deleteAccount`/`AnalyticsDataGenerator`와 다시 대조했다. Android는 내 정보 → 로그아웃 → 실시간 클라우드 동기화 → 약관/개인정보 → 계정 관리 섹션 순서, 가입일 long date 표시, 마지막 동기화 medium date + short time 표시, 수동 백업 표시 조건, 탈퇴 1차 확인 → 최종 확인 → `deleteAccount` 호출, 익명화 통계/도형/드론 데이터 생성, Firestore 삭제 3회 재시도, 삭제 실패 후 Auth 삭제 계속 진행, 최근 로그인 필요 오류 문구, 로컬 데이터 보존 정책을 현재 iOS 계약과 맞춰 유지한다. Android는 공유 데이터 정리를 위해 iOS 삭제 대상에 더해 `sketches`와 FCM `devices` 컬렉션도 삭제 대상으로 유지한다. 코드 동작 변경은 없었고 프로필 섹션/탈퇴 확인 순서 테스트를 보강했다. `:app:testDebugUnitTest --tests "*ProfileSheetParityTest" --tests "*ProfileViewModelTest" --tests "*AnonymizedDeletionDataTest" --tests "*StringResourceCoverageTest" --tests "*SettingsScreenContractTest"` 통과.

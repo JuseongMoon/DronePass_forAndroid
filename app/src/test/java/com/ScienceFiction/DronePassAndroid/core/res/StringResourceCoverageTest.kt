@@ -1357,12 +1357,20 @@ class StringResourceCoverageTest {
         assertEquals("내 드론 관리하기", stringResourceValue("values/strings.xml", "settings_drone_manage"))
         assertEquals("Manage My Drones", stringResourceValue("values-en/strings.xml", "settings_drone_manage"))
 
-        assertEquals("내 드론 관리하기", stringResourceValue("values/strings.xml", "drone_list_title"))
-        assertEquals("Manage My Drones", stringResourceValue("values-en/strings.xml", "drone_list_title"))
-        assertEquals("내 드론", stringResourceValue("values/strings.xml", "drone_list_section_my"))
+        assertEquals("드론 관리", stringResourceValue("values/strings.xml", "drone_list_title"))
+        assertEquals("Manage Drones", stringResourceValue("values-en/strings.xml", "drone_list_title"))
+        assertEquals("내 드론 목록", stringResourceValue("values/strings.xml", "drone_list_section_my"))
         assertEquals("My Drones", stringResourceValue("values-en/strings.xml", "drone_list_section_my"))
+        assertEquals("등록된 드론이 없습니다.", stringResourceValue("values/strings.xml", "drone_list_empty"))
+        assertEquals("No drones registered.", stringResourceValue("values-en/strings.xml", "drone_list_empty"))
+        assertEquals("사용법", stringResourceValue("values/strings.xml", "drone_list_section_usage"))
+        assertEquals("How to Use", stringResourceValue("values-en/strings.xml", "drone_list_section_usage"))
         assertEquals("새 드론 추가", stringResourceValue("values/strings.xml", "drone_list_add"))
         assertEquals("Add New Drone", stringResourceValue("values-en/strings.xml", "drone_list_add"))
+        assertEquals("• 각 드론마다 고유한 색상을 지정할 수 있습니다", stringResourceValue("values/strings.xml", "drone_list_usage_color_customization"))
+        assertEquals("• Each drone can have a unique color", stringResourceValue("values-en/strings.xml", "drone_list_usage_color_customization"))
+        assertEquals("• 마지막 남은 드론은 삭제할 수 없습니다", stringResourceValue("values/strings.xml", "drone_list_usage_last_drone"))
+        assertEquals("• Cannot delete the last remaining drone", stringResourceValue("values-en/strings.xml", "drone_list_usage_last_drone"))
     }
 
     @Test

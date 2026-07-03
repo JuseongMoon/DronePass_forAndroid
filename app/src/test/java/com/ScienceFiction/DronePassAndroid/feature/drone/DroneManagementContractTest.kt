@@ -53,6 +53,91 @@ class DroneManagementContractTest {
     }
 
     @Test
+    fun `드론 상세 복사 가능 필드는 iOS CopyableTextModifier 연결을 따른다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/drone/DroneDetailSheet.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/drone/DroneDetailSheet.kt",
+        ).readText()
+
+        assertAppearsInOrder(
+            source = source,
+            tokens = listOf(
+                "fun copyAndShowToast(text: String)",
+                "copyToClipboard(context, text)",
+                "copyToastMessage = copiedMessage",
+                "R.string.drone_detail_name",
+                "copyText = drone.name",
+                "R.string.drone_detail_color",
+                "colorLabel = colorLabel",
+                "R.string.drone_detail_serial_number",
+                "copyText = drone.serialNumber",
+                "R.string.drone_detail_takeoff_weight",
+                "copyText = drone.takeoffWeight",
+                "R.string.drone_detail_size",
+                "copyText = drone.size",
+                "R.string.drone_detail_section_memo",
+                ".copyOnLongPress(drone.memo, ::copyAndShowToast)",
+            ),
+        )
+    }
+
+    @Test
+    fun `드론 삭제와 연결 도형 처리 흐름은 iOS DroneDetailView 를 따른다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/drone/DroneDetailSheet.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/drone/DroneDetailSheet.kt",
+        ).readText()
+
+        assertAppearsInOrder(
+            source = source,
+            tokens = listOf(
+                "shapeCount = getShapeCount(drone.id)",
+                "showDeleteDialog = true",
+                "resolveDroneDeleteDialogType(resolvedShapeCount)",
+                "DroneDeleteDialogType.ConfirmDelete",
+                "R.string.drone_detail_delete_title",
+                "onDelete(ShapeHandling.DeleteAll)",
+                "DroneDeleteDialogType.ShapeHandling",
+                "DroneDeleteWithShapesActionSheet(",
+                "onMoveToOtherDrone = {",
+                "showMoveTargetSheet = true",
+                "onDeleteAll = {",
+                "onDelete(ShapeHandling.DeleteAll)",
+                "DroneMoveTargetSheet(",
+                "drones = activeDrones.filter { it.id != drone.id }",
+                "ShapeHandling.Reassign(targetDroneId)",
+            ),
+        )
+    }
+
+    @Test
+    fun `도형 재할당 대상 선택 시트는 iOS DroneSelectionSheet 구성을 따른다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/drone/DroneDetailSheet.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/drone/DroneDetailSheet.kt",
+        ).readText()
+
+        assertAppearsInOrder(
+            source = source,
+            tokens = listOf(
+                "private fun DroneMoveTargetSheet(",
+                "DroneMoveTargetNavigationHeader(",
+                "canConfirm = selectedDroneId != null",
+                "DroneDetailSectionHeader(text = stringResource(R.string.drone_select_move_shape))",
+                "DroneMoveTargetRow(",
+                "selectedDroneId = targetDrone.id",
+                "private fun DroneMoveTargetNavigationHeader(",
+                "R.string.common_cancel",
+                "R.string.drone_select_title",
+                "enabled = canConfirm",
+                "R.string.drone_select_confirm",
+                "private fun DroneMoveTargetRow(",
+                "R.string.drone_select_selected",
+            ),
+        )
+    }
+
+    @Test
     fun `드론 편집 섹션 순서는 iOS DroneEditView 를 따른다`() {
         val source = resolveProjectFile(
             "src/main/java/com/ScienceFiction/DronePassAndroid/feature/drone/DroneEditSheet.kt",
