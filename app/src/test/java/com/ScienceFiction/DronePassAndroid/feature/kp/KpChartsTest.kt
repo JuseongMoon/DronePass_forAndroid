@@ -125,6 +125,73 @@ class KpChartsTest {
     }
 
     @Test
+    fun `forecast refresh error is shown even when stale forecast data exists like iOS`() {
+        val plan = resolveKpDataLoadPlan(
+            trigger = KpDataLoadTrigger.UserRefresh,
+            hasCurrentKp = true,
+        )
+
+        assertEquals(
+            KpError.ForecastFailed,
+            resolveKpErrorAfterLoad(
+                plan = plan,
+                currentFailed = false,
+                forecastFailed = true,
+                longTermFailed = true,
+                hasCurrentKp = true,
+            ),
+        )
+    }
+
+    @Test
+    fun `forecast refresh keeps error clear when either NOAA forecast request succeeds like iOS`() {
+        val plan = resolveKpDataLoadPlan(
+            trigger = KpDataLoadTrigger.UserRefresh,
+            hasCurrentKp = true,
+        )
+
+        assertEquals(
+            null,
+            resolveKpErrorAfterLoad(
+                plan = plan,
+                currentFailed = false,
+                forecastFailed = true,
+                longTermFailed = false,
+                hasCurrentKp = true,
+            ),
+        )
+        assertEquals(
+            null,
+            resolveKpErrorAfterLoad(
+                plan = plan,
+                currentFailed = false,
+                forecastFailed = false,
+                longTermFailed = true,
+                hasCurrentKp = true,
+            ),
+        )
+    }
+
+    @Test
+    fun `initial load reports full load failure when current KP and NOAA forecasts all fail`() {
+        val plan = resolveKpDataLoadPlan(
+            trigger = KpDataLoadTrigger.Initial,
+            hasCurrentKp = false,
+        )
+
+        assertEquals(
+            KpError.LoadFailed,
+            resolveKpErrorAfterLoad(
+                plan = plan,
+                currentFailed = true,
+                forecastFailed = true,
+                longTermFailed = true,
+                hasCurrentKp = false,
+            ),
+        )
+    }
+
+    @Test
     fun `current KP card level name uses iOS localizedName resources`() {
         assertEquals(R.string.kp_info_level_normal_name, kpLevelNameRes(KpLevel.NORMAL))
         assertEquals(R.string.kp_info_level_g1_name, kpLevelNameRes(KpLevel.G1))

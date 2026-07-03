@@ -56,6 +56,35 @@ internal fun resolveKpDataLoadPlan(
     )
 }
 
+internal fun resolveKpErrorAfterLoad(
+    plan: KpDataLoadPlan,
+    currentFailed: Boolean,
+    forecastFailed: Boolean,
+    longTermFailed: Boolean,
+    hasCurrentKp: Boolean,
+): KpError? {
+    val currentSourceFailed = plan.fetchCurrent && currentFailed
+    val forecastSourceRequested = plan.fetchForecast || plan.fetchLongTermForecast
+    val forecastSourcesFailed = forecastSourceRequested &&
+        (!plan.fetchForecast || forecastFailed) &&
+        (!plan.fetchLongTermForecast || longTermFailed)
+
+    val allRequestedSourcesFailed = when {
+        plan.fetchCurrent && forecastSourceRequested -> currentSourceFailed && forecastSourcesFailed
+        plan.fetchCurrent -> currentSourceFailed
+        forecastSourceRequested -> forecastSourcesFailed
+        else -> false
+    }
+
+    if (!allRequestedSourcesFailed) return null
+
+    return if (plan.fetchCurrent && currentFailed && !hasCurrentKp) {
+        KpError.LoadFailed
+    } else {
+        KpError.ForecastFailed
+    }
+}
+
 /**
  * Kp 지수 ViewModel
  *
@@ -173,18 +202,13 @@ class KpViewModel @Inject constructor(
                 )
             }
 
-            if (
-                forecastFailed &&
-                longTermFailed &&
-                _forecastData.value.isEmpty() &&
-                _longTermForecast.value.isEmpty()
-            ) {
-                _errorMessage.value = if (currentFailed && _currentKp.value == null) {
-                    KpError.LoadFailed
-                } else {
-                    KpError.ForecastFailed
-                }
-            }
+            _errorMessage.value = resolveKpErrorAfterLoad(
+                plan = plan,
+                currentFailed = currentFailed,
+                forecastFailed = forecastFailed,
+                longTermFailed = longTermFailed,
+                hasCurrentKp = _currentKp.value != null,
+            )
 
             _lastUpdated.value = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
             _isLoading.value = false

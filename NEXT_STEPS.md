@@ -4,14 +4,14 @@
 
 > 마지막 업데이트: 2026-07-04
 > 브랜치: `fix/critical-pri0-fixes`
-> 상태: iOS 동작 대조와 Android 출시 하드닝 진행 중. Play 내부 테스트 `3.5.5 (102) internal-1`은 이미 게시된 상태이며, 최신 완료 코드/패리티 기준은 `ce40d84 Align shape edit radius row parity` 이후 이 파일을 포함한 현재 HEAD의 출시 재개 저장 상태다. 앱 출시 재개 절차는 `PLAY_RELEASE_HANDOFF.md`를 우선 확인한다.
+> 상태: iOS 동작 대조와 Android 출시 하드닝 진행 중. Play 내부 테스트 `3.5.5 (102) internal-1`은 이미 게시된 상태이며, 최신 완료 코드/패리티 기준은 이 파일을 포함한 현재 HEAD의 KP 예보 실패 상태 재감사까지다. 앱 출시 재개 절차는 `PLAY_RELEASE_HANDOFF.md`를 우선 확인한다.
 
 ## 앱 출시 재개 바로가기
 
 나중에 이 디렉토리에서 "앱 출시 과정 다시 이어나가자"라고 하면, 다음 상태에서 이어간다.
 
 - 이미 완료: Google Play 앱 생성, `app-release.aab` 업로드, 내부 테스트 릴리스 `3.5.5 (102) internal-1` 게시.
-- 현재 저장 기준: 문서 갱신 직전 HEAD는 `ce40d84 Align shape edit radius row parity`, 작업트리는 clean.
+- 현재 저장 기준: 최신 HEAD는 KP 예보 실패 상태 재감사와 문서 갱신까지 포함한다.
 - 현재 정지점: Play Console 버전 상세 화면에서 `3.5.5 (102) internal-1`이 내부 테스터에게 제공됨.
 - 다음 작업: Play Console `Google Play로 보호됨 > 앱 무결성`에서 `앱 서명 키 인증서` SHA-1/SHA-256을 복사해 Firebase Android 앱과 NCP Maps Android 앱 제한에 등록.
 - 그 다음: 내부 테스터 Gmail 추가, opt-in 링크를 실기기에서 열어 Google Play 설치, Google/Apple 로그인, 네이버 지도, 주소 검색, Firestore iOS/Android 동기화 검증.
@@ -30,6 +30,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 2026-07-04 현재 작업 기준 KP 예보 화면의 데이터 로딩/오류 상태를 최신 iOS `KPForecastView`/`KPIndexManager`와 다시 대조했다. 48시간 필터(과거 6시간 포함, 미래 48시간)는 iOS와 Android가 이미 일치했다. 발견된 차이는 NOAA 48시간 예보와 27일 예보가 모두 실패했을 때 기존 예보 데이터가 남아 있으면 Android가 오류를 숨기고 stale 차트를 계속 보여줄 수 있던 점이었다. iOS는 요청한 NOAA 소스가 모두 실패하면 기존 데이터가 남아 있어도 48시간 차트에 오류 상태를 표시하므로 Android도 요청 소스 실패 기준으로 오류를 결정하도록 맞췄다. 한쪽 NOAA 요청만 성공하면 iOS처럼 오류를 띄우지 않는다. `:app:testDebugUnitTest --tests "*KpChartsTest" --tests "*WeatherForecastParityTest"` 통과.
 - 2026-07-04 현재 작업 기준 Shape Edit의 좌표 직접 입력 시트와 기본정보 반경 행을 최신 iOS `ShapeEditView`/`CoordinateView`/`SearchCoordinateViewModel`와 다시 대조했다. Android 좌표 입력은 기존 iOS 계약처럼 시트 진입 시 기존 좌표로 검색창을 미리 채우지 않고, 검색 전에는 검증 문구를 보이지 않으며, 파싱 성공 후 역지오코딩 성공이면 선택 가능한 주소 결과 카드를 표시하고 실패 시 주소 없음 확인창에서 fallback 주소로 저장한다. 발견된 차이는 비원형 도형 편집에서 Android가 반경 행을 숨기던 점이었다. iOS `BasicInfoSection`은 타입과 관계없이 반경 행을 항상 표시하므로 Android도 반경 행은 항상 표시하도록 맞췄고, 비원형 geometry 보존을 위해 저장 검증/저장 geometry에서는 기존처럼 반경을 요구하거나 적용하지 않는다. `:app:testDebugUnitTest --tests "*ShapeEditDefaultsTest" --tests "*ShapeEditContractTest" --tests "*SearchAddressSheetTest"` 통과.
 - 2026-07-03 현재 작업 기준 로그인/인증 화면과 Apple/Google provider 흐름을 최신 iOS `LoginView`/`GoogleLoginManager`/`AppleLoginManager`/`AuthManager`와 다시 대조했다. Android는 iOS처럼 Apple 버튼을 Google보다 먼저 표시하고, 위치 약관은 노출하지 않으며, 설정 로그인 시트의 skip 버튼을 숨기고, Apple/Google 중복 로그인 방지와 취소 무시, 계정 전환 경고, provider 복구 키(`appleUserID`/`googleUserID`) 및 루트 사용자 문서 갱신 흐름을 유지한다. 코드 동작 변경은 없었고 Google Credential Manager → Firebase credential → `googleUserID`, Apple OAuthProvider → pending/custom-tabs flow → `appleUserID`, provider별 성공 확정 후 저장/문서 갱신 순서를 source-order 계약 테스트로 보강했다. `:app:testDebugUnitTest --tests "*LoginScreenContractTest" --tests "*AuthViewModelForegroundSyncTest" --tests "*AuthRepositoryUserDocumentTest" --tests "*StringResourceCoverageTest" --tests "*SettingsScreenContractTest"` 통과.
 - 2026-07-03 현재 작업 기준 저장목록 도형 선택과 지도 포커스 흐름을 최신 iOS `SavedTableListView`/`MapViewModel`와 다시 대조했다. Android는 저장목록 행 탭 시 iOS처럼 상세 시트를 열지 않고 선택 표시를 먼저 갱신한 뒤 지도 포커스를 요청하고, 지도는 요청된 도형을 찾으면 기존 포커스 중복 이동을 건너뛰며, 카메라 이벤트는 iOS처럼 목표 줌으로 먼저 이동한 뒤 하이라이트를 적용하고 오프셋 중심으로 2단계 이동한다. 코드 동작 변경은 없었고 이 연결 순서를 source-order 계약 테스트로 보강했다. `:app:testDebugUnitTest --tests "*SavedListSectionsTest" --tests "*SavedShapeListItemTest" --tests "*MapCameraFocusTest" --tests "*MapScreenLayersTest"` 통과.

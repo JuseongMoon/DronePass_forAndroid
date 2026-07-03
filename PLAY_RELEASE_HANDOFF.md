@@ -6,7 +6,7 @@
 > Latest release setup baseline commit: `8135932`
 > Previous saved release-resume commit before this handoff: `b15bc8d`
 > Latest E2E preflight doc commit before this edit: `2cbd5f3`
-> Latest code/parity checkpoint before this handoff edit: `ce40d84 Align shape edit radius row parity`
+> Latest code/parity checkpoint at this handoff: current HEAD containing this file
 > Latest saved release-resume checkpoint at this handoff: current HEAD containing this file
 > Package name: `com.ScienceFiction.DronePassAndroid`
 
@@ -14,18 +14,18 @@ This file captures the Google Play internal testing/release state so a later ses
 
 ## Latest Saved Resume Snapshot
 
-Saved again at the user's request on 2026-07-04 from this repository so a later session can resume the app release process when the user says "앱 출시 과정 다시 이어나가자". The Play Console internal-test release flow had already reached the published version detail page, and local Android/iOS parity audits later continued through the 2026-07-04 Shape Edit coordinate-input and radius-row audit.
+Saved again at the user's request on 2026-07-04 from this repository so a later session can resume the app release process when the user says "앱 출시 과정 다시 이어나가자". The Play Console internal-test release flow had already reached the published version detail page, and local Android/iOS parity audits later continued through the 2026-07-04 KP forecast failure-state audit.
 
 - Current working branch: `fix/critical-pri0-fixes`.
-- Current local HEAD before this documentation save: `ce40d84 Align shape edit radius row parity`.
-- Working tree status before this documentation save: clean.
+- Current local HEAD before this documentation save: `6cef70c Save Play release resume handoff`.
+- Working tree status before this documentation save: KP forecast failure-state parity change and related tests were pending; this handoff save commits them with the documentation update.
 - Play internal test version already published: `3.5.5 (102) internal-1`.
 - Do not rebuild or re-upload version code `102` just to resume the release process.
 - Resume phrase from this directory: `앱 출시 과정 다시 이어나가자`.
 - Resume target: continue from Play app-signing SHA registration, tester setup, and Play-installed real-device verification.
 - If a newer build is intentionally required later, use `versionCode = 103` and release name `3.5.5 (103) internal-2`.
-- Latest completed parity audits before this save: main `+` new-shape flow, map long-press new-shape flow, App Info, Patch Notes, Terms, Privacy document screens, VWorld layer/detail/lifecycle behavior, notification/settings permission plus local notification scheduling, profile/account deletion behavior, Shape Detail screen behavior, Drone management list/detail/edit behavior, saved-list shape selection to map-focus behavior, login/auth Apple·Google provider behavior, and Shape Edit coordinate-input/radius-row behavior.
-- Code-work resume point after this save: Shape Edit coordinate-input and radius-row behavior has been rechecked against the current iOS source. Continue with another user-visible secondary screen or integration path that has not been recently rechecked, or Play-installed real-device verification when a device is available. If the user resumes the app release process, follow the Play release steps below.
+- Latest completed parity audits before this save: main `+` new-shape flow, map long-press new-shape flow, App Info, Patch Notes, Terms, Privacy document screens, VWorld layer/detail/lifecycle behavior, notification/settings permission plus local notification scheduling, profile/account deletion behavior, Shape Detail screen behavior, Drone management list/detail/edit behavior, saved-list shape selection to map-focus behavior, login/auth Apple·Google provider behavior, Shape Edit coordinate-input/radius-row behavior, and KP forecast failure-state behavior.
+- Code-work resume point after this save: KP forecast data loading, 48-hour/27-day chart display, refresh behavior, and failure-state behavior have been rechecked against the current iOS source. Continue with another user-visible secondary screen or integration path that has not been recently rechecked, or Play-installed real-device verification when a device is available. If the user resumes the app release process, follow the Play release steps below.
 
 ## Quick Resume
 
