@@ -4,9 +4,9 @@
 > Resume trigger: "앱 출시 과정 다시 이어나가자"
 > Branch at handoff: `fix/critical-pri0-fixes`
 > Latest release setup baseline commit: `8135932`
-> Previous saved release-resume commit before this handoff: `bd14082`
+> Previous saved release-resume commit before this handoff: `b10e7c1`
 > Latest E2E preflight doc commit before this edit: `2cbd5f3`
-> Latest code/parity commit at this handoff: `42f327e`
+> Latest code/parity commit at this handoff: `330b6ed`
 > Package name: `com.ScienceFiction.DronePassAndroid`
 
 This file captures the Google Play internal testing/release state so a later session can continue from this repository without re-discovering the setup. Do not paste secrets, keystore passwords, API secrets, or full OAuth client IDs into this file.
@@ -16,13 +16,14 @@ This file captures the Google Play internal testing/release state so a later ses
 Saved at the user's request on 2026-07-03 from this repository after the Play Console internal-test release flow reached the published version detail page and later Android/iOS parity audits continued.
 
 - Current working branch: `fix/critical-pri0-fixes`.
-- Current local HEAD before this documentation save: `42f327e Record settings defaults parity audit`.
+- Current local HEAD before this documentation save: `330b6ed Record document screen parity audit`.
 - Working tree status before this documentation save: clean.
 - Play internal test version already published: `3.5.5 (102) internal-1`.
 - Do not rebuild or re-upload version code `102` just to resume the release process.
 - Resume phrase from this directory: `앱 출시 과정 다시 이어나가자`.
 - Resume target: continue from Play app-signing SHA registration, tester setup, and Play-installed real-device verification.
 - If a newer build is intentionally required later, use `versionCode = 103` and release name `3.5.5 (103) internal-2`.
+- Latest completed parity audits before this save: main `+` new-shape flow, map long-press new-shape flow, App Info, Patch Notes, Terms, and Privacy document screens. The VWorld layer/detail audit had just started and had no committed edits yet.
 
 ## Quick Resume
 
@@ -64,7 +65,7 @@ When the user says "앱 출시 과정 다시 이어나가자" from this director
 1. Read this file first.
 2. Run `git status --short` and confirm no unexpected local changes.
 3. Confirm whether an Android test device is attached with `adb devices`.
-4. Tell the user that the internal test build `3.5.5 (102) internal-1` is already live, while the latest local committed code/parity checkpoint at this handoff is `42f327e`. Treat the current HEAD commit containing this file as the latest saved release-resume checkpoint.
+4. Tell the user that the internal test build `3.5.5 (102) internal-1` is already live, while the latest local committed code/parity checkpoint before this handoff edit is `330b6ed`. Treat the current HEAD commit containing this file as the latest saved release-resume checkpoint.
 5. If Firebase/NCP certificate registration changes only console state, no local rebuild is required.
 6. Continue from the Play Console/Firebase/NCP certificate and internal tester steps below before rebuilding a new AAB.
 7. If a new AAB must be uploaded because code/config changed, bump `versionCode` to `103` and use release name `3.5.5 (103) internal-2`.
@@ -92,12 +93,22 @@ The next external release task is not another local build by default. It is to r
 ## Local Android State
 
 - Release setup is committed through `8135932 Record Play internal test release setup`.
-- The previous release-resume documentation checkpoint was `bd14082 Save release resume snapshot`; the current HEAD commit containing this file supersedes it.
+- The previous release-resume documentation checkpoint was `b10e7c1 Save release resume handoff`; the current HEAD commit containing this file supersedes it.
 - Version alignment was committed in `effbf74 Align Android version with iOS`.
   - `versionCode = 102`
   - `versionName = "3.5.5"`
   - This was matched to the iOS build number/marketing version that were available at the time.
 - Latest code/parity commits before this save:
+  - `330b6ed Record document screen parity audit`
+  - Terms/Privacy document screens were rechecked against the iOS `FetchWebDocuments`/document-view/Markdown contract. Android matches the iOS language file selection, loading/error/retry/close states, re-entry behavior, and Markdown parsing scope.
+  - Targeted tests passed:
+    - `:app:testDebugUnitTest --tests "*MarkdownParserTest" --tests "*DocumentRepositoryTest" --tests "*DocumentEntryPolicyTest" --tests "*StringResourceCoverageTest" --tests "*LoginScreenContractTest"`
+  - `0deed48 Record new shape and app info parity audit`
+  - Main `+` new-shape flow, map long-press new-shape confirmation/failure flow, App Info, and Patch Notes screens were rechecked against the current iOS source/String Catalog. Android matches the camera-center/Seoul fallback, reverse-geocoding confirmation flow, failure fallback copy, and static screen text/state tokens.
+  - Targeted tests passed:
+    - `:app:testDebugUnitTest --tests "*MapCameraFocusTest" --tests "*MapScreenLayersTest" --tests "*StringResourceCoverageTest" --tests "*AppInfoScreenTest" --tests "*PatchNotesContentTest" --tests "*PatchNotesScreenTest" --tests "*DocumentEntryPolicyTest"`
+  - `b10e7c1 Save release resume handoff`
+  - Play release resume state was refreshed so the trigger phrase "앱 출시 과정 다시 이어나가자" resumes from Play app-signing SHA registration and Play-installed internal-test verification, not from rebuilding or re-uploading the already published `102` AAB.
   - `42f327e Record settings defaults parity audit`
   - Settings/defaults/color/sketch/drone initialization were rechecked against current iOS source. Android matches `AppLanguage`, `KoreaFeaturesEnabled`, notification/hide/keep-awake defaults, default shape blue `#007AFF`, sketch defaults, Sketch Firestore missing `strokeWidth` fallback, drone color suggestion, default drone creation, and legacy `droneId == nil/null` first-drone migration.
   - Targeted tests passed:
@@ -211,8 +222,8 @@ At the time of the latest release-handoff save request, `git status --short` was
 The user switched from code work to saving this handoff while broader Android/iOS parity work was paused. This is not part of the Play release resume trigger, but it is useful context if the user later says to continue the paused implementation work.
 
 - Completed follow-up since the earlier auth pause: account-switch warning copy/count and auth cancellation behavior now match iOS through `f2dee60` and `a55b59d`.
-- Completed follow-up after the Play handoff: weather guide punctuation, drone dropdown empty label, detail copy-toast text size, KP/weather refresh interval contract, saved-list section sorting, sketch eraser touch completion, saved-list legacy drone filtering, map highlight radius parity, drone optional field parity, shape edit date-only default, and settings/default initialization parity are pinned through `14689d4`, `5346501`, `773e481`, `25a776f`, `902e1ed`, `f056476`, `1beac1b`, `e2afb38`, `5decf36`, `1d11ee0`, and `42f327e`.
-- Latest paused implementation thread before this save: continue the broader iOS/Android parity audit after the main `+` new-shape button, map long-press new-shape flow, App Info screen, Patch Notes screen, and Terms/Privacy document screens were rechecked against current iOS source/String Catalog. Working tree was clean before this documentation update.
+- Completed follow-up after the Play handoff: weather guide punctuation, drone dropdown empty label, detail copy-toast text size, KP/weather refresh interval contract, saved-list section sorting, sketch eraser touch completion, saved-list legacy drone filtering, map highlight radius parity, drone optional field parity, shape edit date-only default, settings/default initialization parity, main/new-shape/App Info/Patch Notes parity, and document screen parity are pinned through `14689d4`, `5346501`, `773e481`, `25a776f`, `902e1ed`, `f056476`, `1beac1b`, `e2afb38`, `5decf36`, `1d11ee0`, `42f327e`, `0deed48`, and `330b6ed`.
+- Latest paused implementation thread before this save: continue the broader iOS/Android parity audit after the main `+` new-shape button, map long-press new-shape flow, App Info screen, Patch Notes screen, and Terms/Privacy document screens were rechecked against current iOS source/String Catalog. The next audit had just moved into VWorld layer/detail behavior; no VWorld edits were committed yet. Working tree was clean before this documentation update.
   - Recent Android files audited or touched:
     - `app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/map/component/MapFloatingButtons.kt`
     - `app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/map/MapScreenLayers.kt`
@@ -237,7 +248,7 @@ The user switched from code work to saving this handoff while broader Android/iO
     - `/Users/david/Development/Swift/myProjects/DronePass/DronePass/Sketch/View/SketchToolbarView.swift`
     - `/Users/david/Development/Swift/myProjects/DronePass/DronePass/Sketch/View/SketchCanvasView.swift`
   - Audit status already established: default sketch color/stroke/opacity, stroke and opacity clamps, 5m point sampling, finish-only-when-two-points, undo/redo edit-session sync, toolbar ordering/dimensions, pen picker/sliders, delete-all dialog strings, touch input, eraser `up`/`cancel`, saved-list sorting, saved-list focus, legacy `droneId == nil` filtering, shape edit date-only default, drone optional edit preservation, map highlight radius behavior, settings/default initialization, main `+` new-shape coordinate fallback, long-press new-shape confirm/failure flow, App Info strings, Patch Notes states, and Terms/Privacy document rendering are aligned with iOS or pinned by tests.
-  - Next code-audit candidate: continue with another user-visible secondary screen or integration path that has not been recently rechecked, such as VWorld layer/detail edge cases, notification permission/settings edge cases, or Play-installed real-device verification when a device is available.
+  - Next code-audit candidate: resume VWorld layer/detail edge cases first. Start by comparing iOS `FlightZoneLayerSelector`, `FlightZoneOverlayManager`, `VWorldZoneDetailView`, and `VWorldModels` with Android `FlightZoneLayerSelector`, `MapViewModel` VWorld state, `MapScreenLayers`, `VWorldZoneDetailSheet`, and VWorld tests. If the user says to resume the app release process instead, ignore this code-audit thread and follow the Play release steps above.
 
 ## Local Build Commands
 

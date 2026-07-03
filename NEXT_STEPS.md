@@ -4,7 +4,7 @@
 
 > 마지막 업데이트: 2026-07-03
 > 브랜치: `fix/critical-pri0-fixes`
-> 상태: iOS 동작 대조와 Android 출시 하드닝 진행 중. Play 내부 테스트 `3.5.5 (102) internal-1`은 이미 게시된 상태이며, 최신 코드/패리티 기준은 `42f327e Record settings defaults parity audit`다. 앱 출시 재개 절차는 `PLAY_RELEASE_HANDOFF.md`를 우선 확인한다.
+> 상태: iOS 동작 대조와 Android 출시 하드닝 진행 중. Play 내부 테스트 `3.5.5 (102) internal-1`은 이미 게시된 상태이며, 최신 코드/패리티 기준은 `330b6ed Record document screen parity audit`다. 앱 출시 재개 절차는 `PLAY_RELEASE_HANDOFF.md`를 우선 확인한다.
 
 ## 앱 출시 재개 바로가기
 
@@ -22,13 +22,14 @@
 
 | 항목 | 값 |
 |---|---|
-| 워킹 트리 | 2026-07-03 handoff 기준 release setup 변경분은 `8135932 Record Play internal test release setup`까지 커밋됨. 이후 릴리스 재개 문서와 iOS 패리티 작업이 이어져 최신 코드/패리티 기준은 `42f327e Record settings defaults parity audit`까지 반영됨. 재개 시 `git status --short`로 실제 상태 확인 |
+| 워킹 트리 | 2026-07-03 handoff 기준 release setup 변경분은 `8135932 Record Play internal test release setup`까지 커밋됨. 이후 릴리스 재개 문서와 iOS 패리티 작업이 이어져 최신 코드/패리티 기준은 `330b6ed Record document screen parity audit`까지 반영됨. 재개 시 `git status --short`로 실제 상태 확인 |
 | 주요 검증 | 2026-07-02 기준 `:app:verifyCrossPlatformE2ePrerequisites`, `:app:testDebugUnitTest --tests "*ShapeEditDefaultsTest" --tests "*ShapeDateFormatsTest" --tests "*MapCameraFocusTest"`, `:app:testDebugUnitTest --tests "*DroneListScreenTest" --tests "*DroneNameWidthLimitTest" --tests "*DroneNextColorTest" --tests "*DroneManagementContractTest" --tests "*DroneEditSheetTest" --tests "*DroneDeleteValidationTest" --tests "*DroneSelectionStateTest"`, `:app:testDebugUnitTest --tests "*ShapeOverlayRenderTest" --tests "*ShapeOverlayColorTest" --tests "*MapCameraFocusTest"`, `:app:testDebugUnitTest --tests "*SavedListSectionsTest" --tests "*DroneSelectionStateTest" --tests "*SavedShapeListItemTest" --tests "*MapCameraFocusTest"`, `:app:testDebugUnitTest --tests "*SketchTouchDecisionTest" --tests "*SketchDefaultsTest" --tests "*SketchEraserSelectionTest" --tests "*SketchOverlayColorTest" --tests "*SketchRepositoryTest" --tests "*SketchFirebaseStoreTest" --tests "*SketchSmoothingAlgorithmTest" --tests "*SketchPointsCacheTest" --tests "*StringResourceCoverageTest"`, `:app:testDebugUnitTest --tests "*WeatherForecastParityTest" --tests "*KpChartsTest"` 통과. 같은 시점 `adb devices`는 연결된 기기가 없어 Play 설치 실기기 검증은 남아 있음. 기존 `:app:testDebugUnitTest :app:lintDebug :app:assembleDebug`, `:app:minifyReleaseWithR8`, `:app:connectedDebugAndroidTest`, `:app:shapeParsingCoverageVerification`, feature별 회귀 테스트 통과 기록 유지 |
 | Release readiness | 2026-07-01 기준 로컬 release signing, `WEB_CLIENT_ID`, Firebase Android OAuth client, Naver Maps key 설정이 완료되어 `:app:verifyCrossPlatformE2ePrerequisites`와 `:app:bundleRelease`가 통과한다. AAB는 `app/build/outputs/bundle/release/app-release.aab`에 생성됨 |
 | 남은 성격 | Play 설치 앱의 앱 서명 SHA를 Firebase/NCP Maps에 등록한 뒤 실기기 Play 설치 경로에서 iOS↔Android 공유 Firebase 실계정 검증 수행 |
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 2026-07-03 현재 출시 재개 상태를 최신 커밋 기준으로 다시 저장했다. 사용자가 이 디렉토리에서 "앱 출시 과정 다시 이어나가자"라고 말하면 `PLAY_RELEASE_HANDOFF.md`를 먼저 읽고, 이미 게시된 내부 테스트 `3.5.5 (102) internal-1`에서 이어간다. 다음 작업은 같은 `102` AAB 재빌드/재업로드가 아니라 Play 앱 서명 인증서 SHA-1/SHA-256을 Firebase/NCP Maps에 등록하고, 내부 테스터 opt-in 링크로 Play 설치 실기기 검증을 진행하는 것이다. 코드 작업 재개 요청이면 VWorld 레이어/상세 감사부터 이어간다.
 - 2026-07-03 현재 작업 기준 약관/개인정보 문서 화면도 iOS `FetchWebDocuments`/`TermsOfServiceView`/`PrivacyPolicyView`/`MarkdownView`와 대조했다. Android는 iOS처럼 한국어만 원본 `.txt`, 그 외 언어는 `_en.txt` 문서를 사용하고, 약관/개인정보는 한 번 표시 가능한 문서를 로드하면 재진입 시 캐시/기존 파싱 결과를 유지하며, 로딩/오류/재시도/닫기 헤더와 Markdown 요소(헤더, 표, 구분선, 리스트, 단락) 파싱 계약도 현재 iOS와 맞춘다. 코드 변경은 없었고 관련 테스트를 유지한다.
 - 2026-07-03 현재 작업 기준 메인 `+` 새 도형 버튼, 지도 롱프레스 새 도형 생성, 앱 정보/패치노트 정적 화면을 현재 iOS 소스와 다시 대조했다. Android는 `+` 버튼에서 iOS처럼 Naver map camera center를 새 도형 좌표로 쓰고, mapView/target이 없으면 서울 좌표 `37.5665, 126.9780`으로 fallback하며 주소를 비워 편집 시트를 연다. 지도 롱프레스는 iOS처럼 역지오코딩 성공 시 새 도형 확인창, 실패 시 주소 검색 실패 확인창을 띄우고 확인 후 편집으로 진입하며, 실패 fallback 주소 `해당 위치의 주소가 존재하지 않습니다`도 최신 iOS String Catalog와 일치한다. 앱 정보/패치노트 화면의 주요 KO/EN 문구와 상태 토큰도 최신 iOS String Catalog 기준과 일치한다. 코드 변경은 없었고 관련 회귀 테스트를 유지한다.
 - 2026-07-03 현재 앱 출시 재개 상태를 다시 저장했다. 사용자가 이 디렉토리에서 "앱 출시 과정 다시 이어나가자"라고 말하면 `PLAY_RELEASE_HANDOFF.md`를 먼저 읽고, 이미 게시된 내부 테스트 `3.5.5 (102) internal-1`에서 이어간다. 다음 작업은 같은 `102` AAB 재빌드/재업로드가 아니라 Play 앱 서명 인증서 SHA-1/SHA-256을 Firebase/NCP Maps에 등록하고, 내부 테스터 opt-in 링크로 Play 설치 실기기 검증을 진행하는 것이다. 코드 작업 재개와 출시 작업 재개는 별도 흐름으로 본다.
