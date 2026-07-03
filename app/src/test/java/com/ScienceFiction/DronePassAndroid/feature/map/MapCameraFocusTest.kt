@@ -9,7 +9,9 @@ import com.ScienceFiction.DronePassAndroid.feature.drone.filterShapesForSelected
 import com.naver.maps.map.LocationTrackingMode
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.File
 
 class MapCameraFocusTest {
 
@@ -371,6 +373,46 @@ class MapCameraFocusTest {
         val polylineFocusCoordinate = calculateShapeFocusCoordinate(polyline)
         assertEquals(polyline.baseCoordinate, polylineFocusCoordinate)
         assertEquals(ShapeFocusDefaultRadiusMeters, calculateShapeFocusRadiusMeters(polyline), 0.0)
+    }
+
+    @Test
+    fun `저장 목록에서 들어온 지도 포커스 요청은 iOS처럼 기존 포커스 중복 이동을 건너뛴다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/map/MapScreen.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/map/MapScreen.kt",
+        ).readText()
+
+        assertAppearsInOrder(
+            source = source,
+            tokens = listOf(
+                "if (focusShapeId != null && mapReady)",
+                "resolvePendingMapShapeRequestTarget(focusShapeId, visibleShapes)",
+                "viewModel.moveCameraToShape(shape, skipIfAlreadyFocused = true)",
+                "onFocusConsumed()",
+            ),
+        )
+    }
+
+    @Test
+    fun `도형 포커스 카메라 이벤트는 iOS처럼 줌 후 하이라이트 후 오프셋 이동한다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/map/MapScreen.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/map/MapScreen.kt",
+        ).readText()
+
+        assertAppearsInOrder(
+            source = source,
+            tokens = listOf(
+                "is CameraEvent.MoveToShape ->",
+                "CameraUpdate.zoomTo(event.zoom)",
+                "map.moveCamera(zoomUpdate)",
+                "delay(ShapeFocusSecondStepDelayMs)",
+                "event.highlightShapeId?.let(viewModel::selectShapeForMapFocus)",
+                "offsetLatLng(",
+                "CameraPosition(offsetCenter, event.zoom)",
+                "map.moveCamera(cameraUpdate)",
+            ),
+        )
     }
 
     @Test
@@ -761,5 +803,25 @@ class MapCameraFocusTest {
             flightEndDate = end,
             droneId = droneId,
         )
+    }
+
+    private fun assertAppearsInOrder(source: String, tokens: List<String>) {
+        var previousIndex = -1
+        for (token in tokens) {
+            val index = source.indexOf(token, startIndex = previousIndex + 1)
+            assertTrue(
+                "$token should appear after index $previousIndex",
+                index > previousIndex,
+            )
+            previousIndex = index
+        }
+    }
+
+    private fun resolveProjectFile(vararg candidates: String): File {
+        val userDir = File(requireNotNull(System.getProperty("user.dir")))
+        return candidates
+            .map { File(userDir, it) }
+            .firstOrNull { it.exists() }
+            ?: error("Project file not found: ${candidates.joinToString()}")
     }
 }

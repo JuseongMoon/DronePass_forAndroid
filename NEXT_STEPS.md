@@ -4,7 +4,7 @@
 
 > 마지막 업데이트: 2026-07-03
 > 브랜치: `fix/critical-pri0-fixes`
-> 상태: iOS 동작 대조와 Android 출시 하드닝 진행 중. Play 내부 테스트 `3.5.5 (102) internal-1`은 이미 게시된 상태이며, 최신 완료 코드/패리티 기준은 이 파일을 포함한 현재 HEAD의 드론 목록/상세/편집 재감사까지다. 앱 출시 재개 절차는 `PLAY_RELEASE_HANDOFF.md`를 우선 확인한다.
+> 상태: iOS 동작 대조와 Android 출시 하드닝 진행 중. Play 내부 테스트 `3.5.5 (102) internal-1`은 이미 게시된 상태이며, 최신 완료 코드/패리티 기준은 이 파일을 포함한 현재 HEAD의 저장목록 도형 선택 → 지도 포커스 재감사까지다. 앱 출시 재개 절차는 `PLAY_RELEASE_HANDOFF.md`를 우선 확인한다.
 
 ## 앱 출시 재개 바로가기
 
@@ -29,6 +29,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 2026-07-03 현재 작업 기준 저장목록 도형 선택과 지도 포커스 흐름을 최신 iOS `SavedTableListView`/`MapViewModel`와 다시 대조했다. Android는 저장목록 행 탭 시 iOS처럼 상세 시트를 열지 않고 선택 표시를 먼저 갱신한 뒤 지도 포커스를 요청하고, 지도는 요청된 도형을 찾으면 기존 포커스 중복 이동을 건너뛰며, 카메라 이벤트는 iOS처럼 목표 줌으로 먼저 이동한 뒤 하이라이트를 적용하고 오프셋 중심으로 2단계 이동한다. 코드 동작 변경은 없었고 이 연결 순서를 source-order 계약 테스트로 보강했다. `:app:testDebugUnitTest --tests "*SavedListSectionsTest" --tests "*SavedShapeListItemTest" --tests "*MapCameraFocusTest" --tests "*MapScreenLayersTest"` 통과.
 - 2026-07-03 현재 작업 기준 드론 목록/상세/편집 화면을 최신 iOS `DroneListView`/`DroneDetailView`/`DroneEditView`/`DroneModel.update`와 다시 대조했다. Android는 드론 목록 title/section/empty/usage/add 문자열을 iOS String Catalog와 맞췄고, 상세 화면의 이름/색상/제작 번호/이륙 무게/크기/메모 복사 가능 필드, 삭제 전 연결 도형 개수 조회, 도형 없음 삭제 확인, 도형 있음 처리 선택, 다른 드론 재할당 대상 필터/선택/확인 흐름, 편집 시 공백 선택 필드가 기존 값을 유지하는 iOS `nil` 무시 계약을 유지한다. `:app:testDebugUnitTest --tests "*DroneManagementContractTest" --tests "*DroneDeleteValidationTest" --tests "*DroneEditSheetTest" --tests "*DroneListScreenTest" --tests "*StringResourceCoverageTest"` 통과.
 - 2026-07-03 현재 작업 기준 Shape Detail 화면을 최신 iOS `ShapeDetailView`/`CopyableTextModifier`/`DateFormatter.localizedDateTime`와 다시 대조했다. Android는 드론 → 제목 → 좌표 → 주소 → 반경 → 고도 → 시작일 → 종료일 → 메모 행 순서, iOS `connectedDrone`의 정상/삭제됨/레거시 첫 드론 fallback/미지정 분기, 좌표 DMS 표시 + 십진수 long-press 복사, 주소 nil-only `-` 표시 + long-press 복사 + 탭 시 길찾기 앱 선택, 한국 기능 ON/OFF별 Naver/Kakao/TMAP/Google 순서, 0.8 상세 시트 높이, inline navigation title + `ellipsis.circle`형 더보기 버튼, 수정/복제/삭제 메뉴 순서, 삭제 확인 문구, 메모 180dp 고정 높이, 웹 링크 내부 웹 시트/전화번호 시스템 intent, 날짜 medium date + short time 표시를 현재 iOS 계약과 맞춰 유지한다. 코드 동작 변경은 없었고 좌표/주소/메모 상호작용 source-order 계약 테스트를 보강했다. `:app:testDebugUnitTest --tests "*ShapeDetailContractTest" --tests "*ShapeDetailDroneResolutionTest" --tests "*ExternalMapTargetTest" --tests "*ShapeDateFormatsTest" --tests "*StringResourceCoverageTest"` 통과.
 - 2026-07-03 현재 진행 내용을 출시 재개용으로 다시 저장했다. 사용자가 이 디렉토리에서 "앱 출시 과정 다시 이어나가자"라고 말하면 `PLAY_RELEASE_HANDOFF.md`의 Quick Resume/Resume Protocol을 먼저 따르고, 이미 게시된 내부 테스트 `3.5.5 (102) internal-1`에서 이어간다. 다음 작업은 같은 `102` AAB 재빌드/재업로드가 아니라 Play 앱 서명 인증서 SHA-1/SHA-256을 Firebase/NCP Maps에 등록하고, 내부 테스터 opt-in 링크로 Play 설치 실기기 검증을 진행하는 것이다.

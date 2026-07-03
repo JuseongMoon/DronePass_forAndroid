@@ -9,7 +9,9 @@ import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.File
 
 class SavedListSectionsTest {
 
@@ -615,6 +617,39 @@ class SavedListSectionsTest {
         assertEquals(100L, SavedListFocusScrollDelayMs)
     }
 
+    @Test
+    fun `저장 목록 행 탭은 iOS처럼 선택 표시 후 지도 포커스를 요청한다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/saved/SavedListScreen.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/saved/SavedListScreen.kt",
+        ).readText()
+
+        assertEquals(
+            3,
+            Regex(
+                "viewModel\\.selectShapeForMapFocus\\(shape\\.id\\)\\s+" +
+                    "onNavigateToMapWithShape\\(shape\\.id\\)",
+            ).findAll(source).count(),
+        )
+        assertEquals(
+            3,
+            Regex("onDetailClick = \\{ viewModel\\.onShapeSelected\\(shape\\.id\\) }")
+                .findAll(source)
+                .count(),
+        )
+        assertAppearsInOrder(
+            source = source,
+            tokens = listOf(
+                "viewModel.selectShapeForMapFocus(targetId)",
+                "listState.animateScrollToItem(targetIndex)",
+                "SavedShapeListItem(",
+                "viewModel.selectShapeForMapFocus(shape.id)",
+                "onNavigateToMapWithShape(shape.id)",
+                "onDetailClick = { viewModel.onShapeSelected(shape.id) }",
+            ),
+        )
+    }
+
     private fun shape(
         id: String,
         start: Long,
@@ -648,5 +683,25 @@ class SavedListSectionsTest {
             flightEndDate = end,
             droneId = droneId,
         )
+    }
+
+    private fun assertAppearsInOrder(source: String, tokens: List<String>) {
+        var previousIndex = -1
+        for (token in tokens) {
+            val index = source.indexOf(token, startIndex = previousIndex + 1)
+            assertTrue(
+                "$token should appear after index $previousIndex",
+                index > previousIndex,
+            )
+            previousIndex = index
+        }
+    }
+
+    private fun resolveProjectFile(vararg candidates: String): File {
+        val userDir = File(requireNotNull(System.getProperty("user.dir")))
+        return candidates
+            .map { File(userDir, it) }
+            .firstOrNull { it.exists() }
+            ?: error("Project file not found: ${candidates.joinToString()}")
     }
 }

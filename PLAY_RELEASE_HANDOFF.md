@@ -13,18 +13,18 @@ This file captures the Google Play internal testing/release state so a later ses
 
 ## Latest Saved Resume Snapshot
 
-Saved at the user's request on 2026-07-03 from this repository after the Play Console internal-test release flow reached the published version detail page and later Android/iOS parity audits continued through the Drone management list/detail/edit audit.
+Saved at the user's request on 2026-07-03 from this repository after the Play Console internal-test release flow reached the published version detail page and later Android/iOS parity audits continued through the saved-list shape selection to map-focus audit.
 
 - Current working branch: `fix/critical-pri0-fixes`.
-- Current local HEAD before this documentation save: `788b960 Record shape detail parity audit`.
+- Current local HEAD before this documentation save: `d8f08ad Record drone management parity audit`.
 - Working tree status before this documentation save: clean.
 - Play internal test version already published: `3.5.5 (102) internal-1`.
 - Do not rebuild or re-upload version code `102` just to resume the release process.
 - Resume phrase from this directory: `앱 출시 과정 다시 이어나가자`.
 - Resume target: continue from Play app-signing SHA registration, tester setup, and Play-installed real-device verification.
 - If a newer build is intentionally required later, use `versionCode = 103` and release name `3.5.5 (103) internal-2`.
-- Latest completed parity audits before this save: main `+` new-shape flow, map long-press new-shape flow, App Info, Patch Notes, Terms, Privacy document screens, VWorld layer/detail/lifecycle behavior, notification/settings permission plus local notification scheduling, profile/account deletion behavior, Shape Detail screen behavior, and Drone management list/detail/edit behavior.
-- Code-work resume point after this save: Drone management list/detail/edit behavior has been rechecked against the current iOS source and pinned with additional contract tests. Continue with another user-visible secondary screen or integration path that has not been recently rechecked, or Play-installed real-device verification when a device is available. If the user resumes the app release process, follow the Play release steps below.
+- Latest completed parity audits before this save: main `+` new-shape flow, map long-press new-shape flow, App Info, Patch Notes, Terms, Privacy document screens, VWorld layer/detail/lifecycle behavior, notification/settings permission plus local notification scheduling, profile/account deletion behavior, Shape Detail screen behavior, Drone management list/detail/edit behavior, and saved-list shape selection to map-focus behavior.
+- Code-work resume point after this save: saved-list shape selection to map-focus behavior has been rechecked against the current iOS source and pinned with additional contract tests. Continue with another user-visible secondary screen or integration path that has not been recently rechecked, or Play-installed real-device verification when a device is available. If the user resumes the app release process, follow the Play release steps below.
 
 ## Quick Resume
 
@@ -101,6 +101,9 @@ The next external release task is not another local build by default. It is to r
   - This was matched to the iOS build number/marketing version that were available at the time.
 - Latest code/parity commits before this save:
   - Current HEAD containing this file
+  - Saved-list shape selection to map-focus behavior was rechecked against iOS `SavedTableListView` and `MapViewModel`. Android keeps list-row tap as selected-row update plus map-focus request without opening detail, consumes map focus only after the shape is available, skips duplicate focus moves, and performs the iOS two-step camera focus: zoom first, then highlight, then offset-center move.
+  - Targeted tests passed:
+    - `:app:testDebugUnitTest --tests "*SavedListSectionsTest" --tests "*SavedShapeListItemTest" --tests "*MapCameraFocusTest" --tests "*MapScreenLayersTest"`
   - Drone management list/detail/edit behavior was rechecked against iOS `DroneListView`, `DroneDetailView`, `DroneEditView`, and `DroneModel.update`. Android now matches the iOS list title/section strings, and source-order tests pin detail copy fields, delete shape-handling, move-target selection, and edit optional-field preservation behavior.
   - Targeted tests passed:
     - `:app:testDebugUnitTest --tests "*DroneManagementContractTest" --tests "*DroneDeleteValidationTest" --tests "*DroneEditSheetTest" --tests "*DroneListScreenTest" --tests "*StringResourceCoverageTest"`
