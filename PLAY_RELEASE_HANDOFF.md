@@ -4,9 +4,9 @@
 > Resume trigger: "앱 출시 과정 다시 이어나가자"
 > Branch at handoff: `fix/critical-pri0-fixes`
 > Latest release setup baseline commit: `8135932`
-> Previous saved release-resume commit before this handoff: `b15bc8d`
+> Previous saved release-resume commit before this handoff: `6cef70c`
 > Latest E2E preflight doc commit before this edit: `2cbd5f3`
-> Latest code/parity checkpoint at this handoff: current HEAD containing this file
+> Latest code/parity checkpoint at this handoff: `c3af146`
 > Latest saved release-resume checkpoint at this handoff: current HEAD containing this file
 > Package name: `com.ScienceFiction.DronePassAndroid`
 
@@ -14,18 +14,18 @@ This file captures the Google Play internal testing/release state so a later ses
 
 ## Latest Saved Resume Snapshot
 
-Saved again at the user's request on 2026-07-04 from this repository so a later session can resume the app release process when the user says "앱 출시 과정 다시 이어나가자". The Play Console internal-test release flow had already reached the published version detail page, and local Android/iOS parity audits later continued through the 2026-07-04 KP forecast failure-state audit.
+Saved again at the user's request on 2026-07-04 from this repository so a later session can resume the app release process when the user says "앱 출시 과정 다시 이어나가자". The Play Console internal-test release flow had already reached the published version detail page, and local Android/iOS parity audits later continued through the 2026-07-04 KP forecast failure-state audit. At this save point, a separate Weather placeholder-state parity edit is in the working tree but is not part of the Play release resume checkpoint.
 
 - Current working branch: `fix/critical-pri0-fixes`.
-- Current local HEAD before this documentation save: `6cef70c Save Play release resume handoff`.
-- Working tree status before this documentation save: KP forecast failure-state parity change and related tests were pending; this handoff save commits them with the documentation update.
+- Current local HEAD before this documentation save: `c3af146 Align KP forecast failure state`.
+- Working tree status before this documentation save: Weather no-data placeholder parity edits are pending in `WeatherForecastScreen.kt`, `SunTimeline.kt`, `WeatherForecastParityTest.kt`, and `SunTimelineStateTest.kt`. They are intentionally not required for continuing the already-published Play internal-test release.
 - Play internal test version already published: `3.5.5 (102) internal-1`.
 - Do not rebuild or re-upload version code `102` just to resume the release process.
 - Resume phrase from this directory: `앱 출시 과정 다시 이어나가자`.
 - Resume target: continue from Play app-signing SHA registration, tester setup, and Play-installed real-device verification.
 - If a newer build is intentionally required later, use `versionCode = 103` and release name `3.5.5 (103) internal-2`.
 - Latest completed parity audits before this save: main `+` new-shape flow, map long-press new-shape flow, App Info, Patch Notes, Terms, Privacy document screens, VWorld layer/detail/lifecycle behavior, notification/settings permission plus local notification scheduling, profile/account deletion behavior, Shape Detail screen behavior, Drone management list/detail/edit behavior, saved-list shape selection to map-focus behavior, login/auth Apple·Google provider behavior, Shape Edit coordinate-input/radius-row behavior, and KP forecast failure-state behavior.
-- Code-work resume point after this save: KP forecast data loading, 48-hour/27-day chart display, refresh behavior, and failure-state behavior have been rechecked against the current iOS source. Continue with another user-visible secondary screen or integration path that has not been recently rechecked, or Play-installed real-device verification when a device is available. If the user resumes the app release process, follow the Play release steps below.
+- Code-work resume point after this save: KP forecast data loading, 48-hour/27-day chart display, refresh behavior, and failure-state behavior have been rechecked against the current iOS source. Weather no-data and sunrise/sunset placeholder-state parity edits were started but still need targeted tests before being committed. If the user resumes the app release process, follow the Play release steps below and do not rebuild only because of those pending code edits unless a new AAB is intentionally needed.
 
 ## Quick Resume
 
@@ -67,6 +67,7 @@ When the user says "앱 출시 과정 다시 이어나가자" from this director
 
 1. Read this file first.
 2. Run `git status --short` and confirm no unexpected local changes.
+   - If the only local changes are the Weather placeholder-state parity files listed in the latest snapshot, they belong to the paused code thread and do not block Play Console certificate/tester work.
 3. Confirm whether an Android test device is attached with `adb devices`.
 4. Tell the user that the internal test build `3.5.5 (102) internal-1` is already live. Treat the current HEAD commit containing this file as the latest saved release-resume and code/parity checkpoint.
 5. If Firebase/NCP certificate registration changes only console state, no local rebuild is required.
@@ -246,15 +247,21 @@ ndk {
 
 This setting was added while investigating the Play native-symbol warning. Rebuilding still did not produce a separate `native-debug-symbols.zip`, because the native `.so` libraries appear to come from third-party dependencies such as Naver Maps/AndroidX/DataStore rather than app-owned NDK code. The warning can be ignored for the current internal test.
 
-At the time of the latest release-handoff save request, `git status --short` only showed the Shape Edit radius-row parity change and related test updates before documentation edits. This commit saves those additions with the handoff update. Re-check with `git status --short` when resuming.
+At the time of the latest release-handoff save request, `git status --short` showed Weather placeholder-state parity edits in progress before this documentation edit. Those code changes are unrelated to the already-published Play internal-test release. Re-check with `git status --short` when resuming.
 
 ## Paused Code Thread
 
 The user switched from code work to saving this handoff while broader Android/iOS parity work was paused. This is not part of the Play release resume trigger, but it is useful context if the user later says to continue the paused implementation work.
 
 - Completed follow-up since the earlier auth pause: account-switch warning copy/count and auth cancellation behavior now match iOS through `f2dee60` and `a55b59d`.
-- Completed follow-up after the Play handoff: weather guide punctuation, drone dropdown empty label, detail copy-toast text size, KP/weather refresh interval contract, saved-list section sorting, sketch eraser touch completion, saved-list legacy drone filtering, map highlight radius parity, drone optional field parity, shape edit date-only default, settings/default initialization parity, main/new-shape/App Info/Patch Notes parity, document screen parity, VWorld layer/detail parity, notification/settings/local notification parity, profile/account deletion parity, Shape Detail screen behavior, drone management behavior, saved-list map-focus behavior, login/auth Apple·Google provider behavior, and Shape Edit coordinate-input/radius-row behavior are pinned through the current HEAD containing this file.
-- Latest completed implementation thread before this save: Shape Edit coordinate-input and radius-row behavior was rechecked against iOS `ShapeEditView`, `CoordinateView`, and `SearchCoordinateViewModel`. Android now shows the radius row for every shape type like iOS while still preserving non-circle geometry and not requiring radius at save time.
+- Completed follow-up after the Play handoff: weather guide punctuation, drone dropdown empty label, detail copy-toast text size, KP/weather refresh interval contract, saved-list section sorting, sketch eraser touch completion, saved-list legacy drone filtering, map highlight radius parity, drone optional field parity, shape edit date-only default, settings/default initialization parity, main/new-shape/App Info/Patch Notes parity, document screen parity, VWorld layer/detail parity, notification/settings/local notification parity, profile/account deletion parity, Shape Detail screen behavior, drone management behavior, saved-list map-focus behavior, login/auth Apple·Google provider behavior, Shape Edit coordinate-input/radius-row behavior, and KP forecast failure-state behavior are pinned through `c3af146`.
+- Latest completed implementation thread before this save: KP forecast data loading, 48-hour/27-day chart display, refresh behavior, and failure-state behavior were rechecked against iOS and committed in `c3af146`.
+- Paused uncommitted implementation thread before this save: Weather forecast no-data placeholder behavior and sunrise/sunset placeholder-card behavior were being aligned with iOS. Targeted tests still need to pass before committing those files:
+  - `app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/weather/WeatherForecastScreen.kt`
+  - `app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/weather/SunTimeline.kt`
+  - `app/src/test/java/com/ScienceFiction/DronePassAndroid/feature/weather/WeatherForecastParityTest.kt`
+  - `app/src/test/java/com/ScienceFiction/DronePassAndroid/feature/weather/SunTimelineStateTest.kt`
+- Previous completed implementation thread before the KP save: Shape Edit coordinate-input and radius-row behavior was rechecked against iOS `ShapeEditView`, `CoordinateView`, and `SearchCoordinateViewModel`. Android now shows the radius row for every shape type like iOS while still preserving non-circle geometry and not requiring radius at save time.
   - Android Shape Edit files to re-open:
     - `app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/shape/ShapeEditScreen.kt`
     - `app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/shape/ShapeEditDefaults.kt`
@@ -327,6 +334,7 @@ The last release readiness check and `bundleRelease` passed after `google-servic
 2026-07-04 targeted parity verification after the latest handoff update:
 
 - `:app:testDebugUnitTest --tests "*ShapeEditDefaultsTest" --tests "*ShapeEditContractTest" --tests "*SearchAddressSheetTest"` passed after rechecking Shape Edit coordinate-input and radius-row behavior against the iOS source.
+- `:app:testDebugUnitTest --tests "*KpChartsTest" --tests "*WeatherForecastParityTest"` passed after rechecking KP forecast failure-state behavior against the iOS source.
 
 ## Upload Key Fingerprints
 
