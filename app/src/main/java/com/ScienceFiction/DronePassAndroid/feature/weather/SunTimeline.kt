@@ -40,6 +40,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ScienceFiction.DronePassAndroid.R
+import com.ScienceFiction.DronePassAndroid.core.util.NextSunEvent
 import com.ScienceFiction.DronePassAndroid.core.util.nextSunEvent
 import java.time.Duration
 import java.time.LocalDateTime
@@ -103,7 +104,7 @@ fun SunTimeline(
             sunsetIsoList = sunsetTimes.ifEmpty { sunset?.let(::listOf).orEmpty() },
             now = nowDateTime,
         )
-    } ?: return
+    }
 
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -196,7 +197,7 @@ private fun TimelineProgressBar(
         // 시작 측 (낮: 일출 / 밤: 일몰)
         SideIconTime(
             endpointIcon = resolveSunTimelineEndpointIcon(isSunrise = isDaytime),
-            time = timelineState.startDateTime.toLocalTime(),
+            time = if (timelineState.isPlaceholder) null else timelineState.startDateTime.toLocalTime(),
         )
 
         // 가운데 프로그레스 바
@@ -282,7 +283,7 @@ private fun TimelineProgressBar(
         // 끝 측 (낮: 일몰 / 밤: 일출(내일))
         SideIconTime(
             endpointIcon = resolveSunTimelineEndpointIcon(isSunrise = !isDaytime),
-            time = timelineState.endDateTime.toLocalTime(),
+            time = if (timelineState.isPlaceholder) null else timelineState.endDateTime.toLocalTime(),
         )
     }
 }
@@ -290,7 +291,7 @@ private fun TimelineProgressBar(
 @Composable
 private fun SideIconTime(
     endpointIcon: SunTimelineEndpointIcon,
-    time: LocalTime,
+    time: LocalTime?,
 ) {
     Column(
         modifier = Modifier.width(IosSunTimelineSideSlotWidth),
@@ -304,7 +305,7 @@ private fun SideIconTime(
             modifier = Modifier.size(IosSunTimelineSideIconSize),
         )
         Text(
-            text = formatHourMinute(time),
+            text = time?.let(::formatHourMinute) ?: "--:--",
             fontSize = IosSunTimelineSideTimeFontSize,
             fontWeight = IosSunTimelineRegularFontWeight,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -349,13 +350,14 @@ internal data class SunTimelineState(
     val startDateTime: LocalDateTime,
     val endDateTime: LocalDateTime,
     val nextEvent: com.ScienceFiction.DronePassAndroid.core.util.NextSunEvent,
+    val isPlaceholder: Boolean = false,
 )
 
 internal fun resolveSunTimelineState(
     sunriseIsoList: List<String>,
     sunsetIsoList: List<String>,
     now: LocalDateTime,
-): SunTimelineState? {
+): SunTimelineState {
     val sunrises = sunriseIsoList.mapNotNull(::parseDateTime)
     val sunsets = sunsetIsoList.mapNotNull(::parseDateTime)
     val todaySunrise = sunrises.firstOrNull { it.toLocalDate() == now.toLocalDate() }
@@ -380,7 +382,7 @@ internal fun resolveSunTimelineState(
             .filter { !it.isAfter(now) }
             .maxByOrNull { it }
             ?: sunsets.firstOrNull { it.toLocalDate() == nextSunrise.toLocalDate() }?.minusDays(1)
-            ?: return null
+            ?: return placeholderSunTimelineState(now)
 
         return SunTimelineState(
             isDaytime = false,
@@ -394,7 +396,7 @@ internal fun resolveSunTimelineState(
         sunriseIso = sunriseIsoList.firstOrNull(),
         sunsetIso = sunsetIsoList.firstOrNull(),
         now = now,
-    )
+    ) ?: placeholderSunTimelineState(now)
 }
 
 /**
@@ -403,6 +405,7 @@ internal fun resolveSunTimelineState(
  *  - progressBar 의 0.0~1.0 범위로 정규화. 범위 밖이면 null.
  */
 internal fun resolveSunTimelineMarker(state: SunTimelineState): NoonMidnightMarker? {
+    if (state.isPlaceholder) return null
     val target = if (state.isDaytime) {
         state.startDateTime.toLocalDate().atTime(12, 0)
     } else {
@@ -425,10 +428,24 @@ internal fun resolveSunTimelineMarker(state: SunTimelineState): NoonMidnightMark
  * 현재 시간이 일출~일몰(낮) 또는 일몰~다음일출(밤) 구간에서 차지하는 위치 (0.0~1.0).
  */
 internal fun calculateSunTimelineProgress(state: SunTimelineState, now: LocalDateTime): Float {
+    if (state.isPlaceholder) return 0f
     val spanMillis = Duration.between(state.startDateTime, state.endDateTime).toMillis()
     if (spanMillis <= 0L) return 0.5f
     val currentMillis = Duration.between(state.startDateTime, now).toMillis()
     return (currentMillis.toFloat() / spanMillis).coerceIn(0f, 1f)
+}
+
+internal fun placeholderSunTimelineState(now: LocalDateTime): SunTimelineState {
+    return SunTimelineState(
+        isDaytime = true,
+        startDateTime = now,
+        endDateTime = now.plusHours(1),
+        nextEvent = NextSunEvent(
+            isNextSunset = true,
+            timeUntilFormatted = "--:--",
+        ),
+        isPlaceholder = true,
+    )
 }
 
 private fun resolveSunTimelineStateFromTimes(

@@ -27,7 +27,7 @@ class SunTimelineStateTest {
             sunriseIsoList = sunriseTimes,
             sunsetIsoList = sunsetTimes,
             now = LocalDateTime.parse("2026-06-04T12:00"),
-        )!!
+        )
 
         assertTrue(state.isDaytime)
         assertEquals(LocalDateTime.parse("2026-06-04T05:10"), state.startDateTime)
@@ -41,7 +41,7 @@ class SunTimelineStateTest {
             sunriseIsoList = sunriseTimes,
             sunsetIsoList = sunsetTimes,
             now = LocalDateTime.parse("2026-06-04T20:30"),
-        )!!
+        )
 
         assertFalse(state.isDaytime)
         assertEquals(LocalDateTime.parse("2026-06-04T19:40"), state.startDateTime)
@@ -56,7 +56,7 @@ class SunTimelineStateTest {
             sunriseIsoList = sunriseTimes,
             sunsetIsoList = sunsetTimes,
             now = LocalDateTime.parse("2026-06-04T04:50"),
-        )!!
+        )
 
         assertFalse(state.isDaytime)
         assertEquals(LocalDateTime.parse("2026-06-03T19:40"), state.startDateTime)
@@ -75,12 +75,31 @@ class SunTimelineStateTest {
     }
 
     @Test
+    fun `missing sun data keeps iOS sunrise sunset card placeholder instead of removing card`() {
+        val now = LocalDateTime.parse("2026-06-04T12:00")
+        val state = resolveSunTimelineState(
+            sunriseIsoList = emptyList(),
+            sunsetIsoList = emptyList(),
+            now = now,
+        )
+
+        assertTrue(state.isPlaceholder)
+        assertTrue(state.isDaytime)
+        assertEquals(now, state.startDateTime)
+        assertEquals(now.plusHours(1), state.endDateTime)
+        assertTrue(state.nextEvent.isNextSunset)
+        assertEquals("--:--", state.nextEvent.timeUntilFormatted)
+        assertEquals(0f, calculateSunTimelineProgress(state, now), 0f)
+        assertEquals(null, resolveSunTimelineMarker(state))
+    }
+
+    @Test
     fun `night marker is midnight within the active night interval`() {
         val state = resolveSunTimelineState(
             sunriseIsoList = sunriseTimes,
             sunsetIsoList = sunsetTimes,
             now = LocalDateTime.parse("2026-06-04T20:30"),
-        )!!
+        )
 
         val marker = resolveSunTimelineMarker(state)!!
 

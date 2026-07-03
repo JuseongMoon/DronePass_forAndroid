@@ -193,15 +193,19 @@ class WeatherForecastParityTest {
         )
 
         assertEquals(existing, weatherForecastBodyData(existing, isLoading = false, hasError = false))
-        assertNull(weatherForecastBodyData(null, isLoading = false, hasError = false))
+        val idlePlaceholder = weatherForecastBodyData(null, isLoading = false, hasError = false)
+        assertNull(idlePlaceholder.current)
+        assertTrue(idlePlaceholder.hourlyForecast.isEmpty())
+        assertTrue(idlePlaceholder.sunriseTimes.isEmpty())
+        assertTrue(idlePlaceholder.sunsetTimes.isEmpty())
 
-        val loadingPlaceholder = weatherForecastBodyData(null, isLoading = true, hasError = false)!!
+        val loadingPlaceholder = weatherForecastBodyData(null, isLoading = true, hasError = false)
         assertNull(loadingPlaceholder.current)
         assertTrue(loadingPlaceholder.hourlyForecast.isEmpty())
         assertTrue(loadingPlaceholder.sunriseTimes.isEmpty())
         assertTrue(loadingPlaceholder.sunsetTimes.isEmpty())
 
-        val errorPlaceholder = weatherForecastBodyData(null, isLoading = false, hasError = true)!!
+        val errorPlaceholder = weatherForecastBodyData(null, isLoading = false, hasError = true)
         assertNull(errorPlaceholder.current)
         assertTrue(errorPlaceholder.hourlyForecast.isEmpty())
     }

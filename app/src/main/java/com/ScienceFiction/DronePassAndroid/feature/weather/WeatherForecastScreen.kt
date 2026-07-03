@@ -70,12 +70,13 @@ internal fun emptyWeatherForecastData(): WeatherData = WeatherData(
     utcOffsetSeconds = null,
 )
 
+@Suppress("UNUSED_PARAMETER")
 internal fun weatherForecastBodyData(
     weatherData: WeatherData?,
     isLoading: Boolean,
     hasError: Boolean,
-): WeatherData? {
-    return weatherData ?: if (isLoading || hasError) emptyWeatherForecastData() else null
+): WeatherData {
+    return weatherData ?: emptyWeatherForecastData()
 }
 
 /**
@@ -126,21 +127,20 @@ fun WeatherForecastContent(
     }
 
     Box(modifier = modifier.fillMaxSize()) {
-        weatherForecastBodyData(
+        val bodyData = weatherForecastBodyData(
             weatherData = weatherData,
             isLoading = isLoading,
             hasError = error != null,
-        )?.let { data ->
-            WeatherForecastBody(
-                data = data,
-                category = selectedCategory,
-                onCategoryChanged = { viewModel.setCategory(it) },
-                isLoading = isLoading,
-                error = error,
-                lastUpdateTime = lastUpdateTime,
-                onWeatherInfoRequested = onWeatherInfoRequested,
-            )
-        }
+        )
+        WeatherForecastBody(
+            data = bodyData,
+            category = selectedCategory,
+            onCategoryChanged = { viewModel.setCategory(it) },
+            isLoading = isLoading,
+            error = error,
+            lastUpdateTime = lastUpdateTime,
+            onWeatherInfoRequested = onWeatherInfoRequested,
+        )
 
         IosToastMessageOverlay(
             visible = showRefreshToast,
