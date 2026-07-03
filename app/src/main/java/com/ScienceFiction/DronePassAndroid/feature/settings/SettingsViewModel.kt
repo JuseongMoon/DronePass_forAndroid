@@ -374,9 +374,7 @@ class SettingsViewModel @Inject constructor(
     private suspend fun rescheduleAllEndDateAlarms() {
         try {
             val plan = buildEndDateAlarmReconcilePlan(shapeRepository.getAllShapes().first())
-            plan.cancelShapeIds.forEach { shapeId ->
-                notificationScheduler.cancelEndDateAlarm(shapeId)
-            }
+            notificationScheduler.cancelKnownEndDateAlarms(plan.cancelShapeIds)
             plan.shapesToSchedule.forEach { shape ->
                 val flightEndDate = shape.flightEndDate ?: return@forEach
                 notificationScheduler.scheduleEndDateAlarm(
@@ -396,9 +394,7 @@ class SettingsViewModel @Inject constructor(
     private suspend fun cancelAllEndDateAlarms() {
         try {
             val shapes = shapeRepository.getAllShapes().first()
-            shapes.forEach { shape ->
-                notificationScheduler.cancelEndDateAlarm(shape.id)
-            }
+            notificationScheduler.cancelKnownEndDateAlarms(shapes.map { it.id })
         } catch (e: Exception) {
             // 실패 시 무시
         }

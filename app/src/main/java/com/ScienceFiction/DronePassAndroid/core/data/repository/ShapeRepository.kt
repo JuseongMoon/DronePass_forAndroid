@@ -202,7 +202,7 @@ class ShapeRepository @Inject constructor(
     suspend fun deleteAllShapes() {
         val shapes = shapeDao.getAllShapesOnce()
         shapeDao.deleteAllShapes()
-        shapes.forEach { shape -> notificationScheduler.cancelEndDateAlarm(shape.id) }
+        notificationScheduler.cancelKnownEndDateAlarms(shapes.map { it.id })
     }
 
     /**
@@ -510,9 +510,7 @@ class ShapeRepository @Inject constructor(
             additionalCancelShapeIds = additionalCancelShapeIds,
         )
 
-        plan.cancelShapeIds.forEach { shapeId ->
-            notificationScheduler.cancelEndDateAlarm(shapeId)
-        }
+        notificationScheduler.cancelKnownEndDateAlarms(plan.cancelShapeIds)
         if (!storedEndDateAlarmEnabled(preferences)) return
 
         plan.shapesToSchedule.forEach { shape ->

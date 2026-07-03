@@ -6,7 +6,7 @@
 > Latest release setup baseline commit: `8135932`
 > Previous saved release-resume commit before this handoff: `2feae0a`
 > Latest E2E preflight doc commit before this edit: `2cbd5f3`
-> Latest code/parity commit at this handoff: `69bfe2a`
+> Latest code/parity commit at this handoff: current HEAD containing this file
 > Package name: `com.ScienceFiction.DronePassAndroid`
 
 This file captures the Google Play internal testing/release state so a later session can continue from this repository without re-discovering the setup. Do not paste secrets, keystore passwords, API secrets, or full OAuth client IDs into this file.
@@ -16,15 +16,15 @@ This file captures the Google Play internal testing/release state so a later ses
 Saved at the user's request on 2026-07-03 from this repository after the Play Console internal-test release flow reached the published version detail page and later Android/iOS parity audits continued.
 
 - Current working branch: `fix/critical-pri0-fixes`.
-- Current local HEAD before this documentation save: `69bfe2a Record VWorld parity audit`.
+- Current local HEAD before this documentation save: current HEAD containing this file.
 - Working tree status before this documentation save: clean.
 - Play internal test version already published: `3.5.5 (102) internal-1`.
 - Do not rebuild or re-upload version code `102` just to resume the release process.
 - Resume phrase from this directory: `앱 출시 과정 다시 이어나가자`.
 - Resume target: continue from Play app-signing SHA registration, tester setup, and Play-installed real-device verification.
 - If a newer build is intentionally required later, use `versionCode = 103` and release name `3.5.5 (103) internal-2`.
-- Latest completed parity audits before this save: main `+` new-shape flow, map long-press new-shape flow, App Info, Patch Notes, Terms, Privacy document screens, and VWorld layer/detail/lifecycle behavior.
-- Code-work resume point after this save: continue the notification/settings permission and local notification parity audit. The iOS `SettingManager` notification contracts and Android `MainActivity`/settings/notification scheduler/restorer tests had been read; no notification changes had been committed yet.
+- Latest completed parity audits before this save: main `+` new-shape flow, map long-press new-shape flow, App Info, Patch Notes, Terms, Privacy document screens, VWorld layer/detail/lifecycle behavior, and notification/settings permission plus local notification scheduling.
+- Code-work resume point after this save: continue with another user-visible secondary screen or integration path that has not been recently rechecked, such as profile/account-deletion edge cases or Play-installed real-device verification when a device is available.
 
 ## Quick Resume
 
@@ -100,6 +100,10 @@ The next external release task is not another local build by default. It is to r
   - `versionName = "3.5.5"`
   - This was matched to the iOS build number/marketing version that were available at the time.
 - Latest code/parity commits before this save:
+  - Current HEAD containing this file
+  - Notification/settings permission and local notification scheduling were rechecked against iOS `SettingManager` and `PushNotificationManager`. Android now records scheduled end-date alarm shape IDs and cancels the union of recorded IDs and current local shape IDs when rebuilding or disabling all end-date alarms, which preserves the user-visible meaning of iOS's `endDate_` prefix removal on Android's non-enumerable `AlarmManager`.
+  - Targeted tests passed:
+    - `:app:testDebugUnitTest --tests "*NotificationSchedulerTest" --tests "*NotificationReceiverTest" --tests "*FcmServiceTest" --tests "*NotificationPermissionRequestTest" --tests "*SettingsScreenContractTest" --tests "*SettingsSunAlarmPlanTest" --tests "*SettingsEndDateAlarmPlanTest" --tests "*AndroidManifestContractTest" --tests "*NotificationPreferenceKeysTest" --tests "*MainActivityKeepScreenAwakeTest"`
   - `69bfe2a Record VWorld parity audit`
   - VWorld layer selection/detail/lifecycle behavior was rechecked against iOS `FlightZoneLayerSelector`, `FlightZoneOverlayManager`, `VWorldZoneDetailView`, `VWorldConstants`, and `VWorldModels`. Android matches the iOS display-name sorting, legal notice, stats header, select/deselect all, separator placement, visible-layer restoration, Korea feature guard, sketch-mode render hide/restore, detail-sheet field visibility, phone link sanitizing, layer field mapping, and center-coordinate behavior.
   - Targeted tests passed:
@@ -227,8 +231,8 @@ At the time of the latest release-handoff save request, `git status --short` was
 The user switched from code work to saving this handoff while broader Android/iOS parity work was paused. This is not part of the Play release resume trigger, but it is useful context if the user later says to continue the paused implementation work.
 
 - Completed follow-up since the earlier auth pause: account-switch warning copy/count and auth cancellation behavior now match iOS through `f2dee60` and `a55b59d`.
-- Completed follow-up after the Play handoff: weather guide punctuation, drone dropdown empty label, detail copy-toast text size, KP/weather refresh interval contract, saved-list section sorting, sketch eraser touch completion, saved-list legacy drone filtering, map highlight radius parity, drone optional field parity, shape edit date-only default, settings/default initialization parity, main/new-shape/App Info/Patch Notes parity, document screen parity, and VWorld layer/detail parity are pinned through `14689d4`, `5346501`, `773e481`, `25a776f`, `902e1ed`, `f056476`, `1beac1b`, `e2afb38`, `5decf36`, `1d11ee0`, `42f327e`, `0deed48`, `330b6ed`, and `69bfe2a`.
-- Latest paused implementation thread before this save: continue the broader iOS/Android parity audit from notification/settings permission and local notification scheduling. iOS `SettingManager` notification contracts and Android `MainActivity` permission startup gate, settings notification permission card, `NotificationScheduler`, `SettingsViewModel`, `NotificationScheduleRestorer`, `BootCompletedReceiver`, and related tests had been read. Next inspect the end-date cancel-all edge case, run targeted notification tests, document or fix any mismatch, then commit. Working tree was clean before this handoff documentation edit.
+- Completed follow-up after the Play handoff: weather guide punctuation, drone dropdown empty label, detail copy-toast text size, KP/weather refresh interval contract, saved-list section sorting, sketch eraser touch completion, saved-list legacy drone filtering, map highlight radius parity, drone optional field parity, shape edit date-only default, settings/default initialization parity, main/new-shape/App Info/Patch Notes parity, document screen parity, VWorld layer/detail parity, and notification/settings/local notification parity are pinned through the current HEAD containing this file.
+- Latest paused implementation thread before this save: notification/settings permission and local notification scheduling were rechecked against iOS `SettingManager`/`PushNotificationManager`. Android keeps the launch notification permission request, settings permission card, exact-alarm platform warning, end-date/sunrise/sunset toggles, app-start and boot restoration, and no-focus notification tap behavior aligned with iOS. Android now also records scheduled end-date alarm shape IDs so "all end-date alarms off/rebuild" cancels both current local shape IDs and previously scheduled IDs, approximating iOS's `endDate_` pending-notification prefix removal despite AlarmManager not being enumerable. Targeted notification tests passed. Working tree was clean before this handoff documentation edit.
   - Recent Android files audited or touched:
     - `app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/map/component/MapFloatingButtons.kt`
     - `app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/map/MapScreenLayers.kt`
@@ -252,8 +256,8 @@ The user switched from code work to saving this handoff while broader Android/iO
     - `/Users/david/Development/Swift/myProjects/DronePass/DronePass/Sketch/SketchFileStore.swift`
     - `/Users/david/Development/Swift/myProjects/DronePass/DronePass/Sketch/View/SketchToolbarView.swift`
     - `/Users/david/Development/Swift/myProjects/DronePass/DronePass/Sketch/View/SketchCanvasView.swift`
-  - Audit status already established: default sketch color/stroke/opacity, stroke and opacity clamps, 5m point sampling, finish-only-when-two-points, undo/redo edit-session sync, toolbar ordering/dimensions, pen picker/sliders, delete-all dialog strings, touch input, eraser `up`/`cancel`, saved-list sorting, saved-list focus, legacy `droneId == nil` filtering, shape edit date-only default, drone optional edit preservation, map highlight radius behavior, settings/default initialization, main `+` new-shape coordinate fallback, long-press new-shape confirm/failure flow, App Info strings, Patch Notes states, Terms/Privacy document rendering, and VWorld layer selector/detail/lifecycle behavior are aligned with iOS or pinned by tests.
-  - Next code-audit candidate: continue with another user-visible secondary screen or integration path that has not been recently rechecked, such as notification permission/settings edge cases, profile/account-deletion edge cases, or Play-installed real-device verification when a device is available. If the user says to resume the app release process instead, ignore this code-audit thread and follow the Play release steps above.
+  - Audit status already established: default sketch color/stroke/opacity, stroke and opacity clamps, 5m point sampling, finish-only-when-two-points, undo/redo edit-session sync, toolbar ordering/dimensions, pen picker/sliders, delete-all dialog strings, touch input, eraser `up`/`cancel`, saved-list sorting, saved-list focus, legacy `droneId == nil` filtering, shape edit date-only default, drone optional edit preservation, map highlight radius behavior, settings/default initialization, main `+` new-shape coordinate fallback, long-press new-shape confirm/failure flow, App Info strings, Patch Notes states, Terms/Privacy document rendering, VWorld layer selector/detail/lifecycle behavior, and notification/settings/local notification scheduling are aligned with iOS or pinned by tests.
+  - Next code-audit candidate: continue with another user-visible secondary screen or integration path that has not been recently rechecked, such as profile/account-deletion edge cases or Play-installed real-device verification when a device is available. If the user says to resume the app release process instead, ignore this code-audit thread and follow the Play release steps above.
 
 ## Local Build Commands
 

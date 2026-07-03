@@ -36,6 +36,17 @@ class NotificationSchedulerTest {
     }
 
     @Test
+    fun `종료일 알림 전체 취소 대상은 로컬 도형과 예약 기록을 합쳐 iOS prefix 삭제 의미를 보강한다`() {
+        assertEquals(
+            listOf("registered-stale", "registered-active", "local-only"),
+            endDateAlarmCancelShapeIds(
+                localShapeIds = listOf("registered-active", "local-only", ""),
+                registeredShapeIds = listOf("registered-stale", "registered-active", "   "),
+            ),
+        )
+    }
+
+    @Test
     fun `종료일 알림 본문은 iOS처럼 빈 문자열과 공백 제목도 원문 그대로 포함한다`() {
         assertEquals(
             EndDateNotificationBodyResource(body = R.string.notification_end_date_body),

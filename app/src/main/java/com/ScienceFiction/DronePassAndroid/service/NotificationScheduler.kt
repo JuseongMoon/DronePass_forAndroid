@@ -150,6 +150,15 @@ internal fun endDateNotificationAction(shapeId: String): String {
     return "com.ScienceFiction.DronePassAndroid.notification.END_DATE.$shapeId"
 }
 
+internal fun endDateAlarmCancelShapeIds(
+    localShapeIds: Iterable<String>,
+    registeredShapeIds: Iterable<String>,
+): List<String> {
+    return (registeredShapeIds + localShapeIds)
+        .filter { it.isNotBlank() }
+        .distinct()
+}
+
 /**
  * 로컬 알림 스케줄러
  * AlarmManager를 사용하여 일출/일몰 알림과 비행 종료일 알림을 예약합니다.
@@ -170,6 +179,9 @@ class NotificationScheduler @Inject constructor(
 
         // 비행 종료일 알림 request code offset
         private const val RC_END_DATE_OFFSET = 20000
+
+        private const val ALARM_REGISTRY_PREFS = "dronepass_notification_alarms"
+        private const val KEY_SCHEDULED_END_DATE_SHAPE_IDS = "scheduled_end_date_shape_ids"
 
         // Intent extras
         const val EXTRA_NOTIFICATION_TYPE = "notification_type"
@@ -358,7 +370,7 @@ class NotificationScheduler @Inject constructor(
             ?.let { context.getString(bodyResource.body, it) }
             ?: context.getString(bodyResource.body)
 
-        scheduleAlarm(
+        val scheduled = scheduleAlarm(
             requestCode = requestCode,
             triggerTime = notifyTime,
             type = TYPE_END_DATE,
@@ -366,6 +378,9 @@ class NotificationScheduler @Inject constructor(
             body = body,
             shapeId = shapeId
         )
+        if (scheduled) {
+            registerScheduledEndDateAlarm(shapeId)
+        }
         Log.d(TAG, "비행 종료일 알림 예약: shapeId=$shapeId, notifyTime=$notifyTime")
     }
 
@@ -378,7 +393,20 @@ class NotificationScheduler @Inject constructor(
         cancelAlarm(requestCode, action = endDateNotificationAction(shapeId))
         // Migration path for alarms scheduled before end-date actions were made unique.
         cancelAlarm(requestCode, action = null)
+        unregisterScheduledEndDateAlarm(shapeId)
         Log.d(TAG, "비행 종료일 알림 취소: shapeId=$shapeId")
+    }
+
+    /**
+     * iOS는 pending notification identifier prefix 로 종료일 알림을 모두 지울 수 있다.
+     * AlarmManager는 예약 목록을 열람할 수 없으므로, Android는 직접 예약한 shapeId를
+     * 따로 기억하고 현재 로컬 도형 ID와 합쳐 취소한다.
+     */
+    fun cancelKnownEndDateAlarms(localShapeIds: Iterable<String> = emptyList()) {
+        endDateAlarmCancelShapeIds(
+            localShapeIds = localShapeIds,
+            registeredShapeIds = registeredEndDateAlarmShapeIds(),
+        ).forEach(::cancelEndDateAlarm)
     }
 
     // ===== 내부 메서드 =====
@@ -394,10 +422,10 @@ class NotificationScheduler @Inject constructor(
         body: String,
         shapeId: String? = null,
         zoneId: ZoneId = ZoneId.systemDefault(),
-    ) {
+    ): Boolean {
         val alarmManager = alarmManager ?: run {
             Log.w(TAG, "AlarmManager를 가져올 수 없어 알림 예약을 건너뜁니다.")
-            return
+            return false
         }
         val intent = Intent(context, NotificationReceiver::class.java).apply {
             if (type == TYPE_END_DATE && shapeId != null) {
@@ -446,6 +474,7 @@ class NotificationScheduler @Inject constructor(
                     pendingIntent
                 )
             }
+            return true
         } catch (e: SecurityException) {
             Log.e(TAG, "알림 예약 실패: 권한 부족", e)
             // Fallback: 비정확한 알림 사용
@@ -454,6 +483,7 @@ class NotificationScheduler @Inject constructor(
                 triggerAtMillis,
                 pendingIntent
             )
+            return true
         }
     }
 
@@ -486,5 +516,37 @@ class NotificationScheduler @Inject constructor(
      */
     private fun getEndDateRequestCode(shapeId: String): Int {
         return RC_END_DATE_OFFSET + (shapeId.hashCode() and 0x7FFFFFFF) % 10000
+    }
+
+    private val alarmRegistryPrefs by lazy {
+        context.getSharedPreferences(ALARM_REGISTRY_PREFS, Context.MODE_PRIVATE)
+    }
+
+    private fun registeredEndDateAlarmShapeIds(): Set<String> {
+        return alarmRegistryPrefs
+            .getStringSet(KEY_SCHEDULED_END_DATE_SHAPE_IDS, emptySet())
+            .orEmpty()
+            .filter { it.isNotBlank() }
+            .toSet()
+    }
+
+    private fun registerScheduledEndDateAlarm(shapeId: String) {
+        if (shapeId.isBlank()) return
+        val updated = registeredEndDateAlarmShapeIds() + shapeId
+        alarmRegistryPrefs.edit()
+            .putStringSet(KEY_SCHEDULED_END_DATE_SHAPE_IDS, updated)
+            .apply()
+    }
+
+    private fun unregisterScheduledEndDateAlarm(shapeId: String) {
+        if (shapeId.isBlank()) return
+        val updated = registeredEndDateAlarmShapeIds() - shapeId
+        alarmRegistryPrefs.edit().apply {
+            if (updated.isEmpty()) {
+                remove(KEY_SCHEDULED_END_DATE_SHAPE_IDS)
+            } else {
+                putStringSet(KEY_SCHEDULED_END_DATE_SHAPE_IDS, updated)
+            }
+        }.apply()
     }
 }
