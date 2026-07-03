@@ -6,18 +6,19 @@
 > Latest release setup baseline commit: `8135932`
 > Previous saved release-resume commit before this handoff: `b15bc8d`
 > Latest E2E preflight doc commit before this edit: `2cbd5f3`
-> Latest code/parity checkpoint at this handoff: current HEAD containing this file
+> Latest code/parity checkpoint before this handoff edit: `ce40d84 Align shape edit radius row parity`
+> Latest saved release-resume checkpoint at this handoff: current HEAD containing this file
 > Package name: `com.ScienceFiction.DronePassAndroid`
 
 This file captures the Google Play internal testing/release state so a later session can continue from this repository without re-discovering the setup. Do not paste secrets, keystore passwords, API secrets, or full OAuth client IDs into this file.
 
 ## Latest Saved Resume Snapshot
 
-Saved at the user's request on 2026-07-03 from this repository after the Play Console internal-test release flow reached the published version detail page. Local Android/iOS parity audits later continued through the 2026-07-04 Shape Edit coordinate-input and radius-row audit.
+Saved again at the user's request on 2026-07-04 from this repository so a later session can resume the app release process when the user says "앱 출시 과정 다시 이어나가자". The Play Console internal-test release flow had already reached the published version detail page, and local Android/iOS parity audits later continued through the 2026-07-04 Shape Edit coordinate-input and radius-row audit.
 
 - Current working branch: `fix/critical-pri0-fixes`.
-- Current local HEAD before this documentation save: `e1ddae8 Record login provider parity audit`.
-- Working tree status before this documentation save: only the Shape Edit radius-row parity change and related test updates were pending; this handoff save commits them with the documentation update.
+- Current local HEAD before this documentation save: `ce40d84 Align shape edit radius row parity`.
+- Working tree status before this documentation save: clean.
 - Play internal test version already published: `3.5.5 (102) internal-1`.
 - Do not rebuild or re-upload version code `102` just to resume the release process.
 - Resume phrase from this directory: `앱 출시 과정 다시 이어나가자`.
@@ -37,7 +38,8 @@ If the user later says "앱 출시 과정 다시 이어나가자" from this repo
    - Play Console: `Google Play로 보호됨 > 앱 무결성`.
    - Copy the `앱 서명 키 인증서` SHA-1 and SHA-256.
    - Register those SHA values in Firebase and NCP Maps.
-5. Add tester Gmail accounts, open the internal-test opt-in link on a real Android device, install from Google Play, and verify sign-in/map/sync.
+5. Add internal tester Gmail accounts in Play Console, open the internal-test opt-in link on a real Android device, install from Google Play, and verify sign-in/map/sync.
+6. If no test device is attached locally, ask for a real Android device to be connected only when installation/logcat verification is needed.
 
 Rebuild only if local code/config has changed and a new Play build is intentionally needed. If that happens, bump `versionCode` to `103` and use release name `3.5.5 (103) internal-2`.
 
