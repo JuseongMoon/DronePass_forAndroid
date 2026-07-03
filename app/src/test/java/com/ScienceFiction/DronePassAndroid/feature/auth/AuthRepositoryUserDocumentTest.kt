@@ -5,6 +5,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.File
 import java.util.Date
 
 class AuthRepositoryUserDocumentTest {
@@ -343,5 +344,95 @@ class AuthRepositoryUserDocumentTest {
         assertFalse(isGoogleWebClientIdConfigured("web-client-id"))
         assertTrue(isGoogleWebClientIdConfigured("web-client-id.apps.googleusercontent.com"))
         assertTrue(isGoogleWebClientIdConfigured("  web-client-id.apps.googleusercontent.com  "))
+    }
+
+    @Test
+    fun `Google 로그인 저장소 흐름은 iOS GoogleLoginManager 후처리와 같은 provider 문서 필드를 사용한다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/auth/AuthRepository.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/auth/AuthRepository.kt",
+        ).readText()
+
+        assertAppearsInOrder(
+            source = source,
+            tokens = listOf(
+                "internal suspend fun signInWithGoogle",
+                "isGoogleWebClientIdConfigured(WEB_CLIENT_ID)",
+                "GetGoogleIdOption.Builder()",
+                ".setServerClientId(WEB_CLIENT_ID)",
+                "GoogleIdTokenCredential.createFrom(credential.data)",
+                "GoogleAuthProvider.getCredential(idToken, null)",
+                "firebaseAuth.signInWithCredential(firebaseCredential).await()",
+                "val googleUserId = user.googleProviderUserId()",
+                "providerUserFieldName = GOOGLE_USER_ID_FIELD",
+                "provider = AuthLoginProvider.GOOGLE",
+                "providerUserId = googleUserId",
+            ),
+        )
+    }
+
+    @Test
+    fun `Apple 로그인 저장소 흐름은 iOS AppleLoginManager 와 같은 Firebase apple provider 를 사용한다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/auth/AuthRepository.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/auth/AuthRepository.kt",
+        ).readText()
+
+        assertAppearsInOrder(
+            source = source,
+            tokens = listOf(
+                "internal suspend fun signInWithApple",
+                "OAuthProvider.newBuilder(APPLE_PROVIDER_ID)",
+                "setScopes(listOf(\"email\", \"name\"))",
+                "val pending = firebaseAuth.pendingAuthResult",
+                "firebaseAuth.startActivityForSignInWithProvider(activity, provider).await()",
+                "val appleUserId = user.appleProviderUserId()",
+                "providerUserFieldName = APPLE_USER_ID_FIELD",
+                "provider = AuthLoginProvider.APPLE",
+                "providerUserId = appleUserId",
+            ),
+        )
+    }
+
+    @Test
+    fun `로그인 성공 확정은 iOS AuthManager처럼 provider 별 복구 키와 사용자 문서를 갱신한다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/auth/AuthRepository.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/auth/AuthRepository.kt",
+        ).readText()
+
+        assertAppearsInOrder(
+            source = source,
+            tokens = listOf(
+                "internal suspend fun finalizeSuccessfulSignIn",
+                "encryptedPrefsHelper.saveFirebaseUid(result.user.uid)",
+                "AuthLoginProvider.APPLE ->",
+                "encryptedPrefsHelper.saveAppleUserId(it)",
+                "ensureUserDocumentSafely(user = result.user, appleUserId = result.providerUserId)",
+                "AuthLoginProvider.GOOGLE ->",
+                "encryptedPrefsHelper.saveGoogleUserId(it)",
+                "ensureUserDocumentSafely(user = result.user, googleUserId = result.providerUserId)",
+            ),
+        )
+    }
+
+    private fun assertAppearsInOrder(source: String, tokens: List<String>) {
+        var previousIndex = -1
+        for (token in tokens) {
+            val index = source.indexOf(token, startIndex = previousIndex + 1)
+            assertTrue(
+                "$token should appear after index $previousIndex",
+                index > previousIndex,
+            )
+            previousIndex = index
+        }
+    }
+
+    private fun resolveProjectFile(vararg candidates: String): File {
+        val userDir = File(requireNotNull(System.getProperty("user.dir")))
+        return candidates
+            .map { File(userDir, it) }
+            .firstOrNull { it.exists() }
+            ?: error("Project file not found: ${candidates.joinToString()}")
     }
 }
