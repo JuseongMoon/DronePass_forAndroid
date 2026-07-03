@@ -46,6 +46,46 @@ class ShapeDetailContractTest {
         )
     }
 
+    @Test
+    fun `도형 상세 좌표와 주소 상호작용은 iOS copyableText 와 주소 탭 계약을 따른다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/shape/ShapeDetailSheet.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/shape/ShapeDetailSheet.kt",
+        ).readText()
+
+        assertAppearsInOrder(
+            source = source,
+            tokens = listOf(
+                "R.string.shape_detail_coordinate",
+                "copyAndShowToast(shape.baseCoordinate.decimalCoordinate)",
+                "shape.baseCoordinate.formattedCoordinate",
+                "R.string.shape_detail_address",
+                "onClick = { showExternalMapDialog = true }",
+                "copyableShapeDetailAddress(shape.address)",
+                "formatShapeDetailAddress(shape.address)",
+            ),
+        )
+    }
+
+    @Test
+    fun `도형 상세 메모 링크 처리는 iOS HyperlinkTextView 와 SafariView 계약을 따른다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/shape/ShapeDetailSheet.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/shape/ShapeDetailSheet.kt",
+        ).readText()
+
+        assertAppearsInOrder(
+            source = source,
+            tokens = listOf(
+                "R.string.common_memo",
+                "formatShapeDetailMemo(shape.memo)",
+                "resolveShapeDetailMemoLinkAction(url)",
+                "ShapeDetailMemoLinkAction.IN_APP_WEB -> memoWebUrl = url",
+                "ShapeDetailMemoLinkAction.SYSTEM_INTENT -> openMemoSystemLink(context, url)",
+            ),
+        )
+    }
+
     private fun assertAppearsInOrder(source: String, tokens: List<String>) {
         var previousIndex = -1
         for (token in tokens) {

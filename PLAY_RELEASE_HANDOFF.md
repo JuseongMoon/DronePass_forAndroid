@@ -6,25 +6,25 @@
 > Latest release setup baseline commit: `8135932`
 > Previous saved release-resume commit before this handoff: `5fe04f7`
 > Latest E2E preflight doc commit before this edit: `2cbd5f3`
-> Latest code/parity commit before this handoff edit: `bd403ee Record profile parity audit`
+> Latest code/parity checkpoint at this handoff: current HEAD containing this file
 > Package name: `com.ScienceFiction.DronePassAndroid`
 
 This file captures the Google Play internal testing/release state so a later session can continue from this repository without re-discovering the setup. Do not paste secrets, keystore passwords, API secrets, or full OAuth client IDs into this file.
 
 ## Latest Saved Resume Snapshot
 
-Saved at the user's request on 2026-07-03 from this repository after the Play Console internal-test release flow reached the published version detail page and later Android/iOS parity audits continued through the profile/account deletion audit.
+Saved at the user's request on 2026-07-03 from this repository after the Play Console internal-test release flow reached the published version detail page and later Android/iOS parity audits continued through the Shape Detail screen audit.
 
 - Current working branch: `fix/critical-pri0-fixes`.
-- Current local HEAD before this documentation save: `bd403ee Record profile parity audit`.
+- Current local HEAD before this documentation save: `b15bc8d Save release resume state`.
 - Working tree status before this documentation save: clean.
 - Play internal test version already published: `3.5.5 (102) internal-1`.
 - Do not rebuild or re-upload version code `102` just to resume the release process.
 - Resume phrase from this directory: `앱 출시 과정 다시 이어나가자`.
 - Resume target: continue from Play app-signing SHA registration, tester setup, and Play-installed real-device verification.
 - If a newer build is intentionally required later, use `versionCode = 103` and release name `3.5.5 (103) internal-2`.
-- Latest completed parity audits before this save: main `+` new-shape flow, map long-press new-shape flow, App Info, Patch Notes, Terms, Privacy document screens, VWorld layer/detail/lifecycle behavior, notification/settings permission plus local notification scheduling, and profile/account deletion behavior.
-- Code-work resume point after this save: a fresh Shape Detail screen re-audit had just been selected and initial file reads had started, but no findings, code changes, or tests were completed for that thread yet. If the user resumes the app release process, ignore the code-audit thread and continue the Play release steps below.
+- Latest completed parity audits before this save: main `+` new-shape flow, map long-press new-shape flow, App Info, Patch Notes, Terms, Privacy document screens, VWorld layer/detail/lifecycle behavior, notification/settings permission plus local notification scheduling, profile/account deletion behavior, and Shape Detail screen behavior.
+- Code-work resume point after this save: Shape Detail screen behavior has been rechecked against the current iOS source and pinned with additional contract tests. Continue with another user-visible secondary screen or integration path that has not been recently rechecked, or Play-installed real-device verification when a device is available. If the user resumes the app release process, follow the Play release steps below.
 
 ## Quick Resume
 
@@ -43,7 +43,7 @@ Rebuild only if local code/config has changed and a new Play build is intentiona
 
 ## Current Stop Point
 
-The Play Console internal test release has already been created and published for `3.5.5 (102) internal-1`. The latest user-visible stop point was the Play Console version detail page showing `3.5.5 (102) internal-1` as provided to internal testers. After that, local code/parity work continued through `bd403ee`, but no newer AAB has been uploaded. When resuming, do not start by rebuilding or uploading the same AAB again unless code/config has changed and a new Play build is intentionally required. Start from the release-distribution side:
+The Play Console internal test release has already been created and published for `3.5.5 (102) internal-1`. The latest user-visible stop point was the Play Console version detail page showing `3.5.5 (102) internal-1` as provided to internal testers. After that, local code/parity work continued through the current HEAD containing this file, but no newer AAB has been uploaded. When resuming, do not start by rebuilding or uploading the same AAB again unless code/config has changed and a new Play build is intentionally required. Start from the release-distribution side:
 
 1. Confirm the Play Console internal test version page still shows `3.5.5 (102) internal-1` as available to internal testers.
 2. Register the Google Play app-signing certificate fingerprints in Firebase and NCP Maps as needed.
@@ -66,7 +66,7 @@ When the user says "앱 출시 과정 다시 이어나가자" from this director
 1. Read this file first.
 2. Run `git status --short` and confirm no unexpected local changes.
 3. Confirm whether an Android test device is attached with `adb devices`.
-4. Tell the user that the internal test build `3.5.5 (102) internal-1` is already live, while the latest local committed code/parity checkpoint before this handoff edit is `bd403ee`. Treat the current HEAD commit containing this file as the latest saved release-resume checkpoint.
+4. Tell the user that the internal test build `3.5.5 (102) internal-1` is already live. Treat the current HEAD commit containing this file as the latest saved release-resume and code/parity checkpoint.
 5. If Firebase/NCP certificate registration changes only console state, no local rebuild is required.
 6. Continue from the Play Console/Firebase/NCP certificate and internal tester steps below before rebuilding a new AAB.
 7. If a new AAB must be uploaded because code/config changed, bump `versionCode` to `103` and use release name `3.5.5 (103) internal-2`.
@@ -100,6 +100,10 @@ The next external release task is not another local build by default. It is to r
   - `versionName = "3.5.5"`
   - This was matched to the iOS build number/marketing version that were available at the time.
 - Latest code/parity commits before this save:
+  - Current HEAD containing this file
+  - Shape Detail screen behavior was rechecked against iOS `ShapeDetailView`, `CopyableTextModifier`, and `DateFormatter.localizedDateTime`. Android keeps the same detail row order, drone state resolution, coordinate/address copy behavior, address-tap external map flow, external map provider order, 0.8 sheet/header/menu/delete contracts, memo web/phone link handling, and medium-date/short-time formatting. Source-order tests now also pin coordinate/address/memo interaction paths.
+  - Targeted tests passed:
+    - `:app:testDebugUnitTest --tests "*ShapeDetailContractTest" --tests "*ShapeDetailDroneResolutionTest" --tests "*ExternalMapTargetTest" --tests "*ShapeDateFormatsTest" --tests "*StringResourceCoverageTest"`
   - `bd403ee Record profile parity audit`
   - Profile/account deletion behavior was rechecked against iOS `ProfileView`, `AuthManager.deleteAccount`, and `AnalyticsDataGenerator`. Android keeps the same profile section order, two-step delete confirmation, localized date formatting, sync status behavior, anonymized data generation, Firestore delete retry/continue policy, recent-login-required error mapping, and local data preservation policy. Android intentionally also deletes `sketches` and FCM `devices` under `users/{uid}` to clean up shared Android/iOS cloud data.
   - Targeted tests passed:
@@ -235,9 +239,8 @@ At the time of the latest release-handoff save request, `git status --short` was
 The user switched from code work to saving this handoff while broader Android/iOS parity work was paused. This is not part of the Play release resume trigger, but it is useful context if the user later says to continue the paused implementation work.
 
 - Completed follow-up since the earlier auth pause: account-switch warning copy/count and auth cancellation behavior now match iOS through `f2dee60` and `a55b59d`.
-- Completed follow-up after the Play handoff: weather guide punctuation, drone dropdown empty label, detail copy-toast text size, KP/weather refresh interval contract, saved-list section sorting, sketch eraser touch completion, saved-list legacy drone filtering, map highlight radius parity, drone optional field parity, shape edit date-only default, settings/default initialization parity, main/new-shape/App Info/Patch Notes parity, document screen parity, VWorld layer/detail parity, notification/settings/local notification parity, and profile/account deletion parity are pinned through `bd403ee`.
-- Latest completed implementation thread before this save: profile/account deletion behavior was rechecked against iOS `ProfileView`/`AuthManager`/`AnalyticsDataGenerator` and pinned with source-order tests for the profile sections and two-step deletion confirmation. Working tree was clean before this handoff documentation edit.
-- Paused but not completed code-audit thread: Shape Detail screen parity was selected as the next audit candidate after `bd403ee`. Initial file reads started, but no conclusions, edits, tests, or commits were made for that Shape Detail thread. If resuming code work, re-open the files below and continue the comparison from scratch rather than assuming the audit is complete.
+- Completed follow-up after the Play handoff: weather guide punctuation, drone dropdown empty label, detail copy-toast text size, KP/weather refresh interval contract, saved-list section sorting, sketch eraser touch completion, saved-list legacy drone filtering, map highlight radius parity, drone optional field parity, shape edit date-only default, settings/default initialization parity, main/new-shape/App Info/Patch Notes parity, document screen parity, VWorld layer/detail parity, notification/settings/local notification parity, profile/account deletion parity, and Shape Detail screen behavior are pinned through the current HEAD containing this file.
+- Latest completed implementation thread before this save: Shape Detail screen behavior was rechecked against iOS `ShapeDetailView`, `CopyableTextModifier`, and `DateFormatter.localizedDateTime`. Android keeps the same row order, drone resolution states, coordinate/address copy behavior, address tap external-map flow, external map provider ordering, sheet/header/menu/delete contracts, memo link handling, and date formatting. Source-order tests now also pin coordinate/address/memo interaction paths.
   - Android Shape Detail files to re-open:
     - `app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/shape/ShapeDetailSheet.kt`
     - `app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/shape/ShapeDetailSelection.kt`
