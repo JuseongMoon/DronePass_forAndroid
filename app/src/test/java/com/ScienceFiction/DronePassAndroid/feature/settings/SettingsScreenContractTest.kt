@@ -104,6 +104,30 @@ class SettingsScreenContractTest {
     }
 
     @Test
+    fun `만료 도형 삭제는 iOS처럼 확인 후 destructive 삭제를 실행한다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsScreen.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsScreen.kt",
+        ).readText()
+
+        assertAppearsInOrder(
+            source = source,
+            tokens = listOf(
+                "R.string.settings_delete_expired_shapes",
+                "onClick = { showDeleteExpiredDialog = true }",
+                "if (showDeleteExpiredDialog)",
+                "R.string.settings_delete_expired_alert_title",
+                "R.string.settings_delete_expired_alert_message",
+                "showDeleteExpiredDialog = false",
+                "settingsViewModel.deleteAllExpiredShapes()",
+                "R.string.common_delete",
+                "MaterialTheme.colorScheme.error",
+                "R.string.common_cancel",
+            ),
+        )
+    }
+
+    @Test
     fun `설정 전역 색상 선택은 iOS 현재 SettingView처럼 노출하지 않는다`() {
         val source = resolveProjectFile(
             "src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsScreen.kt",
