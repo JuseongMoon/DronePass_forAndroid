@@ -397,6 +397,7 @@ class MainScreenStartDestinationTest {
         assertEquals(4.dp, resolveSavedOverlayHeaderBottomPadding(isTablet = true))
         assertEquals(16.dp, resolveSavedOverlayHeaderBottomPadding(isTablet = false))
         assertEquals(8.dp, SavedOverlayListTopSpacing)
+        assertEquals(17.sp, SavedOverlayTitleTextSize)
         assertEquals(8.dp, SavedOverlaySortChipCornerRadius)
         assertEquals(8.dp, SavedOverlaySortChipHorizontalPadding)
         assertEquals(4.dp, SavedOverlaySortChipVerticalPadding)

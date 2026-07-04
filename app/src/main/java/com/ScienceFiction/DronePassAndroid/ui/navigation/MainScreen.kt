@@ -144,6 +144,7 @@ internal val SavedOverlayHeaderHorizontalPadding = 16.dp
 internal val SavedOverlayHeaderBottomPaddingTablet = 4.dp
 internal val SavedOverlayHeaderBottomPaddingPhone = 16.dp
 internal val SavedOverlayListTopSpacing = 8.dp
+internal val SavedOverlayTitleTextSize = 17.sp
 internal val SavedOverlaySortChipCornerRadius = 8.dp
 internal val SavedOverlaySortChipHorizontalPadding = 8.dp
 internal val SavedOverlaySortChipVerticalPadding = 4.dp
@@ -1590,6 +1591,7 @@ private fun SavedListHeaderRow(
         Text(
             text = stringResource(R.string.screen_saved_list),
             style = MaterialTheme.typography.titleMedium,
+            fontSize = SavedOverlayTitleTextSize,
             fontWeight = FontWeight.SemiBold,
             modifier = Modifier.weight(1f),
         )

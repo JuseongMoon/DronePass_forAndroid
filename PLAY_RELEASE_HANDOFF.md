@@ -336,6 +336,7 @@ The last release readiness check and `bundleRelease` passed after `google-servic
 - `:app:testDebugUnitTest --tests "*KpChartsTest" --tests "*WeatherForecastParityTest"` passed after rechecking KP forecast failure-state behavior against the iOS source.
 - `:app:testDebugUnitTest --tests "*WeatherForecastParityTest" --tests "*SunTimelineStateTest" --tests "*SunEventTickerTest" --tests "*WeatherOverlayCardTest"` passed after rechecking Weather forecast no-data placeholder behavior against the iOS source.
 - `:app:verifyCrossPlatformE2ePrerequisites` passed on the latest HEAD. Android-side shared Firebase E2E prerequisites are configured, but no Android device was attached in `adb devices`, so the real Play-installed iOS -> Android receipt check remains open.
+- `:app:testDebugUnitTest --tests "*MainScreenStartDestinationTest" --tests "*SavedListSectionsTest" --tests "*StringResourceCoverageTest"` passed after rechecking the Saved List overlay search/sort/header contract against the iOS source.
 
 ## Upload Key Fingerprints
 
