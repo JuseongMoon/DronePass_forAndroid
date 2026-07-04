@@ -4,9 +4,9 @@
 > Resume trigger: "앱 출시 과정 다시 이어나가자"
 > Branch at handoff: `fix/critical-pri0-fixes`
 > Latest release setup baseline commit: `8135932`
-> Previous saved release-resume commit before this handoff: `6cef70c`
+> Previous saved release-resume commit before this handoff: `f620d2b`
 > Latest E2E preflight doc commit before this edit: `2cbd5f3`
-> Latest code/parity checkpoint at this handoff: current HEAD containing this file
+> Latest code/parity checkpoint before this handoff save: `bbb5f30`
 > Latest saved release-resume checkpoint at this handoff: current HEAD containing this file
 > Package name: `com.ScienceFiction.DronePassAndroid`
 
@@ -14,15 +14,16 @@ This file captures the Google Play internal testing/release state so a later ses
 
 ## Latest Saved Resume Snapshot
 
-Saved again at the user's request on 2026-07-04 from this repository so a later session can resume the app release process when the user says "앱 출시 과정 다시 이어나가자". The Play Console internal-test release flow had already reached the published version detail page, and local Android/iOS parity audits later continued through the 2026-07-04 Saved List internal focus to map-focus delivery audit. The latest Saved List focus delivery change is a regression-test hardening change and has not been uploaded as a newer Play build.
+Saved again at the user's request on 2026-07-04 from this repository so a later session can resume the app release process when the user says "앱 출시 과정 다시 이어나가자". The Play Console internal-test release flow had already reached the published version detail page, and local Android/iOS parity audits later continued through the 2026-07-04 Saved List internal focus to map-focus delivery audit. The latest local code/parity checkpoint before this handoff save was `bbb5f30 Pin saved list map focus delivery`; that regression-test hardening change has not been uploaded as a newer Play build.
 
 - Current working branch: `fix/critical-pri0-fixes`.
-- Current local HEAD before this documentation save: `8209c93 Align shape date time minimum selection`.
-- Working tree status before this documentation save: Saved List internal focus to map-focus delivery parity tests are being committed with this documentation update. They are intentionally not required for continuing the already-published Play internal-test release unless a new Play build is desired.
+- Current local HEAD before this documentation save: `bbb5f30 Pin saved list map focus delivery`.
+- Working tree status before this documentation save: clean.
 - Play internal test version already published: `3.5.5 (102) internal-1`.
 - Do not rebuild or re-upload version code `102` just to resume the release process.
 - Resume phrase from this directory: `앱 출시 과정 다시 이어나가자`.
 - Resume target: continue from Play app-signing SHA registration, tester setup, and Play-installed real-device verification.
+- Current release-process stop point: Play Console version detail page for `3.5.5 (102) internal-1`, with the release already provided to internal testers.
 - If a newer build is intentionally required later, use `versionCode = 103` and release name `3.5.5 (103) internal-2`.
 - Latest completed parity audits before this save: main `+` new-shape flow, map long-press new-shape flow, App Info, Patch Notes, Terms, Privacy document screens, VWorld layer/detail/lifecycle behavior, notification/settings permission plus local notification scheduling, profile/account deletion behavior, Shape Detail screen behavior, Drone management list/detail/edit behavior, saved-list shape selection to map-focus behavior, login/auth Apple/Google provider behavior, Shape Edit coordinate-input/radius-row behavior, KP forecast failure-state behavior, Weather forecast no-data placeholder behavior, saved-list header typography, KP/Weather info-guide section-title typography, Shape DateTimeSelection end-date minimum-date/time behavior, and Saved List internal focus to map-focus delivery behavior.
 - Code-work resume point after this save: KP forecast data loading, 48-hour/27-day chart display, refresh behavior, failure-state behavior, Weather no-data/sunrise-sunset placeholder-state behavior, saved-list header typography, KP/Weather info-guide section-title typography, Shape DateTimeSelection end-date minimum-date/time behavior, and Saved List internal focus to map-focus delivery behavior have been rechecked against the current iOS source. Continue with another user-visible secondary screen or integration path that has not been recently rechecked, or Play-installed real-device verification when a device is available. If the user resumes the app release process, follow the Play release steps below and do not rebuild only because of this committed code change unless a new AAB is intentionally needed.
@@ -255,7 +256,7 @@ ndk {
 
 This setting was added while investigating the Play native-symbol warning. Rebuilding still did not produce a separate `native-debug-symbols.zip`, because the native `.so` libraries appear to come from third-party dependencies such as Naver Maps/AndroidX/DataStore rather than app-owned NDK code. The warning can be ignored for the current internal test.
 
-At the time of the latest release-handoff save request, `git status --short` showed Saved List internal focus to map-focus delivery parity test edits in progress before this documentation edit. This commit saves those test changes with the documentation update. They are unrelated to the already-published Play internal-test release unless a newer AAB is intentionally uploaded. Re-check with `git status --short` when resuming.
+At the time of this latest release-handoff save request, `git status --short` was clean and local HEAD was `bbb5f30 Pin saved list map focus delivery` before this documentation edit. This documentation update only saves the resume state. It does not create or upload a newer Play build, and it is unrelated to the already-published Play internal-test release unless a newer AAB is intentionally uploaded later. Re-check with `git status --short` when resuming.
 
 ## Paused Code Thread
 
