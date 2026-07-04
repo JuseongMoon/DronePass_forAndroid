@@ -72,6 +72,14 @@ class MapCameraFocusTest {
     }
 
     @Test
+    fun `지도 위치 권한 거부 상태는 iOS처럼 지도 위 차단 UI를 띄우지 않는다`() {
+        val source = File("src/main/java/com/ScienceFiction/DronePassAndroid/feature/map/MapScreen.kt").readText()
+        assertTrue(!source.contains("map_permission_required"))
+        assertTrue(!source.contains("map_permission_request"))
+        assertTrue(!source.contains("map_permission_dialog_title"))
+    }
+
+    @Test
     fun `도형 포커스 기본 반경은 iOS처럼 100m 이다`() {
         assertEquals(100.0, ShapeFocusDefaultRadiusMeters, 0.0)
         assertEquals(14.0, calculateShapeFocusZoomLevel(ShapeFocusDefaultRadiusMeters), 0.0)

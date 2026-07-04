@@ -52,11 +52,6 @@
     <string name="login_terms_agree">.</string>
 
     <!-- MapScreen -->
-    <string name="map_permission_dialog_title">Location permission required</string>
-    <string name="map_permission_dialog_message">Location permission is required to show your current position on the map.</string>
-    <string name="map_permission_allow">Allow</string>
-    <string name="map_permission_required">Location permission is required</string>
-    <string name="map_permission_request">Request permission</string>
     <string name="map_new_shape_alert_title">Create New Shape</string>
     <string name="map_new_shape_alert_message">Would you like to create a new shape at this location?</string>
     <string name="map_address_search_failed_title">Address Search Failed</string>

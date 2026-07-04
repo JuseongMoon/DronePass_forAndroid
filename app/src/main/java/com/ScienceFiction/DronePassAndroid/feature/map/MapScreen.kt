@@ -7,11 +7,9 @@ import android.graphics.PointF
 import android.location.Location
 import android.util.Log
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -52,7 +50,6 @@ import com.ScienceFiction.DronePassAndroid.feature.weather.WeatherViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
-import com.google.accompanist.permissions.shouldShowRationale
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
@@ -155,7 +152,6 @@ fun MapScreen(
         coarseLocationGranted = coarseLocationGranted,
     )
     val snackbarHostState = remember { SnackbarHostState() }
-    var showRationaleDialog by remember { mutableStateOf(false) }
 
     // KP/Weather 시트는 부모에서 보유 (FloatingControls 가 열고 BottomSheets 가 표시)
     var showKpSheet by remember { mutableStateOf(false) }
@@ -175,11 +171,7 @@ fun MapScreen(
     // 권한 요청 (앱 초기 진입 시 1회)
     LaunchedEffect(Unit) {
         if (!locationPermissionGranted) {
-            if (locationPermissionsState.permissions.any { it.status.shouldShowRationale }) {
-                showRationaleDialog = true
-            } else {
-                locationPermissionsState.launchMultiplePermissionRequest()
-            }
+            locationPermissionsState.launchMultiplePermissionRequest()
         }
     }
 
@@ -316,28 +308,6 @@ fun MapScreen(
         sketchViewModel = sketchViewModel,
     )
 
-    // 권한 설명 다이얼로그
-    if (showRationaleDialog) {
-        AlertDialog(
-            onDismissRequest = { showRationaleDialog = false },
-            title = { Text(stringResource(R.string.map_permission_dialog_title)) },
-            text = { Text(stringResource(R.string.map_permission_dialog_message)) },
-            confirmButton = {
-                TextButton(onClick = {
-                    showRationaleDialog = false
-                    locationPermissionsState.launchMultiplePermissionRequest()
-                }) {
-                    Text(stringResource(R.string.map_permission_allow))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showRationaleDialog = false }) {
-                    Text(stringResource(R.string.common_cancel))
-                }
-            },
-        )
-    }
-
     pendingNewShapeRequest?.let { request ->
         val addressNotFoundFallback = stringResource(R.string.map_address_not_found)
         val titleRes = when (request.dialogType) {
@@ -440,19 +410,6 @@ fun MapScreen(
         // 지도 로딩 중 인디케이터
         if (!mapReady) {
             CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-        }
-
-        // 권한 거부 안내
-        if (!locationPermissionGranted) {
-            Column(
-                modifier = Modifier.align(Alignment.Center),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Text(stringResource(R.string.map_permission_required))
-                Button(onClick = { locationPermissionsState.launchMultiplePermissionRequest() }) {
-                    Text(stringResource(R.string.map_permission_request))
-                }
-            }
         }
 
         // ── 자식 2: 드론 드롭다운 + FAB + KP/Weather 카드 ──

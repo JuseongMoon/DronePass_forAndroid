@@ -51,11 +51,6 @@
     <string name="login_terms_agree">\u0020동의하게 됩니다.</string>
 
     <!-- MapScreen -->
-    <string name="map_permission_dialog_title">위치 권한 필요</string>
-    <string name="map_permission_dialog_message">지도에서 현재 위치를 표시하기 위해 위치 권한이 필요합니다.</string>
-    <string name="map_permission_allow">허용</string>
-    <string name="map_permission_required">위치 권한이 필요합니다</string>
-    <string name="map_permission_request">권한 요청</string>
     <string name="map_new_shape_alert_title">새 도형 만들기</string>
     <string name="map_new_shape_alert_message">해당 위치에 새 도형을 만드시겠습니까?</string>
     <string name="map_address_search_failed_title">주소 검색 실패</string>
