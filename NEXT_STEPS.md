@@ -4,7 +4,7 @@
 
 > 마지막 업데이트: 2026-07-04
 > 브랜치: `fix/critical-pri0-fixes`
-> 상태: iOS 동작 대조와 Android 출시 하드닝 진행 중. Play 내부 테스트 `3.5.5 (102) internal-1`은 이미 게시된 상태이며, 최신 완료 코드/패리티 기준은 `44b1747 Align drone color picker with iOS`까지다. 앱 출시 재개 절차는 최신 저장된 `PLAY_RELEASE_HANDOFF.md`를 우선 확인하고, 같은 `102` AAB 재업로드가 아니라 Play 앱 서명 SHA 등록과 Play 설치 검증부터 이어간다.
+> 상태: iOS 동작 대조와 Android 출시 하드닝 진행 중. Play 내부 테스트 `3.5.5 (102) internal-1`은 이미 게시된 상태이며, 최신 완료 코드/패리티 기준은 설정용 DateTimeSelectionView 미노출 계약 감사까지다. 앱 출시 재개 절차는 최신 저장된 `PLAY_RELEASE_HANDOFF.md`를 우선 확인하고, 같은 `102` AAB 재업로드가 아니라 Play 앱 서명 SHA 등록과 Play 설치 검증부터 이어간다.
 
 ## 2026-07-04 저장 스냅샷
 
@@ -23,7 +23,7 @@
 나중에 이 디렉토리에서 "앱 출시 과정 다시 이어나가자"라고 하면, 다음 상태에서 이어간다.
 
 - 이미 완료: Google Play 앱 생성, `app-release.aab` 업로드, 내부 테스트 릴리스 `3.5.5 (102) internal-1` 게시.
-- 현재 저장 기준: 최신 HEAD는 KP 예보 실패 상태, 날씨 예보 no-data placeholder, 저장목록 헤더 토큰, KP/날씨 안내 시트 섹션 제목 토큰, Shape DateTimeSelection 종료일 minimum-date/time, 저장목록 내부 포커스 → 지도 포커스 전달 재감사, 지도 위치 권한 거부 상태의 차단 UI 제거, 설정 비행환경 행 chevron 토큰 재감사, 설정 진입 KP 요약 force-refresh 재감사, 날씨 예보 자동 갱신 force-refresh 재감사, 메인 지도 날씨 자동 갱신 생명주기 재감사, 날씨 예보 카테고리 변경 force-refresh 재감사, 드론 편집 색상 선택 행 토큰 재감사까지 포함한다.
+- 현재 저장 기준: 최신 HEAD는 KP 예보 실패 상태, 날씨 예보 no-data placeholder, 저장목록 헤더 토큰, KP/날씨 안내 시트 섹션 제목 토큰, Shape DateTimeSelection 종료일 minimum-date/time, 저장목록 내부 포커스 → 지도 포커스 전달 재감사, 지도 위치 권한 거부 상태의 차단 UI 제거, 설정 비행환경 행 chevron 토큰 재감사, 설정 진입 KP 요약 force-refresh 재감사, 날씨 예보 자동 갱신 force-refresh 재감사, 메인 지도 날씨 자동 갱신 생명주기 재감사, 날씨 예보 카테고리 변경 force-refresh 재감사, 드론 편집 색상 선택 행 토큰 재감사, 설정용 DateTimeSelectionView 미노출 계약 감사까지 포함한다.
 - 현재 정지점: Play Console 버전 상세 화면에서 `3.5.5 (102) internal-1`이 내부 테스터에게 제공됨.
 - 다음 작업: Play Console `Google Play로 보호됨 > 앱 무결성`에서 `앱 서명 키 인증서` SHA-1/SHA-256을 복사해 Firebase Android 앱과 NCP Maps Android 앱 제한에 등록.
 - 그 다음: 내부 테스터 Gmail 추가, opt-in 링크를 실기기에서 열어 Google Play 설치, Google/Apple 로그인, 네이버 지도, 주소 검색, Firestore iOS/Android 동기화 검증.
@@ -42,6 +42,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 2026-07-04 현재 작업 기준 iOS `Setting/View/DateTimeSelectionView.swift`와 실제 `SettingView` 사용처를 다시 확인했다. iOS 설정 폴더의 DateTimeSelectionView는 정의와 Preview만 있고 설정 화면에서는 호출되지 않으며, 실제 날짜/시간 선택 동작은 Shape 편집 전용 `Shape/DateTimeSelectionView.swift` 경로에서만 사용된다. Android 설정 화면도 iOS처럼 날짜/시간 선택 시트를 노출하지 않는 것이 맞으므로 사용자-visible 구현 변경은 하지 않았고, `SettingsScreenContractTest`에 설정 소스가 `DateTimeSelectionView`/`DatePicker`/`TimePicker`를 포함하지 않는 계약을 추가했다. `:app:testDebugUnitTest --tests "*SettingsScreenContractTest"` 통과.
 - 2026-07-04 현재 작업 기준 드론 편집 색상 선택 행을 iOS `DroneListView.ColorPickerGrid`와 다시 대조했다. Android는 색상 목록/선택 체크/회색 제외 계약은 맞았지만 색상 원과 라벨 사이 간격이 iOS 기본 `HStack`보다 넓고 checkmark가 더 크게 보일 수 있었다. 색상 원 24dp, 라벨 간격 8dp, 행 vertical padding 12dp, divider leading 40dp, checkmark 17dp, body 17sp, border alpha 0.2 토큰으로 고정해 iOS 그리드와 맞췄다. `:app:testDebugUnitTest --tests "*DroneEditSheetTest" --tests "*DroneManagementContractTest" --tests "*StringResourceCoverageTest"` 통과.
 - 2026-07-04 현재 작업 기준 날씨 예보 화면의 드론 카테고리 변경 흐름을 iOS `WeatherForecastView.currentWeatherCard`/`WeatherManager.fetchWeatherData(forceRefresh:)`와 다시 대조했다. iOS는 예보 화면 카드에서 카테고리를 바꾸면 저장 직후 항상 현재 위치 기준 force-refresh를 시도하고 토스트는 띄우지 않는다. Android는 기존에 좌표 baseline이 있을 때만 기존 좌표로 재조회했으므로, `WeatherViewModel.setCategory(..., refreshWeather = true)`가 cache를 무효화한 뒤 새 카테고리 override로 현재 위치 fetch를 다시 시도하도록 맞췄다. `WeatherInfoView`에 해당하는 안내 시트 카테고리 변경은 기존처럼 `refreshWeather = false`로 저장만 한다. `:app:testDebugUnitTest --tests "*WeatherForecastParityTest" --tests "*WeatherOverlayCardTest"` 통과.
 - 2026-07-04 현재 작업 기준 메인 지도 날씨 카드의 자동 갱신 생명주기를 iOS `WeatherManager.setupAutoUpdateTimer()`와 다시 대조했다. iOS는 WeatherManager 싱글톤에서 3분 자동 갱신을 전역으로 시작하므로, WeatherForecast 시트뿐 아니라 메인 지도 플로팅 날씨 카드도 갱신 대상이다. Android는 기존에 WeatherForecast 시트가 열릴 때만 `WeatherViewModel.startAutoRefresh()`를 호출했고 지도 화면 생명주기는 KP 자동 갱신만 관리했다. `MapScreen`의 START/STOP/dispose 경로에서 WeatherViewModel 자동 갱신도 KP와 함께 시작/중단하도록 연결했다. `:app:testDebugUnitTest --tests "*MapScreenLayersTest" --tests "*WeatherForecastParityTest" --tests "*WeatherOverlayCardTest"` 통과.

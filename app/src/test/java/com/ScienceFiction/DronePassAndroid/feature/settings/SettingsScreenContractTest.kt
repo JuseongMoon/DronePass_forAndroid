@@ -98,6 +98,18 @@ class SettingsScreenContractTest {
     }
 
     @Test
+    fun `설정 날짜 시간 선택 시트는 iOS 현재 SettingView처럼 노출하지 않는다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsScreen.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsScreen.kt",
+        ).readText()
+
+        assertFalse(source.contains("DateTimeSelectionView"))
+        assertFalse(source.contains("DatePicker"))
+        assertFalse(source.contains("TimePicker"))
+    }
+
+    @Test
     fun `Android 알림 권한 카드는 iOS 알림 섹션 순서를 깨지 않는다`() {
         val source = resolveProjectFile(
             "src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsScreen.kt",
