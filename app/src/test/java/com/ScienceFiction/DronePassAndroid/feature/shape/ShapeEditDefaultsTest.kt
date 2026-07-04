@@ -1149,6 +1149,62 @@ class ShapeEditDefaultsTest {
     }
 
     @Test
+    fun `종료일 시간 선택은 iOS minimumDate처럼 같은 날 시작 시각보다 이르면 시작 시각으로 보정한다`() {
+        val initialEnd = localMillis(year = 2026, month = Calendar.JUNE, day = 3, hour = 16, minute = 0)
+        val minimumStart = localMillis(year = 2026, month = Calendar.JUNE, day = 3, hour = 14, minute = 30)
+        val selectedDate = shapeEditDatePickerMillisFromLocalMillis(minimumStart)
+
+        val selection = coerceShapeEditTimePickerSelectionAtOrAfterMinimum(
+            selectedDateMillis = selectedDate,
+            initialDateMillis = initialEnd,
+            hour = 9,
+            minute = 15,
+            minimumDateMillis = minimumStart,
+        )
+
+        assertEquals(14, selection.hour)
+        assertEquals(30, selection.minute)
+    }
+
+    @Test
+    fun `종료일 시간 선택은 iOS minimumDate처럼 같은 날 시작 시각 이후이면 선택 시각을 유지한다`() {
+        val initialEnd = localMillis(year = 2026, month = Calendar.JUNE, day = 3, hour = 16, minute = 0)
+        val minimumStart = localMillis(year = 2026, month = Calendar.JUNE, day = 3, hour = 14, minute = 30)
+        val selectedDate = shapeEditDatePickerMillisFromLocalMillis(minimumStart)
+
+        val selection = coerceShapeEditTimePickerSelectionAtOrAfterMinimum(
+            selectedDateMillis = selectedDate,
+            initialDateMillis = initialEnd,
+            hour = 16,
+            minute = 45,
+            minimumDateMillis = minimumStart,
+        )
+
+        assertEquals(16, selection.hour)
+        assertEquals(45, selection.minute)
+    }
+
+    @Test
+    fun `종료일 시간 선택은 iOS minimumDate처럼 다음 날이면 더 이른 시각도 유지한다`() {
+        val initialEnd = localMillis(year = 2026, month = Calendar.JUNE, day = 4, hour = 16, minute = 0)
+        val minimumStart = localMillis(year = 2026, month = Calendar.JUNE, day = 3, hour = 14, minute = 30)
+        val selectedDate = shapeEditDatePickerMillisFromLocalMillis(
+            localMillis(year = 2026, month = Calendar.JUNE, day = 4, hour = 0, minute = 0),
+        )
+
+        val selection = coerceShapeEditTimePickerSelectionAtOrAfterMinimum(
+            selectedDateMillis = selectedDate,
+            initialDateMillis = initialEnd,
+            hour = 9,
+            minute = 15,
+            minimumDateMillis = minimumStart,
+        )
+
+        assertEquals(9, selection.hour)
+        assertEquals(15, selection.minute)
+    }
+
+    @Test
     fun `단일 날짜 시간 선택 결과는 시작 종료 규칙에 맞게 저장된다`() {
         val selected = localMillis(year = 2026, month = Calendar.JUNE, day = 3, hour = 9, minute = 15)
 

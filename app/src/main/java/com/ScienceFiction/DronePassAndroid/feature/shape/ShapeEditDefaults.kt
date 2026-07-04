@@ -493,6 +493,44 @@ internal fun shapeEditSelectedLocalMillisFromDateTimePicker(
     )
 }
 
+internal data class ShapeEditTimePickerSelection(
+    val hour: Int,
+    val minute: Int,
+)
+
+internal fun coerceShapeEditTimePickerSelectionAtOrAfterMinimum(
+    selectedDateMillis: Long?,
+    initialDateMillis: Long,
+    hour: Int,
+    minute: Int,
+    minimumDateMillis: Long?,
+): ShapeEditTimePickerSelection {
+    if (minimumDateMillis == null) {
+        return ShapeEditTimePickerSelection(hour = hour, minute = minute)
+    }
+
+    val selectedDate = selectedDateMillis
+        ?: shapeEditDatePickerMillisFromLocalMillis(initialDateMillis)
+    val selectedLocalMillis = shapeEditLocalMillisFromDatePicker(
+        dateMillis = selectedDate,
+        hour = hour,
+        minute = minute,
+    )
+    val isMinimumDay = startOfShapeEditLocalDay(selectedLocalMillis) ==
+        startOfShapeEditLocalDay(minimumDateMillis)
+    if (!isMinimumDay || selectedLocalMillis >= minimumDateMillis) {
+        return ShapeEditTimePickerSelection(hour = hour, minute = minute)
+    }
+
+    val minimumCalendar = Calendar.getInstance().apply {
+        timeInMillis = minimumDateMillis
+    }
+    return ShapeEditTimePickerSelection(
+        hour = minimumCalendar.get(Calendar.HOUR_OF_DAY),
+        minute = minimumCalendar.get(Calendar.MINUTE),
+    )
+}
+
 internal fun selectedStartShapeEditDate(
     selectedDate: Long,
     isDateOnly: Boolean,

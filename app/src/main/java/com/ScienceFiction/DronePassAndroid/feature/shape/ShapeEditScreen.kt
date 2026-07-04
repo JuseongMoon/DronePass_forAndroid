@@ -822,6 +822,7 @@ fun ShapeEditScreen(
             isDateOnly = isDateOnly,
             title = stringResource(R.string.shape_edit_end_date_select),
             selectableDates = endDateSelectableDates,
+            minimumDateMillis = flightStartDate,
             onDateSelected = { selectedDate ->
                 val proposedEnd = selectedEndShapeEditDate(
                     selectedDate = selectedDate,
@@ -1289,6 +1290,7 @@ private fun ShapeDateTimeSelectionSheet(
     isDateOnly: Boolean,
     title: String,
     selectableDates: SelectableDates? = null,
+    minimumDateMillis: Long? = null,
     onDateSelected: (Long) -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(
@@ -1310,6 +1312,29 @@ private fun ShapeDateTimeSelectionSheet(
         initialMinute = initialCalendar.get(Calendar.MINUTE),
         is24Hour = use24HourClock,
     )
+    LaunchedEffect(
+        minimumDateMillis,
+        isDateOnly,
+        datePickerState.selectedDateMillis,
+        timePickerState.hour,
+        timePickerState.minute,
+    ) {
+        if (!isDateOnly && minimumDateMillis != null) {
+            val coercedSelection = coerceShapeEditTimePickerSelectionAtOrAfterMinimum(
+                selectedDateMillis = datePickerState.selectedDateMillis,
+                initialDateMillis = initialDateMillis,
+                hour = timePickerState.hour,
+                minute = timePickerState.minute,
+                minimumDateMillis = minimumDateMillis,
+            )
+            if (timePickerState.hour != coercedSelection.hour) {
+                timePickerState.hour = coercedSelection.hour
+            }
+            if (timePickerState.minute != coercedSelection.minute) {
+                timePickerState.minute = coercedSelection.minute
+            }
+        }
+    }
     fun applyCurrentSelectionAndDismiss() {
         val selectedLocalMillis = shapeEditSelectedLocalMillisFromDateTimePicker(
             selectedDateMillis = datePickerState.selectedDateMillis,
