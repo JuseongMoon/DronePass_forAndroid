@@ -72,6 +72,17 @@ class DocumentEntryPolicyTest {
 
     @Test
     fun `패치노트는 iOS reloadIgnoringLocalCacheData 처럼 진입할 때마다 자동 로드한다`() {
+        val existingContent = PatchNotesUiState.Content(
+            listOf(
+                PatchNote(
+                    version = "v1.0.0",
+                    date = "2025-01-01",
+                    title = "Release",
+                    features = emptyList(),
+                ),
+            ),
+        )
+
         assertEquals(
             true,
             shouldAutoLoadPatchNotesOnEnter(PatchNotesUiState.Loading),
@@ -83,6 +94,10 @@ class DocumentEntryPolicyTest {
         assertEquals(
             true,
             shouldAutoLoadPatchNotesOnEnter(PatchNotesUiState.Content(emptyList())),
+        )
+        assertEquals(
+            true,
+            shouldAutoLoadPatchNotesOnEnter(existingContent),
         )
     }
 

@@ -114,6 +114,32 @@ class SettingsScreenContractTest {
     }
 
     @Test
+    fun `앱 소개와 패치노트는 iOS처럼 설정 행에서 시트로 연다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsScreen.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsScreen.kt",
+        ).readText()
+
+        assertAppearsInOrder(
+            source = source,
+            tokens = listOf(
+                "onNavigateToAppInfo = { showAppInfoSheet = true }",
+                "onNavigateToPatchNotes = { showPatchNotesSheet = true }",
+                "if (showAppInfoSheet)",
+                "skipPartiallyExpanded = true",
+                "AppInfoScreen(onBack = { showAppInfoSheet = false })",
+                "if (showPatchNotesSheet)",
+                "skipPartiallyExpanded = true",
+                "PatchNotesScreen(onBack = { showPatchNotesSheet = false })",
+                "R.string.settings_app_intro",
+                "onClick = onNavigateToAppInfo",
+                "R.string.settings_patch_notes",
+                "onClick = onNavigateToPatchNotes",
+            ),
+        )
+    }
+
+    @Test
     fun `설정 진입 KP 요약은 iOS처럼 강제 갱신한다`() {
         val source = resolveProjectFile(
             "src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsViewModel.kt",
