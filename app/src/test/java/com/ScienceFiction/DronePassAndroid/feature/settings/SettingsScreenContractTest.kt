@@ -76,6 +76,16 @@ class SettingsScreenContractTest {
     }
 
     @Test
+    fun `설정 진입 KP 요약은 iOS처럼 강제 갱신한다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsViewModel.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsViewModel.kt",
+        ).readText()
+
+        assertTrue(source.contains("kpIndexRepository.getCurrentKp(forceRefresh = true)"))
+    }
+
+    @Test
     fun `설정 전역 색상 선택은 iOS 현재 SettingView처럼 노출하지 않는다`() {
         val source = resolveProjectFile(
             "src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsScreen.kt",

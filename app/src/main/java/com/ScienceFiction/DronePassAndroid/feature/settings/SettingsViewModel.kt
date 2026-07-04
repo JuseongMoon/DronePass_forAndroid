@@ -141,10 +141,10 @@ class SettingsViewModel @Inject constructor(
     init {
         initializeKoreaFeaturesSetting()
         checkAuthState()
-        // iOS settings.kp.current 정합 — 화면 진입 시 즉시 최신 Kp 값 표시.
+        // iOS settings.kp.current 정합 — 화면 진입 시 강제 갱신된 Kp 값 표시.
         // KpViewModel 가 떠있지 않은 경우(설정만 단독 진입) 에도 currentKpFlow 가 채워지도록 1회 호출.
         viewModelScope.launch {
-            runCatching { kpIndexRepository.getCurrentKp() }
+            runCatching { kpIndexRepository.getCurrentKp(forceRefresh = true) }
         }
     }
 
