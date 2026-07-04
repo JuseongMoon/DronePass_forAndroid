@@ -16,7 +16,7 @@
 - 다음 외부 설정: Play Console `Google Play로 보호됨 > 앱 무결성`에서 `앱 서명 키 인증서` SHA-1/SHA-256을 Firebase Android 앱과 NCP Maps Android 제한 설정에 등록.
 - 다음 실기기 검증: 내부 테스터 Gmail 추가, opt-in 링크로 Google Play 설치, Google/Apple 로그인, 네이버 지도, 주소 검색, Firestore iOS/Android 동기화, 하단/플로팅 UI 정렬 확인.
 - 새 빌드가 필요할 때만 `versionCode = 103`, release name `3.5.5 (103) internal-2`로 진행한다.
-- 현재 코드 편집은 열려 있지 않다. 코드 패리티를 먼저 이어갈 경우, 프로필 동기화 토글 흐름 다음의 다른 user-visible 보조 화면 또는 통합 경로를 이어서 대조한다.
+- 현재 코드 편집은 열려 있지 않다. 저장/설정 phone 오버레이 정렬 패리티 감사를 시작했지만 Android 코드 수정 전 저장했다. 코드 패리티를 먼저 이어갈 경우, iOS `MainTabView.swift`의 active saved/settings overlay 구현과 Android `MainScreen.kt`의 `SavedListOverlay`/`SettingsOverlay` 안전영역 및 하단 여백을 먼저 대조한다.
 
 ## 앱 출시 재개 바로가기
 
@@ -28,6 +28,7 @@
 - 다음 작업: Play Console `Google Play로 보호됨 > 앱 무결성`에서 `앱 서명 키 인증서` SHA-1/SHA-256을 복사해 Firebase Android 앱과 NCP Maps Android 앱 제한에 등록.
 - 그 다음: 내부 테스터 Gmail 추가, opt-in 링크를 실기기에서 열어 Google Play 설치, Google/Apple 로그인, 네이버 지도, 주소 검색, Firestore iOS/Android 동기화 검증.
 - 주의: 코드나 설정을 바꾸지 않았다면 같은 `102` AAB를 다시 빌드/업로드하지 않는다. 새 빌드가 필요할 때만 `versionCode = 103`, release name `3.5.5 (103) internal-2`로 진행한다.
+- 코드 작업 재개 메모: 직전 중단 지점은 저장/설정 phone 오버레이 위치 감사다. 출시 재개만 요청받으면 이 코드 감사를 건드리지 말고 Play 앱 서명 SHA 등록과 내부 테스트 설치 검증부터 진행한다.
 
 이 문서는 다음 세션에서 바로 이어가기 위한 현재 기준 핸드오프입니다. 오래된 Phase별 상세 이력은 `REFACTORING_PLAN.md`와 `MIGRATION_PLAN.md`에 남겨두고, 여기에는 지금 실제로 필요한 항목만 둡니다.
 
