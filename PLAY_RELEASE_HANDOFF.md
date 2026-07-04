@@ -12,7 +12,24 @@
 
 This file captures the Google Play internal testing/release state so a later session can continue from this repository without re-discovering the setup. Do not paste secrets, keystore passwords, API secrets, or full OAuth client IDs into this file.
 
-## Explicit User Save Snapshot
+## Current Resume Pointer
+
+Saved on 2026-07-04 15:35 KST at the user's request so a later session in this directory can continue the Android app release process when the user says "앱 출시 과정 다시 이어나가자".
+
+- Resume trigger phrase from this directory: `앱 출시 과정 다시 이어나가자`.
+- Current working branch at save time: `fix/critical-pri0-fixes`.
+- Current local HEAD at save time: `6c620e9 Pin settings account sheet entry parity`.
+- Working tree at save time: clean before this documentation update.
+- Play internal test version already published: `3.5.5 (102) internal-1`.
+- Current release stop point: Play Console version detail page for `3.5.5 (102) internal-1`, already provided to internal testers.
+- Do not rebuild or re-upload version code `102` just to resume the release process.
+- Next release step: Play Console `Google Play로 보호됨 > 앱 무결성`에서 `앱 서명 키 인증서` SHA-1/SHA-256을 복사한 뒤 Firebase Android 앱과 NCP Maps Android 제한 설정에 등록한다.
+- Next verification step: add internal tester Gmail accounts, open the Play opt-in link on a real Android device, install from Google Play, then verify Google/Apple sign-in, Naver map auth, geocoding/reverse-geocoding, Firestore iOS/Android sync, and main UI overlay layout.
+- If a newer build is intentionally required later, bump to `versionCode = 103` and use release name `3.5.5 (103) internal-2`.
+- Latest completed local parity checkpoint: settings profile/login/drone-management sheet entry flow, committed in `6c620e9`.
+- Code-work note: no source edit is pending at this save point. A follow-up Patch Notes content rendering audit had just been started but was not changed or completed before this save.
+
+## Earlier User Save Snapshot
 
 Saved on 2026-07-04 at the user's request before pausing/resuming the Android app release process.
 
@@ -37,11 +54,11 @@ Saved on 2026-07-04 at the user's request before pausing/resuming the Android ap
 
 ## Latest Saved Resume Snapshot
 
-Saved again on 2026-07-04 from this repository so a later session can resume the app release process when the user says "앱 출시 과정 다시 이어나가자". The Play Console internal-test release flow had already reached the published version detail page, and local Android/iOS parity audits later continued through the 2026-07-04 settings profile/login/drone-management sheet-entry audit. The latest local code/parity checkpoint before this documentation save has not been uploaded as a newer Play build.
+Saved again on 2026-07-04 15:35 KST from this repository so a later session can resume the app release process when the user says "앱 출시 과정 다시 이어나가자". The Play Console internal-test release flow had already reached the published version detail page, and local Android/iOS parity audits later continued through the 2026-07-04 settings profile/login/drone-management sheet-entry audit. The latest local code/parity checkpoint before this documentation save has not been uploaded as a newer Play build.
 
 - Current working branch: `fix/critical-pri0-fixes`.
-- Current local HEAD before this documentation save: `f939a30 Pin settings document sheet entry parity`.
-- Working tree status before this documentation save: only the settings profile/login/drone-management sheet-entry contract test and documentation edits were pending.
+- Current local HEAD before this documentation save: `6c620e9 Pin settings account sheet entry parity`.
+- Working tree status before this documentation save: clean.
 - Play internal test version already published: `3.5.5 (102) internal-1`.
 - Do not rebuild or re-upload version code `102` just to resume the release process.
 - Resume phrase from this directory: `앱 출시 과정 다시 이어나가자`.
@@ -50,7 +67,7 @@ Saved again on 2026-07-04 from this repository so a later session can resume the
 - If a newer build is intentionally required later, use `versionCode = 103` and release name `3.5.5 (103) internal-2`.
 - Latest completed parity audits before this save: main `+` new-shape flow, map long-press new-shape flow, App Info, Patch Notes, Terms, Privacy document screens, VWorld layer/detail/lifecycle behavior, notification/settings permission plus local notification scheduling, profile/account deletion behavior, Shape Detail screen behavior, Drone management list/detail/edit behavior, saved-list shape selection to map-focus behavior, login/auth Apple/Google provider behavior, Shape Edit coordinate-input/radius-row behavior, KP forecast failure-state behavior, Weather forecast no-data placeholder behavior, saved-list header typography, KP/Weather info-guide section-title typography, Shape DateTimeSelection end-date minimum-date/time behavior, Saved List internal focus to map-focus delivery behavior, map location-permission blocking-UI behavior, settings flight-environment row chevron-token behavior, settings KP summary force-refresh behavior, weather forecast auto-refresh force-refresh behavior, main-map weather auto-refresh lifecycle behavior, weather forecast category-selection force-refresh behavior, drone edit color-picker row-token behavior, settings DateTimeSelectionView no-op behavior, settings language picker chevron-token behavior, settings expired-shape deletion confirmation behavior, settings general navigation-row chevron-scope behavior, settings app-info/patch-notes sheet-entry behavior, and settings profile/login/drone-management sheet-entry behavior.
 - App-release resume point after this save: do not rebuild by default. Start with Play Console app-signing SHA-1/SHA-256 registration in Firebase and NCP Maps, then add testers, open the opt-in link on a real Android device, install from Google Play, and verify sign-in, Naver map auth, geocoding, sync, and overlay layout.
-- Code-work resume point after this save: KP forecast data loading, 48-hour/27-day chart display, refresh behavior, failure-state behavior, Weather no-data/sunrise-sunset placeholder-state behavior, saved-list header typography, KP/Weather info-guide section-title typography, Shape DateTimeSelection end-date minimum-date/time behavior, Saved List internal focus to map-focus delivery behavior, map location-permission blocking-UI behavior, settings flight-environment row chevron-token behavior, settings KP summary force-refresh behavior, weather forecast auto-refresh force-refresh behavior, main-map weather auto-refresh lifecycle behavior, weather forecast category-selection force-refresh behavior, drone edit color-picker row-token behavior, settings DateTimeSelectionView no-op behavior, settings language picker chevron-token behavior, settings expired-shape deletion confirmation behavior, settings general navigation-row chevron-scope behavior, settings app-info/patch-notes sheet-entry behavior, and settings profile/login/drone-management sheet-entry behavior have been rechecked against the current iOS source. If parity work resumes, continue with another user-visible secondary screen or integration path that has not been recently rechecked, or Play-installed real-device verification when a device is available. If the user resumes the app release process, follow the Play release steps below and do not rebuild only because of this committed code change unless a new AAB is intentionally needed.
+- Code-work resume point after this save: KP forecast data loading, 48-hour/27-day chart display, refresh behavior, failure-state behavior, Weather no-data/sunrise-sunset placeholder-state behavior, saved-list header typography, KP/Weather info-guide section-title typography, Shape DateTimeSelection end-date minimum-date/time behavior, Saved List internal focus to map-focus delivery behavior, map location-permission blocking-UI behavior, settings flight-environment row chevron-token behavior, settings KP summary force-refresh behavior, weather forecast auto-refresh force-refresh behavior, main-map weather auto-refresh lifecycle behavior, weather forecast category-selection force-refresh behavior, drone edit color-picker row-token behavior, settings DateTimeSelectionView no-op behavior, settings language picker chevron-token behavior, settings expired-shape deletion confirmation behavior, settings general navigation-row chevron-scope behavior, settings app-info/patch-notes sheet-entry behavior, and settings profile/login/drone-management sheet-entry behavior have been rechecked against the current iOS source. If parity work resumes, continue with another user-visible secondary screen or integration path that has not been recently rechecked, or finish the just-started Patch Notes content rendering audit. If the user resumes the app release process, follow the Play release steps below and do not rebuild only because of this committed code change unless a new AAB is intentionally needed.
 
 ## Quick Resume
 

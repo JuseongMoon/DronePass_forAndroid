@@ -8,15 +8,15 @@
 
 ## 2026-07-04 저장 스냅샷
 
-사용자가 나중에 이 디렉토리에서 "앱 출시 과정 다시 이어나가자"라고 말하면 `PLAY_RELEASE_HANDOFF.md`의 `Explicit User Save Snapshot`부터 읽고 이어간다.
+사용자가 나중에 이 디렉토리에서 "앱 출시 과정 다시 이어나가자"라고 말하면 `PLAY_RELEASE_HANDOFF.md`의 `Current Resume Pointer`와 `Quick Resume`부터 읽고 이어간다.
 
-- 현재 저장 기준 HEAD: `44b1747 Align drone color picker with iOS`.
+- 현재 저장 기준 HEAD: `6c620e9 Pin settings account sheet entry parity`.
 - 현재 출시 상태: Google Play 내부 테스트 `3.5.5 (102) internal-1`은 이미 게시됨.
 - 현재 정지점: Play Console 버전 상세 화면에서 내부 테스터에게 제공된 상태. 새 AAB 업로드가 아니라 앱 서명 인증서 SHA 등록과 테스터 설치 검증이 다음 단계다.
 - 다음 외부 설정: Play Console `Google Play로 보호됨 > 앱 무결성`에서 `앱 서명 키 인증서` SHA-1/SHA-256을 Firebase Android 앱과 NCP Maps Android 제한 설정에 등록.
 - 다음 실기기 검증: 내부 테스터 Gmail 추가, opt-in 링크로 Google Play 설치, Google/Apple 로그인, 네이버 지도, 주소 검색, Firestore iOS/Android 동기화, 하단/플로팅 UI 정렬 확인.
 - 새 빌드가 필요할 때만 `versionCode = 103`, release name `3.5.5 (103) internal-2`로 진행한다.
-- 현재 코드 편집은 열려 있지 않다. 코드 패리티를 먼저 이어갈 경우, 직전에 확인을 시작했던 영역은 iOS 설정용 `DateTimeSelectionView`가 실제 설정 화면에서 쓰이지 않는지에 대한 감사다.
+- 현재 코드 편집은 열려 있지 않다. 코드 패리티를 먼저 이어갈 경우, 직전에 확인을 시작했던 영역은 패치노트 콘텐츠 화면의 로딩/빈 상태/리스트 렌더링 감사다.
 
 ## 앱 출시 재개 바로가기
 
@@ -35,7 +35,7 @@
 
 | 항목 | 값 |
 |---|---|
-| 워킹 트리 | 2026-07-03 handoff 기준 release setup 변경분은 `8135932 Record Play internal test release setup`까지 커밋됨. 이후 릴리스 재개 문서와 iOS 패리티 작업이 이어져 최신 완료 코드/패리티 기준은 이 파일을 포함한 현재 HEAD의 드론 편집 색상 선택 행 토큰 재감사까지 반영됨. 재개 시 `git status --short`로 실제 상태 확인 |
+| 워킹 트리 | 2026-07-03 handoff 기준 release setup 변경분은 `8135932 Record Play internal test release setup`까지 커밋됨. 이후 릴리스 재개 문서와 iOS 패리티 작업이 이어져 최신 완료 코드/패리티 기준은 `6c620e9 Pin settings account sheet entry parity`의 설정 내정보/로그인/드론관리 시트 진입 흐름 재감사까지 반영됨. 재개 시 `git status --short`로 실제 상태 확인 |
 | 주요 검증 | 2026-07-04 기준 `:app:verifyCrossPlatformE2ePrerequisites`, `:app:testDebugUnitTest --tests "*DroneEditSheetTest" --tests "*DroneManagementContractTest" --tests "*StringResourceCoverageTest"`, `:app:testDebugUnitTest --tests "*WeatherForecastParityTest" --tests "*WeatherOverlayCardTest"`, `:app:testDebugUnitTest --tests "*ShapeEditDefaultsTest" --tests "*ShapeDateFormatsTest" --tests "*MapCameraFocusTest"`, `:app:testDebugUnitTest --tests "*DroneListScreenTest" --tests "*DroneNameWidthLimitTest" --tests "*DroneNextColorTest" --tests "*DroneManagementContractTest" --tests "*DroneEditSheetTest" --tests "*DroneDeleteValidationTest" --tests "*DroneSelectionStateTest"`, `:app:testDebugUnitTest --tests "*ShapeOverlayRenderTest" --tests "*ShapeOverlayColorTest" --tests "*MapCameraFocusTest"`, `:app:testDebugUnitTest --tests "*SavedListSectionsTest" --tests "*DroneSelectionStateTest" --tests "*SavedShapeListItemTest" --tests "*MapCameraFocusTest"`, `:app:testDebugUnitTest --tests "*SketchTouchDecisionTest" --tests "*SketchDefaultsTest" --tests "*SketchEraserSelectionTest" --tests "*SketchOverlayColorTest" --tests "*SketchRepositoryTest" --tests "*SketchFirebaseStoreTest" --tests "*SketchSmoothingAlgorithmTest" --tests "*SketchPointsCacheTest" --tests "*StringResourceCoverageTest"`, `:app:testDebugUnitTest --tests "*WeatherForecastParityTest" --tests "*KpChartsTest"`, `:app:testDebugUnitTest --tests "*StringResourceCoverageTest" --tests "*FlightZoneLayerSelectorTest" --tests "*VWorldZoneDetailSheetTest" --tests "*VWorldModelsTest" --tests "*MapScreenLayersTest"`, `:app:testDebugUnitTest --tests "*NotificationSchedulerTest" --tests "*NotificationReceiverTest" --tests "*FcmServiceTest" --tests "*NotificationPermissionRequestTest" --tests "*SettingsScreenContractTest" --tests "*SettingsSunAlarmPlanTest" --tests "*SettingsEndDateAlarmPlanTest" --tests "*AndroidManifestContractTest" --tests "*NotificationPreferenceKeysTest" --tests "*MainActivityKeepScreenAwakeTest"`, `:app:testDebugUnitTest --tests "*ProfileSheetParityTest" --tests "*ProfileViewModelTest" --tests "*AnonymizedDeletionDataTest" --tests "*StringResourceCoverageTest" --tests "*SettingsScreenContractTest"`, `:app:testDebugUnitTest --tests "*LoginScreenContractTest" --tests "*AuthViewModelForegroundSyncTest" --tests "*AuthRepositoryUserDocumentTest" --tests "*StringResourceCoverageTest" --tests "*SettingsScreenContractTest"`, `:app:testDebugUnitTest --tests "*ShapeEditDefaultsTest" --tests "*ShapeEditContractTest" --tests "*SearchAddressSheetTest"`, `:app:testDebugUnitTest --tests "*WeatherForecastParityTest" --tests "*SunTimelineStateTest" --tests "*SunEventTickerTest" --tests "*WeatherOverlayCardTest"`, `:app:testDebugUnitTest --tests "*MainScreenStartDestinationTest" --tests "*SavedListSectionsTest" --tests "*StringResourceCoverageTest"`, `:app:testDebugUnitTest --tests "*InfoGuideSheetsTest" --tests "*StringResourceCoverageTest"`, `:app:testDebugUnitTest --tests "*ShapeEditDefaultsTest" --tests "*ShapeEditContractTest" --tests "*ShapeDateFormatsTest"`, `:app:testDebugUnitTest --tests "*SavedListSectionsTest" --tests "*MainScreenStartDestinationTest"` 통과. 같은 시점 `adb devices`는 연결된 기기가 없어 Play 설치 실기기 검증은 남아 있음. 기존 `:app:testDebugUnitTest :app:lintDebug :app:assembleDebug`, `:app:minifyReleaseWithR8`, `:app:connectedDebugAndroidTest`, `:app:shapeParsingCoverageVerification`, feature별 회귀 테스트 통과 기록 유지 |
 | Release readiness | 2026-07-01 기준 로컬 release signing, `WEB_CLIENT_ID`, Firebase Android OAuth client, Naver Maps key 설정이 완료되어 `:app:verifyCrossPlatformE2ePrerequisites`와 `:app:bundleRelease`가 통과한다. AAB는 `app/build/outputs/bundle/release/app-release.aab`에 생성됨 |
 | 남은 성격 | Play 설치 앱의 앱 서명 SHA를 Firebase/NCP Maps에 등록한 뒤 실기기 Play 설치 경로에서 iOS↔Android 공유 Firebase 실계정 검증 수행 |
