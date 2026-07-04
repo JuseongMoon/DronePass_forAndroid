@@ -4,7 +4,7 @@
 
 > 마지막 업데이트: 2026-07-04
 > 브랜치: `fix/critical-pri0-fixes`
-> 상태: iOS 동작 대조와 Android 출시 하드닝 진행 중. Play 내부 테스트 `3.5.5 (102) internal-1`은 이미 게시된 상태이며, 최신 완료 코드/패리티 기준은 설정 비행환경 행 chevron 토큰 재감사까지다. 앱 출시 재개 절차는 최신 저장된 `PLAY_RELEASE_HANDOFF.md`를 우선 확인한다.
+> 상태: iOS 동작 대조와 Android 출시 하드닝 진행 중. Play 내부 테스트 `3.5.5 (102) internal-1`은 이미 게시된 상태이며, 최신 완료 코드/패리티 기준은 설정 비행환경 행 chevron 토큰 재감사까지다. 앱 출시 재개 절차는 최신 저장된 `PLAY_RELEASE_HANDOFF.md`를 우선 확인하고, 같은 `102` AAB 재업로드가 아니라 Play 앱 서명 SHA 등록과 Play 설치 검증부터 이어간다.
 
 ## 앱 출시 재개 바로가기
 
