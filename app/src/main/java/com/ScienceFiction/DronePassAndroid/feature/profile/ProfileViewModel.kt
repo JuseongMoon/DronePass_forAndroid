@@ -87,6 +87,8 @@ internal fun shouldNotifyProfileSyncResultForCloudToggle(
 
 internal fun shouldAcceptProfileCloudBackupToggle(isSyncing: Boolean): Boolean = !isSyncing
 
+internal const val ProfileCloudBackupRestartScheduleDelayMs = 100L
+
 internal fun profileErrorDescription(localizedMessage: String?, fallback: String): String {
     return localizedMessage ?: fallback
 }
@@ -176,6 +178,13 @@ internal fun isProfileSyncInProgress(
     realtimeSyncState: SyncState,
 ): Boolean {
     return manualSyncing || realtimeSyncState is SyncState.Syncing
+}
+
+internal fun shouldRestartProfileRealtimeSyncAfterToggle(
+    enabled: Boolean,
+    isLoggedIn: Boolean,
+): Boolean {
+    return enabled && isLoggedIn
 }
 
 internal fun buildProfileSyncedShapeBaseline(shapes: List<ShapeModel>): Map<String, Long> {
@@ -331,13 +340,23 @@ class ProfileViewModel @Inject constructor(
                 it.remove(ProfilePreferenceKeys.LEGACY_CLOUD_BACKUP_ENABLED)
             }
             if (enabled && firebaseAuth.currentUser != null) {
-                syncToCloudInternal(
-                    notifyResult = shouldNotifyProfileSyncResultForCloudToggle(
-                        enabled = enabled,
-                        isLoggedIn = true,
-                    ),
-                )
-                realtimeSyncManager.resetAndRestartRealtimeSync()
+                viewModelScope.launch {
+                    syncToCloudInternal(
+                        notifyResult = shouldNotifyProfileSyncResultForCloudToggle(
+                            enabled = enabled,
+                            isLoggedIn = true,
+                        ),
+                    )
+                }
+                delay(ProfileCloudBackupRestartScheduleDelayMs)
+                if (
+                    shouldRestartProfileRealtimeSyncAfterToggle(
+                        enabled = storedCloudBackupEnabled(dataStore.data.first()),
+                        isLoggedIn = firebaseAuth.currentUser != null,
+                    )
+                ) {
+                    realtimeSyncManager.resetAndRestartRealtimeSync()
+                }
             } else if (!enabled) {
                 runCatching { realtimeSyncManager.stopListening() }
             }

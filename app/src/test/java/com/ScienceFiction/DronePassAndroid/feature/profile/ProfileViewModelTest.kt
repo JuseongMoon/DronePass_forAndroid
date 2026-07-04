@@ -222,6 +222,52 @@ class ProfileViewModelTest {
     }
 
     @Test
+    fun `클라우드 동기화 토글 ON은 iOS처럼 백업 시작 후 100ms 뒤 실시간 동기화를 재시작 예약한다`() {
+        assertEquals(100L, ProfileCloudBackupRestartScheduleDelayMs)
+        assertTrue(
+            shouldRestartProfileRealtimeSyncAfterToggle(
+                enabled = true,
+                isLoggedIn = true,
+            )
+        )
+        assertTrue(
+            !shouldRestartProfileRealtimeSyncAfterToggle(
+                enabled = true,
+                isLoggedIn = false,
+            )
+        )
+        assertTrue(
+            !shouldRestartProfileRealtimeSyncAfterToggle(
+                enabled = false,
+                isLoggedIn = true,
+            )
+        )
+    }
+
+    @Test
+    fun `클라우드 동기화 토글 ON 순서는 iOS ProfileView onChange 흐름을 따른다`() {
+        val source = resolveProjectFile(
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/profile/ProfileViewModel.kt",
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/profile/ProfileViewModel.kt",
+        ).readText()
+        val functionBody = source.substringAfter("fun setCloudBackupEnabled(enabled: Boolean)")
+            .substringBefore("/**\n     * 수동 백업")
+
+        assertSourceOrder(
+            source = functionBody,
+            tokens = listOf(
+                "dataStore.edit",
+                "if (enabled && firebaseAuth.currentUser != null)",
+                "viewModelScope.launch",
+                "syncToCloudInternal(",
+                "delay(ProfileCloudBackupRestartScheduleDelayMs)",
+                "shouldRestartProfileRealtimeSyncAfterToggle",
+                "realtimeSyncManager.resetAndRestartRealtimeSync()",
+            ),
+        )
+    }
+
+    @Test
     fun `프로필 클라우드 백업 토글은 iOS처럼 동기화 중에는 무시된다`() {
         assertTrue(shouldAcceptProfileCloudBackupToggle(isSyncing = false))
         assertTrue(!shouldAcceptProfileCloudBackupToggle(isSyncing = true))
@@ -240,6 +286,15 @@ class ProfileViewModelTest {
             .map(::File)
             .firstOrNull { it.exists() }
             ?: error("Project file not found. Tried: ${candidates.joinToString()}")
+    }
+
+    private fun assertSourceOrder(source: String, tokens: List<String>) {
+        var previousIndex = -1
+        tokens.forEach { token ->
+            val index = source.indexOf(token, startIndex = previousIndex + 1)
+            assertTrue("Missing token after $previousIndex: $token", index >= 0)
+            previousIndex = index
+        }
     }
 
     @Test
