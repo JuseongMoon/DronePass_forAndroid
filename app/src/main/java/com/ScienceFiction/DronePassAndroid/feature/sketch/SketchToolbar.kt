@@ -110,6 +110,11 @@ internal const val SketchHueSliderMin = 0f
 internal const val SketchHueSliderMax = 360f
 internal const val SketchOpacitySliderMin = 0.1f
 internal const val SketchOpacitySliderMax = 1.0f
+internal const val SketchToolbarMaterialAlpha = 0.88f
+
+internal fun sketchToolbarMaterialColor(surfaceColor: Color): Color {
+    return surfaceColor.copy(alpha = SketchToolbarMaterialAlpha)
+}
 
 internal fun formatSketchDeleteBadgeCount(sketchCount: Int): String {
     return sketchCount.toString()
@@ -291,7 +296,7 @@ fun SketchToolbar(
                 .wrapContentWidth()
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             shape = RoundedCornerShape(SketchToolbarContainerCornerRadius),
-            color = MaterialTheme.colorScheme.surface,
+            color = sketchToolbarMaterialColor(MaterialTheme.colorScheme.surface),
             shadowElevation = SketchToolbarShadowElevation,
         ) {
             Row(
@@ -603,7 +608,7 @@ private fun PenSettingsCard(
     Surface(
         modifier = modifier.wrapContentWidth(),
         shape = RoundedCornerShape(SketchPenPickerCardCornerRadius),
-        color = MaterialTheme.colorScheme.surface,
+        color = sketchToolbarMaterialColor(MaterialTheme.colorScheme.surface),
         shadowElevation = 8.dp,
     ) {
         Column(

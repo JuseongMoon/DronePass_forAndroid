@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.sketch
 
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -178,6 +179,16 @@ class SketchDefaultsTest {
         assertEquals(14.dp, SketchDeleteBadgeMinSize)
         assertEquals(4.dp, SketchDeleteBadgeOffsetX)
         assertEquals((-4).dp, SketchDeleteBadgeOffsetY)
+    }
+
+    @Test
+    fun `스케치 툴바와 펜 선택 카드는 iOS처럼 지도 위 반투명 material 로 표시한다`() {
+        assertEquals(0.88f, SketchToolbarMaterialAlpha, 0f)
+        assertEquals(
+            0.88f,
+            sketchToolbarMaterialColor(Color.White).alpha,
+            0.002f,
+        )
     }
 
     @Test
