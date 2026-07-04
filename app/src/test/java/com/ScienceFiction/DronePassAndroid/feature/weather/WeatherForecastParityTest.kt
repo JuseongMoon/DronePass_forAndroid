@@ -178,6 +178,23 @@ class WeatherForecastParityTest {
     }
 
     @Test
+    fun `forecast category selection force refreshes current location like iOS WeatherForecastView`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/weather/WeatherViewModel.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/weather/WeatherViewModel.kt",
+        ).readText()
+        val startIndex = source.indexOf("fun setCategory(category: DroneCategory, refreshWeather: Boolean = true)")
+        val preferenceIndex = source.indexOf("preferences[WeatherDroneCategoryPreferenceKey]", startIndex)
+        val invalidateIndex = source.indexOf("weatherRepository.invalidateCache()", preferenceIndex)
+        val fetchIndex = source.indexOf("fetchCurrentLocationAndWeather(categoryOverride = category)", invalidateIndex)
+
+        assertTrue(startIndex >= 0)
+        assertTrue(preferenceIndex > startIndex)
+        assertTrue(invalidateIndex > preferenceIndex)
+        assertTrue(fetchIndex > invalidateIndex)
+    }
+
+    @Test
     fun `weather sheet header matches iOS inline navigation toolbar`() {
         assertEquals(44.dp, WeatherSheetNavigationHeaderHeight)
         assertEquals(44.dp, WeatherSheetNavigationHeaderActionWidth)
@@ -632,18 +649,14 @@ class WeatherForecastParityTest {
     }
 
     @Test
-    fun `weather category selection refreshes only after a coordinate baseline exists`() {
-        assertFalse(shouldFetchWeatherAfterCategorySelection(latitude = 0.0, longitude = 0.0))
-        assertTrue(shouldFetchWeatherAfterCategorySelection(latitude = 37.5665, longitude = 0.0))
-        assertTrue(shouldFetchWeatherAfterCategorySelection(latitude = 0.0, longitude = 126.9780))
+    fun `weather forecast category selection always refreshes like iOS WeatherForecastView`() {
+        assertTrue(shouldFetchWeatherAfterCategorySelection())
     }
 
     @Test
     fun `weather info guide category selection only updates the stored category like iOS WeatherInfoView`() {
         assertFalse(
             shouldFetchWeatherAfterCategorySelection(
-                latitude = 37.5665,
-                longitude = 126.9780,
                 refreshWeather = false,
             ),
         )

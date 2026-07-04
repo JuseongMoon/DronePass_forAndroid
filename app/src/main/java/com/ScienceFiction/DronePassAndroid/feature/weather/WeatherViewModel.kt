@@ -48,11 +48,9 @@ internal fun storedWeatherDroneCategory(preferences: Preferences): DroneCategory
 }
 
 internal fun shouldFetchWeatherAfterCategorySelection(
-    latitude: Double,
-    longitude: Double,
     refreshWeather: Boolean = true,
 ): Boolean {
-    return refreshWeather && (latitude != 0.0 || longitude != 0.0)
+    return refreshWeather
 }
 
 internal enum class WeatherLocationFetchSource {
@@ -107,10 +105,6 @@ class WeatherViewModel @Inject constructor(
         .map { preferences -> storedWeatherDroneCategory(preferences) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DroneCategory.IosDefault)
 
-    private var currentLatitude: Double = 0.0
-    private var currentLongitude: Double = 0.0
-    private var currentWeatherUsesUserLocation: Boolean = false
-
     /**
      * 자동 갱신 Job. Composable 의 ON_START/ON_STOP 라이프사이클에 맞춰 시작/중단된다.
      * 백그라운드 무한 새로고침으로 인한 배터리/요금 부담을 차단한다.
@@ -134,23 +128,14 @@ class WeatherViewModel @Inject constructor(
                 preferences[WeatherDroneCategoryPreferenceKey] = category.iosRawValue
                 preferences.remove(LegacyWeatherDroneCategoryPreferenceKey)
             }
-            // 카테고리 변경 시 날씨 데이터 재계산
+            // WeatherForecastView 는 카테고리 변경 시 현재 위치 기준으로 강제 갱신한다.
             if (
                 shouldFetchWeatherAfterCategorySelection(
-                    latitude = currentLatitude,
-                    longitude = currentLongitude,
                     refreshWeather = refreshWeather,
                 )
             ) {
-                _isLoading.value = true
-                _error.value = null
                 weatherRepository.invalidateCache()
-                fetchWeatherInternal(
-                    latitude = currentLatitude,
-                    longitude = currentLongitude,
-                    category = category,
-                    isUserLocationBacked = currentWeatherUsesUserLocation,
-                )
+                fetchCurrentLocationAndWeather(categoryOverride = category)
             }
         }
     }
@@ -196,7 +181,7 @@ class WeatherViewModel @Inject constructor(
      * 현재 위치 가져와서 날씨 조회
      */
     @SuppressLint("MissingPermission")
-    private suspend fun fetchCurrentLocationAndWeather() {
+    private suspend fun fetchCurrentLocationAndWeather(categoryOverride: DroneCategory? = null) {
         _isLoading.value = true
         _error.value = null
 
@@ -213,8 +198,14 @@ class WeatherViewModel @Inject constructor(
             }
 
             when (resolveWeatherLocationFetchSource(location != null, lastLocation != null)) {
-                WeatherLocationFetchSource.CurrentLocation -> fetchWeatherForUserLocation(requireNotNull(location))
-                WeatherLocationFetchSource.LastKnownLocation -> fetchWeatherForUserLocation(requireNotNull(lastLocation))
+                WeatherLocationFetchSource.CurrentLocation -> fetchWeatherForUserLocation(
+                    location = requireNotNull(location),
+                    categoryOverride = categoryOverride,
+                )
+                WeatherLocationFetchSource.LastKnownLocation -> fetchWeatherForUserLocation(
+                    location = requireNotNull(lastLocation),
+                    categoryOverride = categoryOverride,
+                )
                 WeatherLocationFetchSource.Unavailable -> failWeatherLocation(WeatherError.LocationUnavailable)
             }
         } catch (e: SecurityException) {
@@ -224,22 +215,21 @@ class WeatherViewModel @Inject constructor(
         }
     }
 
-    private suspend fun fetchWeatherForUserLocation(location: Location) {
-        currentLatitude = location.latitude
-        currentLongitude = location.longitude
-        currentWeatherUsesUserLocation = true
+    private suspend fun fetchWeatherForUserLocation(
+        location: Location,
+        categoryOverride: DroneCategory? = null,
+    ) {
         updateLocationAccuracy(location)
         fetchWeatherInternal(
             latitude = location.latitude,
             longitude = location.longitude,
-            category = selectedCategory.value,
+            category = categoryOverride ?: selectedCategory.value,
             isUserLocationBacked = true,
         )
     }
 
     private fun failWeatherLocation(error: WeatherError) {
         _error.value = error
-        currentWeatherUsesUserLocation = false
         clearLocationAccuracy()
         _isLoading.value = false
     }
