@@ -477,6 +477,24 @@ class MapCameraFocusTest {
     }
 
     @Test
+    fun `지도 오버레이 탭은 iOS처럼 하이라이트를 먼저 갱신하고 저장 목록 포커스를 요청한다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/map/MapViewModel.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/map/MapViewModel.kt",
+        ).readText()
+
+        assertAppearsInOrder(
+            source = source,
+            tokens = listOf(
+                "fun onShapeOverlayTapped(shapeId: String)",
+                "_selectedShapeId.value = action.shapeId",
+                "_showShapeDetail.value = action.showShapeDetail",
+                "_savedShapeFocusEvent.emit(action.shapeId)",
+            ),
+        )
+    }
+
+    @Test
     fun `지도 표시 도형은 iOS처럼 시작 전 숨김 설정을 반영한다`() {
         val now = System.currentTimeMillis()
         val filtered = filterShapesByMapVisibilitySettings(
