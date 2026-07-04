@@ -4,7 +4,7 @@
 
 > 마지막 업데이트: 2026-07-04
 > 브랜치: `fix/critical-pri0-fixes`
-> 상태: iOS 동작 대조와 Android 출시 하드닝 진행 중. Play 내부 테스트 `3.5.5 (102) internal-1`은 이미 게시된 상태이며, 최신 완료 코드/패리티 기준은 설정 만료 도형 삭제 확인 흐름 재감사까지다. 앱 출시 재개 절차는 최신 저장된 `PLAY_RELEASE_HANDOFF.md`를 우선 확인하고, 같은 `102` AAB 재업로드가 아니라 Play 앱 서명 SHA 등록과 Play 설치 검증부터 이어간다.
+> 상태: iOS 동작 대조와 Android 출시 하드닝 진행 중. Play 내부 테스트 `3.5.5 (102) internal-1`은 이미 게시된 상태이며, 최신 완료 코드/패리티 기준은 설정 일반 진입 행 chevron 미노출 계약 감사까지다. 앱 출시 재개 절차는 최신 저장된 `PLAY_RELEASE_HANDOFF.md`를 우선 확인하고, 같은 `102` AAB 재업로드가 아니라 Play 앱 서명 SHA 등록과 Play 설치 검증부터 이어간다.
 
 ## 2026-07-04 저장 스냅샷
 
@@ -23,7 +23,7 @@
 나중에 이 디렉토리에서 "앱 출시 과정 다시 이어나가자"라고 하면, 다음 상태에서 이어간다.
 
 - 이미 완료: Google Play 앱 생성, `app-release.aab` 업로드, 내부 테스트 릴리스 `3.5.5 (102) internal-1` 게시.
-- 현재 저장 기준: 최신 HEAD는 KP 예보 실패 상태, 날씨 예보 no-data placeholder, 저장목록 헤더 토큰, KP/날씨 안내 시트 섹션 제목 토큰, Shape DateTimeSelection 종료일 minimum-date/time, 저장목록 내부 포커스 → 지도 포커스 전달 재감사, 지도 위치 권한 거부 상태의 차단 UI 제거, 설정 비행환경 행 chevron 토큰 재감사, 설정 진입 KP 요약 force-refresh 재감사, 날씨 예보 자동 갱신 force-refresh 재감사, 메인 지도 날씨 자동 갱신 생명주기 재감사, 날씨 예보 카테고리 변경 force-refresh 재감사, 드론 편집 색상 선택 행 토큰 재감사, 설정용 DateTimeSelectionView 미노출 계약 감사, 설정 언어 선택 행 chevron 토큰 재감사, 설정 만료 도형 삭제 확인 흐름 재감사까지 포함한다.
+- 현재 저장 기준: 최신 HEAD는 KP 예보 실패 상태, 날씨 예보 no-data placeholder, 저장목록 헤더 토큰, KP/날씨 안내 시트 섹션 제목 토큰, Shape DateTimeSelection 종료일 minimum-date/time, 저장목록 내부 포커스 → 지도 포커스 전달 재감사, 지도 위치 권한 거부 상태의 차단 UI 제거, 설정 비행환경 행 chevron 토큰 재감사, 설정 진입 KP 요약 force-refresh 재감사, 날씨 예보 자동 갱신 force-refresh 재감사, 메인 지도 날씨 자동 갱신 생명주기 재감사, 날씨 예보 카테고리 변경 force-refresh 재감사, 드론 편집 색상 선택 행 토큰 재감사, 설정용 DateTimeSelectionView 미노출 계약 감사, 설정 언어 선택 행 chevron 토큰 재감사, 설정 만료 도형 삭제 확인 흐름 재감사, 설정 일반 진입 행 chevron 미노출 계약 감사까지 포함한다.
 - 현재 정지점: Play Console 버전 상세 화면에서 `3.5.5 (102) internal-1`이 내부 테스터에게 제공됨.
 - 다음 작업: Play Console `Google Play로 보호됨 > 앱 무결성`에서 `앱 서명 키 인증서` SHA-1/SHA-256을 복사해 Firebase Android 앱과 NCP Maps Android 앱 제한에 등록.
 - 그 다음: 내부 테스터 Gmail 추가, opt-in 링크를 실기기에서 열어 Google Play 설치, Google/Apple 로그인, 네이버 지도, 주소 검색, Firestore iOS/Android 동기화 검증.
@@ -42,6 +42,7 @@
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
 
+- 2026-07-04 현재 작업 기준 설정의 일반 진입 행 chevron 노출 범위를 iOS `SettingView`와 Android `SettingsScreen`으로 다시 대조했다. iOS는 내 정보/드론 관리/앱 소개/패치노트/삭제 버튼 같은 일반 설정 버튼에는 chevron을 넣지 않고, 비행환경 KP/날씨 행에만 caption 크기 chevron을 명시한다. Android도 현재 `showArrow = true`가 KP/날씨 두 행에만 쓰이고 일반 `SettingsItem` 기본값은 화살표 없음이라 사용자-visible 구현 변경은 필요 없었다. `SettingsScreenContractTest`에 `showArrow = true`가 두 번만 등장하고 KP/날씨 섹션 안에만 위치한다는 계약을 추가했다. `:app:testDebugUnitTest --tests "*SettingsScreenContractTest"` 통과.
 - 2026-07-04 현재 작업 기준 설정의 만료 도형 일괄 삭제 흐름을 iOS `SettingView`/`MainTabView`/`SettingManager.deleteExpiredShapes`/`ShapeRepository.deleteExpiredShapes`와 Android `SettingsScreen`/`SettingsViewModel`/`ShapeRepository.deleteExpiredShapes`로 다시 대조했다. iOS는 지도 표시 섹션의 destructive 버튼에서 `showDeleteExpiredShapesAlert`를 올리고 `MainTabView`가 삭제/취소 알림을 표시한 뒤 삭제를 실행한다. Android도 같은 사용자 흐름으로 확인 다이얼로그를 띄우고 삭제 버튼에서 soft delete를 실행하며, 저장소는 활성 만료 도형만 삭제하고 알림/클라우드 동기화를 처리한다. 사용자-visible 구현 변경은 없었고, `SettingsScreenContractTest`에 알림 title/message, 삭제→취소 버튼 순서, destructive 색상, `deleteAllExpiredShapes()` 호출 계약을 추가했다. `:app:testDebugUnitTest --tests "*SettingsScreenContractTest" --tests "*ShapeRepositoryTest"` 통과.
 - 2026-07-04 현재 작업 기준 설정 언어 선택 흐름을 iOS `SettingView.AppLanguage`/`Picker`와 Android `AppLanguage`/`SettingsScreen`/`SettingsViewModel`로 다시 대조했다. 언어 enum 순서, 저장값 우선, 한국어 외 시스템 언어 영어 fallback, 선택 후 재시작 안내는 기존 Android 테스트와 구현이 이미 iOS 계약과 맞았다. 발견된 차이는 언어 행만 별도 Row로 구성되어 chevron이 24dp로 남아 있던 점이라, 최근 iOS caption 크기로 맞춘 공통 `SettingsItemChevronSize` 토큰을 언어 행에도 적용했다. `:app:testDebugUnitTest --tests "*SettingsScreenContractTest" --tests "*SettingsLanguageSelectionTest"` 통과.
 - 2026-07-04 현재 작업 기준 iOS `Setting/View/DateTimeSelectionView.swift`와 실제 `SettingView` 사용처를 다시 확인했다. iOS 설정 폴더의 DateTimeSelectionView는 정의와 Preview만 있고 설정 화면에서는 호출되지 않으며, 실제 날짜/시간 선택 동작은 Shape 편집 전용 `Shape/DateTimeSelectionView.swift` 경로에서만 사용된다. Android 설정 화면도 iOS처럼 날짜/시간 선택 시트를 노출하지 않는 것이 맞으므로 사용자-visible 구현 변경은 하지 않았고, `SettingsScreenContractTest`에 설정 소스가 `DateTimeSelectionView`/`DatePicker`/`TimePicker`를 포함하지 않는 계약을 추가했다. `:app:testDebugUnitTest --tests "*SettingsScreenContractTest"` 통과.

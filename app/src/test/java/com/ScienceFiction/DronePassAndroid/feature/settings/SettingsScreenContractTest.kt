@@ -94,6 +94,26 @@ class SettingsScreenContractTest {
     }
 
     @Test
+    fun `설정 일반 진입 행은 iOS처럼 chevron 을 노출하지 않는다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsScreen.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsScreen.kt",
+        ).readText()
+
+        assertEquals(2, Regex("showArrow = true").findAll(source).count())
+        assertAppearsInOrder(
+            source = source,
+            tokens = listOf(
+                "R.string.settings_kp_index_current",
+                "showArrow = true",
+                "R.string.settings_weather_current",
+                "showArrow = true",
+                "R.string.settings_end_date_alarm",
+            ),
+        )
+    }
+
+    @Test
     fun `설정 진입 KP 요약은 iOS처럼 강제 갱신한다`() {
         val source = resolveProjectFile(
             "src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsViewModel.kt",
