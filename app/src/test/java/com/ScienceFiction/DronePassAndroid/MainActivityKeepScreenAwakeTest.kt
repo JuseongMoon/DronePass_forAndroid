@@ -6,6 +6,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.File
 
 class MainActivityKeepScreenAwakeTest {
 
@@ -65,5 +66,66 @@ class MainActivityKeepScreenAwakeTest {
     fun `알림 탭 shapeId 는 iOS처럼 앱 시작 지도 포커스로 사용하지 않는다`() {
         assertNull(resolveNotificationLaunchFocusShapeId(notificationShapeId = "shape-1"))
         assertNull(resolveNotificationLaunchFocusShapeId(notificationShapeId = null))
+    }
+
+    @Test
+    fun `알림 탭 Intent 는 iOS처럼 지도 포커스와 팝업 데이터를 분리해 MainScreen 에 전달한다`() {
+        val source = mainActivitySource()
+
+        assertAppearsInOrder(
+            source = source,
+            tokens = listOf(
+                "initialFocusShapeId.value = resolveNotificationLaunchFocusShapeId(",
+                "notificationShapeId = extractNotificationShapeId(intent)",
+                "notificationForPopup.value = extractForegroundNotification(intent)",
+                "MainScreen(",
+                "initialFocusShapeId = initialFocusShapeId.value",
+                "initialForegroundNotification = notificationForPopup.value",
+            ),
+        )
+    }
+
+    @Test
+    fun `새 알림 Intent 도 iOS처럼 지도 포커스와 팝업 데이터를 같은 순서로 갱신한다`() {
+        val source = mainActivitySource()
+        val onNewIntentBlock = source.substringAfter("override fun onNewIntent(intent: Intent)")
+            .substringBefore("override fun onStart()")
+
+        assertAppearsInOrder(
+            source = onNewIntentBlock,
+            tokens = listOf(
+                "setIntent(intent)",
+                "initialFocusShapeId.value = resolveNotificationLaunchFocusShapeId(",
+                "notificationShapeId = extractNotificationShapeId(intent)",
+                "notificationForPopup.value = extractForegroundNotification(intent)",
+            ),
+        )
+    }
+
+    private fun mainActivitySource(): String {
+        return resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/MainActivity.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/MainActivity.kt",
+        ).readText()
+    }
+
+    private fun assertAppearsInOrder(source: String, tokens: List<String>) {
+        var previousIndex = -1
+        for (token in tokens) {
+            val index = source.indexOf(token, startIndex = previousIndex + 1)
+            assertTrue(
+                "$token should appear after index $previousIndex in MainActivity.kt",
+                index > previousIndex,
+            )
+            previousIndex = index
+        }
+    }
+
+    private fun resolveProjectFile(vararg candidates: String): File {
+        val userDir = File(requireNotNull(System.getProperty("user.dir")))
+        return candidates
+            .map { File(userDir, it) }
+            .firstOrNull { it.exists() }
+            ?: error("Project file not found: ${candidates.joinToString()}")
     }
 }

@@ -488,6 +488,49 @@ class MainScreenStartDestinationTest {
         assertEquals(0.9f, NotificationPopupInitialScale)
     }
 
+    @Test
+    fun `초기 알림 payload 는 iOS처럼 지도 포커스가 아니라 팝업 표시만 처리한다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/ui/navigation/MainScreen.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/ui/navigation/MainScreen.kt",
+        ).readText()
+        val initialNotificationEffect = source
+            .substringAfter("LaunchedEffect(initialForegroundNotification)")
+            .substringBefore("val selectedTabRoute")
+
+        assertAppearsInOrder(
+            source = initialNotificationEffect,
+            tokens = listOf(
+                "val notification = initialForegroundNotification ?: return@LaunchedEffect",
+                "foregroundNotification = notification",
+                "onInitialForegroundNotificationConsumed()",
+            ),
+        )
+        assertFalse(initialNotificationEffect.contains("pendingFocusShapeId"))
+        assertFalse(initialNotificationEffect.contains("navController.navigate"))
+    }
+
+    @Test
+    fun `알림 팝업은 iOS처럼 표시용 notification 을 보존하고 닫기만 제공한다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/ui/navigation/MainScreen.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/ui/navigation/MainScreen.kt",
+        ).readText()
+
+        assertAppearsInOrder(
+            source = source,
+            tokens = listOf(
+                "LaunchedEffect(foregroundNotification)",
+                "displayedForegroundNotification = notification",
+                "AnimatedVisibility(",
+                "visible = foregroundNotification != null",
+                "displayedForegroundNotification?.let { notification ->",
+                "PushNotificationOverlay(",
+                "onDismiss = { foregroundNotification = null }",
+            ),
+        )
+    }
+
     private fun assertAppearsInOrder(source: String, tokens: List<String>) {
         var previousIndex = -1
         for (token in tokens) {
