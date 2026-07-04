@@ -355,8 +355,9 @@ class MainScreenStartDestinationTest {
     }
 
     @Test
-    fun `저장과 설정 폰 오버레이는 iOS처럼 화면 하단에 붙는다`() {
-        assertEquals(0.dp, OverlayBottomMargin)
+    fun `저장과 설정 폰 오버레이는 iOS처럼 내비게이션 바 위에 16dp 하단 여백을 둔다`() {
+        assertTrue(MainOverlaysUseNavigationBarsPadding)
+        assertEquals(16.dp, OverlayBottomMargin)
     }
 
     @Test

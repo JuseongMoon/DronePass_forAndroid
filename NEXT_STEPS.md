@@ -4,31 +4,31 @@
 
 > 마지막 업데이트: 2026-07-04
 > 브랜치: `fix/critical-pri0-fixes`
-> 상태: iOS 동작 대조와 Android 출시 하드닝 진행 중. Play 내부 테스트 `3.5.5 (102) internal-1`은 이미 게시된 상태이며, 최신 완료 코드/패리티 기준은 프로필 클라우드 동기화 토글 ON 백업/실시간 동기화 재시작 순서 재감사까지다. 앱 출시 재개 절차는 최신 저장된 `PLAY_RELEASE_HANDOFF.md`를 우선 확인하고, 같은 `102` AAB 재업로드가 아니라 Play 앱 서명 SHA 등록과 Play 설치 검증부터 이어간다.
+> 상태: iOS 동작 대조와 Android 출시 하드닝 진행 중. Play 내부 테스트 `3.5.5 (102) internal-1`은 이미 게시된 상태이며, 최신 완료 코드/패리티 기준은 저장/설정 phone 오버레이 하단 safe-area 여백 재감사까지다. 앱 출시 재개 절차는 최신 저장된 `PLAY_RELEASE_HANDOFF.md`를 우선 확인하고, 같은 `102` AAB 재업로드가 아니라 Play 앱 서명 SHA 등록과 Play 설치 검증부터 이어간다.
 
 ## 2026-07-04 저장 스냅샷
 
 사용자가 나중에 이 디렉토리에서 "앱 출시 과정 다시 이어나가자"라고 말하면 `PLAY_RELEASE_HANDOFF.md`의 `Current Resume Pointer`와 `Quick Resume`부터 읽고 이어간다.
 
-- 현재 저장 기준 HEAD: 이 파일을 포함한 현재 HEAD의 프로필 클라우드 동기화 토글 ON 백업/실시간 동기화 재시작 순서 감사.
+- 현재 저장 기준 HEAD: 이 파일을 포함한 현재 HEAD의 저장/설정 phone 오버레이 하단 safe-area 여백 감사.
 - 현재 출시 상태: Google Play 내부 테스트 `3.5.5 (102) internal-1`은 이미 게시됨.
 - 현재 정지점: Play Console 버전 상세 화면에서 내부 테스터에게 제공된 상태. 새 AAB 업로드가 아니라 앱 서명 인증서 SHA 등록과 테스터 설치 검증이 다음 단계다.
 - 다음 외부 설정: Play Console `Google Play로 보호됨 > 앱 무결성`에서 `앱 서명 키 인증서` SHA-1/SHA-256을 Firebase Android 앱과 NCP Maps Android 제한 설정에 등록.
 - 다음 실기기 검증: 내부 테스터 Gmail 추가, opt-in 링크로 Google Play 설치, Google/Apple 로그인, 네이버 지도, 주소 검색, Firestore iOS/Android 동기화, 하단/플로팅 UI 정렬 확인.
 - 새 빌드가 필요할 때만 `versionCode = 103`, release name `3.5.5 (103) internal-2`로 진행한다.
-- 현재 코드 편집은 열려 있지 않다. 저장/설정 phone 오버레이 정렬 패리티 감사를 시작했지만 Android 코드 수정 전 저장했다. 코드 패리티를 먼저 이어갈 경우, iOS `MainTabView.swift`의 active saved/settings overlay 구현과 Android `MainScreen.kt`의 `SavedListOverlay`/`SettingsOverlay` 안전영역 및 하단 여백을 먼저 대조한다.
+- 현재 코드 편집은 열려 있지 않다. 저장/설정 phone 오버레이 정렬 패리티는 완료했다. iOS `MainTabView.swift`의 active saved/settings overlay가 모두 하단 16pt 여백을 쓰므로 Android도 `navigationBarsPadding()` 위에 `OverlayBottomMargin = 16.dp`를 적용했다.
 
 ## 앱 출시 재개 바로가기
 
 나중에 이 디렉토리에서 "앱 출시 과정 다시 이어나가자"라고 하면, 다음 상태에서 이어간다.
 
 - 이미 완료: Google Play 앱 생성, `app-release.aab` 업로드, 내부 테스트 릴리스 `3.5.5 (102) internal-1` 게시.
-- 현재 저장 기준: 최신 HEAD는 KP 예보 실패 상태, 날씨 예보 no-data placeholder, 저장목록 헤더 토큰, KP/날씨 안내 시트 섹션 제목 토큰, Shape DateTimeSelection 종료일 minimum-date/time, 저장목록 내부 포커스 → 지도 포커스 전달 재감사, 지도 위치 권한 거부 상태의 차단 UI 제거, 설정 비행환경 행 chevron 토큰 재감사, 설정 진입 KP 요약 force-refresh 재감사, 날씨 예보 자동 갱신 force-refresh 재감사, 메인 지도 날씨 자동 갱신 생명주기 재감사, 날씨 예보 카테고리 변경 force-refresh 재감사, 드론 편집 색상 선택 행 토큰 재감사, 설정용 DateTimeSelectionView 미노출 계약 감사, 설정 언어 선택 행 chevron 토큰 재감사, 설정 만료 도형 삭제 확인 흐름 재감사, 설정 일반 진입 행 chevron 미노출 계약 감사, 설정 앱 정보/패치노트 시트 진입 흐름 재감사, 설정 내정보/로그인/드론관리 시트 진입 흐름 재감사, 패치노트 콘텐츠 로딩/빈 상태/목록 렌더링 재감사, 알림 탭 앱 시작/팝업 복원 경로 재감사, 전면 복귀 원격 변경 감지/동기화 다이얼로그 흐름 재감사, 프로필 클라우드 동기화 토글 ON 백업/실시간 동기화 재시작 순서 재감사까지 포함한다.
+- 현재 저장 기준: 최신 HEAD는 KP 예보 실패 상태, 날씨 예보 no-data placeholder, 저장목록 헤더 토큰, KP/날씨 안내 시트 섹션 제목 토큰, Shape DateTimeSelection 종료일 minimum-date/time, 저장목록 내부 포커스 → 지도 포커스 전달 재감사, 지도 위치 권한 거부 상태의 차단 UI 제거, 설정 비행환경 행 chevron 토큰 재감사, 설정 진입 KP 요약 force-refresh 재감사, 날씨 예보 자동 갱신 force-refresh 재감사, 메인 지도 날씨 자동 갱신 생명주기 재감사, 날씨 예보 카테고리 변경 force-refresh 재감사, 드론 편집 색상 선택 행 토큰 재감사, 설정용 DateTimeSelectionView 미노출 계약 감사, 설정 언어 선택 행 chevron 토큰 재감사, 설정 만료 도형 삭제 확인 흐름 재감사, 설정 일반 진입 행 chevron 미노출 계약 감사, 설정 앱 정보/패치노트 시트 진입 흐름 재감사, 설정 내정보/로그인/드론관리 시트 진입 흐름 재감사, 패치노트 콘텐츠 로딩/빈 상태/목록 렌더링 재감사, 알림 탭 앱 시작/팝업 복원 경로 재감사, 전면 복귀 원격 변경 감지/동기화 다이얼로그 흐름 재감사, 프로필 클라우드 동기화 토글 ON 백업/실시간 동기화 재시작 순서 재감사, 저장/설정 phone 오버레이 하단 safe-area 여백 재감사까지 포함한다.
 - 현재 정지점: Play Console 버전 상세 화면에서 `3.5.5 (102) internal-1`이 내부 테스터에게 제공됨.
 - 다음 작업: Play Console `Google Play로 보호됨 > 앱 무결성`에서 `앱 서명 키 인증서` SHA-1/SHA-256을 복사해 Firebase Android 앱과 NCP Maps Android 앱 제한에 등록.
 - 그 다음: 내부 테스터 Gmail 추가, opt-in 링크를 실기기에서 열어 Google Play 설치, Google/Apple 로그인, 네이버 지도, 주소 검색, Firestore iOS/Android 동기화 검증.
 - 주의: 코드나 설정을 바꾸지 않았다면 같은 `102` AAB를 다시 빌드/업로드하지 않는다. 새 빌드가 필요할 때만 `versionCode = 103`, release name `3.5.5 (103) internal-2`로 진행한다.
-- 코드 작업 재개 메모: 직전 중단 지점은 저장/설정 phone 오버레이 위치 감사다. 출시 재개만 요청받으면 이 코드 감사를 건드리지 말고 Play 앱 서명 SHA 등록과 내부 테스트 설치 검증부터 진행한다.
+- 코드 작업 재개 메모: 저장/설정 phone 오버레이 위치 감사는 완료했다. 출시 재개만 요청받으면 새 코드 감사를 시작하지 말고 Play 앱 서명 SHA 등록과 내부 테스트 설치 검증부터 진행한다.
 
 이 문서는 다음 세션에서 바로 이어가기 위한 현재 기준 핸드오프입니다. 오래된 Phase별 상세 이력은 `REFACTORING_PLAN.md`와 `MIGRATION_PLAN.md`에 남겨두고, 여기에는 지금 실제로 필요한 항목만 둡니다.
 
@@ -42,6 +42,8 @@
 | 남은 성격 | Play 설치 앱의 앱 서명 SHA를 Firebase/NCP Maps에 등록한 뒤 실기기 Play 설치 경로에서 iOS↔Android 공유 Firebase 실계정 검증 수행 |
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
+
+- 2026-07-04 현재 작업 기준 저장/설정 phone 오버레이 하단 위치를 iOS `MainTabView`의 active `SavedListOverlayView`/`SettingsOverlayView`와 다시 대조했다. iOS는 두 phone bottom sheet 모두 `.padding(.horizontal, 16)`과 `.padding(.bottom, 16)`을 적용한다. Android는 이미 `navigationBarsPadding()`으로 시스템 내비게이션 바를 피하고 있었지만 추가 하단 카드 여백이 `0.dp`로 고정되어 있어 iOS보다 하단에 붙어 보일 수 있었다. `OverlayBottomMargin`을 16dp로 맞추고 `MainScreenStartDestinationTest` 계약을 갱신했다. `:app:testDebugUnitTest --tests "*MainScreenStartDestinationTest" --tests "*SavedListSectionsTest" --tests "*SettingsScreenContractTest"` 통과.
 
 - 2026-07-04 현재 작업 기준 프로필 화면의 클라우드 동기화 토글 ON 흐름을 iOS `ProfileView.onChange(of: settingManager.isCloudBackupEnabled)`/`RealtimeSyncManager.resetAndRestartRealtimeSync()`와 Android `ProfileViewModel.setCloudBackupEnabled()`로 다시 대조했다. iOS는 토글 ON + 로그인 상태에서 `syncToCloud()` 백업 Task를 즉시 시작하고, 별도로 0.1초 뒤 실시간 동기화 reset/restart를 예약하며, reset 내부에서 0.5초 뒤 listener를 다시 시작한다. Android도 백업을 별도 coroutine으로 먼저 시작한 뒤 100ms 후 현재 로그인/클라우드 ON 상태를 재확인하고 `resetAndRestartRealtimeSync()`를 호출하도록 맞췄다. 이로써 토글 OFF 등 상태가 바뀐 뒤 늦게 listener가 재시작되는 경계도 막는다. `ProfileViewModelTest`에 100ms 예약, 상태 재확인, 백업→delay→reset 호출 순서 계약을 추가했다. `:app:testDebugUnitTest --tests "*ProfileViewModelTest" --tests "*ProfileSheetParityTest" --tests "*RealtimeSyncManagerTest" --tests "*StringResourceCoverageTest"` 통과.
 - 2026-07-04 현재 작업 기준 앱 전면 복귀 시 원격 도형 변경 감지와 동기화 확인/로딩/완료/오류 다이얼로그 흐름을 iOS `ChangeDetectionManager`와 Android `AuthViewModel`/`MainScreen`으로 다시 대조했다. iOS는 로그인 + 클라우드 백업 ON 상태에서 30초 throttle과 세션 1회 체크를 적용하고, 변경이 있으면 확인/취소 alert를 띄운 뒤 확인 시 shape 동기화 loading alert, 완료 alert, 오류 alert로 진행한다. Android도 같은 사용자-visible 흐름을 유지하므로 구현 변경은 없었고, `AuthViewModelForegroundSyncTest`와 `MainScreenStartDestinationTest`에 확인 alert 순서, loading/complete/error 다이얼로그 문구, 중복 sync guard, shape-only foreground sync 호출 순서를 고정했다. `:app:testDebugUnitTest --tests "*AuthViewModelForegroundSyncTest" --tests "*MainScreenStartDestinationTest" --tests "*RealtimeSyncManagerTest" --tests "*StringResourceCoverageTest"` 통과.
