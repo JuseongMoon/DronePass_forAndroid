@@ -4,7 +4,19 @@
 
 > 마지막 업데이트: 2026-07-04
 > 브랜치: `fix/critical-pri0-fixes`
-> 상태: iOS 동작 대조와 Android 출시 하드닝 진행 중. Play 내부 테스트 `3.5.5 (102) internal-1`은 이미 게시된 상태이며, 최신 완료 코드/패리티 기준은 드론 편집 색상 선택 행 토큰 재감사까지다. 앱 출시 재개 절차는 최신 저장된 `PLAY_RELEASE_HANDOFF.md`를 우선 확인하고, 같은 `102` AAB 재업로드가 아니라 Play 앱 서명 SHA 등록과 Play 설치 검증부터 이어간다.
+> 상태: iOS 동작 대조와 Android 출시 하드닝 진행 중. Play 내부 테스트 `3.5.5 (102) internal-1`은 이미 게시된 상태이며, 최신 완료 코드/패리티 기준은 `44b1747 Align drone color picker with iOS`까지다. 앱 출시 재개 절차는 최신 저장된 `PLAY_RELEASE_HANDOFF.md`를 우선 확인하고, 같은 `102` AAB 재업로드가 아니라 Play 앱 서명 SHA 등록과 Play 설치 검증부터 이어간다.
+
+## 2026-07-04 저장 스냅샷
+
+사용자가 나중에 이 디렉토리에서 "앱 출시 과정 다시 이어나가자"라고 말하면 `PLAY_RELEASE_HANDOFF.md`의 `Explicit User Save Snapshot`부터 읽고 이어간다.
+
+- 현재 저장 기준 HEAD: `44b1747 Align drone color picker with iOS`.
+- 현재 출시 상태: Google Play 내부 테스트 `3.5.5 (102) internal-1`은 이미 게시됨.
+- 현재 정지점: Play Console 버전 상세 화면에서 내부 테스터에게 제공된 상태. 새 AAB 업로드가 아니라 앱 서명 인증서 SHA 등록과 테스터 설치 검증이 다음 단계다.
+- 다음 외부 설정: Play Console `Google Play로 보호됨 > 앱 무결성`에서 `앱 서명 키 인증서` SHA-1/SHA-256을 Firebase Android 앱과 NCP Maps Android 제한 설정에 등록.
+- 다음 실기기 검증: 내부 테스터 Gmail 추가, opt-in 링크로 Google Play 설치, Google/Apple 로그인, 네이버 지도, 주소 검색, Firestore iOS/Android 동기화, 하단/플로팅 UI 정렬 확인.
+- 새 빌드가 필요할 때만 `versionCode = 103`, release name `3.5.5 (103) internal-2`로 진행한다.
+- 현재 코드 편집은 열려 있지 않다. 코드 패리티를 먼저 이어갈 경우, 직전에 확인을 시작했던 영역은 iOS 설정용 `DateTimeSelectionView`가 실제 설정 화면에서 쓰이지 않는지에 대한 감사다.
 
 ## 앱 출시 재개 바로가기
 

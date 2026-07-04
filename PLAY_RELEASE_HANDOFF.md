@@ -12,13 +12,30 @@
 
 This file captures the Google Play internal testing/release state so a later session can continue from this repository without re-discovering the setup. Do not paste secrets, keystore passwords, API secrets, or full OAuth client IDs into this file.
 
+## Explicit User Save Snapshot
+
+Saved on 2026-07-04 at the user's request before pausing/resuming the Android app release process.
+
+- Resume trigger phrase from this directory: `앱 출시 과정 다시 이어나가자`.
+- Current working branch at save time: `fix/critical-pri0-fixes`.
+- Current local HEAD at save time: `44b1747 Align drone color picker with iOS`.
+- Working tree at save time: clean before this documentation update.
+- Play internal test version already published: `3.5.5 (102) internal-1`.
+- Published release state from Play Console: internal test version detail page shows `3.5.5 (102) internal-1` provided to internal testers, released on 2026-06-22 23:57 KST, available on 15,419 device types, install size about 15.2 MB, user install ratio 0.00% at the time of the screenshot.
+- Non-blocking Play warning seen during preview: native debug symbols were not uploaded for version code `102`. This did not block the internal-test release.
+- Do not rebuild or re-upload version code `102` by default when resuming.
+- Next release step: Play Console `Google Play로 보호됨 > 앱 무결성`에서 `앱 서명 키 인증서` SHA-1/SHA-256을 복사한 뒤 Firebase Android 앱과 NCP Maps Android 제한 설정에 등록한다.
+- Next verification step: add internal tester Gmail accounts, open the Play opt-in link on a real Android device, install from Google Play, then verify Google/Apple sign-in, Naver map auth, geocoding/reverse-geocoding, Firestore iOS/Android sync, and main UI overlay layout.
+- If a newer build is intentionally required later, bump to `versionCode = 103` and use release name `3.5.5 (103) internal-2`.
+- No active code edit is pending at this save point. If code parity work resumes before release verification, the next recently started audit area was the unused iOS `Setting/View/DateTimeSelectionView.swift` versus Android settings behavior; no Android change had been made for that audit yet.
+
 ## Latest Saved Resume Snapshot
 
 Saved again on 2026-07-04 from this repository so a later session can resume the app release process when the user says "앱 출시 과정 다시 이어나가자". The Play Console internal-test release flow had already reached the published version detail page, and local Android/iOS parity audits later continued through the 2026-07-04 drone edit color-picker row-token audit. The latest local code/parity checkpoint before this documentation save has not been uploaded as a newer Play build.
 
 - Current working branch: `fix/critical-pri0-fixes`.
-- Current local HEAD before this documentation save: `430b9e8 Align weather category refresh with iOS`.
-- Working tree status before this documentation save: drone edit color-picker row-token parity edits in progress.
+- Current local HEAD before this documentation save: `44b1747 Align drone color picker with iOS`.
+- Working tree status before this documentation save: clean.
 - Play internal test version already published: `3.5.5 (102) internal-1`.
 - Do not rebuild or re-upload version code `102` just to resume the release process.
 - Resume phrase from this directory: `앱 출시 과정 다시 이어나가자`.
