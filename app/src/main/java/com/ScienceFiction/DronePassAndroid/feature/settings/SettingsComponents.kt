@@ -23,6 +23,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
+internal val SettingsItemChevronSize = 12.dp
+
 /**
  * 설정/프로필 화면 공통 컴포넌트.
  * iOS `insetGrouped` List 토큰 정합 — Material3 매핑.
@@ -91,7 +93,7 @@ internal fun SettingsItem(
                 imageVector = Icons.Default.ChevronRight,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier.size(SettingsItemChevronSize),
             )
         }
     }

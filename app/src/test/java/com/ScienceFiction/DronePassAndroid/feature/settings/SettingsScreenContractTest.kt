@@ -1,6 +1,8 @@
 package com.ScienceFiction.DronePassAndroid.feature.settings
 
+import androidx.compose.ui.unit.dp
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
@@ -43,6 +45,32 @@ class SettingsScreenContractTest {
                 "R.string.settings_korea_features",
                 "R.string.settings_app_intro",
                 "R.string.settings_patch_notes",
+            ),
+        )
+    }
+
+    @Test
+    fun `설정 행 chevron 은 iOS caption 크기를 따른다`() {
+        assertEquals(12.dp, SettingsItemChevronSize)
+    }
+
+    @Test
+    fun `비행 환경 행은 iOS처럼 KP 날씨 모두 chevron 버튼으로 연다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsScreen.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsScreen.kt",
+        ).readText()
+
+        assertAppearsInOrder(
+            source = source,
+            tokens = listOf(
+                "R.string.settings_section_flight_environment",
+                "R.string.settings_kp_index_current",
+                "onClick = { showKpForecastSheet = true }",
+                "showArrow = true",
+                "R.string.settings_weather_current",
+                "onClick = { showWeatherSheet = true }",
+                "showArrow = true",
             ),
         )
     }
