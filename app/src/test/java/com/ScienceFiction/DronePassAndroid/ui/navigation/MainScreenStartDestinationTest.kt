@@ -196,11 +196,11 @@ class MainScreenStartDestinationTest {
     }
 
     @Test
-    fun `하단 탭바는 Android 시스템 바를 inset 으로 피하고 tablet은 iOS처럼 20dp 를 더한다`() {
+    fun `하단 탭바는 Android 시스템 바를 inset 으로 피하고 iOS 하단 여백을 더한다`() {
         assertTrue(FloatingTabBarUsesNavigationBarsPadding)
-        assertEquals(0.dp, TabBarPhoneBottomPadding)
+        assertEquals(15.dp, TabBarPhoneBottomPadding)
         assertEquals(20.dp, TabBarTabletBottomPadding)
-        assertEquals(0.dp, resolveTabBarBottomPadding(isTablet = false))
+        assertEquals(15.dp, resolveTabBarBottomPadding(isTablet = false))
         assertEquals(20.dp, resolveTabBarBottomPadding(isTablet = true))
     }
 

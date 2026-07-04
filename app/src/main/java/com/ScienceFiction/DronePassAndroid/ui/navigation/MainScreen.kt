@@ -102,12 +102,12 @@ import kotlinx.coroutines.delay
 
 // MARK: - iOS MainTabView 와 동등한 시각/치수 토큰
 // iOS: width 210, height 60, cornerRadius 30, shadow radius 10.
-// Android still has a system navigation/gesture area at the bottom. Keep the iOS
-// floating control token, but lift it with navigationBarsPadding at the call site.
+// Android still has a system navigation/gesture area at the bottom. Lift the iOS
+// floating control with navigationBarsPadding, then keep the iOS bottom gap.
 private val TabBarWidth = 210.dp
 private val TabBarHeight = 60.dp
 private val TabBarCornerRadius = 30.dp
-internal val TabBarPhoneBottomPadding = 0.dp
+internal val TabBarPhoneBottomPadding = 15.dp
 internal val TabBarTabletBottomPadding = 20.dp
 internal const val FloatingTabBarUsesNavigationBarsPadding = true
 private val TabBarShadowElevation = 8.dp
