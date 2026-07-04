@@ -10,6 +10,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.File
 
 class MapScreenLayersTest {
 
@@ -49,6 +50,32 @@ class MapScreenLayersTest {
     fun `상단 드론 드롭다운은 iOS처럼 지도 준비 전에도 표시한다`() {
         assertEquals(true, shouldShowMapDroneDropdown(isSketchMode = false))
         assertEquals(false, shouldShowMapDroneDropdown(isSketchMode = true))
+    }
+
+    @Test
+    fun `지도 생명주기는 iOS처럼 KP와 날씨 자동 갱신을 함께 관리한다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/map/MapScreen.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/map/MapScreen.kt",
+        ).readText()
+
+        assertAppearsInOrder(
+            source = source,
+            tokens = listOf(
+                "if (lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED))",
+                "kpViewModel.startAutoRefresh()",
+                "weatherViewModel.startAutoRefresh()",
+                "Lifecycle.Event.ON_START",
+                "kpViewModel.startAutoRefresh()",
+                "weatherViewModel.startAutoRefresh()",
+                "Lifecycle.Event.ON_STOP",
+                "kpViewModel.stopAutoRefresh()",
+                "weatherViewModel.stopAutoRefresh()",
+                "onDispose",
+                "kpViewModel.stopAutoRefresh()",
+                "weatherViewModel.stopAutoRefresh()",
+            ),
+        )
     }
 
     @Test
@@ -431,5 +458,25 @@ class MapScreenLayersTest {
             id = id,
             points = points,
         )
+    }
+
+    private fun assertAppearsInOrder(source: String, tokens: List<String>) {
+        var previousIndex = -1
+        for (token in tokens) {
+            val index = source.indexOf(token, startIndex = previousIndex + 1)
+            assertTrue(
+                "$token should appear after index $previousIndex in MapScreen.kt",
+                index > previousIndex,
+            )
+            previousIndex = index
+        }
+    }
+
+    private fun resolveProjectFile(vararg candidates: String): File {
+        val userDir = File(requireNotNull(System.getProperty("user.dir")))
+        return candidates
+            .map { File(userDir, it) }
+            .firstOrNull { it.exists() }
+            ?: error("Project file not found: ${candidates.joinToString()}")
     }
 }
