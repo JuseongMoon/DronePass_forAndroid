@@ -55,6 +55,24 @@ class SettingsScreenContractTest {
     }
 
     @Test
+    fun `언어 선택 행 chevron 도 iOS 설정 행 토큰을 따른다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsScreen.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsScreen.kt",
+        ).readText()
+
+        assertAppearsInOrder(
+            source = source,
+            tokens = listOf(
+                "R.string.settings_section_app_info",
+                "R.string.settings_language",
+                "Icons.Default.ChevronRight",
+                "Modifier.size(SettingsItemChevronSize)",
+            ),
+        )
+    }
+
+    @Test
     fun `비행 환경 행은 iOS처럼 KP 날씨 모두 chevron 버튼으로 연다`() {
         val source = resolveProjectFile(
             "src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsScreen.kt",

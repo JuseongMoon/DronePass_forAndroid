@@ -319,7 +319,7 @@ private fun SettingsMainContent(
                         imageVector = Icons.Default.ChevronRight,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(24.dp),
+                        modifier = Modifier.size(SettingsItemChevronSize),
                     )
                 }
                 DropdownMenu(
