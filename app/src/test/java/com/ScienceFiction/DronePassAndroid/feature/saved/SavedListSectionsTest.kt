@@ -650,6 +650,23 @@ class SavedListSectionsTest {
         )
     }
 
+    @Test
+    fun `저장 목록 내부 포커스 이벤트는 iOS처럼 저장 목록 스크롤과 지도 포커스를 함께 요청한다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/saved/SavedListScreen.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/saved/SavedListScreen.kt",
+        ).readText()
+
+        assertAppearsInOrder(
+            source = source,
+            tokens = listOf(
+                "viewModel.savedShapeFocusEvent.collect { shapeId ->",
+                "internalFocusShapeId = shapeId",
+                "onNavigateToMapWithShape(shapeId)",
+            ),
+        )
+    }
+
     private fun shape(
         id: String,
         start: Long,

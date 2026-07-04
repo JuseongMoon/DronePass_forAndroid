@@ -13,6 +13,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.File
 
 class MainScreenStartDestinationTest {
 
@@ -290,6 +291,41 @@ class MainScreenStartDestinationTest {
     }
 
     @Test
+    fun `저장 오버레이 도형 포커스 요청은 iOS처럼 지도 pending focus 로 전달된다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/ui/navigation/MainScreen.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/ui/navigation/MainScreen.kt",
+        ).readText()
+
+        assertTrue(
+            Regex(
+                "SavedListOverlay\\([\\s\\S]*" +
+                    "onNavigateToMapWithShape = \\{ shapeId ->\\s+" +
+                    "pendingFocusShapeId = shapeId\\s+" +
+                    "showSettingsOverlay = false",
+            ).containsMatchIn(source),
+        )
+    }
+
+    @Test
+    fun `지도 pending focus 는 NavGraph 를 통해 MapScreen focusShapeId 로 전달된다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/ui/navigation/NavGraph.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/ui/navigation/NavGraph.kt",
+        ).readText()
+
+        assertAppearsInOrder(
+            source = source,
+            tokens = listOf(
+                "pendingFocusShapeId: String? = null",
+                "MapScreen(",
+                "focusShapeId = pendingFocusShapeId",
+                "onFocusConsumed = onPendingShapeConsumed",
+            ),
+        )
+    }
+
+    @Test
     fun `저장과 설정 오버레이는 iOS처럼 바깥 영역 탭으로 닫히지 않는다`() {
         assertEquals(false, shouldDismissMainOverlayOnOutsideTap())
     }
@@ -450,5 +486,25 @@ class MainScreenStartDestinationTest {
         assertEquals(17.sp, NotificationPopupButtonTextSize)
         assertEquals(250, NotificationPopupAnimationDurationMs)
         assertEquals(0.9f, NotificationPopupInitialScale)
+    }
+
+    private fun assertAppearsInOrder(source: String, tokens: List<String>) {
+        var previousIndex = -1
+        for (token in tokens) {
+            val index = source.indexOf(token, startIndex = previousIndex + 1)
+            assertTrue(
+                "$token should appear after index $previousIndex",
+                index > previousIndex,
+            )
+            previousIndex = index
+        }
+    }
+
+    private fun resolveProjectFile(vararg candidates: String): File {
+        val userDir = File(requireNotNull(System.getProperty("user.dir")))
+        return candidates
+            .map { File(userDir, it) }
+            .firstOrNull { it.exists() }
+            ?: error("Project file not found: ${candidates.joinToString()}")
     }
 }
