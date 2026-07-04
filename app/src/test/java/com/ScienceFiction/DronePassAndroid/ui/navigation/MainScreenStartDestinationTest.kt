@@ -531,6 +531,60 @@ class MainScreenStartDestinationTest {
         )
     }
 
+    @Test
+    fun `포그라운드 동기화 확인 alert 는 iOS ChangeDetectionManager 와 같은 순서를 유지한다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/ui/navigation/MainScreen.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/ui/navigation/MainScreen.kt",
+        ).readText()
+
+        assertAppearsInOrder(
+            source = source,
+            tokens = listOf(
+                "authViewModel.foregroundSyncConfirmation.collect",
+                "showForegroundSyncConfirmation = true",
+                "if (showForegroundSyncConfirmation)",
+                "R.string.sync_alert_detected_title",
+                "R.string.sync_alert_detected_message",
+                "confirmButton",
+                "showForegroundSyncConfirmation = false",
+                "authViewModel.confirmForegroundCloudSync()",
+                "R.string.common_confirm",
+                "dismissButton",
+                "R.string.common_cancel",
+            ),
+        )
+    }
+
+    @Test
+    fun `포그라운드 동기화 결과 dialog 는 iOS처럼 loading complete error 순서와 문구를 유지한다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/ui/navigation/MainScreen.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/ui/navigation/MainScreen.kt",
+        ).readText()
+        val dialogSource = source.substringAfter("private fun ForegroundSyncDialog")
+            .substringBefore("/**\n * iOS PushNotificationPopupView")
+
+        assertAppearsInOrder(
+            source = dialogSource,
+            tokens = listOf(
+                "ForegroundSyncDialogState.Loading",
+                "R.string.sync_loading_title",
+                "CircularProgressIndicator",
+                "R.string.sync_loading_message",
+                "ForegroundSyncDialogState.Complete",
+                "R.string.sync_complete_title",
+                "R.string.sync_complete_message",
+                "R.string.common_confirm",
+                "is ForegroundSyncDialogState.Error",
+                "R.string.sync_error_title",
+                "R.string.sync_error_message",
+                "dialogState.message",
+                "R.string.common_confirm",
+            ),
+        )
+    }
+
     private fun assertAppearsInOrder(source: String, tokens: List<String>) {
         var previousIndex = -1
         for (token in tokens) {

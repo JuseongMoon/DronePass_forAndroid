@@ -70,6 +70,32 @@ class AuthViewModelForegroundSyncTest {
     }
 
     @Test
+    fun `foreground confirmation follows iOS loading then complete or error alert sequence`() {
+        val source = resolveProjectFile(
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/auth/AuthViewModel.kt",
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/auth/AuthViewModel.kt",
+        ).readText()
+        val functionBody = source.substringAfter("fun confirmForegroundCloudSync()")
+            .substringBefore("/**\n     * Google Sign-In 실행")
+
+        assertAppearsInOrder(
+            source = functionBody,
+            tokens = listOf(
+                "if (isForegroundSyncing) return@launch",
+                "isForegroundSyncing = true",
+                "realtimeSyncManager.startListening(user.uid)",
+                "ForegroundSyncDialogState.Loading",
+                "performForegroundCloudSync()",
+                "FullSyncResult.Success",
+                "ForegroundSyncDialogState.Complete",
+                "is FullSyncResult.Failure",
+                "ForegroundSyncDialogState.Error(result.message)",
+                "isForegroundSyncing = false",
+            ),
+        )
+    }
+
+    @Test
     fun `foreground remote change check is skipped after a completed check in the same session`() {
         assertEquals(
             false,
@@ -263,6 +289,18 @@ class AuthViewModelForegroundSyncTest {
             .map(::File)
             .firstOrNull { it.exists() }
             ?: error("Project file not found. Tried: ${candidates.joinToString()}")
+    }
+
+    private fun assertAppearsInOrder(source: String, tokens: List<String>) {
+        var previousIndex = -1
+        for (token in tokens) {
+            val index = source.indexOf(token, startIndex = previousIndex + 1)
+            assertTrue(
+                "$token should appear after index $previousIndex in AuthViewModel.kt",
+                index > previousIndex,
+            )
+            previousIndex = index
+        }
     }
 
     @Test
