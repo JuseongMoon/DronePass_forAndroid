@@ -56,6 +56,13 @@ private const val DRONE_NAME_MAX_WIDTH_DP = 210
 internal val DroneEditMemoMinHeight = 100.dp
 internal val DroneEditNavigationHeaderHeight = 44.dp
 internal val DroneEditNavigationHeaderSideWidth = 88.dp
+internal val DroneColorPickerCircleSize = 24.dp
+internal val DroneColorPickerCircleTextSpacing = 8.dp
+internal val DroneColorPickerRowVerticalPadding = 12.dp
+internal val DroneColorPickerDividerStartPadding = 40.dp
+internal val DroneColorPickerCheckmarkSize = 17.dp
+internal val DroneColorPickerLabelFontSize = 17.sp
+internal const val DroneColorPickerCircleBorderAlpha = 0.2f
 
 /**
  * 드론 생성/편집 BottomSheet.
@@ -440,7 +447,7 @@ fun ColorPickerGrid(
                 onClick = { onColorSelected(color) },
             )
             if (index != colors.lastIndex) {
-                HorizontalDivider(modifier = Modifier.padding(start = 40.dp))
+                HorizontalDivider(modifier = Modifier.padding(start = DroneColorPickerDividerStartPadding))
             }
         }
     }
@@ -456,24 +463,27 @@ private fun ColorPickerRow(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(vertical = 12.dp),
+            .padding(vertical = DroneColorPickerRowVerticalPadding),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
             modifier = Modifier
-                .size(24.dp)
+                .size(DroneColorPickerCircleSize)
                 .clip(CircleShape)
                 .background(color.composeColor)
                 .border(
                     width = 1.dp,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = DroneColorPickerCircleBorderAlpha),
                     shape = CircleShape,
                 ),
         )
-        Spacer(modifier = Modifier.width(16.dp))
+        Spacer(modifier = Modifier.width(DroneColorPickerCircleTextSpacing))
         Text(
             text = color.localizedLabel(),
-            style = MaterialTheme.typography.bodyLarge,
+            style = MaterialTheme.typography.bodyLarge.copy(
+                fontSize = DroneColorPickerLabelFontSize,
+                letterSpacing = 0.sp,
+            ),
         )
         Spacer(modifier = Modifier.weight(1f))
         if (isSelected) {
@@ -484,7 +494,7 @@ private fun ColorPickerRow(
                     color.localizedLabel(),
                 ),
                 tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(20.dp),
+                modifier = Modifier.size(DroneColorPickerCheckmarkSize),
             )
         }
     }

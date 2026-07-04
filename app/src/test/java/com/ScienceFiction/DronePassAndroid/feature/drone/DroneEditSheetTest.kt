@@ -1,6 +1,7 @@
 package com.ScienceFiction.DronePassAndroid.feature.drone
 
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.PaletteColor
 import org.junit.Assert.assertEquals
@@ -66,6 +67,17 @@ class DroneEditSheetTest {
             ),
             droneEditSelectableColors(),
         )
+    }
+
+    @Test
+    fun `색상 선택 행 토큰은 iOS ColorPickerGrid와 맞춘다`() {
+        assertEquals(24.dp, DroneColorPickerCircleSize)
+        assertEquals(8.dp, DroneColorPickerCircleTextSpacing)
+        assertEquals(12.dp, DroneColorPickerRowVerticalPadding)
+        assertEquals(40.dp, DroneColorPickerDividerStartPadding)
+        assertEquals(17.dp, DroneColorPickerCheckmarkSize)
+        assertEquals(17.sp, DroneColorPickerLabelFontSize)
+        assertEquals(0.2f, DroneColorPickerCircleBorderAlpha, 0f)
     }
 
     @Test
