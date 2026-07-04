@@ -23,6 +23,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.File
 import java.text.DateFormat
 import java.util.Date
 import java.util.Locale
@@ -159,6 +160,21 @@ class WeatherForecastParityTest {
     @Test
     fun `auto refresh interval matches iOS WeatherManager three minute timer`() {
         assertEquals(3 * 60 * 1000L, WeatherAutoRefreshIntervalMs)
+    }
+
+    @Test
+    fun `auto refresh invalidates cache before fetching like iOS force refresh timer`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/weather/WeatherViewModel.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/weather/WeatherViewModel.kt",
+        ).readText()
+        val loopIndex = source.indexOf("delay(WeatherAutoRefreshIntervalMs)")
+        val invalidateIndex = source.indexOf("weatherRepository.invalidateCache()", startIndex = loopIndex)
+        val fetchIndex = source.indexOf("fetchCurrentLocationAndWeather()", startIndex = invalidateIndex)
+
+        assertTrue(loopIndex >= 0)
+        assertTrue(invalidateIndex > loopIndex)
+        assertTrue(fetchIndex > invalidateIndex)
     }
 
     @Test
@@ -705,6 +721,14 @@ class WeatherForecastParityTest {
         cri = 0.0,
         gustDifferenceLevel = GustDifferenceLevel.SAFE,
     )
+
+    private fun resolveProjectFile(vararg candidates: String): File {
+        val userDir = File(requireNotNull(System.getProperty("user.dir")))
+        return candidates
+            .map { File(userDir, it) }
+            .firstOrNull { it.exists() }
+            ?: error("Project file not found: ${candidates.joinToString()}")
+    }
 
     private companion object {
         const val HourMs = 60 * 60 * 1000L

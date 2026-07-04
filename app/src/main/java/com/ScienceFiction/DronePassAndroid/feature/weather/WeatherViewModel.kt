@@ -178,6 +178,7 @@ class WeatherViewModel @Inject constructor(
         autoRefreshJob = viewModelScope.launch {
             while (isActive) {
                 delay(WeatherAutoRefreshIntervalMs)
+                weatherRepository.invalidateCache()
                 fetchCurrentLocationAndWeather()
             }
         }
