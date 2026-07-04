@@ -140,6 +140,78 @@ class SettingsScreenContractTest {
     }
 
     @Test
+    fun `내 정보와 드론 관리는 iOS처럼 설정 행에서 시트로 연다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsScreen.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsScreen.kt",
+        ).readText()
+
+        assertAppearsInOrder(
+            source = source,
+            tokens = listOf(
+                "title = if (isLoggedIn)",
+                "R.string.settings_profile_my",
+                "R.string.settings_profile_login",
+                "onClick = {",
+                "if (isLoggedIn)",
+                "showProfileSheet = true",
+                "showLoginSheet = true",
+                "R.string.settings_drone_manage",
+                "onClick = onNavigateToDroneList",
+            ),
+        )
+        assertAppearsInOrder(
+            source = source,
+            tokens = listOf(
+                "if (showDroneListSheet)",
+                "onDismissRequest = { showDroneListSheet = false }",
+                "skipPartiallyExpanded = true",
+                "DroneListScreen()",
+            ),
+        )
+    }
+
+    @Test
+    fun `프로필과 로그인 시트 종료 후에는 iOS처럼 설정 인증 상태를 다시 확인한다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsScreen.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsScreen.kt",
+        ).readText()
+
+        assertAppearsInOrder(
+            source = source,
+            tokens = listOf(
+                "if (showProfileSheet)",
+                "onDismissRequest = {",
+                "showProfileSheet = false",
+                "settingsViewModel.checkAuthState()",
+                "ProfileScreen(",
+                "onDismiss = {",
+                "showProfileSheet = false",
+                "settingsViewModel.checkAuthState()",
+                "onAccountSessionEnded = onAccountSessionEnded",
+            ),
+        )
+        assertAppearsInOrder(
+            source = source,
+            tokens = listOf(
+                "if (showLoginSheet)",
+                "onDismissRequest = {",
+                "showLoginSheet = false",
+                "settingsViewModel.checkAuthState()",
+                "LoginScreen(",
+                "onLoginSuccess = {",
+                "showLoginSheet = false",
+                "settingsViewModel.checkAuthState()",
+                "onSkipLogin = {",
+                "showLoginSheet = false",
+                "settingsViewModel.checkAuthState()",
+                "showSkipLogin = SettingsLoginSheetShowSkipLogin",
+            ),
+        )
+    }
+
+    @Test
     fun `설정 진입 KP 요약은 iOS처럼 강제 갱신한다`() {
         val source = resolveProjectFile(
             "src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsViewModel.kt",
