@@ -57,6 +57,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.core.util.DroneCategory
 import com.ScienceFiction.DronePassAndroid.domain.model.KpLevel
@@ -70,6 +71,7 @@ internal val InfoGuideHeaderHeight = 44.dp
 internal val InfoGuideHeaderActionWidth = 72.dp
 internal val InfoGuideHeaderHorizontalPadding = 8.dp
 internal val InfoGuideHeaderDividerThickness = 0.5.dp
+internal val InfoGuideSectionTitleFontSize = 20.sp
 internal val InfoGuideLeadingIconSlotWidth = 50.dp
 internal val InfoGuideLeadingIconSize = 30.dp
 internal val InfoGuideElementNoteTopPadding = 8.dp
@@ -228,6 +230,7 @@ private fun SectionTitle(
     Text(
         text = stringResource(titleRes),
         style = MaterialTheme.typography.titleMedium,
+        fontSize = InfoGuideSectionTitleFontSize,
         fontWeight = FontWeight.SemiBold,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = modifier.padding(top = 4.dp),

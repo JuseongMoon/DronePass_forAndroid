@@ -8,6 +8,7 @@ import androidx.compose.material.icons.filled.Circle
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.core.util.DroneCategory
 import com.ScienceFiction.DronePassAndroid.domain.model.KpLevel
@@ -183,6 +184,7 @@ class InfoGuideSheetsTest {
         assertEquals(72.dp, InfoGuideHeaderActionWidth)
         assertEquals(8.dp, InfoGuideHeaderHorizontalPadding)
         assertEquals(0.5f, InfoGuideHeaderDividerThickness.value, 0f)
+        assertEquals(20.sp, InfoGuideSectionTitleFontSize)
     }
 
     @Test
