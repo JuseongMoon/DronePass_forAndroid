@@ -87,7 +87,7 @@ internal fun resolveNotamStatusValueColor(status: NotamStatus): Color? = when (s
 }
 
 internal fun shouldShowAltitudeRow(upper: String?, lower: String?): Boolean =
-    upper != null && lower != null
+    upper != null || lower != null
 
 internal val AltitudeUnit.descriptionRes: Int?
     get() = when (this) {

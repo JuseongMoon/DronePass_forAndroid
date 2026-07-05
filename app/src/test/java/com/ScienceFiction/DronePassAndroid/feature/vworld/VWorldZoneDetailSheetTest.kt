@@ -79,10 +79,10 @@ class VWorldZoneDetailSheetTest {
     }
 
     @Test
-    fun `altitude row is shown only when upper and lower values both exist like iOS altitudeInfo`() {
+    fun `altitude row is shown when either upper or lower value exists like iOS altitudeInfo`() {
         assertTrue(shouldShowAltitudeRow(upper = "무제한", lower = "지면 (0m)"))
-        assertFalse(shouldShowAltitudeRow(upper = "무제한", lower = null))
-        assertFalse(shouldShowAltitudeRow(upper = null, lower = "지면 (0m)"))
+        assertTrue(shouldShowAltitudeRow(upper = "무제한", lower = null))
+        assertTrue(shouldShowAltitudeRow(upper = null, lower = "지면 (0m)"))
         assertFalse(shouldShowAltitudeRow(upper = null, lower = null))
     }
 
