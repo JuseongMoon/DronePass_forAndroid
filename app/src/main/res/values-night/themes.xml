@@ -13,4 +13,8 @@
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
     </style>
+
+    <style name="Theme.DronePassAndroid.Launch" parent="Theme.DronePassAndroid">
+        <item name="android:windowBackground">@drawable/launch_screen</item>
+    </style>
 </resources>

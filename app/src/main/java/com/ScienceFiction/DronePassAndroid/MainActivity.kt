@@ -46,6 +46,7 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        setTheme(R.style.Theme_DronePassAndroid)
         super.onCreate(savedInstanceState)
         initialFocusShapeId.value = resolveNotificationLaunchFocusShapeId(
             notificationShapeId = extractNotificationShapeId(intent),

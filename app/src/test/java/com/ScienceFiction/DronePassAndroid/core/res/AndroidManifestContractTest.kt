@@ -33,6 +33,14 @@ class AndroidManifestContractTest {
     }
 
     @Test
+    fun `MainActivity 는 iOS LaunchScreen 처럼 전용 launch theme 로 시작한다`() {
+        val manifest = parseManifest()
+        val activity = manifest.findActivity(".MainActivity")
+
+        assertEquals("@style/Theme.DronePassAndroid.Launch", activity.getAttribute("android:theme"))
+    }
+
+    @Test
     fun `Application 은 Android 13 이상 back dispatcher 를 명시적으로 사용한다`() {
         val manifest = parseManifest()
 
