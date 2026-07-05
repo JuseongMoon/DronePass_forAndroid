@@ -99,6 +99,20 @@ class SavedShapeListItemTest {
     }
 
     @Test
+    fun `저장 목록 행 타이포그래피는 iOS ShapeListRow 값을 따른다`() {
+        assertEquals(17f, SavedShapeTitleFontSize.value, 0f)
+        assertEquals(20f, SavedShapeTitleLineHeight.value, 0f)
+        assertEquals(11f, SavedShapeMetadataFontSize.value, 0f)
+        assertEquals(13f, SavedShapeMetadataLineHeight.value, 0f)
+        assertEquals(4.dp, SavedShapeInfoVerticalSpacing)
+    }
+
+    @Test
+    fun `저장 목록 행 선택 배경은 iOS accentColor 15퍼센트 opacity 를 따른다`() {
+        assertEquals(0.15f, SavedShapeSelectedBackgroundAlpha, 0f)
+    }
+
+    @Test
     fun `저장 목록 행 레이아웃 토큰은 iOS ShapeListRow 값을 따른다`() {
         assertEquals(55.dp, SavedShapeRowMinHeight)
         assertEquals(4.dp, SavedShapeRowHorizontalPadding)

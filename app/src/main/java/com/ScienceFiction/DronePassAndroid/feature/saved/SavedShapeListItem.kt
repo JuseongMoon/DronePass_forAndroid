@@ -63,7 +63,7 @@ fun SavedShapeListItem(
             .heightIn(min = SavedShapeRowMinHeight)
             .background(
                 if (isSelected) {
-                    MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                    MaterialTheme.colorScheme.primary.copy(alpha = SavedShapeSelectedBackgroundAlpha)
                 } else {
                     Color.Transparent
                 }
@@ -93,12 +93,15 @@ fun SavedShapeListItem(
 
         Column(
             modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically)
+            verticalArrangement = Arrangement.spacedBy(
+                SavedShapeInfoVerticalSpacing,
+                Alignment.CenterVertically,
+            )
         ) {
             Text(
                 text = savedShapeListTitleText(shape.title),
-                fontSize = 17.sp,
-                lineHeight = 20.sp,
+                fontSize = SavedShapeTitleFontSize,
+                lineHeight = SavedShapeTitleLineHeight,
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
@@ -107,8 +110,8 @@ fun SavedShapeListItem(
             if (shouldShowSavedShapeAddress(shape.address)) {
                 Text(
                     text = shape.address.orEmpty(),
-                    fontSize = 11.sp,
-                    lineHeight = 13.sp,
+                    fontSize = SavedShapeMetadataFontSize,
+                    lineHeight = SavedShapeMetadataLineHeight,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -117,8 +120,8 @@ fun SavedShapeListItem(
 
             Text(
                 text = dateRangeText,
-                fontSize = 11.sp,
-                lineHeight = 13.sp,
+                fontSize = SavedShapeMetadataFontSize,
+                lineHeight = SavedShapeMetadataLineHeight,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
@@ -149,6 +152,12 @@ internal val SavedShapeInfoLeadingSpacing = 12.dp
 internal val SavedShapeDetailLeadingSpacing = 8.dp
 internal val SavedShapeDetailButtonWidth = 30.dp
 internal val SavedShapeDetailChevronSize = 12.dp
+internal const val SavedShapeSelectedBackgroundAlpha = 0.15f
+internal val SavedShapeInfoVerticalSpacing = 4.dp
+internal val SavedShapeTitleFontSize = 17.sp
+internal val SavedShapeTitleLineHeight = 20.sp
+internal val SavedShapeMetadataFontSize = 11.sp
+internal val SavedShapeMetadataLineHeight = 13.sp
 internal val SavedShapeColorIndicatorWidth = 4.dp
 internal val SavedShapeColorIndicatorHeight = 35.dp
 internal val SavedShapeColorIndicatorCornerRadius = 15.dp
