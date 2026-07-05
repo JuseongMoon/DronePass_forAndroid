@@ -20,7 +20,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.NightsStay
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.WbSunny
-import androidx.compose.material.icons.filled.WbTwilight
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -34,7 +33,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -299,7 +298,7 @@ private fun SideIconTime(
         verticalArrangement = Arrangement.spacedBy(IosSunTimelineSideIconTimeSpacing),
     ) {
         Icon(
-            imageVector = sunTimelineEndpointImageVector(endpointIcon),
+            painter = painterResource(sunTimelineEndpointDrawableRes(endpointIcon)),
             contentDescription = null,
             tint = SunEventColor,
             modifier = Modifier.size(IosSunTimelineSideIconSize),
@@ -326,10 +325,10 @@ internal enum class SunTimelineEndpointIcon {
 internal fun resolveSunTimelineEndpointIcon(isSunrise: Boolean): SunTimelineEndpointIcon =
     if (isSunrise) SunTimelineEndpointIcon.Sunrise else SunTimelineEndpointIcon.Sunset
 
-internal fun sunTimelineEndpointImageVector(endpointIcon: SunTimelineEndpointIcon): ImageVector =
+internal fun sunTimelineEndpointDrawableRes(endpointIcon: SunTimelineEndpointIcon): Int =
     when (endpointIcon) {
-        SunTimelineEndpointIcon.Sunrise -> Icons.Default.WbSunny
-        SunTimelineEndpointIcon.Sunset -> Icons.Default.WbTwilight
+        SunTimelineEndpointIcon.Sunrise -> iosSunEventDrawableRes(isSunrise = true)
+        SunTimelineEndpointIcon.Sunset -> iosSunEventDrawableRes(isSunrise = false)
     }
 
 internal data class SunTimelineRemainingTime(

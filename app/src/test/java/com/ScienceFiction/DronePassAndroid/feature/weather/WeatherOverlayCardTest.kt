@@ -5,6 +5,7 @@ import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.Umbrella
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ScienceFiction.DronePassAndroid.R
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -24,6 +25,14 @@ class WeatherOverlayCardTest {
             SunEventOverlayIcon.Sunrise,
             resolveSunEventOverlayIcon(isNextSunset = false),
         )
+    }
+
+    @Test
+    fun `sun event overlay icons use iOS sunrise and sunset symbol resources`() {
+        assertEquals(IosSunriseSymbolName, iosSunEventSymbolName(isSunrise = true))
+        assertEquals(IosSunsetSymbolName, iosSunEventSymbolName(isSunrise = false))
+        assertEquals(R.drawable.ic_sunrise_fill_ios_like, iosSunEventDrawableRes(isSunrise = true))
+        assertEquals(R.drawable.ic_sunset_fill_ios_like, iosSunEventDrawableRes(isSunrise = false))
     }
 
     @Test
