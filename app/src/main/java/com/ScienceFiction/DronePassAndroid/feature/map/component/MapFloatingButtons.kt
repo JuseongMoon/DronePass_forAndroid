@@ -39,6 +39,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
@@ -85,6 +87,7 @@ internal const val FlightZoneFabIdleScale = 1.0f
 internal const val FlightZoneFabPulseScale = 1.1f
 internal const val FlightZoneFabPulseResetDelayMillis = 200L
 internal const val FlightZoneFabPulseDampingRatio = 0.6f
+internal val FlightZoneFabOpenHapticType = HapticFeedbackType.TextHandleMove
 private val FlightZoneActiveColor = MapFloatingAccentColor
 
 internal enum class FlightZoneFabIconStyle {
@@ -295,6 +298,7 @@ private fun FlightZoneLayerFab(
     modifier: Modifier = Modifier
 ) {
     val state = remember(count) { resolveFlightZoneFabUiState(count) }
+    val haptic = LocalHapticFeedback.current
     var observedCount by remember { mutableIntStateOf(count) }
     var isAnimating by remember { mutableStateOf(false) }
     LaunchedEffect(count) {
@@ -314,7 +318,10 @@ private fun FlightZoneLayerFab(
         label = "flightZoneFabPulseScale",
     )
     Surface(
-        onClick = onClick,
+        onClick = {
+            haptic.performHapticFeedback(FlightZoneFabOpenHapticType)
+            onClick()
+        },
         shape = RoundedCornerShape(FlightZoneFabCornerRadius),
         color = MaterialTheme.colorScheme.surface,
         shadowElevation = FlightZoneFabShadowElevation,

@@ -3,6 +3,7 @@ package com.ScienceFiction.DronePassAndroid.feature.map.component
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Draw
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.junit.Assert.assertEquals
@@ -88,6 +89,11 @@ class MapFloatingButtonsTest {
         assertEquals(1.1f, FlightZoneFabPulseScale, 0f)
         assertEquals(200L, FlightZoneFabPulseResetDelayMillis)
         assertEquals(0.6f, FlightZoneFabPulseDampingRatio, 0f)
+    }
+
+    @Test
+    fun `flight zone FAB open action uses light haptic feedback like iOS`() {
+        assertEquals(HapticFeedbackType.TextHandleMove, FlightZoneFabOpenHapticType)
     }
 
     @Test
