@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 internal const val IosToastMessageDurationMs = 2_000L
 internal const val IosToastMessageAnimationDurationMs = 300
@@ -24,6 +25,7 @@ internal val IosToastMessageBottomPadding = 100.dp
 internal val IosToastMessageCornerRadius = 12.dp
 internal val IosToastMessageHorizontalPadding = 16.dp
 internal val IosToastMessageVerticalPadding = 10.dp
+internal val IosToastMessageTextSize = 15.sp
 
 /**
  * iOS ToastMessageModifier 정합: 화면 내부 하단 토스트.
@@ -49,6 +51,7 @@ internal fun IosToastMessageOverlay(
         Text(
             text = message,
             style = MaterialTheme.typography.bodyMedium,
+            fontSize = IosToastMessageTextSize,
             fontWeight = FontWeight.Normal,
             color = Color.White,
             modifier = Modifier

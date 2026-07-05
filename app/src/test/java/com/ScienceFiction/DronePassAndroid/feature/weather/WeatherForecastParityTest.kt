@@ -17,6 +17,7 @@ import com.ScienceFiction.DronePassAndroid.ui.component.IosToastMessageBottomPad
 import com.ScienceFiction.DronePassAndroid.ui.component.IosToastMessageCornerRadius
 import com.ScienceFiction.DronePassAndroid.ui.component.IosToastMessageDurationMs
 import com.ScienceFiction.DronePassAndroid.ui.component.IosToastMessageHorizontalPadding
+import com.ScienceFiction.DronePassAndroid.ui.component.IosToastMessageTextSize
 import com.ScienceFiction.DronePassAndroid.ui.component.IosToastMessageVerticalPadding
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -149,6 +150,7 @@ class WeatherForecastParityTest {
         assertEquals(12.dp, IosToastMessageCornerRadius)
         assertEquals(16.dp, IosToastMessageHorizontalPadding)
         assertEquals(10.dp, IosToastMessageVerticalPadding)
+        assertEquals(15.sp, IosToastMessageTextSize)
     }
 
     @Test
