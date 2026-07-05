@@ -75,6 +75,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.core.data.remote.NaverGeocodingApi
 import com.ScienceFiction.DronePassAndroid.core.data.repository.reverseGeocodingResultsToAddress
@@ -103,6 +104,9 @@ internal val CoordinateGuideCardCornerRadius = 20.dp
 internal val CoordinateGuideCardMaxWidth = 500.dp
 internal val CoordinateGuideCardPadding = 16.dp
 internal val CoordinateGuideCardVerticalSpacing = 8.dp
+internal val CoordinateGuideTextSize = 15.sp
+internal val CoordinateGuideFormatTitleTextSize = 12.sp
+internal val CoordinateGuideExampleTextSize = 11.sp
 internal val ShapeEditMemoMinHeight = 170.dp
 internal val ShapeEditNavigationHeaderHeight = 44.dp
 internal val ShapeEditNavigationActionSlotWidth = 80.dp
@@ -1220,17 +1224,20 @@ private fun CoordinateGuideCard(
         Text(
             text = stringResource(R.string.coordinate_guide),
             style = MaterialTheme.typography.bodySmall,
+            fontSize = CoordinateGuideTextSize,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(
             text = stringResource(R.string.coordinate_format_title),
             style = MaterialTheme.typography.labelSmall,
+            fontSize = CoordinateGuideFormatTitleTextSize,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         coordinateGuideExampleResourceIds().forEach { resId ->
             Text(
                 text = stringResource(resId),
                 style = MaterialTheme.typography.labelSmall,
+                fontSize = CoordinateGuideExampleTextSize,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }

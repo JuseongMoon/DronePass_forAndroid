@@ -54,6 +54,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.core.data.remote.NaverGeocodingApi
 import com.ScienceFiction.DronePassAndroid.core.data.remote.model.GeocodingAddress
@@ -101,6 +102,9 @@ internal val SearchAddressGuideCardCornerRadius = 20.dp
 internal val SearchAddressGuideCardMaxWidth = 500.dp
 internal val SearchAddressGuideCardPadding = 16.dp
 internal val SearchAddressGuideCardVerticalSpacing = 8.dp
+internal val SearchAddressGuideTextSize = 15.sp
+internal val SearchAddressGuideExampleTitleTextSize = 12.sp
+internal val SearchAddressGuideExampleTextSize = 12.sp
 
 internal fun resolveSelectedAddressForShapeEdit(address: GeocodingAddress): String =
     address.jibunAddress
@@ -460,11 +464,13 @@ private fun SearchAddressGuideCard(
         Text(
             text = stringResource(R.string.search_address_guide),
             style = MaterialTheme.typography.bodyMedium,
+            fontSize = SearchAddressGuideTextSize,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(
             text = stringResource(R.string.search_address_example),
             style = MaterialTheme.typography.bodySmall,
+            fontSize = SearchAddressGuideExampleTitleTextSize,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         listOf(
@@ -476,6 +482,7 @@ private fun SearchAddressGuideCard(
             Text(
                 text = stringResource(resId),
                 style = MaterialTheme.typography.bodySmall,
+                fontSize = SearchAddressGuideExampleTextSize,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }

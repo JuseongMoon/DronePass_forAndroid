@@ -2,6 +2,7 @@ package com.ScienceFiction.DronePassAndroid.feature.shape
 
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.ScienceFiction.DronePassAndroid.core.data.remote.model.GeocodingAddress
 import com.ScienceFiction.DronePassAndroid.core.data.remote.model.GeocodingAddressElement
 import com.ScienceFiction.DronePassAndroid.domain.model.Coordinate
@@ -103,6 +104,9 @@ class SearchAddressSheetTest {
         assertEquals(20.dp, SearchAddressGuideCardCornerRadius)
         assertEquals(16.dp, SearchAddressGuideCardPadding)
         assertEquals(8.dp, SearchAddressGuideCardVerticalSpacing)
+        assertEquals(15.sp, SearchAddressGuideTextSize)
+        assertEquals(12.sp, SearchAddressGuideExampleTitleTextSize)
+        assertEquals(12.sp, SearchAddressGuideExampleTextSize)
     }
 
     @Test

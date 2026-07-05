@@ -2,6 +2,7 @@ package com.ScienceFiction.DronePassAndroid.feature.shape
 
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.datastore.preferences.core.preferencesOf
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.domain.model.Coordinate
@@ -77,6 +78,9 @@ class ShapeEditDefaultsTest {
         assertEquals(20.dp, CoordinateGuideCardCornerRadius)
         assertEquals(16.dp, CoordinateGuideCardPadding)
         assertEquals(8.dp, CoordinateGuideCardVerticalSpacing)
+        assertEquals(15.sp, CoordinateGuideTextSize)
+        assertEquals(12.sp, CoordinateGuideFormatTitleTextSize)
+        assertEquals(11.sp, CoordinateGuideExampleTextSize)
     }
 
     @Test
