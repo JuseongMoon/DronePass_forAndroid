@@ -6,7 +6,7 @@
 > Latest release setup baseline commit: `8135932`
 > Previous saved release-resume commit before this handoff: `c20533a`
 > Latest E2E preflight doc commit before this edit: `2cbd5f3`
-> Latest code/parity checkpoint at this handoff: current HEAD containing this file
+> Latest code/parity checkpoint before this handoff: `ee45aea` (`Pin main tab icon parity`)
 > Latest saved release-resume checkpoint at this handoff: current HEAD containing this file
 > Package name: `com.ScienceFiction.DronePassAndroid`
 
@@ -18,15 +18,15 @@ Saved on 2026-07-05 KST so a later session in this directory can continue the An
 
 - Resume trigger phrase from this directory: `앱 출시 과정 다시 이어나가자`.
 - Current working branch at save time: `fix/critical-pri0-fixes`.
-- Current local code/parity checkpoint at this documentation save: current HEAD containing this file.
-- Working tree before this save: main floating tab icon contract test and release-resume documentation updates pending.
+- Current local code/parity checkpoint at this documentation save: `ee45aea` (`Pin main tab icon parity`).
+- Working tree before this save: clean.
 - Play internal test version already published: `3.5.5 (102) internal-1`.
 - Current release stop point: Play Console version detail page for `3.5.5 (102) internal-1`, already provided to internal testers.
 - Do not rebuild or re-upload version code `102` just to resume the release process.
 - Next release step: Play Console `Google Play로 보호됨 > 앱 무결성`에서 `앱 서명 키 인증서` SHA-1/SHA-256을 복사한 뒤 Firebase Android 앱과 NCP Maps Android 제한 설정에 등록한다.
 - Next verification step: add internal tester Gmail accounts, open the Play opt-in link on a real Android device, install from Google Play, then verify Google/Apple sign-in, Naver map auth, geocoding/reverse-geocoding, Firestore iOS/Android sync, and main UI overlay layout.
 - If a newer build is intentionally required later, bump to `versionCode = 103` and use release name `3.5.5 (103) internal-2`.
-- Latest completed local parity checkpoint: main floating tab icon contract audit, committed in the current HEAD containing this file.
+- Latest completed local parity checkpoint: main floating tab icon contract audit, committed as `ee45aea`.
 - Code-work note: iOS `MainTabView.Tab` maps the bottom tabs to `map`/`map.fill`, `tray.full`/`tray.full.fill`, and `gearshape`/`gearshape.fill`. Android already used the corresponding Material map, inbox, and settings icon families, and `MainScreenStartDestinationTest` now pins all three mappings instead of only the saved tab. `MainScreenStartDestinationTest` passed for this checkpoint.
 - Release-work note: this save is a release-resume handoff only. It does not create a newer Play build, and it does not supersede the already published `102` internal-test AAB.
 
@@ -58,8 +58,8 @@ Saved on 2026-07-04 at the user's request before pausing/resuming the Android ap
 Saved again on 2026-07-05 KST from this repository so a later session can resume the app release process when the user says "앱 출시 과정 다시 이어나가자". The Play Console internal-test release flow had already reached the published version detail page, and local Android/iOS parity audits later continued through the main floating tab icon contract audit. The latest local code/parity checkpoint before this documentation save has not been uploaded as a newer Play build.
 
 - Current working branch: `fix/critical-pri0-fixes`.
-- Current local code/parity checkpoint before this documentation save: current HEAD containing this file.
-- Working tree status before this documentation save: main floating tab icon contract test and release-resume documentation updates pending; after the save commit, rerun `git status --short` and expect a clean tree unless the user has made newer edits.
+- Current local code/parity checkpoint before this documentation save: `ee45aea` (`Pin main tab icon parity`).
+- Working tree status before this documentation save: clean.
 - Play internal test version already published: `3.5.5 (102) internal-1`.
 - Do not rebuild or re-upload version code `102` just to resume the release process.
 - Resume phrase from this directory: `앱 출시 과정 다시 이어나가자`.
