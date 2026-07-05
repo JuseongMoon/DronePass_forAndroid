@@ -225,15 +225,21 @@ class MainScreenStartDestinationTest {
     }
 
     @Test
-    fun `하단 저장 탭 아이콘은 iOS tray full 심볼에 대응하는 inbox 계열을 사용한다`() {
+    fun `하단 탭 아이콘은 iOS MainTabView 심볼 계약을 따른다`() {
         val source = resolveProjectFile(
             "src/main/java/com/ScienceFiction/DronePassAndroid/ui/navigation/Screen.kt",
             "app/src/main/java/com/ScienceFiction/DronePassAndroid/ui/navigation/Screen.kt",
         ).readText()
 
+        assertTrue(source.contains("iOS: map / map.fill"))
+        assertTrue(source.contains("icon = Icons.Outlined.Map"))
+        assertTrue(source.contains("selectedIcon = Icons.Filled.Map"))
         assertTrue(source.contains("iOS: tray.full / tray.full.fill"))
         assertTrue(source.contains("icon = Icons.Outlined.Inbox"))
         assertTrue(source.contains("selectedIcon = Icons.Filled.Inbox"))
+        assertTrue(source.contains("iOS: gearshape / gearshape.fill"))
+        assertTrue(source.contains("icon = Icons.Outlined.Settings"))
+        assertTrue(source.contains("selectedIcon = Icons.Filled.Settings"))
         assertFalse(source.contains("Inventory2"))
     }
 
