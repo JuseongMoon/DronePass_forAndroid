@@ -4,19 +4,19 @@
 
 > 마지막 업데이트: 2026-07-05
 > 브랜치: `fix/critical-pri0-fixes`
-> 상태: iOS 동작 대조와 Android 출시 하드닝 진행 중. Play 내부 테스트 `3.5.5 (102) internal-1`은 이미 게시된 상태이며, 최신 완료 코드/패리티 기준은 도형 편집 주소 검색 clear 동작 재감사까지다. 앱 출시 재개 절차는 최신 저장된 `PLAY_RELEASE_HANDOFF.md`를 우선 확인하고, 같은 `102` AAB 재업로드가 아니라 Play 앱 서명 SHA 등록과 Play 설치 검증부터 이어간다.
+> 상태: iOS 동작 대조와 Android 출시 하드닝 진행 중. Play 내부 테스트 `3.5.5 (102) internal-1`은 이미 게시된 상태이며, 최신 완료 코드/패리티 기준은 도형 편집 주소 검색 결과 카드 토큰 재감사까지다. 앱 출시 재개 절차는 최신 저장된 `PLAY_RELEASE_HANDOFF.md`를 우선 확인하고, 같은 `102` AAB 재업로드가 아니라 Play 앱 서명 SHA 등록과 Play 설치 검증부터 이어간다.
 
 ## 2026-07-05 저장 스냅샷
 
 사용자가 나중에 이 디렉토리에서 "앱 출시 과정 다시 이어나가자"라고 말하면 `PLAY_RELEASE_HANDOFF.md`의 `Current Resume Pointer`와 `Quick Resume`부터 읽고 이어간다.
 
-- 현재 저장 기준 코드 체크포인트: 도형 편집 주소 검색 clear 동작 패리티 감사. 이 문서를 포함한 HEAD가 최신 코드/문서 체크포인트다.
+- 현재 저장 기준 코드 체크포인트: 도형 편집 주소 검색 결과 카드 토큰 패리티 감사. 이 문서를 포함한 HEAD가 최신 코드/문서 체크포인트다.
 - 현재 출시 상태: Google Play 내부 테스트 `3.5.5 (102) internal-1`은 이미 게시됨.
 - 현재 정지점: Play Console 버전 상세 화면에서 내부 테스터에게 제공된 상태. 새 AAB 업로드가 아니라 앱 서명 인증서 SHA 등록과 테스터 설치 검증이 다음 단계다.
 - 다음 외부 설정: Play Console `Google Play로 보호됨 > 앱 무결성`에서 `앱 서명 키 인증서` SHA-1/SHA-256을 Firebase Android 앱과 NCP Maps Android 제한 설정에 등록.
 - 다음 실기기 검증: 내부 테스터 Gmail 추가, opt-in 링크로 Google Play 설치, Google/Apple 로그인, 네이버 지도, 주소 검색, Firestore iOS/Android 동기화, 하단/플로팅 UI 정렬 확인.
 - 새 빌드가 필요할 때만 `versionCode = 103`, release name `3.5.5 (103) internal-2`로 진행한다.
-- 현재 코드 편집은 열려 있지 않다. 도형 편집 주소 검색 clear 동작, 일반 토스트 subheadline 타이포그래피, 저장/설정 phone 오버레이 정렬, 하단 플로팅 탭바 정렬, 하단 플로팅 탭 아이콘 패리티, 하단 저장 탭 아이콘 패리티, 날씨 일출/일몰 아이콘 패리티, 드론 선택 드롭다운 popup dismiss 패리티, 비행구역 플로팅 버튼 count-change pulse 패리티, 비행구역 플로팅 버튼 open haptic 패리티, 비행구역 레이어 선택 시트 haptic 계약 패리티, VWorld 구역 상세 고도 행 표시 조건 패리티, 도형 편집 미저장 변경 취소 알림 계약 패리티, 지도 도형 포커스/오버레이 탭 경로 패리티, 스케치 툴바 material 배경 패리티, 스케치 ViewModel 모드/삭제 순서 패리티, 런치 화면 브랜딩 패리티, Android 알림 small icon 브랜딩 하드닝은 완료했다. 지도 도형 포커스는 iOS처럼 `baseCoordinate`, `radius ?? 100`, 11~14 선형 줌, 0.3초 후 하이라이트+오프셋 이동 순서를 따른다.
+- 현재 코드 편집은 열려 있지 않다. 도형 편집 주소 검색 결과 카드 토큰, 도형 편집 주소 검색 clear 동작, 일반 토스트 subheadline 타이포그래피, 저장/설정 phone 오버레이 정렬, 하단 플로팅 탭바 정렬, 하단 플로팅 탭 아이콘 패리티, 하단 저장 탭 아이콘 패리티, 날씨 일출/일몰 아이콘 패리티, 드론 선택 드롭다운 popup dismiss 패리티, 비행구역 플로팅 버튼 count-change pulse 패리티, 비행구역 플로팅 버튼 open haptic 패리티, 비행구역 레이어 선택 시트 haptic 계약 패리티, VWorld 구역 상세 고도 행 표시 조건 패리티, 도형 편집 미저장 변경 취소 알림 계약 패리티, 지도 도형 포커스/오버레이 탭 경로 패리티, 스케치 툴바 material 배경 패리티, 스케치 ViewModel 모드/삭제 순서 패리티, 런치 화면 브랜딩 패리티, Android 알림 small icon 브랜딩 하드닝은 완료했다. 지도 도형 포커스는 iOS처럼 `baseCoordinate`, `radius ?? 100`, 11~14 선형 줌, 0.3초 후 하이라이트+오프셋 이동 순서를 따른다.
 - 현재 워킹트리 저장 상태: 이 체크포인트 작업 시작 시 `git status --short`는 clean이었다. 저장 커밋 후 다시 clean이어야 한다.
 
 ## 앱 출시 재개 바로가기
@@ -43,6 +43,8 @@
 | 남은 성격 | Play 설치 앱의 앱 서명 SHA를 Firebase/NCP Maps에 등록한 뒤 실기기 Play 설치 경로에서 iOS↔Android 공유 Firebase 실계정 검증 수행 |
 
 최근 완료된 iOS 패리티/릴리스 하드닝:
+
+- 2026-07-05 현재 작업 기준 도형 편집 주소 검색 결과 카드를 iOS `AddressCardView`와 다시 대조했다. Android는 이미 지번/도로명 순서와 건물명 표시를 맞추고 있었고, 이번에는 카드 radius 16dp, 세로 padding 6dp, content padding 16dp, row spacing 10dp, badge corner 6dp, badge padding 8/4dp, 지번 blue `#007AFF`, 도로명 green `#34C759`, building icon 14dp 토큰을 상수화해 회귀 테스트로 고정했다. `:app:testDebugUnitTest --tests "*SearchAddressSheetTest"` 통과.
 
 - 2026-07-05 현재 작업 기준 도형 편집 주소 검색 시트의 clear 버튼 동작을 iOS `SearchAddressView`/`SearchBar`와 다시 대조했다. iOS clear는 검색어만 비우고 기존 `addresses`/`errorMessage`를 직접 초기화하지 않으므로, Android `SearchAddressSheet`도 clear 시 `query`만 비우고 기존 결과/오류 상태를 유지하도록 맞췄다. `:app:testDebugUnitTest --tests "*SearchAddressSheetTest"` 통과.
 

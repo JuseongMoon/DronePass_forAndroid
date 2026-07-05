@@ -77,6 +77,23 @@ class SearchAddressSheetTest {
     fun `주소 검색 결과 카드는 iOS처럼 8dp 그림자와 6퍼센트 검정 그림자를 사용한다`() {
         assertEquals(8.dp, SearchAddressResultCardShadowElevation)
         assertEquals(0x0F000000, SearchAddressResultCardShadowColor.toArgb())
+        assertEquals(16.dp, SearchAddressResultCardCornerRadius)
+        assertEquals(6.dp, SearchAddressResultCardVerticalPadding)
+        assertEquals(16.dp, SearchAddressResultCardContentPadding)
+        assertEquals(10.dp, SearchAddressResultCardRowSpacing)
+        assertEquals(8.dp, SearchAddressResultRowSpacing)
+    }
+
+    @Test
+    fun `주소 검색 결과 배지는 iOS처럼 지번 파랑 도로명 초록 토큰을 사용한다`() {
+        assertEquals(0xFF007AFF.toInt(), SearchAddressJibunBadgeColor.toArgb())
+        assertEquals(0xFF34C759.toInt(), SearchAddressRoadBadgeColor.toArgb())
+        assertEquals(6.dp, SearchAddressBadgeCornerRadius)
+        assertEquals(8.dp, SearchAddressBadgeHorizontalPadding)
+        assertEquals(4.dp, SearchAddressBadgeVerticalPadding)
+        assertEquals(14.dp, SearchAddressBuildingIconSize)
+        assertEquals(6.dp, SearchAddressBuildingRowSpacing)
+        assertEquals(2.dp, SearchAddressBuildingRowTopPadding)
     }
 
     @Test

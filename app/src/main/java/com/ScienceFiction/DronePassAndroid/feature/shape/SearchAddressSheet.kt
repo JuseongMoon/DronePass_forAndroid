@@ -83,6 +83,19 @@ internal val SearchAddressBarBackgroundColor = Color(0xFFF2F2F7)
 internal val SearchAddressBarIconColor = Color(0xFF8E8E93)
 internal val SearchAddressResultCardShadowElevation = 8.dp
 internal val SearchAddressResultCardShadowColor = Color.Black.copy(alpha = 0.06f)
+internal val SearchAddressResultCardCornerRadius = 16.dp
+internal val SearchAddressResultCardVerticalPadding = 6.dp
+internal val SearchAddressResultCardContentPadding = 16.dp
+internal val SearchAddressResultCardRowSpacing = 10.dp
+internal val SearchAddressResultRowSpacing = 8.dp
+internal val SearchAddressBadgeCornerRadius = 6.dp
+internal val SearchAddressBadgeHorizontalPadding = 8.dp
+internal val SearchAddressBadgeVerticalPadding = 4.dp
+internal val SearchAddressJibunBadgeColor = Color(0xFF007AFF)
+internal val SearchAddressRoadBadgeColor = Color(0xFF34C759)
+internal val SearchAddressBuildingIconSize = 14.dp
+internal val SearchAddressBuildingRowSpacing = 6.dp
+internal val SearchAddressBuildingRowTopPadding = 2.dp
 internal val SearchAddressGuideCardBackgroundColor = Color(0xFFF2F2F7)
 internal val SearchAddressGuideCardCornerRadius = 20.dp
 internal val SearchAddressGuideCardMaxWidth = 500.dp
@@ -478,12 +491,12 @@ private fun AddressResultItem(
     onClick: () -> Unit
 ) {
     val rows = addressDisplayRows(address)
-    val cardShape = RoundedCornerShape(16.dp)
+    val cardShape = RoundedCornerShape(SearchAddressResultCardCornerRadius)
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 6.dp)
+            .padding(vertical = SearchAddressResultCardVerticalPadding)
             .shadow(
                 elevation = SearchAddressResultCardShadowElevation,
                 shape = cardShape,
@@ -495,8 +508,8 @@ private fun AddressResultItem(
             .background(MaterialTheme.colorScheme.surface)
             .border(1.dp, MaterialTheme.colorScheme.outlineVariant, cardShape)
             .clickable(onClick = onClick)
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+            .padding(SearchAddressResultCardContentPadding),
+        verticalArrangement = Arrangement.spacedBy(SearchAddressResultCardRowSpacing),
     ) {
         rows.forEach { row ->
             AddressDisplayRowView(row = row)
@@ -513,7 +526,7 @@ private fun AddressDisplayRowView(
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(SearchAddressResultRowSpacing),
         verticalAlignment = Alignment.Top,
     ) {
         AddressTypeBadge(type = row.type)
@@ -534,14 +547,14 @@ private fun AddressBuildingNameRow(
     buildingName: String,
 ) {
     Row(
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        horizontalArrangement = Arrangement.spacedBy(SearchAddressBuildingRowSpacing),
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.padding(top = 2.dp),
+        modifier = Modifier.padding(top = SearchAddressBuildingRowTopPadding),
     ) {
         Icon(
             imageVector = Icons.Default.Business,
             contentDescription = null,
-            modifier = Modifier.size(14.dp),
+            modifier = Modifier.size(SearchAddressBuildingIconSize),
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(
@@ -559,8 +572,8 @@ private fun AddressTypeBadge(
     type: AddressDisplayType,
 ) {
     val (label, color) = when (type) {
-        AddressDisplayType.JIBUN -> stringResource(R.string.search_address_jibun) to Color(0xFF007AFF)
-        AddressDisplayType.ROAD -> stringResource(R.string.search_address_road) to Color(0xFF34C759)
+        AddressDisplayType.JIBUN -> stringResource(R.string.search_address_jibun) to SearchAddressJibunBadgeColor
+        AddressDisplayType.ROAD -> stringResource(R.string.search_address_road) to SearchAddressRoadBadgeColor
     }
 
     Text(
@@ -571,8 +584,11 @@ private fun AddressTypeBadge(
         modifier = Modifier
             .background(
                 color = color,
-                shape = RoundedCornerShape(6.dp),
+                shape = RoundedCornerShape(SearchAddressBadgeCornerRadius),
             )
-            .padding(horizontal = 8.dp, vertical = 4.dp),
+            .padding(
+                horizontal = SearchAddressBadgeHorizontalPadding,
+                vertical = SearchAddressBadgeVerticalPadding,
+            ),
     )
 }
