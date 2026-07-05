@@ -225,6 +225,19 @@ class MainScreenStartDestinationTest {
     }
 
     @Test
+    fun `하단 저장 탭 아이콘은 iOS tray full 심볼에 대응하는 inbox 계열을 사용한다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/ui/navigation/Screen.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/ui/navigation/Screen.kt",
+        ).readText()
+
+        assertTrue(source.contains("iOS: tray.full / tray.full.fill"))
+        assertTrue(source.contains("icon = Icons.Outlined.Inbox"))
+        assertTrue(source.contains("selectedIcon = Icons.Filled.Inbox"))
+        assertFalse(source.contains("Inventory2"))
+    }
+
+    @Test
     fun `스케치 모드 진입 시 iOS처럼 저장과 설정 오버레이를 모두 닫는다`() {
         assertEquals(
             MainOverlayVisibility(showSavedListOverlay = false, showSettingsOverlay = false),

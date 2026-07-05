@@ -2,10 +2,10 @@ package com.ScienceFiction.DronePassAndroid.ui.navigation
 
 import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Inventory2
+import androidx.compose.material.icons.filled.Inbox
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.outlined.Inventory2
+import androidx.compose.material.icons.outlined.Inbox
 import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -31,8 +31,8 @@ sealed class Screen(
     data object SavedList : Screen(
         route = "saved_list",
         titleResId = R.string.screen_saved_list,
-        icon = Icons.Outlined.Inventory2,
-        selectedIcon = Icons.Filled.Inventory2,
+        icon = Icons.Outlined.Inbox,
+        selectedIcon = Icons.Filled.Inbox,
         tabLabelResId = R.string.tab_label_saved,
     )
 
