@@ -9,7 +9,8 @@ import kotlin.math.abs
  *
  * 지원 형식:
  * - DMS (도/분/초): 37°33'58.0"N 126°58'41.0"E
- * - Decimal (십진수): 37.5661, 126.9781
+ * - Decimal degrees (십진도): 37.5661, 126.9781
+ * - Simple decimal (단순 십진수): 37.5661 126.9781
  * - Geo URI: geo:37.5661,126.9781
  */
 object CoordinateParser {
@@ -24,17 +25,22 @@ object CoordinateParser {
     )
 
     /**
-     * 십진수 패턴: 위도, 경도
-     * 예: 37.5661, 126.9781 또는 37.5661 126.9781
-     * iOS 와 화면 안내 예시처럼 각 값 뒤의 도 기호도 허용한다.
-     *
-     * 입력 전체에 anchor(`^`/`$`) 적용하여 "abc 99.9, 99.9" 같은 부분 매치를
-     * 거부한다. 소수점 뒤 자릿수도 명시적으로 강제(`(?:\.\d+)?`).
+     * iOS CoordinateManager.parseDecimalDegrees 정합:
+     * 쉼표가 있는 십진도는 firstMatch 로 부분 매칭되며, 각 값 뒤의 도 기호도 허용한다.
      */
-    private const val SIGNED_DECIMAL = """[+-]?\d{1,3}(?:\.\d+)?"""
+    private const val IOS_DECIMAL = """-?\d{1,3}\.?\d*"""
+    private const val SIGNED_SIMPLE_DECIMAL = """[+-]?\d{1,3}(?:\.\d+)?"""
 
-    private val DECIMAL_PATTERN = Regex(
-        """^\s*($SIGNED_DECIMAL)\s*°?\s*[,\s]\s*($SIGNED_DECIMAL)\s*°?\s*$"""
+    private val DECIMAL_DEGREES_PATTERN = Regex(
+        """($IOS_DECIMAL)\s*°?\s*,\s*($IOS_DECIMAL)\s*°?"""
+    )
+
+    /**
+     * iOS CoordinateManager.parseSimpleDecimal 정합:
+     * 공백 구분 단순 십진수는 split 결과가 정확히 두 개여야 하므로 전체 입력만 허용한다.
+     */
+    private val SIMPLE_DECIMAL_PATTERN = Regex(
+        """^\s*($SIGNED_SIMPLE_DECIMAL)\s+($SIGNED_SIMPLE_DECIMAL)\s*$"""
     )
 
     /**
@@ -42,13 +48,13 @@ object CoordinateParser {
      * 예: geo:37.5661,126.9781
      */
     private val GEO_URI_PATTERN = Regex(
-        """^\s*geo:\s*($SIGNED_DECIMAL)\s*,\s*($SIGNED_DECIMAL)\s*$"""
+        """^\s*geo:\s*($SIGNED_SIMPLE_DECIMAL)\s*,\s*($SIGNED_SIMPLE_DECIMAL)\s*$"""
     )
 
     /**
      * 입력 문자열을 파싱하여 Coordinate 객체를 반환한다.
      *
-     * Geo URI -> DMS -> Decimal 순서로 시도한다.
+     * DMS -> comma decimal degrees -> simple decimal -> Geo URI 순서로 시도한다.
      *
      * @param input 좌표 문자열
      * @return 파싱된 Coordinate, 또는 파싱 실패 시 null
@@ -56,14 +62,17 @@ object CoordinateParser {
     fun parse(input: String): Coordinate? {
         val trimmed = input.trim()
 
-        // 1. Geo URI
-        parseGeoUri(trimmed)?.let { return it }
-
-        // 2. DMS
+        // 1. DMS
         parseDms(trimmed)?.let { return it }
 
-        // 3. Decimal
-        parseDecimal(trimmed)?.let { return it }
+        // 2. Comma decimal degrees
+        parseDecimalDegrees(trimmed)?.let { return it }
+
+        // 3. Simple decimal
+        parseSimpleDecimal(trimmed)?.let { return it }
+
+        // 4. Geo URI
+        parseGeoUri(trimmed)?.let { return it }
 
         return null
     }
@@ -151,10 +160,20 @@ object CoordinateParser {
     }
 
     /**
-     * 십진수 형식 파싱
+     * 쉼표 십진도 형식 파싱
      */
-    private fun parseDecimal(input: String): Coordinate? {
-        val match = DECIMAL_PATTERN.find(input) ?: return null
+    private fun parseDecimalDegrees(input: String): Coordinate? {
+        val match = DECIMAL_DEGREES_PATTERN.find(input) ?: return null
+        val lat = match.groupValues[1].toDoubleOrNull() ?: return null
+        val lon = match.groupValues[2].toDoubleOrNull() ?: return null
+        return validateAndCreate(lat, lon)
+    }
+
+    /**
+     * 공백 구분 단순 십진수 형식 파싱
+     */
+    private fun parseSimpleDecimal(input: String): Coordinate? {
+        val match = SIMPLE_DECIMAL_PATTERN.find(input) ?: return null
         val lat = match.groupValues[1].toDoubleOrNull() ?: return null
         val lon = match.groupValues[2].toDoubleOrNull() ?: return null
         return validateAndCreate(lat, lon)

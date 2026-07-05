@@ -8,11 +8,11 @@ import org.junit.Test
 /**
  * CoordinateParser 단위 테스트
  *
- * Phase 2.1 C-H3 (DMS 분/초 범위 검증) + C-H4 (Decimal anchoring) 회귀 보호.
+ * Phase 2.1 C-H3 (DMS 분/초 범위 검증) + iOS CoordinateManager wire/input parity 회귀 보호.
  */
 class CoordinateParserTest {
 
-    // region Decimal anchoring (C-H4)
+    // region Decimal degrees / simple decimal iOS parity
 
     @Test
     fun `정상 십진수는 파싱된다`() {
@@ -51,10 +51,22 @@ class CoordinateParserTest {
     }
 
     @Test
-    fun `입력 앞뒤에 다른 텍스트가 있으면 거부`() {
-        // 이전(anchor 없음): "abc 99.9, 99.9" 가 매치되어 잘못된 좌표 생성됐음
-        assertNull(CoordinateParser.parse("abc 99.9, 99.9"))
-        assertNull(CoordinateParser.parse("99.9, 99.9 xyz"))
+    fun `iOS처럼 쉼표 십진도는 앞뒤 설명 텍스트가 있어도 좌표 부분을 파싱한다`() {
+        val prefixed = CoordinateParser.parse("lat/lon: 37.5665, 126.9780")
+        assertNotNull(prefixed)
+        assertEquals(37.5665, prefixed!!.latitude, 0.0001)
+        assertEquals(126.9780, prefixed.longitude, 0.0001)
+
+        val suffixed = CoordinateParser.parse("37.5665, 126.9780 copied from site")
+        assertNotNull(suffixed)
+        assertEquals(37.5665, suffixed!!.latitude, 0.0001)
+        assertEquals(126.9780, suffixed.longitude, 0.0001)
+    }
+
+    @Test
+    fun `공백 구분 단순 십진수는 iOS처럼 입력 전체가 좌표일 때만 파싱한다`() {
+        assertNull(CoordinateParser.parse("lat/lon: 37.5665 126.9780"))
+        assertNull(CoordinateParser.parse("37.5665 126.9780 copied from site"))
         assertNull(CoordinateParser.parse("hello world"))
     }
 
