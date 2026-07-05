@@ -76,6 +76,9 @@ internal val DroneDropdownSelectionButtonHeight = DroneDropdownTriggerDiameter
 internal val DroneDropdownTriggerSize = DroneDropdownTriggerDiameter
 internal val DroneDropdownControlVerticalAlignment: Alignment.Vertical = Alignment.Top
 internal val DroneDropdownTextSize = 14.sp
+internal const val DroneDropdownPopupFocusable = false
+internal const val DroneDropdownPopupDismissOnClickOutside = false
+internal const val DroneDropdownPopupDismissOnBackPress = false
 @DrawableRes
 internal val DroneDropdownEmptyIconRes = R.drawable.ic_drone
 internal fun droneDropdownEmptyTextColor(onSurface: Color): Color = onSurface
@@ -162,12 +165,14 @@ fun DroneSelectionDropdown(
                 alignment = Alignment.TopEnd,
                 offset = IntOffset(0, triggerHeight + with(density) { 4.dp.roundToPx() }),
                 onDismissRequest = { showDropdown = false },
-                // focusable=true 로 외부 터치 이벤트를 Popup 이 흡수하도록 한다.
-                // 기본값(false) 에서는 chevron 재클릭 시 외부 터치로 인식되어 onDismissRequest 가
-                // showDropdown=false 로 만든 직후, 같은 터치가 chevron 까지 전달되어 onClick 이
-                // 다시 호출되며 토글 결과가 true 가 되어 "닫혔다 바로 열림" 으로 보였다.
-                // focusable=true 면 외부 터치는 chevron 으로 전달되지 않고 onDismissRequest 만 호출 → 한 번에 닫힘.
-                properties = PopupProperties(focusable = true)
+                // iOS overlay 정합: 바깥 탭으로 자동 dismiss 되지 않고 chevron 재탭으로 닫힌다.
+                // Popup 을 focusable/modal 로 만들면 지도 탭이 드롭다운을 먼저 닫는 Android 고유
+                // 동작이 생기므로, 외부 dismiss 를 끄고 터치는 뒤 화면으로 통과시킨다.
+                properties = PopupProperties(
+                    focusable = DroneDropdownPopupFocusable,
+                    dismissOnBackPress = DroneDropdownPopupDismissOnBackPress,
+                    dismissOnClickOutside = DroneDropdownPopupDismissOnClickOutside,
+                )
             ) {
                 AnimatedVisibility(
                     visible = true,

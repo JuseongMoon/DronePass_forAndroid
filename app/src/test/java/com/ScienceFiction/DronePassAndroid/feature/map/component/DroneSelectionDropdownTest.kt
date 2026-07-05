@@ -62,6 +62,13 @@ class DroneSelectionDropdownTest {
     }
 
     @Test
+    fun `드론 메뉴 popup은 iOS overlay처럼 바깥 탭으로 자동 dismiss되지 않는다`() {
+        assertFalse(DroneDropdownPopupFocusable)
+        assertFalse(DroneDropdownPopupDismissOnClickOutside)
+        assertFalse(DroneDropdownPopupDismissOnBackPress)
+    }
+
+    @Test
     fun `선택 드론 줄바꿈은 iOS처럼 첫 줄만 chevron 공간을 예약한다`() {
         val layout = computeDroneDropdownChipFlowLayout(
             itemSizes = listOf(
