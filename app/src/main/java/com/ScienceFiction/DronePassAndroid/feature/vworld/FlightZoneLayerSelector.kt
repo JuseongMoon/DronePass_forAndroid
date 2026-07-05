@@ -72,6 +72,8 @@ internal val FlightZoneLayerSelectorStatHeaderOuterVerticalPadding = 0.dp
 internal val FlightZoneLayerSelectorDividerLeadingPadding = 60.dp
 internal val FlightZoneLayerSelectorActionIconSize = 15.dp
 internal val FlightZoneLayerSelectorActionTextSize = 15.sp
+internal val FlightZoneLayerSelectorBulkActionHapticType = HapticFeedbackType.LongPress
+internal val FlightZoneLayerSelectorRowToggleHapticType = HapticFeedbackType.TextHandleMove
 
 internal fun sortedFlightZoneLayersForSelector(
     displayNameOf: (FlightZoneLayer) -> String,
@@ -172,7 +174,7 @@ fun FlightZoneLayerSelector(
                     containerColor = SelectAllButtonBackground,
                     contentColor = InfoBannerAccent,
                     onClick = {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        haptic.performHapticFeedback(FlightZoneLayerSelectorBulkActionHapticType)
                         onShowAll()
                     },
                     modifier = Modifier.weight(1f)
@@ -183,7 +185,7 @@ fun FlightZoneLayerSelector(
                     containerColor = DeselectAllButtonBackground,
                     contentColor = DeselectAllButtonForeground,
                     onClick = {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        haptic.performHapticFeedback(FlightZoneLayerSelectorBulkActionHapticType)
                         onHideAll()
                     },
                     modifier = Modifier.weight(1f)
@@ -199,7 +201,7 @@ fun FlightZoneLayerSelector(
                         layer = layer,
                         isChecked = visibleLayers.contains(layer),
                         onToggle = {
-                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            haptic.performHapticFeedback(FlightZoneLayerSelectorRowToggleHapticType)
                             onToggleLayer(layer)
                         }
                     )

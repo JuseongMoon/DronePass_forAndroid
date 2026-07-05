@@ -1,6 +1,7 @@
 package com.ScienceFiction.DronePassAndroid.feature.vworld
 
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.FlightZoneLayer
@@ -94,6 +95,12 @@ class FlightZoneLayerSelectorTest {
     fun `전체 선택 버튼은 iOS subheadline Label 크기를 따른다`() {
         assertEquals(15.dp, FlightZoneLayerSelectorActionIconSize)
         assertEquals(15.sp, FlightZoneLayerSelectorActionTextSize)
+    }
+
+    @Test
+    fun `레이어 선택 시트 햅틱은 iOS medium bulk action과 light row toggle을 따른다`() {
+        assertEquals(HapticFeedbackType.LongPress, FlightZoneLayerSelectorBulkActionHapticType)
+        assertEquals(HapticFeedbackType.TextHandleMove, FlightZoneLayerSelectorRowToggleHapticType)
     }
 
     @Test
