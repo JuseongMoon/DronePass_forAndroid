@@ -6,6 +6,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.File
 
 class FcmServiceTest {
 
@@ -336,5 +337,28 @@ class FcmServiceTest {
                 appInForeground = false,
             )
         )
+    }
+
+    @Test
+    fun `FCM 시스템 알림 small icon 은 Android 알림 제약에 맞는 단색 앱 아이콘을 사용한다`() {
+        val source = fcmServiceSource()
+
+        assertTrue(source.contains(".setSmallIcon(R.drawable.ic_launcher_monochrome)"))
+        assertTrue(!source.contains(".setSmallIcon(R.mipmap.ic_launcher)"))
+    }
+
+    private fun fcmServiceSource(): String {
+        return resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/service/FcmService.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/service/FcmService.kt",
+        ).readText()
+    }
+
+    private fun resolveProjectFile(vararg candidates: String): File {
+        val userDir = File(requireNotNull(System.getProperty("user.dir")))
+        return candidates
+            .map { File(userDir, it) }
+            .firstOrNull { it.exists() }
+            ?: error("Project file not found: ${candidates.joinToString()}")
     }
 }
