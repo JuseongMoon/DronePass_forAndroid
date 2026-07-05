@@ -48,6 +48,22 @@ class SearchAddressSheetTest {
     }
 
     @Test
+    fun `주소 검색 clear 는 iOS SearchBar onClear처럼 검색어만 비운다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/shape/SearchAddressSheet.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/shape/SearchAddressSheet.kt",
+        ).readText()
+        val searchFieldIndex = source.indexOf("SearchAddressInputField(")
+        val clearBlockStart = source.indexOf("onClear = {", startIndex = searchFieldIndex)
+        val clearBlockEnd = source.indexOf("onSearch = { submitSearch() }", startIndex = clearBlockStart)
+        val clearBlock = source.substring(clearBlockStart, clearBlockEnd)
+
+        assertTrue(clearBlock.contains("query = \"\""))
+        assertFalse(clearBlock.contains("errorMessage = null"))
+        assertFalse(clearBlock.contains("results = emptyList()"))
+    }
+
+    @Test
     fun `주소 검색바는 iOS SearchBar처럼 회색 배경과 8dp 모서리를 사용한다`() {
         assertEquals(8.dp, SearchAddressBarCornerRadius)
         assertEquals(8.dp, SearchAddressBarInnerPadding)

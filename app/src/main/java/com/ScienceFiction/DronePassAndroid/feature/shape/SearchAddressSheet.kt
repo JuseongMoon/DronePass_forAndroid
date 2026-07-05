@@ -260,7 +260,6 @@ fun SearchAddressSheet(
                     onQueryChange = { query = it },
                     onClear = {
                         query = ""
-                        errorMessage = null
                     },
                     onSearch = { submitSearch() },
                     modifier = Modifier.weight(1f),
