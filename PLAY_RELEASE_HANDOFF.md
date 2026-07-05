@@ -6,11 +6,27 @@
 > Latest release setup baseline commit: `8135932`
 > Previous saved release-resume commit before this handoff: `c20533a`
 > Latest E2E preflight doc commit before this edit: `2cbd5f3`
-> Latest code/parity checkpoint at this handoff: current HEAD containing the saved-list row visual-token parity checkpoint
-> Latest saved release-resume checkpoint at this handoff: current HEAD containing this file
+> Latest code/parity checkpoint before this handoff update: `d4d04e8 Pin saved list row visual tokens`
+> Latest saved release-resume checkpoint at this handoff: commit containing this file
 > Package name: `com.ScienceFiction.DronePassAndroid`
 
 This file captures the Google Play internal testing/release state so a later session can continue from this repository without re-discovering the setup. Do not paste secrets, keystore passwords, API secrets, or full OAuth client IDs into this file.
+
+## Latest Resume Checkpoint
+
+Saved on 2026-07-05 KST at the user's request. This section supersedes older snapshots below when resuming the Android app release process from this repository.
+
+- Resume trigger phrase from this directory: `앱 출시 과정 다시 이어나가자`.
+- Branch at save time: `fix/critical-pri0-fixes`.
+- Latest committed code/parity checkpoint before this handoff update: `d4d04e8 Pin saved list row visual tokens`.
+- Working tree before this handoff update: clean at `d4d04e8`.
+- Play internal test release already published: `3.5.5 (102) internal-1`.
+- Current release stop point: Play Console version detail page for `3.5.5 (102) internal-1`, already provided to internal testers.
+- Do not rebuild or re-upload version code `102` just to resume the release process.
+- Next external release step: Play Console `Google Play로 보호됨 > 앱 무결성`에서 `앱 서명 키 인증서` SHA-1/SHA-256을 복사한 뒤 Firebase Android 앱과 NCP Maps Android 제한 설정에 등록한다.
+- Next verification step: add internal tester Gmail accounts, open the internal-test opt-in link on a real Android device, install from Google Play, then verify Google/Apple sign-in, Naver map auth, geocoding/reverse-geocoding, Firestore iOS/Android sync, and main UI overlay layout.
+- If a newer build is intentionally required later, bump to `versionCode = 103` and use release name `3.5.5 (103) internal-2`.
+- Code-work resume note: saved-list row visual tokens are the latest committed parity checkpoint. A follow-up color/palette audit had started after that: iOS and Android palette raw values match, Android drone-edit color picker is already pinned, and the remaining question is whether iOS's dormant global `ColorPickerView` is still user-visible. No Android code change has been made for that audit yet. If the user resumes the app release process, ignore this code-audit thread and continue with Play/Firebase/NCP release steps first.
 
 ## Current Resume Pointer
 
@@ -18,15 +34,15 @@ Saved on 2026-07-05 KST so a later session in this directory can continue the An
 
 - Resume trigger phrase from this directory: `앱 출시 과정 다시 이어나가자`.
 - Current working branch at save time: `fix/critical-pri0-fixes`.
-- Current local code/parity checkpoint at this documentation save: current HEAD containing the saved-list row visual-token parity checkpoint.
-- Working tree before this save: saved-list row visual-token parity changes pending.
+- Current local code/parity checkpoint at this documentation save: `d4d04e8 Pin saved list row visual tokens`.
+- Working tree before this save: clean at `d4d04e8`; only this documentation handoff update was added afterward.
 - Play internal test version already published: `3.5.5 (102) internal-1`.
 - Current release stop point: Play Console version detail page for `3.5.5 (102) internal-1`, already provided to internal testers.
 - Do not rebuild or re-upload version code `102` just to resume the release process.
 - Next release step: Play Console `Google Play로 보호됨 > 앱 무결성`에서 `앱 서명 키 인증서` SHA-1/SHA-256을 복사한 뒤 Firebase Android 앱과 NCP Maps Android 제한 설정에 등록한다.
 - Next verification step: add internal tester Gmail accounts, open the Play opt-in link on a real Android device, install from Google Play, then verify Google/Apple sign-in, Naver map auth, geocoding/reverse-geocoding, Firestore iOS/Android sync, and main UI overlay layout.
 - If a newer build is intentionally required later, bump to `versionCode = 103` and use release name `3.5.5 (103) internal-2`.
-- Latest completed local parity checkpoint: saved-list row visual-token parity audit, committed in the current HEAD containing this file.
+- Latest completed local parity checkpoint: saved-list row visual-token parity audit, committed as `d4d04e8`.
 - Code-work note: iOS `SavedTableListView.ShapeListRow` uses a 55pt minimum row, 4pt/35pt color indicator, 30pt detail chevron area, 15% accent selection background, headline title text, and caption2 address/date metadata. Android now exposes those row typography and selection tokens as constants and pins them in `SavedShapeListItemTest`.
 - Release-work note: this save is a release-resume handoff only. It does not create a newer Play build, and it does not supersede the already published `102` internal-test AAB.
 
@@ -58,8 +74,8 @@ Saved on 2026-07-04 at the user's request before pausing/resuming the Android ap
 Saved again on 2026-07-05 KST from this repository so a later session can resume the app release process when the user says "앱 출시 과정 다시 이어나가자". The Play Console internal-test release flow had already reached the published version detail page, and local Android/iOS parity audits later continued through the saved-list row visual-token contract audit. The latest local code/parity checkpoint before this documentation save has not been uploaded as a newer Play build.
 
 - Current working branch: `fix/critical-pri0-fixes`.
-- Current local code/parity checkpoint before this documentation save: current HEAD containing the saved-list row visual-token parity checkpoint.
-- Working tree status before this documentation save: saved-list row visual-token parity changes pending; after the save commit, rerun `git status --short` and expect a clean tree unless the user has made newer edits.
+- Current local code/parity checkpoint before this documentation save: `d4d04e8 Pin saved list row visual tokens`.
+- Working tree status before this documentation save: clean at `d4d04e8`; after the save commit, rerun `git status --short` and expect a clean tree unless the user has made newer edits.
 - Play internal test version already published: `3.5.5 (102) internal-1`.
 - Do not rebuild or re-upload version code `102` just to resume the release process.
 - Resume phrase from this directory: `앱 출시 과정 다시 이어나가자`.
@@ -88,7 +104,7 @@ Rebuild only if local code/config has changed and a new Play build is intentiona
 
 ## Current Stop Point
 
-The Play Console internal test release has already been created and published for `3.5.5 (102) internal-1`. The latest user-visible stop point was the Play Console version detail page showing `3.5.5 (102) internal-1` as provided to internal testers. After that, local code/parity work continued through the current HEAD containing this file, but no newer AAB has been uploaded. When resuming, do not start by rebuilding or uploading the same AAB again unless code/config has changed and a new Play build is intentionally required. Start from the release-distribution side:
+The Play Console internal test release has already been created and published for `3.5.5 (102) internal-1`. The latest user-visible stop point was the Play Console version detail page showing `3.5.5 (102) internal-1` as provided to internal testers. After that, local code/parity work continued through `d4d04e8 Pin saved list row visual tokens`, but no newer AAB has been uploaded. When resuming, do not start by rebuilding or uploading the same AAB again unless code/config has changed and a new Play build is intentionally required. Start from the release-distribution side:
 
 1. Confirm the Play Console internal test version page still shows `3.5.5 (102) internal-1` as available to internal testers.
 2. Register the Google Play app-signing certificate fingerprints in Firebase and NCP Maps as needed.

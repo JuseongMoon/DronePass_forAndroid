@@ -6,6 +6,19 @@
 > 브랜치: `fix/critical-pri0-fixes`
 > 상태: iOS 동작 대조와 Android 출시 하드닝 진행 중. Play 내부 테스트 `3.5.5 (102) internal-1`은 이미 게시된 상태이며, 최신 완료 코드/패리티 기준은 저장목록 행 시각 토큰 재감사까지다. 앱 출시 재개 절차는 최신 저장된 `PLAY_RELEASE_HANDOFF.md`를 우선 확인하고, 같은 `102` AAB 재업로드가 아니라 Play 앱 서명 SHA 등록과 Play 설치 검증부터 이어간다.
 
+## 2026-07-05 최신 저장 체크포인트
+
+사용자가 나중에 이 디렉토리에서 "앱 출시 과정 다시 이어나가자"라고 말하면 `PLAY_RELEASE_HANDOFF.md`의 `Latest Resume Checkpoint`, `Quick Resume`, `Resume Protocol` 순서로 확인하고 이어간다.
+
+- 최신 코드 체크포인트: `d4d04e8 Pin saved list row visual tokens`.
+- 저장 시점 브랜치: `fix/critical-pri0-fixes`.
+- 저장 전 워킹트리: clean.
+- 이미 게시된 Play 내부 테스트: `3.5.5 (102) internal-1`.
+- 출시 재개 기준: 새 AAB 업로드가 아니라 Play 앱 서명 인증서 SHA-1/SHA-256을 Firebase Android 앱과 NCP Maps Android 제한 설정에 등록하는 단계부터 시작한다.
+- 실기기 검증 기준: 내부 테스터 Gmail 추가, opt-in 링크로 Google Play 설치, Google/Apple 로그인, 네이버 지도 SDK 인증, 주소 검색/역지오코딩, Firestore iOS/Android 동기화, 하단/플로팅 UI 정렬을 확인한다.
+- 새 빌드가 필요할 때만 `versionCode = 103`, release name `3.5.5 (103) internal-2`로 진행한다.
+- 코드 작업 재개 메모: 저장목록 행 시각 토큰 패리티는 커밋 완료. 그 다음 색상/팔레트 감사가 일부 시작되었고, iOS/Android 팔레트 값과 Android 드론 편집 색상 선택기는 이미 맞는 것으로 확인했다. 남은 확인점은 iOS의 전역 `ColorPickerView`가 현재 사용자에게 노출되는지 여부이며, 아직 Android 코드 변경은 없다. 앱 출시 재개 요청이면 이 코드 감사보다 Play/Firebase/NCP 설정과 실기기 검증을 우선한다.
+
 ## 2026-07-05 저장 스냅샷
 
 사용자가 나중에 이 디렉토리에서 "앱 출시 과정 다시 이어나가자"라고 말하면 `PLAY_RELEASE_HANDOFF.md`의 `Current Resume Pointer`와 `Quick Resume`부터 읽고 이어간다.
