@@ -46,6 +46,31 @@ class ShapeEditContractTest {
         )
     }
 
+    @Test
+    fun `도형 편집 취소 알림은 iOS unsaved changes alert 계약을 따른다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/shape/ShapeEditScreen.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/shape/ShapeEditScreen.kt",
+        ).readText()
+
+        assertTrue(source.contains("if (hasChanges) showCancelAlert = true else onDismiss()"))
+
+        val alertBlock = source.substringAfter("// ===== 변경사항 폐기 알림")
+        assertAppearsInOrder(
+            source = alertBlock,
+            tokens = listOf(
+                "AlertDialog(",
+                "R.string.shape_edit_alert_unsaved_title",
+                "R.string.shape_edit_alert_unsaved_message",
+                "R.string.shape_edit_alert_unsaved_discard",
+                "MaterialTheme.colorScheme.error",
+                "R.string.common_cancel",
+            ),
+        )
+        assertTrue(alertBlock.contains("showCancelAlert = false\n                        onDismiss()"))
+        assertTrue(alertBlock.contains("TextButton(onClick = { showCancelAlert = false })"))
+    }
+
     private fun assertAppearsInOrder(source: String, tokens: List<String>) {
         var previousIndex = -1
         for (token in tokens) {
