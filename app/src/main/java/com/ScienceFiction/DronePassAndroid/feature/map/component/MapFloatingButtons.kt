@@ -1,5 +1,8 @@
 package com.ScienceFiction.DronePassAndroid.feature.map.component
 
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,7 +28,13 @@ import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -38,6 +47,7 @@ import androidx.compose.ui.unit.sp
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.domain.model.CurrentWeatherData
 import com.ScienceFiction.DronePassAndroid.feature.weather.WeatherOverlayCard
+import kotlinx.coroutines.delay
 import java.util.Locale
 
 /**
@@ -71,6 +81,10 @@ internal val FlightZoneFabShadowElevation = 4.dp
 internal val FlightZoneFabIconSize = 22.dp
 internal val FlightZoneFabBadgeFontSize = 10.sp
 internal val FlightZoneFabVerticalSpacing = 4.dp
+internal const val FlightZoneFabIdleScale = 1.0f
+internal const val FlightZoneFabPulseScale = 1.1f
+internal const val FlightZoneFabPulseResetDelayMillis = 200L
+internal const val FlightZoneFabPulseDampingRatio = 0.6f
 private val FlightZoneActiveColor = MapFloatingAccentColor
 
 internal enum class FlightZoneFabIconStyle {
@@ -281,12 +295,32 @@ private fun FlightZoneLayerFab(
     modifier: Modifier = Modifier
 ) {
     val state = remember(count) { resolveFlightZoneFabUiState(count) }
+    var observedCount by remember { mutableIntStateOf(count) }
+    var isAnimating by remember { mutableStateOf(false) }
+    LaunchedEffect(count) {
+        if (observedCount != count) {
+            observedCount = count
+            isAnimating = true
+            delay(FlightZoneFabPulseResetDelayMillis)
+            isAnimating = false
+        }
+    }
+    val scale by animateFloatAsState(
+        targetValue = if (isAnimating) FlightZoneFabPulseScale else FlightZoneFabIdleScale,
+        animationSpec = spring(
+            dampingRatio = FlightZoneFabPulseDampingRatio,
+            stiffness = Spring.StiffnessMedium,
+        ),
+        label = "flightZoneFabPulseScale",
+    )
     Surface(
         onClick = onClick,
         shape = RoundedCornerShape(FlightZoneFabCornerRadius),
         color = MaterialTheme.colorScheme.surface,
         shadowElevation = FlightZoneFabShadowElevation,
-        modifier = modifier.size(FlightZoneFabSize)
+        modifier = modifier
+            .size(FlightZoneFabSize)
+            .scale(scale)
     ) {
         Column(
             modifier = Modifier.fillMaxSize(),

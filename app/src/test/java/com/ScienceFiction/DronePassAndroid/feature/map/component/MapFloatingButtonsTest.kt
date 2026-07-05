@@ -83,6 +83,14 @@ class MapFloatingButtonsTest {
     }
 
     @Test
+    fun `flight zone FAB count change pulse matches iOS scale feedback`() {
+        assertEquals(1.0f, FlightZoneFabIdleScale, 0f)
+        assertEquals(1.1f, FlightZoneFabPulseScale, 0f)
+        assertEquals(200L, FlightZoneFabPulseResetDelayMillis)
+        assertEquals(0.6f, FlightZoneFabPulseDampingRatio, 0f)
+    }
+
+    @Test
     fun `flight zone FAB inactive state matches iOS map icon without badge`() {
         val state = resolveFlightZoneFabUiState(count = 0)
 
