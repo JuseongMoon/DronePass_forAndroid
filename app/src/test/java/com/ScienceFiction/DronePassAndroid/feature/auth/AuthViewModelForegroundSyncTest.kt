@@ -153,6 +153,35 @@ class AuthViewModelForegroundSyncTest {
     }
 
     @Test
+    fun `foreground resume marks check complete only after remote check succeeds like iOS`() {
+        val source = resolveProjectFile(
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/auth/AuthViewModel.kt",
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/auth/AuthViewModel.kt",
+        ).readText()
+        val functionBody = source.substringAfter("fun ensureCloudSyncActiveOnForeground()")
+            .substringBefore("fun resetForegroundSyncCheckStatus()")
+
+        assertAppearsInOrder(
+            source = functionBody,
+            tokens = listOf(
+                "authRepository.currentUser ?: return",
+                "storedCloudBackupEnabled(dataStore.data.first())",
+                "resolveForegroundCloudSyncAction",
+                "realtimeSyncManager.isRealtimeSyncEnabled.value",
+                "ForegroundCloudSyncAction.REQUEST_USER_CONFIRMATION",
+                "shouldCheckForegroundRemoteChanges",
+                "lastForegroundRemoteChangeCheckTimeMillis = nowMillis",
+                "realtimeSyncManager.hasForegroundShapeRemoteChanges()",
+                ".onFailure",
+                "if (remoteChangesResult.isSuccess)",
+                "hasCheckedForegroundRemoteChanges = true",
+                "remoteChangesResult.getOrDefault(false)",
+                "_foregroundSyncConfirmation.tryEmit(Unit)",
+            ),
+        )
+    }
+
+    @Test
     fun `provider login starts only from logged out or error state like iOS retry flow`() {
         assertEquals(
             AuthProviderSignInAction.START,

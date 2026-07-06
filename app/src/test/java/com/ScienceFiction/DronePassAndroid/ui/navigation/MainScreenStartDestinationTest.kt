@@ -589,6 +589,34 @@ class MainScreenStartDestinationTest {
     }
 
     @Test
+    fun `앱 전면 복귀와 백그라운드 전환은 iOS AppDelegate 변경감지 lifecycle 과 대응한다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/ui/navigation/MainScreen.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/ui/navigation/MainScreen.kt",
+        ).readText()
+        val lifecycleSource = source
+            .substringAfter("DisposableEffect(lifecycleOwner, authViewModel)")
+            .substringBefore("// iOS MainTabView 와 동일하게 ZStack")
+
+        assertAppearsInOrder(
+            source = lifecycleSource,
+            tokens = listOf(
+                "LifecycleEventObserver",
+                "Lifecycle.Event.ON_RESUME -> authViewModel.ensureCloudSyncActiveOnForeground()",
+                "Lifecycle.Event.ON_STOP -> authViewModel.resetForegroundSyncCheckStatus()",
+                "lifecycleOwner.lifecycle.addObserver(observer)",
+                "onDispose",
+                "lifecycleOwner.lifecycle.removeObserver(observer)",
+            ),
+        )
+        assertFalse(
+            lifecycleSource.contains(
+                "Lifecycle.Event.ON_START -> authViewModel.ensureCloudSyncActiveOnForeground()",
+            ),
+        )
+    }
+
+    @Test
     fun `포그라운드 동기화 결과 dialog 는 iOS처럼 loading complete error 순서와 문구를 유지한다`() {
         val source = resolveProjectFile(
             "src/main/java/com/ScienceFiction/DronePassAndroid/ui/navigation/MainScreen.kt",
