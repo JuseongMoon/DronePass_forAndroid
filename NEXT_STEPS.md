@@ -4,20 +4,21 @@
 
 > 마지막 업데이트: 2026-07-06
 > 브랜치: `fix/critical-pri0-fixes`
-> 상태: iOS 동작 대조와 Android 출시 하드닝 진행 중. Play 내부 테스트 `3.5.5 (102) internal-1`은 이미 게시된 상태이며, 최신 완료 코드/패리티 기준은 지도 기본 컨트롤 하단 padding 회귀 고정까지다. 앱 출시 재개 절차는 최신 저장된 `PLAY_RELEASE_HANDOFF.md`를 우선 확인하고, 같은 `102` AAB 재업로드가 아니라 Play 앱 서명 SHA 등록과 Play 설치 검증부터 이어간다.
+> 상태: iOS 동작 대조와 Android 출시 하드닝 진행 중. Play 내부 테스트 `3.5.5 (102) internal-1`은 이미 게시된 상태이며, 최신 완료 코드/패리티 기준은 Room 마이그레이션 안전성 계약 고정까지다. 앱 출시 재개 절차는 최신 저장된 `PLAY_RELEASE_HANDOFF.md`를 우선 확인하고, 같은 `102` AAB 재업로드가 아니라 Play 앱 서명 SHA 등록과 Play 설치 검증부터 이어간다.
 
 ## 2026-07-06 최신 저장 체크포인트
 
 사용자가 나중에 이 디렉토리에서 "앱 출시 과정 다시 이어나가자"라고 말하면 `PLAY_RELEASE_HANDOFF.md`의 `Latest Resume Checkpoint`, `Quick Resume`, `Resume Protocol` 순서로 확인하고 이어간다.
 
-- 최신 코드 체크포인트: `8d501d5 Pin map control padding parity`.
+- 최신 코드 체크포인트: `484dbd3 Pin database migration safety contract`.
 - 현재 저장 목적: 앱 출시 과정 재개용 핸드오프 저장. 이 문서와 `PLAY_RELEASE_HANDOFF.md`를 기준으로 이어간다.
 - 이미 게시된 Play 내부 테스트: `3.5.5 (102) internal-1`.
 - 현재 정지점: Play Console 버전 상세 화면에서 `3.5.5 (102) internal-1`이 내부 테스터에게 제공된 상태.
 - 출시 재개 기준: 새 AAB 업로드가 아니라 Play 앱 서명 인증서 SHA-1/SHA-256을 Firebase Android 앱과 NCP Maps Android 제한 설정에 등록하는 단계부터 시작한다.
 - Firestore 호환성 메모: 공유 `shapeType` 계약을 재확인했다. Android 쓰기는 `shape.shapeType.rawValue` 소문자만 사용하고, 읽기는 `ShapeType.parseWireValue`로 레거시 `CIRCLE`/`Circle`을 허용하되 unknown 값은 스킵한다. 사건 메모는 `FIRESTORE_CONTRACT.md`에 남겼다.
 - 로컬 데이터 안전성 메모: iOS `MigrationManager`/Android Room 마이그레이션 경로를 다시 확인했다. Android는 v1→v3 직접 마이그레이션으로 iOS geometry 컬럼을 보존하고, 프로덕션 `DatabaseModule`은 `addMigrations(*DronePassDatabase.allMigrations)`만 사용하며 destructive fallback을 쓰지 않는 계약을 테스트로 고정했다.
-- 코드 작업 메모: iOS `NaverMapView`의 지도 기본 컨트롤 하단 inset 조정에 대응해 Android `NaverMap.setContentPadding` 하단 패딩 경로와 `MapBottomContentPadding = 45.dp`를 테스트로 고정했다. 이전 체크포인트의 `PaletteColor.composeColor` 런타임 독립 파싱과 드론 드롭다운 메뉴 회색 fallback도 유지한다.
+- 코드 작업 메모: iOS `NaverMapView`의 지도 기본 컨트롤 하단 inset 조정에 대응해 Android `NaverMap.setContentPadding` 하단 패딩 경로와 `MapBottomContentPadding = 45.dp`를 테스트로 고정했다. 이후 공유 Firestore `shapeType` 계약, 에이전트 상태 노트, Android Room 마이그레이션 안전성 계약까지 추가로 고정했다. 이전 체크포인트의 `PaletteColor.composeColor` 런타임 독립 파싱과 드론 드롭다운 메뉴 회색 fallback도 유지한다.
+- 일시 중단 메모: iOS/Android 설정 기본값과 전면 복귀 동기화 흐름 감사가 막 시작된 상태였고, 그 감사에서 저장된 코드 변경은 없다. 사용자가 앱 출시 재개를 요청하면 이 감사가 아니라 Play/Firebase/NCP 외부 설정과 실기기 검증부터 이어간다.
 - 재개 주의: 앱 출시 과정을 이어가자는 요청이면 중간에 멈춘 코드 감사 후보를 먼저 시작하지 말고, Play 앱 서명 SHA 등록, 테스터 추가, opt-in 링크로 Play 설치 검증부터 진행한다.
 - 검증: `:app:testDebugUnitTest --tests "*MapCameraFocusTest" --tests "*MapScreenLayersTest"` 통과. 추가로 `:app:testDebugUnitTest --tests "*ShapeTypeTest" --tests "*ShapeFirestoreParsingTest" --tests "*ShapeFirebaseStoreTest" --tests "*CrossPlatformFirestoreContractTest"` 및 `:app:testDebugUnitTest --tests "*DronePassDatabaseMigrationContractTest"` 통과.
 
