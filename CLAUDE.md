@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project Overview
 DronePass Android는 iOS DronePass의 Android 포팅 프로젝트입니다. 드론 비행 허가지 시각화를 위한 애플리케이션으로, 네이버 Maps SDK를 활용하여 지도 기반 UI를 제공합니다.
 
-**현재 구현 단계**: 1단계 - 네이버 지도 표시 및 위치 권한 처리
+**현재 구현 단계**: iOS 동작/UX 패리티와 Android 출시 하드닝 단계입니다. 네이버 지도, 도형 관리, 저장 목록, 드론 관리, VWorld 비행구역, 날씨/KP 정보, 스케치, Firebase Auth/Firestore/FCM, 설정/프로필/문서 화면이 구현되어 있으며, 남은 핵심 작업은 Play 설치 빌드에서 실기기/실계정 검증과 발견된 패리티 차이 보정입니다.
 
 ## Build Configuration
 - **Package Name**: `com.ScienceFiction.DronePassAndroid`
@@ -14,25 +14,25 @@ DronePass Android는 iOS DronePass의 Android 포팅 프로젝트입니다. 드�
 - **Compile SDK**: 36
 - **Java Version**: 11
 - **Kotlin Version**: 2.0.21
-- **AGP Version**: 8.13.0
+- **AGP Version**: 8.13.2
 
 ## Development Commands
 
 ### Build
 ```bash
-./gradlew build
+./gradlew :app:assembleDebug
 ```
 
 ### Run Tests
 ```bash
 # Unit tests
-./gradlew test
+./gradlew :app:testDebugUnitTest
 
 # Instrumented tests (requires connected device or emulator)
-./gradlew connectedAndroidTest
+./gradlew :app:connectedDebugAndroidTest
 
 # Specific test class
-./gradlew test --tests com.ScienceFiction.DronePassAndroid.ExampleUnitTest
+./gradlew :app:testDebugUnitTest --tests "*ShapeTypeTest"
 ```
 
 ### Clean Build
@@ -47,16 +47,19 @@ DronePass Android는 iOS DronePass의 Android 포팅 프로젝트입니다. 드�
 
 ### Lint
 ```bash
-./gradlew lint
+./gradlew :app:lintDebug
 ```
 
 ## Architecture
 
 ### Package Structure
-- `com.ScienceFiction.DronePassAndroid` - 메인 패키지
-  - `MainActivity.kt` - 앱의 진입점, 지도 화면 호출
-  - `MapScreen.kt` - 네이버 지도 화면 Composable
-  - `ui.theme/` - Material 3 테마 (Color, Type, Theme)
+- `app/` - Application 초기화
+- `core/` - 공통 데이터, DI, UI, 유틸
+- `domain/model/` - 도메인 모델과 Firebase wire-format 검증
+- `feature/` - 기능별 Compose 화면과 ViewModel
+  - `auth`, `document`, `drone`, `kp`, `map`, `profile`, `saved`, `settings`, `shape`, `sketch`, `vworld`, `weather`
+- `service/` - FCM, 알림, 부팅 리시버
+- `ui/navigation`, `ui/theme` - 탭/화면 네비게이션과 테마
 
 ### UI Framework
 - **Jetpack Compose** 기반 선언적 UI
@@ -65,7 +68,7 @@ DronePass Android는 iOS DronePass의 Android 포팅 프로젝트입니다. 드�
 - Edge-to-edge 디스플레이 지원
 
 ### Map Integration
-- **네이버 Maps SDK 3.19.1** 사용
+- **네이버 Maps SDK 3.23.1** 사용
 - Compose의 `AndroidView`로 네이버 `MapView` 래핑
 - 지도 생명주기 관리 (`onStart`, `onResume`, `onPause`, `onStop`, `onDestroy`)
 - 위치 추적 및 카메라 제어
@@ -135,18 +138,17 @@ Geocoding/Reverse Geocoding REST API는 `NAVER_MAP_KEY_ID`와
 4. 생명주기 관리: `DisposableEffect` 사용
 
 ### Map Related Work
-- 지도 관련 작업 시 `MapScreen.kt` 참조
+- 지도 관련 작업 시 `feature/map/MapScreen.kt`, `feature/map/MapViewModel.kt`, `feature/map/overlay/ShapeOverlayManager.kt` 참조
 - 네이버 Maps SDK API: [공식 문서](https://navermaps.github.io/android-map-sdk/guide-ko/)
 - 지도 생명주기는 반드시 관리 필요
 
-## Next Steps (향후 구현 예정)
+## Current Resume Notes
 
-1. **도형 모델 구현**: Circle, Rectangle, Polygon 모델
-2. **지도 오버레이**: 네이버 지도에 도형 그리기
-3. **Firebase 통합**: Authentication, Firestore
-4. **데이터 저장/불러오기**: 도형 정보 영속화
-5. **설정 화면**: 앱 설정 관리
-6. **탭 네비게이션**: Bottom Navigation 또는 Navigation Rail
+- 앱 출시 과정을 이어갈 때는 먼저 `PLAY_RELEASE_HANDOFF.md`를 확인합니다.
+- 2026-07-06 기준 Play 내부 테스트 `3.5.5 (102) internal-1`은 이미 게시되어 있습니다.
+- 같은 versionCode `102`를 재업로드하지 말고, Play 앱 서명 SHA-1/SHA-256을 Firebase Android 앱과 NCP Maps에 등록한 뒤 내부 테스터 opt-in 링크로 Play 설치 검증을 진행합니다.
+- iOS/Android 공유 Firestore wire-format은 `FIRESTORE_CONTRACT.md`가 기준입니다. 특히 `shapeType`은 쓰기 소문자 raw value, 읽기 대소문자 무시, unknown 값 스킵 계약을 유지해야 합니다.
+- 코드 작업 재개 시 오래된 TODO 목록보다 `NEXT_STEPS.md`의 최신 체크포인트와 현재 테스트를 우선합니다.
 
 ## Reference
 - 원본 iOS 프로젝트: `/Users/david/Development/Swift/myProjects/DronePass`
