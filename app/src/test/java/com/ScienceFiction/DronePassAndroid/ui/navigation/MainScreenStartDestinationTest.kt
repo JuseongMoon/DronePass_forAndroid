@@ -244,6 +244,18 @@ class MainScreenStartDestinationTest {
     }
 
     @Test
+    fun `메인 화면은 iOS 현재 MainTabView처럼 전역 도형 색상 선택기를 노출하지 않는다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/ui/navigation/MainScreen.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/ui/navigation/MainScreen.kt",
+        ).readText()
+
+        assertFalse(source.contains("ColorPicker"))
+        assertFalse(source.contains("showColorPicker"))
+        assertFalse(source.contains("updateAllShapesColor"))
+    }
+
+    @Test
     fun `스케치 모드 진입 시 iOS처럼 저장과 설정 오버레이를 모두 닫는다`() {
         assertEquals(
             MainOverlayVisibility(showSavedListOverlay = false, showSettingsOverlay = false),
