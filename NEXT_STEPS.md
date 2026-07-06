@@ -10,10 +10,13 @@
 
 사용자가 나중에 이 디렉토리에서 "앱 출시 과정 다시 이어나가자"라고 말하면 `PLAY_RELEASE_HANDOFF.md`의 `Latest Resume Checkpoint`, `Quick Resume`, `Resume Protocol` 순서로 확인하고 이어간다.
 
-- 최신 코드 체크포인트: 지도 기본 컨트롤 하단 padding 회귀 고정.
+- 최신 코드 체크포인트: `8d501d5 Pin map control padding parity`.
+- 현재 저장 목적: 앱 출시 과정 재개용 핸드오프 저장. 이 문서와 `PLAY_RELEASE_HANDOFF.md`를 기준으로 이어간다.
 - 이미 게시된 Play 내부 테스트: `3.5.5 (102) internal-1`.
+- 현재 정지점: Play Console 버전 상세 화면에서 `3.5.5 (102) internal-1`이 내부 테스터에게 제공된 상태.
 - 출시 재개 기준: 새 AAB 업로드가 아니라 Play 앱 서명 인증서 SHA-1/SHA-256을 Firebase Android 앱과 NCP Maps Android 제한 설정에 등록하는 단계부터 시작한다.
 - 코드 작업 메모: iOS `NaverMapView`의 지도 기본 컨트롤 하단 inset 조정에 대응해 Android `NaverMap.setContentPadding` 하단 패딩 경로와 `MapBottomContentPadding = 45.dp`를 테스트로 고정했다. 이전 체크포인트의 `PaletteColor.composeColor` 런타임 독립 파싱과 드론 드롭다운 메뉴 회색 fallback도 유지한다.
+- 재개 주의: 앱 출시 과정을 이어가자는 요청이면 중간에 멈춘 코드 감사 후보를 먼저 시작하지 말고, Play 앱 서명 SHA 등록, 테스터 추가, opt-in 링크로 Play 설치 검증부터 진행한다.
 - 검증: `:app:testDebugUnitTest --tests "*MapCameraFocusTest" --tests "*MapScreenLayersTest"` 통과.
 
 ## 2026-07-05 최신 저장 체크포인트
