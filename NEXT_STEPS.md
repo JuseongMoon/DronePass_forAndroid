@@ -1,10 +1,20 @@
 # DronePass Android 작업 이어가기
 
-> Play Console 내부 테스트/출시 흐름을 이어갈 때는 먼저 `PLAY_RELEASE_HANDOFF.md`를 확인한다. 사용자가 이 디렉토리에서 "앱 출시 과정 다시 이어나가자"라고 말하면 해당 파일의 Quick Resume/Resume Protocol부터 따른다. 2026-07-05 기준 내부 테스트 `3.5.5 (102) internal-1`은 이미 게시되어 있고, 다음 작업은 새 AAB 업로드가 아니라 Play 앱 서명 인증서 SHA를 Firebase/NCP Maps에 등록한 뒤 테스터 opt-in 링크로 Play 설치 검증을 진행하는 것이다.
+> Play Console 내부 테스트/출시 흐름을 이어갈 때는 먼저 `PLAY_RELEASE_HANDOFF.md`를 확인한다. 사용자가 이 디렉토리에서 "앱 출시 과정 다시 이어나가자"라고 말하면 해당 파일의 Quick Resume/Resume Protocol부터 따른다. 2026-07-06 기준 내부 테스트 `3.5.5 (102) internal-1`은 이미 게시되어 있고, 다음 작업은 새 AAB 업로드가 아니라 Play 앱 서명 인증서 SHA를 Firebase/NCP Maps에 등록한 뒤 테스터 opt-in 링크로 Play 설치 검증을 진행하는 것이다.
 
-> 마지막 업데이트: 2026-07-05
+> 마지막 업데이트: 2026-07-06
 > 브랜치: `fix/critical-pri0-fixes`
-> 상태: iOS 동작 대조와 Android 출시 하드닝 진행 중. Play 내부 테스트 `3.5.5 (102) internal-1`은 이미 게시된 상태이며, 최신 완료 코드/패리티 기준은 저장목록 행 시각 토큰 재감사까지다. 앱 출시 재개 절차는 최신 저장된 `PLAY_RELEASE_HANDOFF.md`를 우선 확인하고, 같은 `102` AAB 재업로드가 아니라 Play 앱 서명 SHA 등록과 Play 설치 검증부터 이어간다.
+> 상태: iOS 동작 대조와 Android 출시 하드닝 진행 중. Play 내부 테스트 `3.5.5 (102) internal-1`은 이미 게시된 상태이며, 최신 완료 코드/패리티 기준은 팔레트 색상 파싱과 드론 드롭다운 메뉴 색상 fallback 재감사까지다. 앱 출시 재개 절차는 최신 저장된 `PLAY_RELEASE_HANDOFF.md`를 우선 확인하고, 같은 `102` AAB 재업로드가 아니라 Play 앱 서명 SHA 등록과 Play 설치 검증부터 이어간다.
+
+## 2026-07-06 최신 저장 체크포인트
+
+사용자가 나중에 이 디렉토리에서 "앱 출시 과정 다시 이어나가자"라고 말하면 `PLAY_RELEASE_HANDOFF.md`의 `Latest Resume Checkpoint`, `Quick Resume`, `Resume Protocol` 순서로 확인하고 이어간다.
+
+- 최신 코드 체크포인트: 팔레트 색상 파싱과 드론 드롭다운 메뉴 색상 fallback 패리티 감사.
+- 이미 게시된 Play 내부 테스트: `3.5.5 (102) internal-1`.
+- 출시 재개 기준: 새 AAB 업로드가 아니라 Play 앱 서명 인증서 SHA-1/SHA-256을 Firebase Android 앱과 NCP Maps Android 제한 설정에 등록하는 단계부터 시작한다.
+- 코드 작업 메모: `PaletteColor.composeColor`는 Android 런타임 `parseColor` 의존 없이 iOS hex 값을 직접 Compose `Color`로 변환한다. 선택된 드론 칩은 iOS처럼 팔레트 색상이 있을 때만 색상 원을 표시하고, 드롭다운 메뉴 행은 iOS처럼 팔레트 색상이 없으면 회색 원으로 fallback 한다.
+- 검증: `:app:testDebugUnitTest --tests "*DroneSelectionDropdownTest" --tests "*DroneSelectionStateTest" --tests "*DroneSyncMergeTest" --tests "*PaletteColorTest"` 통과.
 
 ## 2026-07-05 최신 저장 체크포인트
 

@@ -1,7 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.domain.model
 
 import androidx.compose.ui.graphics.Color
-import androidx.core.graphics.toColorInt
 
 enum class PaletteColor(val hex: String, val koreanName: String) {
     RED("#FF3B30", "빨강"),
@@ -25,7 +24,7 @@ enum class PaletteColor(val hex: String, val koreanName: String) {
      */
     val composeColor: Color
         get() = try {
-            Color(hex.toColorInt())
+            Color(parseHexColor(hex))
         } catch (e: IllegalArgumentException) {
             DEFAULT_FALLBACK
         }
@@ -33,6 +32,16 @@ enum class PaletteColor(val hex: String, val koreanName: String) {
     companion object {
         /** parseColor 실패 시 사용할 폴백 (#007AFF — iOS DronePass 기본 파랑) */
         private val DEFAULT_FALLBACK = Color(0xFF007AFF)
+
+        private fun parseHexColor(hex: String): Long {
+            val value = hex.removePrefix("#")
+            val argb = when (value.length) {
+                6 -> "FF$value"
+                8 -> value
+                else -> throw IllegalArgumentException("Unsupported color format: $hex")
+            }
+            return argb.toLong(radix = 16)
+        }
 
         /**
          * 드론 편집/추천에서 선택 가능한 색상 목록.

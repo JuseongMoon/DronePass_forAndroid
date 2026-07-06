@@ -21,6 +21,12 @@ class DroneSelectionDropdownTest {
     }
 
     @Test
+    fun `드롭다운 메뉴 행 색상 원은 iOS처럼 팔레트가 없으면 회색으로 폴백한다`() {
+        assertEquals(PaletteColor.BLUE.composeColor, droneDropdownMenuColor(PaletteColor.BLUE))
+        assertEquals(Color.Gray, droneDropdownMenuColor(null))
+    }
+
+    @Test
     fun `드롭다운 메뉴 행 padding은 iOS와 동일하다`() {
         assertEquals(12.dp, DroneDropdownMenuItemHorizontalPadding)
         assertEquals(8.dp, DroneDropdownMenuItemVerticalPadding)

@@ -227,7 +227,7 @@ fun DroneSelectionDropdown(
                                     )
 
                                     // 드론 색상 원
-                                    val droneColor = drone.paletteColor?.composeColor ?: Color.Gray
+                                    val droneColor = droneDropdownMenuColor(drone.paletteColor)
                                     Box(
                                         modifier = Modifier
                                             .size(12.dp)
@@ -388,6 +388,9 @@ private fun DroneChip(
 }
 
 internal fun shouldShowSelectedDroneChipColorIndicator(color: PaletteColor?): Boolean = color != null
+
+internal fun droneDropdownMenuColor(color: PaletteColor?): Color =
+    color?.composeColor ?: Color.Gray
 
 internal data class DroneDropdownChipPlacement(
     val x: Int,

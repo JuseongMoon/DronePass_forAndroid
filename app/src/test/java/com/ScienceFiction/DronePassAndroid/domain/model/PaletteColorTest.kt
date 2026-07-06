@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.domain.model
 
+import androidx.compose.ui.graphics.toArgb
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -23,6 +24,12 @@ class PaletteColorTest {
             ),
             PaletteColor.entries.map { it.hex },
         )
+    }
+
+    @Test
+    fun `팔레트 Compose 색상은 Android 런타임 parseColor 없이 iOS hex 값을 유지한다`() {
+        assertEquals(0xFF007AFF.toInt(), PaletteColor.BLUE.composeColor.toArgb())
+        assertEquals(0xFF8E8E93.toInt(), PaletteColor.GRAY.composeColor.toArgb())
     }
 
     @Test

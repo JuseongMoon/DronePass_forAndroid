@@ -1,12 +1,12 @@
 # DronePass Android Play Release Handoff
 
-> Last updated: 2026-07-05
+> Last updated: 2026-07-06
 > Resume trigger: "앱 출시 과정 다시 이어나가자"
 > Branch at handoff: `fix/critical-pri0-fixes`
 > Latest release setup baseline commit: `8135932`
 > Previous saved release-resume commit before this handoff: `c20533a`
 > Latest E2E preflight doc commit before this edit: `2cbd5f3`
-> Latest code/parity checkpoint before this handoff update: global shape color picker non-exposure contract audit
+> Latest code/parity checkpoint before this handoff update: palette color parsing and drone dropdown menu color fallback audit
 > Latest saved release-resume checkpoint at this handoff: commit containing this file
 > Package name: `com.ScienceFiction.DronePassAndroid`
 
@@ -14,19 +14,19 @@ This file captures the Google Play internal testing/release state so a later ses
 
 ## Latest Resume Checkpoint
 
-Saved on 2026-07-05 KST at the user's request. This section supersedes older snapshots below when resuming the Android app release process from this repository.
+Saved on 2026-07-06 KST. This section supersedes older snapshots below when resuming the Android app release process from this repository.
 
 - Resume trigger phrase from this directory: `앱 출시 과정 다시 이어나가자`.
 - Branch at save time: `fix/critical-pri0-fixes`.
-- Latest committed code/parity checkpoint before this handoff update: global shape color picker non-exposure contract audit.
-- Working tree before this color-audit update: clean at `1a5607f Save release resume checkpoint`.
+- Latest committed code/parity checkpoint before this handoff update: palette color parsing and drone dropdown menu color fallback audit.
+- Working tree before this update: clean at `1a269d7 Pin global color picker exposure parity`.
 - Play internal test release already published: `3.5.5 (102) internal-1`.
 - Current release stop point: Play Console version detail page for `3.5.5 (102) internal-1`, already provided to internal testers.
 - Do not rebuild or re-upload version code `102` just to resume the release process.
 - Next external release step: Play Console `Google Play로 보호됨 > 앱 무결성`에서 `앱 서명 키 인증서` SHA-1/SHA-256을 복사한 뒤 Firebase Android 앱과 NCP Maps Android 제한 설정에 등록한다.
 - Next verification step: add internal tester Gmail accounts, open the internal-test opt-in link on a real Android device, install from Google Play, then verify Google/Apple sign-in, Naver map auth, geocoding/reverse-geocoding, Firestore iOS/Android sync, and main UI overlay layout.
 - If a newer build is intentionally required later, bump to `versionCode = 103` and use release name `3.5.5 (103) internal-2`.
-- Code-work resume note: saved-list row visual tokens are committed, and the follow-up color/palette audit is now pinned by tests. iOS and Android palette raw values match, Android drone-edit color picker is already pinned, and Android now also has a `MainScreenStartDestinationTest` contract that the dormant iOS global `ColorPickerView` is not exposed from the main screen. If the user resumes the app release process, ignore code-audit threads and continue with Play/Firebase/NCP release steps first.
+- Code-work resume note: saved-list row visual tokens and global color picker non-exposure are committed. The latest follow-up pins palette Compose color conversion without Android runtime `parseColor`, and pins the iOS dropdown distinction where selected chips omit invalid palette colors while dropdown menu rows fall back to a gray color circle. If the user resumes the app release process, ignore code-audit threads and continue with Play/Firebase/NCP release steps first.
 
 ## Current Resume Pointer
 
