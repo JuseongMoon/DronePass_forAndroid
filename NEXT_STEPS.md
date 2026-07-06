@@ -16,9 +16,10 @@
 - 현재 정지점: Play Console 버전 상세 화면에서 `3.5.5 (102) internal-1`이 내부 테스터에게 제공된 상태.
 - 출시 재개 기준: 새 AAB 업로드가 아니라 Play 앱 서명 인증서 SHA-1/SHA-256을 Firebase Android 앱과 NCP Maps Android 제한 설정에 등록하는 단계부터 시작한다.
 - Firestore 호환성 메모: 공유 `shapeType` 계약을 재확인했다. Android 쓰기는 `shape.shapeType.rawValue` 소문자만 사용하고, 읽기는 `ShapeType.parseWireValue`로 레거시 `CIRCLE`/`Circle`을 허용하되 unknown 값은 스킵한다. 사건 메모는 `FIRESTORE_CONTRACT.md`에 남겼다.
+- 로컬 데이터 안전성 메모: iOS `MigrationManager`/Android Room 마이그레이션 경로를 다시 확인했다. Android는 v1→v3 직접 마이그레이션으로 iOS geometry 컬럼을 보존하고, 프로덕션 `DatabaseModule`은 `addMigrations(*DronePassDatabase.allMigrations)`만 사용하며 destructive fallback을 쓰지 않는 계약을 테스트로 고정했다.
 - 코드 작업 메모: iOS `NaverMapView`의 지도 기본 컨트롤 하단 inset 조정에 대응해 Android `NaverMap.setContentPadding` 하단 패딩 경로와 `MapBottomContentPadding = 45.dp`를 테스트로 고정했다. 이전 체크포인트의 `PaletteColor.composeColor` 런타임 독립 파싱과 드론 드롭다운 메뉴 회색 fallback도 유지한다.
 - 재개 주의: 앱 출시 과정을 이어가자는 요청이면 중간에 멈춘 코드 감사 후보를 먼저 시작하지 말고, Play 앱 서명 SHA 등록, 테스터 추가, opt-in 링크로 Play 설치 검증부터 진행한다.
-- 검증: `:app:testDebugUnitTest --tests "*MapCameraFocusTest" --tests "*MapScreenLayersTest"` 통과. 추가로 `:app:testDebugUnitTest --tests "*ShapeTypeTest" --tests "*ShapeFirestoreParsingTest" --tests "*ShapeFirebaseStoreTest" --tests "*CrossPlatformFirestoreContractTest"` 통과.
+- 검증: `:app:testDebugUnitTest --tests "*MapCameraFocusTest" --tests "*MapScreenLayersTest"` 통과. 추가로 `:app:testDebugUnitTest --tests "*ShapeTypeTest" --tests "*ShapeFirestoreParsingTest" --tests "*ShapeFirebaseStoreTest" --tests "*CrossPlatformFirestoreContractTest"` 및 `:app:testDebugUnitTest --tests "*DronePassDatabaseMigrationContractTest"` 통과.
 
 ## 2026-07-05 최신 저장 체크포인트
 

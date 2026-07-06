@@ -38,6 +38,19 @@ class DronePassDatabaseMigrationContractTest {
         )
     }
 
+    @Test
+    fun `production database builder uses explicit migrations without destructive fallback`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/core/di/DatabaseModule.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/core/di/DatabaseModule.kt",
+        ).readText()
+
+        assertTrue(source.contains(".addMigrations(*DronePassDatabase.allMigrations)"))
+        assertFalse(source.contains("fallbackToDestructiveMigration"))
+        assertFalse(source.contains("fallbackToDestructiveMigrationFrom"))
+        assertFalse(source.contains("fallbackToDestructiveMigrationOnDowngrade"))
+    }
+
     private fun String.hasColumn(columnName: String): Boolean =
         contains("\"columnName\": \"$columnName\"")
 
@@ -51,6 +64,14 @@ class DronePassDatabaseMigrationContractTest {
 
     private fun readSchema(version: Int): String =
         File(schemaDirectory(), "$version.json").readText()
+
+    private fun resolveProjectFile(vararg candidates: String): File {
+        val userDir = File(requireNotNull(System.getProperty("user.dir")))
+        return candidates
+            .map { File(userDir, it) }
+            .firstOrNull { it.exists() }
+            ?: error("Project file not found: ${candidates.joinToString()}")
+    }
 
     private fun schemaDirectory(): File {
         val userDir = File(requireNotNull(System.getProperty("user.dir")))
