@@ -306,6 +306,8 @@ class SettingsScreenContractTest {
                 "else R.string.settings_korea_features_off_title",
                 "if (isOn) R.string.settings_korea_features_on_message",
                 "else R.string.settings_korea_features_off_message",
+                "TextButton(onClick = { koreaFeaturesAlertOn = null })",
+                "R.string.common_confirm",
             ),
         )
     }

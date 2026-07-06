@@ -4,13 +4,13 @@
 
 > 마지막 업데이트: 2026-07-06
 > 브랜치: `fix/critical-pri0-fixes`
-> 상태: iOS 동작 대조와 Android 출시 하드닝 진행 중. Play 내부 테스트 `3.5.5 (102) internal-1`은 이미 게시된 상태이며, 최신 완료 코드/패리티 기준은 전면 복귀 원격 변경 감지 lifecycle 계약 고정까지다. 앱 출시 재개 절차는 최신 저장된 `PLAY_RELEASE_HANDOFF.md`를 우선 확인하고, 같은 `102` AAB 재업로드가 아니라 Play 앱 서명 SHA 등록과 Play 설치 검증부터 이어간다.
+> 상태: iOS 동작 대조와 Android 출시 하드닝 진행 중. Play 내부 테스트 `3.5.5 (102) internal-1`은 이미 게시된 상태이며, 최신 완료 코드/패리티 기준은 설정 한국 현지 기능 alert 확인 버튼 계약 고정까지다. 앱 출시 재개 절차는 최신 저장된 `PLAY_RELEASE_HANDOFF.md`를 우선 확인하고, 같은 `102` AAB 재업로드가 아니라 Play 앱 서명 SHA 등록과 Play 설치 검증부터 이어간다.
 
 ## 2026-07-06 최신 저장 체크포인트
 
 사용자가 나중에 이 디렉토리에서 "앱 출시 과정 다시 이어나가자"라고 말하면 `PLAY_RELEASE_HANDOFF.md`의 `Latest Resume Checkpoint`, `Quick Resume`, `Resume Protocol` 순서로 확인하고 이어간다.
 
-- 최신 코드 체크포인트: 전면 복귀 원격 변경 감지 lifecycle 계약 고정.
+- 최신 코드 체크포인트: 설정 한국 현지 기능 alert 확인 버튼 계약 고정.
 - 현재 저장 목적: 앱 출시 과정 재개용 핸드오프 저장. 이 문서와 `PLAY_RELEASE_HANDOFF.md`를 기준으로 이어간다.
 - 이미 게시된 Play 내부 테스트: `3.5.5 (102) internal-1`.
 - 현재 정지점: Play Console 버전 상세 화면에서 `3.5.5 (102) internal-1`이 내부 테스터에게 제공된 상태.
@@ -19,8 +19,9 @@
 - 로컬 데이터 안전성 메모: iOS `MigrationManager`/Android Room 마이그레이션 경로를 다시 확인했다. Android는 v1→v3 직접 마이그레이션으로 iOS geometry 컬럼을 보존하고, 프로덕션 `DatabaseModule`은 `addMigrations(*DronePassDatabase.allMigrations)`만 사용하며 destructive fallback을 쓰지 않는 계약을 테스트로 고정했다.
 - 코드 작업 메모: iOS `NaverMapView`의 지도 기본 컨트롤 하단 inset 조정에 대응해 Android `NaverMap.setContentPadding` 하단 패딩 경로와 `MapBottomContentPadding = 45.dp`를 테스트로 고정했다. 이후 공유 Firestore `shapeType` 계약, 에이전트 상태 노트, Android Room 마이그레이션 안전성 계약, 전면 복귀 원격 변경 감지 lifecycle 계약까지 추가로 고정했다. 이전 체크포인트의 `PaletteColor.composeColor` 런타임 독립 파싱과 드론 드롭다운 메뉴 회색 fallback도 유지한다.
 - 전면 복귀 동기화 메모: Android `MainScreen`은 `ON_RESUME`에서 `ensureCloudSyncActiveOnForeground()`, `ON_STOP`에서 `resetForegroundSyncCheckStatus()`를 호출해 iOS `applicationDidBecomeActive`/`applicationWillResignActive`와 대응한다. `AuthViewModel`은 iOS `ChangeDetectionManager`처럼 원격 변경 확인이 성공했을 때만 체크 완료 상태로 표시한다.
+- 설정 한국 현지 기능 메모: iOS `SettingView`의 한국 현지 기능 ON/OFF alert가 `common.ok` 버튼으로 닫히는 흐름에 맞춰 Android `SettingsScreen`도 `common_confirm` 버튼으로 `koreaFeaturesAlertOn`을 해제하는 계약을 테스트로 고정했다.
 - 재개 주의: 앱 출시 과정을 이어가자는 요청이면 중간에 멈춘 코드 감사 후보를 먼저 시작하지 말고, Play 앱 서명 SHA 등록, 테스터 추가, opt-in 링크로 Play 설치 검증부터 진행한다.
-- 검증: `:app:testDebugUnitTest --tests "*MapCameraFocusTest" --tests "*MapScreenLayersTest"` 통과. 추가로 `:app:testDebugUnitTest --tests "*ShapeTypeTest" --tests "*ShapeFirestoreParsingTest" --tests "*ShapeFirebaseStoreTest" --tests "*CrossPlatformFirestoreContractTest"`, `:app:testDebugUnitTest --tests "*DronePassDatabaseMigrationContractTest"`, `:app:testDebugUnitTest --tests "*AuthViewModelForegroundSyncTest" --tests "*MainScreenStartDestinationTest"`, `:app:testDebugUnitTest --tests "*RealtimeSyncManagerTest"` 통과.
+- 검증: `:app:testDebugUnitTest --tests "*MapCameraFocusTest" --tests "*MapScreenLayersTest"` 통과. 추가로 `:app:testDebugUnitTest --tests "*ShapeTypeTest" --tests "*ShapeFirestoreParsingTest" --tests "*ShapeFirebaseStoreTest" --tests "*CrossPlatformFirestoreContractTest"`, `:app:testDebugUnitTest --tests "*DronePassDatabaseMigrationContractTest"`, `:app:testDebugUnitTest --tests "*AuthViewModelForegroundSyncTest" --tests "*MainScreenStartDestinationTest"`, `:app:testDebugUnitTest --tests "*RealtimeSyncManagerTest"`, `:app:testDebugUnitTest --tests "*SettingsScreenContractTest" --tests "*StringResourceCoverageTest"` 통과.
 
 ## 2026-07-05 최신 저장 체크포인트
 

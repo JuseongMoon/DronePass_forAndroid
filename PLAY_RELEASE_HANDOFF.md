@@ -6,7 +6,7 @@
 > Latest release setup baseline commit: `8135932`
 > Previous saved release-resume commit before this handoff: `b8f3a7e`
 > Latest E2E preflight doc commit before this edit: `2cbd5f3`
-> Latest code/parity checkpoint before this handoff update: foreground remote-change lifecycle contract pin
+> Latest code/parity checkpoint before this handoff update: settings Korea local feature alert button contract pin
 > Latest saved release-resume checkpoint at this handoff: commit containing this file
 > Package name: `com.ScienceFiction.DronePassAndroid`
 
@@ -18,18 +18,19 @@ Saved again on 2026-07-06 KST at the user's request. This section supersedes old
 
 - Resume trigger phrase from this directory: `앱 출시 과정 다시 이어나가자`.
 - Branch at save time: `fix/critical-pri0-fixes`.
-- Latest committed code/parity checkpoint before this handoff update: foreground remote-change lifecycle parity test update after `484dbd3 Pin database migration safety contract`.
-- Working tree before this documentation save: clean before the foreground lifecycle test/doc changes.
+- Latest committed code/parity checkpoint before this handoff update: settings Korea local feature alert button parity test update after foreground remote-change lifecycle parity.
+- Working tree before this documentation save: clean before the settings alert test/doc changes.
 - Play internal test release already published: `3.5.5 (102) internal-1`.
 - Current release stop point: Play Console version detail page for `3.5.5 (102) internal-1`, already provided to internal testers.
 - Do not rebuild or re-upload version code `102` just to resume the release process.
 - Next external release step: Play Console `Google Play로 보호됨 > 앱 무결성`에서 `앱 서명 키 인증서` SHA-1/SHA-256을 복사한 뒤 Firebase Android 앱과 NCP Maps Android 제한 설정에 등록한다.
 - Next verification step: add internal tester Gmail accounts, open the internal-test opt-in link on a real Android device, install from Google Play, then verify Google/Apple sign-in, Naver map auth, geocoding/reverse-geocoding, Firestore iOS/Android sync, and main UI overlay layout.
 - If a newer build is intentionally required later, bump to `versionCode = 103` and use release name `3.5.5 (103) internal-2`.
-- Code-work resume note: saved-list row visual tokens, global color picker non-exposure, palette Compose color conversion, drone dropdown menu color fallback, Android NaverMap bottom content padding parity, shared Firestore `shapeType` wire-format compatibility, agent status notes, Room migration safety, and foreground remote-change lifecycle parity are committed. If the user asks to resume the app release process, do not start another code audit first. Continue Play/Firebase/NCP release steps first.
+- Code-work resume note: saved-list row visual tokens, global color picker non-exposure, palette Compose color conversion, drone dropdown menu color fallback, Android NaverMap bottom content padding parity, shared Firestore `shapeType` wire-format compatibility, agent status notes, Room migration safety, foreground remote-change lifecycle parity, and settings Korea local feature alert button parity are committed. If the user asks to resume the app release process, do not start another code audit first. Continue Play/Firebase/NCP release steps first.
 - Completed compatibility note: Android still writes shape enum values as lowercase `rawValue` and reads legacy uppercase values case-insensitively; `FIRESTORE_CONTRACT.md` contains the incident note. Production Room setup is pinned to `addMigrations(*DronePassDatabase.allMigrations)` with no destructive fallback.
 - Latest foreground lifecycle note: Android `MainScreen` now has tests pinning `ON_RESUME -> ensureCloudSyncActiveOnForeground()` and `ON_STOP -> resetForegroundSyncCheckStatus()`, matching iOS `applicationDidBecomeActive`/`applicationWillResignActive`. `AuthViewModel` tests also pin the iOS behavior that a foreground change check is marked complete only after the remote check succeeds.
-- Latest targeted verification before this save: `:app:testDebugUnitTest --tests "*AuthViewModelForegroundSyncTest" --tests "*MainScreenStartDestinationTest"`, `:app:testDebugUnitTest --tests "*RealtimeSyncManagerTest"`, `:app:testDebugUnitTest --tests "*ShapeTypeTest" --tests "*ShapeFirestoreParsingTest" --tests "*ShapeFirebaseStoreTest" --tests "*CrossPlatformFirestoreContractTest"`, and `:app:testDebugUnitTest --tests "*DronePassDatabaseMigrationContractTest"` passed.
+- Latest settings note: Android `SettingsScreen` now has a contract test pinning the Korea local feature ON/OFF alert confirm button dismissal to the iOS `common.ok` alert behavior.
+- Latest targeted verification before this save: `:app:testDebugUnitTest --tests "*SettingsScreenContractTest" --tests "*StringResourceCoverageTest"`, `:app:testDebugUnitTest --tests "*AuthViewModelForegroundSyncTest" --tests "*MainScreenStartDestinationTest"`, `:app:testDebugUnitTest --tests "*RealtimeSyncManagerTest"`, `:app:testDebugUnitTest --tests "*ShapeTypeTest" --tests "*ShapeFirestoreParsingTest" --tests "*ShapeFirebaseStoreTest" --tests "*CrossPlatformFirestoreContractTest"`, and `:app:testDebugUnitTest --tests "*DronePassDatabaseMigrationContractTest"` passed.
 
 ## Current Resume Pointer
 
