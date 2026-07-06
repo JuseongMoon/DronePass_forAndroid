@@ -39,6 +39,15 @@ class MapCameraFocusTest {
     }
 
     @Test
+    fun `네이버 지도 기본 컨트롤은 iOS처럼 하단 플로팅 탭바와 겹치지 않도록 패딩을 둔다`() {
+        assertEquals(45.dp, MapBottomContentPadding)
+
+        val source = File("src/main/java/com/ScienceFiction/DronePassAndroid/feature/map/MapScreen.kt").readText()
+        assertTrue(source.contains("val mapBottomPaddingPx = with(density) { MapBottomContentPadding.roundToPx() }"))
+        assertTrue(source.contains("map.setContentPadding(0, 0, 0, mapBottomPaddingPx)"))
+    }
+
+    @Test
     fun `지도 위치 권한은 대략적인 위치만 허용되어도 사용 가능하다`() {
         assertEquals(
             true,

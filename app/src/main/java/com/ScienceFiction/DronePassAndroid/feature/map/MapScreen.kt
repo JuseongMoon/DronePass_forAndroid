@@ -585,7 +585,7 @@ internal const val ShapeFocusZoomDurationMs = 300L
 internal const val ShapeFocusSecondStepDelayMs = 300L
 internal const val ShapeFocusMoveDurationMs = 500L
 
-private val MapBottomContentPadding = 45.dp
+internal val MapBottomContentPadding = 45.dp
 private val ShapeFocusPhoneOffsetY = 200.dp
 private val ShapeFocusTabletOffsetX = (-100).dp
 

@@ -6,7 +6,7 @@
 > Latest release setup baseline commit: `8135932`
 > Previous saved release-resume commit before this handoff: `c20533a`
 > Latest E2E preflight doc commit before this edit: `2cbd5f3`
-> Latest code/parity checkpoint before this handoff update: palette color parsing and drone dropdown menu color fallback audit
+> Latest code/parity checkpoint before this handoff update: map control bottom padding regression pin
 > Latest saved release-resume checkpoint at this handoff: commit containing this file
 > Package name: `com.ScienceFiction.DronePassAndroid`
 
@@ -18,15 +18,15 @@ Saved on 2026-07-06 KST. This section supersedes older snapshots below when resu
 
 - Resume trigger phrase from this directory: `앱 출시 과정 다시 이어나가자`.
 - Branch at save time: `fix/critical-pri0-fixes`.
-- Latest committed code/parity checkpoint before this handoff update: palette color parsing and drone dropdown menu color fallback audit.
-- Working tree before this update: clean at `1a269d7 Pin global color picker exposure parity`.
+- Latest committed code/parity checkpoint before this handoff update: map control bottom padding regression pin.
+- Working tree before this update: clean at `4c36e8e Pin drone dropdown color fallback parity`.
 - Play internal test release already published: `3.5.5 (102) internal-1`.
 - Current release stop point: Play Console version detail page for `3.5.5 (102) internal-1`, already provided to internal testers.
 - Do not rebuild or re-upload version code `102` just to resume the release process.
 - Next external release step: Play Console `Google Play로 보호됨 > 앱 무결성`에서 `앱 서명 키 인증서` SHA-1/SHA-256을 복사한 뒤 Firebase Android 앱과 NCP Maps Android 제한 설정에 등록한다.
 - Next verification step: add internal tester Gmail accounts, open the internal-test opt-in link on a real Android device, install from Google Play, then verify Google/Apple sign-in, Naver map auth, geocoding/reverse-geocoding, Firestore iOS/Android sync, and main UI overlay layout.
 - If a newer build is intentionally required later, bump to `versionCode = 103` and use release name `3.5.5 (103) internal-2`.
-- Code-work resume note: saved-list row visual tokens and global color picker non-exposure are committed. The latest follow-up pins palette Compose color conversion without Android runtime `parseColor`, and pins the iOS dropdown distinction where selected chips omit invalid palette colors while dropdown menu rows fall back to a gray color circle. If the user resumes the app release process, ignore code-audit threads and continue with Play/Firebase/NCP release steps first.
+- Code-work resume note: saved-list row visual tokens, global color picker non-exposure, palette Compose color conversion, and drone dropdown menu color fallback are committed. The latest follow-up pins the Android NaverMap bottom content padding path used to keep default map controls from colliding with the floating tab bar, matching the iOS map-control inset adjustment intent. If the user resumes the app release process, ignore code-audit threads and continue with Play/Firebase/NCP release steps first.
 
 ## Current Resume Pointer
 
