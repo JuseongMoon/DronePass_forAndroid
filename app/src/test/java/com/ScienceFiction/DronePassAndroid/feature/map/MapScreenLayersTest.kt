@@ -404,6 +404,39 @@ class MapScreenLayersTest {
     }
 
     @Test
+    fun `한국 특화 기능 전환은 iOS HideAllFlightZones 처럼 비행구역 UI를 모두 닫는다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/map/MapViewModel.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/map/MapViewModel.kt",
+        ).readText()
+        val initSource = source
+            .substringAfter("koreaFeaturesEnabled 와 FlightZone 상태 Flow")
+            .substringBefore("@OptIn(FlowPreview::class)")
+        val clearSource = source
+            .substringAfter("private fun clearFlightZoneUiForKoreaFeatureChange()")
+            .substringBefore("private fun setVisibleLayers")
+
+        assertAppearsInOrder(
+            source = initSource,
+            tokens = listOf(
+                "koreaFeaturesEnabled",
+                ".drop(1)",
+                ".distinctUntilChanged()",
+                ".collect { clearFlightZoneUiForKoreaFeatureChange() }",
+            ),
+        )
+        assertAppearsInOrder(
+            source = clearSource,
+            tokens = listOf(
+                "hideAllLayers()",
+                "_showLayerSelector.value = false",
+                "_selectedZone.value = null",
+                "_showZoneDetail.value = false",
+            ),
+        )
+    }
+
+    @Test
     fun `비행구역 로드 결과는 iOS처럼 현재 표시 중인 레이어일 때만 반영한다`() {
         assertEquals(
             true,
