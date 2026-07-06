@@ -21,6 +21,12 @@ Never write Kotlin enum names such as `CIRCLE`, `RECTANGLE`, `POLYGON`, or `POLY
 
 Android legacy builds wrote enum names to Firestore. Android must continue reading `shapeType` case-insensitively so documents written as `CIRCLE` remain visible on both platforms after the next save normalizes them back to lowercase.
 
+Incident note, 2026-07-06: legacy Android documents with uppercase `shapeType`
+values such as `CIRCLE` caused those otherwise-valid shapes to be silently skipped
+by the iOS reader before the iOS tolerant-read fix. Keep this contract as:
+write canonical lowercase raw values, read known values case-insensitively, and skip
+unknown future values instead of coercing them to `circle`.
+
 Regression coverage:
 
 - `CrossPlatformFirestoreContractTest`
