@@ -137,7 +137,7 @@ fun AppInfoScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(bottom = 32.dp),
         ) {
-            SectionHeader(title = stringResource(R.string.app_info_section_intro))
+            AppInfoSectionHeader(title = stringResource(R.string.app_info_section_intro))
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -156,7 +156,7 @@ fun AppInfoScreen(
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-            SectionHeader(title = stringResource(R.string.app_info_section_drone_management))
+            AppInfoSectionHeader(title = stringResource(R.string.app_info_section_drone_management))
             FeatureRow(
                 icon = AppInfoMultiDroneIcon,
                 iconColor = Color(0xFF007AFF),
@@ -182,7 +182,7 @@ fun AppInfoScreen(
             )
 
             Spacer(modifier = Modifier.height(16.dp))
-            SectionHeader(title = stringResource(R.string.app_info_section_environmental_info))
+            AppInfoSectionHeader(title = stringResource(R.string.app_info_section_environmental_info))
             FeatureRow(
                 icon = AppInfoWeatherIcon,
                 iconColor = Color(0xFF5AC8FA),
@@ -205,7 +205,7 @@ fun AppInfoScreen(
             )
 
             Spacer(modifier = Modifier.height(16.dp))
-            SectionHeader(title = stringResource(R.string.app_info_section_shapes_and_map))
+            AppInfoSectionHeader(title = stringResource(R.string.app_info_section_shapes_and_map))
             FeatureRow(
                 icon = AppInfoShapeManagementIcon,
                 iconColor = Color(0xFF5856D6),
@@ -229,7 +229,7 @@ fun AppInfoScreen(
             )
 
             Spacer(modifier = Modifier.height(16.dp))
-            SectionHeader(title = stringResource(R.string.app_info_section_cloud_and_data))
+            AppInfoSectionHeader(title = stringResource(R.string.app_info_section_cloud_and_data))
             FeatureRow(
                 icon = AppInfoCloudSyncIcon,
                 iconColor = Color(0xFF007AFF),
@@ -245,7 +245,7 @@ fun AppInfoScreen(
             )
 
             Spacer(modifier = Modifier.height(16.dp))
-            SectionHeader(title = stringResource(R.string.app_info_section_version))
+            AppInfoSectionHeader(title = stringResource(R.string.app_info_section_version))
             InfoRow(
                 icon = Icons.Default.Info,
                 title = stringResource(R.string.app_info_version_app),
@@ -259,7 +259,7 @@ fun AppInfoScreen(
             )
 
             Spacer(modifier = Modifier.height(16.dp))
-            SectionHeader(title = stringResource(R.string.app_info_section_contact))
+            AppInfoSectionHeader(title = stringResource(R.string.app_info_section_contact))
             val contactCompany = stringResource(R.string.app_info_contact_company)
             val contactEmail = stringResource(R.string.app_info_contact_email)
             val contactDisplay = appInfoContactDisplay(contactCompany, contactEmail)
@@ -283,6 +283,17 @@ fun AppInfoScreen(
             )
         }
     }
+}
+
+@Composable
+private fun AppInfoSectionHeader(title: String) {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.titleSmall,
+        fontWeight = FontWeight.SemiBold,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+    )
 }
 
 @Composable
