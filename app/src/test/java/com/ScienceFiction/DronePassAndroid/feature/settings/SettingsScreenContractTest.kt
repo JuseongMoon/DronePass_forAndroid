@@ -246,6 +246,35 @@ class SettingsScreenContractTest {
     }
 
     @Test
+    fun `알림 토글은 iOS처럼 설명과 즉시 저장 액션을 유지한다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsScreen.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsScreen.kt",
+        ).readText()
+
+        assertAppearsInOrder(
+            source = source,
+            tokens = listOf(
+                "R.string.settings_section_notifications",
+                "NotificationPermissionRequest()",
+                "R.string.settings_end_date_alarm",
+                "R.string.settings_end_date_alarm_subtitle",
+                "checked = endDateAlarmEnabled",
+                "settingsViewModel.toggleEndDateAlarm(it)",
+                "R.string.settings_sunrise_alarm",
+                "R.string.settings_sunrise_alarm_subtitle",
+                "checked = sunriseAlarmEnabled",
+                "settingsViewModel.toggleSunriseAlarm(it)",
+                "R.string.settings_sunset_alarm",
+                "R.string.settings_sunset_alarm_subtitle",
+                "checked = sunsetAlarmEnabled",
+                "settingsViewModel.toggleSunsetAlarm(it)",
+                "R.string.settings_section_map_display",
+            ),
+        )
+    }
+
+    @Test
     fun `지도 표시 토글은 iOS처럼 설명과 즉시 저장 액션을 유지한다`() {
         val source = resolveProjectFile(
             "src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsScreen.kt",

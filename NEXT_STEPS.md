@@ -4,13 +4,13 @@
 
 > 마지막 업데이트: 2026-07-07
 > 브랜치: `fix/critical-pri0-fixes`
-> 상태: iOS 동작 대조와 Android 출시 하드닝 진행 중. Play 내부 테스트 `3.5.5 (102) internal-1`은 이미 게시된 상태이며, 최신 완료 코드/패리티 기준은 설정 지도 표시 토글/저장 액션 계약 고정까지다. 앱 출시 재개 절차는 최신 저장된 `PLAY_RELEASE_HANDOFF.md`를 우선 확인하고, 같은 `102` AAB 재업로드가 아니라 Play 앱 서명 SHA 등록과 Play 설치 검증부터 이어간다.
+> 상태: iOS 동작 대조와 Android 출시 하드닝 진행 중. Play 내부 테스트 `3.5.5 (102) internal-1`은 이미 게시된 상태이며, 최신 완료 코드/패리티 기준은 설정 알림 토글/저장 액션 계약 고정까지다. 앱 출시 재개 절차는 최신 저장된 `PLAY_RELEASE_HANDOFF.md`를 우선 확인하고, 같은 `102` AAB 재업로드가 아니라 Play 앱 서명 SHA 등록과 Play 설치 검증부터 이어간다.
 
 ## 2026-07-07 최신 저장 체크포인트
 
 사용자가 나중에 이 디렉토리에서 "앱 출시 과정 다시 이어나가자"라고 말하면 `PLAY_RELEASE_HANDOFF.md`의 `2026-07-07 Current Resume Checkpoint`, `Quick Resume`, `Resume Protocol` 순서로 확인하고 이어간다.
 
-- 최신 코드 체크포인트: 설정 지도 표시 토글/저장 액션 계약 고정.
+- 최신 코드 체크포인트: 설정 알림 토글/저장 액션 계약 고정.
 - 저장 전 워킹트리: clean.
 - 저장 시점 연결 Android 기기: 없음. Play 설치 실기기 검증은 계속 남아 있다.
 - 이미 게시된 Play 내부 테스트: `3.5.5 (102) internal-1`.
@@ -19,8 +19,9 @@
 - 그 다음 작업: 내부 테스터 Gmail 추가, opt-in 링크를 실기기에서 열어 Google Play 설치, Google/Apple 로그인, Naver 지도 SDK 인증, 주소 검색/역지오코딩, Firestore iOS/Android 동기화, 저장/설정 오버레이와 하단 플로팅 UI 정렬 확인.
 - 새 빌드가 필요할 때만 `versionCode = 103`, release name `3.5.5 (103) internal-2`로 진행한다.
 - 코드 작업 메모: iOS `SettingView`의 지도 표시 섹션처럼 Android `SettingsScreen`도 화면 항상 켜기, 시작 전 도형 숨기기, 만료 도형 숨기기 토글이 각각 제목 + 설명 + 즉시 저장 액션을 유지하고, 뒤이어 destructive 만료 도형 삭제 행을 노출하는 계약을 테스트로 고정했다.
+- 알림 섹션 메모: iOS `SettingView`의 알림 섹션처럼 Android `SettingsScreen`도 도형 만료, 일출, 일몰 알림 토글이 각각 제목 + 설명 + 즉시 저장 액션을 유지한다. Android 전용 권한 안내 카드는 이 세 토글 앞에만 위치하도록 계약을 고정했다.
 - 재개 주의: 앱 출시 과정을 이어가자는 요청이면 중간에 멈춘 코드 감사 후보를 먼저 시작하지 말고, Play 앱 서명 SHA 등록, 테스터 추가, opt-in 링크로 Play 설치 검증부터 진행한다.
-- 검증: `:app:testDebugUnitTest --tests "*SettingsScreenContractTest" --tests "*StringResourceCoverageTest"` 통과.
+- 검증: `:app:testDebugUnitTest --tests "*SettingsScreenContractTest" --tests "*StringResourceCoverageTest" --tests "*NotificationPermissionRequestTest"` 통과.
 
 ## 2026-07-06 최신 저장 체크포인트
 
