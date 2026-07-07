@@ -1,6 +1,8 @@
 package com.ScienceFiction.DronePassAndroid.feature.profile
 
+import androidx.compose.ui.graphics.Color
 import androidx.datastore.preferences.core.preferencesOf
+import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncPreferenceKeys
 import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncState
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
@@ -145,6 +147,24 @@ class ProfileViewModelTest {
                 realtimeSyncState = SyncState.Success(timestamp = 1_700_000_000_000L),
             ),
         )
+    }
+
+    @Test
+    fun `프로필 동기화 상태 문구와 색상은 iOS realtimeCloudSyncStatusText 를 따른다`() {
+        assertEquals(R.string.profile_sync_in_progress, ProfileSyncStatus.Syncing.labelRes)
+        assertEquals(Color(0xFF007AFF), ProfileSyncStatus.Syncing.color)
+
+        assertEquals(R.string.profile_sync_login_required, ProfileSyncStatus.LoginRequired.labelRes)
+        assertEquals(Color(0xFFFF9500), ProfileSyncStatus.LoginRequired.color)
+
+        assertEquals(R.string.profile_sync_disabled, ProfileSyncStatus.Disabled.labelRes)
+        assertEquals(Color(0xFF8E8E93), ProfileSyncStatus.Disabled.color)
+
+        assertEquals(R.string.profile_sync_active, ProfileSyncStatus.Active.labelRes)
+        assertEquals(Color(0xFF34C759), ProfileSyncStatus.Active.color)
+
+        assertEquals(R.string.profile_sync_waiting, ProfileSyncStatus.Waiting.labelRes)
+        assertEquals(Color(0xFFFF9500), ProfileSyncStatus.Waiting.color)
     }
 
     @Test

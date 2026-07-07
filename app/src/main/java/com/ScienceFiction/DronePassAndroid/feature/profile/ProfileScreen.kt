@@ -186,7 +186,7 @@ fun ProfileScreen(
             )
 
             // 수동 백업 (로그인 + 토글 ON 시만 표시)
-            if (isLoggedIn && isCloudBackupEnabled) {
+            if (shouldShowProfileManualBackup(isLoggedIn, isCloudBackupEnabled)) {
                 HorizontalDivider()
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -211,11 +211,7 @@ fun ProfileScreen(
                 }
             }
 
-            val syncFooterTextRes = when {
-                !isLoggedIn -> R.string.profile_sync_footer_login_required
-                !isCloudBackupEnabled -> R.string.profile_sync_footer_enable_info
-                else -> null
-            }
+            val syncFooterTextRes = profileSyncFooterTextRes(isLoggedIn, isCloudBackupEnabled)
             syncFooterTextRes?.let { textRes ->
                 Text(
                     text = stringResource(textRes),
@@ -528,6 +524,20 @@ private fun ProfileCloudSyncToggleItem(
 internal fun shouldShowProfileSyncProgress(isSyncing: Boolean): Boolean = isSyncing
 
 internal fun shouldEnableProfileManualBackup(isSyncing: Boolean): Boolean = !isSyncing
+
+internal fun shouldShowProfileManualBackup(
+    isLoggedIn: Boolean,
+    isCloudBackupEnabled: Boolean,
+): Boolean = isLoggedIn && isCloudBackupEnabled
+
+internal fun profileSyncFooterTextRes(
+    isLoggedIn: Boolean,
+    isCloudBackupEnabled: Boolean,
+): Int? = when {
+    !isLoggedIn -> R.string.profile_sync_footer_login_required
+    !isCloudBackupEnabled -> R.string.profile_sync_footer_enable_info
+    else -> null
+}
 
 internal fun shouldEnableProfileAccountAction(isAccountActionInProgress: Boolean): Boolean =
     !isAccountActionInProgress

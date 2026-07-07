@@ -1,6 +1,7 @@
 package com.ScienceFiction.DronePassAndroid.feature.profile
 
 import androidx.compose.ui.unit.dp
+import com.ScienceFiction.DronePassAndroid.R
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -144,6 +145,60 @@ class ProfileSheetParityTest {
                 "lastBackupTime.hasSyncTimestamp()",
                 "R.string.profile_backup_last_backup",
                 "R.string.profile_sync_no_history",
+            ),
+        )
+    }
+
+    @Test
+    fun `프로필 수동 백업과 동기화 footer 조건은 iOS ProfileView 를 따른다`() {
+        assertTrue(shouldShowProfileManualBackup(isLoggedIn = true, isCloudBackupEnabled = true))
+        assertFalse(shouldShowProfileManualBackup(isLoggedIn = false, isCloudBackupEnabled = true))
+        assertFalse(shouldShowProfileManualBackup(isLoggedIn = true, isCloudBackupEnabled = false))
+
+        assertEquals(
+            R.string.profile_sync_footer_login_required,
+            profileSyncFooterTextRes(isLoggedIn = false, isCloudBackupEnabled = true),
+        )
+        assertEquals(
+            R.string.profile_sync_footer_login_required,
+            profileSyncFooterTextRes(isLoggedIn = false, isCloudBackupEnabled = false),
+        )
+        assertEquals(
+            R.string.profile_sync_footer_enable_info,
+            profileSyncFooterTextRes(isLoggedIn = true, isCloudBackupEnabled = false),
+        )
+        assertEquals(null, profileSyncFooterTextRes(isLoggedIn = true, isCloudBackupEnabled = true))
+    }
+
+    @Test
+    fun `프로필 동기화 섹션은 iOS처럼 마지막 동기화 수동 백업 footer 순서로 배치한다`() {
+        val source = resolveProjectFile(
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/profile/ProfileScreen.kt",
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/profile/ProfileScreen.kt",
+        ).readText()
+        val syncSectionSource = source.substring(
+            source.indexOf("// ===== 2. 동기화 섹션 ====="),
+            source.indexOf("// ===== 3. 약관 및 정책 섹션 ====="),
+        )
+        val footerHelperSource = source.substring(source.indexOf("internal fun profileSyncFooterTextRes"))
+
+        assertSourceOrder(
+            syncSectionSource,
+            listOf(
+                "ProfileCloudSyncToggleItem(",
+                "val lastSyncDisplay = when",
+                "Text(",
+                "text = lastSyncDisplay",
+                "if (shouldShowProfileManualBackup(isLoggedIn, isCloudBackupEnabled))",
+                "R.string.profile_backup_manual",
+                "val syncFooterTextRes = profileSyncFooterTextRes(isLoggedIn, isCloudBackupEnabled)",
+            ),
+        )
+        assertSourceOrder(
+            footerHelperSource,
+            listOf(
+                "R.string.profile_sync_footer_login_required",
+                "R.string.profile_sync_footer_enable_info",
             ),
         )
     }
