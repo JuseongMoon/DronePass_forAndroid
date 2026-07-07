@@ -55,6 +55,26 @@ class SettingsScreenContractTest {
     }
 
     @Test
+    fun `설정 섹션 헤더는 iOS List header 처럼 보조색 label 스타일을 따른다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsComponents.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsComponents.kt",
+        ).readText()
+
+        assertAppearsInOrder(
+            source = source,
+            tokens = listOf(
+                "internal fun SectionHeader",
+                "style = MaterialTheme.typography.labelMedium",
+                "color = MaterialTheme.colorScheme.onSurfaceVariant",
+                "modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)",
+            ),
+        )
+        assertFalse(source.contains("fontWeight = FontWeight.SemiBold"))
+        assertFalse(source.contains("color = MaterialTheme.colorScheme.primary"))
+    }
+
+    @Test
     fun `설정 토글 설명은 iOS caption secondary 스타일을 따른다`() {
         val source = resolveProjectFile(
             "src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsComponents.kt",
