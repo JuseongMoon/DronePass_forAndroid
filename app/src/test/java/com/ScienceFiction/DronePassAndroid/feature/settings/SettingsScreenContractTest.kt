@@ -55,6 +55,25 @@ class SettingsScreenContractTest {
     }
 
     @Test
+    fun `설정 토글 설명은 iOS caption secondary 스타일을 따른다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsComponents.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsComponents.kt",
+        ).readText()
+
+        assertAppearsInOrder(
+            source = source,
+            tokens = listOf(
+                "internal fun SettingsToggleItem",
+                "subtitleColor: Color = MaterialTheme.colorScheme.onSurfaceVariant",
+                "if (subtitle != null)",
+                "style = MaterialTheme.typography.bodySmall",
+                "color = subtitleColor",
+            ),
+        )
+    }
+
+    @Test
     fun `언어 선택 행 chevron 도 iOS 설정 행 토큰을 따른다`() {
         val source = resolveProjectFile(
             "src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsScreen.kt",
