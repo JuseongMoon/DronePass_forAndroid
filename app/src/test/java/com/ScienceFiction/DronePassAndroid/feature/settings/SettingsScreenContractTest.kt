@@ -246,6 +246,36 @@ class SettingsScreenContractTest {
     }
 
     @Test
+    fun `지도 표시 토글은 iOS처럼 설명과 즉시 저장 액션을 유지한다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsScreen.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsScreen.kt",
+        ).readText()
+
+        assertAppearsInOrder(
+            source = source,
+            tokens = listOf(
+                "R.string.settings_section_map_display",
+                "R.string.settings_keep_screen_awake",
+                "R.string.settings_keep_screen_awake_subtitle",
+                "checked = keepScreenAwake",
+                "settingsViewModel.toggleKeepScreenAwake(it)",
+                "R.string.settings_hide_not_started",
+                "R.string.settings_hide_not_started_subtitle",
+                "checked = hideNotStartedShapes",
+                "settingsViewModel.toggleHideNotStartedShapes(it)",
+                "R.string.settings_hide_expired",
+                "R.string.settings_hide_expired_subtitle",
+                "checked = hideExpiredShapes",
+                "settingsViewModel.toggleHideExpiredShapes(it)",
+                "R.string.settings_delete_expired_shapes",
+                "titleColor = MaterialTheme.colorScheme.error",
+                "showDeleteExpiredDialog = true",
+            ),
+        )
+    }
+
+    @Test
     fun `만료 도형 삭제는 iOS처럼 확인 후 destructive 삭제를 실행한다`() {
         val source = resolveProjectFile(
             "src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsScreen.kt",
