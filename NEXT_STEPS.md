@@ -4,11 +4,13 @@
 
 > 마지막 업데이트: 2026-07-08
 > 브랜치: `fix/critical-pri0-fixes`
-> 상태: iOS 동작 대조와 Android 출시 하드닝 진행 중. Play 내부 테스트 `3.5.5 (102) internal-1`은 이미 게시된 상태이며, 최신 완료 코드/패리티 기준은 프로필 동기화 섹션 조건 계약 고정까지다. 앱 출시 재개 절차는 최신 저장된 `PLAY_RELEASE_HANDOFF.md`를 우선 확인하고, 같은 `102` AAB 재업로드가 아니라 Play 앱 서명 SHA 등록과 Play 설치 검증부터 이어간다.
+> 상태: iOS 동작 대조와 Android 출시 하드닝 진행 중. Play 내부 테스트 `3.5.5 (102) internal-1`은 이미 게시된 상태이며, 최신 완료 코드/패리티 기준은 프로필 내 정보 행 계약 고정까지다. 앱 출시 재개 절차는 최신 저장된 `PLAY_RELEASE_HANDOFF.md`를 우선 확인하고, 같은 `102` AAB 재업로드가 아니라 Play 앱 서명 SHA 등록과 Play 설치 검증부터 이어간다.
 
 ## 2026-07-08 최신 코드 체크포인트
 
 - 최신 코드 체크포인트: 프로필 동기화 섹션 조건 계약 고정.
+- 추가 코드 체크포인트: 프로필 내 정보 행 계약 고정.
+- 프로필 내 정보 메모: iOS `ProfileView`처럼 Android도 내 정보 행을 이메일 → 로그인 방식 → 가입일 → 구분선 → 활성 도형 → 스케치 → 드론 → 만료 도형 순서로 표시하고, 행 라벨/값 모두 subheadline 계열 크기, 값은 보조색/우측 정렬로 유지하도록 계약을 고정했다. 로그인 방식 표시도 iOS `providerText`와 같은 `Apple`/`Google`/`—` 값으로 테스트한다.
 - 프로필 동기화 메모: iOS `ProfileView`처럼 Android도 수동 백업 행은 로그인 + 클라우드 동기화 ON일 때만 보이고, footer는 비로그인일 때 로그인 필요 문구, 로그인했지만 클라우드 동기화 OFF일 때 활성화 안내 문구만 보여준다. 동기화 섹션 순서도 토글 → 마지막 동기화/백업 시간 → 수동 백업 → footer로 고정했다.
 - 동기화 상태 메모: Android `ProfileSyncStatus`의 5개 상태 문구와 색상이 iOS `realtimeCloudSyncStatusText`/`realtimeCloudSyncStatusColor`와 맞도록 테스트로 고정했다.
 - 검증: `:app:testDebugUnitTest --tests "*ProfileSheetParityTest" --tests "*ProfileViewModelTest" --tests "*StringResourceCoverageTest"` 통과.

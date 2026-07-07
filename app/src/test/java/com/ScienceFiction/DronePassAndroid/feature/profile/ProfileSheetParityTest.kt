@@ -38,6 +38,49 @@ class ProfileSheetParityTest {
     }
 
     @Test
+    fun `내 정보 행은 iOS ProfileView처럼 이메일 로그인 가입일 구분선 통계 순서로 표시한다`() {
+        val source = resolveProjectFile(
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/profile/ProfileScreen.kt",
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/profile/ProfileScreen.kt",
+        ).readText()
+        val infoSectionSource = source.substring(
+            source.indexOf("private fun ProfileInfoSection("),
+            source.indexOf("@Composable\nprivate fun ProfileCloudSyncToggleItem"),
+        )
+
+        assertSourceOrder(
+            infoSectionSource,
+            listOf(
+                "R.string.profile_info_email",
+                "R.string.profile_info_login_method",
+                "R.string.profile_info_join_date",
+                "ProfileInfoDivider()",
+                "R.string.profile_info_shapes",
+                "R.string.profile_info_sketches",
+                "R.string.profile_info_drones",
+                "R.string.profile_info_expired_shapes",
+            ),
+        )
+        assertSourceOrder(
+            infoSectionSource,
+            listOf(
+                "style = MaterialTheme.typography.bodyMedium",
+                "Spacer(modifier = Modifier.width(ProfileInfoValueLeadingSpacing))",
+                "style = MaterialTheme.typography.bodyMedium",
+                "color = MaterialTheme.colorScheme.onSurfaceVariant",
+                "textAlign = TextAlign.End",
+            ),
+        )
+    }
+
+    @Test
+    fun `프로필 로그인 방식 표시는 iOS providerText 값과 같다`() {
+        assertEquals("Apple", profileLoginProviderDisplayText(ProfileLoginProvider.APPLE))
+        assertEquals("Google", profileLoginProviderDisplayText(ProfileLoginProvider.GOOGLE))
+        assertEquals("—", profileLoginProviderDisplayText(ProfileLoginProvider.UNKNOWN))
+    }
+
+    @Test
     fun `프로필 가입일은 iOS DateFormatter long date style 을 사용한다`() {
         val timestamp = 1_700_000_000_000L
 

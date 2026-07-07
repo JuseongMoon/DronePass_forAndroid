@@ -136,7 +136,7 @@ fun ProfileScreen(
 
             ProfileInfoSection(
                 email = profileEmail ?: stringResource(R.string.profile_info_email_hidden),
-                loginProvider = profileLoginProvider.displayText(),
+                loginProvider = profileLoginProviderDisplayText(profileLoginProvider),
                 joinDate = joinDateMillis?.let(::formatProfileJoinDate)
                     ?: stringResource(R.string.profile_info_join_unknown),
                 shapeCount = stringResource(R.string.profile_info_count_unit, activeShapeCount),
@@ -546,8 +546,8 @@ internal fun shouldShowProfileAccountSection(isLoggedIn: Boolean): Boolean {
     return true
 }
 
-private fun ProfileLoginProvider.displayText(): String {
-    return when (this) {
+internal fun profileLoginProviderDisplayText(provider: ProfileLoginProvider): String {
+    return when (provider) {
         ProfileLoginProvider.APPLE -> "Apple"
         ProfileLoginProvider.GOOGLE -> "Google"
         ProfileLoginProvider.UNKNOWN -> "—"
