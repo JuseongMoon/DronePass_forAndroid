@@ -95,6 +95,60 @@ class ProfileSheetParityTest {
     }
 
     @Test
+    fun `프로필 동기화 토글 행은 iOS처럼 headline caption progress switch 구조를 유지한다`() {
+        val source = resolveProjectFile(
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/profile/ProfileScreen.kt",
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/profile/ProfileScreen.kt",
+        ).readText()
+
+        assertSourceOrder(
+            source,
+            listOf(
+                "ProfileCloudSyncToggleItem(",
+                "title = stringResource(R.string.profile_sync_cloud)",
+                "subtitle = stringResource(syncStatus.labelRes)",
+                "subtitleColor = syncStatus.color",
+                "showProgress = shouldShowProfileSyncProgress(isSyncing)",
+                "onCheckedChange = { viewModel.setCloudBackupEnabled(it) }",
+            ),
+        )
+
+        val toggleItemSource = source.substring(source.indexOf("private fun ProfileCloudSyncToggleItem"))
+        assertSourceOrder(
+            toggleItemSource,
+            listOf(
+                "style = MaterialTheme.typography.bodyLarge",
+                "fontWeight = FontWeight.SemiBold",
+                "style = MaterialTheme.typography.bodySmall",
+                "color = subtitleColor",
+                "if (showProgress)",
+                "CircularProgressIndicator",
+                "Switch(",
+            ),
+        )
+    }
+
+    @Test
+    fun `프로필 마지막 동기화 문구는 iOS처럼 실시간 동기화 백업 기록없음 순서로 고른다`() {
+        val source = resolveProjectFile(
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/profile/ProfileScreen.kt",
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/profile/ProfileScreen.kt",
+        ).readText()
+        val lastSyncSource = source.substring(source.indexOf("val lastSyncDisplay = when"))
+
+        assertSourceOrder(
+            lastSyncSource,
+            listOf(
+                "lastRealtimeSyncTime.hasSyncTimestamp()",
+                "R.string.profile_sync_last_sync",
+                "lastBackupTime.hasSyncTimestamp()",
+                "R.string.profile_backup_last_backup",
+                "R.string.profile_sync_no_history",
+            ),
+        )
+    }
+
+    @Test
     fun `프로필 탈퇴 흐름은 iOS처럼 1차 확인 후 최종 확인에서 deleteAccount 를 호출한다`() {
         val source = resolveProjectFile(
             "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/profile/ProfileScreen.kt",
