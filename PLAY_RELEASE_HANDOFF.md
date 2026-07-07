@@ -1,16 +1,37 @@
 # DronePass Android Play Release Handoff
 
-> Last updated: 2026-07-06
+> Last updated: 2026-07-07
 > Resume trigger: "앱 출시 과정 다시 이어나가자"
 > Branch at handoff: `fix/critical-pri0-fixes`
 > Latest release setup baseline commit: `8135932`
 > Previous saved release-resume commit before this handoff: `b8f3a7e`
 > Latest E2E preflight doc commit before this edit: `2cbd5f3`
-> Latest code/parity checkpoint before this handoff update: settings language restart alert contract pin
+> Latest code/parity checkpoint before this handoff update: `e66ed42 Pin settings language alert parity`
 > Latest saved release-resume checkpoint at this handoff: commit containing this file
 > Package name: `com.ScienceFiction.DronePassAndroid`
 
 This file captures the Google Play internal testing/release state so a later session can continue from this repository without re-discovering the setup. Do not paste secrets, keystore passwords, API secrets, or full OAuth client IDs into this file.
+
+## 2026-07-07 Current Resume Checkpoint
+
+Saved again on 2026-07-07 KST at the user's request. This is the current resume entry for the Android app release process from this repository.
+
+- Resume trigger phrase from this directory: `앱 출시 과정 다시 이어나가자`.
+- Branch at save time: `fix/critical-pri0-fixes`.
+- Latest committed code/parity checkpoint before this documentation save: `e66ed42 Pin settings language alert parity`.
+- Working tree before this documentation save: clean.
+- Connected Android devices at save time: none (`adb devices` returned only the header), so Play-installed real-device verification remains open.
+- Play internal test release already published: `3.5.5 (102) internal-1`.
+- Current Play release stop point: Play Console version detail page for `3.5.5 (102) internal-1`, already provided to internal testers.
+- Do not rebuild or re-upload version code `102` just to resume the release process.
+- Next external release step: Play Console `Google Play로 보호됨 > 앱 무결성`에서 `앱 서명 키 인증서` SHA-1/SHA-256을 복사한 뒤 Firebase Android 앱과 NCP Maps Android 제한 설정에 등록한다.
+- Next tester step: Play Console 내부 테스트 테스터 목록에 Gmail 계정을 추가하고 opt-in 링크를 실기기에서 열어 Google Play 설치 경로로 설치한다.
+- Next verification step: Play 설치 앱에서 Google/Apple 로그인, Naver 지도 SDK 인증, 주소 검색/역지오코딩, Firestore iOS/Android 동기화, 저장/설정 오버레이와 하단 플로팅 UI 정렬을 확인한다.
+- If a newer build is intentionally required later, bump to `versionCode = 103` and use release name `3.5.5 (103) internal-2`.
+- Code-work resume note: saved-list row visual tokens, global color picker non-exposure, palette Compose color conversion, drone dropdown menu color fallback, Android NaverMap bottom content padding parity, shared Firestore `shapeType` wire-format compatibility, agent status notes, Room migration safety, foreground remote-change lifecycle parity, settings Korea local feature alert button parity, Korea feature flight-zone UI clearing parity, and settings language restart alert parity are committed.
+- Release-work priority: if the user asks to resume the app release process, do not start another code audit first. Continue Play/Firebase/NCP release steps first.
+- Compatibility note: Android writes shape enum values as lowercase `rawValue` and reads legacy uppercase values case-insensitively; `FIRESTORE_CONTRACT.md` contains the incident note. Production Room setup is pinned to `addMigrations(*DronePassDatabase.allMigrations)` with no destructive fallback.
+- Latest E2E preflight note: `:app:verifyCrossPlatformE2ePrerequisites` passed on 2026-07-06. This save did not rerun tests because it only updates release handoff documentation.
 
 ## Latest Resume Checkpoint
 
