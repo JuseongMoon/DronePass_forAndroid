@@ -73,6 +73,30 @@ class SettingsScreenContractTest {
     }
 
     @Test
+    fun `언어 변경 안내 alert 는 iOS처럼 선택 후 표시되고 확인으로 닫힌다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsScreen.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsScreen.kt",
+        ).readText()
+
+        assertAppearsInOrder(
+            source = source,
+            tokens = listOf(
+                "resolveLanguageSelectionAction",
+                "showLanguageChangeAlert = action.showRestartAlert",
+                "settingsViewModel.setLanguage(language)",
+                "if (showLanguageChangeAlert)",
+                "onDismissRequest = { showLanguageChangeAlert = false }",
+                "R.string.settings_language_restart_title",
+                "R.string.settings_language_restart_message",
+                "TextButton(onClick = {",
+                "showLanguageChangeAlert = false",
+                "R.string.common_confirm",
+            ),
+        )
+    }
+
+    @Test
     fun `비행 환경 행은 iOS처럼 KP 날씨 모두 chevron 버튼으로 연다`() {
         val source = resolveProjectFile(
             "src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsScreen.kt",

@@ -4,13 +4,13 @@
 
 > 마지막 업데이트: 2026-07-06
 > 브랜치: `fix/critical-pri0-fixes`
-> 상태: iOS 동작 대조와 Android 출시 하드닝 진행 중. Play 내부 테스트 `3.5.5 (102) internal-1`은 이미 게시된 상태이며, 최신 완료 코드/패리티 기준은 한국 현지 기능 전환 시 비행구역 UI 전체 닫힘 계약 고정까지다. 앱 출시 재개 절차는 최신 저장된 `PLAY_RELEASE_HANDOFF.md`를 우선 확인하고, 같은 `102` AAB 재업로드가 아니라 Play 앱 서명 SHA 등록과 Play 설치 검증부터 이어간다.
+> 상태: iOS 동작 대조와 Android 출시 하드닝 진행 중. Play 내부 테스트 `3.5.5 (102) internal-1`은 이미 게시된 상태이며, 최신 완료 코드/패리티 기준은 설정 언어 변경 재시작 안내 alert 계약 고정까지다. 앱 출시 재개 절차는 최신 저장된 `PLAY_RELEASE_HANDOFF.md`를 우선 확인하고, 같은 `102` AAB 재업로드가 아니라 Play 앱 서명 SHA 등록과 Play 설치 검증부터 이어간다.
 
 ## 2026-07-06 최신 저장 체크포인트
 
 사용자가 나중에 이 디렉토리에서 "앱 출시 과정 다시 이어나가자"라고 말하면 `PLAY_RELEASE_HANDOFF.md`의 `Latest Resume Checkpoint`, `Quick Resume`, `Resume Protocol` 순서로 확인하고 이어간다.
 
-- 최신 코드 체크포인트: 한국 현지 기능 전환 시 비행구역 UI 전체 닫힘 계약 고정.
+- 최신 코드 체크포인트: 설정 언어 변경 재시작 안내 alert 계약 고정.
 - 현재 저장 목적: 앱 출시 과정 재개용 핸드오프 저장. 이 문서와 `PLAY_RELEASE_HANDOFF.md`를 기준으로 이어간다.
 - 이미 게시된 Play 내부 테스트: `3.5.5 (102) internal-1`.
 - 현재 정지점: Play Console 버전 상세 화면에서 `3.5.5 (102) internal-1`이 내부 테스터에게 제공된 상태.
@@ -21,8 +21,10 @@
 - 전면 복귀 동기화 메모: Android `MainScreen`은 `ON_RESUME`에서 `ensureCloudSyncActiveOnForeground()`, `ON_STOP`에서 `resetForegroundSyncCheckStatus()`를 호출해 iOS `applicationDidBecomeActive`/`applicationWillResignActive`와 대응한다. `AuthViewModel`은 iOS `ChangeDetectionManager`처럼 원격 변경 확인이 성공했을 때만 체크 완료 상태로 표시한다.
 - 설정 한국 현지 기능 메모: iOS `SettingView`의 한국 현지 기능 ON/OFF alert가 `common.ok` 버튼으로 닫히는 흐름에 맞춰 Android `SettingsScreen`도 `common_confirm` 버튼으로 `koreaFeaturesAlertOn`을 해제하는 계약을 테스트로 고정했다.
 - 비행구역 UI 메모: iOS는 한국 현지 기능을 켤 때도 끌 때도 `HideAllFlightZones` 알림으로 모든 비행구역 레이어를 숨긴다. Android `MapViewModel`도 `koreaFeaturesEnabled` 변경을 감지해 레이어, 레이어 선택 시트, 선택 구역, 구역 상세 시트를 모두 닫는 계약을 테스트로 고정했다.
+- 설정 언어 변경 메모: iOS `SettingView`처럼 언어 선택 후 재시작 안내 alert를 띄우고 확인 버튼으로 닫는 Android `SettingsScreen` 계약을 테스트로 고정했다.
+- E2E 전제 조건 메모: 2026-07-06 현재 `:app:verifyCrossPlatformE2ePrerequisites`는 통과한다. 단, `adb devices`에 연결된 Android 기기가 없어 Play 설치 실기기/실계정 검증은 계속 남아 있다.
 - 재개 주의: 앱 출시 과정을 이어가자는 요청이면 중간에 멈춘 코드 감사 후보를 먼저 시작하지 말고, Play 앱 서명 SHA 등록, 테스터 추가, opt-in 링크로 Play 설치 검증부터 진행한다.
-- 검증: `:app:testDebugUnitTest --tests "*MapCameraFocusTest" --tests "*MapScreenLayersTest"` 통과. 추가로 `:app:testDebugUnitTest --tests "*ShapeTypeTest" --tests "*ShapeFirestoreParsingTest" --tests "*ShapeFirebaseStoreTest" --tests "*CrossPlatformFirestoreContractTest"`, `:app:testDebugUnitTest --tests "*DronePassDatabaseMigrationContractTest"`, `:app:testDebugUnitTest --tests "*AuthViewModelForegroundSyncTest" --tests "*MainScreenStartDestinationTest"`, `:app:testDebugUnitTest --tests "*RealtimeSyncManagerTest"`, `:app:testDebugUnitTest --tests "*SettingsScreenContractTest" --tests "*StringResourceCoverageTest"` 통과.
+- 검증: `:app:testDebugUnitTest --tests "*MapCameraFocusTest" --tests "*MapScreenLayersTest"` 통과. 추가로 `:app:testDebugUnitTest --tests "*ShapeTypeTest" --tests "*ShapeFirestoreParsingTest" --tests "*ShapeFirebaseStoreTest" --tests "*CrossPlatformFirestoreContractTest"`, `:app:testDebugUnitTest --tests "*DronePassDatabaseMigrationContractTest"`, `:app:testDebugUnitTest --tests "*AuthViewModelForegroundSyncTest" --tests "*MainScreenStartDestinationTest"`, `:app:testDebugUnitTest --tests "*RealtimeSyncManagerTest"`, `:app:testDebugUnitTest --tests "*SettingsScreenContractTest" --tests "*SettingsLanguageSelectionTest" --tests "*StringResourceCoverageTest"`, `:app:verifyCrossPlatformE2ePrerequisites` 통과.
 
 ## 2026-07-05 최신 저장 체크포인트
 
