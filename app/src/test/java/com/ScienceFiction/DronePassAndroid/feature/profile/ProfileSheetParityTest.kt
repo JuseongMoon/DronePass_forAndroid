@@ -149,6 +149,73 @@ class ProfileSheetParityTest {
     }
 
     @Test
+    fun `프로필 약관 행은 iOS처럼 chevron 행으로 약관 개인정보 시트를 연다`() {
+        val source = resolveProjectFile(
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/profile/ProfileScreen.kt",
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/profile/ProfileScreen.kt",
+        ).readText()
+        val termsSectionSource = source.substring(
+            source.indexOf("// ===== 3. 약관 및 정책 섹션 ====="),
+            source.indexOf("// ===== 4. 계정 관리 섹션"),
+        )
+        val documentSheetSource = source.substring(source.indexOf("// 약관/개인정보 두 번째 시트"))
+
+        assertSourceOrder(
+            termsSectionSource,
+            listOf(
+                "R.string.profile_section_terms",
+                "R.string.profile_terms_service",
+                "webDocTarget = WebDocTarget.Terms",
+                "showArrow = true",
+                "HorizontalDivider",
+                "R.string.profile_terms_privacy",
+                "webDocTarget = WebDocTarget.Privacy",
+                "showArrow = true",
+            ),
+        )
+        assertSourceOrder(
+            documentSheetSource,
+            listOf(
+                "webDocTarget?.let { target ->",
+                "ModalBottomSheet(",
+                "onDismissRequest = { webDocTarget = null }",
+                "skipPartiallyExpanded = ProfileDocumentSheetSkipPartiallyExpanded",
+                "WebDocTarget.Terms -> TermsOfServiceScreen(onDismiss = { webDocTarget = null })",
+                "WebDocTarget.Privacy -> PrivacyPolicyScreen(onDismiss = { webDocTarget = null })",
+            ),
+        )
+    }
+
+    @Test
+    fun `프로필 로그아웃 알림은 iOS처럼 취소와 destructive 로그아웃을 제공한다`() {
+        val source = resolveProjectFile(
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/profile/ProfileScreen.kt",
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/profile/ProfileScreen.kt",
+        ).readText()
+        val logoutDialogSource = source.substring(
+            source.indexOf("// 로그아웃 확인 다이얼로그"),
+            source.indexOf("// 계정 삭제 1차 다이얼로그"),
+        )
+
+        assertSourceOrder(
+            logoutDialogSource,
+            listOf(
+                "AlertDialog(",
+                "onDismissRequest = { showLogoutDialog = false }",
+                "R.string.profile_account_logout",
+                "R.string.profile_logout_message",
+                "confirmButton",
+                "viewModel.signOut",
+                "onAccountSessionEnded()",
+                "onDismiss()",
+                "MaterialTheme.colorScheme.error",
+                "dismissButton",
+                "R.string.common_cancel",
+            ),
+        )
+    }
+
+    @Test
     fun `프로필 탈퇴 흐름은 iOS처럼 1차 확인 후 최종 확인에서 deleteAccount 를 호출한다`() {
         val source = resolveProjectFile(
             "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/profile/ProfileScreen.kt",
@@ -171,6 +238,54 @@ class ProfileSheetParityTest {
         )
     }
 
+    @Test
+    fun `프로필 결과 알림은 iOS처럼 확인 버튼 하나로 동기화 결과와 탈퇴 실패를 닫는다`() {
+        val source = resolveProjectFile(
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/profile/ProfileScreen.kt",
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/profile/ProfileScreen.kt",
+        ).readText()
+        val syncResultSource = source.substring(
+            source.indexOf("// 동기화 결과 알림"),
+            source.indexOf("Scaffold("),
+        )
+        val deleteFinalSource = source.substring(
+            source.indexOf("// 계정 삭제 2차 최종 확인"),
+            source.indexOf("resultDialog?.let { dialog ->"),
+        )
+        val resultDialogSource = source.substring(
+            source.indexOf("resultDialog?.let { dialog ->"),
+            source.indexOf("// 약관/개인정보 두 번째 시트"),
+        )
+
+        assertSourceOrder(
+            syncResultSource,
+            listOf(
+                "viewModel.syncResultMessage.collect",
+                "ProfileResultDialog(",
+                "titleRes = R.string.profile_sync_alert_title",
+            ),
+        )
+        assertSourceOrder(
+            deleteFinalSource,
+            listOf(
+                "viewModel.deleteAccount",
+                "ProfileResultDialog(",
+                "titleRes = R.string.profile_delete_account_error_title",
+                "message = message",
+            ),
+        )
+        assertSourceOrder(
+            resultDialogSource,
+            listOf(
+                "AlertDialog(",
+                "onDismissRequest = { resultDialog = null }",
+                "title = { Text(stringResource(dialog.titleRes)) }",
+                "text = { Text(dialog.message) }",
+                "R.string.common_confirm",
+            ),
+        )
+    }
+
     private fun resolveProjectFile(vararg candidates: String): File {
         return candidates
             .map(::File)
@@ -181,7 +296,7 @@ class ProfileSheetParityTest {
     private fun assertSourceOrder(source: String, tokens: List<String>) {
         var previousIndex = -1
         tokens.forEach { token ->
-            val index = source.indexOf(token)
+            val index = source.indexOf(token, startIndex = previousIndex + 1)
             assertTrue("Missing token: $token", index >= 0)
             assertTrue("Token out of order: $token", index > previousIndex)
             previousIndex = index

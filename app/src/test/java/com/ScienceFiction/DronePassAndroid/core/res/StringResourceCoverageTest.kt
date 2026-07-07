@@ -883,6 +883,9 @@ class StringResourceCoverageTest {
     @Test
     fun `profile sync and account strings match iOS localizations`() {
         assertEquals("내 정보", stringResourceValue("values/strings.xml", "profile_section_my_info"))
+        assertEquals("동기화", stringResourceValue("values/strings.xml", "profile_section_sync"))
+        assertEquals("약관 및 정책", stringResourceValue("values/strings.xml", "profile_section_terms"))
+        assertEquals("계정 관리", stringResourceValue("values/strings.xml", "profile_section_account"))
         assertEquals("이메일", stringResourceValue("values/strings.xml", "profile_info_email"))
         assertEquals("비공개", stringResourceValue("values/strings.xml", "profile_info_email_hidden"))
         assertEquals("로그인", stringResourceValue("values/strings.xml", "profile_info_login_method"))
@@ -914,6 +917,9 @@ class StringResourceCoverageTest {
             "활성화하면 같은 계정으로 로그인한 모든 기기에서 도형 데이터가 실시간으로 동기화 및 백업됩니다.",
             stringResourceValue("values/strings.xml", "profile_sync_footer_enable_info"),
         )
+        assertEquals("이용약관", stringResourceValue("values/strings.xml", "profile_terms_service"))
+        assertEquals("개인정보 취급방침", stringResourceValue("values/strings.xml", "profile_terms_privacy"))
+        assertEquals("로그아웃", stringResourceValue("values/strings.xml", "profile_account_logout"))
         assertEquals("회원 탈퇴", stringResourceValue("values/strings.xml", "profile_account_delete"))
         assertEquals(
             "탈퇴 시 계정만 삭제되며, 로컬 데이터는 계속 사용할 수 있습니다.",
@@ -940,6 +946,9 @@ class StringResourceCoverageTest {
         assertEquals("로그아웃하시겠습니까?", stringResourceValue("values/strings.xml", "profile_logout_message"))
 
         assertEquals("My Info", stringResourceValue("values-en/strings.xml", "profile_section_my_info"))
+        assertEquals("Synchronization", stringResourceValue("values-en/strings.xml", "profile_section_sync"))
+        assertEquals("Terms & Policies", stringResourceValue("values-en/strings.xml", "profile_section_terms"))
+        assertEquals("Account Management", stringResourceValue("values-en/strings.xml", "profile_section_account"))
         assertEquals("Email", stringResourceValue("values-en/strings.xml", "profile_info_email"))
         assertEquals("Hidden", stringResourceValue("values-en/strings.xml", "profile_info_email_hidden"))
         assertEquals("Login", stringResourceValue("values-en/strings.xml", "profile_info_login_method"))
@@ -968,6 +977,10 @@ class StringResourceCoverageTest {
             "When enabled, shape data will be synced and backed up in real-time across all devices with the same account.",
             stringResourceValue("values-en/strings.xml", "profile_sync_footer_enable_info"),
         )
+        assertEquals("Terms of Service", stringResourceValue("values-en/strings.xml", "profile_terms_service"))
+        assertEquals("Privacy Policy", stringResourceValue("values-en/strings.xml", "profile_terms_privacy"))
+        assertEquals("Sign Out", stringResourceValue("values-en/strings.xml", "profile_account_logout"))
+        assertEquals("Delete Account", stringResourceValue("values-en/strings.xml", "profile_account_delete"))
         assertEquals(
             "Only the account will be deleted. Local data will remain available.",
             stringResourceValue("values-en/strings.xml", "profile_account_delete_desc"),

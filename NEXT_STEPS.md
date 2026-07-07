@@ -4,13 +4,13 @@
 
 > 마지막 업데이트: 2026-07-07
 > 브랜치: `fix/critical-pri0-fixes`
-> 상태: iOS 동작 대조와 Android 출시 하드닝 진행 중. Play 내부 테스트 `3.5.5 (102) internal-1`은 이미 게시된 상태이며, 최신 완료 코드/패리티 기준은 `f8323bc Pin profile sync row parity`까지다. 앱 출시 재개 절차는 최신 저장된 `PLAY_RELEASE_HANDOFF.md`를 우선 확인하고, 같은 `102` AAB 재업로드가 아니라 Play 앱 서명 SHA 등록과 Play 설치 검증부터 이어간다.
+> 상태: iOS 동작 대조와 Android 출시 하드닝 진행 중. Play 내부 테스트 `3.5.5 (102) internal-1`은 이미 게시된 상태이며, 최신 완료 코드/패리티 기준은 프로필 약관/로그아웃/결과 alert 계약 고정까지다. 앱 출시 재개 절차는 최신 저장된 `PLAY_RELEASE_HANDOFF.md`를 우선 확인하고, 같은 `102` AAB 재업로드가 아니라 Play 앱 서명 SHA 등록과 Play 설치 검증부터 이어간다.
 
 ## 2026-07-07 최신 저장 체크포인트
 
 사용자가 나중에 이 디렉토리에서 "앱 출시 과정 다시 이어나가자"라고 말하면 `PLAY_RELEASE_HANDOFF.md`의 `2026-07-07 Current Resume Checkpoint`, `Quick Resume`, `Resume Protocol` 순서로 확인하고 이어간다.
 
-- 최신 코드 체크포인트: `f8323bc Pin profile sync row parity`.
+- 최신 코드 체크포인트: 프로필 약관/로그아웃/결과 alert 계약 고정.
 - 저장 전 워킹트리: clean.
 - 저장 시점 연결 Android 기기: 없음. Play 설치 실기기 검증은 계속 남아 있다.
 - 이미 게시된 Play 내부 테스트: `3.5.5 (102) internal-1`.
@@ -25,8 +25,9 @@
 - 섹션 헤더 스타일 메모: iOS 기본 List 섹션 헤더에 맞춰 Android 공통 `SectionHeader`를 primary/semibold가 아니라 `labelMedium` + `onSurfaceVariant`로 조정하고 계약을 고정했다. 이 공통 컴포넌트는 설정, 프로필, 앱 정보 화면에 적용된다.
 - 앱 정보 메모: iOS `AppInfoView`는 섹션 헤더에 `.font(.headline)`을 명시하므로 Android `AppInfoScreen`은 공통 muted `SectionHeader`가 아니라 전용 `AppInfoSectionHeader`로 headline 성격을 유지하도록 분리했다.
 - 프로필 메모: iOS `ProfileView`의 클라우드 동기화 행처럼 Android도 headline 제목, caption 상태/색상, 진행 표시 후 switch 구조를 유지하고, 마지막 동기화 문구는 실시간 동기화 시간 → 마지막 백업 시간 → 기록 없음 순서로 선택하도록 계약을 고정했다.
+- 프로필 계정/문서 메모: iOS `ProfileView`의 약관/개인정보 chevron 행 → 문서 sheet, 로그아웃 destructive alert, 회원 탈퇴 1차/최종 확인, 동기화 결과/탈퇴 실패 확인 alert 흐름을 Android `ProfileScreen` 계약 테스트로 고정했다.
 - 재개 주의: 앱 출시 과정을 이어가자는 요청이면 중간에 멈춘 코드 감사 후보를 먼저 시작하지 말고, Play 앱 서명 SHA 등록, 테스터 추가, opt-in 링크로 Play 설치 검증부터 진행한다.
-- 검증: `:app:testDebugUnitTest --tests "*ProfileSheetParityTest" --tests "*ProfileViewModelTest" --tests "*StringResourceCoverageTest"` 통과.
+- 검증: `:app:testDebugUnitTest --tests "*ProfileSheetParityTest" --tests "*StringResourceCoverageTest"` 통과.
 
 ## 2026-07-06 최신 저장 체크포인트
 
