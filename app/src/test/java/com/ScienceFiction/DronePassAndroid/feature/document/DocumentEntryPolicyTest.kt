@@ -7,7 +7,9 @@ import com.ScienceFiction.DronePassAndroid.domain.model.MarkdownElement
 import com.ScienceFiction.DronePassAndroid.domain.model.MarkdownElementType
 import com.ScienceFiction.DronePassAndroid.domain.model.ParsedDocument
 import com.ScienceFiction.DronePassAndroid.domain.model.PatchNote
+import java.io.File
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class DocumentEntryPolicyTest {
@@ -68,6 +70,72 @@ class DocumentEntryPolicyTest {
         assertEquals(12.dp, DocumentEmptyStateSpacing)
         assertEquals(20.dp, DocumentErrorRetryTopSpacing)
         assertEquals(300.dp, DocumentStateMinHeight)
+    }
+
+    @Test
+    fun `약관 문서 공통 화면은 iOS처럼 고정 헤더 닫기 구분선 상태본문 순서다`() {
+        val source = resolveProjectFile(
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/document/DocumentScreen.kt",
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/document/DocumentScreen.kt",
+        ).readText()
+        val documentScreenSource = source.substring(
+            source.indexOf("fun DocumentScreen("),
+            source.indexOf("internal fun shouldAutoLoadParsedDocumentOnEnter"),
+        )
+
+        assertSourceOrder(
+            documentScreenSource,
+            listOf(
+                "Column(modifier = modifier.fillMaxSize())",
+                "Row(",
+                "text = title",
+                "R.string.common_close",
+                "HorizontalDivider(",
+                "when (state)",
+                "ParsedDocumentUiState.Loading -> LoadingContent",
+                "ParsedDocumentUiState.Error -> ErrorContent",
+                "ParsedDocumentUiState.Content ->",
+                "MarkdownView(",
+            ),
+        )
+    }
+
+    @Test
+    fun `이용약관과 개인정보 화면은 iOS처럼 각 문서 상태와 문구 재시도를 연결한다`() {
+        val source = resolveProjectFile(
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/document/DocumentScreen.kt",
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/document/DocumentScreen.kt",
+        ).readText()
+        val termsSource = source.substring(
+            source.indexOf("fun TermsOfServiceScreen("),
+            source.indexOf("/**\n * 개인정보 처리방침 화면"),
+        )
+        val privacySource = source.substring(source.indexOf("fun PrivacyPolicyScreen("))
+
+        assertSourceOrder(
+            termsSource,
+            listOf(
+                "viewModel.termsState.collectAsStateWithLifecycle()",
+                "if (shouldAutoLoadParsedDocumentOnEnter(state)) viewModel.loadTerms()",
+                "title = stringResource(R.string.document_terms_service_title)",
+                "onRetry = { viewModel.loadTerms() }",
+                "loadingTextResId = R.string.document_terms_loading",
+                "errorTitleResId = R.string.document_terms_service_error_title",
+                "errorMessageResId = R.string.document_terms_service_error_message",
+            ),
+        )
+        assertSourceOrder(
+            privacySource,
+            listOf(
+                "viewModel.privacyState.collectAsStateWithLifecycle()",
+                "if (shouldAutoLoadParsedDocumentOnEnter(state)) viewModel.loadPrivacy()",
+                "title = stringResource(R.string.document_terms_privacy_title)",
+                "onRetry = { viewModel.loadPrivacy() }",
+                "loadingTextResId = R.string.document_terms_loading",
+                "errorTitleResId = R.string.document_terms_privacy_error_title",
+                "errorMessageResId = R.string.document_terms_privacy_error_message",
+            ),
+        )
     }
 
     @Test
@@ -142,5 +210,22 @@ class DocumentEntryPolicyTest {
                 message = "network",
             ),
         )
+    }
+
+    private fun resolveProjectFile(vararg candidates: String): File {
+        return candidates
+            .map(::File)
+            .firstOrNull { it.exists() }
+            ?: error("Project file not found. Tried: ${candidates.joinToString()}")
+    }
+
+    private fun assertSourceOrder(source: String, tokens: List<String>) {
+        var previousIndex = -1
+        tokens.forEach { token ->
+            val index = source.indexOf(token, startIndex = previousIndex + 1)
+            assertTrue("Missing token: $token", index >= 0)
+            assertTrue("Token out of order: $token", index > previousIndex)
+            previousIndex = index
+        }
     }
 }

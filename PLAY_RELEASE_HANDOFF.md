@@ -6,7 +6,7 @@
 > Latest release setup baseline commit: `8135932`
 > Previous saved release-resume commit before this handoff: `b8f3a7e`
 > Latest E2E preflight doc commit before this edit: `2cbd5f3`
-> Latest code/parity checkpoint before this handoff update: profile info row contract pin
+> Latest code/parity checkpoint before this handoff update: terms/privacy document screen contract pin
 > Latest saved release-resume checkpoint at this handoff: commit containing this file
 > Package name: `com.ScienceFiction.DronePassAndroid`
 
@@ -18,7 +18,7 @@ Saved again on 2026-07-07 KST at the user's request. This is the current resume 
 
 - Resume trigger phrase from this directory: `앱 출시 과정 다시 이어나가자`.
 - Branch at save time: `fix/critical-pri0-fixes`.
-- Latest committed code/parity checkpoint before this documentation save: profile info row parity test update after profile sync condition parity.
+- Latest committed code/parity checkpoint before this documentation save: terms/privacy document screen parity test update after profile info row parity.
 - Working tree before this documentation save: clean.
 - Connected Android devices at save time: none (`adb devices` returned only the header), so Play-installed real-device verification remains open.
 - Play internal test release already published: `3.5.5 (102) internal-1`.
@@ -29,7 +29,7 @@ Saved again on 2026-07-07 KST at the user's request. This is the current resume 
 - Next tester step: Play Console 내부 테스트 테스터 목록에 Gmail 계정을 추가하고 opt-in 링크를 실기기에서 열어 Google Play 설치 경로로 설치한다.
 - Next verification step: Play 설치 앱에서 Google/Apple 로그인, Naver 지도 SDK 인증, 주소 검색/역지오코딩, Firestore iOS/Android 동기화, 저장/설정 오버레이와 하단 플로팅 UI 정렬을 확인한다.
 - If a newer build is intentionally required later, bump to `versionCode = 103` and use release name `3.5.5 (103) internal-2`.
-- Code-work resume note: saved-list row visual tokens, global color picker non-exposure, palette Compose color conversion, drone dropdown menu color fallback, Android NaverMap bottom content padding parity, shared Firestore `shapeType` wire-format compatibility, agent status notes, Room migration safety, foreground remote-change lifecycle parity, settings Korea local feature alert button parity, Korea feature flight-zone UI clearing parity, settings language restart alert parity, settings map-display toggle/action parity, settings notification toggle/action parity, settings toggle subtitle style parity, settings section header style parity, app-info section header style parity, profile sync row parity, profile account/document alert parity, profile sync condition parity, and profile info row parity are committed.
+- Code-work resume note: saved-list row visual tokens, global color picker non-exposure, palette Compose color conversion, drone dropdown menu color fallback, Android NaverMap bottom content padding parity, shared Firestore `shapeType` wire-format compatibility, agent status notes, Room migration safety, foreground remote-change lifecycle parity, settings Korea local feature alert button parity, Korea feature flight-zone UI clearing parity, settings language restart alert parity, settings map-display toggle/action parity, settings notification toggle/action parity, settings toggle subtitle style parity, settings section header style parity, app-info section header style parity, profile sync row parity, profile account/document alert parity, profile sync condition parity, profile info row parity, and terms/privacy document screen parity are committed.
 - Release-work priority: if the user asks to resume the app release process, do not start another code audit first. Continue Play/Firebase/NCP release steps first.
 - Compatibility note: Android writes shape enum values as lowercase `rawValue` and reads legacy uppercase values case-insensitively; `FIRESTORE_CONTRACT.md` contains the incident note. Production Room setup is pinned to `addMigrations(*DronePassDatabase.allMigrations)` with no destructive fallback.
 - Latest settings notification note: Android `SettingsScreen` now has a contract test pinning the iOS `SettingView` notification structure: shape-expiry, sunrise, and sunset notification toggles each keep title + caption-style description + immediate ViewModel save action. The Android-only permission request card remains before those toggles without changing their order.
@@ -41,7 +41,8 @@ Saved again on 2026-07-07 KST at the user's request. This is the current resume 
 - Latest profile account/document note: Android `ProfileScreen` now has contract tests pinning the iOS `ProfileView` terms/privacy chevron rows to document sheets, logout destructive alert, two-step delete flow, and single-confirm result/error alert behavior.
 - Latest profile sync-condition note: Android `ProfileScreen` now has helper-level and source-order tests pinning the iOS `ProfileView` sync section conditions: manual backup appears only when logged in with cloud sync enabled, footer text appears only for login-required or cloud-disabled states, and the section order stays toggle -> last sync time -> manual backup -> footer.
 - Latest profile info note: Android `ProfileScreen` now has contract tests pinning the iOS `ProfileView` compact info row order and typography: email, login provider, join date, divider, active shapes, sketches, drones, expired shapes, with secondary trailing values and provider display values `Apple`/`Google`/`—`.
-- Latest E2E preflight note: `:app:verifyCrossPlatformE2ePrerequisites` passed on 2026-07-06. This save additionally verified `:app:testDebugUnitTest --tests "*ProfileSheetParityTest" --tests "*ProfileViewModelTest" --tests "*StringResourceCoverageTest"`.
+- Latest document note: Android `DocumentScreen`, `TermsOfServiceScreen`, and `PrivacyPolicyScreen` now have contract tests pinning the iOS `TermsOfServiceView`/`PrivacyPolicyView` structure: fixed title/close header, divider, loading/error/content branching, document-specific state collection, auto-load, retry, and localized title/error resource wiring.
+- Latest E2E preflight note: `:app:verifyCrossPlatformE2ePrerequisites` passed on 2026-07-06. This save additionally verified `:app:testDebugUnitTest --tests "*DocumentEntryPolicyTest" --tests "*DocumentRepositoryTest" --tests "*StringResourceCoverageTest"`.
 
 ## Latest Resume Checkpoint
 
