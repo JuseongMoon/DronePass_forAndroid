@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
@@ -93,6 +94,7 @@ internal const val CoordinateInputSheetSkipPartiallyExpanded = false
 internal const val CoordinateInputSheetInteractiveDismissEnabled = false
 internal const val CoordinateInputSheetHeightFraction = 0.85f
 internal val CoordinateInputNavigationHeaderHeight = 44.dp
+internal val CoordinateInputNavigationActionHorizontalPadding = 8.dp
 internal const val ShapeDateTimeSelectionSkipPartiallyExpanded = true
 internal val CoordinateValidationSuccessColor = Color(0xFF34C759)
 internal val CoordinateAddressResultCardCornerRadius = 12.dp
@@ -179,20 +181,21 @@ fun ShapeEditScreen(
         )
     }
     val initialMemo = remember(editKey) { shape?.memo ?: "" }
-    val initialFlightStart = remember(editKey, editDefaults.startDate) {
-        resolveInitialShapeEditFlightStart(
+    val initialFlightPeriod = remember(
+        editKey,
+        editDefaults.startDate,
+        editDefaults.endDate,
+        editDefaults.isDateOnly,
+    ) {
+        resolveInitialShapeEditFlightPeriod(
             shape = shape,
             editDefaults = editDefaults,
             now = nowForInitialValues,
+            isDuplicateMode = isDuplicateMode,
         )
     }
-    val initialFlightEnd = remember(editKey, editDefaults.endDate) {
-        resolveInitialShapeEditFlightEnd(
-            shape = shape,
-            editDefaults = editDefaults,
-            now = nowForInitialValues,
-        )
-    }
+    val initialFlightStart = initialFlightPeriod.startDate
+    val initialFlightEnd = initialFlightPeriod.endDate ?: initialFlightStart
     val initialCoord = remember(editKey) {
         shape?.baseCoordinate ?: initialCoordinate
     }
@@ -364,6 +367,7 @@ fun ShapeEditScreen(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .statusBarsPadding()
                 .navigationBarsPadding()
         ) {
             ShapeEditNavigationHeader(
@@ -930,7 +934,13 @@ private fun CoordinateInputSheet(
                     .padding(horizontal = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                TextButton(onClick = onDismiss, modifier = Modifier.width(80.dp)) {
+                TextButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.width(80.dp),
+                    contentPadding = PaddingValues(
+                        horizontal = CoordinateInputNavigationActionHorizontalPadding,
+                    ),
+                ) {
                     Text(stringResource(R.string.coordinate_cancel))
                 }
                 Text(
@@ -944,6 +954,9 @@ private fun CoordinateInputSheet(
                     onClick = onConfirm,
                     enabled = canConfirmCoordinateInput(isCoordinateInvalid),
                     modifier = Modifier.width(80.dp),
+                    contentPadding = PaddingValues(
+                        horizontal = CoordinateInputNavigationActionHorizontalPadding,
+                    ),
                 ) {
                     Text(stringResource(R.string.coordinate_confirm))
                 }

@@ -667,6 +667,21 @@ class SavedListSectionsTest {
         )
     }
 
+    @Test
+    fun `저장 상세 드론 조회 맵은 value 조회 전에 즉시 구독한다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/saved/SavedListViewModel.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/saved/SavedListViewModel.kt",
+        ).readText()
+
+        assertTrue(
+            Regex(
+                "val droneById:[\\s\\S]*?" +
+                    "stateIn\\(viewModelScope, SharingStarted\\.Eagerly, emptyMap\\(\\)\\)",
+            ).containsMatchIn(source),
+        )
+    }
+
     private fun shape(
         id: String,
         start: Long,

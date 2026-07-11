@@ -310,10 +310,11 @@ class SavedListViewModel @Inject constructor(
 
     /**
      * droneId → DroneModel Map. ShapeDetailSheet 의 드론 3상태(정상/삭제됨/미할당) 분기에 사용.
+     * getDroneById()는 이 StateFlow를 직접 collect하지 않고 value를 읽으므로 즉시 구독해야 한다.
      */
     val droneById: StateFlow<Map<String, DroneModel>> = activeDrones
         .map { drones -> drones.associateBy { it.id } }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
 
     val sortOption: StateFlow<SortOption> = dataStore.data
         .map { preferences -> SortOption.fromRawValue(preferences[KEY_SORT_OPTION]) }

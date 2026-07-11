@@ -44,6 +44,7 @@ class ShapeEditDefaultsTest {
     @Test
     fun `좌표 입력 시트 헤더는 iOS CoordinateView inline toolbar 높이를 따른다`() {
         assertEquals(44.dp, CoordinateInputNavigationHeaderHeight)
+        assertEquals(8.dp, CoordinateInputNavigationActionHorizontalPadding)
     }
 
     @Test
@@ -453,6 +454,127 @@ class ShapeEditDefaultsTest {
     fun `새 도형은 최근 비행 기간이 없으면 iOS처럼 현재 시각을 사용한다`() {
         assertEquals(1000L, resolveInitialShapeEditFlightStart(null, ShapeEditDefaults(), now = 1000L))
         assertEquals(1000L, resolveInitialShapeEditFlightEnd(null, ShapeEditDefaults(), now = 1000L))
+    }
+
+    @Test
+    fun `날짜 전용 새 도형 초기 기간은 당일 전체로 정규화한다`() {
+        val now = localMillis(year = 2026, month = Calendar.JULY, day = 10, hour = 15, minute = 14)
+
+        val period = resolveInitialShapeEditFlightPeriod(
+            shape = null,
+            editDefaults = ShapeEditDefaults(isDateOnly = true),
+            now = now,
+        )
+
+        assertEquals(startOfShapeEditLocalDay(now), period.startDate)
+        assertEquals(endOfShapeEditLocalDay(now), period.endDate)
+    }
+
+    @Test
+    fun `날짜 전용 새 도형의 지난 기본 기간은 오늘로 이동한다`() {
+        val now = localMillis(year = 2026, month = Calendar.JULY, day = 10, hour = 15, minute = 14)
+        val yesterday = localMillis(year = 2026, month = Calendar.JULY, day = 9, hour = 10, minute = 30)
+
+        val period = resolveInitialShapeEditFlightPeriod(
+            shape = null,
+            editDefaults = ShapeEditDefaults(
+                startDate = yesterday,
+                endDate = yesterday,
+                isDateOnly = true,
+            ),
+            now = now,
+        )
+
+        assertEquals(startOfShapeEditLocalDay(now), period.startDate)
+        assertEquals(endOfShapeEditLocalDay(now), period.endDate)
+    }
+
+    @Test
+    fun `시간 단위 새 도형의 만료된 기본 기간은 한 시간 뒤로 보정한다`() {
+        val now = 10_000L
+
+        val period = resolveInitialShapeEditFlightPeriod(
+            shape = null,
+            editDefaults = ShapeEditDefaults(
+                startDate = 1_000L,
+                endDate = 2_000L,
+                isDateOnly = false,
+            ),
+            now = now,
+        )
+
+        assertEquals(1_000L, period.startDate)
+        assertEquals(now + DefaultShapeEditFlightDurationMillis, period.endDate)
+    }
+
+    @Test
+    fun `날짜 전용 새 도형의 미래 시작일은 지난 종료일보다 우선한다`() {
+        val now = localMillis(year = 2026, month = Calendar.JULY, day = 10, hour = 15, minute = 14)
+        val futureStart = localMillis(year = 2026, month = Calendar.JULY, day = 12, hour = 10, minute = 30)
+        val pastEnd = localMillis(year = 2026, month = Calendar.JULY, day = 9, hour = 10, minute = 30)
+
+        val period = resolveInitialShapeEditFlightPeriod(
+            shape = null,
+            editDefaults = ShapeEditDefaults(
+                startDate = futureStart,
+                endDate = pastEnd,
+                isDateOnly = true,
+            ),
+            now = now,
+        )
+
+        assertEquals(startOfShapeEditLocalDay(futureStart), period.startDate)
+        assertEquals(endOfShapeEditLocalDay(futureStart), period.endDate)
+    }
+
+    @Test
+    fun `만료 도형 복제는 새 도형처럼 오늘 기간으로 보정한다`() {
+        val now = localMillis(year = 2026, month = Calendar.JULY, day = 10, hour = 15, minute = 14)
+        val expired = localMillis(year = 2026, month = Calendar.JULY, day = 9, hour = 10, minute = 30)
+        val shape = ShapeModel(
+            title = "Expired",
+            flightStartDate = expired,
+            flightEndDate = expired,
+        )
+
+        val period = resolveInitialShapeEditFlightPeriod(
+            shape = shape,
+            editDefaults = ShapeEditDefaults(isDateOnly = true),
+            now = now,
+            isDuplicateMode = true,
+        )
+
+        assertEquals(startOfShapeEditLocalDay(now), period.startDate)
+        assertEquals(endOfShapeEditLocalDay(now), period.endDate)
+    }
+
+    @Test
+    fun `날짜 전용 종료 시각은 당일 마지막 초다`() {
+        val now = localMillis(year = 2026, month = Calendar.JULY, day = 10, hour = 15, minute = 14)
+        val calendar = Calendar.getInstance().apply { timeInMillis = endOfShapeEditLocalDay(now) }
+
+        assertEquals(23, calendar.get(Calendar.HOUR_OF_DAY))
+        assertEquals(59, calendar.get(Calendar.MINUTE))
+        assertEquals(59, calendar.get(Calendar.SECOND))
+        assertEquals(0, calendar.get(Calendar.MILLISECOND))
+    }
+
+    @Test
+    fun `기존 만료 도형 편집은 저장된 비행 기간을 유지한다`() {
+        val shape = ShapeModel(
+            title = "Expired",
+            flightStartDate = 1_000L,
+            flightEndDate = 2_000L,
+        )
+
+        val period = resolveInitialShapeEditFlightPeriod(
+            shape = shape,
+            editDefaults = ShapeEditDefaults(isDateOnly = true),
+            now = 10_000L,
+        )
+
+        assertEquals(1_000L, period.startDate)
+        assertEquals(2_000L, period.endDate)
     }
 
     @Test
@@ -1040,12 +1162,12 @@ class ShapeEditDefaultsTest {
         assertEquals(3, calendar.get(Calendar.DAY_OF_MONTH))
         assertEquals(23, calendar.get(Calendar.HOUR_OF_DAY))
         assertEquals(59, calendar.get(Calendar.MINUTE))
-        assertEquals(0, calendar.get(Calendar.SECOND))
+        assertEquals(59, calendar.get(Calendar.SECOND))
         assertEquals(0, calendar.get(Calendar.MILLISECOND))
     }
 
     @Test
-    fun `날짜 전용 종료일은 iOS처럼 23시 59분 0초로 저장한다`() {
+    fun `날짜 전용 종료일은 23시 59분 59초로 저장한다`() {
         val date = localMillis(year = 2026, month = Calendar.JUNE, day = 3, hour = 9, minute = 15)
 
         val endOfDay = endOfShapeEditLocalDay(date)
@@ -1056,7 +1178,7 @@ class ShapeEditDefaultsTest {
         assertEquals(3, calendar.get(Calendar.DAY_OF_MONTH))
         assertEquals(23, calendar.get(Calendar.HOUR_OF_DAY))
         assertEquals(59, calendar.get(Calendar.MINUTE))
-        assertEquals(0, calendar.get(Calendar.SECOND))
+        assertEquals(59, calendar.get(Calendar.SECOND))
         assertEquals(0, calendar.get(Calendar.MILLISECOND))
     }
 
@@ -1258,7 +1380,7 @@ class ShapeEditDefaultsTest {
             assertEquals(4, get(Calendar.DAY_OF_MONTH))
             assertEquals(23, get(Calendar.HOUR_OF_DAY))
             assertEquals(59, get(Calendar.MINUTE))
-            assertEquals(0, get(Calendar.SECOND))
+            assertEquals(59, get(Calendar.SECOND))
             assertEquals(0, get(Calendar.MILLISECOND))
         }
     }
@@ -1290,7 +1412,7 @@ class ShapeEditDefaultsTest {
             assertEquals(3, get(Calendar.DAY_OF_MONTH))
             assertEquals(23, get(Calendar.HOUR_OF_DAY))
             assertEquals(59, get(Calendar.MINUTE))
-            assertEquals(0, get(Calendar.SECOND))
+            assertEquals(59, get(Calendar.SECOND))
             assertEquals(0, get(Calendar.MILLISECOND))
         }
     }

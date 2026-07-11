@@ -2,9 +2,25 @@
 
 > Play Console 내부 테스트/출시 흐름을 이어갈 때는 먼저 `PLAY_RELEASE_HANDOFF.md`를 확인한다. 사용자가 이 디렉토리에서 "앱 출시 과정 다시 이어나가자"라고 말하면 해당 파일의 2026-07-07 Current Resume Checkpoint, Quick Resume, Resume Protocol부터 따른다. 2026-07-07 기준 내부 테스트 `3.5.5 (102) internal-1`은 이미 게시되어 있고, 다음 작업은 새 AAB 업로드가 아니라 Play 앱 서명 인증서 SHA를 Firebase/NCP Maps에 등록한 뒤 테스터 opt-in 링크로 Play 설치 검증을 진행하는 것이다.
 
-> 마지막 업데이트: 2026-07-08
+> 마지막 업데이트: 2026-07-10
 > 브랜치: `fix/critical-pri0-fixes`
-> 상태: iOS 동작 대조와 Android 출시 하드닝 진행 중. Play 내부 테스트 `3.5.5 (102) internal-1`은 이미 게시된 상태이며, 최신 완료 코드/패리티 기준은 MarkdownView 렌더링 계약 고정까지다. 앱 출시 재개 절차는 최신 저장된 `PLAY_RELEASE_HANDOFF.md`를 우선 확인하고, 같은 `102` AAB 재업로드가 아니라 Play 앱 서명 SHA 등록과 Play 설치 검증부터 이어간다.
+> 상태: iOS 동작 대조와 Android 출시 하드닝 진행 중. Play 내부 테스트 `3.5.5 (102) internal-1`은 이미 게시된 상태이며, 실제 동일 Google 계정의 iPhone 12/Android 15 양방향 도형 생성·상세·삭제 동기화 게이트까지 완료했다. 앱 출시 재개 절차는 최신 저장된 `PLAY_RELEASE_HANDOFF.md`를 우선 확인하고, 같은 `102` AAB 재업로드가 아니라 Play 앱 서명 SHA 등록과 Play 설치 검증부터 이어간다.
+
+## 2026-07-10 최신 코드·실기기 체크포인트
+
+- 원본 iOS `Localizable.xcstrings`와 다시 대조해 Android 영문 리소스에 한국어로 남아 있던 좌표 형식 예시 3개와 주소 검색 예시 4개를 iOS 영문 값으로 맞췄다.
+- Android 15 실기기 `RFCW324TZ0Z`에서 영어 좌표 입력 시트의 `Confirm`이 고정 80dp 액션 슬롯 안에서 잘리는 것을 발견했다. 좌우 슬롯 폭과 중앙 제목 정렬은 유지하고 액션 내부 가로 패딩을 8dp로 줄여 전체 문구가 표시되도록 보정했다.
+- 같은 기기에서 최신 debug APK의 cold launch, Naver 지도 인증/현재 위치, KP/날씨 카드, 저장·설정 오버레이와 navigation bar 여백, 영어 좌표·주소 안내, 좌표 역지오코딩 결과, 로그인 시트, 이용약관 Markdown, 앱 정보, 패치노트 렌더링을 확인했다. 검증 뒤 앱 언어는 한국어로 복원했고 `MainActivity` 포커스와 프로세스가 유지되며 fatal/ANR 로그는 없다.
+- 검증: 전체 JVM unit test 1,326개, Android 15 instrumentation 10개, Shape parsing coverage verification, `:app:lintDebug`, `:app:assembleDebug`, `:app:minifyReleaseWithR8`, `:app:verifyCrossPlatformE2ePrerequisites` 통과. lint에는 기존 TypographyDashes/UseKtx advisory 18건이 남지만 오류는 0건이다.
+- 새 도형의 과거 저장 기간 때문에 생성 직후 사라지던 문제를 양쪽에서 보정했다. Android는 생성/복제 기본 기간을 날짜 모드 기준 오늘 00:00~23:59:59로 정규화하고, iOS도 `ShapeEditViewModel`에서 생성/복제에만 같은 정규화를 적용해 기존 도형 편집 값은 보존한다. Android 편집 시트에는 status bar inset도 적용해 헤더 겹침을 제거했다.
+- 원본 iOS는 지도 중심 좌표와 주소를 하나의 새 도형 draft로 원자적으로 전달하고 `.sheet(item:)`으로 편집기를 열도록 보정했다. Firestore 활성 도형 로드는 전체 컬렉션을 파싱한 뒤 `deletedAt == nil`을 적용해 `deletedAt` 필드가 없는 Android 문서도 수신한다.
+- 원본 iOS Debug device build를 iPhone 12에 데이터 유지 설치했고, 두 실기기 모두 같은 Google 테스트 계정과 클라우드 실시간 동기화 ON 상태로 확인했다.
+- iOS 생성 `DP_CROSS_20260710_1549_iOS_fixed`는 Android 활성 목록, 지도 선택 외곽선, 상세 반경 `120 m`, 기간, 메모가 일치했다. Android 생성 `DP_CROSS_20260710_1602_Android_offline`은 iOS 활성 목록에서 10초 이상 유지됐고 지도 선택과 상세 값이 일치했다.
+- Android 저장 상세의 드론 조회 맵이 수집되지 않은 `WhileSubscribed` StateFlow의 초기값을 읽어 iOS 도형을 `삭제된 드론`으로 표시하는 문제를 실기기에서 발견했다. `droneById`를 `SharingStarted.Eagerly`로 바꾸고 회귀 계약 테스트를 추가했다. 수정 APK에서 iOS 생성 `DP_CROSS_20260710_2232_iOS_drone`의 연결 드론이 실제 이름 `내 드론`으로 표시되는 것을 확인했다.
+- 양방향 soft delete를 실제 UI로 검증했다. Android→iOS 온라인 재검증에서 `DP_CROSS_20260710_1534_Android_fixed` 제거 assertion이 통과했고, iOS→Android 삭제는 10초 안에 Android 목록에서 제거됐다. Android Room에는 iOS 도형 ID `F6A5F911-9D94-4C8F-9B22-7FB09DE19B36`의 `deletedAt=2026-07-10 16:50:01`이 남았다.
+- 첫 Android 삭제 시 단말 DNS가 `firestore.googleapis.com`을 해석하지 못해 로컬 삭제가 약 30초 뒤 서버에 도착했다. 네트워크 복구 후 iOS 재실행에서 tombstone이 반영됐고, DNS 연결 확인 후 두 번째 실시간 삭제 테스트는 통과했다.
+- 최종 검증에서 `:app:testDebugUnitTest`, `:app:lintDebug`, `:app:assembleDebug`, `:app:minifyReleaseWithR8`, `:app:verifyCrossPlatformE2ePrerequisites`가 `BUILD SUCCESSFUL`로 통과했고, 원본 iOS도 연결된 iPhone 12 대상 signed Debug build가 통과했다. 양쪽 저장소 `git diff --check`도 통과했다.
+- 검증에 사용한 나머지 `DP_CROSS_...` 항목을 Android UI로 모두 삭제했다. Android 저장 목록의 빈 상태와 iPhone 실기기 XCUITest의 `DP_CONFIRMED_ANDROID_CLEANUP_ON_IOS` assertion으로 양쪽 활성 테스트 항목이 0개임을 확인했다.
 
 ## 2026-07-08 최신 코드 체크포인트
 
@@ -1274,9 +1290,8 @@ export PATH="$JAVA_HOME/bin:$PATH"
 ## 5. 다음에 바로 볼 후보
 
 1. 남은 실기기 회귀 시나리오를 돌리고 실패 항목을 코드 수정 단위로 커밋
-2. iOS ↔ Android Firestore 실제 계정 동기화 시나리오 검증
-3. Play Store 내부 테스트용 signing/Firebase OAuth client 구성 후 `bundleRelease` 검증
-4. 실기기/실계정 검증 결과를 반영해 `NEXT_STEPS.md`의 잔여 항목을 줄이기
+2. Play Store 내부 테스트용 signing/Firebase OAuth client 구성 후 `bundleRelease` 검증
+3. 남은 실기기/실계정 회귀 결과를 반영해 `NEXT_STEPS.md`의 잔여 항목을 줄이기
 
 ## 6. 주요 경로
 

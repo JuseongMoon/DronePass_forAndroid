@@ -47,6 +47,22 @@ class ShapeEditContractTest {
     }
 
     @Test
+    fun `도형 편집 주 시트 헤더는 상태 표시줄 안전 영역 아래에 배치한다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/shape/ShapeEditScreen.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/shape/ShapeEditScreen.kt",
+        ).readText()
+
+        assertTrue(
+            source.contains(
+                ".fillMaxWidth()\n" +
+                    "                .statusBarsPadding()\n" +
+                    "                .navigationBarsPadding()",
+            ),
+        )
+    }
+
+    @Test
     fun `도형 편집 취소 알림은 iOS unsaved changes alert 계약을 따른다`() {
         val source = resolveProjectFile(
             "src/main/java/com/ScienceFiction/DronePassAndroid/feature/shape/ShapeEditScreen.kt",

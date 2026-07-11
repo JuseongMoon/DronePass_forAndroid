@@ -218,8 +218,10 @@ val createdAt = document.getTimestamp("createdAt")
 **품질 게이트**:
 - [x] LWW 충돌 해결 Unit Test 10가지 케이스 통과
 - [x] Soft Delete 필터링 Integration Test 통과
-- [ ] 크로스 플랫폼 동기화 테스트 통과 (iOS 생성 → Android 수신, `CROSS_PLATFORM_E2E_RUNBOOK.md` 기준)
+- [x] 크로스 플랫폼 동기화 테스트 통과 (iOS 생성 → Android 수신, `CROSS_PLATFORM_E2E_RUNBOOK.md` 기준)
 - [x] 500개 초과 배치 처리 테스트 통과
+
+> 2026-07-10: iPhone 12(`00008101-000D08581AD0001E`)와 Android 15 SM-A346N(`RFCW324TZ0Z`)에서 동일 Google 계정으로 실기기 검증했다. iOS 생성 도형 `DP_CROSS_20260710_1549_iOS_fixed`는 Android 활성 목록, 지도 선택 외곽선, 상세 반경 `120 m`/기간/메모가 일치했고, Android 생성 도형 `DP_CROSS_20260710_1602_Android_offline`은 iOS 활성 목록에서 10초 이상 유지되며 상세 값이 일치했다. 추가 iOS 도형의 Android 상세에서 활성 연결 드론명 `내 드론`도 확인했다. Android→iOS 및 iOS→Android soft delete를 UI로 실행해 상대 기기 목록 제거와 Room `deletedAt` tombstone을 확인했으며, 최종 테스트 데이터 정리는 Android 빈 목록과 iPhone XCUITest로 재확인했다.
 
 ---
 

@@ -17,6 +17,7 @@ Unit tests such as `CrossPlatformFirestoreContractTest` protect the wire format.
   - Firebase Console has the Android debug/release SHA-1 and SHA-256 fingerprints.
   - `app/google-services.json` has a `client_type=1` Android `oauth_client` for `com.ScienceFiction.DronePassAndroid`.
 - Cloud backup/sync is enabled for the test account in both apps.
+- Both devices can resolve and reach `firestore.googleapis.com`; an offline write is valid, but the receipt timer starts only after the pending write reaches Firestore.
 - Any existing test data with the chosen prefix is safe to delete.
 
 Before starting the manual device steps, run the Android-side preflight:
@@ -81,7 +82,22 @@ If time is limited, prioritize polygon because it covers array coordinate parsin
 1. Delete one test shape from Android.
 2. Confirm iOS removes it from active lists.
 3. If inspecting Firestore, `deletedAt` must be a Firestore `Timestamp`.
-4. Delete or clean up all remaining `DP_CROSS_...` test data through the app UI so both platforms observe the same tombstone behavior.
+4. Delete another test shape from iOS and confirm Android removes it from active lists.
+5. For a debug Android build, inspect Room and confirm the received row retains a non-null `deletedAt` tombstone.
+6. Delete or clean up all remaining `DP_CROSS_...` test data through the app UI so both platforms observe the same tombstone behavior.
+
+Active Firestore documents from Android or older iOS versions may omit `deletedAt`. Readers must treat a missing field as active; do not use a Firestore `deletedAt == null` query as the only active-document load path because it excludes documents where the field is absent.
+
+## 2026-07-10 Real-Device Result
+
+- Devices: iPhone 12 and Android 15 SM-A346N (`RFCW324TZ0Z`).
+- Shared auth: the same Google account on both devices.
+- iOS -> Android: `DP_CROSS_20260710_1549_iOS_fixed`, radius `120 m`, map highlight and detail values matched.
+- Android -> iOS: `DP_CROSS_20260710_1602_Android_offline`, active after 10 seconds and detail values matched.
+- Linked drone resolution: after changing Android `droneById` to an eagerly collected StateFlow, iOS-created `DP_CROSS_20260710_2232_iOS_drone` displayed the active linked drone name `내 드론` instead of `삭제된 드론` in Android detail.
+- Delete sync: Android -> iOS and iOS -> Android both passed; the Android Room row for the iOS-created shape retained `deletedAt=2026-07-10 16:50:01` local time.
+- One Android delete was queued during a DNS outage and arrived after connectivity recovered. A second online run passed the live iOS removal assertion.
+- Cleanup: Android showed an empty saved list, and the iPhone real-device XCUITest emitted `DP_CONFIRMED_ANDROID_CLEANUP_ON_IOS` for the final test shape.
 
 ## Evidence To Record
 

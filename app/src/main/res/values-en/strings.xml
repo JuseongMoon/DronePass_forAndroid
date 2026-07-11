@@ -180,9 +180,9 @@
     <string name="coordinate_placeholder">Enter coordinates</string>
     <string name="coordinate_guide">Enter flight coordinates in one of the supported formats</string>
     <string name="coordinate_format_title">Supported formats:</string>
-    <string name="coordinate_example_dms">• 도/분/초: 37° 38′ 55″ N 126° 41′ 12″ E</string>
-    <string name="coordinate_example_decimal_degrees">• 십진도: 37.648611°, 126.686667°</string>
-    <string name="coordinate_example_simple_decimal">• 단순 십진수: 37.3855 126.4142</string>
+    <string name="coordinate_example_dms">• DMS: 37° 38′ 55″ N 126° 41′ 12″ E</string>
+    <string name="coordinate_example_decimal_degrees">• Decimal degrees: 37.648611°, 126.686667°</string>
+    <string name="coordinate_example_simple_decimal">• Decimal: 37.3855 126.4142</string>
     <string name="coordinate_example_geo_uri">• Geo URI: geo:37.648611,126.686667</string>
     <string name="coordinate_validation_valid">Valid coordinate format</string>
     <string name="coordinate_validation_invalid">Invalid coordinate format</string>
@@ -334,10 +334,10 @@
     <string name="search_address_placeholder">Search by road or lot address</string>
     <string name="search_address_guide">Both road and lot addresses are searchable</string>
     <string name="search_address_example">Search examples:</string>
-    <string name="search_address_example_road_1">• 서초대로78길 24 (도로명)</string>
-    <string name="search_address_example_jibun_1" tools:ignore="TypographyDashes">• 서초동 1305-6 (지번)</string>
-    <string name="search_address_example_road_2">• 테헤란로 322 (도로명)</string>
-    <string name="search_address_example_jibun_2" tools:ignore="TypographyDashes">• 역삼동 679-4 (지번)</string>
+    <string name="search_address_example_road_1">• 78-gil Seocho-daero 24 (Road name)</string>
+    <string name="search_address_example_jibun_1" tools:ignore="TypographyDashes">• Seocho-dong 1305-6 (Lot number)</string>
+    <string name="search_address_example_road_2">• Teheran-ro 322 (Road name)</string>
+    <string name="search_address_example_jibun_2" tools:ignore="TypographyDashes">• Yeoksam-dong 679-4 (Lot number)</string>
     <string name="search_address_road">Road</string>
     <string name="search_address_jibun">Lot</string>
     <string name="search_address_error_prefix">Error searching address</string>

@@ -17,6 +17,7 @@ import java.util.Locale
 import java.util.TimeZone
 
 internal const val DefaultShapeEditDateOnlyMode = true
+internal const val DefaultShapeEditFlightDurationMillis = 60L * 60L * 1_000L
 internal const val ShowShapeEditFlightPeriodSectionHeader = false
 @DrawableRes
 internal val ShapeEditDronePlaceholderIconRes = R.drawable.ic_drone
@@ -221,6 +222,45 @@ internal fun resolveInitialShapeEditFlightEnd(
         return shape.flightEndDate ?: now
     }
     return editDefaults.endDate ?: now
+}
+
+internal fun resolveInitialShapeEditFlightPeriod(
+    shape: ShapeModel?,
+    editDefaults: ShapeEditDefaults,
+    now: Long,
+    isDuplicateMode: Boolean = false,
+): ShapeEditFlightPeriod {
+    val startDate = resolveInitialShapeEditFlightStart(shape, editDefaults, now)
+    val endDate = resolveInitialShapeEditFlightEnd(shape, editDefaults, now)
+
+    // Existing shapes must keep their stored period, including expired records opened for editing.
+    if (shape != null && !isDuplicateMode) {
+        return ShapeEditFlightPeriod(startDate = startDate, endDate = endDate)
+    }
+
+    if (editDefaults.isDateOnly) {
+        val normalizedStartDate = startOfShapeEditLocalDay(startDate)
+        val startDayEnd = endOfShapeEditLocalDay(startDate)
+        val normalizedEndDate = endOfShapeEditLocalDay(endDate)
+        if (normalizedEndDate < now && startDayEnd < now) {
+            return ShapeEditFlightPeriod(
+                startDate = startOfShapeEditLocalDay(now),
+                endDate = endOfShapeEditLocalDay(now),
+            )
+        }
+        return ShapeEditFlightPeriod(
+            startDate = normalizedStartDate,
+            endDate = maxOf(normalizedEndDate, startDayEnd),
+        )
+    }
+
+    if (endDate <= now || endDate < startDate) {
+        return ShapeEditFlightPeriod(
+            startDate = startDate,
+            endDate = maxOf(startDate, now + DefaultShapeEditFlightDurationMillis),
+        )
+    }
+    return ShapeEditFlightPeriod(startDate = startDate, endDate = endDate)
 }
 
 internal fun formatShapeEditCoordinateText(coordinate: Coordinate): String {
@@ -436,7 +476,7 @@ internal fun endOfShapeEditLocalDay(millis: Long): Long = Calendar.getInstance()
     timeInMillis = millis
     set(Calendar.HOUR_OF_DAY, 23)
     set(Calendar.MINUTE, 59)
-    set(Calendar.SECOND, 0)
+    set(Calendar.SECOND, 59)
     set(Calendar.MILLISECOND, 0)
 }.timeInMillis
 

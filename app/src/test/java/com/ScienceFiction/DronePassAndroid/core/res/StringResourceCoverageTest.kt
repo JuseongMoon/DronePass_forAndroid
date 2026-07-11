@@ -384,15 +384,15 @@ class StringResourceCoverageTest {
         )
         assertEquals("Supported formats:", stringResourceValue("values-en/strings.xml", "coordinate_format_title"))
         assertEquals(
-            "• 도/분/초: 37° 38′ 55″ N 126° 41′ 12″ E",
+            "• DMS: 37° 38′ 55″ N 126° 41′ 12″ E",
             stringResourceValue("values-en/strings.xml", "coordinate_example_dms"),
         )
         assertEquals(
-            "• 십진도: 37.648611°, 126.686667°",
+            "• Decimal degrees: 37.648611°, 126.686667°",
             stringResourceValue("values-en/strings.xml", "coordinate_example_decimal_degrees"),
         )
         assertEquals(
-            "• 단순 십진수: 37.3855 126.4142",
+            "• Decimal: 37.3855 126.4142",
             stringResourceValue("values-en/strings.xml", "coordinate_example_simple_decimal"),
         )
         assertEquals(
@@ -411,10 +411,10 @@ class StringResourceCoverageTest {
         assertEquals("Search by road or lot address", stringResourceValue("values-en/strings.xml", "search_address_placeholder"))
         assertEquals("Both road and lot addresses are searchable", stringResourceValue("values-en/strings.xml", "search_address_guide"))
         assertEquals("Search examples:", stringResourceValue("values-en/strings.xml", "search_address_example"))
-        assertEquals("• 서초대로78길 24 (도로명)", stringResourceValue("values-en/strings.xml", "search_address_example_road_1"))
-        assertEquals("• 서초동 1305-6 (지번)", stringResourceValue("values-en/strings.xml", "search_address_example_jibun_1"))
-        assertEquals("• 테헤란로 322 (도로명)", stringResourceValue("values-en/strings.xml", "search_address_example_road_2"))
-        assertEquals("• 역삼동 679-4 (지번)", stringResourceValue("values-en/strings.xml", "search_address_example_jibun_2"))
+        assertEquals("• 78-gil Seocho-daero 24 (Road name)", stringResourceValue("values-en/strings.xml", "search_address_example_road_1"))
+        assertEquals("• Seocho-dong 1305-6 (Lot number)", stringResourceValue("values-en/strings.xml", "search_address_example_jibun_1"))
+        assertEquals("• Teheran-ro 322 (Road name)", stringResourceValue("values-en/strings.xml", "search_address_example_road_2"))
+        assertEquals("• Yeoksam-dong 679-4 (Lot number)", stringResourceValue("values-en/strings.xml", "search_address_example_jibun_2"))
         assertEquals("Error searching address", stringResourceValue("values-en/strings.xml", "search_address_error_prefix"))
         assertEquals("Unsaved Changes", stringResourceValue("values-en/strings.xml", "shape_edit_alert_unsaved_title"))
         assertEquals("All changes will be lost. Close anyway?", stringResourceValue("values-en/strings.xml", "shape_edit_alert_unsaved_message"))
