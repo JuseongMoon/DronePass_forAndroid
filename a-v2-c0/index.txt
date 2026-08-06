@@ -1,5 +1,5 @@
-# A-v2 C0 index — role	path	byteLength	sha256	trailingLF=none(전건)
-# content files: 16 (normative-clause 11 + reference-resolver 1 + support-evidence 3 + marker-policy 1)
+# A-v2 C0 index v4 — role	path	byteLength	sha256	trailingLF=none(전건)
+# content files: 17 (normative-clause 11 + normative-addendum 1 + reference-resolver 1 + support-evidence 3 + marker-policy 1)
 normative-clause	a-v2-c0/GE-TARGET.txt	478	019d607d7dc7696da10bd04302635d7961ca1ddd746deec330c5e8129816289b
 normative-clause	a-v2-c0/GE-EXC.txt	538	51933f325eee849f2179483ba99ca42514196e3f3ee9ec4bf08daa89b41d432b
 normative-clause	a-v2-c0/GE-RULE.txt	1456	71bc5f35b3ff60f573a177ddf525f8103c7958b77319698697201d69a6eac2ab
@@ -11,8 +11,9 @@ normative-clause	a-v2-c0/GE-REF.txt	2119	88940411c2bdffb99dc735560195e0b181bf847
 normative-clause	a-v2-c0/GE-MECH.txt	11835	a1cfd7c60aced95ef615a92f24cbbf8389733e4f86b22067357a7c0b2beccdbc
 normative-clause	a-v2-c0/GE-MUT.txt	977	782332b6089f5f88fbde62a6718d1fe8af472f56ea403adb7766a3a9712cbb93
 normative-clause	a-v2-c0/GE-FWD.txt	1421	153a2a5938b6b31ce4932e95e6de90b9853749833c094a7f79d9ea3480fda9f9
+normative-addendum	a-v2-c0/A_V2_ADDENDUM_1.txt	468	06fa3a34d7eebe8c744d32fba86b37d15f08f66d240836b2d5b96fbad464a57b
 support-evidence	a-v2-c0/inventory.txt	7717	7f73d7a24b99d672f63cbeeb8e81b3ce9df31b9e49dfe9351af07b78299d9034
 support-evidence	a-v2-c0/census.txt	96	18eeba978044c3ad6f9516f517f8ac4cc8cd019be9fe8ed46313a749ad85ce0b
 support-evidence	a-v2-c0/mapping.txt	668	7f2efca2c848d700315dc1e14ec2a26c5afdf25e37d9d29db6a236f6d898c8ea
 marker-policy	a-v2-c0/marker-policy.txt	623	6dfd784456c04e2e419abaf77fe453594d842ae1b265a6d25f335096841fab71
-reference-resolver	a-v2-c0/resolution-map.txt	7842	107c2f1d18156f87b69fe37929e5e9ca1e547f70970b46f3abddb7639009cff0
+reference-resolver	a-v2-c0/resolution-map.txt	10269	eaf04032d77261b2858cf7c603d94a8716110c3bc378a8a3e0ae6a5a1e31ef09
