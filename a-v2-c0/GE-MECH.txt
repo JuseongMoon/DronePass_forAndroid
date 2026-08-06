@@ -1,0 +1,80 @@
+## 5. 기계 강제 4계층 + seeded **7종** [GE-MECH]
+
+> **[M2 정정]** rev4 의 술어 `"configurationReason" ∈ properties(P) ∧ P.allOf에 규칙 존재`는 **직접 주소 검사**여서 §4 의 branch-sensitive algebra 와 갈라진다 — 노드 키가 `oneOf` 뿐이거나 `allOf` 만 있고 direct `properties` 가 없는 TARGET site 에서 이 술어는 성립하지 않는다. **site 발견과 규칙 적용은 동일 algebra 를 써야 한다.** 아래로 교체한다.
+
+<!-- normative-constant -->
+```text
+A(P)   = §4 R1~R5 로 열거한 P 의 satisfiable branch-effective 대안 집합
+         대안 = ⟨props, domain, required, forbidden⟩                      ← H4: guard·const 를 domain 으로 통합
+         domain(prop) = (allowed: 집합 | ⊤(무한), excluded: 집합)
+             선언 기여 : const/enum → allowed  ·  not.const/not.enum → excluded
+             guard 기여: if 의 조건을 then 에는 그대로, else 에는 부정하여 같은 형태로 기록
+                         (부정은 단일 원자 if 에 한함 · 분기 부재 = 무제약 대안)
+             병합      : allowed 는 교집합(⊤ 는 항등원), excluded 는 합집합
+             unsat     : 어떤 prop 의 allowed − excluded = ∅  ∨  required ∩ forbidden ≠ ∅
+                         전부 unsat 이면 대안 집합은 [] 이며 무제약 대안으로 대체하지 않는다(R1-b-2)
+         정규화    : ⟨props, domain, required, forbidden⟩ 를 키로 **dedup**
+ERR(P) = { A ∈ A(P) | props(A) ⊇ {code, retryDisposition} }
+
+effectiveDomain(A, k) = allowed(k) − excluded(k)               ← G1: **임의의 키 k 에 대해 일반**
+                        (allowed = ⊤ 이면 '⊤ − excluded' — 어떤 유한 집합과도 같지 않다)
+codeClass(A) = **effectiveDomain(A, code) 의 순수 함수** — 선언 형태(const/enum/guard/어느 절)에 의존하지 않는다
+               (선결) effectiveDomain(A, code) = ∅ 이면 **UNSAT 누출**이며 fail-closed 한다 — 빈 집합은
+                      어떤 집합의 부분집합이므로 ⊆ 판정을 먼저 쓰면 ATT 로 **오분류**된다(rev16 G3-7.3)
+               ATT           : effectiveDomain(A, code) **== {ATT}**  (non-empty 확인 후 exact 일치)
+               NON_ATT       : ATT ∉ effectiveDomain(A, code)
+               INDETERMINATE : ATT ∈ effectiveDomain(A, code) 이면서 다른 code 도 가능
+
+∀ site P ∈ (규범 축 산출 ∖ EXCEPTION 11) :
+  ⑴ ERR(P) ≠ ∅
+  ⑵ ∀A ∈ ERR(P)          : configurationReason ∈ props(A)
+                            ∧ effectiveDomain(A, configurationReason) == {CLIENT_VERSION_UNSUPPORTED,
+                                 ATTESTATION_FAILED, CLIENT_CONFIGURATION_INVALID}   ← **정확히 일치**
+                            (상위집합·부분집합·값 교체·⊤ 전부 거부)
+  ⑶ ∀A ∈ ERR(P)          : codeClass(A) = ATT      ⇒ configurationReason ∈ required(A)
+  ⑷ ∀A ∈ ERR(P)          : codeClass(A) = NON_ATT  ⇒ configurationReason ∈ forbidden(A)
+  ⑸ ∀A ∈ ERR(P)          : codeClass(A) ∈ {INDETERMINATE, UNSAT 누출}  ⇒ **fail-closed**(게이트 거부)
+  ⑹ ∀B ∈ A(P) ∖ ERR(P)   : configurationReason ∉ props(B)
+
+보고(4자 대조 대상) : 정규화 대안 수 · ERROR 대안 수 · codeClass 분포 · unsat 제거 · unsatCollapse
+                      · recursiveEdgeStops · **정규화 ERROR 대안 fingerprint**(SHA-256)
+                      fingerprint 는 대안마다 codeClass + **tracked `domains` map 전체** +
+                      props·required·forbidden 을 포함한다(rev16 G2 — 두 키만으로는 불충분)
+  canonical record  : site \t codeClass \t domains \t props \t required \t forbidden
+  집합 원소 표현    : **선언 단계에서 `ENC(x)` 문자열로 키잉**한다(rev19 ②) — Python `frozenset` 은
+                      `1 / True / 1.0` 을 **encoding 이전에 하나로 합치므로**(`frozenset([1,True,1.0]) == {1}`)
+                      원값으로 집합을 만들면 언어 중립성이 깨진다. 교집합·합집합·비교는 전부 ENC 문자열 공간에서 한다.
+  공역 결합 규칙    : 한 subschema 안의 `const` 와 `enum` 은 **conjunctive 교집합**이다(rev19 ③) —
+                      `{"const":"C","enum":["A","B"]}` 의 참값은 **∅(UNSAT)** 이며 `{C}` 가 아니다.
+                      `not.const` 와 `not.enum` 은 **합집합**으로 excluded 에 누적한다.
+  domains encoding  : property 이름 오름차순으로 `k|allowed=…|excluded=[…]` 를 `;` 로 결합
+                      allowed 는 **`TOP`(=⊤) 과 유한 집합을 구분**해 표기
+                      집합 원소는 `json.dumps(v, sort_keys=True, ensure_ascii=False, separators=(',',':'))`
+                      로 **JSON scalar 의 타입과 값을 보존**해 인코딩한 뒤 그 문자열로 정렬
+  fingerprint       : sha256( "\n".join(sorted(records)) ) — UTF-8 · **후행 LF 없음**
+```
+- **직접 주소 검사 금지**: `properties(P)`·`P.allOf` 같은 노드-국소 술어를 판정 근거로 쓰지 않는다.
+- **satisfiability 범위(rev16 G3-7.5 정정)**: rev8·rev9 는 범위를 *"동일 property `const` 충돌 · `required` ∧ `not required` 충돌"* **두 경우로 한정**한다고 적었으나 R4·알고리즘은 이미 **enum 교집합 소멸**에 의존한다 — 문면과 algebra 가 충돌했다. 정정: **범위 = domain algebra 가 판정하는 것 전부**이며 정확히 다음과 같다.
+  - **UNSAT ⇔** 어떤 property `k`에 대해 `allowed(k) − excluded(k) = ∅` (⊤은 소멸하지 않는다) — `const`/`enum`/`not.const`/`not.enum`/guard 유래를 **구분하지 않는다**.
+  - **또는** `required ∩ forbidden ≠ ∅`.
+  - 이 판정은 **선언된 domain 원자에 한정**되며 일반 JSON Schema 충족가능성(정규식 교차·수치 구간·`unevaluated*` 등)은 **요구하지 않는다**. 그 범위를 넓히려면 4자 재승인이 필요하다.
+- **ERROR 대안 수는 상수로 pin 하지 않는다**: 조건부 규칙을 추가하면 ERROR 대안이 분할되어 수가 늘기 때문이다. pin 대상은 site count 4종과 두 digest 다.
+- **⚠️ rev7 §5의 단조성 주장 철회(rev15 H4)**: rev7 은 *"더 잘게 쪼개는 구현일수록 엄격해질 뿐 통과가 느슨해지지 않는다"* 고 적었으나 그 주장은 **철회한다**. **⑵⑶⑷⑹ 에는 성립하지만 ⑸ 에는 반대**다 — 세분 구현은 guard 가 결정적이라 `INDETERMINATE` 가 발화하지 않아 **통과**할 수 있고, 조대 구현은 code 공역을 좁히지 못해 `INDETERMINATE` → **fail-closed 거부**가 된다. **fail-closed catch-all 이 방향을 뒤집으므로**, 판정은 **분할 방식과 무관**해야 하며 `effectiveCodeDomain` 집합의 **순수 함수로 정규화(dedup)** 해 정의한다.
+- **해소 방식(H4)**: 판정을 **선언 형태가 아니라 `effectiveCodeDomain` 집합의 순수 함수**로 바꾸고, 대안을 `⟨props, domain, required, forbidden⟩` 로 **정규화(dedup)** 한다. 분할 방식이 달라도 **같은 공역이면 같은 codeClass**가 나오고, 정규화 후 중복 대안은 하나로 합쳐진다. 남는 구현 차이는 **`fingerprint`로 즉시 드러나므로** 침묵 대신 대조가 된다 — 4자는 §5.1의 fingerprint·분포를 재현해 일치를 확인한다.
+- **[G2] fingerprint 는 정규화 domain 전체를 bind 한다**: fingerprint identity 는 **canonical encoding 된 tracked `domains` map 전체**를 bind 해야 하며, **일부 key 만 bind 한 fingerprint 는 허용하지 않는다**.
+- **[G1] 값은 이름이 아니라 공역으로 검사한다**: `configurationReason` 검사는 property 이름 존재가 아니라 **`effectiveDomain(A, configurationReason)` 의 정확한 3값 일치**로 정의한다. **상위집합·부분집합·값 교체·TOP 은 모두 거부**하며, `effectiveDomain` 은 **임의의 key 에 대해 동일하게** 적용한다.
+- **⑸ fail-closed의 의미**: `code` 판별자를 못 찾은 ERROR 대안은 **통과가 아니라 거부**다. 판별자가 없다는 것은 그 envelope가 ATT 여부로 분기되지 않는다는 뜻이므로, 조건부 규칙이 실제로 적용되는지 확인할 수 없다. **공허참을 거부로 뒤집는 것이 이 조항의 목적**이다.
+- **[신규] ⑵는 선언 층 · ⑶⑷는 적용 층**: ⑵는 *"이 envelope가 `configurationReason`을 3값 폐쇄로 **선언**하는가"*, ⑶⑷는 *"각 대안에서 그 필드가 **required인가 forbidden인가**"* 를 본다. **두 층은 서로를 면제하지 않는다.**
+  - vector 예시 — `GoldenFlowFile` 2 site 는 `effectiveDomain(A, code) = {UNAVAILABLE, RESOURCE_EXHAUSTED, INTERNAL}` 이라 **모든 ERROR 대안이 `NON_ATT`** 이고 ⑷ 에 의해 `configurationReason` 은 **언제나 forbidden** 이다. 그렇다고 **⑵ 가 면제되지 않는다** — 그 site 도 필드를 3값 폐쇄로 선언해야 한다.
+  - **면제하면 생기는 일**: 구현자가 *"항상 forbidden이니 선언 불필요"* 로 읽어 필드를 빼면, 훗날 그 envelope의 code 공역이 넓어져 ATT가 포함되는 순간 **조건부 규칙이 통째로 빠진 채** ATT를 반환하게 된다. 선언은 **미래 공역 확장에 대한 계약 앵커**다.
+- **guard 대 props**: guard 는 **props 에 기여하지 않는다**. 따라서 §4 의 site 판정(props ⊇ {code, retryDisposition})은 영향을 받지 않으며 §3 **폐쇄 목록·count const 4종·두 digest 는 불변**이다.
+- **schema**: TARGET 5 site에 필드·조건부 규칙 선언.
+- **validator(`validate_corpus.py`)**: §4 규격 + 위 술어 **⑴~⑹** 구현 + §3 폐쇄 목록·count const 4종·**두 digest** 대조(상수 배치는 `CONTRACT_VERSION_BOUND` 선례와 동형).
+- **oracle(`oracle_contract.py`)**: 동일 산출 독립 재계산 + code↔`configurationReason` 결합·disposition 고정값 + **§6 mutation tuple 5항 불변** 판정.
+<!-- expected-vector -->
+- **seeded 음성 7종**: ⓐ TARGET envelope에 `ATTESTATION_OR_CONFIG_FAILED`를 넣고 `configurationReason` 누락 ⓑ TARGET 중 하나에서 조건부 규칙(required/forbidden) 제거 ⓒ `code: CONFLICT` 인스턴스에 `configurationReason` 주입 ⓓ **mutation 재시도를 `operationId` 하나로 축약**(tuple 중 `requestHash`/`intentHash`/outbox row/canonical payload 하나를 바꾸고 재시도로 표기 — rev1 43행 회귀 봉쇄) ⓔ **bare fragment에 `type:"object"` 부여**(승격 → `BARE_FRAGMENTS 14→13`) ⓕ **합성 은닉 site 신설 — ⓕ-1(conjunctive, `TOTAL 16→17` 거부)** ⓖ **`appCode → code` 개명**(→ `TOTAL 17`).
+  - **ⓕ-2(대안 분리)는 seeded 음성이 아니라 scanner conformance vector**로 배치한다: `oneOf` branch 간 분산 선언은 **정상 통과(16 유지)** 가 정답이며, 이 vector는 **naive union 구현을 실패시키는 것이 목적**이다. 음성/대조를 한 쌍으로 유지해야 §4 R3가 실제로 검사된다.
+  - **라벨 교환**은 방법 A digest 가 잡는다(별도 seeded 불요).
+  - *rev3 seeded ⓑ(구)"예외를 envelope로 위장 — 레지스트리에 `retryDisposition` 추가"는 폐기 상태를 유지한다 — taxonomy `codes[]`가 이미 `retryDisposition`을 보유해 no-op이다.*
+- **④ 방어 계층 위치**: `appCode` 개명의 **1차 방어는 count const·digest**(TOTAL 17로 즉시 파괴)이고 **seeded ⓖ는 보강**이다.
+- **양성 축**: TARGET 각 site에 `ATTESTATION_OR_CONFIG_FAILED`+`CLIENT_VERSION_UNSUPPORTED` 1건 이상 · mutation 재시도 tuple 불변 1건 · **정당한 re-root 1건**(`ACK-001` 회귀 방지) · **ⓕ-2 conformance vector**.

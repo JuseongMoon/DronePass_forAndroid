@@ -1,0 +1,64 @@
+# A-v2 C0 resolution-map (reference-resolver) — U-DEF-F · Android rev66 §1 + 확장(rev64 §2·계수 정정 2026-08-06)
+# scan-inputs: 15 files (clause 11 + support 3 + marker-policy 1) — resolver 자기 자신 제외
+# counts: SECTION 39/39 · DIGEST 18/18 · unresolved-digest 0
+# section recipe: regex §[0-9]+(\.[0-9]+)?(-[0-9]+)? · byteOffset = UTF-8 byte offset in file · kind ∈ {LOCAL_C0_CLAUSE, EXTERNAL_ARTIFACT, HISTORICAL_NON_NORMATIVE}
+# local §↔clause: §1=GE-TARGET §1.1=GE-EXC §2=GE-RULE §3=GE-LIST §4=GE-SCAN §4.1=GE-AXIS §4.2=GE-GAP §4.3=GE-REF §5=GE-MECH §6=GE-MUT §7=GE-FWD
+# assembly order: GE-TARGET GE-EXC GE-RULE GE-LIST GE-SCAN GE-AXIS GE-GAP GE-REF GE-MECH GE-MUT GE-FWD
+# marker bijection: marker(GE-MECH 1) ↔ census(U32 1) ↔ inventory U32 — 1:1:1
+SECTION	GE-EXC.txt	1	120	§5	EXTERNAL_ARTIFACT	canonical/p6p11	n.json → expected.wire`(§5 provider-status
+SECTION	GE-EXC.txt	2	336	§7	LOCAL_C0_CLAUSE	GE-FWD	P3가 채택되어도 자동 이동은 없다** — §7의 **fail-closed 
+SECTION	GE-RULE.txt	1	53	§1	LOCAL_C0_CLAUSE	GE-TARGET	on` 동일 규칙 편입 [GE-RULE]  §1 TARGET의 오류 enve
+SECTION	GE-RULE.txt	2	1020	§5	LOCAL_C0_CLAUSE	GE-MECH	ICT` 인스턴스에서는 **부재가 정답**(§5 seeded ⓒ가 고정). 
+SECTION	GE-LIST.txt	1	594	§5	HISTORICAL_NON_NORMATIVE	-	`, 후행 LF 없음 |  > **rev3 §5의 "주석·분류 라벨은 포함하
+SECTION	GE-LIST.txt	2	2835	§4	LOCAL_C0_CLAUSE	GE-SCAN	` 목록·count·두 digest 는 **§4 규격 교체에도 불변**이다.
+SECTION	GE-LIST.txt	3	3558	§4.1	LOCAL_C0_CLAUSE	GE-AXIS	object`) 표기와 정확히 일치**한다(§4.1 표 1~4행 + StateM
+SECTION	GE-LIST.txt	4	3601	§4.1	LOCAL_C0_CLAUSE	GE-AXIS	Machine은 두 축 표기가 동일). 즉 §4.1은 표기 대조표인 동시에 **
+SECTION	GE-SCAN.txt	1	2447	§5	LOCAL_C0_CLAUSE	GE-MECH	d 미기록 → 그 대안은 판별 불가로 남아 §5 ⑸가 처리한다). **`th
+SECTION	GE-SCAN.txt	2	2691	§5	LOCAL_C0_CLAUSE	GE-MECH	용 집합의 교집합과 제외 집합의 합집합이다(§5 `effectiveCodeD
+SECTION	GE-SCAN.txt	3	2973	§5	LOCAL_C0_CLAUSE	GE-MECH	에 `consts.code` 가 남지 않아 §5 ⑶⑷ 가 **공허하게 참**
+SECTION	GE-SCAN.txt	4	3179	§4	HISTORICAL_NON_NORMATIVE	-	힌 노드를 site로 오판한다. (rev3 §4가 `not`을 합성 키워드에
+SECTION	GE-SCAN.txt	5	3820	§3	LOCAL_C0_CLAUSE	GE-LIST	exicographic 정렬** ⑶ 결과를 §3 폐쇄 목록·count con
+SECTION	GE-REF.txt	1	557	§3	LOCAL_C0_CLAUSE	GE-LIST	-set digest 는 변하지 않는다 — §3 문면 교체의 근거이며, 라벨
+SECTION	GE-REF.txt	2	627	§5	LOCAL_C0_CLAUSE	GE-MECH	한다.  **분기 동작 probe 2종**(§5 ⓕ의 기계 근거)  | pr
+SECTION	GE-REF.txt	3	1361	§6-4	HISTORICAL_NON_NORMATIVE	-	onformance vector(rev16 §6-4)**: ⓕ-1·ⓕ-2·ⓕ-3
+SECTION	GE-MECH.txt	1	140	§4	LOCAL_C0_CLAUSE	GE-SCAN	 규칙 존재`는 **직접 주소 검사**여서 §4 의 branch-sensit
+SECTION	GE-MECH.txt	2	363	§4	LOCAL_C0_CLAUSE	GE-SCAN	nt --> ```text A(P)   = §4 R1~R5 로 열거한 P 의
+SECTION	GE-MECH.txt	3	4572	§5	HISTORICAL_NON_NORMATIVE	-	두 digest 다. - **⚠️ rev7 §5의 단조성 주장 철회(rev1
+SECTION	GE-MECH.txt	4	5202	§5.1	HISTORICAL_NON_NORMATIVE	-	므로** 침묵 대신 대조가 된다 — 4자는 §5.1의 fingerprint·분포
+SECTION	GE-MECH.txt	5	6466	§4	LOCAL_C0_CLAUSE	GE-SCAN	props 에 기여하지 않는다**. 따라서 §4 의 site 판정(props
+SECTION	GE-MECH.txt	6	6525	§3	LOCAL_C0_CLAUSE	GE-LIST	sposition})은 영향을 받지 않으며 §3 **폐쇄 목록·count c
+SECTION	GE-MECH.txt	7	6652	§4	LOCAL_C0_CLAUSE	GE-SCAN	validate_corpus.py`)**: §4 규격 + 위 술어 **⑴~⑹
+SECTION	GE-MECH.txt	8	6678	§3	LOCAL_C0_CLAUSE	GE-LIST	 규격 + 위 술어 **⑴~⑹** 구현 + §3 폐쇄 목록·count con
+SECTION	GE-MECH.txt	9	6860	§6	LOCAL_C0_CLAUSE	GE-MUT	 결합·disposition 고정값 + **§6 mutation tuple 
+SECTION	GE-MECH.txt	10	7597	§4	LOCAL_C0_CLAUSE	GE-SCAN	**이다. 음성/대조를 한 쌍으로 유지해야 §4 R3가 실제로 검사된다.  
+SECTION	GE-MUT.txt	1	654	§1.13	EXTERNAL_ARTIFACT	canonical/p6p11	tation 표면 = **canonical §1.13·§1.14 + 본 결정**.
+SECTION	GE-MUT.txt	2	660	§1.14	EXTERNAL_ARTIFACT	canonical/p6p11	 표면 = **canonical §1.13·§1.14 + 본 결정**. rev3.
+SECTION	GE-FWD.txt	1	137	§2	LOCAL_C0_CLAUSE	GE-RULE	 `configurationReason`을 §2 규칙대로 포함해야 한다.**
+SECTION	GE-FWD.txt	2	247	§4	LOCAL_C0_CLAUSE	GE-SCAN	 존재하지 않는다. 판정 기준·산출 규격은 §4, 폐쇄 목록·count·di
+SECTION	GE-FWD.txt	3	271	§3	LOCAL_C0_CLAUSE	GE-LIST	§4, 폐쇄 목록·count·digest는 §3, 술어는 §5다. > > *
+SECTION	GE-FWD.txt	4	279	§5	LOCAL_C0_CLAUSE	GE-MECH	록·count·digest는 §3, 술어는 §5다. > > **⚠️ 자동 이
+SECTION	inventory.txt	1	1368	§0	HISTORICAL_NON_NORMATIVE	-	유(rev31 · 본 담당 재현)**: ① §0…` | `3d9cccc2d7
+SECTION	inventory.txt	2	2018	§2	HISTORICAL_NON_NORMATIVE	-	 사유(rev25 · 본 담당 재현)**: §2 규…` | `19872cda
+SECTION	inventory.txt	3	2664	§5	HISTORICAL_NON_NORMATIVE	-	| `GE-LIST` | `> **rev3 §5의 "주석·분류 라벨은 포함하
+SECTION	inventory.txt	4	2849	§4	HISTORICAL_NON_NORMATIVE	-	| `목록·count·두 digest는 **§4 규격 교체에도 불변**이다(
+SECTION	inventory.txt	5	4045	§5-5	HISTORICAL_NON_NORMATIVE	-	실증**(rev4 문면 정정 — rev12 §5-5): rev4는…` | `77
+SECTION	inventory.txt	6	6097	§6-4	HISTORICAL_NON_NORMATIVE	-	`**vector builder(rev16 §6-4)**: ⓕ 계열은 서술…` 
+SECTION	inventory.txt	7	6257	§5	HISTORICAL_NON_NORMATIVE	-	GE-MECH` | `- **⚠️ rev7 §5의 단조성 주장 철회(rev1
+DIGEST	GE-RULE.txt	1	65b91815	normative-clause-digest	65b91815d3c9976da1e5ec9c626f8f065b6b032016dbb54f7954b5b4ab87322b
+DIGEST	GE-REF.txt	1	b7fc811e	normative-clause-digest	b7fc811e91d1fb9bfb2dde4c6cfa9fe03957e2f1a07f64a1903e6709839a8fca
+DIGEST	GE-REF.txt	2	b7fc811e	normative-clause-digest	b7fc811e91d1fb9bfb2dde4c6cfa9fe03957e2f1a07f64a1903e6709839a8fca
+DIGEST	GE-REF.txt	3	b7fc811e	normative-clause-digest	b7fc811e91d1fb9bfb2dde4c6cfa9fe03957e2f1a07f64a1903e6709839a8fca
+DIGEST	GE-REF.txt	4	b90ce2eb	normative-clause-digest	b90ce2ebee2055257366ffce19aadfe98306eedb907e8f9e1013054d1150fb18
+DIGEST	inventory.txt	1	dde9c20e	support-digest	dde9c20ed5442cdd9928ae3a2c7d610681373475461ef45f6982abfcd96e55d1
+DIGEST	mapping.txt	1	e1a4393299f7d44d	support-digest	e1a4393299f7d44d86fe8a3c5bb9859589798e8e6002e6e4e4a4ab7ea1c4cafe
+DIGEST	mapping.txt	2	4ecdc13267e51f75	support-digest	4ecdc13267e51f75cc725b27a7930182c0dee4148107fddec946c812a095656e
+DIGEST	mapping.txt	3	9386d0e00fa3dbd7	support-digest	9386d0e00fa3dbd7efff7e346064a8a9e3adddf67fcc1d3cfd64406fe7aa682f
+DIGEST	mapping.txt	4	b0e86a3873058037	support-digest	b0e86a3873058037f9b6f9884ca05c2857f72319d5be8474ab6d305d8a37d8ac
+DIGEST	mapping.txt	5	877409a182cd4a33	support-digest	877409a182cd4a337cda65288dc9c12d0ee5d94b64951b3c2b5697caae8120a4
+DIGEST	mapping.txt	6	b58ad7ad3d6136e7	support-digest	b58ad7ad3d6136e72500c03c3e3060826cc25c49a32038a5475921e9dbedc890
+DIGEST	mapping.txt	7	fe4cec821bd57380	support-digest	fe4cec821bd5738086ac775262f3bf58a0ff56bd24a3eaa96c2db46d345e8078
+DIGEST	mapping.txt	8	0a16c3f0298ac4d0	support-digest	0a16c3f0298ac4d0d431a5c9fc955805872c32ddb6c6a23490822795584a9add
+DIGEST	mapping.txt	9	b9c37ce2a6f3750b	support-digest	b9c37ce2a6f3750b6752fd1e091ba6fde37a053201d5c8739938042ebf781930
+DIGEST	mapping.txt	10	e119083d751e5984	support-digest	e119083d751e598498da68ef7949042c9d9a009589e135222f127fe78e6f7c2e
+DIGEST	mapping.txt	11	544187c28fe4133e	support-digest	544187c28fe4133ea50f97666e350510a65abb3a5b720e84c195f6e0d2603075
+DIGEST	mapping.txt	12	7174414d518b3fc1	support-digest	7174414d518b3fc1bbd1c0783ddc67b0f365c8a6f5c1f1bfea9ec9c0f7bacfd8

@@ -1,0 +1,20 @@
+## 2. 결정 — `configurationReason` 동일 규칙 편입 [GE-RULE]
+
+§1 TARGET의 오류 envelope 정의에 **item 6 rev3.21(`65b91815…`) 조항 `B6-CFGREASON`과 동일한 규칙**을 적용한다:
+
+<!-- normative-constant -->
+```json
+{ "properties":{
+    "code":{"enum":[ "… 해당 표면의 기존 code 집합 불변 …" ]},
+    "retryDisposition":{"enum":["NEVER","AFTER_AUTH_REFRESH","AFTER_CONFIGURATION_CHANGE","BOUNDED_BACKOFF","QUEUE_ONLY","MANUAL_CONFLICT_RESOLUTION"]},
+    "configurationReason":{"enum":["CLIENT_VERSION_UNSUPPORTED","ATTESTATION_FAILED","CLIENT_CONFIGURATION_INVALID"]}
+  },
+  "allOf":[
+    { "if":{"properties":{"code":{"const":"ATTESTATION_OR_CONFIG_FAILED"}},"required":["code"]},
+      "then":{"required":["configurationReason"]},
+      "else":{"not":{"required":["configurationReason"]}} } ] }
+```
+- 3값 의미·UX 계약은 `B6-CFGREASON`과 동일. 미분류는 sentinel 없이 **`INTERNAL` 수렴**. **최소 지원 버전 값 wire 금지.**
+- 기존 code 집합·`retryDisposition` 고정값·`operationId` 필수·`currentProjection` iff는 **불변**.
+- 규칙은 **envelope 정의**에 적용된다 — 인스턴스를 채우는 것이 아니다. `code: CONFLICT` 인스턴스에서는 **부재가 정답**(§5 seeded ⓒ가 고정).
+- **`retryDisposition` 고정값 결합은 wire schema가 아니라 semantic oracle이 강제**한다(corpus `B6-DISP`). 편입 시에도 이 배치를 바꾸지 않는다.

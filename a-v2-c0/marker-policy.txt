@@ -1,0 +1,1 @@
+표식 규칙: ⑴ **바로 다음 한 줄에만** 적용(blank line·다중 행·블록 확장 금지) ⑵ 대상 identity 의 유일 disposition 이 `KEEP_EXPECTED_VECTOR` 일 것 ⑶ 아래 census 등재 ⑷ 통합 inventory 와 bijection ⑸ 내용이 **규범 vector 입력·기대 판정**일 것 — 과거 실행·감사 결과에 붙여 우회할 수 없다(붙이면 **그 자체가 P1-a 위반**) ⑹ **표식은 P1-a record-keyword 분류만 정밀화한다** — 실행 명령·actual rc·ID·fingerprint·tool code 등 다른 금지 표면을 면제하지 않으며, **4자 심사를 면제하지 않는다**.

@@ -1,0 +1,22 @@
+### 4.3 참조 구현 규격 [GE-REF]
+
+
+| 연산 | 방법 A digest | pointer-set digest |
+|---|---|---|
+| 무변경(정본) | `f6bf72dd7cf5e600d9cef88ef18166a2c9800fafe7e7d9e94984ab34df840b32` | `b7fc811e…` |
+| **전체 라벨 반전**(16건) | `df64d7d5eb47113cef7cb71c0b276a9d5974aa1ac6199df0cad966d9c3c61c21` | `b7fc811e…` **불변** |
+| **1:1 교환** — `StateMachineFile/…/oneOf/1/properties/error`(TARGET→EXCEPTION) ↔ `WireFile/…/exampleConflictError`(EXCEPTION→TARGET) | `dde9c20ed5442cdd9928ae3a2c7d610681373475461ef45f6982abfcd96e55d1` | `b7fc811e…` **불변** |
+
+어느 연산에서도 pointer-set digest 는 변하지 않는다 — §3 문면 교체의 근거이며, 라벨 bind 는 **방법 A digest 만** 제공한다.
+
+**분기 동작 probe 2종**(§5 ⓕ의 기계 근거)
+
+| probe | 주입 | 규격 준수 구현의 결과 |
+|---|---|---|
+| **ⓕ-1** | 부모가 `code`, `allOf` 자식이 `retryDisposition`을 선언(**conjunctive 은닉**) | `TOTAL = 17` → count const·digest 파괴 → **거부** |
+| **ⓕ-2** | `oneOf` 두 branch에 `code`/`retryDisposition`을 **분산** 선언(**disjunctive**) | `TOTAL = 16` **유지** → 통과. **naive union 구현이면 17로 오탐**하므로 이 vector가 구현 결함을 드러낸다 |
+| **ⓕ-3**(rev14 J1) | **`$ref` 형제 은닉** — StateMachine 오류 envelope의 `retryDisposition`만 `$defs` 대상으로 옮기고 `$ref`를 두어 형제 `properties`에는 `code`만 남김 | **R1-b 구현: `TOTAL = 16`·pointer·두 digest 전부 불변**(정상 통과) / **R1-b 미구현(Draft-07 식 형제 무시): `TOTAL = 15`·`TARGET = 4`·digest `b90ce2eb…`** → count·digest 동시 파괴로 **실패**. 즉 이 vector는 **R1-b를 구현하지 않은 쪽만 실패**시킨다 |
+
+**conformance vector(rev16 §6-4)**: ⓕ-1·ⓕ-2·ⓕ-3 은 corpus 원본을 변경하지 않는 **독립 conformance vector** 이며, 각 입력과 기대 판정은 위 폐쇄표와 일치해야 한다.
+
+ⓕ-2(`oneOf` 분산 vector)에서 규격 준수 구현은 `TOTAL 16` 을 유지해야 하며, naive union 구현은 17 로 오탐한다.

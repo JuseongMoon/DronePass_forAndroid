@@ -1,0 +1,10 @@
+### 4.1 두 축의 표기 차 5건 [GE-AXIS]
+같은 대상을 가리키나 pointer 표기가 다르다 — 폐쇄 목록은 **규범 축(합성) 표기**를 쓴다.
+
+| # | 규범 축(합성) | 보조 축(raw+`type:object`) |
+|---|---|---|
+| 1 | `…/BaselineApiFile/…/allOf/1/then/properties/expected` | `…/expected/oneOf/2` |
+| 2 | `…/BaselineApiFile/…/allOf/2/then/properties/expected` | `…/expected/oneOf/1` |
+| 3 | `…/GoldenFlowFile/…/allOf/1/then/…/wireResponse/properties/error` | `…/error/allOf/0` |
+| 4 | `…/GoldenFlowFile/…/allOf/2/then/…/wireResponse/properties/error` | `…/error/allOf/0` |
+| 5 | `…/TaxonomyFile/properties/codes/items` | `…/codes/items/allOf/0` |

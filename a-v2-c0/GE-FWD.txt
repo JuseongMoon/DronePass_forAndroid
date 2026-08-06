@@ -1,0 +1,6 @@
+## 7. 전방 불변식 (규범) [GE-FWD]
+
+> **client-facing 오류 envelope가 `ATTESTATION_OR_CONFIG_FAILED`를 반환할 수 있으면, 그 envelope는 `configurationReason`을 §2 규칙대로 포함해야 한다.** 새 endpoint·새 envelope 정의 시 함께 적용되며, 계약이 그 envelope를 정의하기 전에는 편입 대상이 존재하지 않는다. 판정 기준·산출 규격은 §4, 폐쇄 목록·count·digest는 §3, 술어는 §5다.
+>
+> **⚠️ 자동 이동 금지 — fail-closed(rev12 M4 정정)**: rev4는 P3 채택 시 `exampleConflictError`에 불변식이 *"자동 적용"* 된다고 적었으나, 그러면 **예외 tuple 변경이 게이트를 조용히 통과**한다. 정정: **예외 목록·count const·labeled digest 중 하나라도 불일치하면 게이트는 즉시 fail-closed로 거부**한다. site의 TARGET↔EXCEPTION 이동은 자동으로 일어나지 않으며, **4자 재심사에서** ⑴ 그 site의 disposition ⑵ count const 4종 ⑶ labeled digest를 **재결정**한 뒤에만 통과한다. P3 채택은 이 재심사의 **입력**이지 면제 사유가 아니다.
+> **재시도 식별자 일반 규범**: 식별자는 **표면이 정의**한다. taxonomy `clientAction`의 식별자 문구는 그 식별자를 갖는 표면에 적용되며, 없는 표면(예: `operationId` 없는 `GetEntityBaseline`)은 자기 계약을 따른다 — rev3.21 `B6-RETRY`.

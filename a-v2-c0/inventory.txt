@@ -1,0 +1,40 @@
+| `U01` | R01 | `(머리말)` | `> **⚠️ iOS rev17의 ②③ 폐쇄 판정 정정 요청**: rev1…` | `a3950b4d34d8d94af907e7c535b8dba49c5e13891e43f6985b0ba46bab1773c5` | 615 | `MOVE_TO_B` |
+| `U02` | R02 | `GE-PROV` | `> **rev24 차단 5건(iOS rev37 / Android rev3…` | `b4284a0d32452a99e7b8cd7fa853e7503ea7113dee6e6a4c4852e9984d4a6831` | 84 | `MOVE_TO_B` |
+| `U03` | R03 | `GE-PROV` | `> **①** `GE-LABEL` clause text SHA — 기재 …` | `b83cff479c69e18e69ddf1176619c43069734029c2b2fff81e229e2999e929a8` | 633 | `MOVE_TO_B` |
+| `U04` | R04 | `GE-PROV` | `> **⑤** `mkdtemp(prefix='lblref_')` 에 `r…` | `41b1929fc15e4cdacda6b37724c8cd75c4b56550de3c4465f2cd020be9c93ad8` | 288 | `MOVE_TO_B` |
+| `U05` | R05 | `GE-PROV` | `> **rev23 잔여 2건(rev35 · 본 담당 재현)**: ⑴ `p…` | `eb6065dd6d7f7883978be12e102a7ec21029030c8f446bc4e34d1b900de9c9a6` | 779 | `MOVE_TO_B` |
+| `U06` | R06 | `GE-PROV` | `> **rev22 잔여(rev34 · 본 담당 재현)**: `--bogu…` | `33b380d9e09d119fa16ac8e6302fc791324dbe1ab47b89de4ce93c19089ea1f6` | 302 | `MOVE_TO_B` |
+| `U07` | R07 | `GE-PROV` | `> **규율 ⑼-a 보강(rev34 · iOS 절차 슬립 보고 접수)**…` | `ab8fba56814aa30d55df9a65c9bfe02a56672ad6a99101fbe1075a7057e6fefa` | 318 | `MOVE_TO_B` |
+| `U08` | R08 | `GE-PROV` | `> **rev21 차단(rev33 · 본 담당 재현)**: ⑴ 공식 명령…` | `b7866ed84e0b4038ff2c21d9d2c1700ff100e5b18e5758c36ebaae47512e8be9` | 796 | `MOVE_TO_B` |
+| `U09` | R09 | `GE-PROV` | `> **rev19 차단 사유(rev31 · 본 담당 재현)**: ① §0…` | `3d9cccc2d748578303df7a9119b55a3bba4655646ea534c54e36ca745e4f5059` | 720 | `MOVE_TO_B` |
+| `U10` | R10 | `GE-PROV` | `> **rev18 차단 사유(rev29 · 본 담당 재현 — 3종 전부 …` | `87e3f71cc4441d1abf6103c00fbb43b0380b109d7cdf789444d1173e13a7ad5d` | 612 | `MOVE_TO_B` |
+| `U11` | R11 | `GE-PROV` | `> **rev17 차단 사유(rev27 · 본 담당 재현)**: rev1…` | `acd577df3dc2d662d2ad10a1ff5784592daa4b81a7eb1e001ef5c23da6aec68c` | 690 | `MOVE_TO_B` |
+| `U12` | R12 | `GE-PROV` | `> **rev16 차단 2건(rev26 · 본 담당 재현)**: ⑴ `B…` | `15f511558fd96ebd872bab66f1c62e474f5e3fb2475af4e8fe73c7fadfedf1f1` | 635 | `MOVE_TO_B` |
+| `U13` | R13 | `GE-PROV` | `> **rev15 차단 사유(rev25 · 본 담당 재현)**: §2 규…` | `19872cda627b5cf1883f2c452c6672c26f15773dab972311817aade38718948c` | 550 | `MOVE_TO_B` |
+| `U14` | R14 | `GE-SPLIT` | `- **C3 — 규범부의 자기 검증 유지**: 라벨↔SHA(⑻)·수치(⑻…` | `dbeffde0e5fb3f899fc469ca4426a8a91ce0c91fac84d4f4e90c5fc98c062856` | 372 | `REWRITE_AS_NORM` |
+| `U15` | R15 | `GE-PROVLIST` | `> **⚠️ rev11 문면 정정(rev20 신규)**: rev11은 *…` | `69387b41247447acad179e320d5668a00dc29a8957aac20e1f96dc40ac4c07dd` | 725 | `MOVE_TO_B` |
+| `U16` | C01 | `GE-RULE` | `- **`retryDisposition` 고정값 결합은 wire schema가 …` | `9ad11740b8c17e9bd72d7db8d3303c56077d9542dfbfea359578be3554bb9c1f` | 172 | `REWRITE_AS_NORM` |
+| `U17` | C02 | `GE-LIST` | `> **rev3 §5의 "주석·분류 라벨은 포함하지 않는다" 문면을 폐기하고 위…` | `05418b6830010833245e02080afb4840ea582f0c05179ed08a59d51630593244` | 630 | `REWRITE_AS_NORM` |
+| `U18` | C03 | `GE-LIST` | `목록·count·두 digest는 **§4 규격 교체에도 불변**이다(rev11…` | `4950908f39b8721c5068ea12e1eeb64d072d397f89dc9d234f7cc92c931a0c86` | 136 | `REWRITE_AS_NORM` |
+| `U19` | C04 | `GE-LIST` | `**선언 노드 5종**(corpus revision이 필드·규칙을 넣을 위치 —…` | `58a5234d51d1a13e22a736e5e0632bf2ac17614b36a283bb9d3851cb11ff59e2` | 85 | `REWRITE_AS_NORM` |
+| `U20` | C05 | `GE-SCAN` | `> **R1-b-2 unsat 붕괴 금지(rev15 H2)** — `$ref` …` | `d4193f0572dc32649c2d3008205937d5533a76c42dfb7b0ee475fbb96de17f05` | 517 | `REWRITE_AS_NORM` |
+| `U21` | C06 | `GE-SCAN` | `> **산출 불변 확인(실측)**: 승인 schema의 `$ref` 노드는 **…` | `6c5a045c1b6496b2ab91588eb7d4b6f95837992005d039829951625018d5f7f9` | 421 | `MOVE_TO_B` |
+| `U22` | C07 | `GE-SCAN` | `> **guard를 버리면 안 되는 이유(실측)**: `code` 판별자는 오직…` | `d1bf2af4baca33f4bdbbba0840a4cc405b9ce5bf662a7d3fbb4ce1d0d803d269` | 557 | `REWRITE_AS_NORM` |
+| `U23` | R16·C08 | `GE-GAP` | `- **raw 30(qualifier 없는 원시 계수)은 pin하지 않는…` | `5e07b152a41d4b72daaf16a2fb4a13c15ca0947677295e60eb90dcee93c65b74` | 180 | `REWRITE_AS_NORM` |
+| `U24` | C09 | `GE-REF` | `### 4.3 참조 구현과 실행 결과 [GE-REF]…` | `95669523ea047efac58ed87da71cfe726bd6d3b6398e748f68975f27a520e405` | 47 | `REWRITE_AS_NORM` |
+| `U25` | C10 | `GE-REF` | `**라벨 교환 실증**(rev4 문면 정정 — rev12 §5-5): rev4는…` | `770b12d3b3d17322a507c4ad27d976ce35d8790b9c1e0a07b0c42c7fbd532563` | 354 | `MOVE_TO_B` |
+| `U26` | C11 | `GE-REF` | `정본 schema에 `--draft07`(형제 무시)을 적용해도 산출은 `TOT…` | `41e2ebab2cc2ae6729fe5ae442314040e75702002d12a01884c674c8a5fe859f` | 281 | `MOVE_TO_B` |
+| `U27` | C12 | `GE-MECH` | `> **[M2 정정]** rev4의 술어 `"configurationReason…` | `83a6c081cfebd90de4ab698896ea3a34c7f7a0a84ae5eecbefeb4c3cc303f6bc` | 508 | `REWRITE_AS_NORM` |
+| `U28` | R17·C13 | `GE-MECH` | `- **satisfiability 범위(rev16 G3-7.5 정정)**…` | `74241b1e22bed771a77520d8dbeae6c5c208f6e11f5a3f2e8ff4f04e771d0520` | 420 | `REWRITE_AS_NORM` |
+| `U29` | R18·C14 | `GE-MECH` | `- **ERROR 대안 수는 상수로 pin하지 않는다**: 조건부 규칙을…` | `f34d51ccb0e6b4a2c2347c211c81c107ba26c8b40a354fca736018420da44e18` | 218 | `REWRITE_AS_NORM` |
+| `U30` | C15 | `GE-MECH` | `- 실측 사례 — `GoldenFlowFile` 2 site는 `effectiv…` | `59a5e5dec5e41aef24540fe591c4507089a9ab88e3d5947bfe4f454e0e9cf9a6` | 350 | `REWRITE_AS_NORM` |
+| `U31` | C16 | `GE-MECH` | `- **guard 대 props**: guard는 **props에 기여하지 않는…` | `1a8fb36c583cec7eb84ec18a5c557fb9aa3f01992c8f569a95e729b0da6cb94a` | 285 | `REWRITE_AS_NORM` |
+| `U32` | R19·C17 | `GE-MECH` | `- **seeded 음성 7종**: ⓐ TARGET envelope에 `…` | `622c032c5670326831b55e17d75b4c1a44045c6dd53d6ec8a32c2a0b2c981830` | 670 | `KEEP_EXPECTED_VECTOR` |
+| `U33` | C18 | `GE-MECH` | `- **라벨 교환**은 방법 A digest가 잡는다(별도 seeded 불요 —…` | `15d6c3570f39465f8ee17fc54dcb53c5c79eb4f60d84dd0aa7efddaafcc2447b` | 93 | `REWRITE_AS_NORM` |
+| `U34` | C19 | `GE-MUT` | `> **`requestHash` ⇔ canonical payload**: `re…` | `2177b6d6b5737290853e96a0857f30f65124e61a03bb11cfd7c2bb1cabad23f7` | 202 | `REWRITE_AS_NORM` |
+| `U35` | 4자 심사 | `GE-REF` | `iOS 제시값 `dde9c20e…`와 **바이트 일치**. 어느 연산에서…` | `9386d0e00fa3dbd7efff7e346064a8a9e3adddf67fcc1d3cfd64406fe7aa682f` | 201 | `REWRITE_AS_NORM` |
+| `U36` | 4자 심사 | `GE-REF` | `ⓕ-2도 함께 점검했다 — `oneOf` 분산 vector에서 규격 준수…` | `877409a182cd4a337cda65288dc9c12d0ee5d94b64951b3c2b5697caae8120a4` | 151 | `REWRITE_AS_NORM` |
+| `U37` | 4자 심사 | `GE-REF` | `**vector builder(rev16 §6-4)**: ⓕ 계열은 서술…` | `fe4cec821bd5738086ac775262f3bf58a0ff56bd24a3eaa96c2db46d345e8078` | 316 | `REWRITE_AS_NORM` |
+| `U38` | 4자 심사 | `GE-MECH` | `- **⚠️ rev7 §5의 단조성 주장 철회(rev15 H4)**: r…` | `b9c37ce2a6f3750b6752fd1e091ba6fde37a053201d5c8739938042ebf781930` | 663 | `REWRITE_AS_NORM` |
+| `U39` | 4자 심사 | `GE-MECH` | `- **[G1] 값은 이름이 아니라 공역으로 검사한다**: rev8의 ⑵…` | `544187c28fe4133ea50f97666e350510a65abb3a5b720e84c195f6e0d2603075` | 653 | `REWRITE_AS_NORM` |
+| `U40` | 4자 심사 | `GE-MECH` | `- **[G2] fingerprint 는 정규화 domain 전체를 bi…` | `e1a4393299f7d44d86fe8a3c5bb9859589798e8e6002e6e4e4a4ab7ea1c4cafe` | 524 | `REWRITE_AS_NORM` |

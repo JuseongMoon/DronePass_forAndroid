@@ -1,0 +1,24 @@
+## 4. 규범 축 = 합성 정의 · **branch-sensitive scanner 규격** [GE-SCAN]
+
+> **envelope site 판정(규범)**: 스키마 노드 `N`의 합성 closure를 **대안 집합**(각 대안 = property 이름 집합)으로 계산하고, **어느 한 대안이** `{code, retryDisposition}`을 **동시에 포함**하면 `N`을 후보로 한다. 후보 중 다른 후보를 **진 prefix로 갖는 것을 제거**해 **prefix-minimal(최외곽)** 만 site로 채택한다.
+>
+> **결합 규칙 5종(규범)**
+> - **R1 `$ref`** — canonical pointer로 **해소**한다. **ref identity = (정규화 문서 URI, percent-decode·`~0`/`~1` decode를 마친 JSON Pointer)**. identity가 **active-ref stack**에 있으면 그 edge는 **recursive edge로 명시 정지**하고(해당 edge 기여 = ∅) **정지 횟수를 산출물에 보고**한다. 전역 visited 집합은 쓰지 않는다 — 공유 `$def`가 다른 분기에서 skip되어 **under-detection**이 발생한다.
+>   **R1-b-3 UNSAT 결과형(rev16 G3)** — 충족가능성은 **명시적 결과형 `SAT(domains)` / `UNSAT`** 로 다룬다. **UNSAT를 `{}`(무제약 domain)이나 빈 대안으로 암묵 변환하지 않는다** — 초기 property domain, 병합, guard 결합, guard 부정 **전 경로**에서 그렇다. 공역이 빈 지점은 `emptyDomain` 카운터로 보고한다.
+>   **R4-b `if` 가 UNSAT 인 경우(rev16 G3-7.1)** — `if` 조건 자체가 충족 불가면 그 조건은 **항상 거짓**이다. 따라서 **`then` 분기는 폐기**하고 **`else` 분기를 guard 없이 무조건 적용**한다(`else`가 없으면 무제약 대안 1개). guard 모순을 '무제약'으로 바꿔 **`then`을 적용해 버리는 것은 오류**다.
+>   **R4-c guard 부정은 정확 분할(rev16 G3-7.4)** — `¬(⋀ₖ(x∈Aₖ ∧ x∉Eₖ)) = ⋁ₖ[(x∉Aₖ) ∨ (x∈Eₖ)]` 로 **분리 대안들**을 만든다. 부정을 '표현 불가'로 두고 무제약으로 떨어뜨리지 않는다 — 이 규칙으로 `allowed`와 `excluded`가 동시에 있는 domain의 complement도 정확히 표현된다.
+>   **R1-b-2 unsat 붕괴 금지(rev15 H2)** — `$ref` 대상과 형제(또는 임의의 conjunctive 결합)의 병합 결과가 **전부 unsatisfiable 이면 대안 집합은 빈 집합 `[]`** 이다. 이를 **무제약 빈 대안으로 대체하지 않는다** — 모순인 부분식을 '제약 없음'으로 바꾸면 상위 conjunction 이 **약해져 거부가 통과로 뒤집힌다**. 붕괴 발생 횟수는 **`unsatCollapse` 카운터로 `recursiveEdgeStops` 와 동형으로 보고**한다.
+>   **R1-b 형제 키워드 conjunctive 병합(rev13 K2)** — JSON Schema **Draft 2020-12에서 `$ref`는 형제 키워드를 무효화하지 않는다**(Draft-07의 "형제 무시" 규칙은 폐지됐다). 따라서 한 노드가 `$ref`와 다른 키워드를 함께 가지면 **해소된 대상의 대안 집합과 형제 키워드가 만든 대안 집합을 R2와 동일한 conjunctive(곱집합) 규칙으로 병합**한다. 형제 병합은 **같은 노드 안의 결합이므로 depth를 증가시키지 않는다**(`$ref` 해소 자체는 +1). 형제 키워드가 `properties`로 `code`·`retryDisposition` 중 하나만 선언하고 `$ref` 대상이 나머지를 선언하는 은닉 패턴이 이 규칙으로 닫힌다.
+> - **R2 `allOf`** — conjunctive: 부모 대안 집합과 각 멤버 대안 집합의 **곱집합 합집합**(`{a ∪ b}`)으로 결합한다.
+> - **R3 `anyOf`·`oneOf`** — disjunctive: **형제 대안 간 교차 union 금지**. 각 branch를 **별개 대안**으로 유지한 뒤 부모와 결합한다.
+> - **R4 `if`/`then`/`else`(rev14 J2 정정)** — `then`과 `else`는 **서로 다른 대안**이다. `if`는 **property 기여는 하지 않되 그 조건을 `guard`로 대안에 기록**한다: `then` 대안에 **양성 guard**, `else` 대안에 **부정 guard**. 부정은 `if`가 **단일 원자 조건으로 완전 포착될 때만** 기록한다(다중 원자 `if`의 부정은 선언이므로 guard 미기록 → 그 대안은 판별 불가로 남아 §5 ⑸가 처리한다). **`then` 또는 `else`가 없으면 "그 조건에서 무제약"이 하나의 대안**이다(JSON Schema `if/then/else` 의미). guard는 **원자 형태가 아니라 property별 공역(domain)** 으로 환원해 기록한다 — `const`/`enum`은 **허용 집합**, `not.const`/`not.enum`은 **제외 집합**이며, 병합은 허용 집합의 교집합과 제외 집합의 합집합이다(§5 `effectiveCodeDomain`). 어떤 property의 공역이 **비면 그 대안은 unsatisfiable**이다.
+>   **guard 를 버리면 안 되는 이유**: `code` 판별자는 오직 `if` 안에만 있으므로, guard 를 기록하지 않으면 `then`/`else` 대안은 **방향(required/forbidden)만 남고 어느 code 조건인지를 잃는다**. guard 를 버리는 구현에서는 TARGET site 의 ERROR 대안에 `consts.code` 가 남지 않아 §5 ⑶⑷ 가 **공허하게 참**이 된다. 같은 guard 를 delta 값 비교(P4c)는 검사하는데 술어는 버리는 **비대칭**이 결함의 실체였다.
+> - **R5 `not`** — closure에 **기여하지 않는다**. 부정 문맥의 property 선언은 필드 선언이 아니므로 envelope 판정에 넣으면 의미가 뒤집힌 노드를 site로 오판한다. (rev3 §4가 `not`을 합성 키워드에 포함한 문면을 **교체**한다.)
+>
+> **instance-level 정지**: `properties`·`items`·`additionalProperties`·`patternProperties`·`prefixItems`·`propertyNames`·`contains`·`$defs`·`definitions`·`dependentSchemas`·`unevaluated*`에서 closure는 정지하며, 그 아래 노드는 **각자 독립 scan root**로 다시 평가된다.
+>
+> **depth 측정 단위(규범)**: depth는 **대안 계산 재귀 1회 = +1**이다 — 합성 keyword(`allOf`·`anyOf`·`oneOf`·`then`·`else`) 하강 1단계와 `$ref` 해소 1회가 각각 +1이며, instance-level 키워드에서는 closure가 정지하므로 depth가 증가하지 않고 그 하위 노드는 **depth 0의 새 scan root**로 다시 시작한다.
+>
+> **산출 규격**: ⑴ **깊이 상한 64**, 초과 시 **fail-closed**(예외로 중단 — 조용한 skip 금지) ⑵ pointer는 RFC 6901 형식, **lexicographic 정렬** ⑶ 결과를 §3 폐쇄 목록·count const 4종·**방법 A digest**와 대조 ⑷ `recursiveEdgeStops`를 함께 보고.
+>
+> **보조 축(규범)**: `properties`에 `code`·`retryDisposition`을 **함께 직접 선언하고 `"type":"object"`를 갖는** 노드 수 = **16**, `type` 없는 **bare 제약 조각** 수 = **`BARE_FRAGMENTS = 14`**(전부 `TaxonomyFile/properties/codes/items/allOf/1/oneOf/0..13`). 보조 축은 규범 축이 놓치는 **fragment 승격**을 잡는다.

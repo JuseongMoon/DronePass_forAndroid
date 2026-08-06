@@ -1,0 +1,2 @@
+### 1.1 예외 — site 축 11건 [GE-EXC]
+`error_taxonomy.json → codes[]`(code 레지스트리, 1) · `p6p11_decision.json → expected.wire`(§5 provider-status 매핑표, **9**) · `operation_wire.json → input.exampleConflictError`(**`OPW-016`/`status: PROPOSAL`/`proposalId: P3`/`kind: ackSchema` — OPEN 제안 P3의 CONFLICT 전용 스키마 예시**, 1). **P3가 채택되어도 자동 이동은 없다** — §7의 **fail-closed 재심사 경로**를 따른다(rev12 M4). 예외 추가·해제는 4자 재승인 대상이다.
