@@ -85,6 +85,7 @@ import com.ScienceFiction.DronePassAndroid.domain.model.Coordinate
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.PaletteColor
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
+import com.ScienceFiction.DronePassAndroid.domain.model.newCanonicalFirestoreUuid
 
 import java.util.Calendar
 import java.util.Date
@@ -336,7 +337,7 @@ fun ShapeEditScreen(
         val resultShape = buildShapeEditSavedShape(
             originalShape = shape,
             isDuplicateMode = isDuplicateMode,
-            generatedId = java.util.UUID.randomUUID().toString(),
+            generatedId = newCanonicalFirestoreUuid(),
             title = title,
             defaultTitle = defaultTitle,
             coordinate = resultCoordinate,

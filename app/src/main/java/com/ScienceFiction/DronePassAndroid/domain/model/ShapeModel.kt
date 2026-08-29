@@ -1,9 +1,7 @@
 package com.ScienceFiction.DronePassAndroid.domain.model
 
-import java.util.UUID
-
 data class ShapeModel(
-    val id: String = UUID.randomUUID().toString(),
+    val id: String = newCanonicalFirestoreUuid(),
     val title: String = "",
     val shapeType: ShapeType = ShapeType.CIRCLE,
     val baseCoordinate: Coordinate = Coordinate(37.5665, 126.9780),
