@@ -9,65 +9,80 @@ import com.ScienceFiction.DronePassAndroid.domain.model.isValidForFirebasePersis
 import com.ScienceFiction.DronePassAndroid.domain.model.isValidForFirebaseRead
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.GeoPoint
+import com.squareup.moshi.JsonReader
+import okio.Buffer
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.File
 import java.util.Date
 
 class CrossPlatformFirestoreContractTest {
 
     @Test
-    fun `iOS circle shape fixture parses on Android`() {
-        val shape = shapeFromFirestoreDocument(
-            documentId = SHAPE_ID,
-            data = iosCircleShapeDocument(),
+    fun `all seven shared iOS shape fixture files parse on Android`() {
+        val expectedTypes = mapOf(
+            "shape-circle.json" to ShapeType.CIRCLE,
+            "shape-rectangle.json" to ShapeType.RECTANGLE,
+            "shape-polygon.json" to ShapeType.POLYGON,
+            "shape-polyline.json" to ShapeType.POLYLINE,
+            "shape-soft-deleted.json" to ShapeType.CIRCLE,
+            "shape-android-active.json" to ShapeType.CIRCLE,
+            "shape-legacy.json" to ShapeType.CIRCLE,
         )
 
-        requireNotNull(shape)
-        assertEquals(SHAPE_ID, shape.id)
-        assertEquals("iOS Circle", shape.title)
-        assertEquals(ShapeType.CIRCLE, shape.shapeType)
-        assertEquals(Coordinate(37.5665, 126.978), shape.baseCoordinate)
-        assertEquals(120.0, shape.radius ?: 0.0, 0.0)
-        assertEquals("#007AFF", shape.color)
-        assertEquals(1_700_000_000_000L, shape.flightStartDate)
-        assertEquals(1_700_000_600_000L, shape.flightEndDate)
-        assertEquals(DRONE_ID, shape.droneId)
+        assertEquals(SHARED_SHAPE_FIXTURE_FILES.toSet(), expectedTypes.keys)
+        expectedTypes.forEach { (fileName, expectedType) ->
+            val fixture = loadSharedShapeFixture(fileName)
+            val shape = shapeFromFirestoreDocument(
+                documentId = fixture.documentId,
+                data = fixture.fields,
+            )
+
+            requireNotNull(shape) { "Shared fixture did not parse: $fileName" }
+            assertEquals(fixture.documentId, shape.id)
+            assertEquals(expectedType, shape.shapeType)
+        }
     }
 
     @Test
-    fun `legacy uppercase shapeType fixtures still parse on Android`() {
-        val fixtures = listOf(
-            Triple(
-                SHAPE_ID,
-                iosCircleShapeDocument(shapeType = "CIRCLE"),
-                ShapeType.CIRCLE,
-            ),
-            Triple(
-                RECTANGLE_SHAPE_ID,
-                iosRectangleShapeDocument() + ("shapeType" to "RECTANGLE"),
-                ShapeType.RECTANGLE,
-            ),
-            Triple(
-                POLYGON_SHAPE_ID,
-                iosPolygonShapeDocument() + ("shapeType" to "POLYGON"),
-                ShapeType.POLYGON,
-            ),
-            Triple(
-                POLYLINE_SHAPE_ID,
-                iosPolylineShapeDocument() + ("shapeType" to "POLYLINE"),
-                ShapeType.POLYLINE,
-            ),
-        )
+    fun `shared circle shape fixture preserves canonical fields on Android`() {
+        val shape = parsedSharedShapeFixture("shape-circle.json")
 
-        fixtures.forEach { (documentId, data, expectedType) ->
-            val shape = shapeFromFirestoreDocument(documentId = documentId, data = data)
+        assertEquals("1A2B3C4D-5E6F-4A7B-8C9D-0E1F2A3B4C5D", shape.id)
+        assertEquals("한강 드론 비행구역", shape.title)
+        assertEquals(ShapeType.CIRCLE, shape.shapeType)
+        assertEquals(Coordinate(37.541234, 126.986123), shape.baseCoordinate)
+        assertEquals(150.5, shape.radius ?: 0.0, 0.0)
+        assertEquals(120.5, shape.height ?: 0.0, 0.0)
+        assertEquals("#007AFF", shape.color)
+        assertEquals(1_782_900_000_000L, shape.flightStartDate)
+        assertEquals(1_785_456_000_000L, shape.flightEndDate)
+        assertEquals(1_782_907_200_123L, shape.updatedAt)
+        assertEquals("DRONE-001", shape.droneId)
+    }
 
-            requireNotNull(shape)
-            assertEquals(expectedType, shape.shapeType)
-        }
+    @Test
+    fun `shared legacy iOS fixture uses case insensitive type and date fallbacks`() {
+        val fixture = loadSharedShapeFixture("shape-legacy.json")
+
+        assertFalse(fixture.fields.containsKey("flightStartDate"))
+        assertFalse(fixture.fields.containsKey("flightEndDate"))
+        assertFalse(fixture.fields.containsKey("createdAt"))
+        assertFalse(fixture.fields.containsKey("updatedAt"))
+        assertFalse(fixture.fields.containsKey("memo"))
+        assertFalse(fixture.fields.containsKey("address"))
+
+        val shape = parsedSharedShapeFixture("shape-legacy.json")
+        assertEquals(ShapeType.CIRCLE, shape.shapeType)
+        assertEquals(1_750_000_000_000L, shape.flightStartDate)
+        assertEquals(1_755_000_000_000L, shape.flightEndDate)
+        assertEquals(shape.flightStartDate, shape.createdAt)
+        assertEquals(shape.createdAt, shape.updatedAt)
+        assertNull(shape.memo)
+        assertNull(shape.address)
     }
 
     @Test
@@ -81,49 +96,36 @@ class CrossPlatformFirestoreContractTest {
     }
 
     @Test
-    fun `iOS non circle shape fixtures parse on Android`() {
-        val rectangle = shapeFromFirestoreDocument(
-            documentId = RECTANGLE_SHAPE_ID,
-            data = iosRectangleShapeDocument(),
-        )
-        val polygon = shapeFromFirestoreDocument(
-            documentId = POLYGON_SHAPE_ID,
-            data = iosPolygonShapeDocument(),
-        )
-        val polyline = shapeFromFirestoreDocument(
-            documentId = POLYLINE_SHAPE_ID,
-            data = iosPolylineShapeDocument(),
-        )
-
-        val rectangleShape = requireNotNull(rectangle)
+    fun `shared non circle shape fixtures preserve canonical geometry on Android`() {
+        val rectangleShape = parsedSharedShapeFixture("shape-rectangle.json")
         assertEquals(ShapeType.RECTANGLE, rectangleShape.shapeType)
-        assertEquals(Coordinate(37.5665, 126.978), rectangleShape.baseCoordinate)
-        assertEquals(Coordinate(37.5675, 126.979), rectangleShape.secondCoordinate)
-        assertEquals("#FF9500", rectangleShape.color)
-        assertEquals(1_700_001_000_000L, rectangleShape.flightStartDate)
+        assertEquals(Coordinate(37.615321, 126.715654), rectangleShape.baseCoordinate)
+        assertEquals(Coordinate(37.610111, 126.722222), rectangleShape.secondCoordinate)
+        assertEquals("#FF3B30", rectangleShape.color)
 
-        val polygonShape = requireNotNull(polygon)
+        val polygonShape = parsedSharedShapeFixture("shape-polygon.json")
         assertEquals(ShapeType.POLYGON, polygonShape.shapeType)
         assertEquals(
             listOf(
-                Coordinate(37.5665, 126.978),
-                Coordinate(37.567, 126.979),
-                Coordinate(37.566, 126.98),
+                Coordinate(37.511111, 127.011111),
+                Coordinate(37.512222, 127.013333),
+                Coordinate(37.509999, 127.014444),
             ),
             polygonShape.polygonCoordinates,
         )
-        assertEquals("#AF52DE", polygonShape.color)
+        assertEquals("#34C759", polygonShape.color)
 
-        val polylineShape = requireNotNull(polyline)
+        val polylineShape = parsedSharedShapeFixture("shape-polyline.json")
         assertEquals(ShapeType.POLYLINE, polylineShape.shapeType)
         assertEquals(
             listOf(
-                Coordinate(37.565, 126.977),
-                Coordinate(37.566, 126.978),
+                Coordinate(36.351234, 127.384567),
+                Coordinate(36.353456, 127.386789),
+                Coordinate(36.355678, 127.389012),
             ),
             polylineShape.polylineCoordinates,
         )
-        assertEquals("#34C759", polylineShape.color)
+        assertEquals("#FF9500", polylineShape.color)
     }
 
     @Test
@@ -287,15 +289,9 @@ class CrossPlatformFirestoreContractTest {
     }
 
     @Test
-    fun `iOS tombstone fixtures parse as deleted on Android`() {
-        val deletedAtMillis = 1_700_000_999_000L
-        val shape = shapeFromFirestoreDocument(
-            documentId = SHAPE_ID,
-            data = iosCircleShapeDocument() + mapOf(
-                "deletedAt" to timestamp(deletedAtMillis),
-                "updatedAt" to timestamp(deletedAtMillis),
-            ),
-        )
+    fun `shared iOS tombstone fixture parses as deleted on Android`() {
+        val deletedAtMillis = 1_782_950_400_000L
+        val shape = parsedSharedShapeFixture("shape-soft-deleted.json")
         val sketch = sketchFromFirestoreDocument(
             documentId = SKETCH_ID,
             data = iosSketchDocument() + mapOf(
@@ -311,7 +307,6 @@ class CrossPlatformFirestoreContractTest {
             ),
         )
 
-        requireNotNull(shape)
         assertEquals(deletedAtMillis, shape.deletedAt)
         assertEquals(deletedAtMillis, shape.updatedAt)
         assertTrue(shape.isDeleted)
@@ -331,28 +326,18 @@ class CrossPlatformFirestoreContractTest {
     }
 
     @Test
-    fun `shared Firestore integer numeric fields are not widened to Double on Android read`() {
-        val shape = shapeFromFirestoreDocument(
-            documentId = SHAPE_ID,
-            data = iosCircleShapeDocument() + mapOf(
-                "radius" to 120,
-                "height" to 45L,
-            ),
-        )
-        val sketch = sketchFromFirestoreDocument(
-            documentId = SKETCH_ID,
-            data = iosSketchDocument() + mapOf(
-                "strokeWidth" to 4,
-                "opacity" to 0L,
-            ),
-        )
+    fun `shared Android active fixture accepts integer radius and height without deletedAt`() {
+        val fixture = loadSharedShapeFixture("shape-android-active.json")
 
-        requireNotNull(shape)
-        assertNull(shape.radius)
-        assertNull(shape.height)
-        requireNotNull(sketch)
-        assertEquals(3.0, sketch.strokeWidth, 0.0)
-        assertEquals(1.0, sketch.opacity, 0.0)
+        assertFalse(fixture.fields.containsKey("deletedAt"))
+        assertTrue(fixture.fields["radius"] is Long)
+        assertTrue(fixture.fields["height"] is Long)
+
+        val shape = parsedSharedShapeFixture("shape-android-active.json")
+        assertEquals(200.0, shape.radius ?: 0.0, 0.0)
+        assertEquals(100.0, shape.height ?: 0.0, 0.0)
+        assertNull(shape.deletedAt)
+        assertFalse(shape.isDeleted)
     }
 
     @Test
@@ -531,6 +516,109 @@ class CrossPlatformFirestoreContractTest {
         assertFalse(droneData.containsKey("deletedAt"))
     }
 
+    private fun parsedSharedShapeFixture(fileName: String): ShapeModel {
+        val fixture = loadSharedShapeFixture(fileName)
+        return requireNotNull(
+            shapeFromFirestoreDocument(
+                documentId = fixture.documentId,
+                data = fixture.fields,
+            ),
+        ) { "Shared fixture did not parse: $fileName" }
+    }
+
+    private fun loadSharedShapeFixture(fileName: String): SharedShapeFixture {
+        val fixtureDirectory = File(
+            System.getProperty(SHARED_FIXTURE_DIRECTORY_PROPERTY)
+                ?: DEFAULT_SHARED_FIXTURE_DIRECTORY,
+        )
+        val fixtureFile = fixtureDirectory.resolve(fileName)
+        require(fixtureFile.isFile) {
+            "Missing shared iOS fixture: ${fixtureFile.absolutePath}. " +
+                "Override with -D$SHARED_FIXTURE_DIRECTORY_PROPERTY=<fixture-directory>."
+        }
+
+        val root = JsonReader.of(Buffer().writeUtf8(fixtureFile.readText())).use { reader ->
+            val value = readFixtureJsonValue(reader)
+            require(reader.peek() == JsonReader.Token.END_DOCUMENT) {
+                "Unexpected trailing JSON in ${fixtureFile.absolutePath}"
+            }
+            value
+        } as? Map<*, *> ?: error("Fixture root must be an object: ${fixtureFile.absolutePath}")
+
+        val documentId = root["documentId"] as? String
+            ?: error("Fixture documentId must be a string: ${fixtureFile.absolutePath}")
+        val rawFields = root["fields"] as? Map<*, *>
+            ?: error("Fixture fields must be an object: ${fixtureFile.absolutePath}")
+        val fields = rawFields.entries.associate { (key, value) ->
+            val fieldName = key as? String
+                ?: error("Fixture field name must be a string: ${fixtureFile.absolutePath}")
+            fieldName to decodeFirestoreFixtureValue(value)
+        }
+
+        return SharedShapeFixture(documentId = documentId, fields = fields)
+    }
+
+    private fun readFixtureJsonValue(reader: JsonReader): Any? {
+        return when (reader.peek()) {
+            JsonReader.Token.BEGIN_OBJECT -> {
+                val result = linkedMapOf<String, Any?>()
+                reader.beginObject()
+                while (reader.hasNext()) {
+                    result[reader.nextName()] = readFixtureJsonValue(reader)
+                }
+                reader.endObject()
+                result
+            }
+            JsonReader.Token.BEGIN_ARRAY -> {
+                val result = mutableListOf<Any?>()
+                reader.beginArray()
+                while (reader.hasNext()) {
+                    result += readFixtureJsonValue(reader)
+                }
+                reader.endArray()
+                result
+            }
+            JsonReader.Token.STRING -> reader.nextString()
+            JsonReader.Token.NUMBER -> {
+                val rawNumber = reader.nextString()
+                rawNumber.toLongOrNull() ?: rawNumber.toDouble()
+            }
+            JsonReader.Token.BOOLEAN -> reader.nextBoolean()
+            JsonReader.Token.NULL -> {
+                reader.nextNull<Unit>()
+                null
+            }
+            else -> error("Unexpected JSON token ${reader.peek()} at ${reader.path}")
+        }
+    }
+
+    private fun decodeFirestoreFixtureValue(value: Any?): Any? {
+        return when (value) {
+            is Map<*, *> -> {
+                if (value.keys == TIMESTAMP_FIXTURE_FIELDS) {
+                    val seconds = value["_seconds"] as? Number
+                        ?: error("Timestamp _seconds must be an integer")
+                    val nanoseconds = value["_nanoseconds"] as? Number
+                        ?: error("Timestamp _nanoseconds must be an integer")
+                    Timestamp(seconds.toLong(), nanoseconds.toInt())
+                } else {
+                    value.entries.associate { (key, nestedValue) ->
+                        val fieldName = key as? String
+                            ?: error("Fixture object key must be a string")
+                        fieldName to decodeFirestoreFixtureValue(nestedValue)
+                    }
+                }
+            }
+            is List<*> -> value.map(::decodeFirestoreFixtureValue)
+            else -> value
+        }
+    }
+
+    private data class SharedShapeFixture(
+        val documentId: String,
+        val fields: Map<String, Any?>,
+    )
+
     private fun iosCircleShapeDocument(
         id: String = SHAPE_ID,
         title: String = "iOS Circle",
@@ -705,11 +793,24 @@ class CrossPlatformFirestoreContractTest {
     }
 
     private companion object {
+        const val SHARED_FIXTURE_DIRECTORY_PROPERTY = "dronepass.iosFixtureDirectory"
+        const val DEFAULT_SHARED_FIXTURE_DIRECTORY =
+            "/Users/david/Development/Swift/myProjects/DronePass/team/fixtures"
         const val SHAPE_ID = "00000000-0000-0000-0000-000000000101"
         const val SKETCH_ID = "00000000-0000-0000-0000-000000000102"
         const val DRONE_ID = "00000000-0000-0000-0000-000000000103"
         const val RECTANGLE_SHAPE_ID = "00000000-0000-0000-0000-000000000104"
         const val POLYGON_SHAPE_ID = "00000000-0000-0000-0000-000000000105"
         const val POLYLINE_SHAPE_ID = "00000000-0000-0000-0000-000000000106"
+        val TIMESTAMP_FIXTURE_FIELDS = setOf("_seconds", "_nanoseconds")
+        val SHARED_SHAPE_FIXTURE_FILES = listOf(
+            "shape-circle.json",
+            "shape-rectangle.json",
+            "shape-polygon.json",
+            "shape-polyline.json",
+            "shape-soft-deleted.json",
+            "shape-android-active.json",
+            "shape-legacy.json",
+        )
     }
 }

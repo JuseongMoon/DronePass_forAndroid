@@ -55,6 +55,10 @@ private fun timestampMillis(value: Any?): Long? {
     return (value as? Timestamp)?.toDate()?.time
 }
 
+private fun firestoreShapeOptionalDouble(value: Any?): Double? {
+    return (value as? Number)?.toDouble()
+}
+
 private fun isValidShapeId(id: String): Boolean {
     return runCatching { UUID.fromString(id) }.isSuccess
 }
@@ -146,7 +150,7 @@ internal fun shapeFromFirestoreData(data: Map<String, Any?>): ShapeModel? {
     val deletedAt = timestampMillis(data["deletedAt"])
     val baseCoordinate = firestoreMapToCoordinate(data["baseCoordinate"]) ?: return null
     val radius = if (shapeType == ShapeType.CIRCLE) {
-        firestoreOptionalDouble(data["radius"])
+        firestoreShapeOptionalDouble(data["radius"])
     } else {
         null
     }
@@ -180,7 +184,7 @@ internal fun shapeFromFirestoreData(data: Map<String, Any?>): ShapeModel? {
         secondCoordinate = secondCoordinate,
         polygonCoordinates = polygonCoordinates,
         polylineCoordinates = polylineCoordinates,
-        height = firestoreOptionalDouble(data["height"]),
+        height = firestoreShapeOptionalDouble(data["height"]),
         memo = data["memo"] as? String,
         color = color,
         droneId = data["droneId"] as? String,
