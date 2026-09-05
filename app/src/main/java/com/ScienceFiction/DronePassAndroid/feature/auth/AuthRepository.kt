@@ -9,6 +9,7 @@ import androidx.credentials.exceptions.NoCredentialException
 import com.ScienceFiction.DronePassAndroid.BuildConfig
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.core.data.local.EncryptedPrefsHelper
+import com.ScienceFiction.DronePassAndroid.core.analytics.UserActivityTracker
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.firebase.auth.FirebaseAuth
@@ -195,7 +196,8 @@ internal fun isGoogleWebClientIdConfigured(webClientId: String): Boolean {
 class AuthRepository @Inject constructor(
     private val firebaseAuth: FirebaseAuth,
     private val encryptedPrefsHelper: EncryptedPrefsHelper,
-    private val firestore: FirebaseFirestore
+    private val firestore: FirebaseFirestore,
+    private val userActivityTracker: UserActivityTracker,
 ) {
     companion object {
         private const val TAG = "AuthRepository"
@@ -374,6 +376,7 @@ class AuthRepository @Inject constructor(
                 ensureUserDocumentSafely(user = result.user, googleUserId = result.providerUserId)
             }
         }
+        userActivityTracker.recordIfNeeded()
     }
 
     /**

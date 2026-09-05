@@ -17,6 +17,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.lifecycle.lifecycleScope
 import com.ScienceFiction.DronePassAndroid.core.data.NotificationPreferenceKeys
 import com.ScienceFiction.DronePassAndroid.core.data.storedLaunchNotificationPermissionRequested
+import com.ScienceFiction.DronePassAndroid.core.analytics.UserActivityTracker
 import com.ScienceFiction.DronePassAndroid.feature.settings.localizedAppLanguageContext
 import com.ScienceFiction.DronePassAndroid.feature.settings.storedKeepScreenAwake
 import com.ScienceFiction.DronePassAndroid.service.AppForegroundState
@@ -37,6 +38,7 @@ internal const val LaunchNotificationPermissionRequestCode = 7301
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     @Inject lateinit var dataStore: DataStore<Preferences>
+    @Inject lateinit var userActivityTracker: UserActivityTracker
 
     private val initialFocusShapeId = mutableStateOf<String?>(null)
     private val notificationForPopup = mutableStateOf<ForegroundNotification?>(null)
@@ -83,6 +85,9 @@ class MainActivity : ComponentActivity() {
     override fun onStart() {
         super.onStart()
         AppForegroundState.onActivityStarted()
+        lifecycleScope.launch {
+            userActivityTracker.recordIfNeeded()
+        }
     }
 
     override fun onStop() {
