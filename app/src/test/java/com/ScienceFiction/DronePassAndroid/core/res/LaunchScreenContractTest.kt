@@ -73,8 +73,13 @@ class LaunchScreenContractTest {
             "src/main/res/drawable-nodpi/login_logo.png",
             "app/src/main/res/drawable-nodpi/login_logo.png",
         )
+        // iOS 저장소(https://github.com/JuseongMoon/dronepass-ios)가 로컬에 있을 때만 대조한다.
+        // 다른 위치라면 -Ddronepass.iosProjectDirectory=<경로> 로 지정한다.
+        val iosProjectDirectory = System.getProperty("dronepass.iosProjectDirectory")
+            ?: "../dronepass-ios"
         val iosLaunchLogo = File(
-            "/Users/david/Development/Swift/myProjects/DronePass/DronePass/Assets.xcassets/LaunchLogo.imageset/DronePass_AppIcon_v2.2_BG.png",
+            iosProjectDirectory,
+            "DronePass/Assets.xcassets/LaunchLogo.imageset/DronePass_AppIcon_v2.2_BG.png",
         )
 
         if (iosLaunchLogo.exists()) {

@@ -1,9 +1,0 @@
-## 1. 대상 표면 — 논리 경로 축 2곳 / site 축 5건 [GE-TARGET]
-
-| # | 파일 | 논리 경로 | site(규범 축) |
-|---|---|---|---|
-| 1 | `state_machine.json` | `expected.response.error` | 1 |
-| 2 | `golden_flow.json` | `expected.wireResponse.error` | 2 |
-| — | *(item 6)* `baseline_api.json` | Get·Bind `expected` | 2 |
-
-→ **TARGET = 5 site**(일반 3 + baseline 2). 논리 경로 축의 "표면 2곳"과 site 축의 5는 **같은 대상의 다른 축**이다.

@@ -1,4 +1,0 @@
-### 4.2 두 축이 각각 놓치는 공격 [GE-GAP]
-- **보조 축 단독의 공백**: `code`와 `retryDisposition`이 부모와 `allOf` 자식으로 **나뉘어 선언된 은닉 site**는 어느 단일 노드도 둘을 함께 갖지 않아 **0건으로 통과**한다 → 규범 축이 필요하다.
-- **규범 축 단독의 공백**: prefix-minimal에서 하강을 멈추므로 **fragment가 `type:"object"`를 얻어 envelope로 승격**되는 변경을 감지하지 못한다 → 보조 축(`BARE_FRAGMENTS = 14`)이 필요하다.
-- **raw 30(qualifier 없는 원시 계수)은 pin 하지 않는다** — 승격은 **count const 감소**로, 합성 은닉 신설은 **TOTAL 증가**로 각각 이미 잡히므로 중복이다.

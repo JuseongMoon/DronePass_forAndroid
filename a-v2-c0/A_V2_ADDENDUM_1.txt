@@ -1,1 +1,0 @@
-A-v2 addendum-1 (normative · clause 바이트 무변경 · 4자 승인 대상) — ⑴ forbidden 산출 규칙: subschema 의 not:{required:[k]} 는 그 대안의 forbidden 에 k 를 기여한다(발생원: GE-RULE else 분기 not:{required:["configurationReason"]}). ⑵ GE-SCAN R5 "not 은 closure 에 기여하지 않는다"의 범위는 site closure(대안 열거·envelope site 판정)에 한정되며, GE-MECH ⑷ 의 forbidden 산출을 배제하지 않는다.

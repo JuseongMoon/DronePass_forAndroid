@@ -15,6 +15,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Assume.assumeTrue
 import org.junit.Test
 import java.io.File
 import java.util.Date
@@ -532,10 +533,12 @@ class CrossPlatformFirestoreContractTest {
                 ?: DEFAULT_SHARED_FIXTURE_DIRECTORY,
         )
         val fixtureFile = fixtureDirectory.resolve(fileName)
-        require(fixtureFile.isFile) {
-            "Missing shared iOS fixture: ${fixtureFile.absolutePath}. " +
-                "Override with -D$SHARED_FIXTURE_DIRECTORY_PROPERTY=<fixture-directory>."
-        }
+        assumeTrue(
+            "Shared iOS fixture not available: ${fixtureFile.path}. " +
+                "Check out the iOS repository and run with " +
+                "-D$SHARED_FIXTURE_DIRECTORY_PROPERTY=<fixture-directory> to enable this contract test.",
+            fixtureFile.isFile,
+        )
 
         val root = JsonReader.of(Buffer().writeUtf8(fixtureFile.readText())).use { reader ->
             val value = readFixtureJsonValue(reader)
@@ -794,8 +797,9 @@ class CrossPlatformFirestoreContractTest {
 
     private companion object {
         const val SHARED_FIXTURE_DIRECTORY_PROPERTY = "dronepass.iosFixtureDirectory"
-        const val DEFAULT_SHARED_FIXTURE_DIRECTORY =
-            "/Users/david/Development/Swift/myProjects/DronePass/team/fixtures"
+        // iOS 저장소(https://github.com/JuseongMoon/dronepass-ios)를 형제 디렉터리에 두었을 때의 기본값.
+        // 다른 위치라면 -Ddronepass.iosFixtureDirectory=<경로> 로 지정한다.
+        const val DEFAULT_SHARED_FIXTURE_DIRECTORY = "../dronepass-ios/team/fixtures"
         const val SHAPE_ID = "00000000-0000-0000-0000-000000000101"
         const val SKETCH_ID = "00000000-0000-0000-0000-000000000102"
         const val DRONE_ID = "00000000-0000-0000-0000-000000000103"

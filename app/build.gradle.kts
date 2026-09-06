@@ -246,6 +246,18 @@ android {
             "NewerVersionAvailable",
         )
     }
+    testOptions {
+        unitTests.all {
+            // Cross-platform contract tests read fixtures from the iOS repository checkout.
+            // Point IOS_PROJECT_DIR at it in local.properties to enable them; otherwise the
+            // tests are skipped instead of failing. The path is machine-local, never committed.
+            val iosProjectDir = localProperties.getProperty("IOS_PROJECT_DIR")?.trim()
+            if (!iosProjectDir.isNullOrEmpty()) {
+                it.systemProperty("dronepass.iosProjectDirectory", iosProjectDir)
+                it.systemProperty("dronepass.iosFixtureDirectory", "$iosProjectDir/team/fixtures")
+            }
+        }
+    }
 }
 
 ksp {
@@ -394,13 +406,13 @@ val validateReleaseReadiness by tasks.registering {
 
 val verifyCrossPlatformE2ePrerequisites by tasks.registering {
     group = "verification"
-    description = "Verifies Android-side configuration required before running CROSS_PLATFORM_E2E_RUNBOOK.md."
+    description = "Verifies Android-side configuration required before running docs/agents/CROSS_PLATFORM_E2E_RUNBOOK.md."
 
     doLast {
         crossPlatformE2ePrerequisitesErrorMessage?.let { errorMessage ->
             throw GradleException(errorMessage)
         }
-        logger.lifecycle("Android-side cross-platform E2E prerequisites are configured. Continue with CROSS_PLATFORM_E2E_RUNBOOK.md.")
+        logger.lifecycle("Android-side cross-platform E2E prerequisites are configured. Continue with docs/agents/CROSS_PLATFORM_E2E_RUNBOOK.md.")
     }
 }
 

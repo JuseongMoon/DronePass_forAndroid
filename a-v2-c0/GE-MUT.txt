@@ -1,6 +1,0 @@
-## 6. mutation 재시도 식별자 (규범) [GE-MUT]
-
-> **불변 tuple**: 동일 **outbox row** · **`operationId`** · **`requestHash`** · **`intentHash`** · **canonical payload**. 다섯 중 하나라도 다르면 **재시도가 아니라 새 operation**이다. 同 `operationId` + 異 `requestHash` → **fail-closed**(`INVALID_ARGUMENT`).
-> **`requestHash` ⇔ canonical payload**: `requestHash` = canonical payload 의 SHA-256(corpus `OPW-001` · validator 동일 검사 지점) — 두 항 열거는 **검증 지점 두 곳**을 못박는다.
-> **⚠️ re-root는 재시도가 아니다**: `ACK-001`(*"successor 재-root — binding 반영해 `requestHash` 원자 재계산, `intentHash` 불변"*)은 **다른 `operationId`를 가진 후속 row**의 흐름이므로 적용 대상이 아니다(rev3.21 `B6-REROOT`와 동일 경계).
-> **권위**: mutation 표면 = **canonical §1.13·§1.14 + 본 결정**. rev3.21 `B6-RETRY`의 mutation 행은 **cross-reference**다.
