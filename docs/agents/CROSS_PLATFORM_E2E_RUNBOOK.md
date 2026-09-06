@@ -2,8 +2,8 @@
 
 This runbook closes the real-device shared Firestore gate:
 
-- `MIGRATION_PLAN.md` quality gate: `iOS 생성 -> Android 수신`
-- `MIGRATION_PLAN.md` TC-CROSS scenarios
+- `docs/agents/MIGRATION_PLAN.md` quality gate: `iOS 생성 -> Android 수신`
+- `docs/agents/MIGRATION_PLAN.md` TC-CROSS scenarios
 
 Unit tests such as `CrossPlatformFirestoreContractTest` protect the wire format. This runbook is for the final real account check that proves both apps are connected to the same Firebase project and can sync live user data.
 
@@ -90,7 +90,7 @@ Active Firestore documents from Android or older iOS versions may omit `deletedA
 
 ## 2026-07-10 Real-Device Result
 
-- Devices: iPhone 12 and Android 15 SM-A346N (`RFCW324TZ0Z`).
+- Devices: iPhone 12 and Android 15 SM-A346N (실기기).
 - Shared auth: the same Google account on both devices.
 - iOS -> Android: `DP_CROSS_20260710_1549_iOS_fixed`, radius `120 m`, map highlight and detail values matched.
 - Android -> iOS: `DP_CROSS_20260710_1602_Android_offline`, active after 10 seconds and detail values matched.
@@ -101,7 +101,7 @@ Active Firestore documents from Android or older iOS versions may omit `deletedA
 
 ## Evidence To Record
 
-Add the final evidence to `NEXT_STEPS.md` when the test passes:
+Add the final evidence to `docs/agents/NEXT_STEPS.md` when the test passes:
 
 - Firebase project id and app build versions, without secrets.
 - Test account identifier in redacted form.
@@ -111,4 +111,4 @@ Add the final evidence to `NEXT_STEPS.md` when the test passes:
 - Logcat result confirming no fatal app errors.
 - Screenshots or UIAutomator bounds for saved list, map highlight, and detail sheet if available.
 
-Do not mark the `MIGRATION_PLAN.md` cross-platform checkbox complete until the real shared Firebase iOS -> Android receipt has passed.
+Do not mark the `docs/agents/MIGRATION_PLAN.md` cross-platform checkbox complete until the real shared Firebase iOS -> Android receipt has passed.

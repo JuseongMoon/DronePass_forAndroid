@@ -31,7 +31,7 @@ Saved again on 2026-07-07 KST at the user's request. This is the current resume 
 - If a newer build is intentionally required later, bump to `versionCode = 103` and use release name `3.5.5 (103) internal-2`.
 - Code-work resume note: saved-list row visual tokens, global color picker non-exposure, palette Compose color conversion, drone dropdown menu color fallback, Android NaverMap bottom content padding parity, shared Firestore `shapeType` wire-format compatibility, agent status notes, Room migration safety, foreground remote-change lifecycle parity, settings Korea local feature alert button parity, Korea feature flight-zone UI clearing parity, settings language restart alert parity, settings map-display toggle/action parity, settings notification toggle/action parity, settings toggle subtitle style parity, settings section header style parity, app-info section header style parity, profile sync row parity, profile account/document alert parity, profile sync condition parity, profile info row parity, terms/privacy document screen parity, and MarkdownView rendering parity are committed.
 - Release-work priority: if the user asks to resume the app release process, do not start another code audit first. Continue Play/Firebase/NCP release steps first.
-- Compatibility note: Android writes shape enum values as lowercase `rawValue` and reads legacy uppercase values case-insensitively; `FIRESTORE_CONTRACT.md` contains the incident note. Production Room setup is pinned to `addMigrations(*DronePassDatabase.allMigrations)` with no destructive fallback.
+- Compatibility note: Android writes shape enum values as lowercase `rawValue` and reads legacy uppercase values case-insensitively; `docs/agents/FIRESTORE_CONTRACT.md` contains the incident note. Production Room setup is pinned to `addMigrations(*DronePassDatabase.allMigrations)` with no destructive fallback.
 - Latest settings notification note: Android `SettingsScreen` now has a contract test pinning the iOS `SettingView` notification structure: shape-expiry, sunrise, and sunset notification toggles each keep title + caption-style description + immediate ViewModel save action. The Android-only permission request card remains before those toggles without changing their order.
 - Latest settings map-display note: Android `SettingsScreen` now has a contract test pinning the iOS `SettingView` map-display structure: keep-screen-awake, hide-before-start, and hide-expired each keep title + caption-style description + immediate ViewModel save action, followed by the destructive expired-shape delete row.
 - Latest settings style note: Android `SettingsToggleItem` now has a contract test pinning subtitle text to `MaterialTheme.typography.bodySmall` plus `onSurfaceVariant`, matching iOS `.font(.caption).foregroundColor(.secondary)` descriptions across settings toggles.
@@ -60,7 +60,7 @@ Saved again on 2026-07-06 KST at the user's request. This section supersedes old
 - Next verification step: add internal tester Gmail accounts, open the internal-test opt-in link on a real Android device, install from Google Play, then verify Google/Apple sign-in, Naver map auth, geocoding/reverse-geocoding, Firestore iOS/Android sync, and main UI overlay layout.
 - If a newer build is intentionally required later, bump to `versionCode = 103` and use release name `3.5.5 (103) internal-2`.
 - Code-work resume note: saved-list row visual tokens, global color picker non-exposure, palette Compose color conversion, drone dropdown menu color fallback, Android NaverMap bottom content padding parity, shared Firestore `shapeType` wire-format compatibility, agent status notes, Room migration safety, foreground remote-change lifecycle parity, settings Korea local feature alert button parity, Korea feature flight-zone UI clearing parity, and settings language restart alert parity are committed. If the user asks to resume the app release process, do not start another code audit first. Continue Play/Firebase/NCP release steps first.
-- Completed compatibility note: Android still writes shape enum values as lowercase `rawValue` and reads legacy uppercase values case-insensitively; `FIRESTORE_CONTRACT.md` contains the incident note. Production Room setup is pinned to `addMigrations(*DronePassDatabase.allMigrations)` with no destructive fallback.
+- Completed compatibility note: Android still writes shape enum values as lowercase `rawValue` and reads legacy uppercase values case-insensitively; `docs/agents/FIRESTORE_CONTRACT.md` contains the incident note. Production Room setup is pinned to `addMigrations(*DronePassDatabase.allMigrations)` with no destructive fallback.
 - Latest foreground lifecycle note: Android `MainScreen` now has tests pinning `ON_RESUME -> ensureCloudSyncActiveOnForeground()` and `ON_STOP -> resetForegroundSyncCheckStatus()`, matching iOS `applicationDidBecomeActive`/`applicationWillResignActive`. `AuthViewModel` tests also pin the iOS behavior that a foreground change check is marked complete only after the remote check succeeds.
 - Latest settings note: Android `SettingsScreen` now has a contract test pinning the Korea local feature ON/OFF alert confirm button dismissal to the iOS `common.ok` alert behavior.
 - Latest flight-zone note: Android `MapViewModel` now has a contract test pinning Korea local feature changes to the iOS `HideAllFlightZones` behavior: all visible layers are hidden and the layer selector, selected zone, and zone detail sheet are closed.
@@ -400,9 +400,9 @@ The user switched from code work to saving this handoff while broader Android/iO
     - `app/src/test/java/com/ScienceFiction/DronePassAndroid/feature/shape/ShapeEditContractTest.kt`
     - `app/src/test/java/com/ScienceFiction/DronePassAndroid/feature/shape/SearchAddressSheetTest.kt`
   - iOS Shape Edit references to re-open:
-    - `/Users/david/Development/Swift/myProjects/DronePass/DronePass/Shape/View/ShapeEditView.swift`
-    - `/Users/david/Development/Swift/myProjects/DronePass/DronePass/Shape/View/CoordinateView.swift`
-    - `/Users/david/Development/Swift/myProjects/DronePass/DronePass/Shape/View/CoordinateViewModel.swift`
+    - `<ios-repo>/DronePass/Shape/View/ShapeEditView.swift`
+    - `<ios-repo>/DronePass/Shape/View/CoordinateView.swift`
+    - `<ios-repo>/DronePass/Shape/View/CoordinateViewModel.swift`
   - Recent Android files audited or touched:
     - `app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/map/component/MapFloatingButtons.kt`
     - `app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/map/MapScreenLayers.kt`
@@ -418,14 +418,14 @@ The user switched from code work to saving this handoff while broader Android/iO
     - `app/src/test/java/com/ScienceFiction/DronePassAndroid/feature/sketch/SketchDefaultsTest.kt`
     - `app/src/test/java/com/ScienceFiction/DronePassAndroid/core/res/StringResourceCoverageTest.kt`
   - Recent iOS references opened:
-    - `/Users/david/Development/Swift/myProjects/DronePass/DronePass/View/MainFloatingButtonView.swift`
-    - `/Users/david/Development/Swift/myProjects/DronePass/DronePass/MainView.swift`
-    - `/Users/david/Development/Swift/myProjects/DronePass/DronePass/Manager/SketchManager.swift`
-    - `/Users/david/Development/Swift/myProjects/DronePass/DronePass/Sketch/SketchModel.swift`
-    - `/Users/david/Development/Swift/myProjects/DronePass/DronePass/Sketch/SketchRepository.swift`
-    - `/Users/david/Development/Swift/myProjects/DronePass/DronePass/Sketch/SketchFileStore.swift`
-    - `/Users/david/Development/Swift/myProjects/DronePass/DronePass/Sketch/View/SketchToolbarView.swift`
-    - `/Users/david/Development/Swift/myProjects/DronePass/DronePass/Sketch/View/SketchCanvasView.swift`
+    - `<ios-repo>/DronePass/View/MainFloatingButtonView.swift`
+    - `<ios-repo>/DronePass/MainView.swift`
+    - `<ios-repo>/DronePass/Manager/SketchManager.swift`
+    - `<ios-repo>/DronePass/Sketch/SketchModel.swift`
+    - `<ios-repo>/DronePass/Sketch/SketchRepository.swift`
+    - `<ios-repo>/DronePass/Sketch/SketchFileStore.swift`
+    - `<ios-repo>/DronePass/Sketch/View/SketchToolbarView.swift`
+    - `<ios-repo>/DronePass/Sketch/View/SketchCanvasView.swift`
   - Audit status already established: default sketch color/stroke/opacity, stroke and opacity clamps, 5m point sampling, finish-only-when-two-points, undo/redo edit-session sync, toolbar ordering/dimensions, pen picker/sliders, delete-all dialog strings, touch input, eraser `up`/`cancel`, saved-list sorting, saved-list focus, saved-list header typography, saved-list internal focus to map-focus delivery, legacy `droneId == nil` filtering, shape edit date-only default, Shape Edit coordinate-input/radius-row behavior, Shape DateTimeSelection end-date minimum-date/time behavior, drone optional edit preservation, map highlight radius behavior, settings/default initialization, main `+` new-shape coordinate fallback, long-press new-shape confirm/failure flow, App Info strings, Patch Notes states, Terms/Privacy document rendering, VWorld layer selector/detail/lifecycle behavior, notification/settings/local notification scheduling, profile/account deletion behavior, Shape Detail behavior, drone management behavior, saved-list map-focus behavior, login/auth Apple/Google provider behavior, KP forecast failure-state behavior, Weather no-data placeholder behavior, and KP/Weather info-guide section-title typography are aligned with iOS or pinned by tests.
   - Next code-audit candidate: continue with another user-visible secondary screen or integration path that has not been recently rechecked, or Play-installed real-device verification when a device is available. If the user says to resume the app release process instead, ignore this code-audit thread and follow the Play release steps above.
 

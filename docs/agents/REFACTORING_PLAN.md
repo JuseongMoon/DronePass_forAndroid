@@ -357,7 +357,7 @@
 
 ### 5.4 마이그레이션 계획서와의 정합
 
-`MIGRATION_PLAN.md`의 출시 후 개선 항목(크로스 플랫폼 호환성, 앱 서명, 테스트 작성, LeakCanary)은 본 문서의 다음 항목들과 매핑:
+`docs/agents/MIGRATION_PLAN.md`의 출시 후 개선 항목(크로스 플랫폼 호환성, 앱 서명, 테스트 작성, LeakCanary)은 본 문서의 다음 항목들과 매핑:
 - 크로스 플랫폼 호환성 → Pri 0 PR(동기화 4건) + Phase 2 데이터 레이어 H-항목
 - 앱 서명 → E-C5 (Phase 1)
 - 단위/UI 테스트 작성 → FlightZoneCalculatorTest 신규 작성 + 향후 Phase 별 각 PR에 동반

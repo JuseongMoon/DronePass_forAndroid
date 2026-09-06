@@ -116,6 +116,21 @@ Geocoding/Reverse Geocoding REST API는 `NAVER_MAP_KEY_ID`와
 ⚠️ **주의**: NCP Maps Console에서 Android 앱(`com.ScienceFiction.DronePassAndroid`)으로
 등록하고 현재 설치 APK 서명 인증서의 SHA-1을 등록해야 합니다.
 
+### Firebase (`app/google-services.json`)
+
+`app/google-services.json`은 **커밋합니다.** Firebase Android 클라이언트 설정 파일이며
+`app/build.gradle.kts`가 빌드 시점에 `package_name`과 `oauth_client`(client_type=1) 존재를
+검증하므로, 파일이 없으면 빌드 진단이 실패합니다. 이 파일에는 비밀값이 들어 있지 않습니다.
+
+반면 다음은 **절대 커밋하지 않습니다.**
+
+- Firebase/GCP **서비스 계정 키**(`*-firebase-adminsdk-*.json` 등 private key가 포함된 JSON)
+- 서명 키와 그 비밀번호: `release.jks`, `*.jks`, `*.keystore`, `keystore.properties`
+- `local.properties` (`NAVER_MAP_KEY_ID`, `NAVER_MAP_KEY_SECRET`, `VWORLD_API_KEY`,
+  `WEB_CLIENT_ID` 주입처. 크로스 플랫폼 계약 테스트용 `IOS_PROJECT_DIR`도 여기 둡니다.)
+
+저장소에는 `keystore.properties.example` 같은 `*.example`만 둡니다.
+
 ### Permissions
 앱이 요구하는 권한:
 - `INTERNET` - 지도 타일 다운로드
@@ -142,14 +157,36 @@ Geocoding/Reverse Geocoding REST API는 `NAVER_MAP_KEY_ID`와
 - 네이버 Maps SDK API: [공식 문서](https://navermaps.github.io/android-map-sdk/guide-ko/)
 - 지도 생명주기는 반드시 관리 필요
 
-## Current Resume Notes
+## Cross-Platform Contract
 
-- 앱 출시 과정을 이어갈 때는 먼저 `PLAY_RELEASE_HANDOFF.md`를 확인합니다.
-- 2026-07-06 기준 Play 내부 테스트 `3.5.5 (102) internal-1`은 이미 게시되어 있습니다.
-- 같은 versionCode `102`를 재업로드하지 말고, Play 앱 서명 SHA-1/SHA-256을 Firebase Android 앱과 NCP Maps에 등록한 뒤 내부 테스터 opt-in 링크로 Play 설치 검증을 진행합니다.
-- iOS/Android 공유 Firestore wire-format은 `FIRESTORE_CONTRACT.md`가 기준입니다. 특히 `shapeType`은 쓰기 소문자 raw value, 읽기 대소문자 무시, unknown 값 스킵 계약을 유지해야 합니다.
-- 코드 작업 재개 시 오래된 TODO 목록보다 `NEXT_STEPS.md`의 최신 체크포인트와 현재 테스트를 우선합니다.
+- iOS/Android 공유 Firestore wire-format은 [`docs/agents/FIRESTORE_CONTRACT.md`](docs/agents/FIRESTORE_CONTRACT.md)가 기준입니다.
+  특히 `shapeType`은 쓰기 소문자 raw value, 읽기 대소문자 무시, unknown 값 스킵 계약을 유지해야 합니다.
+- 설계 배경과 진행 중인 계획 문서는 `docs/agents/` 아래에 있습니다.
 
 ## Reference
-- 원본 iOS 프로젝트: `/Users/david/Development/Swift/myProjects/DronePass`
+- 원본 iOS 프로젝트: https://github.com/JuseongMoon/dronepass-ios
 - iOS 아키텍처: MVVM, Manager 패턴, Repository 패턴
+
+## 공개 저장소 규칙
+
+이 저장소는 공개되어 있다. 커밋한 것은 되돌려도 남는다.
+
+- **시크릿 금지** — API 키·토큰·서명 키(`*.jks`/`*.p12`)·서비스 계정 키·실제 사용자 데이터를 커밋하지 않는다.
+  값은 **`local.properties`** 에만 두고 저장소에는 `*.example`만 올린다.
+  소스·plist·manifest·주석·커밋 메시지 어디에도 값을 쓰지 않는다.
+  이미 올렸다면 되돌리는 것으로 끝내지 말고 **키를 폐기·재발급**한다.
+- **내부 정보 금지** — 로컬 절대경로(`/Users/…`), 저장소 밖 파일 참조, 관리자 URL,
+  인프라 식별자(버킷·배포 ID·계정 번호), 개인 기기 식별자(UDID·시리얼),
+  릴리스 진행 상태와 스토어 콘솔 절차는 문서에 남기지 않는다.
+- **내부 문서 위치** — 가격 전략·미출시 기획·운영 절차·서버 계약은 저장소에 두지 않는다.
+  로컬에 두고 gitignore 하되 **그 판단 근거를 이 문서에 적어** 다음 세션이 되돌리지 않게 한다.
+  gitignore된 경로를 코드 주석이나 문서에서 참조하지 않는다 — 방문자에게는 끊어진 링크다.
+- **문서 정확성** — 여기 적힌 버전·경로·명령·구조가 코드와 다르면 코드가 아니라 문서를 고친다.
+  배포 타깃과 언어 버전은 프로젝트 기본값이 아니라 **앱 타깃의 실제 값**을 확인해 적는다.
+- **브랜치** — 에이전트 작업 브랜치는 머지 후 지운다. 원격에 실험 브랜치를 남기지 않는다.
+  **처음 push 하는 순간 그 브랜치의 문서·메모도 함께 공개된다.**
+- **`main`에 force-push 하지 않는다.** 공개된 히스토리를 다시 쓰면 클론·포크한 쪽이 깨진다.
+  (예외: 시크릿 제거 — 이때도 키 폐기가 먼저다.)
+- **push 전 확인** — `git fetch origin && git status -sb`로 원격이 앞섰는지 보고, 앞섰으면 덮지 말고 rebase 한다.
+  `git log origin/main..HEAD --stat`으로 올라갈 파일 전체를 확인해 무관한 파일을 분리하고,
+  `git diff`에서 키·절대경로·기기 식별자가 없는지 본다. **`git add .` 금지.**

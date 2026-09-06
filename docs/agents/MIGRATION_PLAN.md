@@ -2,7 +2,7 @@
 
 > 작성일: 2026-02-24
 > 팀 구성: 팀 리드, 개발 리드, 기획 리드, 디자인 리드, QA 리드
-> 현재 기준: 이 문서는 초기 마이그레이션 계획의 역사 기록입니다. 본문의 "현재 상태", "향후 개선 사항", "MVP 제외" 문구는 작성 당시 기준으로 보존되어 있으며 최신 상태가 아닐 수 있습니다. 최신 Android 구현/출시 준비 상태는 `README.md`와 `NEXT_STEPS.md`를 기준으로 확인하세요.
+> 현재 기준: 이 문서는 초기 마이그레이션 계획의 역사 기록입니다. 본문의 "현재 상태", "향후 개선 사항", "MVP 제외" 문구는 작성 당시 기준으로 보존되어 있으며 최신 상태가 아닐 수 있습니다. 최신 Android 구현/출시 준비 상태는 `README.md`와 `docs/agents/NEXT_STEPS.md`를 기준으로 확인하세요.
 
 ---
 
@@ -172,7 +172,7 @@ com.ScienceFiction.DronePassAndroid/
 
 > 2026-06-16: 원형 도형 지도 오버레이 조건과 하이라이트 반경은 `ShapeOverlayRenderTest`에서 고정했고, 최신 실기기 smoke에서 Naver Map과 저장 도형 UI 렌더링을 재확인했습니다. Shape Firestore 파서는 iOS 날짜 fallback(`flightEndDate`/`expireDate`, `createdAt`, `updatedAt`)까지 추가 회귀 테스트로 고정했고, Room mapper는 `EntityMapperTest`와 Android 15 실기기 `SoftDeleteFilteringIntegrationTest` 7 tests로 shapeType fallback, 선택 필드 왕복, polygon/polyline 좌표 JSON close/reopen 복원, 손상 geometry JSON 방어를 보강했습니다. `:app:shapeParsingCoverageVerification`은 `ShapeFirebaseStoreKt` 기준 instruction 99.66%, branch 99.28%, line 100%로 90% 게이트를 통과합니다.
 >
-> 2026-06-16: Android 15 실기기 `RFCW324TZ0Z`에서 실제 UI 도형 생성→저장→앱 강제 종료→런처 재실행→저장 목록 복원 E2E를 통과했습니다. 기준선 Room DB는 `shapes=0`, `active=0`이었고, `새 도형 추가` FAB → `ShapeEditScreen`에서 제목 `DP_E2E_20260616`, 반경 `100` 입력 후 저장했습니다. 저장 직후 저장 목록 UI에 해당 제목이 표시됐고 DB는 `shapes=1`, `active=1`, `shapeType=circle`, `radius=100.0`이었습니다. `adb shell am force-stop` 후 런처 재실행(PID `10301`) 및 저장 탭 진입 뒤 동일 제목/주소/기간이 저장 목록에 복원됐고, 상세 시트에도 제목/좌표/반경 `100 m`이 표시됐습니다. PID logcat에는 `NaverMapDebug: 네이버 지도 준비 완료`가 있고 `AndroidRuntime`/`FATAL EXCEPTION`은 없었습니다. 검증 뒤 UI 삭제 플로우로 테스트 도형을 soft-delete해 저장 목록은 빈 상태, 활성 도형 수는 0으로 정리했습니다.
+> 2026-06-16: Android 15 실기기(SM-A346N)에서 실제 UI 도형 생성→저장→앱 강제 종료→런처 재실행→저장 목록 복원 E2E를 통과했습니다. 기준선 Room DB는 `shapes=0`, `active=0`이었고, `새 도형 추가` FAB → `ShapeEditScreen`에서 제목 `DP_E2E_20260616`, 반경 `100` 입력 후 저장했습니다. 저장 직후 저장 목록 UI에 해당 제목이 표시됐고 DB는 `shapes=1`, `active=1`, `shapeType=circle`, `radius=100.0`이었습니다. `adb shell am force-stop` 후 런처 재실행(PID `10301`) 및 저장 탭 진입 뒤 동일 제목/주소/기간이 저장 목록에 복원됐고, 상세 시트에도 제목/좌표/반경 `100 m`이 표시됐습니다. PID logcat에는 `NaverMapDebug: 네이버 지도 준비 완료`가 있고 `AndroidRuntime`/`FATAL EXCEPTION`은 없었습니다. 검증 뒤 UI 삭제 플로우로 테스트 도형을 soft-delete해 저장 목록은 빈 상태, 활성 도형 수는 0으로 정리했습니다.
 
 ---
 
@@ -218,10 +218,10 @@ val createdAt = document.getTimestamp("createdAt")
 **품질 게이트**:
 - [x] LWW 충돌 해결 Unit Test 10가지 케이스 통과
 - [x] Soft Delete 필터링 Integration Test 통과
-- [x] 크로스 플랫폼 동기화 테스트 통과 (iOS 생성 → Android 수신, `CROSS_PLATFORM_E2E_RUNBOOK.md` 기준)
+- [x] 크로스 플랫폼 동기화 테스트 통과 (iOS 생성 → Android 수신, `docs/agents/CROSS_PLATFORM_E2E_RUNBOOK.md` 기준)
 - [x] 500개 초과 배치 처리 테스트 통과
 
-> 2026-07-10: iPhone 12(`00008101-000D08581AD0001E`)와 Android 15 SM-A346N(`RFCW324TZ0Z`)에서 동일 Google 계정으로 실기기 검증했다. iOS 생성 도형 `DP_CROSS_20260710_1549_iOS_fixed`는 Android 활성 목록, 지도 선택 외곽선, 상세 반경 `120 m`/기간/메모가 일치했고, Android 생성 도형 `DP_CROSS_20260710_1602_Android_offline`은 iOS 활성 목록에서 10초 이상 유지되며 상세 값이 일치했다. 추가 iOS 도형의 Android 상세에서 활성 연결 드론명 `내 드론`도 확인했다. Android→iOS 및 iOS→Android soft delete를 UI로 실행해 상대 기기 목록 제거와 Room `deletedAt` tombstone을 확인했으며, 최종 테스트 데이터 정리는 Android 빈 목록과 iPhone XCUITest로 재확인했다.
+> 2026-07-10: iPhone 12와 Android 15(SM-A346N) 실기기에서 동일 Google 계정으로 실기기 검증했다. iOS 생성 도형 `DP_CROSS_20260710_1549_iOS_fixed`는 Android 활성 목록, 지도 선택 외곽선, 상세 반경 `120 m`/기간/메모가 일치했고, Android 생성 도형 `DP_CROSS_20260710_1602_Android_offline`은 iOS 활성 목록에서 10초 이상 유지되며 상세 값이 일치했다. 추가 iOS 도형의 Android 상세에서 활성 연결 드론명 `내 드론`도 확인했다. Android→iOS 및 iOS→Android soft delete를 UI로 실행해 상대 기기 목록 제거와 Room `deletedAt` tombstone을 확인했으며, 최종 테스트 데이터 정리는 Android 빈 목록과 iPhone XCUITest로 재확인했다.
 
 ---
 
@@ -662,11 +662,11 @@ iOS와 Android가 **동일 Firestore**를 공유하므로 가장 중요한 QA �
 | TC-CROSS-03 | 동시 수정 LWW → 최신 updatedAt 승리 | 양쪽 동일 결과 |
 | TC-CROSS-04 | 도형 100개 동기화 → Android 5초 이내 | 데이터 무결성 |
 
-실제 계정/공유 Firebase 검증 절차와 증거 기록 기준은 `CROSS_PLATFORM_E2E_RUNBOOK.md`를 따른다.
+실제 계정/공유 Firebase 검증 절차와 증거 기록 기준은 `docs/agents/CROSS_PLATFORM_E2E_RUNBOOK.md`를 따른다.
 
 ### Firestore 레거시 필드 호환
 
-최신 상세 계약은 `FIRESTORE_CONTRACT.md`를 기준으로 한다. 핵심은 쓰기는 표준 iOS wire format으로 엄격하게, 읽기는 Android 초기 레거시 값까지 관대하게 처리하는 것이다.
+최신 상세 계약은 `docs/agents/FIRESTORE_CONTRACT.md`를 기준으로 한다. 핵심은 쓰기는 표준 iOS wire format으로 엄격하게, 읽기는 Android 초기 레거시 값까지 관대하게 처리하는 것이다.
 
 ```
 startedAt → createdAt + flightStartDate (폴백)
