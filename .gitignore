@@ -27,6 +27,10 @@ local.properties
 # macOS
 .DS_Store
 
+# Debug logs
+firebase-debug.log*
+firestore-debug.log*
+
 # Keystore (보안)
 *.jks
 *.keystore
