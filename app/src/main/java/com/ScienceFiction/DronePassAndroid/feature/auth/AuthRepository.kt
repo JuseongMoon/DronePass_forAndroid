@@ -380,23 +380,14 @@ class AuthRepository @Inject constructor(
     }
 
     /**
-     * 계정 삭제
-     * Firebase Auth에서 현재 사용자 계정을 완전히 삭제
+     * 서버측 회원 탈퇴 완료 후 로컬 인증 상태만 정리한다.
      *
-     * @return 성공 시 Unit, 실패 시 에러 메시지를 포함한 Result
+     * 사용자 Firestore 데이터와 Firebase Auth 계정 삭제는 Cloud Function이 원자적인
+     * 순서로 처리한다. 로컬 도형/드론/스케치는 제품 정책에 따라 유지한다.
      */
-    suspend fun deleteAccount(): Result<Unit> {
-        return try {
-            val user = firebaseAuth.currentUser
-                ?: return Result.failure(Exception())
-
-            user.delete().await()
-            encryptedPrefsHelper.clearAll()
-
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
+    fun completeAccountDeletionLocally() {
+        encryptedPrefsHelper.clearAll()
+        firebaseAuth.signOut()
     }
 
     /**

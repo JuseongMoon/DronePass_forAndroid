@@ -89,12 +89,35 @@ class AndroidManifestContractTest {
     }
 
     @Test
-    fun `Firebase Analytics 수집은 Android manifest 에서 비활성화하지 않는다`() {
+    fun `Firebase Analytics 이벤트 수집은 유지하고 광고 식별자 수집은 비활성화한다`() {
         val manifest = parseManifest()
         val application = manifest.findApplication()
         val analyticsCollection = application.findMetaDataOrNull("firebase_analytics_collection_enabled")
 
         assertTrue(analyticsCollection == null || analyticsCollection.getAttribute("android:value") != "false")
+        assertEquals(
+            "false",
+            application.findMetaData("google_analytics_adid_collection_enabled")
+                .getAttribute("android:value"),
+        )
+        assertEquals(
+            "false",
+            application.findMetaData("google_analytics_default_allow_ad_personalization_signals")
+                .getAttribute("android:value"),
+        )
+    }
+
+    @Test
+    fun `광고와 AdServices 식별자 권한은 병합 manifest 에서 제거한다`() {
+        val manifest = parseManifest()
+
+        listOf(
+            "com.google.android.gms.permission.AD_ID",
+            "android.permission.ACCESS_ADSERVICES_AD_ID",
+            "android.permission.ACCESS_ADSERVICES_ATTRIBUTION",
+        ).forEach { permissionName ->
+            assertEquals("remove", manifest.findPermission(permissionName).getAttribute("tools:node"))
+        }
     }
 
     @Test
@@ -129,6 +152,17 @@ class AndroidManifestContractTest {
             }
         }
         return false
+    }
+
+    private fun Document.findPermission(name: String): Element {
+        val permissions = getElementsByTagName("uses-permission")
+        for (index in 0 until permissions.length) {
+            val permission = permissions.item(index) as Element
+            if (permission.getAttribute("android:name") == name) {
+                return permission
+            }
+        }
+        error("Permission not found: $name")
     }
 
     private fun Document.hasQueryPackage(name: String): Boolean {

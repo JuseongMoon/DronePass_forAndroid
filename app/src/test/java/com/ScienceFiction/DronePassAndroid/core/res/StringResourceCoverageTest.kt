@@ -492,22 +492,22 @@ class StringResourceCoverageTest {
     fun `settings account deletion strings do not imply local data deletion`() {
         assertEquals("회원 탈퇴", stringResourceValue("values/strings.xml", "settings_delete_account"))
         assertEquals(
-            "탈퇴 시 계정만 삭제되며, 로컬 데이터는 계속 사용할 수 있습니다.",
+            "계정과 클라우드 데이터가 삭제되며, 로컬 데이터는 기기에 유지됩니다.",
             stringResourceValue("values/strings.xml", "settings_delete_account_subtitle"),
         )
         assertEquals(
-            "계정이 삭제되고\\n클라우드 동기화가 중단됩니다.\\n\\n기기에 저장된 도형과 드론은\\n계속 사용할 수 있습니다.\\n\\n정말 탈퇴하시겠습니까?",
+            "계정이 삭제되고\\n클라우드 동기화가 중단됩니다.\\n\\n기기에 저장된 도형, 드론, 스케치는\\n계속 사용할 수 있습니다.\\n\\n이후 다른 계정에서 클라우드 동기화를 켜면\\n해당 계정으로 동기화될 수 있습니다.\\n\\n정말 탈퇴하시겠습니까?",
             stringResourceValue("values/strings.xml", "settings_delete_account_confirm"),
         )
         assertEquals("탈퇴하기", stringResourceValue("values/strings.xml", "settings_delete_account_button"))
 
         assertEquals("Delete Account", stringResourceValue("values-en/strings.xml", "settings_delete_account"))
         assertEquals(
-            "Only the account will be deleted. Local data will remain available.",
+            "Your account and cloud data will be deleted. Local data will remain on this device.",
             stringResourceValue("values-en/strings.xml", "settings_delete_account_subtitle"),
         )
         assertEquals(
-            "Your account will be deleted and cloud sync will stop.\\n\\nShapes and drones saved on this device will remain available.\\n\\nAre you sure you want to delete your account?",
+            "Your account will be deleted and cloud sync will stop.\\n\\nShapes, drones, and sketches saved on this device will remain available.\\n\\nIf you later enable cloud sync with another account, they may sync to that account.\\n\\nAre you sure you want to delete your account?",
             stringResourceValue("values-en/strings.xml", "settings_delete_account_confirm"),
         )
         assertEquals("Delete", stringResourceValue("values-en/strings.xml", "settings_delete_account_button"))
@@ -922,12 +922,12 @@ class StringResourceCoverageTest {
         assertEquals("로그아웃", stringResourceValue("values/strings.xml", "profile_account_logout"))
         assertEquals("회원 탈퇴", stringResourceValue("values/strings.xml", "profile_account_delete"))
         assertEquals(
-            "탈퇴 시 계정만 삭제되며, 로컬 데이터는 계속 사용할 수 있습니다.",
+            "계정과 클라우드 데이터가 삭제되며, 로컬 데이터는 기기에 유지됩니다.",
             stringResourceValue("values/strings.xml", "profile_account_delete_desc"),
         )
         assertEquals("탈퇴하기", stringResourceValue("values/strings.xml", "profile_delete_account_button"))
         assertEquals(
-            "계정이 삭제되고\\n클라우드 동기화가 중단됩니다.\\n\\n기기에 저장된 도형과 드론은\\n계속 사용할 수 있습니다.\\n\\n정말 탈퇴하시겠습니까?",
+            "계정이 삭제되고\\n클라우드 동기화가 중단됩니다.\\n\\n기기에 저장된 도형, 드론, 스케치는\\n계속 사용할 수 있습니다.\\n\\n이후 다른 계정에서 클라우드 동기화를 켜면\\n해당 계정으로 동기화될 수 있습니다.\\n\\n정말 탈퇴하시겠습니까?",
             stringResourceValue("values/strings.xml", "profile_delete_account_message"),
         )
         assertEquals("최종 확인", stringResourceValue("values/strings.xml", "profile_delete_account_final_title"))
@@ -982,13 +982,13 @@ class StringResourceCoverageTest {
         assertEquals("Sign Out", stringResourceValue("values-en/strings.xml", "profile_account_logout"))
         assertEquals("Delete Account", stringResourceValue("values-en/strings.xml", "profile_account_delete"))
         assertEquals(
-            "Only the account will be deleted. Local data will remain available.",
+            "Your account and cloud data will be deleted. Local data will remain on this device.",
             stringResourceValue("values-en/strings.xml", "profile_account_delete_desc"),
         )
         assertEquals("Are you sure you want to sign out?", stringResourceValue("values-en/strings.xml", "profile_logout_message"))
         assertEquals("Delete", stringResourceValue("values-en/strings.xml", "profile_delete_account_button"))
         assertEquals(
-            "Your account will be deleted and cloud sync will stop.\\n\\nShapes and drones saved on this device will remain available.\\n\\nAre you sure you want to delete your account?",
+            "Your account will be deleted and cloud sync will stop.\\n\\nShapes, drones, and sketches saved on this device will remain available.\\n\\nIf you later enable cloud sync with another account, they may sync to that account.\\n\\nAre you sure you want to delete your account?",
             stringResourceValue("values-en/strings.xml", "profile_delete_account_message"),
         )
         assertEquals("Final Confirmation", stringResourceValue("values-en/strings.xml", "profile_delete_account_final_title"))

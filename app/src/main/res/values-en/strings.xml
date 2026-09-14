@@ -280,8 +280,8 @@
     <string name="settings_keep_screen_awake_subtitle">Screen won\'t turn off automatically while using the app.</string>
     <string name="settings_section_app_info">App</string>
     <string name="settings_delete_account" tools:ignore="UnusedResources">Delete Account</string>
-    <string name="settings_delete_account_subtitle" tools:ignore="UnusedResources">Only the account will be deleted. Local data will remain available.</string>
-    <string name="settings_delete_account_confirm" tools:ignore="UnusedResources">Your account will be deleted and cloud sync will stop.\n\nShapes and drones saved on this device will remain available.\n\nAre you sure you want to delete your account?</string>
+    <string name="settings_delete_account_subtitle" tools:ignore="UnusedResources">Your account and cloud data will be deleted. Local data will remain on this device.</string>
+    <string name="settings_delete_account_confirm" tools:ignore="UnusedResources">Your account will be deleted and cloud sync will stop.\n\nShapes, drones, and sketches saved on this device will remain available.\n\nIf you later enable cloud sync with another account, they may sync to that account.\n\nAre you sure you want to delete your account?</string>
     <string name="settings_delete_account_button" tools:ignore="UnusedResources">Delete</string>
     <string name="settings_section_notifications">Notifications</string>
     <string name="settings_sunrise_alarm">Sunrise notifications</string>
@@ -424,10 +424,10 @@
 
     <string name="profile_account_logout">Sign Out</string>
     <string name="profile_account_delete">Delete Account</string>
-    <string name="profile_account_delete_desc">Only the account will be deleted. Local data will remain available.</string>
+    <string name="profile_account_delete_desc">Your account and cloud data will be deleted. Local data will remain on this device.</string>
     <string name="profile_logout_message">Are you sure you want to sign out?</string>
     <string name="profile_delete_account_button">Delete</string>
-    <string name="profile_delete_account_message">Your account will be deleted and cloud sync will stop.\n\nShapes and drones saved on this device will remain available.\n\nAre you sure you want to delete your account?</string>
+    <string name="profile_delete_account_message">Your account will be deleted and cloud sync will stop.\n\nShapes, drones, and sketches saved on this device will remain available.\n\nIf you later enable cloud sync with another account, they may sync to that account.\n\nAre you sure you want to delete your account?</string>
     <string name="profile_delete_account_final_title">Final Confirmation</string>
     <string name="profile_delete_account_final_message">This action cannot be undone.</string>
     <string name="profile_delete_account_final_button">Permanently Delete</string>
@@ -435,7 +435,6 @@
     <string name="profile_delete_account_success">Account deleted successfully.</string>
     <string name="profile_delete_account_error">Failed to delete account.</string>
     <string name="profile_delete_account_requires_recent_login">For security, please sign in again before deleting your account.</string>
-    <string name="profile_delete_data_error">Data deletion failed. Please check your network connection and try again.</string>
 
     <!-- Document / PatchNotes -->
     <string name="document_loading">Loading…</string>

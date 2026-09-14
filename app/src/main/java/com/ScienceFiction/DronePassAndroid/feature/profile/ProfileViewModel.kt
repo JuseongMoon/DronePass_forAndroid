@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.profile
 
+import android.app.Activity
 import android.content.Context
 import android.util.Log
 import androidx.datastore.core.DataStore
@@ -23,10 +24,6 @@ import com.ScienceFiction.DronePassAndroid.feature.auth.AuthSignOutStep
 import com.ScienceFiction.DronePassAndroid.feature.auth.authSignOutSteps
 import com.ScienceFiction.DronePassAndroid.service.FcmService
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseAuthException
-import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException
-import com.google.firebase.firestore.DocumentReference
-import com.google.firebase.firestore.FirebaseFirestore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -42,17 +39,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
-import java.util.UUID
 import javax.inject.Inject
-
-internal val FIRESTORE_USER_SUBCOLLECTIONS_TO_DELETE = listOf(
-    "shapes",
-    "drones",
-    "sketches",
-    "metadata",
-    "devices",
-)
 
 internal val ACCOUNT_DELETION_SYNC_PREFERENCE_KEYS_TO_CLEAR: List<Key<*>> = listOf(
     SyncPreferenceKeys.LAST_SYNC_TIME,
@@ -62,21 +49,6 @@ internal val ACCOUNT_DELETION_SYNC_PREFERENCE_KEYS_TO_CLEAR: List<Key<*>> = list
     SyncPreferenceKeys.LAST_SKETCH_SYNC_TIME,
     SyncPreferenceKeys.LAST_LOCAL_SKETCH_MODIFICATION_TIME,
 )
-
-private const val FIRESTORE_BATCH_LIMIT = 500
-internal const val FIRESTORE_USER_DELETE_MAX_ATTEMPTS = 3
-private const val FIRESTORE_USER_DELETE_RETRY_DELAY_MS = 1_000L
-private const val FIREBASE_AUTH_REQUIRES_RECENT_LOGIN = "ERROR_REQUIRES_RECENT_LOGIN"
-
-internal fun chunkFirestoreDocumentIdsForBatchDelete(documentIds: List<String>): List<List<String>> {
-    return documentIds.chunked(FIRESTORE_BATCH_LIMIT)
-}
-
-internal fun shouldRetryFirestoreUserDelete(completedAttempts: Int): Boolean {
-    return completedAttempts < FIRESTORE_USER_DELETE_MAX_ATTEMPTS
-}
-
-internal fun shouldContinueAccountDeletionAfterFirestoreDeleteFailure(): Boolean = true
 
 internal fun shouldNotifyProfileSyncResultForCloudToggle(
     enabled: Boolean,
@@ -93,44 +65,20 @@ internal fun profileErrorDescription(localizedMessage: String?, fallback: String
     return localizedMessage ?: fallback
 }
 
-internal fun isRecentLoginRequiredAuthErrorCode(errorCode: String?): Boolean {
-    return errorCode == FIREBASE_AUTH_REQUIRES_RECENT_LOGIN
+internal fun accountDeletionRequiresProviderAuthentication(exception: Throwable): Boolean {
+    val reason = (exception as? AccountDeletionException)?.reason
+    return reason == AccountDeletionFailureReason.NOT_AUTHENTICATED ||
+        reason == AccountDeletionFailureReason.APPLE_REAUTHENTICATION_FAILED ||
+        reason == AccountDeletionFailureReason.APPLE_ACCESS_TOKEN_MISSING ||
+        reason == AccountDeletionFailureReason.APPLE_TOKEN_REVOCATION_FAILED
 }
 
-internal fun isRecentLoginRequiredForAccountDeletion(exception: Throwable): Boolean {
-    return exception is FirebaseAuthRecentLoginRequiredException ||
-        (exception as? FirebaseAuthException)?.let { authException ->
-            isRecentLoginRequiredAuthErrorCode(authException.errorCode)
-        } == true
-}
-
-internal fun profileDeleteAccountErrorDescription(
-    recentLoginRequired: Boolean,
-    localizedMessage: String?,
-    recentLoginRequiredMessage: String,
-    fallback: String,
-): String {
-    return if (recentLoginRequired) {
-        recentLoginRequiredMessage
-    } else {
-        profileErrorDescription(
-            localizedMessage = localizedMessage,
-            fallback = fallback,
-        )
-    }
-}
-
-internal fun profileDeleteAccountErrorDescription(
-    exception: Throwable,
-    recentLoginRequiredMessage: String,
-    fallback: String,
-): String {
-    return profileDeleteAccountErrorDescription(
-        recentLoginRequired = isRecentLoginRequiredForAccountDeletion(exception),
-        localizedMessage = exception.localizedMessage,
-        recentLoginRequiredMessage = recentLoginRequiredMessage,
-        fallback = fallback,
-    )
+internal fun shouldRestoreRealtimeSyncAfterAccountDeletionFailure(
+    wasCloudBackupEnabled: Boolean,
+    previousUserId: String?,
+    isStillLoggedIn: Boolean,
+): Boolean {
+    return wasCloudBackupEnabled && previousUserId != null && isStillLoggedIn
 }
 
 internal fun normalizeProfileJoinDateMillis(timestamp: Long?): Long? =
@@ -203,7 +151,7 @@ class ProfileViewModel @Inject constructor(
     private val shapeRepository: ShapeRepository,
     private val sketchRepository: SketchRepository,
     private val droneRepository: DroneRepository,
-    private val firestore: FirebaseFirestore,
+    private val accountDeletionService: AccountDeletionService,
     private val realtimeSyncManager: RealtimeSyncManager,
     @ApplicationContext private val appContext: Context,
 ) : ViewModel() {
@@ -450,164 +398,59 @@ class ProfileViewModel @Inject constructor(
     /**
      * 계정 삭제 (iOS `ProfileView.deleteAccount()` 정합 — 2단계 확인 후 호출).
      */
-    fun deleteAccount(onResult: (Boolean, String) -> Unit) {
+    fun deleteAccount(activity: Activity, onResult: (Boolean, String) -> Unit) {
         if (_isAccountActionInProgress.value) return
         _isAccountActionInProgress.value = true
         viewModelScope.launch {
             val userId = firebaseAuth.currentUser?.uid
-
-            runCatching { saveAnonymizedStats() }
-                .onFailure { Log.e(TAG, "익명화 통계 저장 실패", it) }
-
-            runCatching { FcmService.deactivateTokenAndWait(appContext) }
-                .onFailure { Log.w(TAG, "FCM 토큰 비활성화 실패", it) }
-
-            if (userId != null) {
-                val firestoreResult = runCatching { deleteFirestoreUserData(userId) }
-                if (firestoreResult.isFailure) {
-                    val err = firestoreResult.exceptionOrNull()
-                    Log.w(TAG, "Firestore 데이터 삭제 실패 — iOS처럼 Auth 계정 삭제는 계속 진행", err)
-                    if (!shouldContinueAccountDeletionAfterFirestoreDeleteFailure()) {
-                        _isAccountActionInProgress.value = false
-                        onResult(
-                            false,
-                            profileErrorDescription(
-                                localizedMessage = err?.localizedMessage,
-                                fallback = appContext.getString(R.string.profile_delete_data_error),
-                            ),
-                        )
-                        return@launch
-                    }
-                }
-            }
-
-            dataStore.edit {
-                it[ProfilePreferenceKeys.CLOUD_BACKUP_ENABLED] = false
-                it.remove(ProfilePreferenceKeys.LAST_BACKUP_TIME)
-                it.remove(ProfilePreferenceKeys.LEGACY_CLOUD_BACKUP_ENABLED)
-                it.remove(ProfilePreferenceKeys.LEGACY_LAST_BACKUP_TIME)
-                ACCOUNT_DELETION_SYNC_PREFERENCE_KEYS_TO_CLEAR.forEach { key ->
-                    it.remove(key)
-                }
-            }
-
+            val wasCloudBackupEnabled = storedCloudBackupEnabled(dataStore.data.first())
             runCatching { realtimeSyncManager.stopListening() }
+                .onFailure { Log.w(TAG, "탈퇴 전 리스너 중단 실패", it) }
 
-            authRepository.deleteAccount().fold(
+            accountDeletionService.deleteCurrentAccount(activity).fold(
                 onSuccess = {
+                    runCatching {
+                        dataStore.edit {
+                            it[ProfilePreferenceKeys.CLOUD_BACKUP_ENABLED] = false
+                            it.remove(ProfilePreferenceKeys.LAST_BACKUP_TIME)
+                            it.remove(ProfilePreferenceKeys.LEGACY_CLOUD_BACKUP_ENABLED)
+                            it.remove(ProfilePreferenceKeys.LEGACY_LAST_BACKUP_TIME)
+                            ACCOUNT_DELETION_SYNC_PREFERENCE_KEYS_TO_CLEAR.forEach { key ->
+                                it.remove(key)
+                            }
+                        }
+                    }.onFailure { Log.w(TAG, "탈퇴 후 동기화 설정 정리 실패", it) }
+                    runCatching { authRepository.completeAccountDeletionLocally() }
+                        .onFailure { Log.w(TAG, "탈퇴 후 로컬 인증 정리 실패", it) }
                     _isAccountActionInProgress.value = false
                     onResult(true, appContext.getString(R.string.profile_delete_account_success))
                 },
                 onFailure = { exception ->
+                    Log.e(TAG, "서버측 회원 탈퇴 실패", exception)
+                    if (
+                        shouldRestoreRealtimeSyncAfterAccountDeletionFailure(
+                            wasCloudBackupEnabled = wasCloudBackupEnabled,
+                            previousUserId = userId,
+                            isStillLoggedIn = firebaseAuth.currentUser != null,
+                        )
+                    ) {
+                        userId?.let { restartUserId ->
+                            runCatching { realtimeSyncManager.startListening(restartUserId) }
+                                .onFailure { Log.w(TAG, "탈퇴 실패 후 리스너 복구 실패", it) }
+                        }
+                    }
                     _isAccountActionInProgress.value = false
                     onResult(
                         false,
-                        profileDeleteAccountErrorDescription(
-                            exception = exception,
-                            recentLoginRequiredMessage = appContext.getString(
-                                R.string.profile_delete_account_requires_recent_login,
-                            ),
-                            fallback = appContext.getString(R.string.profile_delete_account_error),
-                        ),
+                        if (accountDeletionRequiresProviderAuthentication(exception)) {
+                            appContext.getString(R.string.profile_delete_account_requires_recent_login)
+                        } else {
+                            appContext.getString(R.string.profile_delete_account_error)
+                        },
                     )
                 },
             )
         }
-    }
-
-    private suspend fun deleteFirestoreUserData(userId: String) {
-        var completedAttempts = 0
-        var lastError: Throwable? = null
-
-        while (shouldRetryFirestoreUserDelete(completedAttempts)) {
-            completedAttempts += 1
-            try {
-                deleteFirestoreUserDataOnce(userId)
-                return
-            } catch (error: Throwable) {
-                lastError = error
-                if (shouldRetryFirestoreUserDelete(completedAttempts)) {
-                    Log.w(TAG, "Firestore 데이터 삭제 실패, 재시도 ${completedAttempts}/$FIRESTORE_USER_DELETE_MAX_ATTEMPTS", error)
-                    delay(FIRESTORE_USER_DELETE_RETRY_DELAY_MS)
-                }
-            }
-        }
-
-        throw lastError ?: IllegalStateException()
-    }
-
-    private suspend fun deleteFirestoreUserDataOnce(userId: String) {
-        val userDoc = firestore.collection("users").document(userId)
-        for (collectionName in FIRESTORE_USER_SUBCOLLECTIONS_TO_DELETE) {
-            deleteFirestoreUserSubcollection(userDoc, collectionName)
-        }
-        userDoc.delete().await()
-    }
-
-    private suspend fun deleteFirestoreUserSubcollection(
-        userDoc: DocumentReference,
-        collectionName: String,
-    ) {
-        val snapshot = userDoc.collection(collectionName).get().await()
-        val batches = chunkFirestoreDocumentIdsForBatchDelete(snapshot.documents.map { it.id })
-        batches.forEach { documentIds ->
-            val batch = firestore.batch()
-            documentIds.forEach { documentId ->
-                batch.delete(userDoc.collection(collectionName).document(documentId))
-            }
-            batch.commit().await()
-        }
-    }
-
-    private suspend fun saveAnonymizedStats() {
-        val shapes = runCatching {
-            shapesForAnonymizedDeletion(shapeRepository.getAllShapes().first())
-        }.getOrDefault(emptyList())
-        val drones = runCatching { droneRepository.getAllDrones().first() }.getOrDefault(emptyList())
-        val cloudSyncEnabled = storedCloudBackupEnabled(dataStore.data.first())
-        val now = System.currentTimeMillis()
-        val accountCreatedAt = firebaseAuth.currentUser
-            ?.metadata
-            ?.creationTimestamp
-            ?.takeIf { it > 0L }
-        val anonymousUserRef = firestore.collection("analytics")
-            .document("deleted_users")
-            .collection("users")
-            .document(UUID.randomUUID().toString())
-
-        anonymousUserRef.set(
-            buildAnonymizedUserData(
-                shapes = shapes,
-                drones = drones,
-                cloudSyncEnabled = cloudSyncEnabled,
-                deletedAtMillis = now,
-                accountCreatedAtMillis = accountCreatedAt,
-            ),
-        ).await()
-
-        shapes
-            .map(::shapeToAnonymizedData)
-            .chunked(FIRESTORE_BATCH_LIMIT)
-            .forEach { batchData ->
-                val batch = firestore.batch()
-                batchData.forEach { shapeData ->
-                    val shapeId = shapeData["id"] as? String ?: return@forEach
-                    batch.set(anonymousUserRef.collection("shapes").document(shapeId), shapeData)
-                }
-                batch.commit().await()
-            }
-
-        drones
-            .map(::droneToAnonymizedData)
-            .chunked(FIRESTORE_BATCH_LIMIT)
-            .forEach { batchData ->
-                val batch = firestore.batch()
-                batchData.forEach { droneData ->
-                    val droneId = droneData["id"] as? String ?: return@forEach
-                    batch.set(anonymousUserRef.collection("drones").document(droneId), droneData)
-                }
-                batch.commit().await()
-            }
     }
 
     /** 동기화 결과 — Toast/SnackBar 용 1회성 메시지. */

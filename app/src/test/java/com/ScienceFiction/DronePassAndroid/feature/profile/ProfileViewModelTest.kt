@@ -14,43 +14,53 @@ import org.junit.Test
 class ProfileViewModelTest {
 
     @Test
-    fun `탈퇴 시 iOS 사용자 데이터와 Android FCM devices 컬렉션을 삭제 대상으로 포함한다`() {
-        assertEquals(
-            listOf("shapes", "drones", "sketches", "metadata", "devices"),
-            FIRESTORE_USER_SUBCOLLECTIONS_TO_DELETE,
-        )
-    }
-
-    @Test
-    fun `삭제 대상 컬렉션은 중복이 없다`() {
+    fun `탈퇴 공급자 인증 오류만 재로그인 안내를 사용한다`() {
+        listOf(
+            AccountDeletionFailureReason.NOT_AUTHENTICATED,
+            AccountDeletionFailureReason.APPLE_REAUTHENTICATION_FAILED,
+            AccountDeletionFailureReason.APPLE_ACCESS_TOKEN_MISSING,
+            AccountDeletionFailureReason.APPLE_TOKEN_REVOCATION_FAILED,
+        ).forEach { reason ->
+            assertTrue(accountDeletionRequiresProviderAuthentication(AccountDeletionException(reason)))
+        }
         assertTrue(
-            FIRESTORE_USER_SUBCOLLECTIONS_TO_DELETE.toSet().size ==
-                FIRESTORE_USER_SUBCOLLECTIONS_TO_DELETE.size
+            !accountDeletionRequiresProviderAuthentication(
+                AccountDeletionException(AccountDeletionFailureReason.SERVER_REQUEST_FAILED),
+            ),
         )
+        assertTrue(!accountDeletionRequiresProviderAuthentication(IllegalStateException("network")))
     }
 
     @Test
-    fun `탈퇴 Firestore 문서 삭제는 iOS처럼 500개 단위로 batch 분할한다`() {
-        val documentIds = (1..501).map { "doc-$it" }
-
-        val chunks = chunkFirestoreDocumentIdsForBatchDelete(documentIds)
-
-        assertEquals(listOf(500, 1), chunks.map { it.size })
-        assertEquals("doc-1", chunks.first().first())
-        assertEquals("doc-501", chunks.last().single())
-    }
-
-    @Test
-    fun `탈퇴 Firestore 데이터 삭제는 iOS처럼 최대 3회까지 시도한다`() {
-        assertEquals(3, FIRESTORE_USER_DELETE_MAX_ATTEMPTS)
-        assertTrue(shouldRetryFirestoreUserDelete(completedAttempts = 0))
-        assertTrue(shouldRetryFirestoreUserDelete(completedAttempts = 2))
-        assertTrue(!shouldRetryFirestoreUserDelete(completedAttempts = 3))
-    }
-
-    @Test
-    fun `탈퇴 Firestore 데이터 삭제가 최종 실패해도 iOS처럼 Auth 계정 삭제는 계속 진행한다`() {
-        assertTrue(shouldContinueAccountDeletionAfterFirestoreDeleteFailure())
+    fun `탈퇴 실패 시 로그인과 클라우드 백업이 유지된 경우에만 실시간 동기화를 복구한다`() {
+        assertTrue(
+            shouldRestoreRealtimeSyncAfterAccountDeletionFailure(
+                wasCloudBackupEnabled = true,
+                previousUserId = "user-1",
+                isStillLoggedIn = true,
+            ),
+        )
+        assertTrue(
+            !shouldRestoreRealtimeSyncAfterAccountDeletionFailure(
+                wasCloudBackupEnabled = false,
+                previousUserId = "user-1",
+                isStillLoggedIn = true,
+            ),
+        )
+        assertTrue(
+            !shouldRestoreRealtimeSyncAfterAccountDeletionFailure(
+                wasCloudBackupEnabled = true,
+                previousUserId = null,
+                isStillLoggedIn = true,
+            ),
+        )
+        assertTrue(
+            !shouldRestoreRealtimeSyncAfterAccountDeletionFailure(
+                wasCloudBackupEnabled = true,
+                previousUserId = "user-1",
+                isStillLoggedIn = false,
+            ),
+        )
     }
 
     @Test
@@ -315,35 +325,6 @@ class ProfileViewModelTest {
             assertTrue("Missing token after $previousIndex: $token", index >= 0)
             previousIndex = index
         }
-    }
-
-    @Test
-    fun `탈퇴 최근 로그인 필요 오류는 iOS AccountDeletionError 메시지로 고정한다`() {
-        assertTrue(isRecentLoginRequiredAuthErrorCode("ERROR_REQUIRES_RECENT_LOGIN"))
-        assertTrue(!isRecentLoginRequiredAuthErrorCode("ERROR_NETWORK_REQUEST_FAILED"))
-        assertEquals(
-            "보안을 위해 다시 로그인한 후 탈퇴해주세요.",
-            profileDeleteAccountErrorDescription(
-                recentLoginRequired = true,
-                localizedMessage = "raw firebase message",
-                recentLoginRequiredMessage = "보안을 위해 다시 로그인한 후 탈퇴해주세요.",
-                fallback = "회원 탈퇴에 실패했습니다.",
-            ),
-        )
-    }
-
-    @Test
-    fun `탈퇴 일반 오류는 iOS처럼 localizedMessage 를 우선한다`() {
-        assertTrue(!isRecentLoginRequiredForAccountDeletion(IllegalStateException("network")))
-        assertEquals(
-            "network",
-            profileDeleteAccountErrorDescription(
-                recentLoginRequired = false,
-                localizedMessage = "network",
-                recentLoginRequiredMessage = "보안을 위해 다시 로그인한 후 탈퇴해주세요.",
-                fallback = "회원 탈퇴에 실패했습니다.",
-            ),
-        )
     }
 
     @Test

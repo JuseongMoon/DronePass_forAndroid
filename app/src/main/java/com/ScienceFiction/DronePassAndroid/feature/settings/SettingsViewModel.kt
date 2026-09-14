@@ -400,8 +400,8 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    // signOut / deleteAccount / saveAnonymizedStats / deleteFirestoreUserData 함수는
-    // ProfileViewModel 로 이전되어 ProfileView 시트(약관/계정 관리 섹션)에서 호출된다.
+    // signOut / deleteAccount 함수는 ProfileViewModel이 담당하며
+    // ProfileView 시트(약관/계정 관리 섹션)에서 호출된다.
 }
 
 internal data class SunAlarmRescheduleTargets(

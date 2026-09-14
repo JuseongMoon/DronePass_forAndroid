@@ -1,5 +1,8 @@
 package com.ScienceFiction.DronePassAndroid.feature.profile
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -35,6 +38,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -71,6 +75,7 @@ fun ProfileScreen(
     onAccountSessionEnded: () -> Unit = {},
     viewModel: ProfileViewModel = hiltViewModel(),
 ) {
+    val activity = LocalContext.current.findActivity()
     val resources = LocalResources.current
     val isLoggedIn by viewModel.isLoggedIn.collectAsStateWithLifecycle()
     val isCloudBackupEnabled by viewModel.isCloudBackupEnabled.collectAsStateWithLifecycle()
@@ -325,15 +330,22 @@ fun ProfileScreen(
             confirmButton = {
                 TextButton(onClick = {
                     showDeleteFinalDialog = false
-                    viewModel.deleteAccount { success, message ->
-                        if (success) {
-                            onAccountSessionEnded()
-                            onDismiss()
-                        } else {
-                            resultDialog = ProfileResultDialog(
-                                titleRes = R.string.profile_delete_account_error_title,
-                                message = message,
-                            )
+                    if (activity == null) {
+                        resultDialog = ProfileResultDialog(
+                            titleRes = R.string.profile_delete_account_error_title,
+                            message = resources.getString(R.string.profile_delete_account_error),
+                        )
+                    } else {
+                        viewModel.deleteAccount(activity) { success, message ->
+                            if (success) {
+                                onAccountSessionEnded()
+                                onDismiss()
+                            } else {
+                                resultDialog = ProfileResultDialog(
+                                    titleRes = R.string.profile_delete_account_error_title,
+                                    message = message,
+                                )
+                            }
                         }
                     }
                 }) {
@@ -378,6 +390,14 @@ fun ProfileScreen(
                 WebDocTarget.Privacy -> PrivacyPolicyScreen(onDismiss = { webDocTarget = null })
             }
         }
+    }
+}
+
+private tailrec fun Context.findActivity(): Activity? {
+    return when (this) {
+        is Activity -> this
+        is ContextWrapper -> baseContext.findActivity()
+        else -> null
     }
 }
 
