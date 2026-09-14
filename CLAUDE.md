@@ -137,6 +137,28 @@ Geocoding/Reverse Geocoding REST API는 `NAVER_MAP_KEY_ID`와
 - `ACCESS_FINE_LOCATION` - 정확한 위치 정보
 - `ACCESS_COARSE_LOCATION` - 대략적인 위치 정보
 
+**위 목록은 직접 선언한 것이고, APK에 실리는 권한은 라이브러리가 주입한 것까지 합쳐진 결과입니다.**
+의존성 버전을 올릴 때는 머지 매니페스트에서 새 권한이 들어왔는지 확인합니다.
+
+특히 **Firebase BOM을 올릴 때 광고 관련 권한을 확인합니다.** `firebase-analytics`는 버전에 따라
+`com.google.android.gms.permission.AD_ID`와 Privacy Sandbox 권한 2종
+(`android.permission.ACCESS_ADSERVICES_AD_ID`, `android.permission.ACCESS_ADSERVICES_ATTRIBUTION`)을
+주입합니다. **현재 BOM 33.1.0에서는 주입되지 않지만**(2026-09-14 머지 매니페스트로 확인, 광고 권한 0건),
+**33.7.0에서는 3종 모두 들어옵니다**(TokenWatchAndroid에서 실측). 증상이 전혀 없어서 모르고 출시하면
+Play Data safety의 광고 ID 신고와 어긋난 채로 나갑니다.
+
+```bash
+./gradlew :app:processReleaseMainManifest
+grep -iE 'AD_ID|ADSERVICES' \
+  app/build/intermediates/merged_manifest/release/processReleaseMainManifest/AndroidManifest.xml
+```
+
+`<property>`의 `android.adservices.AD_SERVICES_CONFIG`와 `<uses-library>`의 `android.ext.adservices`는
+권한이 아니므로 걸려도 무방합니다. **`<uses-permission>`에 들어왔는지만 봅니다.**
+
+광고 ID를 쓰지 않기로 했다면 매니페스트에서 3종을 `tools:node="remove"`로 제거합니다.
+제거해도 Analytics 수집은 정상 동작합니다(TokenWatchAndroid에서 이벤트 업로드 204 확인).
+
 ## Development Guidelines
 
 ### Code Style
