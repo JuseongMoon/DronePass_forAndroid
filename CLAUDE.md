@@ -132,20 +132,34 @@ Geocoding/Reverse Geocoding REST API는 `NAVER_MAP_KEY_ID`와
 저장소에는 `keystore.properties.example` 같은 `*.example`만 둡니다.
 
 ### Permissions
-앱이 요구하는 권한:
-- `INTERNET` - 지도 타일 다운로드
-- `ACCESS_FINE_LOCATION` - 정확한 위치 정보
-- `ACCESS_COARSE_LOCATION` - 대략적인 위치 정보
 
-**위 목록은 직접 선언한 것이고, APK에 실리는 권한은 라이브러리가 주입한 것까지 합쳐진 결과입니다.**
-의존성 버전을 올릴 때는 머지 매니페스트에서 새 권한이 들어왔는지 확인합니다.
+`app/src/main/AndroidManifest.xml`이 직접 선언하는 권한:
 
-특히 **Firebase BOM을 올릴 때 광고 관련 권한을 확인합니다.** `firebase-analytics`는 버전에 따라
-`com.google.android.gms.permission.AD_ID`와 Privacy Sandbox 권한 2종
-(`android.permission.ACCESS_ADSERVICES_AD_ID`, `android.permission.ACCESS_ADSERVICES_ATTRIBUTION`)을
-주입합니다. **현재 BOM 33.1.0에서는 주입되지 않지만**(2026-09-14 머지 매니페스트로 확인, 광고 권한 0건),
-**33.7.0에서는 3종 모두 들어옵니다**(TokenWatchAndroid에서 실측). 증상이 전혀 없어서 모르고 출시하면
-Play Data safety의 광고 ID 신고와 어긋난 채로 나갑니다.
+| 권한 | 용도 |
+| --- | --- |
+| `INTERNET` | 지도 타일·Firebase 통신 |
+| `ACCESS_FINE_LOCATION` | 정확한 위치 정보 |
+| `ACCESS_COARSE_LOCATION` | 대략적인 위치 정보 |
+| `POST_NOTIFICATIONS` | 알림 (Android 13+) |
+| `SCHEDULE_EXACT_ALARM` | 정확한 알람 예약 (Android 12+) |
+| `RECEIVE_BOOT_COMPLETED` | 재부팅 후 알림 재예약 |
+
+같은 파일에 **제거 지시**(`tools:node="remove"`) 3건이 있습니다. 선언이 아니라 **라이브러리가 주입하는 것을
+막는 것**이므로 지우지 마십시오.
+
+```
+com.google.android.gms.permission.AD_ID
+android.permission.ACCESS_ADSERVICES_AD_ID
+android.permission.ACCESS_ADSERVICES_ATTRIBUTION
+```
+
+`firebase-analytics`가 버전에 따라 주입하는 광고·Privacy Sandbox 권한입니다. 이 앱은 광고 ID를 쓰지 않으므로
+Play Data safety 신고와 맞추기 위해 막아 둡니다. 제거해도 Analytics 수집은 정상 동작합니다
+(TokenWatchAndroid에서 이벤트 업로드 204 확인).
+
+**주입 여부는 BOM 버전에 따라 갈립니다** — BOM 33.1.0은 주입하지 않고, 33.7.0은 3종 모두 주입합니다
+(TokenWatchAndroid 실측). 제거 지시는 버전과 무관하게 막아 주므로 평소에는 신경 쓸 일이 없지만,
+**의존성을 올릴 때는 머지 매니페스트를 한 번 확인합니다.** 증상이 전혀 없어서 어긋난 채로 출시되기 쉽습니다.
 
 ```bash
 ./gradlew :app:processReleaseMainManifest
@@ -156,8 +170,12 @@ grep -iE 'AD_ID|ADSERVICES' \
 `<property>`의 `android.adservices.AD_SERVICES_CONFIG`와 `<uses-library>`의 `android.ext.adservices`는
 권한이 아니므로 걸려도 무방합니다. **`<uses-permission>`에 들어왔는지만 봅니다.**
 
-광고 ID를 쓰지 않기로 했다면 매니페스트에서 3종을 `tools:node="remove"`로 제거합니다.
-제거해도 Analytics 수집은 정상 동작합니다(TokenWatchAndroid에서 이벤트 업로드 204 확인).
+APK에 실리는 권한은 위 목록에 라이브러리 주입분이 더해진 결과입니다. 2026-09-08 릴리스 머지 매니페스트
+기준으로 `ACCESS_NETWORK_STATE` · `ACCESS_WIFI_STATE` · `WAKE_LOCK` ·
+`com.google.android.c2dm.permission.RECEIVE` ·
+`com.google.android.finsky.permission.BIND_GET_INSTALL_REFERRER_SERVICE` ·
+`com.google.android.providers.gsf.permission.READ_GSERVICES`가 추가되며, 광고 권한은 0건이었습니다.
+의존성이 바뀌면 달라질 수 있으니 확정이 필요할 때는 위 명령으로 직접 확인합니다.
 
 ## Development Guidelines
 
