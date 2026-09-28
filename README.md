@@ -75,6 +75,7 @@ Repository는 Hilt로 주입됩니다.
 `CrossPlatformFirestoreContractTest`가 iOS 저장소의 픽스처 JSON(원·사각형·다각형·선·
 soft delete·legacy)을 그대로 읽어 Android 파싱 결과를 검증합니다.
 iOS 저장소가 로컬에 없으면 이 테스트는 실패가 아니라 skip 됩니다.
+릴리스 검증이나 CI에서는 `-PrequireCrossPlatformFixtures=true`로 실행해 fixture 누락을 실패로 처리합니다.
 
 **5. 플랫폼 차이를 흡수한 지점**
 
@@ -128,6 +129,15 @@ LWW 머지, 설정 마이그레이션, 크로스 플랫폼 계약이 주요 대�
 크로스 플랫폼 계약 테스트는 [iOS 저장소](https://github.com/JuseongMoon/dronepass-ios)의
 `team/fixtures/` JSON을 읽습니다. iOS 저장소를 로컬에 받아 두고 `local.properties`에
 `IOS_PROJECT_DIR=<iOS 저장소 경로>`를 넣으면 활성화되고, 없으면 실패가 아니라 skip 됩니다.
+CI에서는 같은 값을 `IOS_PROJECT_DIR` 환경변수나 `-PIOS_PROJECT_DIR=<iOS 저장소 경로>`로
+전달할 수 있습니다. 계약 검증이 필수인 실행은 다음처럼 지정합니다.
+
+```bash
+./gradlew :app:testDebugUnitTest --tests '*CrossPlatformFirestoreContractTest' -PrequireCrossPlatformFixtures=true
+```
+
+이 모드에서는 `IOS_PROJECT_DIR` 또는 공유 fixture 파일이 없으면 실패합니다. 테스트 결과의
+skipped 건수도 0인지 확인합니다.
 
 ## 기술 스택
 
@@ -193,6 +203,8 @@ Release 빌드는 서명 설정, `WEB_CLIENT_ID`, Firebase Android OAuth client�
 2. `./gradlew :app:bundleRelease`
 
 키스토어와 `keystore.properties`는 커밋하지 않습니다.
+계약 검증을 포함한 릴리스 빌드는 `-PrequireCrossPlatformFixtures=true`를 추가합니다.
+이때 `testDebugUnitTest`도 실행되며 iOS fixture가 없으면 빌드가 실패합니다.
 
 ## 릴리스 보안 기준
 

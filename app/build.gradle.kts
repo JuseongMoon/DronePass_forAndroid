@@ -85,6 +85,11 @@ val naverMapKeyId = localProperties.localProperty("NAVER_MAP_KEY_ID")
 val naverMapKeySecret = localProperties.localProperty("NAVER_MAP_KEY_SECRET")
 val vworldApiKey = localProperties.localProperty("VWORLD_API_KEY")
 val webClientId = localProperties.getProperty("WEB_CLIENT_ID")?.trim().orEmpty()
+val requireCrossPlatformFixtures =
+    providers.gradleProperty("requireCrossPlatformFixtures").orNull?.let { value ->
+        value.toBooleanStrictOrNull()
+            ?: throw GradleException("requireCrossPlatformFixtures must be true or false.")
+    } ?: false
 
 // keystore.properties 에서 Release 서명 정보 로드 (CI/로컬 모두 지원)
 val keystoreProperties = Properties().apply {
@@ -249,12 +254,24 @@ android {
     testOptions {
         unitTests.all {
             // Cross-platform contract tests read fixtures from the iOS repository checkout.
-            // Point IOS_PROJECT_DIR at it in local.properties to enable them; otherwise the
-            // tests are skipped instead of failing. The path is machine-local, never committed.
-            val iosProjectDir = localProperties.getProperty("IOS_PROJECT_DIR")?.trim()
+            // The path stays machine-local; CI can supply it through the environment.
+            val iosProjectDir = (
+                providers.gradleProperty("IOS_PROJECT_DIR").orNull
+                    ?: providers.environmentVariable("IOS_PROJECT_DIR").orNull
+                    ?: localProperties.getProperty("IOS_PROJECT_DIR")
+                )?.trim()
+            it.systemProperty("dronepass.requireSharedFixtures", requireCrossPlatformFixtures)
             if (!iosProjectDir.isNullOrEmpty()) {
                 it.systemProperty("dronepass.iosProjectDirectory", iosProjectDir)
                 it.systemProperty("dronepass.iosFixtureDirectory", "$iosProjectDir/team/fixtures")
+            }
+            if (requireCrossPlatformFixtures) {
+                require(!iosProjectDir.isNullOrEmpty()) {
+                    "IOS_PROJECT_DIR is required when -PrequireCrossPlatformFixtures=true."
+                }
+                require(File(iosProjectDir, "team/fixtures").isDirectory) {
+                    "Shared iOS fixtures directory is missing under IOS_PROJECT_DIR/team/fixtures."
+                }
             }
         }
     }
@@ -420,6 +437,9 @@ val verifyCrossPlatformE2ePrerequisites by tasks.registering {
 tasks.matching { it.name == "assembleRelease" || it.name == "bundleRelease" }
     .configureEach {
         dependsOn(validateReleaseReadiness)
+        if (requireCrossPlatformFixtures) {
+            dependsOn("testDebugUnitTest")
+        }
     }
 
 gradle.taskGraph.whenReady {

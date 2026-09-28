@@ -199,7 +199,7 @@ APK에 실리는 권한은 위 목록에 라이브러리 주입분이 더해진 
 
 - iOS/Android 공유 Firestore wire-format의 정본은 iOS 앱이 쓰는 형태이며, 이 저장소의 요약은 [`docs/agents/FIRESTORE_CONTRACT.md`](docs/agents/FIRESTORE_CONTRACT.md)입니다. 요약과 iOS 동작이 다르면 iOS 쪽이 맞습니다.
   특히 `shapeType`은 쓰기 소문자 raw value, 읽기 대소문자 무시, unknown 값 스킵 계약을 유지해야 합니다.
-- `CrossPlatformFirestoreContractTest`는 `IOS_PROJECT_DIR`의 iOS 공유 fixture로 이 계약을 검증합니다. 경로가 없으면 실패하지 않고 skip되므로, 계약 검증이 필요할 때는 skip 없이 실행됐는지 확인합니다.
+- `CrossPlatformFirestoreContractTest`는 `IOS_PROJECT_DIR`의 iOS 공유 fixture로 이 계약을 검증합니다. 계약 검증이 필요할 때는 `-PrequireCrossPlatformFixtures=true`를 지정해 경로·fixture 누락을 실패로 처리하고 skip이 0건인지 확인합니다.
 
 ## Reference
 - 원본 iOS 프로젝트: https://github.com/JuseongMoon/DronePass

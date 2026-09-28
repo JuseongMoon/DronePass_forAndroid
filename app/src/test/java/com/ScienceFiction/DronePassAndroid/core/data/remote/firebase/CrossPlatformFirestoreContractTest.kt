@@ -533,12 +533,14 @@ class CrossPlatformFirestoreContractTest {
                 ?: DEFAULT_SHARED_FIXTURE_DIRECTORY,
         )
         val fixtureFile = fixtureDirectory.resolve(fileName)
-        assumeTrue(
+        val missingFixtureMessage =
             "Shared iOS fixture not available: ${fixtureFile.path}. " +
-                "Check out the iOS repository and run with " +
-                "-D$SHARED_FIXTURE_DIRECTORY_PROPERTY=<fixture-directory> to enable this contract test.",
-            fixtureFile.isFile,
-        )
+                "Set IOS_PROJECT_DIR to the iOS repository checkout."
+        if (System.getProperty(REQUIRE_SHARED_FIXTURES_PROPERTY) == "true") {
+            check(fixtureFile.isFile) { missingFixtureMessage }
+        } else {
+            assumeTrue(missingFixtureMessage, fixtureFile.isFile)
+        }
 
         val root = JsonReader.of(Buffer().writeUtf8(fixtureFile.readText())).use { reader ->
             val value = readFixtureJsonValue(reader)
@@ -797,6 +799,7 @@ class CrossPlatformFirestoreContractTest {
 
     private companion object {
         const val SHARED_FIXTURE_DIRECTORY_PROPERTY = "dronepass.iosFixtureDirectory"
+        const val REQUIRE_SHARED_FIXTURES_PROPERTY = "dronepass.requireSharedFixtures"
         // iOS 저장소(https://github.com/JuseongMoon/dronepass-ios)를 형제 디렉터리에 두었을 때의 기본값.
         // 다른 위치라면 -Ddronepass.iosFixtureDirectory=<경로> 로 지정한다.
         const val DEFAULT_SHARED_FIXTURE_DIRECTORY = "../dronepass-ios/team/fixtures"
