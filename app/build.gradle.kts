@@ -407,13 +407,13 @@ val validateReleaseReadiness by tasks.registering {
 
 val verifyCrossPlatformE2ePrerequisites by tasks.registering {
     group = "verification"
-    description = "Verifies Android-side configuration required before running docs/agents/CROSS_PLATFORM_E2E_RUNBOOK.md."
+    description = "Verifies Android-side configuration required before the cross-platform real-device E2E test."
 
     doLast {
         crossPlatformE2ePrerequisitesErrorMessage?.let { errorMessage ->
             throw GradleException(errorMessage)
         }
-        logger.lifecycle("Android-side cross-platform E2E prerequisites are configured. Continue with docs/agents/CROSS_PLATFORM_E2E_RUNBOOK.md.")
+        logger.lifecycle("Android-side cross-platform E2E prerequisites are configured.")
     }
 }
 

@@ -40,3 +40,7 @@ firestore-debug.log*
 
 # Kotlin build cache
 .kotlin/
+
+# 내부 문서 — 계획·출시 인수인계·운영 runbook은 로컬 전용 (AGENTS.md "내부 문서 위치")
+/docs/agents/*
+!/docs/agents/FIRESTORE_CONTRACT.md

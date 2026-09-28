@@ -200,36 +200,13 @@ APK에 실리는 권한은 위 목록에 라이브러리 주입분이 더해진 
 - iOS/Android 공유 Firestore wire-format의 정본은 iOS 앱이 쓰는 형태이며, 이 저장소의 요약은 [`docs/agents/FIRESTORE_CONTRACT.md`](docs/agents/FIRESTORE_CONTRACT.md)입니다. 요약과 iOS 동작이 다르면 iOS 쪽이 맞습니다.
   특히 `shapeType`은 쓰기 소문자 raw value, 읽기 대소문자 무시, unknown 값 스킵 계약을 유지해야 합니다.
 - `CrossPlatformFirestoreContractTest`는 `IOS_PROJECT_DIR`의 iOS 공유 fixture로 이 계약을 검증합니다. 경로가 없으면 실패하지 않고 skip되므로, 계약 검증이 필요할 때는 skip 없이 실행됐는지 확인합니다.
-- 설계 배경과 진행 중인 계획 문서는 `docs/agents/` 아래에 있습니다.
 
 ## Reference
 - 원본 iOS 프로젝트: https://github.com/JuseongMoon/DronePass
 - iOS 아키텍처: MVVM, Manager 패턴, Repository 패턴
 
-## 공개 저장소 규칙
+## 공통 작업 규칙
 
-이 저장소는 공개되어 있다. 커밋한 것은 되돌려도 남는다.
+공개 저장소 규칙과 안전 경계는 Codex 등 다른 에이전트도 함께 읽도록 `AGENTS.md`에 둔다.
 
-- **시크릿 금지** — API 키·토큰·서명 키(`*.jks`/`*.p12`)·서비스 계정 키·실제 사용자 데이터를 커밋하지 않는다.
-  값은 **`local.properties`** 에만 두고 저장소에는 `*.example`만 올린다.
-  소스·plist·manifest·주석·커밋 메시지 어디에도 값을 쓰지 않는다.
-  이미 올렸다면 되돌리는 것으로 끝내지 말고 **키를 폐기·재발급**한다.
-  **예외** — Firebase 클라이언트 설정(`GoogleService-Info.plist`, `google-services.json`, `AIzaSy…`)과
-  OAuth public client ID는 Google이 앱 바이너리 내장을 전제로 문서화한 **식별자**이며 비밀이 아니다.
-  커밋해도 되고 재발급 대상이 아니다. 접근 통제는 Firestore 보안 규칙과 API 키의 `apiTargets`·앱 제한이 담당한다.
-  **단 서비스 계정 키·Admin SDK 자격증명·서명 키는 이 예외에 해당하지 않는다.**
-- **내부 정보 금지** — 로컬 절대경로(`/Users/…`), 저장소 밖 파일 참조, 관리자 URL,
-  인프라 식별자(버킷·배포 ID·계정 번호), 개인 기기 식별자(UDID·시리얼),
-  릴리스 진행 상태와 스토어 콘솔 절차는 문서에 남기지 않는다.
-- **내부 문서 위치** — 가격 전략·미출시 기획·운영 절차·서버 계약은 저장소에 두지 않는다.
-  로컬에 두고 gitignore 하되 **그 판단 근거를 이 문서에 적어** 다음 세션이 되돌리지 않게 한다.
-  gitignore된 경로를 코드 주석이나 문서에서 참조하지 않는다 — 방문자에게는 끊어진 링크다.
-- **문서 정확성** — 여기 적힌 버전·경로·명령·구조가 코드와 다르면 코드가 아니라 문서를 고친다.
-  배포 타깃과 언어 버전은 프로젝트 기본값이 아니라 **앱 타깃의 실제 값**을 확인해 적는다.
-- **브랜치** — 에이전트 작업 브랜치는 머지 후 지운다. 원격에 실험 브랜치를 남기지 않는다.
-  **처음 push 하는 순간 그 브랜치의 문서·메모도 함께 공개된다.**
-- **`main`에 force-push 하지 않는다.** 공개된 히스토리를 다시 쓰면 클론·포크한 쪽이 깨진다.
-  (예외: 시크릿 제거 — 이때도 키 폐기가 먼저다.)
-- **push 전 확인** — `git fetch origin && git status -sb`로 원격이 앞섰는지 보고, 앞섰으면 덮지 말고 rebase 한다.
-  `git log origin/main..HEAD --stat`으로 올라갈 파일 전체를 확인해 무관한 파일을 분리하고,
-  `git diff`에서 키·절대경로·기기 식별자가 없는지 본다. **`git add .` 금지.**
+@AGENTS.md
