@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project Overview
 DronePass Android는 iOS DronePass의 Android 포팅 프로젝트입니다. 드론 비행 허가지 시각화를 위한 애플리케이션으로, 네이버 Maps SDK를 활용하여 지도 기반 UI를 제공합니다.
 
-**현재 구현 단계**: iOS 동작/UX 패리티와 Android 출시 하드닝 단계입니다. 네이버 지도, 도형 관리, 저장 목록, 드론 관리, VWorld 비행구역, 날씨/KP 정보, 스케치, Firebase Auth/Firestore/FCM, 설정/프로필/문서 화면이 구현되어 있으며, 남은 핵심 작업은 Play 설치 빌드에서 실기기/실계정 검증과 발견된 패리티 차이 보정입니다.
+**구현된 기능**: 네이버 지도, 도형 관리, 저장 목록, 드론 관리, VWorld 비행구역, 날씨/KP 정보, 스케치, Firebase Auth/Firestore/FCM, 설정/프로필/문서 화면. 동작·UX는 iOS 앱과의 패리티를 기준으로 맞춥니다.
 
 ## Build Configuration
 - **Package Name**: `com.ScienceFiction.DronePassAndroid`
@@ -80,10 +80,8 @@ DronePass Android는 iOS DronePass의 Android 포팅 프로젝트입니다. 드�
 - 권한 요청 다이얼로그 및 설명 UI 포함
 
 ### Dependency Management
-프로젝트는 **Version Catalog** (libs.versions.toml)와 직접 의존성을 혼합하여 사용합니다.
-- 표준 AndroidX 라이브러리: Version Catalog로 관리
-- 네이버 Maps, Play Services, Accompanist: 직접 버전 명시
-- 네이버 Maps SDK Maven Repository: `https://repository.map.naver.com/archive/maven`
+모든 의존성 버전은 **Version Catalog** (`gradle/libs.versions.toml`)에서 관리합니다.
+네이버 Maps SDK Maven Repository(`https://repository.map.naver.com/archive/maven`)는 `settings.gradle.kts`에 선언되어 있습니다.
 
 ### Key Dependencies
 - AndroidX Core KTX
@@ -189,7 +187,7 @@ APK에 실리는 권한은 위 목록에 라이브러리 주입분이 더해진 
 ### Adding New Features
 1. 패키지 구조 유지: `com.ScienceFiction.DronePassAndroid` 하위에 생성
 2. Compose Composable 함수로 UI 구현
-3. 상태 관리: `remember`, `mutableStateOf`, `LaunchedEffect` 활용
+3. 상태 관리: 화면 상태는 `@HiltViewModel` ViewModel의 `StateFlow`로 노출하고, `remember`/`mutableStateOf`는 Composable 내부의 일시적 UI 상태에만 사용
 4. 생명주기 관리: `DisposableEffect` 사용
 
 ### Map Related Work
@@ -199,12 +197,13 @@ APK에 실리는 권한은 위 목록에 라이브러리 주입분이 더해진 
 
 ## Cross-Platform Contract
 
-- iOS/Android 공유 Firestore wire-format은 [`docs/agents/FIRESTORE_CONTRACT.md`](docs/agents/FIRESTORE_CONTRACT.md)가 기준입니다.
+- iOS/Android 공유 Firestore wire-format의 정본은 iOS 앱이 쓰는 형태이며, 이 저장소의 요약은 [`docs/agents/FIRESTORE_CONTRACT.md`](docs/agents/FIRESTORE_CONTRACT.md)입니다. 요약과 iOS 동작이 다르면 iOS 쪽이 맞습니다.
   특히 `shapeType`은 쓰기 소문자 raw value, 읽기 대소문자 무시, unknown 값 스킵 계약을 유지해야 합니다.
+- `CrossPlatformFirestoreContractTest`는 `IOS_PROJECT_DIR`의 iOS 공유 fixture로 이 계약을 검증합니다. 경로가 없으면 실패하지 않고 skip되므로, 계약 검증이 필요할 때는 skip 없이 실행됐는지 확인합니다.
 - 설계 배경과 진행 중인 계획 문서는 `docs/agents/` 아래에 있습니다.
 
 ## Reference
-- 원본 iOS 프로젝트: https://github.com/JuseongMoon/dronepass-ios
+- 원본 iOS 프로젝트: https://github.com/JuseongMoon/DronePass
 - iOS 아키텍처: MVVM, Manager 패턴, Repository 패턴
 
 ## 공개 저장소 규칙
