@@ -796,7 +796,7 @@ internal fun formatIosPrecipitationIntensity(
 } ?: MissingWeatherValueText
 
 internal fun formatIosCri(cri: Double?): String =
-    cri?.let { "%.0f".format(Locale.ROOT, it) } ?: MissingWeatherValueText
+    cri?.takeIf { it.isFinite() }?.let { "%.0f".format(Locale.ROOT, it) } ?: MissingWeatherValueText
 
 @StringRes
 internal fun resolveWindDirectionLabelRes(degrees: Double): Int {

@@ -10,6 +10,7 @@ import java.time.ZoneOffset
 import kotlin.math.roundToInt
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -45,6 +46,7 @@ class WeatherRepositoryTest {
             data.hourlyForecast.single().time,
         )
         assertEquals(9 * 60 * 60, data.utcOffsetSeconds)
+        assertNull(data.hourlyForecast.single().cri)
     }
 
     @Test
@@ -56,20 +58,20 @@ class WeatherRepositoryTest {
         val repository = WeatherRepository(api)
 
         val first = repository.fetchWeather(latitude = 37.0, longitude = 127.0).getOrThrow()
-        assertEquals(CRICalculator.calculate(20.0, 20.0, 0.0), first.current?.cri ?: -1.0, 0.0)
+        assertEquals(CRICalculator.calculate(20.0, 20.0, 10.0), first.current?.cri ?: -1.0, 0.0)
 
         repository.invalidateCache()
         api.response = weatherResponse(current = secondCurrent, hourly = secondHourly)
         val second = repository.fetchWeather(latitude = 37.0, longitude = 127.0).getOrThrow()
 
         val expectedCurrent = (
-            CRICalculator.calculateUnrounded(20.0, 20.0, 0.0) +
-                CRICalculator.calculateUnrounded(25.0, 5.0, 0.0)
+            CRICalculator.calculateUnrounded(20.0, 20.0, 10.0) +
+                CRICalculator.calculateUnrounded(25.0, 5.0, 10.0)
             ).div(2.0).roundToInt().toDouble()
         assertEquals(expectedCurrent, second.current?.cri ?: -1.0, 0.0)
         assertEquals(
-            CRICalculator.calculate(25.0, 5.0, 0.0),
-            second.hourlyForecast.single().cri,
+            CRICalculator.calculate(25.0, 5.0, 10.0),
+            second.hourlyForecast.single().cri ?: -1.0,
             0.0,
         )
     }
@@ -133,6 +135,28 @@ class WeatherRepositoryTest {
         assertEquals(2.4, data.current?.visibility ?: -1.0, 0.0)
     }
 
+    @Test
+    fun `current and hourly CRI use visibility in kilometers for fog adjustment`() = runBlocking {
+        val current = currentWeather(temperature = 25.0, dewPoint = 22.5, windSpeed = 0.0, visibility = 500.0)
+        val hourly = hourlyWeather(temperature = 25.0, dewPoint = 22.5).copy(visibility = listOf(500.0))
+        val data = WeatherRepository(FakeWeatherApi(weatherResponse(current, hourly)))
+            .fetchWeather(latitude = 37.0, longitude = 127.0).getOrThrow()
+
+        assertEquals(90.0, data.current?.cri ?: -1.0, 0.0)
+        assertEquals(90.0, data.hourlyForecast.single().cri ?: -1.0, 0.0)
+    }
+
+    @Test
+    fun `missing temperature or dew point leaves CRI absent instead of creating a false warning`() = runBlocking {
+        val current = currentWeather(temperature = -5.0, dewPoint = null, windSpeed = 0.0)
+        val hourly = hourlyWeather(temperature = -5.0).copy(dewPoint = null)
+        val data = WeatherRepository(FakeWeatherApi(weatherResponse(current, hourly)))
+            .fetchWeather(latitude = 37.0, longitude = 127.0).getOrThrow()
+
+        assertNull(data.current?.cri)
+        assertNull(data.hourlyForecast.single().cri)
+    }
+
     private fun weatherResponse(
         current: CurrentWeather? = null,
         hourly: HourlyWeather? = null,
@@ -144,8 +168,8 @@ class WeatherRepositoryTest {
     )
 
     private fun currentWeather(
-        temperature: Double,
-        dewPoint: Double,
+        temperature: Double?,
+        dewPoint: Double?,
         windSpeed: Double,
         visibility: Double? = 10000.0,
     ): CurrentWeather = CurrentWeather(

@@ -438,7 +438,19 @@ class WeatherForecastParityTest {
         assertEquals("1.2 mm/h", formatIosPrecipitationIntensity(1.24))
         assertEquals("0.1 cm/h", formatIosPrecipitationIntensity(1.24, isSnowing = true))
         assertEquals("-", formatIosCri(null))
+        assertEquals("-", formatIosCri(Double.NaN))
         assertEquals("43", formatIosCri(42.6))
+    }
+
+    @Test
+    fun `CRI chart omits missing or nonfinite forecast points`() {
+        val hours = listOf(
+            hourlyWeather(time = 1L).copy(cri = 30.0),
+            hourlyWeather(time = 2L).copy(cri = null),
+            hourlyWeather(time = 3L).copy(cri = Double.NaN),
+            hourlyWeather(time = 4L).copy(cri = 70.0),
+        )
+        assertEquals(listOf(1L to 30.0, 4L to 70.0), criChartDataPoints(hours))
     }
 
     @Test

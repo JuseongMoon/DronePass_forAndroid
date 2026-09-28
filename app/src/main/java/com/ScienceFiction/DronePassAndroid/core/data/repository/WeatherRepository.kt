@@ -96,6 +96,13 @@ class WeatherRepository @Inject constructor(
             val dewPt = current.dewPoint ?: 0.0
             val wind = current.windSpeed ?: 0.0
             val gusts = current.windGusts
+            val cri = if (current.temperature != null && current.dewPoint != null) {
+                CRICalculator.calculateUnrounded(
+                    current.temperature,
+                    current.dewPoint,
+                    current.visibility?.div(1000.0),
+                ).takeIf { it.isFinite() }?.let(currentCriSmoother::smooth)
+            } else null
 
             CurrentWeatherData(
                 temperature = temp,
@@ -106,7 +113,7 @@ class WeatherRepository @Inject constructor(
                 precipitation = current.precipitation ?: 0.0,
                 visibility = current.visibility?.div(1000.0),
                 weatherCode = current.weatherCode ?: 0,
-                cri = currentCriSmoother.smooth(CRICalculator.calculateUnrounded(temp, dewPt, wind)),
+                cri = cri,
                 gustDifferenceLevel = GustDifferenceCalculator.evaluate(wind, gusts, category)
             )
         }
@@ -156,11 +163,20 @@ class WeatherRepository @Inject constructor(
                     ?: localDateTime.atZone(ZoneId.systemDefault()).toInstant()
                 val epochMillis = instant.toEpochMilli()
 
-                val temp = hourly.temperature?.getOrNull(i) ?: 0.0
-                val dewPt = hourly.dewPoint?.getOrNull(i) ?: 0.0
+                val temperatureForCri = hourly.temperature?.getOrNull(i)
+                val dewPointForCri = hourly.dewPoint?.getOrNull(i)
+                val temp = temperatureForCri ?: 0.0
+                val dewPt = dewPointForCri ?: 0.0
                 val wind = hourly.windSpeed?.getOrNull(i) ?: 0.0
                 val gusts = hourly.windGusts?.getOrNull(i)
                 val visibilityMeters = hourly.visibility?.getOrNull(i) ?: 10000.0
+                val cri = if (temperatureForCri != null && dewPointForCri != null) {
+                    CRICalculator.calculate(
+                        temperatureForCri,
+                        dewPointForCri,
+                        hourly.visibility?.getOrNull(i)?.div(1000.0),
+                    ).takeIf { it.isFinite() }
+                } else null
 
                 HourlyWeatherData(
                     time = epochMillis,
@@ -172,7 +188,7 @@ class WeatherRepository @Inject constructor(
                     precipitation = hourly.precipitation?.getOrNull(i) ?: 0.0,
                     visibility = visibilityMeters / 1000.0, // m -> km
                     dewPoint = dewPt,
-                    cri = CRICalculator.calculate(temp, dewPt, wind)
+                    cri = cri
                 )
             } catch (e: Exception) {
                 null

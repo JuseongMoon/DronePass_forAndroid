@@ -21,7 +21,7 @@ data class CurrentWeatherData(
     val precipitation: Double,     // mm
     val visibility: Double?,       // km
     val weatherCode: Int,
-    val cri: Double,               // Condensation Risk Index 0-100
+    val cri: Double?,              // Condensation Risk Index 1-100; null when inputs are missing
     val gustDifferenceLevel: GustDifferenceLevel
 )
 
@@ -35,5 +35,5 @@ data class HourlyWeatherData(
     val precipitation: Double,
     val visibility: Double,        // km
     val dewPoint: Double,
-    val cri: Double
+    val cri: Double?
 )

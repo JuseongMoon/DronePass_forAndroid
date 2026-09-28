@@ -940,7 +940,7 @@ fun CriChart(
     modifier: Modifier = Modifier,
     nowMillis: Long = System.currentTimeMillis(),
 ) {
-    val dataPoints = hourlyData.map { it.time to it.cri }
+    val dataPoints = criChartDataPoints(hourlyData)
     val lineColor = IosWeatherCriChartColor
     val thresholdLines = criChartThresholdLines()
     val currentLabel = stringResource(R.string.weather_chart_current)
@@ -980,6 +980,11 @@ fun CriChart(
         )
     }
 }
+
+internal fun criChartDataPoints(hourlyData: List<HourlyWeatherData>): List<Pair<Long, Double>> =
+    hourlyData.mapNotNull { hour ->
+        hour.cri?.takeIf { it.isFinite() }?.let { hour.time to it }
+    }
 
 internal fun resolveWeatherChartCurrentTimeMarkerMs(
     dataPoints: List<Pair<Long, Double>>,
