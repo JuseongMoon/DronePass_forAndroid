@@ -408,15 +408,20 @@ class WeatherForecastParityTest {
     }
 
     @Test
-    fun `current weather high and low use the full iOS forecast range`() {
+    fun `current weather high and low use only the iOS one hour back and three day window`() {
+        val nowMillis = 10 * HourMs + 42 * 60 * 1000L
         val hourly = listOf(
-            hourlyWeather(time = 0L, temperature = 10.0),
-            hourlyWeather(time = 24L, temperature = 12.0),
-            hourlyWeather(time = 48L, temperature = -3.0),
-            hourlyWeather(time = 71L, temperature = 31.0),
+            hourlyWeather(time = nowMillis - HourMs - 1, temperature = 99.0),
+            hourlyWeather(time = nowMillis - HourMs, temperature = 10.0),
+            hourlyWeather(time = nowMillis, temperature = 12.0),
+            hourlyWeather(time = nowMillis + 24 * HourMs, temperature = -3.0),
+            hourlyWeather(time = nowMillis + 72 * HourMs, temperature = 31.0),
+            hourlyWeather(time = nowMillis + 72 * HourMs + 1, temperature = -99.0),
+            hourlyWeather(time = nowMillis + 16 * 24 * HourMs, temperature = 120.0),
         )
 
-        assertEquals(31.0 to -3.0, resolveForecastTemperatureRange(hourly))
+        assertEquals(31.0 to -3.0, resolveForecastTemperatureRange(hourly, nowMillis))
+        assertNull(resolveForecastTemperatureRange(hourly.take(1), nowMillis))
     }
 
     @Test

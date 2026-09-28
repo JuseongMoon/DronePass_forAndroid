@@ -47,6 +47,7 @@ class WeatherRepositoryTest {
             data.hourlyForecast.single().time,
         )
         assertEquals(9 * 60 * 60, data.utcOffsetSeconds)
+        assertEquals(73, api.lastForecastHours)
         assertEquals(3, api.lastPastHours)
         assertNull(data.hourlyForecast.single().cri)
     }
@@ -206,6 +207,7 @@ class WeatherRepositoryTest {
         var response: WeatherResponse,
     ) : WeatherApi {
         var lastCurrentQuery: String? = null
+        var lastForecastHours: Int? = null
         var lastPastHours: Int? = null
 
         override suspend fun getWeather(
@@ -216,10 +218,12 @@ class WeatherRepositoryTest {
             daily: String,
             timezone: String,
             forecastDays: Int,
+            forecastHours: Int,
             pastHours: Int,
             windSpeedUnit: String,
         ): WeatherResponse {
             lastCurrentQuery = current
+            lastForecastHours = forecastHours
             lastPastHours = pastHours
             return response
         }

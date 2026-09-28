@@ -491,9 +491,16 @@ internal fun shouldShowWeatherReloadingIndicator(
 
 internal fun resolveForecastTemperatureRange(
     hourlyForecast: List<HourlyWeatherData>,
+    nowMillis: Long = System.currentTimeMillis(),
 ): Pair<Double, Double>? {
-    if (hourlyForecast.isEmpty()) return null
-    return hourlyForecast.maxOf { it.temperature } to hourlyForecast.minOf { it.temperature }
+    val startMillis = nowMillis - 60L * 60L * 1000L
+    val endMillis = nowMillis + WeatherForecastWindowMs
+    val temperatures = hourlyForecast.asSequence()
+        .filter { it.time in startMillis..endMillis }
+        .map { it.temperature }
+        .toList()
+    if (temperatures.isEmpty()) return null
+    return temperatures.max() to temperatures.min()
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
