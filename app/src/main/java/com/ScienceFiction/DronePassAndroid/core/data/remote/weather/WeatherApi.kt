@@ -13,6 +13,7 @@ interface WeatherApi {
         @Query("daily") daily: String = "sunrise,sunset",
         @Query("timezone") timezone: String = "auto",
         @Query("forecast_days") forecastDays: Int = 3,
+        @Query("past_hours") pastHours: Int = 3,
         @Query("wind_speed_unit") windSpeedUnit: String = "ms"
     ): WeatherResponse
 }

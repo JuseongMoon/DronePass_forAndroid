@@ -33,10 +33,10 @@ import java.util.TimeZone
 class WeatherForecastParityTest {
 
     @Test
-    fun `forecast charts use iOS three day hourly data window from one hour before now`() {
+    fun `forecast charts start three hours before the current whole hour`() {
         assertEquals(3, WeatherForecastDays)
         assertEquals(72, WeatherForecastChartHours)
-        assertEquals(HourMs, WeatherForecastLookbackMs)
+        assertEquals(3 * HourMs, WeatherForecastLookbackMs)
         assertEquals(72 * HourMs, WeatherForecastWindowMs)
 
         val hourly = (0 until 100).map { index ->
@@ -46,8 +46,8 @@ class WeatherForecastParityTest {
 
         val chartHours = resolveWeatherForecastChartHours(hourly, nowMillis = nowMillis)
 
-        assertEquals(73, chartHours.size)
-        assertEquals(10 * HourMs, chartHours.first().time)
+        assertEquals(76, chartHours.size)
+        assertEquals(7 * HourMs, chartHours.first().time)
         assertEquals(82 * HourMs, chartHours.last().time)
     }
 
@@ -60,9 +60,27 @@ class WeatherForecastParityTest {
 
         val chartHours = resolveWeatherForecastChartHours(hourly, nowMillis = nowMillis)
 
-        assertEquals(74, chartHours.size)
-        assertEquals(9 * HourMs, chartHours.first().time)
+        assertEquals(76, chartHours.size)
+        assertEquals(7 * HourMs, chartHours.first().time)
         assertEquals(82 * HourMs, chartHours.last().time)
+    }
+
+    @Test
+    fun `forecast charts use forecast location whole hours across half hour timezone offsets`() {
+        val halfHourMs = HourMs / 2
+        val hourly = (0 until 100).map { index ->
+            hourlyWeather(time = index * HourMs + halfHourMs)
+        }
+        val nowMillis = 5 * HourMs + 12 * 60 * 1000L // Local 10:42 at UTC+05:30
+
+        val chartHours = resolveWeatherForecastChartHours(
+            hourly,
+            nowMillis = nowMillis,
+            utcOffsetSeconds = 5 * 60 * 60 + 30 * 60,
+        )
+
+        assertEquals(HourMs + halfHourMs, chartHours.first().time) // Local 07:00
+        assertEquals(76 * HourMs + halfHourMs, chartHours.last().time)
     }
 
     @Test

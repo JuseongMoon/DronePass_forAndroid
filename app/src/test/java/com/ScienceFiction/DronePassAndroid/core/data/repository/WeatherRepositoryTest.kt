@@ -34,7 +34,8 @@ class WeatherRepositoryTest {
             daily = null,
             utcOffsetSeconds = 9 * 60 * 60,
         )
-        val repository = WeatherRepository(FakeWeatherApi(response))
+        val api = FakeWeatherApi(response)
+        val repository = WeatherRepository(api)
 
         val data = repository.fetchWeather(latitude = 37.0, longitude = 127.0).getOrThrow()
 
@@ -46,6 +47,7 @@ class WeatherRepositoryTest {
             data.hourlyForecast.single().time,
         )
         assertEquals(9 * 60 * 60, data.utcOffsetSeconds)
+        assertEquals(3, api.lastPastHours)
         assertNull(data.hourlyForecast.single().cri)
     }
 
@@ -204,6 +206,7 @@ class WeatherRepositoryTest {
         var response: WeatherResponse,
     ) : WeatherApi {
         var lastCurrentQuery: String? = null
+        var lastPastHours: Int? = null
 
         override suspend fun getWeather(
             latitude: Double,
@@ -213,9 +216,11 @@ class WeatherRepositoryTest {
             daily: String,
             timezone: String,
             forecastDays: Int,
+            pastHours: Int,
             windSpeedUnit: String,
         ): WeatherResponse {
             lastCurrentQuery = current
+            lastPastHours = pastHours
             return response
         }
     }
