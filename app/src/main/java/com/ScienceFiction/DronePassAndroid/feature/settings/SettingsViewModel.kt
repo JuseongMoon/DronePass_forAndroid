@@ -58,6 +58,7 @@ class SettingsViewModel @Inject constructor(
     private val fusedLocationClient: FusedLocationProviderClient,
     private val realtimeSyncManager: RealtimeSyncManager,
     private val kpIndexRepository: KpIndexRepository,
+    val subscriptionManager: com.ScienceFiction.DronePassAndroid.subscription.SubscriptionManager,
     @ApplicationContext private val appContext: Context
 ) : ViewModel() {
 

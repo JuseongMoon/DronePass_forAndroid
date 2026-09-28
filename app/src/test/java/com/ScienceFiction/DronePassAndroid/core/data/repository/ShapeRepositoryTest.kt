@@ -84,7 +84,7 @@ class ShapeRepositoryTest {
     }
 
     @Test
-    fun `만료 도형 삭제는 활성 도형 중 종료일이 지난 항목만 같은 시각으로 소프트 삭제한다`() {
+    fun `만료 도형 삭제는 종료일이 현재 이하인 활성 항목을 같은 시각으로 소프트 삭제한다`() {
         val now = 10_000L
         val expired = shapeEntity(
             id = "expired",
@@ -113,11 +113,11 @@ class ShapeRepositoryTest {
             now = now,
         )
 
-        assertEquals(listOf("expired"), deletedShapes.map { it.id })
-        assertEquals(now, deletedShapes.single().deletedAt)
-        assertEquals(now, deletedShapes.single().updatedAt)
-        assertEquals(expired.color, deletedShapes.single().color)
-        assertEquals(expired.droneId, deletedShapes.single().droneId)
+        assertEquals(listOf("expired", "exactly-now"), deletedShapes.map { it.id })
+        assertEquals(listOf(now, now), deletedShapes.map { it.deletedAt })
+        assertEquals(listOf(now, now), deletedShapes.map { it.updatedAt })
+        assertEquals(expired.color, deletedShapes.first().color)
+        assertEquals(expired.droneId, deletedShapes.first().droneId)
     }
 
     @Test

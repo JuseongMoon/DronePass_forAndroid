@@ -177,8 +177,8 @@ android {
         applicationId = dronepassApplicationId
         minSdk = 28
         targetSdk = 36
-        versionCode = 102
-        versionName = "3.5.5"
+        versionCode = 103
+        versionName = "3.6.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -357,6 +357,7 @@ dependencies {
 
     // Google Play Services - Location
     implementation(libs.play.services.location)
+    implementation(libs.play.billing)
 
     // Coroutines Play Services (await() for Task)
     implementation(libs.kotlinx.coroutines.play.services)

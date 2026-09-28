@@ -352,7 +352,7 @@ class ProfileViewModelTest {
     }
 
     @Test
-    fun `프로필 만료 도형 수는 iOS처럼 종료일이 현재보다 과거인 도형만 센다`() {
+    fun `프로필 만료 도형 수는 종료일이 현재와 같아도 센다`() {
         val shapes = listOf(
             ShapeModel(flightEndDate = 999L),
             ShapeModel(flightEndDate = 1_000L),
@@ -360,7 +360,7 @@ class ProfileViewModelTest {
             ShapeModel(flightEndDate = null),
         )
 
-        assertEquals(1, countExpiredProfileShapes(shapes, now = 1_000L))
+        assertEquals(2, countExpiredProfileShapes(shapes, now = 1_000L))
     }
 
     @Test

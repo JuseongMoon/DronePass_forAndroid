@@ -534,7 +534,7 @@ class MapCameraFocusTest {
     }
 
     @Test
-    fun `지도 표시 도형은 iOS ShapeModel처럼 종료 시각과 현재가 같으면 아직 만료가 아니다`() {
+    fun `지도 표시 도형은 종료 시각과 현재가 같으면 만료다`() {
         val now = 10_000L
         val filtered = filterShapesByMapVisibilitySettings(
             shapes = listOf(
@@ -546,8 +546,8 @@ class MapCameraFocusTest {
             now = now,
         )
 
-        assertEquals(listOf("ended-now"), filtered.map { it.id })
-        assertEquals(false, isMapShapeExpired(flightEndDateMillis = now, now = now))
+        assertEquals(emptyList<String>(), filtered.map { it.id })
+        assertEquals(true, isMapShapeExpired(flightEndDateMillis = now, now = now))
         assertEquals(true, isMapShapeExpired(flightEndDateMillis = now - 1, now = now))
     }
 

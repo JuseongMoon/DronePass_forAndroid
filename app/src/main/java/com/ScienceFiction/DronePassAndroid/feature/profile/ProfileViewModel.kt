@@ -103,7 +103,7 @@ internal fun countExpiredProfileShapes(
     now: Long = System.currentTimeMillis(),
 ): Int {
     return shapes.count { shape ->
-        shape.flightEndDate?.let { endDate -> endDate < now } == true
+        shape.flightEndDate?.let { endDate -> endDate <= now } == true
     }
 }
 
@@ -152,6 +152,7 @@ class ProfileViewModel @Inject constructor(
     private val sketchRepository: SketchRepository,
     private val droneRepository: DroneRepository,
     private val accountDeletionService: AccountDeletionService,
+    val subscriptionManager: com.ScienceFiction.DronePassAndroid.subscription.SubscriptionManager,
     private val realtimeSyncManager: RealtimeSyncManager,
     @ApplicationContext private val appContext: Context,
 ) : ViewModel() {

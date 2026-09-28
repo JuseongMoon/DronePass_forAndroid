@@ -37,6 +37,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalContext
+import com.ScienceFiction.DronePassAndroid.subscription.EntitlementState
+import com.ScienceFiction.DronePassAndroid.subscription.LegacyKind
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ScienceFiction.DronePassAndroid.R
@@ -140,6 +143,10 @@ private fun SettingsMainContent(
     val endDateAlarmEnabled by settingsViewModel.endDateAlarmEnabled.collectAsStateWithLifecycle()
     val currentKpString by settingsViewModel.currentKpString.collectAsStateWithLifecycle()
     val authState by settingsViewModel.authState.collectAsStateWithLifecycle()
+    val plan by settingsViewModel.subscriptionManager.status.collectAsStateWithLifecycle()
+    val quotaLimits by settingsViewModel.subscriptionManager.limits.collectAsStateWithLifecycle()
+    val quotaUsage by settingsViewModel.subscriptionManager.usage.collectAsStateWithLifecycle()
+    val context = LocalContext.current
 
     val currentLanguage by settingsViewModel.currentLanguage.collectAsStateWithLifecycle()
     val koreaFeaturesEnabled by settingsViewModel.koreaFeaturesEnabled.collectAsStateWithLifecycle()
@@ -181,6 +188,35 @@ private fun SettingsMainContent(
                     }
                 },
             )
+
+            HorizontalDivider(modifier = Modifier.padding(start = 16.dp))
+
+            SectionHeader(title = stringResource(R.string.subscription_plan))
+            SettingsItem(
+                title = when {
+                    plan.isPaidSubscriber && plan.legacyKind == LegacyKind.EARLY_ACCESS -> stringResource(R.string.subscription_pro) + " · " + stringResource(R.string.subscription_early_badge)
+                    plan.legacyKind == LegacyKind.EARLY_ACCESS -> stringResource(R.string.subscription_early_badge) + " · " + stringResource(R.string.subscription_early_lifetime)
+                    plan.entitlement == EntitlementState.PRO -> stringResource(R.string.subscription_pro)
+                    else -> stringResource(R.string.subscription_free)
+                },
+                onClick = { settingsViewModel.subscriptionManager.showPaywall("settings") },
+            )
+            SettingsItem(
+                title = stringResource(R.string.subscription_usage, quotaUsage.shapes, quotaLimits.freeShapes, quotaUsage.sketches, quotaLimits.freeSketches, quotaUsage.drones, quotaLimits.freeDrones),
+                onClick = { settingsViewModel.subscriptionManager.showPaywall("settings") },
+            )
+            SettingsItem(
+                title = stringResource(R.string.subscription_benefits),
+                onClick = { settingsViewModel.subscriptionManager.showPaywall("settings") },
+            )
+            if (plan.isPaidSubscriber) {
+                SettingsItem(
+                    title = stringResource(R.string.subscription_manage),
+                    onClick = { settingsViewModel.subscriptionManager.openManagement(context) },
+                )
+            }
+            if (plan.paymentIssue) Text(stringResource(R.string.subscription_payment_issue), modifier = Modifier.padding(horizontal = 16.dp))
+            Text(stringResource(R.string.subscription_cross_platform_notice), modifier = Modifier.padding(horizontal = 16.dp))
 
             HorizontalDivider(modifier = Modifier.padding(start = 16.dp))
 

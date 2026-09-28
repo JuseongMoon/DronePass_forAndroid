@@ -31,6 +31,8 @@ import com.ScienceFiction.DronePassAndroid.feature.shape.storedShapeEditDefaults
 import com.ScienceFiction.DronePassAndroid.feature.shape.writeShapeEditDateOnlyMode
 import com.ScienceFiction.DronePassAndroid.feature.shape.writeShapeEditDefaults
 import com.ScienceFiction.DronePassAndroid.R
+import com.ScienceFiction.DronePassAndroid.subscription.QuotaAction
+import com.ScienceFiction.DronePassAndroid.subscription.SubscriptionManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -258,6 +260,7 @@ class SavedListViewModel @Inject constructor(
     private val dataStore: DataStore<Preferences>,
     val naverGeocodingApi: NaverGeocodingApi,
     private val analyticsLogger: AnalyticsLogger,
+    private val subscriptionManager: SubscriptionManager,
     @ApplicationContext private val appContext: Context,
 ) : ViewModel() {
 
@@ -477,10 +480,13 @@ class SavedListViewModel @Inject constructor(
     }
 
     fun onDuplicateRequested(shape: ShapeModel) {
-        _selectedShapeId.value = shape.id
-        _isDuplicateMode.value = true
-        _showShapeDetail.value = false
-        _showShapeEdit.value = true
+        viewModelScope.launch {
+            if (!subscriptionManager.allow(QuotaAction.DUPLICATE_SHAPE, "shape_duplicate")) return@launch
+            _selectedShapeId.value = shape.id
+            _isDuplicateMode.value = true
+            _showShapeDetail.value = false
+            _showShapeEdit.value = true
+        }
     }
 
     fun dismissShapeEdit() {
@@ -510,7 +516,13 @@ class SavedListViewModel @Inject constructor(
                     latestShape = latestShape,
                 )
                 val updatedShape = resolvedShape.copy(updatedAt = System.currentTimeMillis())
-                shapeRepository.insertShape(updatedShape)
+                if (isDuplicate || originalShapeAtEditStart == null) {
+                    val action = if (isDuplicate) QuotaAction.DUPLICATE_SHAPE else QuotaAction.CREATE_SHAPE
+                    val source = if (isDuplicate) "shape_duplicate" else "shape_create"
+                    if (!subscriptionManager.withCreationPermit(action, source) { shapeRepository.insertShape(updatedShape) }) return@launch
+                } else {
+                    shapeRepository.insertShape(updatedShape)
+                }
                 if (isDuplicate) {
                     analyticsLogger.logShapeDuplicated()
                 }

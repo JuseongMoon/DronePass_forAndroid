@@ -43,6 +43,8 @@ import com.ScienceFiction.DronePassAndroid.feature.shape.storedShapeEditDefaults
 import com.ScienceFiction.DronePassAndroid.feature.shape.writeShapeEditDateOnlyMode
 import com.ScienceFiction.DronePassAndroid.feature.shape.writeShapeEditDefaults
 import com.ScienceFiction.DronePassAndroid.R
+import com.ScienceFiction.DronePassAndroid.subscription.QuotaAction
+import com.ScienceFiction.DronePassAndroid.subscription.SubscriptionManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.FlowPreview
@@ -222,7 +224,7 @@ internal fun isMapShapeExpired(
     flightEndDateMillis: Long?,
     now: Long = System.currentTimeMillis(),
 ): Boolean {
-    return flightEndDateMillis?.let { it < now } ?: false
+    return flightEndDateMillis?.let { it <= now } ?: false
 }
 
 internal fun isMapShapeNotStarted(
@@ -304,6 +306,7 @@ class MapViewModel @Inject constructor(
     private val dataStore: DataStore<Preferences>,
     private val droneSelectionState: DroneSelectionState,
     private val analyticsLogger: AnalyticsLogger,
+    private val subscriptionManager: SubscriptionManager,
     @ApplicationContext private val appContext: Context,
 ) : ViewModel() {
     private var hasCheckedLegacyShapeMigration = false
@@ -583,6 +586,13 @@ class MapViewModel @Inject constructor(
      * iOS plusButtonView 와 동일하게 지도 중심 좌표만 넘기고 주소는 비워둔다.
      */
     fun onCreateShapeRequested(coordinate: Coordinate) {
+        viewModelScope.launch {
+            if (!subscriptionManager.allow(QuotaAction.CREATE_SHAPE, "shape_create")) return@launch
+            openNewShapeAtCoordinate(coordinate)
+        }
+    }
+
+    private fun openNewShapeAtCoordinate(coordinate: Coordinate) {
         resetShapeSelectionForNewShapeEdit()
         pendingNewShapeRequestGeneration++
         _pendingNewShapeRequest.value = null
@@ -596,6 +606,13 @@ class MapViewModel @Inject constructor(
      * iOS MainView.handleLongPress 처럼 역지오코딩 후 확인창을 거쳐 편집 시트를 연다.
      */
     fun onCreateShapeAtCoordinate(coordinate: Coordinate) {
+        viewModelScope.launch {
+            if (!subscriptionManager.allow(QuotaAction.CREATE_SHAPE, "shape_create")) return@launch
+            prepareNewShapeAtCoordinate(coordinate)
+        }
+    }
+
+    private fun prepareNewShapeAtCoordinate(coordinate: Coordinate) {
         resetShapeSelectionForNewShapeEdit()
         val requestGeneration = ++pendingNewShapeRequestGeneration
         _pendingNewShapeRequest.value = null
@@ -683,6 +700,13 @@ class MapViewModel @Inject constructor(
         shape: ShapeModel,
         returnToDetailAfterDismiss: Boolean = false,
     ) {
+        viewModelScope.launch {
+            if (!subscriptionManager.allow(QuotaAction.DUPLICATE_SHAPE, "shape_duplicate")) return@launch
+            openDuplicateShape(shape, returnToDetailAfterDismiss)
+        }
+    }
+
+    private fun openDuplicateShape(shape: ShapeModel, returnToDetailAfterDismiss: Boolean) {
         _selectedShapeId.value = shape.id
         _isDuplicateMode.value = true
         returnToShapeDetailAfterEditSave = false
@@ -715,7 +739,13 @@ class MapViewModel @Inject constructor(
                     latestShape = latestShape,
                 )
                 val updatedShape = resolvedShape.copy(updatedAt = System.currentTimeMillis())
-                shapeRepository.insertShape(updatedShape)
+                if (isDuplicate || originalShapeAtEditStart == null) {
+                    val action = if (isDuplicate) QuotaAction.DUPLICATE_SHAPE else QuotaAction.CREATE_SHAPE
+                    val source = if (isDuplicate) "shape_duplicate" else "shape_create"
+                    if (!subscriptionManager.withCreationPermit(action, source) { shapeRepository.insertShape(updatedShape) }) return@launch
+                } else {
+                    shapeRepository.insertShape(updatedShape)
+                }
                 val postSaveAction = resolveShapeEditPostSaveAction(
                     isDuplicate = isDuplicate,
                     focusAfterSave = focusAfterSave,

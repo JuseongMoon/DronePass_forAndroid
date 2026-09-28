@@ -41,6 +41,40 @@ internal const val AnalyticsParamAppName = "app_name"
 class AnalyticsLogger @Inject constructor() {
 
     private val analytics: FirebaseAnalytics = Firebase.analytics
+    private val lastQuotaBlocks = mutableMapOf<String, Long>()
+    private var lastUsageAt = 0L
+
+    fun logPaywallView(source: String) = analytics.logEvent("paywall_view") { param("source", source) }
+
+    @Synchronized
+    fun logQuotaBlock(kind: String) {
+        val now = System.currentTimeMillis()
+        if (now - (lastQuotaBlocks[kind] ?: 0L) < 60_000L) return
+        lastQuotaBlocks[kind] = now
+        analytics.logEvent("quota_block") { param("kind", kind) }
+    }
+
+    fun logPurchaseStart(source: String) = analytics.logEvent("purchase_start") { param("source", source) }
+    fun logPurchaseSuccess(source: String) = analytics.logEvent("purchase_success") { param("source", source) }
+    fun logPurchaseFail(source: String, reason: String) = analytics.logEvent("purchase_fail") {
+        param("source", source)
+        param("reason", reason)
+    }
+    fun logRestoreTap() = analytics.logEvent("restore_tap", null)
+    fun logRestoreResult(restored: Boolean) = analytics.logEvent("restore_result") { param("restored", restored.toString()) }
+
+    @Synchronized
+    fun logQuotaUsage(shapes: Int, sketches: Int, drones: Int, plan: String) {
+        val now = System.currentTimeMillis()
+        if (now - lastUsageAt < 24L * 60L * 60L * 1000L) return
+        lastUsageAt = now
+        analytics.logEvent("quota_usage") {
+            param("shapes", com.ScienceFiction.DronePassAndroid.subscription.countBucket(shapes))
+            param("sketches", com.ScienceFiction.DronePassAndroid.subscription.countBucket(sketches))
+            param("drones", drones.toLong())
+            param("plan", plan)
+        }
+    }
 
     /** 도형 생성 이벤트 */
     fun logShapeCreated(shapeType: String) {

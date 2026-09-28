@@ -116,7 +116,7 @@ fun DroneListScreen(
 
             item {
                 Spacer(modifier = Modifier.height(16.dp))
-                DroneAddItem(onClick = { droneViewModel.showEditSheet(null) })
+                DroneAddItem(onClick = droneViewModel::requestAddDrone)
             }
 
             item {

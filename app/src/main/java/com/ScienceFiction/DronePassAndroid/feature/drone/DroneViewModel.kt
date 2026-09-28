@@ -7,6 +7,8 @@ import com.ScienceFiction.DronePassAndroid.core.data.repository.ShapeRepository
 import com.ScienceFiction.DronePassAndroid.core.util.AnalyticsLogger
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.PaletteColor
+import com.ScienceFiction.DronePassAndroid.subscription.QuotaAction
+import com.ScienceFiction.DronePassAndroid.subscription.SubscriptionManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -39,6 +41,7 @@ class DroneViewModel @Inject constructor(
     private val shapeRepository: ShapeRepository,
     private val droneSelectionState: DroneSelectionState,
     private val analyticsLogger: AnalyticsLogger,
+    private val subscriptionManager: SubscriptionManager,
 ) : ViewModel() {
 
     /**
@@ -94,9 +97,17 @@ class DroneViewModel @Inject constructor(
                 size = size,
                 memo = memo
             )
-            droneRepository.insertDrone(drone)
+            if (!subscriptionManager.withCreationPermit(QuotaAction.ADD_DRONE, "drone_add") {
+                droneRepository.insertDrone(drone)
+            }) return@launch
             droneSelectionState.addDroneToSelection(drone.id)
             analyticsLogger.logDroneCreated()
+        }
+    }
+
+    fun requestAddDrone() {
+        viewModelScope.launch {
+            if (subscriptionManager.allow(QuotaAction.ADD_DRONE, "drone_add")) showEditSheet(null)
         }
     }
 

@@ -24,7 +24,7 @@ data class ShapeModel(
      * 비행 종료일이 현재 시각보다 과거인지 여부
      */
     val isExpired: Boolean
-        get() = flightEndDate?.let { it < System.currentTimeMillis() } ?: false
+        get() = flightEndDate?.let { it <= System.currentTimeMillis() } ?: false
 
     /**
      * 비행 시작일이 현재 시각보다 미래인지 여부

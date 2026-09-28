@@ -14,6 +14,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -452,6 +455,8 @@ internal fun MapSketchInput(
     val canUndo by sketchViewModel.canUndo.collectAsStateWithLifecycle()
     val canRedo by sketchViewModel.canRedo.collectAsStateWithLifecycle()
     val activeSketches by sketchViewModel.activeSketches.collectAsStateWithLifecycle()
+    val quotaBlockedCount by sketchViewModel.quotaBlockedCount.collectAsStateWithLifecycle()
+    val quotaLimits by sketchViewModel.quotaLimits.collectAsStateWithLifecycle()
     val windowSize = currentWindowSizeDp()
     val isTabletLayout = windowSize.width >= MapTabletBreakpointDp.dp
 
@@ -506,6 +511,17 @@ internal fun MapSketchInput(
 
     Box(modifier = modifier.fillMaxSize()) {
         // 하단 스케치 툴바
+        Column(
+            modifier = Modifier.align(Alignment.BottomCenter),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+        quotaBlockedCount?.let { count ->
+            Surface {
+                TextButton(onClick = sketchViewModel::showSketchPaywall) {
+                    Text("선 $count/${quotaLimits.freeSketches} · Pro 보기")
+                }
+            }
+        }
         SketchToolbar(
             currentColor = currentColor,
             currentStrokeWidth = currentStrokeWidth,
@@ -523,10 +539,10 @@ internal fun MapSketchInput(
             onDeleteAll = { sketchViewModel.deleteAllSketches() },
             onDone = { sketchViewModel.exitSketchMode() },
             modifier = Modifier
-                .align(Alignment.BottomCenter)
                 .navigationBarsPadding()
                 .padding(bottom = resolveSketchToolbarBottomPadding(isTablet = isTabletLayout)),
         )
+        }
     }
 }
 

@@ -36,6 +36,7 @@ firebaseCrashlytics = "3.0.2"
 credentials = "1.3.0"
 googleid = "1.1.1"
 securityCrypto = "1.1.0-alpha06"
+billing = "9.1.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -100,6 +101,7 @@ googleid = { group = "com.google.android.libraries.identity.googleid", name = "g
 
 # Security
 security-crypto = { group = "androidx.security", name = "security-crypto", version.ref = "securityCrypto" }
+play-billing = { group = "com.android.billingclient", name = "billing", version.ref = "billing" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

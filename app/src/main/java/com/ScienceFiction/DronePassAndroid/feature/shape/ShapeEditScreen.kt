@@ -223,6 +223,8 @@ fun ShapeEditScreen(
     var memo by remember(editKey) { mutableStateOf(initialMemo) }
     var flightStartDate by remember(editKey, initialFlightStart) { mutableLongStateOf(initialFlightStart) }
     var flightEndDate by remember(editKey, initialFlightEnd) { mutableLongStateOf(initialFlightEnd) }
+    // 표시용 종료일이 자동 보정되어도 원래 null이었던 값은 직접 선택할 때까지 보존한다.
+    var keepsNoEndDate by remember(editKey) { mutableStateOf(isEditMode && shape?.flightEndDate == null) }
     var coordinate by remember(editKey) { mutableStateOf(initialCoord) }
     var coordinateText by remember(editKey) {
         mutableStateOf(initialCoord?.let { formatShapeEditCoordinateText(it) }.orEmpty())
@@ -349,7 +351,7 @@ fun ShapeEditScreen(
             selectedColor = selectedColor,
             selectedDroneId = selectedDroneId,
             flightStartDate = flightStartDate,
-            flightEndDate = flightEndDate,
+            flightEndDate = flightEndDateToSave(flightEndDate, keepsNoEndDate),
             now = now,
         )
         onSave(
@@ -842,6 +844,7 @@ fun ShapeEditScreen(
                     proposedEndDate = proposedEnd,
                     isDateOnly = isDateOnly,
                 )
+                keepsNoEndDate = false
                 showEndDatePicker = false
             },
         )

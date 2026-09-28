@@ -75,7 +75,8 @@ fun ProfileScreen(
     onAccountSessionEnded: () -> Unit = {},
     viewModel: ProfileViewModel = hiltViewModel(),
 ) {
-    val activity = LocalContext.current.findActivity()
+    val context = LocalContext.current
+    val activity = context.findActivity()
     val resources = LocalResources.current
     val isLoggedIn by viewModel.isLoggedIn.collectAsStateWithLifecycle()
     val isCloudBackupEnabled by viewModel.isCloudBackupEnabled.collectAsStateWithLifecycle()
@@ -91,6 +92,7 @@ fun ProfileScreen(
     val expiredShapeCount by viewModel.expiredShapeCount.collectAsStateWithLifecycle()
     val activeSketchCount by viewModel.activeSketchCount.collectAsStateWithLifecycle()
     val activeDroneCount by viewModel.activeDroneCount.collectAsStateWithLifecycle()
+    val subscriptionPlan by viewModel.subscriptionManager.status.collectAsStateWithLifecycle()
 
     var showLogoutDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -301,7 +303,17 @@ fun ProfileScreen(
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
             title = { Text(stringResource(R.string.profile_account_delete)) },
-            text = { Text(stringResource(R.string.profile_delete_account_message)) },
+            text = {
+                Column {
+                    Text(stringResource(R.string.profile_delete_account_message))
+                    if (subscriptionPlan.isPaidSubscriber) {
+                        Text(stringResource(R.string.subscription_delete_warning))
+                        TextButton(onClick = { viewModel.subscriptionManager.openManagement(context) }) {
+                            Text(stringResource(R.string.subscription_manage))
+                        }
+                    }
+                }
+            },
             confirmButton = {
                 TextButton(onClick = {
                     showDeleteDialog = false
@@ -326,7 +338,12 @@ fun ProfileScreen(
         AlertDialog(
             onDismissRequest = { showDeleteFinalDialog = false },
             title = { Text(stringResource(R.string.profile_delete_account_final_title)) },
-            text = { Text(stringResource(R.string.profile_delete_account_final_message)) },
+            text = {
+                Column {
+                    Text(stringResource(R.string.profile_delete_account_final_message))
+                    if (subscriptionPlan.isPaidSubscriber) Text(stringResource(R.string.subscription_delete_warning))
+                }
+            },
             confirmButton = {
                 TextButton(onClick = {
                     showDeleteFinalDialog = false

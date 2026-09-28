@@ -11,6 +11,13 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
@@ -21,6 +28,9 @@ import com.ScienceFiction.DronePassAndroid.core.analytics.UserActivityTracker
 import com.ScienceFiction.DronePassAndroid.feature.settings.localizedAppLanguageContext
 import com.ScienceFiction.DronePassAndroid.feature.settings.storedKeepScreenAwake
 import com.ScienceFiction.DronePassAndroid.service.AppForegroundState
+import com.ScienceFiction.DronePassAndroid.subscription.PaywallRequest
+import com.ScienceFiction.DronePassAndroid.subscription.SubscriptionManager
+import com.ScienceFiction.DronePassAndroid.subscription.SubscriptionPaywall
 import com.ScienceFiction.DronePassAndroid.service.ForegroundNotification
 import com.ScienceFiction.DronePassAndroid.service.extractForegroundNotification
 import com.ScienceFiction.DronePassAndroid.service.extractNotificationShapeId
@@ -39,6 +49,7 @@ internal const val LaunchNotificationPermissionRequestCode = 7301
 class MainActivity : ComponentActivity() {
     @Inject lateinit var dataStore: DataStore<Preferences>
     @Inject lateinit var userActivityTracker: UserActivityTracker
+    @Inject lateinit var subscriptionManager: SubscriptionManager
 
     private val initialFocusShapeId = mutableStateOf<String?>(null)
     private val notificationForPopup = mutableStateOf<ForegroundNotification?>(null)
@@ -57,7 +68,16 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         observeKeepScreenAwakeSetting()
         requestLaunchNotificationPermissionIfNeeded()
+        subscriptionManager.start()
         setContent {
+            var paywallRequest by remember { mutableStateOf<PaywallRequest?>(null) }
+            var subscriptionMessage by remember { mutableStateOf<String?>(null) }
+            LaunchedEffect(subscriptionManager) {
+                subscriptionManager.paywallRequests.collect { paywallRequest = it }
+            }
+            LaunchedEffect(subscriptionManager) {
+                subscriptionManager.messages.collect { subscriptionMessage = it }
+            }
             DronePassAndroidTheme {
                 MainScreen(
                     initialFocusShapeId = initialFocusShapeId.value,
@@ -69,6 +89,16 @@ class MainActivity : ComponentActivity() {
                         notificationForPopup.value = null
                     },
                 )
+                paywallRequest?.let { request ->
+                    SubscriptionPaywall(subscriptionManager, request, this, onDismiss = { paywallRequest = null })
+                }
+                subscriptionMessage?.let { message ->
+                    AlertDialog(
+                        onDismissRequest = { subscriptionMessage = null },
+                        text = { Text(message) },
+                        confirmButton = { TextButton(onClick = { subscriptionMessage = null }) { Text(getString(R.string.common_confirm)) } },
+                    )
+                }
             }
         }
     }
@@ -88,6 +118,11 @@ class MainActivity : ComponentActivity() {
         lifecycleScope.launch {
             userActivityTracker.recordIfNeeded()
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        subscriptionManager.onForeground()
     }
 
     override fun onStop() {

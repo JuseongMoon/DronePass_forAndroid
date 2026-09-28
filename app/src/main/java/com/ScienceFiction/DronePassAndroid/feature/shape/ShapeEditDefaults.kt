@@ -17,6 +17,8 @@ import java.util.Locale
 import java.util.TimeZone
 
 internal const val DefaultShapeEditDateOnlyMode = true
+internal fun flightEndDateToSave(displayedEndDate: Long, keepsNoEndDate: Boolean): Long? =
+    if (keepsNoEndDate) null else displayedEndDate
 internal const val DefaultShapeEditFlightDurationMillis = 60L * 60L * 1_000L
 internal const val ShowShapeEditFlightPeriodSectionHeader = false
 @DrawableRes
@@ -219,7 +221,7 @@ internal fun resolveInitialShapeEditFlightEnd(
     now: Long,
 ): Long {
     if (shape != null) {
-        return shape.flightEndDate ?: now
+        return shape.flightEndDate ?: maxOf(now, shape.flightStartDate)
     }
     return editDefaults.endDate ?: now
 }
@@ -346,7 +348,7 @@ internal fun buildShapeEditSavedShape(
     selectedColor: String,
     selectedDroneId: String?,
     flightStartDate: Long,
-    flightEndDate: Long,
+    flightEndDate: Long?,
     now: Long,
 ): ShapeModel {
     val baseShape = originalShape ?: ShapeModel()

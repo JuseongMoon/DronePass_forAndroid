@@ -787,4 +787,27 @@
     <string name="saved_sort_flight_end">By Flight End</string>
     <string name="saved_sort_ascending">Ascending</string>
     <string name="saved_sort_descending">Descending</string>
+    <string name="subscription_plan">Plan</string>
+    <string name="subscription_free">Free</string>
+    <string name="subscription_pro">DronePass Pro</string>
+    <string name="subscription_early_badge">EARLY ACCESS</string>
+    <string name="subscription_early_title">Early Access Member</string>
+    <string name="subscription_early_message">Thank you for being with DronePass from the very beginning.\nYour support and feedback made DronePass what it is today.</string>
+    <string name="subscription_early_lifetime">All Pro features, free for life</string>
+    <string name="subscription_benefits">View Pro benefits</string>
+    <string name="subscription_manage">Manage subscription</string>
+    <string name="subscription_usage">Usage: shapes %1$d / %2$d · lines %3$d / %4$d · drones %5$d / %6$d</string>
+    <string name="subscription_cross_platform_notice">Subscriptions purchased on iPhone are not yet recognized on Android.</string>
+    <string name="subscription_payment_issue">Please check your payment information.</string>
+    <string name="subscription_paywall_title">DronePass Pro · yearly subscription</string>
+    <string name="subscription_paywall_benefits">Create unlimited shapes, sketches, and drones.</string>
+    <string name="subscription_paywall_price">%1$s / year</string>
+    <string name="subscription_paywall_renewal">Your subscription renews automatically each year. Cancel any time in Google Play.</string>
+    <string name="subscription_purchase">Subscribe yearly</string>
+    <string name="subscription_restore">Restore purchases</string>
+    <string name="subscription_terms">Terms of Service · EULA</string>
+    <string name="subscription_privacy">Privacy Policy</string>
+    <string name="subscription_update_required">Update the app to create new items.</string>
+    <string name="subscription_delete_warning">Deleting your account does not cancel your subscription.</string>
+    <string name="subscription_legacy_subscribed">Your lifetime Pro access continues even if you cancel your subscription.</string>
 </resources>

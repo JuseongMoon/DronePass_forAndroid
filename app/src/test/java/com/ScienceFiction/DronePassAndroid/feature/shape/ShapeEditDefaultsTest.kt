@@ -621,7 +621,7 @@ class ShapeEditDefaultsTest {
     }
 
     @Test
-    fun `기존 도형 종료일이 없던 편집 저장도 iOS처럼 보정된 종료일을 저장한다`() {
+    fun `기존 도형 종료일이 없으면 종료일 선택 전까지 저장값은 null이다`() {
         val original = ShapeModel(
             id = "shape-without-end",
             title = "Flight Area",
@@ -652,11 +652,12 @@ class ShapeEditDefaultsTest {
             selectedColor = original.color,
             selectedDroneId = original.droneId,
             flightStartDate = original.flightStartDate,
-            flightEndDate = resolvedEndDate,
+            flightEndDate = flightEndDateToSave(resolvedEndDate, keepsNoEndDate = true),
             now = 2_000L,
         )
 
-        assertEquals(1_000L, saved.flightEndDate)
+        assertEquals(null, saved.flightEndDate)
+        assertEquals(1_000L, flightEndDateToSave(resolvedEndDate, keepsNoEndDate = false))
     }
 
     @Test

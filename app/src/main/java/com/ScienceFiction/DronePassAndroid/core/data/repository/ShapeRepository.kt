@@ -56,7 +56,7 @@ internal fun softDeleteExpiredShapeEntities(
 ): List<ShapeEntity> {
     return shapes
         .filter { shape ->
-            shape.deletedAt == null && shape.flightEndDate?.let { endDate -> endDate < now } == true
+            shape.deletedAt == null && shape.flightEndDate?.let { endDate -> endDate <= now } == true
         }
         .map { shape ->
             shape.copy(

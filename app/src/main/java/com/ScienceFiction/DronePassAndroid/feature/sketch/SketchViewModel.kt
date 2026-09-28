@@ -10,6 +10,7 @@ import com.ScienceFiction.DronePassAndroid.core.util.AnalyticsLogger
 import com.ScienceFiction.DronePassAndroid.core.util.DistanceCalculator
 import com.ScienceFiction.DronePassAndroid.domain.model.Coordinate
 import com.ScienceFiction.DronePassAndroid.domain.model.SketchModel
+import com.ScienceFiction.DronePassAndroid.subscription.SubscriptionManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -37,7 +38,8 @@ internal const val SketchEraserThresholdMeters = 30.0
 class SketchViewModel @Inject constructor(
     private val sketchRepository: SketchRepository,
     private val analyticsLogger: AnalyticsLogger,
-    private val dataStore: DataStore<Preferences>
+    private val dataStore: DataStore<Preferences>,
+    private val subscriptionManager: SubscriptionManager,
 ) : ViewModel() {
 
     // ──────────────────────────────────────────────
@@ -89,7 +91,13 @@ class SketchViewModel @Inject constructor(
 
     /** 활성 스케치 목록 (Room DB Flow) */
     val activeSketches: StateFlow<List<SketchModel>> = sketchRepository.getActiveSketches()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    private val _quotaBlockedCount = MutableStateFlow<Int?>(null)
+    val quotaBlockedCount: StateFlow<Int?> = _quotaBlockedCount.asStateFlow()
+    val quotaLimits = subscriptionManager.limits
+    private val pendingCreatedSketchIds = mutableSetOf<String>()
+    fun showSketchPaywall() = subscriptionManager.showPaywall("sketch")
 
     // ──────────────────────────────────────────────
     // Undo/Redo 스택
@@ -115,6 +123,12 @@ class SketchViewModel @Inject constructor(
     }
 
     init {
+        viewModelScope.launch {
+            activeSketches.collect { sketches ->
+                pendingCreatedSketchIds.removeAll(sketches.map { it.id }.toSet())
+                if (sketches.size + pendingCreatedSketchIds.size < quotaLimits.value.freeSketches) _quotaBlockedCount.value = null
+            }
+        }
         viewModelScope.launch {
             val preferences = dataStore.data.first()
             _currentColor.value = normalizeSketchFirestoreColor(
@@ -198,6 +212,14 @@ class SketchViewModel @Inject constructor(
      */
     fun startDrawing(coordinate: Coordinate) {
         if (_isEraserMode.value) return
+        val count = activeSketches.value.size + pendingCreatedSketchIds.count { pendingId ->
+            activeSketches.value.none { it.id == pendingId }
+        }
+        if (!subscriptionManager.allowSketchStroke(count)) {
+            _quotaBlockedCount.value = count
+            return
+        }
+        _quotaBlockedCount.value = null
         drawingBuffer.clear()
         drawingBuffer.add(coordinate)
         _currentDrawingPoints.value = drawingBuffer.toList()
@@ -241,8 +263,15 @@ class SketchViewModel @Inject constructor(
             opacity = _currentOpacity.value
         )
 
+        pendingCreatedSketchIds.add(sketch.id)
+
         launchSketchMutation {
-            sketchRepository.insertSketch(sketch)
+            try {
+                sketchRepository.insertSketch(sketch)
+            } catch (error: Exception) {
+                pendingCreatedSketchIds.remove(sketch.id)
+                throw error
+            }
             if (recordUndo) {
                 pushUndoAction(SketchAction.Create(sketch))
             }
