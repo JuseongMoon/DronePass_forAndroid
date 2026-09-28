@@ -2,6 +2,8 @@ package com.ScienceFiction.DronePassAndroid.feature.profile
 
 import android.app.Activity
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseAuthInvalidUserException
+import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.OAuthCredential
 import com.google.firebase.auth.OAuthProvider
 import com.google.firebase.functions.FirebaseFunctions
@@ -11,11 +13,14 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.tasks.await
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 
 internal const val ACCOUNT_DELETION_FUNCTION_NAME = "deleteDronePassAccount"
 internal const val ACCOUNT_DELETION_SUCCESS_STATUS = "deleted"
+internal const val ACCOUNT_DELETION_TIMEOUT_SECONDS = 540L
+private const val USER_NOT_FOUND_ERROR_CODE = "ERROR_USER_NOT_FOUND"
 private const val APPLE_PROVIDER_ID = "apple.com"
 
 internal fun accountDeletionCallablePayload(): Map<String, Any> = emptyMap()
@@ -27,6 +32,47 @@ internal fun isAccountDeletionSuccessResponse(data: Any?): Boolean {
 
 internal fun hasAppleLoginProvider(providerIds: List<String>): Boolean {
     return APPLE_PROVIDER_ID in providerIds
+}
+
+internal enum class AccountReloadStatus { EXISTS, DELETED }
+
+internal fun isUserNotFoundErrorCode(errorCode: String?): Boolean {
+    return errorCode == USER_NOT_FOUND_ERROR_CODE
+}
+
+private suspend fun reloadAccountStatus(user: FirebaseUser): AccountReloadStatus {
+    return try {
+        user.reload().await()
+        AccountReloadStatus.EXISTS
+    } catch (error: FirebaseAuthInvalidUserException) {
+        if (isUserNotFoundErrorCode(error.errorCode)) AccountReloadStatus.DELETED else throw error
+    }
+}
+
+internal suspend fun completeAccountDeletion(
+    reload: suspend () -> AccountReloadStatus,
+    beforeCall: suspend () -> Unit,
+    call: suspend () -> Any?,
+) {
+    if (reload() == AccountReloadStatus.DELETED) return
+    beforeCall()
+
+    try {
+        if (!isAccountDeletionSuccessResponse(call())) {
+            throw AccountDeletionException(AccountDeletionFailureReason.INVALID_SERVER_RESPONSE)
+        }
+    } catch (error: CancellationException) {
+        throw error
+    } catch (error: Throwable) {
+        val accountWasDeleted = try {
+            reload() == AccountReloadStatus.DELETED
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (_: Throwable) {
+            false
+        }
+        if (!accountWasDeleted) throw error
+    }
 }
 
 internal enum class AccountDeletionFailureReason {
@@ -58,27 +104,31 @@ class FirebaseAccountDeletionService @Inject constructor(
             val user = firebaseAuth.currentUser
                 ?: throw AccountDeletionException(AccountDeletionFailureReason.NOT_AUTHENTICATED)
 
-            if (hasAppleLoginProvider(user.providerData.map { it.providerId })) {
-                revokeAppleAccessToken(activity)
-            }
-
-            val callableResult = try {
-                firebaseFunctions
-                    .getHttpsCallable(ACCOUNT_DELETION_FUNCTION_NAME)
-                    .call(accountDeletionCallablePayload())
-                    .await()
-            } catch (error: CancellationException) {
-                throw error
-            } catch (error: Throwable) {
-                throw AccountDeletionException(
-                    reason = AccountDeletionFailureReason.SERVER_REQUEST_FAILED,
-                    cause = error,
-                )
-            }
-
-            if (!isAccountDeletionSuccessResponse(callableResult.data)) {
-                throw AccountDeletionException(AccountDeletionFailureReason.INVALID_SERVER_RESPONSE)
-            }
+            completeAccountDeletion(
+                reload = { reloadAccountStatus(user) },
+                beforeCall = {
+                    if (hasAppleLoginProvider(user.providerData.map { it.providerId })) {
+                        revokeAppleAccessToken(activity)
+                    }
+                },
+                call = {
+                    try {
+                        firebaseFunctions
+                            .getHttpsCallable(ACCOUNT_DELETION_FUNCTION_NAME)
+                            .withTimeout(ACCOUNT_DELETION_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                            .call(accountDeletionCallablePayload())
+                            .await()
+                            .data
+                    } catch (error: CancellationException) {
+                        throw error
+                    } catch (error: Throwable) {
+                        throw AccountDeletionException(
+                            reason = AccountDeletionFailureReason.SERVER_REQUEST_FAILED,
+                            cause = error,
+                        )
+                    }
+                },
+            )
             Result.success(Unit)
         } catch (error: CancellationException) {
             throw error

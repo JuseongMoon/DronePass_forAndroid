@@ -2,8 +2,10 @@ package com.ScienceFiction.DronePassAndroid.feature.profile
 
 import com.ScienceFiction.DronePassAndroid.core.di.FIREBASE_FUNCTIONS_REGION
 import java.io.File
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -13,12 +15,102 @@ class AccountDeletionServiceTest {
     fun `회원 탈퇴 callable 계약은 UID 없는 빈 요청과 deleted 응답을 사용한다`() {
         assertEquals("asia-northeast3", FIREBASE_FUNCTIONS_REGION)
         assertEquals("deleteDronePassAccount", ACCOUNT_DELETION_FUNCTION_NAME)
+        assertEquals(540L, ACCOUNT_DELETION_TIMEOUT_SECONDS)
+        assertTrue(isUserNotFoundErrorCode("ERROR_USER_NOT_FOUND"))
+        assertFalse(isUserNotFoundErrorCode("ERROR_USER_TOKEN_EXPIRED"))
         assertTrue(accountDeletionCallablePayload().isEmpty())
         assertTrue(isAccountDeletionSuccessResponse(mapOf("status" to "deleted")))
         assertFalse(isAccountDeletionSuccessResponse(mapOf("status" to "pending")))
         assertFalse(isAccountDeletionSuccessResponse(emptyMap<String, Any>()))
         assertFalse(isAccountDeletionSuccessResponse("deleted"))
         assertFalse(isAccountDeletionSuccessResponse(null))
+    }
+
+    @Test
+    fun `서버 호출 실패 후 계정이 없어졌으면 탈퇴를 완료한다`() = runBlocking {
+        var reloadCount = 0
+        var callCount = 0
+        completeAccountDeletion(
+            reload = {
+                reloadCount++
+                if (reloadCount == 2) AccountReloadStatus.DELETED else AccountReloadStatus.EXISTS
+            },
+            beforeCall = {},
+            call = {
+                callCount++
+                throw AccountDeletionException(AccountDeletionFailureReason.SERVER_REQUEST_FAILED)
+            },
+        )
+
+        assertEquals(2, reloadCount)
+        assertEquals(1, callCount)
+    }
+
+    @Test
+    fun `서버 호출 실패 후 계정이 남아 있으면 실패를 유지한다`() = runBlocking {
+        val serverError = AccountDeletionException(AccountDeletionFailureReason.SERVER_REQUEST_FAILED)
+        var reloadCount = 0
+        val result = runCatching {
+            completeAccountDeletion(
+                reload = {
+                    reloadCount++
+                    AccountReloadStatus.EXISTS
+                },
+                beforeCall = {},
+                call = { throw serverError },
+            )
+        }
+
+        assertSame(serverError, result.exceptionOrNull())
+        assertEquals(2, reloadCount)
+    }
+
+    @Test
+    fun `서버 호출 실패 후 reload도 실패하면 서버 실패를 유지한다`() = runBlocking {
+        val serverError = AccountDeletionException(AccountDeletionFailureReason.SERVER_REQUEST_FAILED)
+        var reloadCount = 0
+        val result = runCatching {
+            completeAccountDeletion(
+                reload = {
+                    reloadCount++
+                    if (reloadCount == 2) throw IllegalStateException("Token expired")
+                    AccountReloadStatus.EXISTS
+                },
+                beforeCall = {},
+                call = { throw serverError },
+            )
+        }
+
+        assertSame(serverError, result.exceptionOrNull())
+        assertEquals(2, reloadCount)
+    }
+
+    @Test
+    fun `재시도 시작 시 계정이 없으면 서버 함수를 다시 호출하지 않는다`() = runBlocking {
+        var callCount = 0
+        completeAccountDeletion(
+            reload = { AccountReloadStatus.DELETED },
+            beforeCall = { error("Provider authentication must not run") },
+            call = { callCount++ },
+        )
+
+        assertEquals(0, callCount)
+    }
+
+    @Test
+    fun `재시도 시작 시 다른 Auth 오류는 삭제 완료로 간주하지 않는다`() = runBlocking {
+        val authError = IllegalStateException("Token expired")
+        var callCount = 0
+        val result = runCatching {
+            completeAccountDeletion(
+                reload = { throw authError },
+                beforeCall = {},
+                call = { callCount++ },
+            )
+        }
+
+        assertSame(authError, result.exceptionOrNull())
+        assertEquals(0, callCount)
     }
 
     @Test
@@ -44,6 +136,7 @@ class AccountDeletionServiceTest {
             listOf(
                 "revokeAppleAccessToken(activity)",
                 "getHttpsCallable(ACCOUNT_DELETION_FUNCTION_NAME)",
+                "withTimeout(ACCOUNT_DELETION_TIMEOUT_SECONDS, TimeUnit.SECONDS)",
                 ".call(accountDeletionCallablePayload())",
             ),
         )
