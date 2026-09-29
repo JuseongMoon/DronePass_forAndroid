@@ -429,6 +429,7 @@ private fun SettingsMainContent(
                 settingsViewModel.checkAuthState()
             },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            containerColor = IosSystemGroupedBackground,
         ) {
             ProfileScreen(
                 onDismiss = {
@@ -618,9 +619,6 @@ private fun SettingsMainContent(
         )
     }
 }
-
-// 재사용 컴포넌트(SectionHeader / SettingsItem / SettingsToggleItem)는
-// SettingsComponents.kt 에 internal 로 이전 — ProfileScreen 등에서 동일 시각 정합으로 재사용.
 
 
 /** 무료 플랜 사용량 행. iOS 처럼 한도에 도달하면 값을 빨간색으로 표시한다. */

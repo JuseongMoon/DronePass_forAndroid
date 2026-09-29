@@ -6,7 +6,6 @@ import android.content.ContextWrapper
 import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -21,10 +20,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -40,15 +36,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ScienceFiction.DronePassAndroid.R
+import androidx.compose.foundation.background
+import androidx.compose.ui.text.style.TextOverflow
+import com.ScienceFiction.DronePassAndroid.ui.component.DronePassSwitch
+import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedDivider
+import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedRow
+import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedSection
+import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedSectionSpacing
+import com.ScienceFiction.DronePassAndroid.ui.component.SheetLargeTitleHeader
+import com.ScienceFiction.DronePassAndroid.ui.theme.IosSeparator
+import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGroupedBackground
 import com.ScienceFiction.DronePassAndroid.feature.document.PrivacyPolicyScreen
 import com.ScienceFiction.DronePassAndroid.feature.document.TermsOfServiceScreen
-import com.ScienceFiction.DronePassAndroid.feature.settings.SectionHeader
-import com.ScienceFiction.DronePassAndroid.feature.settings.SettingsItem
 import java.text.DateFormat
 import java.util.Date
 import java.util.Locale
@@ -119,154 +122,135 @@ fun ProfileScreen(
         }
     }
 
-    Scaffold(
-        modifier = Modifier.fillMaxWidth(),
-        topBar = {
-            LargeTopAppBar(
-                title = {
-                    Text(
-                        text = stringResource(R.string.profile_title),
-                        fontWeight = FontWeight.Bold,
-                    )
-                },
-            )
-        },
-    ) { innerPadding ->
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(IosSystemGroupedBackground),
+    ) {
+        SheetLargeTitleHeader(
+            title = stringResource(R.string.profile_title),
+            closeText = stringResource(R.string.common_close),
+            onClose = onDismiss,
+        )
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(innerPadding)
-                .verticalScroll(rememberScrollState()),
+                .verticalScroll(rememberScrollState())
+                .padding(top = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(InsetGroupedSectionSpacing),
         ) {
             // ===== 1. 내 정보 섹션 =====
-            SectionHeader(title = stringResource(R.string.profile_section_my_info))
+            InsetGroupedSection(header = stringResource(R.string.profile_section_my_info)) {
+                ProfileInfoSection(
+                    email = profileEmail ?: stringResource(R.string.profile_info_email_hidden),
+                    loginProvider = profileLoginProviderDisplayText(profileLoginProvider),
+                    joinDate = joinDateMillis?.let(::formatProfileJoinDate)
+                        ?: stringResource(R.string.profile_info_join_unknown),
+                    shapeCount = stringResource(R.string.profile_info_count_unit, activeShapeCount),
+                    sketchCount = stringResource(R.string.profile_info_count_unit, activeSketchCount),
+                    droneCount = stringResource(R.string.profile_info_count_unit, activeDroneCount),
+                    expiredShapeCount = stringResource(R.string.profile_info_count_unit, expiredShapeCount),
+                )
+            }
 
-            ProfileInfoSection(
-                email = profileEmail ?: stringResource(R.string.profile_info_email_hidden),
-                loginProvider = profileLoginProviderDisplayText(profileLoginProvider),
-                joinDate = joinDateMillis?.let(::formatProfileJoinDate)
-                    ?: stringResource(R.string.profile_info_join_unknown),
-                shapeCount = stringResource(R.string.profile_info_count_unit, activeShapeCount),
-                sketchCount = stringResource(R.string.profile_info_count_unit, activeSketchCount),
-                droneCount = stringResource(R.string.profile_info_count_unit, activeDroneCount),
-                expiredShapeCount = stringResource(R.string.profile_info_count_unit, expiredShapeCount),
-            )
-
-            // iOS ProfileView: 내 정보 카드와 로그아웃은 별도 Section이며 listSectionSpacing(10)을 둔다.
-            Spacer(modifier = Modifier.height(ProfileInfoToLogoutSectionSpacing))
-            SettingsItem(
-                title = stringResource(R.string.profile_account_logout),
-                titleColor = MaterialTheme.colorScheme.error,
-                onClick = { if (!isAccountActionInProgress) showLogoutDialog = true },
-                enabled = shouldEnableProfileAccountAction(isAccountActionInProgress),
-            )
-
-            Spacer(modifier = Modifier.height(ProfileLogoutToSyncSectionSpacing))
+            // iOS ProfileView: 내 정보 카드와 로그아웃은 별도 Section 이다.
+            InsetGroupedSection {
+                InsetGroupedRow(
+                    title = stringResource(R.string.profile_account_logout),
+                    titleColor = MaterialTheme.colorScheme.error,
+                    onClick = { if (!isAccountActionInProgress) showLogoutDialog = true },
+                    enabled = shouldEnableProfileAccountAction(isAccountActionInProgress),
+                )
+            }
 
             // ===== 2. 동기화 섹션 =====
-            SectionHeader(title = stringResource(R.string.profile_section_sync))
+            val syncFooterTextRes = profileSyncFooterTextRes(isLoggedIn, isCloudBackupEnabled)
+            InsetGroupedSection(
+                header = stringResource(R.string.profile_section_sync),
+                footer = syncFooterTextRes?.let { stringResource(it) },
+            ) {
+                ProfileCloudSyncToggleItem(
+                    title = stringResource(R.string.profile_sync_cloud),
+                    subtitle = stringResource(syncStatus.labelRes),
+                    subtitleColor = syncStatus.color,
+                    checked = isCloudBackupEnabled,
+                    enabled = !isSyncing,
+                    showProgress = shouldShowProfileSyncProgress(isSyncing),
+                    onCheckedChange = { viewModel.setCloudBackupEnabled(it) },
+                )
 
-            ProfileCloudSyncToggleItem(
-                title = stringResource(R.string.profile_sync_cloud),
-                subtitle = stringResource(syncStatus.labelRes),
-                subtitleColor = syncStatus.color,
-                checked = isCloudBackupEnabled,
-                enabled = !isSyncing,
-                showProgress = shouldShowProfileSyncProgress(isSyncing),
-                onCheckedChange = { viewModel.setCloudBackupEnabled(it) },
-            )
+                // 마지막 동기화 시간 — iOS lastSyncTimeText 라벨 분기 정합.
+                val lastSyncDisplay = when {
+                    lastRealtimeSyncTime.hasSyncTimestamp() ->
+                        stringResource(R.string.profile_sync_last_sync, formatProfileSyncDateTime(lastRealtimeSyncTime))
+                    lastBackupTime.hasSyncTimestamp() ->
+                        stringResource(R.string.profile_backup_last_backup, formatProfileSyncDateTime(lastBackupTime))
+                    else ->
+                        stringResource(R.string.profile_sync_no_history)
+                }
+                InsetGroupedDivider()
+                Text(
+                    text = lastSyncDisplay,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                )
 
-            // 마지막 동기화 시간 — iOS lastSyncTimeText 라벨 분기 정합.
-            val lastSyncDisplay = when {
-                lastRealtimeSyncTime.hasSyncTimestamp() ->
-                    stringResource(R.string.profile_sync_last_sync, formatProfileSyncDateTime(lastRealtimeSyncTime))
-                lastBackupTime.hasSyncTimestamp() ->
-                    stringResource(R.string.profile_backup_last_backup, formatProfileSyncDateTime(lastBackupTime))
-                else ->
-                    stringResource(R.string.profile_sync_no_history)
-            }
-            Text(
-                text = lastSyncDisplay,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-            )
-
-            // 수동 백업 (로그인 + 토글 ON 시만 표시)
-            if (shouldShowProfileManualBackup(isLoggedIn, isCloudBackupEnabled)) {
-                HorizontalDivider()
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Box(modifier = Modifier.weight(1f)) {
-                        SettingsItem(
-                            title = stringResource(R.string.profile_backup_manual),
-                            titleColor = MaterialTheme.colorScheme.primary,
-                            onClick = { viewModel.syncToCloud() },
-                            enabled = shouldEnableProfileManualBackup(isSyncing),
-                        )
-                    }
-                    if (isSyncing) {
-                        CircularProgressIndicator(
-                            modifier = Modifier
-                                .size(20.dp)
-                                .padding(end = 16.dp),
-                            strokeWidth = 2.dp,
-                        )
-                    }
+                // 수동 백업 (로그인 + 토글 ON 시만 표시)
+                if (shouldShowProfileManualBackup(isLoggedIn, isCloudBackupEnabled)) {
+                    InsetGroupedDivider()
+                    InsetGroupedRow(
+                        title = stringResource(R.string.profile_backup_manual),
+                        titleColor = MaterialTheme.colorScheme.primary,
+                        onClick = { viewModel.syncToCloud() },
+                        enabled = shouldEnableProfileManualBackup(isSyncing),
+                        trailing = if (isSyncing) {
+                            {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(20.dp),
+                                    strokeWidth = 2.dp,
+                                )
+                            }
+                        } else {
+                            null
+                        },
+                    )
                 }
             }
 
-            val syncFooterTextRes = profileSyncFooterTextRes(isLoggedIn, isCloudBackupEnabled)
-            syncFooterTextRes?.let { textRes ->
-                Text(
-                    text = stringResource(textRes),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            // ===== 3. 약관 및 정책 섹션 =====
+            InsetGroupedSection(header = stringResource(R.string.profile_section_terms)) {
+                InsetGroupedRow(
+                    title = stringResource(R.string.profile_terms_service),
+                    titleColor = MaterialTheme.colorScheme.primary,
+                    showChevron = true,
+                    onClick = { webDocTarget = WebDocTarget.Terms },
+                )
+                InsetGroupedDivider()
+                InsetGroupedRow(
+                    title = stringResource(R.string.profile_terms_privacy),
+                    titleColor = MaterialTheme.colorScheme.primary,
+                    showChevron = true,
+                    onClick = { webDocTarget = WebDocTarget.Privacy },
                 )
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // ===== 3. 약관 및 정책 섹션 =====
-            SectionHeader(title = stringResource(R.string.profile_section_terms))
-
-            SettingsItem(
-                title = stringResource(R.string.profile_terms_service),
-                onClick = { webDocTarget = WebDocTarget.Terms },
-                showArrow = true,
-            )
-            HorizontalDivider(modifier = Modifier.padding(start = 16.dp))
-            SettingsItem(
-                title = stringResource(R.string.profile_terms_privacy),
-                onClick = { webDocTarget = WebDocTarget.Privacy },
-                showArrow = true,
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
 
             // ===== 4. 계정 관리 섹션 (회원 탈퇴만) =====
             if (shouldShowProfileAccountSection(isLoggedIn)) {
-                SectionHeader(title = stringResource(R.string.profile_section_account))
-
-                SettingsItem(
-                    title = stringResource(R.string.profile_account_delete),
-                    titleColor = MaterialTheme.colorScheme.error,
-                    onClick = { if (!isAccountActionInProgress) showDeleteDialog = true },
-                    enabled = shouldEnableProfileAccountAction(isAccountActionInProgress),
-                )
-
-                Text(
-                    text = stringResource(R.string.profile_account_delete_desc),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                )
+                InsetGroupedSection(
+                    header = stringResource(R.string.profile_section_account),
+                    footer = stringResource(R.string.profile_account_delete_desc),
+                ) {
+                    InsetGroupedRow(
+                        title = stringResource(R.string.profile_account_delete),
+                        titleColor = MaterialTheme.colorScheme.error,
+                        onClick = { if (!isAccountActionInProgress) showDeleteDialog = true },
+                        enabled = shouldEnableProfileAccountAction(isAccountActionInProgress),
+                    )
+                }
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 
@@ -443,7 +427,7 @@ private fun ProfileInfoSection(
             .fillMaxWidth()
             .padding(
                 horizontal = 16.dp,
-                vertical = ProfileInfoSectionVerticalPadding,
+                vertical = ProfileInfoSectionVerticalPadding + 6.dp,
             ),
         verticalArrangement = Arrangement.spacedBy(ProfileInfoRowSpacing),
     ) {
@@ -483,6 +467,8 @@ private fun ProfileInfoSection(
 private fun ProfileInfoDivider() {
     HorizontalDivider(
         modifier = Modifier.padding(vertical = ProfileInfoDividerVerticalPadding),
+        thickness = 0.5.dp,
+        color = IosSeparator,
     )
 }
 
@@ -497,15 +483,17 @@ private fun ProfileInfoRow(
     ) {
         Text(
             text = title,
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.weight(1f),
+            style = MaterialTheme.typography.bodyLarge,
         )
         Spacer(modifier = Modifier.width(ProfileInfoValueLeadingSpacing))
+        // 이메일처럼 긴 값은 두 줄로 끊지 않고 가운데를 줄여 한 줄로 보여 준다.
         Text(
             text = value,
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.End,
+            maxLines = 1,
+            overflow = TextOverflow.MiddleEllipsis,
             modifier = Modifier.weight(1f),
         )
     }
@@ -528,14 +516,13 @@ private fun ProfileCloudSyncToggleItem(
                 if (enabled) Modifier.clickable { onCheckedChange(!checked) }
                 else Modifier
             )
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+            .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = title,
                 style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.SemiBold,
             )
             Text(
                 text = subtitle,
@@ -550,7 +537,7 @@ private fun ProfileCloudSyncToggleItem(
             )
             Spacer(modifier = Modifier.width(8.dp))
         }
-        Switch(
+        DronePassSwitch(
             checked = checked,
             onCheckedChange = onCheckedChange,
             enabled = enabled,

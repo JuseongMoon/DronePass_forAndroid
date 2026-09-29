@@ -64,9 +64,9 @@ class ProfileSheetParityTest {
         assertSourceOrder(
             infoSectionSource,
             listOf(
-                "style = MaterialTheme.typography.bodyMedium",
+                "style = MaterialTheme.typography.bodyLarge",
                 "Spacer(modifier = Modifier.width(ProfileInfoValueLeadingSpacing))",
-                "style = MaterialTheme.typography.bodyMedium",
+                "style = MaterialTheme.typography.bodyLarge",
                 "color = MaterialTheme.colorScheme.onSurfaceVariant",
                 "textAlign = TextAlign.End",
             ),
@@ -162,12 +162,11 @@ class ProfileSheetParityTest {
             toggleItemSource,
             listOf(
                 "style = MaterialTheme.typography.bodyLarge",
-                "fontWeight = FontWeight.SemiBold",
                 "style = MaterialTheme.typography.bodySmall",
                 "color = subtitleColor",
                 "if (showProgress)",
                 "CircularProgressIndicator",
-                "Switch(",
+                "DronePassSwitch(",
             ),
         )
     }
@@ -228,13 +227,15 @@ class ProfileSheetParityTest {
         assertSourceOrder(
             syncSectionSource,
             listOf(
+                // footer 는 섹션 카드 아래에 그려지지만, 섹션 선언 인자로 먼저 넘긴다.
+                "val syncFooterTextRes = profileSyncFooterTextRes(isLoggedIn, isCloudBackupEnabled)",
+                "footer = syncFooterTextRes",
                 "ProfileCloudSyncToggleItem(",
                 "val lastSyncDisplay = when",
                 "Text(",
                 "text = lastSyncDisplay",
                 "if (shouldShowProfileManualBackup(isLoggedIn, isCloudBackupEnabled))",
                 "R.string.profile_backup_manual",
-                "val syncFooterTextRes = profileSyncFooterTextRes(isLoggedIn, isCloudBackupEnabled)",
             ),
         )
         assertSourceOrder(
@@ -263,12 +264,12 @@ class ProfileSheetParityTest {
             listOf(
                 "R.string.profile_section_terms",
                 "R.string.profile_terms_service",
+                "showChevron = true",
                 "webDocTarget = WebDocTarget.Terms",
-                "showArrow = true",
-                "HorizontalDivider",
+                "InsetGroupedDivider",
                 "R.string.profile_terms_privacy",
+                "showChevron = true",
                 "webDocTarget = WebDocTarget.Privacy",
-                "showArrow = true",
             ),
         )
         assertSourceOrder(
@@ -344,7 +345,7 @@ class ProfileSheetParityTest {
         ).readText()
         val syncResultSource = source.substring(
             source.indexOf("// 동기화 결과 알림"),
-            source.indexOf("Scaffold("),
+            source.indexOf("SheetLargeTitleHeader("),
         )
         val deleteFinalSource = source.substring(
             source.indexOf("// 계정 삭제 2차 최종 확인"),

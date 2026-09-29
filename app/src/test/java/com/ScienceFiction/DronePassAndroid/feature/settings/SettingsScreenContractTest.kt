@@ -50,45 +50,23 @@ class SettingsScreenContractTest {
     }
 
     @Test
-    fun `설정 행 chevron 은 iOS caption 크기를 따른다`() {
-        assertEquals(12.dp, SettingsItemChevronSize)
-    }
-
-    @Test
-    fun `설정 섹션 헤더는 iOS List header 처럼 보조색 label 스타일을 따른다`() {
+    fun `설정 섹션 헤더와 토글 설명은 iOS footnote 보조색 스타일을 따른다`() {
         val source = resolveProjectFile(
-            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsComponents.kt",
-            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsComponents.kt",
+            "src/main/java/com/ScienceFiction/DronePassAndroid/ui/component/InsetGrouped.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/ui/component/InsetGrouped.kt",
         ).readText()
 
         assertAppearsInOrder(
             source = source,
             tokens = listOf(
-                "internal fun SectionHeader",
-                "style = MaterialTheme.typography.labelMedium",
-                "color = MaterialTheme.colorScheme.onSurfaceVariant",
-                "modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)",
-            ),
-        )
-        assertFalse(source.contains("fontWeight = FontWeight.SemiBold"))
-        assertFalse(source.contains("color = MaterialTheme.colorScheme.primary"))
-    }
-
-    @Test
-    fun `설정 토글 설명은 iOS caption secondary 스타일을 따른다`() {
-        val source = resolveProjectFile(
-            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsComponents.kt",
-            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsComponents.kt",
-        ).readText()
-
-        assertAppearsInOrder(
-            source = source,
-            tokens = listOf(
-                "internal fun SettingsToggleItem",
-                "subtitleColor: Color = MaterialTheme.colorScheme.onSurfaceVariant",
+                "fun InsetGroupedSection(",
+                "if (header != null)",
+                "fontSize = 13.sp",
+                "color = IosSecondaryLabel",
+                "fun InsetGroupedRow(",
                 "if (subtitle != null)",
-                "style = MaterialTheme.typography.bodySmall",
-                "color = subtitleColor",
+                "fontSize = 13.sp",
+                "color = IosSecondaryLabel",
             ),
         )
     }
