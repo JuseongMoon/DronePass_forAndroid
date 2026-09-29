@@ -109,7 +109,7 @@ private data class WeatherChartLegendItem(
 /**
  * 공통 라인 차트. Weather/KP 등 시계열 데이터 표시에 재사용.
  *
- * 기본 사용 (Weather): 데이터 범위에 따라 자동 Y축, fill area + smooth cubic line.
+ * 기본 사용 (Weather): 데이터 범위에 따라 자동 Y축, fill area + 직선(iOS LineMark .linear).
  *
  * KP 등 고급 사용 시 옵션:
  * - [yAxisRange] / [yLabelStep]: Y축 0..9 같은 강제 범위
@@ -150,6 +150,8 @@ internal fun WeatherLineChart(
     chartHeight: Dp = WeatherLineChartDefaultHeight,
     xLabelFormatter: (Long) -> String = { formatIosTimeChartAxisLabel(it) },
     fillValueGradient: List<Pair<Double, Color>>? = null,
+    // iOS PointMark 기본 크기(KP symbolSize 36 포함) ≈ 반지름 3pt. 온도 그래프(symbolSize 60)는 4dp.
+    pointRadius: Dp = WeatherChartDefaultPointRadius,
 ) {
     if (dataPoints.isEmpty()) return
     // 가로 스크롤 뷰포트 안이면 Y축을 스크롤 위치에 고정해 그린다 (iOS chartScrollableAxes 정합).
@@ -162,6 +164,36 @@ internal fun WeatherLineChart(
     // 11.sp 는 Material labelSmall 크기와 비슷하며 사용자 폰트 크기 설정에 반응한다.
     val axisLabelPx = with(LocalDensity.current) { 11.sp.toPx() }
 
+    // 가로 스크롤 중에는 프레임마다 다시 그리므로 텍스트 Paint 는 한 번 만들어 재사용한다.
+    val axisLabelArgb = onSurfaceVariant.copy(alpha = 0.8f).toArgb()
+    val pointLabelArgb = onSurface.toArgb()
+    val yLabelPaint = remember(axisLabelArgb, axisLabelPx) {
+        Paint().apply {
+            color = axisLabelArgb
+            textSize = axisLabelPx
+            textAlign = Paint.Align.RIGHT
+            isAntiAlias = true
+        }
+    }
+    val xLabelPaint = remember(axisLabelArgb, axisLabelPx) {
+        Paint().apply {
+            color = axisLabelArgb
+            textSize = axisLabelPx
+            textAlign = Paint.Align.CENTER
+            isAntiAlias = true
+        }
+    }
+    val xDateLabelPaint = remember(xLabelPaint) { Paint(xLabelPaint).apply { typeface = Typeface.DEFAULT_BOLD } }
+    val pointLabelPaint = remember(pointLabelArgb, axisLabelPx) {
+        Paint().apply {
+            color = pointLabelArgb
+            textSize = axisLabelPx
+            textAlign = Paint.Align.CENTER
+            isAntiAlias = true
+            typeface = Typeface.DEFAULT
+        }
+    }
+
     Canvas(
         modifier = modifier
             .fillMaxWidth()
@@ -169,7 +201,7 @@ internal fun WeatherLineChart(
     ) {
         val scrollX = horizontalScroll?.value?.toFloat() ?: 0f
         val lineStrokePx = 2.dp.toPx()
-        val pointRadiusPx = 3.dp.toPx()
+        val pointRadiusPx = pointRadius.toPx()
         val labelGapPx = 6.dp.toPx()
         val rightPadding = 12.dp.toPx()
         val shouldDrawCurrentMarker = shouldDrawWeatherCurrentMarker(
@@ -185,23 +217,13 @@ internal fun WeatherLineChart(
         val bottomPadding = axisLabelPx + 10.dp.toPx()
 
         // Y축 범위 계산 — yAxisRange 가 명시되면 그대로 사용, 아니면 데이터 기반 자동 + 10% 패딩.
-        val (yMin, yMax) = if (yAxisRange != null) {
-            yAxisRange.start to yAxisRange.endInclusive
-        } else {
-            val rawMin = dataPoints.minOf { it.second }
-            val rawMax = dataPoints.maxOf { it.second }
-            val range = if (rawMax - rawMin < 0.001) 1.0 else rawMax - rawMin
-            val padding10 = range * 0.1
-            (rawMin - padding10) to (rawMax + padding10)
-        }
+        val (yMin, yMax) = yAxisRange?.let { it.start to it.endInclusive }
+            ?: resolveWeatherChartAutoYRange(
+                values = dataPoints.map { it.second },
+                thresholds = thresholdLines.map { it.value },
+            )
 
         // Y축 라벨 값과 폭 — 가장 긴 라벨이 잘리지 않도록 왼쪽 여백을 라벨 폭으로 잡는다.
-        val yLabelPaint = Paint().apply {
-            color = onSurfaceVariant.copy(alpha = 0.8f).toArgb()
-            textSize = axisLabelPx
-            textAlign = Paint.Align.RIGHT
-            isAntiAlias = true
-        }
         val yLabelValues = resolveWeatherChartYLabelValues(yMin, yMax, yLabelStep)
         val yLabelTexts = yLabelValues.map(formatValue)
         val leftPadding = (yLabelTexts.maxOfOrNull { yLabelPaint.measureText(it) } ?: 0f) + labelGapPx * 2
@@ -252,13 +274,6 @@ internal fun WeatherLineChart(
         }
 
         // X축 시간 라벨 — xLabelIntervalMs 명시 시 그 간격, 기본 3시간.
-        val xLabelPaint = Paint().apply {
-            color = onSurfaceVariant.copy(alpha = 0.8f).toArgb()
-            textSize = axisLabelPx
-            textAlign = Paint.Align.CENTER
-            isAntiAlias = true
-        }
-        val xDateLabelPaint = Paint(xLabelPaint).apply { typeface = Typeface.DEFAULT_BOLD }
         val intervalMs = xLabelIntervalMs ?: (3 * 60 * 60 * 1000L)
         val labelTimes = resolveTimeChartLabelTimes(
             dataStartMs = dataPoints.first().first,
@@ -294,7 +309,6 @@ internal fun WeatherLineChart(
                     color = thresholdLine.color,
                     left = leftPadding,
                     right = size.width - rightPadding,
-                    strokeWidth = 1f,
                 )
             }
         }
@@ -304,10 +318,9 @@ internal fun WeatherLineChart(
             if (threshold in yMin..yMax) {
                 drawWeatherThresholdLine(
                     y = toScreenY(threshold),
-                    color = Color(0xFFFFB300),
+                    color = IosWeatherRuleMarkOrange,
                     left = leftPadding,
                     right = size.width - rightPadding,
-                    strokeWidth = 2f,
                 )
             }
         }
@@ -317,10 +330,9 @@ internal fun WeatherLineChart(
             if (threshold in yMin..yMax) {
                 drawWeatherThresholdLine(
                     y = toScreenY(threshold),
-                    color = Color(0xFFF44336),
+                    color = IosWeatherRuleMarkRed,
                     left = leftPadding,
                     right = size.width - rightPadding,
-                    strokeWidth = 2f,
                 )
             }
         }
@@ -357,17 +369,13 @@ internal fun WeatherLineChart(
             lineSegmentColors = lineSegmentColors,
         )
 
-        // 기본 Weather 차트는 단일 부드러운 곡선 (기존 동작).
-        // KP처럼 예측/레벨 색상이 명시되면 iOS LineMark처럼 segment 단위로 직선을 그린다.
+        // 기본 Weather 차트는 단일 선. iOS LineMark 기본 보간(.linear)처럼 점 사이를 직선으로 잇는다.
+        // KP처럼 예측/레벨 색상이 명시되면 segment 단위로 그린다.
         if (!drawSegmentedLine) {
-            // 부드러운 곡선 Path (cubicTo) — 기존 동작
             val linePath = Path()
             linePath.moveTo(screenPoints.first().x, screenPoints.first().y)
             for (i in 1 until screenPoints.size) {
-                val prev = screenPoints[i - 1]
-                val curr = screenPoints[i]
-                val cpx = (prev.x + curr.x) / 2
-                linePath.cubicTo(cpx, prev.y, cpx, curr.y, curr.x, curr.y)
+                linePath.lineTo(screenPoints[i].x, screenPoints[i].y)
             }
 
             // 영역 채우기 (라인 아래)
@@ -453,7 +461,8 @@ internal fun WeatherLineChart(
             }
 
             // segment 별 실선/점선 — KP 의 observed/predicted 표현
-            val predictedDash = PathEffect.dashPathEffect(floatArrayOf(10f, 6f), 0f)
+            // iOS KP 예측 구간 StrokeStyle(dash: [5, 3])
+            val predictedDash = PathEffect.dashPathEffect(floatArrayOf(5.dp.toPx(), 3.dp.toPx()), 0f)
             for (i in 0 until screenPoints.size - 1) {
                 val isPredictedSegment = predicted.size == dataPoints.size && predicted[i] && predicted[i + 1]
                 val segmentColor = weatherLineSegmentColor(
@@ -480,18 +489,12 @@ internal fun WeatherLineChart(
         }
 
         if (pointLabels.size == screenPoints.size) {
-            val pointLabelPaint = Paint().apply {
-                color = onSurface.toArgb()
-                textSize = axisLabelPx
-                textAlign = Paint.Align.CENTER
-                isAntiAlias = true
-                typeface = Typeface.DEFAULT
-            }
             screenPoints.forEachIndexed { idx, point ->
                 drawContext.canvas.nativeCanvas.drawText(
                     pointLabels[idx],
                     point.x,
-                    point.y - 8f,
+                    // iOS annotation(position: .top): 점 위쪽으로 약간 띄운다(dp 기준).
+                    point.y - pointRadiusPx - 4.dp.toPx(),
                     pointLabelPaint,
                 )
             }
@@ -545,19 +548,20 @@ internal fun resolveWeatherChartNiceStep(span: Double, maxTicks: Int = 6): Doubl
     return listOf(1.0, 2.0, 5.0, 10.0).map { it * magnitude }.first { it >= rough - 1e-9 }
 }
 
+/** iOS RuleMark StrokeStyle(lineWidth: 1, dash: [5, 5]) — pt 값을 dp 로 그린다(px 로 그리면 고밀도 화면에서 흐려진다). */
 private fun DrawScope.drawWeatherThresholdLine(
     y: Float,
     color: Color,
     left: Float,
     right: Float,
-    strokeWidth: Float,
 ) {
+    val dash = WeatherChartRuleMarkDash.toPx()
     drawLine(
         color = color,
         start = Offset(left, y),
         end = Offset(right, y),
-        strokeWidth = strokeWidth,
-        pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 8f)),
+        strokeWidth = WeatherChartRuleMarkWidth.toPx(),
+        pathEffect = PathEffect.dashPathEffect(floatArrayOf(dash, dash)),
     )
 }
 
@@ -751,6 +755,25 @@ internal fun resolveIosPrecipitationYMax(precipitations: List<Double>): Double {
 }
 
 internal const val IosTemperatureChartYStride = 5.0
+
+/**
+ * Swift Charts 자동 Y 범위 정합: 양수 데이터는 0 을 포함하고, RuleMark(주의/위험선) 값도 범위에 넣어
+ * 데이터가 낮을 때도 기준선이 항상 보이게 한다. 위쪽만 10% 여유를 둔다.
+ */
+internal fun resolveWeatherChartAutoYRange(
+    values: List<Double>,
+    thresholds: List<Double>,
+): Pair<Double, Double> {
+    val all = values + thresholds
+    val rawMin = minOf(0.0, all.minOrNull() ?: 0.0)
+    val rawMax = maxOf(rawMin + 1.0, all.maxOrNull() ?: 1.0)
+    return rawMin to rawMax + (rawMax - rawMin) * 0.1
+}
+internal val WeatherChartDefaultPointRadius = 3.dp
+internal val WeatherChartRuleMarkWidth = 1.dp
+internal val WeatherChartRuleMarkDash = 5.dp
+/** iOS 온도 PointMark symbolSize(60) ≈ 지름 7.7pt */
+internal val IosTemperatureChartPointRadius = 4.dp
 internal const val IosWeatherValueGradientAreaAlpha = 0.3f
 
 /** iOS calculateTemperatureGradientStops 의 온도 기준점. 영역 채우기를 Y축 값에 맞춘 색 그라데이션으로 그린다. */
@@ -856,6 +879,7 @@ fun TemperatureChart(
                 pointColors = pointColors,
                 lineSegmentColors = pointColors,
                 fillValueGradient = IosTemperatureAreaGradientStops,
+                pointRadius = IosTemperatureChartPointRadius,
             )
         }
         WeatherChartLegend(

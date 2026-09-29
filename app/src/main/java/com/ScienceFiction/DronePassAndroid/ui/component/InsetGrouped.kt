@@ -1,5 +1,8 @@
 package com.ScienceFiction.DronePassAndroid.ui.component
 
+import androidx.compose.ui.unit.Dp
+import androidx.compose.runtime.getValue
+import androidx.compose.animation.core.animateFloatAsState
 import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGreen
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -271,4 +274,25 @@ fun SheetLargeTitleHeader(
             }
         }
     }
+}
+
+/**
+ * 시트 내비게이션 헤더 아래 hairline. iOS inline 내비게이션 바처럼 콘텐츠가 헤더 밑으로
+ * 스크롤됐을 때만 나타난다(맨 위에서는 숨김). 높이는 항상 차지해 레이아웃이 흔들리지 않는다.
+ */
+@Composable
+fun SheetHeaderDivider(
+    visible: Boolean,
+    modifier: Modifier = Modifier,
+    thickness: Dp = 0.5.dp,
+) {
+    val alpha by animateFloatAsState(
+        targetValue = if (visible) 1f else 0f,
+        label = "sheet_header_divider",
+    )
+    HorizontalDivider(
+        modifier = modifier.alpha(alpha),
+        thickness = thickness,
+        color = IosSeparator,
+    )
 }

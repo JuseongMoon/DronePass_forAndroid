@@ -1,5 +1,8 @@
 package com.ScienceFiction.DronePassAndroid.feature.kp
 
+import com.ScienceFiction.DronePassAndroid.ui.component.SheetHeaderDivider
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.material.icons.outlined.Info
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
@@ -25,7 +28,6 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -92,6 +94,7 @@ fun KpSheetHeader(
     isLoading: Boolean,
     onRefresh: () -> Unit,
     onInfo: (() -> Unit)? = null,
+    showDivider: Boolean = true,
 ) {
     Column {
         Row(
@@ -142,9 +145,9 @@ fun KpSheetHeader(
                 }
             }
         }
-        HorizontalDivider(
+        SheetHeaderDivider(
+            visible = showDivider,
             thickness = KpSheetNavigationHeaderDividerThickness,
-            color = MaterialTheme.colorScheme.outlineVariant,
         )
     }
 }
@@ -157,6 +160,7 @@ fun KpSheetHeader(
 fun KpForecastContent(
     viewModel: KpViewModel,
     modifier: Modifier = Modifier,
+    listState: LazyListState = rememberLazyListState(),
 ) {
     val currentKp by viewModel.currentKp.collectAsStateWithLifecycle()
     val kpLevel by viewModel.kpLevel.collectAsStateWithLifecycle()
@@ -199,6 +203,7 @@ fun KpForecastContent(
     Box(modifier = modifier.fillMaxSize()) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
+            state = listState,
             contentPadding = PaddingValues(
                 horizontal = IosKpForecastContentHorizontalPadding,
                 vertical = IosKpForecastContentVerticalPadding,

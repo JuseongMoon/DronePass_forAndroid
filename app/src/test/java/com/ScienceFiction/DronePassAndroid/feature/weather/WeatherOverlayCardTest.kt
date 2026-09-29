@@ -1,8 +1,8 @@
 package com.ScienceFiction.DronePassAndroid.feature.weather
 
+import com.ScienceFiction.DronePassAndroid.core.ui.IosWeatherSymbols
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cloud
-import androidx.compose.material.icons.filled.Umbrella
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ScienceFiction.DronePassAndroid.R
@@ -47,7 +47,7 @@ class WeatherOverlayCardTest {
     @Test
     fun `weather icon uses iOS precipitation aware weather code when current weather is available`() {
         assertEquals(
-            Icons.Default.Umbrella.name,
+            IosWeatherSymbols.CloudRain.name,
             resolveWeatherOverlayWeatherIcon(condition = WeatherCondition.RAIN, precipitation = 0.1).name,
         )
     }

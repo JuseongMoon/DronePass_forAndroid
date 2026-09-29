@@ -108,6 +108,8 @@ fun WeatherOverlayCard(
                 vertical = WeatherOverlayCardVerticalPadding,
             ),
             verticalArrangement = Arrangement.spacedBy(WeatherOverlayCardGroupSpacing),
+            // iOS VStack 기본 정렬(.center): 폭이 좁은 아랫줄(일출/일몰 + 남은 시간)을 카드 가운데에 둔다.
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             // 윗줄: 날씨 + 풍향 + 온도 — iOS HStack(spacing: 8)
             Row(

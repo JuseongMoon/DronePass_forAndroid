@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.drone
 
+import com.ScienceFiction.DronePassAndroid.feature.shape.ShapeDetailFirstSectionTopPadding
 import com.ScienceFiction.DronePassAndroid.ui.component.IosMenuDivider
 import com.ScienceFiction.DronePassAndroid.ui.component.IosDropdownMenu
 import android.content.ClipData
@@ -160,7 +161,7 @@ fun DroneDetailSheet(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 4.dp)
+                        .padding(top = ShapeDetailFirstSectionTopPadding)
                         .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(InsetGroupedSectionSpacing),
                 ) {
@@ -190,7 +191,6 @@ fun DroneDetailSheet(
                             emptyFallback = stringResource(R.string.drone_detail_not_entered),
                         ),
                         copyText = drone.serialNumber,
-                        isPlaceholder = isDroneDetailPlaceholder(drone.serialNumber),
                         onCopy = ::copyAndShowToast,
                     )
                     }
@@ -203,7 +203,6 @@ fun DroneDetailSheet(
                             emptyFallback = stringResource(R.string.drone_detail_not_entered),
                         ),
                         copyText = drone.takeoffWeight,
-                        isPlaceholder = isDroneDetailPlaceholder(drone.takeoffWeight),
                         onCopy = ::copyAndShowToast,
                     )
                     InsetGroupedDivider()
@@ -214,7 +213,6 @@ fun DroneDetailSheet(
                             emptyFallback = stringResource(R.string.drone_detail_not_entered),
                         ),
                         copyText = drone.size,
-                        isPlaceholder = isDroneDetailPlaceholder(drone.size),
                         onCopy = ::copyAndShowToast,
                     )
                     }
@@ -684,13 +682,13 @@ private fun DroneDetailTextRow(
     ) {
         Text(
             text = label,
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(modifier = Modifier.weight(1f))
         Text(
             text = value,
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodyLarge,
             fontWeight = valueFontWeight,
         )
     }
@@ -712,7 +710,7 @@ private fun DroneDetailColorRow(
     ) {
         Text(
             text = label,
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(modifier = Modifier.weight(1f))
@@ -734,7 +732,7 @@ private fun DroneDetailColorRow(
                 )
                 Text(
                     text = colorLabel.orEmpty(),
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodyLarge,
                 )
             }
         }
@@ -746,7 +744,6 @@ private fun DroneDetailBlockRow(
     label: String,
     value: String,
     copyText: String? = null,
-    isPlaceholder: Boolean,
     onCopy: (String) -> Unit,
 ) {
     Column(
@@ -758,17 +755,15 @@ private fun DroneDetailBlockRow(
     ) {
         Text(
             text = label,
-            style = MaterialTheme.typography.bodySmall,
+            fontSize = 12.sp,
+            lineHeight = 16.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(
             text = value,
-            style = MaterialTheme.typography.bodyMedium,
-            color = if (isPlaceholder) {
-                MaterialTheme.colorScheme.onSurfaceVariant
-            } else {
-                MaterialTheme.colorScheme.onSurface
-            },
+            style = MaterialTheme.typography.bodyLarge,
+            // iOS 는 "미입력" 도 본문색으로 표시한다(값 자리 표시).
+            color = MaterialTheme.colorScheme.onSurface,
         )
     }
 }

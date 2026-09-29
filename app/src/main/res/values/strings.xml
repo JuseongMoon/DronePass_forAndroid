@@ -169,9 +169,6 @@
     <string name="shape_edit_label_memo">메모</string>
     <string name="shape_edit_placeholder_memo">메모를 입력하세요</string>
     <string name="shape_edit_default_title">새 도형</string>
-    <string name="shape_edit_nav_title_new">새 도형</string>
-    <string name="shape_edit_nav_title_edit">도형 수정</string>
-    <string name="shape_edit_nav_title_duplicate">도형 복제</string>
     <string name="shape_edit_navigation_cancel">취소</string>
     <string name="shape_edit_navigation_save">저장</string>
     <string name="shape_edit_alert_unsaved_title">수정 중인 정보가 있습니다</string>
@@ -543,7 +540,8 @@
     <string name="weather_time_minutes" tools:ignore="PluralsCandidate">%1$d분</string>
     <string name="weather_remaining">남음</string>
     <string name="weather_disclaimer">주의 및 경고 아이콘은 참고용입니다. 비행 전 현장 상황을 반드시 확인하세요.</string>
-    <string name="weather_attribution_legal">법적 고지 및 데이터 출처</string>
+    <string name="weather_attribution_prefix">날씨 정보 제공:</string>
+    <string name="weather_attribution_legal">법적 고지</string>
     <string name="weather_attribution_logo">Apple 날씨</string>
     <string name="weather_stale_notice">최신 날씨를 받지 못해 마지막으로 받은 자료를 보여 주고 있습니다.</string>
     <string name="weather_error_service_unavailable">날씨 서비스를 잠시 사용할 수 없습니다. 잠시 후 다시 시도해 주세요.</string>

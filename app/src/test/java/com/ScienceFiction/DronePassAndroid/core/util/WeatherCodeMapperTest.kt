@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.core.util
 
+import com.ScienceFiction.DronePassAndroid.core.ui.IosWeatherSymbols
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AcUnit
 import androidx.compose.material.icons.filled.Cloud
@@ -46,8 +47,8 @@ class WeatherCodeMapperTest {
     @Test
     fun `precipitation icon matches iOS by requiring actual precipitation for rain icon`() {
         assertEquals(Icons.Default.Cloud.name, WeatherCodeMapper.conditionIcon(WeatherCondition.RAIN, 0.0).name)
-        assertEquals(Icons.Default.Umbrella.name, WeatherCodeMapper.conditionIcon(WeatherCondition.RAIN, 0.1).name)
-        assertEquals(Icons.Default.AcUnit.name, WeatherCodeMapper.conditionIcon(WeatherCondition.SNOW, 0.1).name)
+        assertEquals(IosWeatherSymbols.CloudRain.name, WeatherCodeMapper.conditionIcon(WeatherCondition.RAIN, 0.1).name)
+        assertEquals(IosWeatherSymbols.CloudSnow.name, WeatherCodeMapper.conditionIcon(WeatherCondition.SNOW, 0.1).name)
     }
 
     @Test

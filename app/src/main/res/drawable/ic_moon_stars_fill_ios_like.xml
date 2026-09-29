@@ -1,0 +1,16 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- SF Symbols moon.stars.fill: 채운 초승달 + 작은 별 두 개 (구름 없음) -->
+    <path
+        android:pathData="M11.2,3.2A9,9 0,1 0,20.8 15.6A7.2,7.2 0,0 1,11.2 3.2Z"
+        android:fillColor="@android:color/black" />
+    <path
+        android:pathData="M17.2,2.9000000000000004Q17.2,5.2 19.5,5.2Q17.2,5.2 17.2,7.5Q17.2,5.2 14.899999999999999,5.2Q17.2,5.2 17.2,2.9000000000000004Z"
+        android:fillColor="@android:color/black" />
+    <path
+        android:pathData="M20.9,8.6Q20.9,10.2 22.5,10.2Q20.9,10.2 20.9,11.799999999999999Q20.9,10.2 19.299999999999997,10.2Q20.9,10.2 20.9,8.6Z"
+        android:fillColor="@android:color/black" />
+</vector>

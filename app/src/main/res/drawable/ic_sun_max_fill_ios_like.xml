@@ -1,0 +1,15 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- SF Symbols sun.max.fill: 채운 원 + 빛살 8개 -->
+    <path
+        android:pathData="M12,7.3A4.7,4.7 0,1 1,11.99 7.3Z"
+        android:fillColor="@android:color/black" />
+    <path
+        android:pathData="M19.00,12.00L21.60,12.00M16.95,16.95L18.79,18.79M12.00,19.00L12.00,21.60M7.05,16.95L5.21,18.79M5.00,12.00L2.40,12.00M7.05,7.05L5.21,5.21M12.00,5.00L12.00,2.40M16.95,7.05L18.79,5.21"
+        android:strokeColor="@android:color/black"
+        android:strokeWidth="2"
+        android:strokeLineCap="round" />
+</vector>

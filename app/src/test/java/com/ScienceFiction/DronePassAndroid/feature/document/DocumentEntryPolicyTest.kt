@@ -90,7 +90,7 @@ class DocumentEntryPolicyTest {
                 "Row(",
                 "text = title",
                 "R.string.common_close",
-                "HorizontalDivider(",
+                "SheetHeaderDivider(", // 스크롤했을 때만 보이는 iOS 내비게이션 바 hairline
                 "when (state)",
                 "ParsedDocumentUiState.Loading -> LoadingContent",
                 "ParsedDocumentUiState.Error -> ErrorContent",

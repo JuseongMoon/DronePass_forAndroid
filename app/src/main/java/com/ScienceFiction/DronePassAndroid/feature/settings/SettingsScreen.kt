@@ -1,4 +1,5 @@
 package com.ScienceFiction.DronePassAndroid.feature.settings
+import androidx.compose.foundation.lazy.rememberLazyListState
 import com.ScienceFiction.DronePassAndroid.ui.component.IosMenuDivider
 import com.ScienceFiction.DronePassAndroid.ui.component.IosDropdownMenu
 import androidx.compose.foundation.clickable
@@ -121,7 +122,7 @@ fun SettingsScreen(
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
             containerColor = IosSystemGroupedBackground,
         ) {
-            DroneListScreen(onClose = { showDroneListSheet = false })
+            DroneListScreen()
         }
     }
 
@@ -192,7 +193,7 @@ private fun SettingsMainContent(
                 .padding(top = 8.dp),
             verticalArrangement = Arrangement.spacedBy(InsetGroupedSectionSpacing),
         ) {
-            // ===== 1. 내 정보 (iOS: 내 프로필 / 로그인 + 내 드론 관리하기) =====
+            // ===== 1. 내 정보 (iOS: 내 프로필 / 로그인 + 내 드론 관리하기, 셰브런 없는 버튼 행) =====
             InsetGroupedSection(header = stringResource(R.string.settings_section_my_info)) {
                 InsetGroupedRow(
                     title = if (isLoggedIn) {
@@ -200,7 +201,6 @@ private fun SettingsMainContent(
                     } else {
                         stringResource(R.string.settings_profile_login)
                     },
-                    showChevron = true,
                     onClick = {
                         if (isLoggedIn) showProfileSheet = true else showLoginSheet = true
                     },
@@ -208,7 +208,6 @@ private fun SettingsMainContent(
                 InsetGroupedDivider()
                 InsetGroupedRow(
                     title = stringResource(R.string.settings_drone_manage),
-                    showChevron = true,
                     onClick = onNavigateToDroneList,
                 )
             }
@@ -538,15 +537,18 @@ private fun SettingsMainContent(
             onDismissRequest = { showKpForecastSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         ) {
+            val kpListState = rememberLazyListState()
             Column(modifier = Modifier.fillMaxWidth()) {
                 KpSheetHeader(
                     isLoading = kpIsLoading,
                     onRefresh = { kpViewModel.loadKpData() },
                     onInfo = { showKpInfoSheet = true },
+                    showDivider = kpListState.canScrollBackward,
                 )
                 KpForecastContent(
                     viewModel = kpViewModel,
                     modifier = Modifier.padding(bottom = 16.dp),
+                    listState = kpListState,
                 )
             }
         }
@@ -560,6 +562,7 @@ private fun SettingsMainContent(
             onDismissRequest = { showWeatherSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         ) {
+            val weatherListState = rememberLazyListState()
             Column(modifier = Modifier.fillMaxWidth()) {
                 WeatherSheetHeader(
                     isLoading = weatherIsLoading,
@@ -568,10 +571,12 @@ private fun SettingsMainContent(
                         selectedWeatherInfoTopic = null
                         showWeatherInfoSheet = true
                     },
+                    showDivider = weatherListState.canScrollBackward,
                 )
                 WeatherForecastContent(
                     viewModel = weatherViewModel,
                     modifier = Modifier.padding(bottom = 16.dp),
+                    listState = weatherListState,
                     onWeatherInfoRequested = { topic ->
                         selectedWeatherInfoTopic = topic
                         showWeatherInfoSheet = true

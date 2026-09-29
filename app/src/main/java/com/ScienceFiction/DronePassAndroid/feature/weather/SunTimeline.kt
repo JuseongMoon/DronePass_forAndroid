@@ -17,9 +17,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.NightsStay
 import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -272,8 +270,11 @@ private fun TimelineProgressBar(
                     ),
                 contentAlignment = Alignment.Center,
             ) {
+                // iOS 현재 상태 배지: 낮 sun.max.fill / 밤 moon.stars.fill (구름 없는 초승달)
                 Icon(
-                    imageVector = if (isDaytime) Icons.Default.WbSunny else Icons.Default.NightsStay,
+                    painter = painterResource(
+                        if (isDaytime) R.drawable.ic_sun_max_fill_ios_like else R.drawable.ic_moon_stars_fill_ios_like,
+                    ),
                     contentDescription = null,
                     tint = Color.White,
                     modifier = Modifier.size(IosSunTimelineCurrentBadgeIconSize),

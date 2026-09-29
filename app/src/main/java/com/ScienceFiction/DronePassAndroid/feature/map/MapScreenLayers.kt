@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.map
 
+import androidx.compose.foundation.lazy.rememberLazyListState
 import android.annotation.SuppressLint
 import android.graphics.PointF
 import android.view.MotionEvent
@@ -809,15 +810,18 @@ internal fun MapBottomSheets(
             onDismissRequest = onDismissKpSheet,
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         ) {
+            val kpListState = rememberLazyListState()
             Column(modifier = Modifier.fillMaxWidth()) {
                 KpSheetHeader(
                     isLoading = kpIsLoading,
                     onRefresh = { kpViewModel.loadKpData() },
                     onInfo = { showKpInfoSheet = true },
+                    showDivider = kpListState.canScrollBackward,
                 )
                 KpForecastContent(
                     viewModel = kpViewModel,
                     modifier = Modifier.padding(bottom = 16.dp),
+                    listState = kpListState,
                 )
             }
         }
@@ -830,6 +834,7 @@ internal fun MapBottomSheets(
             onDismissRequest = onDismissWeatherSheet,
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         ) {
+            val weatherListState = rememberLazyListState()
             Column(modifier = Modifier.fillMaxWidth()) {
                 WeatherSheetHeader(
                     isLoading = weatherIsLoading,
@@ -838,10 +843,12 @@ internal fun MapBottomSheets(
                         selectedWeatherInfoTopic = null
                         showWeatherInfoSheet = true
                     },
+                    showDivider = weatherListState.canScrollBackward,
                 )
                 WeatherForecastContent(
                     viewModel = weatherViewModel,
                     modifier = Modifier.padding(bottom = 16.dp),
+                    listState = weatherListState,
                     onWeatherInfoRequested = { topic ->
                         selectedWeatherInfoTopic = topic
                         showWeatherInfoSheet = true

@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.settings
 
+import com.ScienceFiction.DronePassAndroid.ui.component.SheetHeaderDivider
 import com.ScienceFiction.DronePassAndroid.ui.component.IosMenuDivider
 import com.ScienceFiction.DronePassAndroid.ui.component.IosDropdownMenu
 import androidx.annotation.StringRes
@@ -179,9 +180,9 @@ private fun InfoGuideScaffold(
                 }
             }
         }
-        HorizontalDivider(
+        SheetHeaderDivider(
+            visible = listState.canScrollBackward,
             thickness = InfoGuideHeaderDividerThickness,
-            color = MaterialTheme.colorScheme.outlineVariant,
         )
         LazyColumn(
             modifier = Modifier.fillMaxWidth(),

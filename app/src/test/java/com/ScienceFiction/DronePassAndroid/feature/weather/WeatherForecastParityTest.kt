@@ -803,4 +803,12 @@ class WeatherForecastParityTest {
         assertEquals(listOf(0.0, 2.0, 4.0, 6.0, 8.0, 10.0), resolveWeatherChartYLabelValues(0.0, 10.0, null))
         assertEquals(listOf(10.0, 15.0, 20.0, 25.0, 30.0, 35.0), resolveWeatherChartYLabelValues(10.0, 35.0, 5.0))
     }
+
+    @Test
+    fun `자동 Y 범위는 iOS Charts 처럼 0 과 주의 위험선을 포함한다`() {
+        // 풍속 0.3~1.5 m/s, 주의 8.5 / 위험 10.5 → 기준선이 보이도록 0 ~ 10.5(+10%)
+        val (min, max) = resolveWeatherChartAutoYRange(listOf(0.3, 1.5), listOf(8.5, 10.5))
+        assertEquals(0.0, min, 0.0)
+        assertEquals(11.55, max, 1e-9)
+    }
 }

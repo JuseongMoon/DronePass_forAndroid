@@ -128,11 +128,8 @@ fun ProfileScreen(
             .fillMaxWidth()
             .background(IosSystemGroupedBackground),
     ) {
-        SheetLargeTitleHeader(
-            title = stringResource(R.string.profile_title),
-            closeText = stringResource(R.string.common_close),
-            onClose = onDismiss,
-        )
+        // iOS ProfileView 는 닫기 버튼 없이 시트를 끌어 내려 닫는다.
+        SheetLargeTitleHeader(title = stringResource(R.string.profile_title))
         Column(
             modifier = Modifier
                 .fillMaxWidth()

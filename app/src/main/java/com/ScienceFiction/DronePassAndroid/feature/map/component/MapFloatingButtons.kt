@@ -1,6 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.map.component
 
-import androidx.compose.ui.res.vectorResource
+import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.layout.onSizeChanged
 import com.naver.maps.map.widget.ZoomControlView
@@ -75,8 +75,8 @@ internal val MapSketchButtonSize = 45.dp
 internal val MapZoomControlToSketchSpacing = 10.dp
 internal val MapSketchIconSize = 21.dp
 internal val MapSketchButtonShadowElevation = 4.dp
-/** iOS sketchButton 의 SF Symbols pencil.tip 과 같은 모양. */
-internal val MapSketchButtonIconRes: Int = R.drawable.ic_pencil_tip_ios_like
+/** 스케치(그리기) 진입 아이콘. 연필 끝(pencil.tip)은 작은 크기에서 삼각형처럼 보여 펜 아이콘을 쓴다. */
+internal val MapSketchButtonIcon: ImageVector = Icons.Rounded.Edit
 internal val MapStatusGroupSpacing = 8.dp
 internal val MapKpButtonHorizontalPadding = 12.dp
 internal val MapKpButtonVerticalPadding = 8.dp
@@ -213,7 +213,7 @@ fun MapFloatingButtons(
                         ),
                     ) {
                         Icon(
-                            imageVector = ImageVector.vectorResource(MapSketchButtonIconRes),
+                            imageVector = MapSketchButtonIcon,
                             contentDescription = stringResource(R.string.map_fab_sketch),
                             modifier = Modifier.size(MapSketchIconSize)
                         )

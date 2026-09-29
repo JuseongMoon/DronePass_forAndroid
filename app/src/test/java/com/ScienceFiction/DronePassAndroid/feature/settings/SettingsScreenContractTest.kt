@@ -136,21 +136,17 @@ class SettingsScreenContractTest {
     }
 
     @Test
-    fun `설정 chevron 은 다른 화면으로 이동하는 행에만 표시한다`() {
+    fun `설정 chevron 은 iOS처럼 KP와 날씨 행에만 표시한다`() {
         val source = resolveProjectFile(
             "src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsScreen.kt",
             "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsScreen.kt",
         ).readText()
 
-        // Android 는 이동 행(프로필, 드론 관리, KP, 날씨)에 chevron 을 둔다. 동작 행은 파란 텍스트로 구분한다.
-        assertEquals(4, Regex("showChevron = true").findAll(source).count())
+        // iOS SettingView 처럼 chevron 은 KP·날씨 행에만 둔다(내 정보 행은 버튼 행).
+        assertEquals(2, Regex("showChevron = true").findAll(source).count())
         assertAppearsInOrder(
             source = source,
             tokens = listOf(
-                "R.string.settings_profile_login",
-                "showChevron = true",
-                "R.string.settings_drone_manage",
-                "showChevron = true",
                 "R.string.settings_kp_index_current",
                 "showChevron = true",
                 "R.string.settings_weather_current",
@@ -213,7 +209,7 @@ class SettingsScreenContractTest {
                 "if (showDroneListSheet)",
                 "onDismissRequest = { showDroneListSheet = false }",
                 "skipPartiallyExpanded = true",
-                "DroneListScreen(onClose = { showDroneListSheet = false })",
+                "DroneListScreen()",
             ),
         )
     }

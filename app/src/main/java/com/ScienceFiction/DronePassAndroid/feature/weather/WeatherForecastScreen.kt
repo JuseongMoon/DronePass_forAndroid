@@ -1,5 +1,8 @@
 package com.ScienceFiction.DronePassAndroid.feature.weather
 
+import com.ScienceFiction.DronePassAndroid.ui.component.SheetHeaderDivider
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,7 +19,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -32,7 +34,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.Image
@@ -58,7 +59,7 @@ import java.util.Locale
 
 /** Apple WeatherKit 법적 고지·데이터 출처 페이지. 날씨 화면에 반드시 링크해야 한다. */
 internal const val WeatherKitLegalAttributionUrl = "https://weatherkit.apple.com/legal-attribution.html"
-internal val WeatherKitLogoHeight = 14.dp
+internal val WeatherKitLogoHeight = 12.dp
 private val WeatherStaleNoticeColor = Color(0xFFFF9500)
 internal val WeatherSheetNavigationHeaderHeight = 44.dp
 internal val WeatherSheetNavigationHeaderActionWidth = 44.dp
@@ -96,6 +97,7 @@ fun WeatherForecastContent(
     viewModel: WeatherViewModel,
     modifier: Modifier = Modifier,
     onWeatherInfoRequested: (WeatherInfoTopic) -> Unit = {},
+    listState: LazyListState = rememberLazyListState(),
 ) {
     val weatherData by viewModel.weatherData.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
@@ -148,6 +150,7 @@ fun WeatherForecastContent(
             error = error,
             lastUpdateTime = lastUpdateTime,
             onWeatherInfoRequested = onWeatherInfoRequested,
+            listState = listState,
         )
 
         IosToastMessageOverlay(
@@ -167,10 +170,12 @@ private fun WeatherForecastBody(
     error: WeatherError?,
     lastUpdateTime: Long?,
     onWeatherInfoRequested: (WeatherInfoTopic) -> Unit,
+    listState: LazyListState,
 ) {
     val uriHandler = LocalUriHandler.current
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
+        state = listState,
         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
@@ -257,10 +262,16 @@ private fun WeatherAttributionFooter(
                 color = if (isStale) WeatherStaleNoticeColor else MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+        // iOS: "날씨 정보 제공:  Weather 법적 고지" (caption2). Android 는  글리프가 없어 로고 이미지를 쓴다.
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
+            Text(
+                text = stringResource(R.string.weather_attribution_prefix),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
             Image(
                 painter = painterResource(R.drawable.apple_weather_logo),
                 contentDescription = stringResource(R.string.weather_attribution_logo),
@@ -270,8 +281,9 @@ private fun WeatherAttributionFooter(
                 text = stringResource(R.string.weather_attribution_legal),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.primary,
-                textDecoration = TextDecoration.Underline,
-                modifier = Modifier.clickable(onClick = onLegalAttributionClick),
+                modifier = Modifier
+                    .clickable(onClick = onLegalAttributionClick)
+                    .padding(start = 2.dp),
             )
         }
     }
@@ -319,6 +331,7 @@ fun WeatherSheetHeader(
     isLoading: Boolean,
     onRefresh: () -> Unit,
     onInfo: (() -> Unit)? = null,
+    showDivider: Boolean = true,
 ) {
     Column {
         Row(
@@ -369,9 +382,9 @@ fun WeatherSheetHeader(
                 }
             }
         }
-        HorizontalDivider(
+        SheetHeaderDivider(
+            visible = showDivider,
             thickness = WeatherSheetNavigationHeaderDividerThickness,
-            color = MaterialTheme.colorScheme.outlineVariant,
         )
     }
 }

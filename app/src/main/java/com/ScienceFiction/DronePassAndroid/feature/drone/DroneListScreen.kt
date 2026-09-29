@@ -40,13 +40,11 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ScienceFiction.DronePassAndroid.R
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedDivider
 import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedRowMinHeight
 import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedSection
 import com.ScienceFiction.DronePassAndroid.ui.component.SheetLargeTitleHeader
 import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedSectionSpacing
-import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGray3
 import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGroupedBackground
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.PaletteColor
@@ -61,7 +59,6 @@ internal val DroneListAddIconTextSpacing = 8.dp
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DroneListScreen(
-    onClose: (() -> Unit)? = null,
     droneViewModel: DroneViewModel = hiltViewModel()
 ) {
     val drones by droneViewModel.activeDrones.collectAsStateWithLifecycle()
@@ -78,11 +75,8 @@ fun DroneListScreen(
         verticalArrangement = Arrangement.spacedBy(InsetGroupedSectionSpacing),
     ) {
         item {
-            SheetLargeTitleHeader(
-                title = stringResource(R.string.drone_list_title),
-                closeText = stringResource(R.string.common_close),
-                onClose = onClose,
-            )
+            // iOS DroneListView 는 닫기 버튼 없이 시트를 끌어 내려 닫는다.
+            SheetLargeTitleHeader(title = stringResource(R.string.drone_list_title))
         }
 
         item {
@@ -242,13 +236,6 @@ private fun DroneListItem(
             modifier = Modifier.weight(1f),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
-        )
-        // iOS 는 chevron 이 없어 누를 수 있는 행인지 알기 어렵다. Android 는 표시한다.
-        Icon(
-            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-            contentDescription = null,
-            tint = IosSystemGray3,
-            modifier = Modifier.size(20.dp),
         )
     }
 }

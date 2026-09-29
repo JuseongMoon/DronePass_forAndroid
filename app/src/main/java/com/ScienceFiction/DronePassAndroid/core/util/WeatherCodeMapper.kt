@@ -1,15 +1,12 @@
 package com.ScienceFiction.DronePassAndroid.core.util
 
+import com.ScienceFiction.DronePassAndroid.core.ui.IosWeatherSymbols
 import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AcUnit
 import androidx.compose.material.icons.filled.Air
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.Dehaze
 import androidx.compose.material.icons.filled.FlashOn
-import androidx.compose.material.icons.filled.Grain
-import androidx.compose.material.icons.filled.Thunderstorm
-import androidx.compose.material.icons.filled.Umbrella
 import androidx.compose.material.icons.filled.WbCloudy
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -85,22 +82,22 @@ object WeatherCodeMapper {
         val hasPrecipitation = (precipitationIntensity ?: 0.0) > 0.0
         if (hasPrecipitation) {
             return when (condition) {
-                WeatherCondition.RAIN, WeatherCondition.HEAVY_RAIN -> Icons.Default.Umbrella
-                WeatherCondition.DRIZZLE -> Icons.Default.Grain
+                WeatherCondition.RAIN, WeatherCondition.HEAVY_RAIN -> IosWeatherSymbols.CloudRain
+                WeatherCondition.DRIZZLE -> IosWeatherSymbols.CloudDrizzle
                 WeatherCondition.SNOW,
                 WeatherCondition.BLOWING_SNOW,
                 WeatherCondition.HEAVY_SNOW,
-                WeatherCondition.FLURRIES -> Icons.Default.AcUnit
+                WeatherCondition.FLURRIES -> IosWeatherSymbols.CloudSnow
                 WeatherCondition.SLEET,
                 WeatherCondition.FREEZING_RAIN,
                 WeatherCondition.FREEZING_DRIZZLE,
-                WeatherCondition.WINTRY_MIX,
-                WeatherCondition.HAIL -> Icons.Default.Grain
+                WeatherCondition.WINTRY_MIX -> IosWeatherSymbols.CloudSleet
+                WeatherCondition.HAIL -> IosWeatherSymbols.CloudSleet
                 WeatherCondition.ISOLATED_THUNDERSTORMS,
                 WeatherCondition.STRONG_STORMS,
                 WeatherCondition.THUNDERSTORMS,
-                WeatherCondition.SCATTERED_THUNDERSTORMS -> Icons.Default.Thunderstorm
-                else -> Icons.Default.Umbrella
+                WeatherCondition.SCATTERED_THUNDERSTORMS -> IosWeatherSymbols.CloudBoltRain
+                else -> IosWeatherSymbols.CloudRain
             }
         }
 

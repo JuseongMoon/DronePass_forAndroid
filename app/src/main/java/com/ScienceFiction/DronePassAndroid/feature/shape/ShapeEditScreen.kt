@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.shape
 
+import com.ScienceFiction.DronePassAndroid.ui.component.SheetHeaderDivider
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.text.BasicText
 import com.ScienceFiction.DronePassAndroid.ui.component.IosMenuDivider
@@ -408,23 +409,17 @@ fun ShapeEditScreen(
                 .navigationBarsPadding()
         ) {
             ShapeEditNavigationHeader(
-                title = stringResource(
-                    when {
-                        isDuplicateMode -> R.string.shape_edit_nav_title_duplicate
-                        isEditMode -> R.string.shape_edit_nav_title_edit
-                        else -> R.string.shape_edit_nav_title_new
-                    },
-                ),
                 onCancel = handleCancel,
                 onSave = handleSave,
             )
-            HorizontalDivider(thickness = 0.5.dp, color = IosSeparator)
+            val formScrollState = rememberScrollState()
+            SheetHeaderDivider(visible = formScrollState.canScrollBackward)
 
             // ===== 본문 =====
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .verticalScroll(rememberScrollState()),
+                    .verticalScroll(formScrollState),
                 // iOS Form 은 헤더 없는 섹션 사이도 약 35pt 띄운다.
                 verticalArrangement = Arrangement.spacedBy(ShapeEditSectionSpacing),
             ) {
@@ -939,7 +934,6 @@ private class ShapeEditSheetGestureGuard {
  */
 @Composable
 private fun ShapeEditNavigationHeader(
-    title: String,
     onCancel: () -> Unit,
     onSave: () -> Unit,
 ) {
@@ -956,15 +950,7 @@ private fun ShapeEditNavigationHeader(
         ) {
             Text(stringResource(R.string.shape_edit_navigation_cancel))
         }
-        // iOS 는 제목이 없어 새 도형/수정을 구분하기 어렵다. Android 는 제목을 표시한다.
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.SemiBold,
-            textAlign = TextAlign.Center,
-            maxLines = 1,
-            modifier = Modifier.weight(1f),
-        )
+        Spacer(modifier = Modifier.weight(1f))
         TextButton(
             onClick = onSave,
             modifier = Modifier.width(ShapeEditNavigationActionSlotWidth),
@@ -1039,13 +1025,14 @@ private fun CoordinateInputSheet(
                     Text(stringResource(R.string.coordinate_confirm))
                 }
             }
-            HorizontalDivider()
+            val coordinateScrollState = rememberScrollState()
+            SheetHeaderDivider(visible = coordinateScrollState.canScrollBackward)
 
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(min = 360.dp)
-                    .verticalScroll(rememberScrollState())
+                    .verticalScroll(coordinateScrollState)
                     .padding(horizontal = 16.dp)
                     .padding(top = 8.dp, bottom = 12.dp),
             ) {

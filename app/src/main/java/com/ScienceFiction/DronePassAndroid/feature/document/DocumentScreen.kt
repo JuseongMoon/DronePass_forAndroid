@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.document
 
+import com.ScienceFiction.DronePassAndroid.ui.component.SheetHeaderDivider
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,7 +17,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.FindInPage
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -86,9 +86,10 @@ fun DocumentScreen(
                 Text(stringResource(R.string.common_close))
             }
         }
-        HorizontalDivider(
+        val documentScrollState = rememberScrollState()
+        SheetHeaderDivider(
+            visible = documentScrollState.canScrollBackward,
             thickness = DocumentDividerThickness,
-            color = MaterialTheme.colorScheme.outlineVariant,
         )
 
         // 본문 — 상태별 분기
@@ -111,7 +112,7 @@ fun DocumentScreen(
                         Column(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .verticalScroll(rememberScrollState())
+                                .verticalScroll(documentScrollState)
                                 .padding(vertical = 16.dp),
                         ) {
                             MarkdownView(
