@@ -43,7 +43,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Switch
@@ -90,6 +89,18 @@ import com.ScienceFiction.DronePassAndroid.domain.model.newCanonicalFirestoreUui
 import java.util.Calendar
 import java.util.Date
 import kotlinx.coroutines.launch
+import com.ScienceFiction.DronePassAndroid.ui.component.DronePassModalBottomSheet
+import androidx.compose.ui.graphics.SolidColor
+import com.ScienceFiction.DronePassAndroid.ui.component.DronePassSwitch
+import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedDivider
+import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedRowHorizontalPadding
+import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedRowMinHeight
+import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedSection
+import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedSectionSpacing
+import com.ScienceFiction.DronePassAndroid.ui.theme.IosSeparator
+import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGray2
+import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGray3
+import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGroupedBackground
 
 internal const val CoordinateInputSheetSkipPartiallyExpanded = false
 internal const val CoordinateInputSheetInteractiveDismissEnabled = false
@@ -362,9 +373,10 @@ fun ShapeEditScreen(
         }
     }
 
-    ModalBottomSheet(
+    DronePassModalBottomSheet(
         onDismissRequest = handleCancel,
         sheetState = sheetState,
+        containerColor = IosSystemGroupedBackground,
         dragHandle = null,
     ) {
         Column(
@@ -374,21 +386,29 @@ fun ShapeEditScreen(
                 .navigationBarsPadding()
         ) {
             ShapeEditNavigationHeader(
+                title = stringResource(
+                    when {
+                        isDuplicateMode -> R.string.shape_edit_nav_title_duplicate
+                        isEditMode -> R.string.shape_edit_nav_title_edit
+                        else -> R.string.shape_edit_nav_title_new
+                    },
+                ),
                 onCancel = handleCancel,
                 onSave = handleSave,
             )
-            HorizontalDivider()
+            HorizontalDivider(thickness = 0.5.dp, color = IosSeparator)
 
             // ===== 본문 =====
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 16.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(InsetGroupedSectionSpacing),
             ) {
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(0.dp))
 
                 // ===== Section 1: 드론 (iOS DroneSelectionSection 정합) =====
+                InsetGroupedSection {
                 EditFormRow(label = stringResource(R.string.shape_edit_drone_label)) {
                     Box {
                         Row(
@@ -475,9 +495,10 @@ fun ShapeEditScreen(
                         }
                     }
                 }
-                HorizontalDivider()
+                }
 
                 // ===== Section 2: 기본 정보 (iOS BasicInfoSection 정합) =====
+                InsetGroupedSection {
 
                 // 제목 (인라인 편집)
                 EditFormTextFieldRow(
@@ -486,7 +507,7 @@ fun ShapeEditScreen(
                     onValueChange = { title = it },
                     placeholder = stringResource(R.string.shape_edit_title_placeholder),
                 )
-                HorizontalDivider()
+                InsetGroupedDivider()
 
                 // 좌표 (인라인 편집 + Decimal/DMS 파싱)
                 EditFormClickableRow(
@@ -507,7 +528,7 @@ fun ShapeEditScreen(
                         showCoordinateInput = true
                     },
                 )
-                HorizontalDivider()
+                InsetGroupedDivider()
 
                 // 주소 (iOS처럼 행 탭 → 주소 검색 화면)
                 if (geocodingApi != null) {
@@ -534,7 +555,7 @@ fun ShapeEditScreen(
                         placeholder = stringResource(R.string.shape_edit_placeholder_address),
                     )
                 }
-                HorizontalDivider()
+                InsetGroupedDivider()
 
                 // 반경
                 if (showRadiusField) {
@@ -547,7 +568,7 @@ fun ShapeEditScreen(
                         placeholder = stringResource(R.string.shape_edit_radius_placeholder),
                         keyboardType = KeyboardType.Number,
                     )
-                    HorizontalDivider()
+                    InsetGroupedDivider()
                 }
 
                 // 고도
@@ -560,8 +581,7 @@ fun ShapeEditScreen(
                     placeholder = stringResource(R.string.shape_edit_altitude_placeholder),
                     keyboardType = KeyboardType.Number,
                 )
-
-                Spacer(modifier = Modifier.height(20.dp))
+                }
 
                 // ===== Section 3: iOS DateSection 정합 — 헤더 없이 날짜 행만 표시 =====
                 if (ShowShapeEditFlightPeriodSectionHeader) {
@@ -574,39 +594,39 @@ fun ShapeEditScreen(
                     Spacer(modifier = Modifier.height(8.dp))
                 }
 
+                InsetGroupedSection {
                 // 시작일
-                EditFormClickableRow(
+                EditFormDateRow(
                     label = stringResource(R.string.shape_edit_start_date),
                     value = if (isDateOnly) dateFormat.format(Date(flightStartDate))
                         else dateTimeFormat.format(Date(flightStartDate)),
                     onClick = { showStartDatePicker = true },
                 )
-                HorizontalDivider()
+                InsetGroupedDivider()
 
                 // 종료일
-                EditFormClickableRow(
+                EditFormDateRow(
                     label = stringResource(R.string.shape_edit_end_date),
                     value = if (isDateOnly) dateFormat.format(Date(flightEndDate))
                         else dateTimeFormat.format(Date(flightEndDate)),
                     onClick = { showEndDatePicker = true },
                 )
-                HorizontalDivider()
+                InsetGroupedDivider()
 
                 // 일 단위 모드 토글
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 8.dp)
-                        .heightIn(min = 44.dp),
+                        .heightIn(min = InsetGroupedRowMinHeight)
+                        .padding(horizontal = InsetGroupedRowHorizontalPadding),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
                         text = stringResource(R.string.shape_edit_date_only_mode),
                         style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Bold,
                     )
-                    Switch(
+                    DronePassSwitch(
                         checked = isDateOnly,
                         onCheckedChange = { newValue ->
                             val resolvedPeriod = resolveShapeEditFlightPeriodOnDateOnlyModeToggle(
@@ -621,27 +641,24 @@ fun ShapeEditScreen(
                         },
                     )
                 }
-
-                Spacer(modifier = Modifier.height(20.dp))
+                }
 
                 // ===== Section 4: 메모 (iOS MemoSection 정합 — minHeight 170pt) =====
-                Text(
-                    text = stringResource(R.string.shape_edit_label_memo),
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Bold,
-                )
-                Spacer(modifier = Modifier.height(8.dp))
+                InsetGroupedSection(header = stringResource(R.string.shape_edit_label_memo)) {
+                    FormPlainTextField(
+                        value = memo,
+                        onValueChange = { memo = it },
+                        placeholder = stringResource(R.string.shape_edit_placeholder_memo),
+                        singleLine = false,
+                        textAlign = TextAlign.Start,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = ShapeEditMemoMinHeight)
+                            .padding(InsetGroupedRowHorizontalPadding),
+                    )
+                }
 
-                OutlinedTextField(
-                    value = memo,
-                    onValueChange = { memo = it },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = ShapeEditMemoMinHeight),
-                    placeholder = { Text(stringResource(R.string.shape_edit_placeholder_memo)) },
-                )
-
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(12.dp))
             }
         }
     }
@@ -872,6 +889,7 @@ fun ShapeEditScreen(
  */
 @Composable
 private fun ShapeEditNavigationHeader(
+    title: String,
     onCancel: () -> Unit,
     onSave: () -> Unit,
 ) {
@@ -888,7 +906,15 @@ private fun ShapeEditNavigationHeader(
         ) {
             Text(stringResource(R.string.shape_edit_navigation_cancel))
         }
-        Spacer(modifier = Modifier.weight(1f))
+        // iOS 는 제목이 없어 새 도형/수정을 구분하기 어렵다. Android 는 제목을 표시한다.
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            textAlign = TextAlign.Center,
+            maxLines = 1,
+            modifier = Modifier.weight(1f),
+        )
         TextButton(
             onClick = onSave,
             modifier = Modifier.width(ShapeEditNavigationActionSlotWidth),
@@ -918,7 +944,7 @@ private fun CoordinateInputSheet(
     val sheetState = rememberModalBottomSheetState(
         skipPartiallyExpanded = CoordinateInputSheetSkipPartiallyExpanded,
     )
-    ModalBottomSheet(
+    DronePassModalBottomSheet(
         onDismissRequest = {
             if (CoordinateInputSheetInteractiveDismissEnabled) onDismiss()
         },
@@ -1167,14 +1193,13 @@ private fun EditFormRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp)
-            .heightIn(min = 44.dp),
+            .heightIn(min = InsetGroupedRowMinHeight)
+            .padding(horizontal = InsetGroupedRowHorizontalPadding),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = label,
             style = MaterialTheme.typography.bodyLarge,
-            fontWeight = FontWeight.Bold,
         )
         Spacer(modifier = Modifier.weight(1f))
         content()
@@ -1182,9 +1207,8 @@ private fun EditFormRow(
 }
 
 /**
- * iOS Form 행 — bold label + trailing TextField. 인라인 편집.
+ * iOS Form 행 — label + 오른쪽 정렬 인라인 TextField (테두리 없음).
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun EditFormTextFieldRow(
     label: String,
@@ -1196,29 +1220,94 @@ private fun EditFormTextFieldRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp)
-            .heightIn(min = 44.dp),
+            .heightIn(min = InsetGroupedRowMinHeight)
+            .padding(horizontal = InsetGroupedRowHorizontalPadding),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = label,
             style = MaterialTheme.typography.bodyLarge,
-            fontWeight = FontWeight.Bold,
         )
-        Spacer(modifier = Modifier.weight(1f))
-        OutlinedTextField(
+        Spacer(modifier = Modifier.width(16.dp))
+        FormPlainTextField(
             value = value,
             onValueChange = onValueChange,
-            modifier = Modifier.width(220.dp),
-            singleLine = true,
-            placeholder = {
-                Text(
-                    text = placeholder,
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-            },
-            keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
-            textStyle = MaterialTheme.typography.bodyMedium,
+            placeholder = placeholder,
+            keyboardType = keyboardType,
+            modifier = Modifier
+                .weight(1f)
+                .padding(vertical = 12.dp),
+        )
+    }
+}
+
+/** 테두리 없는 입력칸. 비어 있으면 회색 placeholder 를 같은 위치에 보여 준다. */
+@Composable
+private fun FormPlainTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
+    modifier: Modifier = Modifier,
+    keyboardType: KeyboardType = KeyboardType.Text,
+    singleLine: Boolean = true,
+    textAlign: TextAlign = TextAlign.End,
+) {
+    val textStyle = MaterialTheme.typography.bodyLarge.copy(
+        color = MaterialTheme.colorScheme.onSurface,
+        textAlign = textAlign,
+    )
+    BasicTextField(
+        value = value,
+        onValueChange = onValueChange,
+        modifier = modifier,
+        singleLine = singleLine,
+        textStyle = textStyle,
+        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+        keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+        decorationBox = { innerTextField ->
+            Box(contentAlignment = if (textAlign == TextAlign.End) Alignment.CenterEnd else Alignment.TopStart) {
+                if (value.isEmpty()) {
+                    Text(
+                        text = placeholder,
+                        style = textStyle.copy(color = IosSystemGray2),
+                        maxLines = if (singleLine) 1 else Int.MAX_VALUE,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                innerTextField()
+            }
+        },
+    )
+}
+
+/** iOS compact DatePicker 처럼 회색 캡슐 안에 날짜를 보여 주는 행. */
+@Composable
+private fun EditFormDateRow(
+    label: String,
+    value: String,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = InsetGroupedRowMinHeight)
+            .padding(horizontal = InsetGroupedRowHorizontalPadding),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.weight(1f),
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier
+                .clip(RoundedCornerShape(8.dp))
+                .background(IosSystemGroupedBackground)
+                .clickable(onClick = onClick)
+                .padding(horizontal = 12.dp, vertical = 7.dp),
         )
     }
 }
@@ -1278,19 +1367,18 @@ private fun EditFormClickableRow(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(vertical = 8.dp)
-            .heightIn(min = 44.dp),
+            .heightIn(min = InsetGroupedRowMinHeight)
+            .padding(horizontal = InsetGroupedRowHorizontalPadding, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = label,
             style = MaterialTheme.typography.bodyLarge,
-            fontWeight = FontWeight.Bold,
         )
         Spacer(modifier = Modifier.width(12.dp))
         Text(
             text = value,
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodyLarge,
             color = valueColor,
             modifier = Modifier.weight(1f),
             textAlign = TextAlign.End,
@@ -1301,8 +1389,8 @@ private fun EditFormClickableRow(
         Icon(
             imageVector = Icons.AutoMirrored.Default.KeyboardArrowRight,
             contentDescription = null,
-            modifier = Modifier.size(16.dp),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(20.dp),
+            tint = IosSystemGray3,
         )
     }
 }
@@ -1370,7 +1458,7 @@ private fun ShapeDateTimeSelectionSheet(
         onDateSelected(selectedLocalMillis)
     }
 
-    ModalBottomSheet(
+    DronePassModalBottomSheet(
         onDismissRequest = { applyCurrentSelectionAndDismiss() },
         sheetState = sheetState,
     ) {

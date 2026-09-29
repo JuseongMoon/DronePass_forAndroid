@@ -21,10 +21,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
@@ -49,8 +47,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ScienceFiction.DronePassAndroid.R
+import androidx.compose.foundation.layout.Arrangement
+import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedDivider
+import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedSection
+import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedSectionSpacing
+import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGroupedBackground
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.PaletteColor
+import com.ScienceFiction.DronePassAndroid.ui.component.DronePassModalBottomSheet
 
 private const val DRONE_NAME_MAX_WIDTH_DP = 210
 internal val DroneEditMemoMinHeight = 100.dp
@@ -59,7 +63,7 @@ internal val DroneEditNavigationHeaderSideWidth = 88.dp
 internal val DroneColorPickerCircleSize = 24.dp
 internal val DroneColorPickerCircleTextSpacing = 8.dp
 internal val DroneColorPickerRowVerticalPadding = 12.dp
-internal val DroneColorPickerDividerStartPadding = 40.dp
+internal val DroneColorPickerDividerStartPadding = 56.dp
 internal val DroneColorPickerCheckmarkSize = 17.dp
 internal val DroneColorPickerLabelFontSize = 17.sp
 internal const val DroneColorPickerCircleBorderAlpha = 0.2f
@@ -145,9 +149,10 @@ fun DroneEditSheet(
         }
     }
 
-    ModalBottomSheet(
+    DronePassModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
+        containerColor = IosSystemGroupedBackground,
     ) {
         Column(
             modifier = Modifier
@@ -171,9 +176,9 @@ fun DroneEditSheet(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp)
                     .padding(top = 4.dp)
                     .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(InsetGroupedSectionSpacing),
             ) {
                 DroneEditSection(
                     header = stringResource(R.string.drone_edit_section_basic),
@@ -236,7 +241,7 @@ fun DroneEditSheet(
                         placeholder = stringResource(R.string.drone_edit_weight_placeholder),
                         singleLine = true,
                     )
-                    HorizontalDivider()
+                    InsetGroupedDivider()
                     DroneEditInputField(
                         value = size,
                         onValueChange = { size = it },
@@ -333,26 +338,8 @@ private fun DroneEditSection(
     footer: String? = null,
     content: @Composable () -> Unit,
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 12.dp),
-    ) {
-        Text(
-            text = header,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(bottom = 6.dp),
-        )
+    InsetGroupedSection(header = header, footer = footer) {
         content()
-        footer?.let {
-            Text(
-                text = it,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 6.dp),
-            )
-        }
     }
 }
 
@@ -447,7 +434,7 @@ fun ColorPickerGrid(
                 onClick = { onColorSelected(color) },
             )
             if (index != colors.lastIndex) {
-                HorizontalDivider(modifier = Modifier.padding(start = DroneColorPickerDividerStartPadding))
+                InsetGroupedDivider(startIndent = DroneColorPickerDividerStartPadding)
             }
         }
     }
@@ -463,7 +450,7 @@ private fun ColorPickerRow(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(vertical = DroneColorPickerRowVerticalPadding),
+            .padding(horizontal = 16.dp, vertical = DroneColorPickerRowVerticalPadding),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(

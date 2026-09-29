@@ -37,6 +37,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -61,6 +62,7 @@ fun SavedListScreen(
     onSelectionConsumed: () -> Unit = {},
     focusShapeId: String? = null,
     onFocusConsumed: () -> Unit = {},
+    contentBottomPadding: Dp = 0.dp,
     viewModel: SavedListViewModel = hiltViewModel()
 ) {
     val notStartedShapes by viewModel.notStartedShapes.collectAsStateWithLifecycle()
@@ -165,8 +167,10 @@ fun SavedListScreen(
                 modifier = Modifier.fillMaxSize(),
                 state = listState,
                 contentPadding = PaddingValues(
-                    horizontal = SavedListContentHorizontalPadding,
-                    vertical = SavedListContentVerticalPadding,
+                    start = SavedListContentHorizontalPadding,
+                    end = SavedListContentHorizontalPadding,
+                    top = SavedListContentVerticalPadding,
+                    bottom = SavedListContentVerticalPadding + contentBottomPadding,
                 ),
                 verticalArrangement = Arrangement.spacedBy(SavedListRowVerticalSpacing),
             ) {

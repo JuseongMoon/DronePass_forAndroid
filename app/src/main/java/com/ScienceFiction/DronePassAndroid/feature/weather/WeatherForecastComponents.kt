@@ -46,6 +46,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
@@ -733,16 +736,25 @@ private fun WeatherDataCell(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                 )
-                Text(
+                val valueFontSize = if (hasSubText) {
+                    IosWeatherDataCellValueWithSubTextFontSize
+                } else {
+                    IosWeatherDataCellValueFontSize
+                }
+                // 좁은 화면에서 "0.0 mm/h" 같은 값이 잘리지 않도록 칸 폭에 맞춰 줄인다.
+                BasicText(
                     text = value,
-                    fontSize = if (hasSubText) {
-                        IosWeatherDataCellValueWithSubTextFontSize
-                    } else {
-                        IosWeatherDataCellValueFontSize
-                    },
-                    fontWeight = IosWeatherDataCellValueFontWeight,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    style = TextStyle(
+                        fontSize = valueFontSize,
+                        fontWeight = IosWeatherDataCellValueFontWeight,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    ),
                     maxLines = 1,
+                    autoSize = TextAutoSize.StepBased(
+                        minFontSize = 12.sp,
+                        maxFontSize = valueFontSize,
+                        stepSize = 0.5.sp,
+                    ),
                 )
                 if (hasSubText) {
                     Text(

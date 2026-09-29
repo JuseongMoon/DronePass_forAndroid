@@ -10,6 +10,7 @@ import com.ScienceFiction.DronePassAndroid.core.util.AnalyticsLogger
 import com.ScienceFiction.DronePassAndroid.core.util.DistanceCalculator
 import com.ScienceFiction.DronePassAndroid.domain.model.Coordinate
 import com.ScienceFiction.DronePassAndroid.domain.model.SketchModel
+import com.ScienceFiction.DronePassAndroid.subscription.QuotaLimitKind
 import com.ScienceFiction.DronePassAndroid.subscription.SubscriptionManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -97,7 +98,7 @@ class SketchViewModel @Inject constructor(
     val quotaBlockedCount: StateFlow<Int?> = _quotaBlockedCount.asStateFlow()
     val quotaLimits = subscriptionManager.limits
     private val pendingCreatedSketchIds = mutableSetOf<String>()
-    fun showSketchPaywall() = subscriptionManager.showPaywall("sketch")
+    fun showSketchPaywall() = subscriptionManager.showPaywall("sketch", QuotaLimitKind.SKETCHES)
 
     // ──────────────────────────────────────────────
     // Undo/Redo 스택

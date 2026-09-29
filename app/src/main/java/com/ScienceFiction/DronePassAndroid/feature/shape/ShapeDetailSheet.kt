@@ -50,7 +50,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -94,6 +93,12 @@ import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.PaletteColor
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 import java.util.Date
+import com.ScienceFiction.DronePassAndroid.ui.component.DronePassModalBottomSheet
+import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedDivider
+import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedRowHorizontalPadding
+import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedSection
+import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedSectionSpacing
+import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGroupedBackground
 
 internal enum class ExternalMapProvider(@StringRes val labelRes: Int, val analyticsName: String) {
     NAVER(R.string.shape_detail_open_naver_map, "naver"),
@@ -217,9 +222,10 @@ fun ShapeDetailSheet(
         showCopyToast = false
     }
 
-    ModalBottomSheet(
+    DronePassModalBottomSheet(
         onDismissRequest = onDismiss,
-        sheetState = sheetState
+        sheetState = sheetState,
+        containerColor = IosSystemGroupedBackground,
     ) {
         Box(
             modifier = Modifier
@@ -248,10 +254,11 @@ fun ShapeDetailSheet(
 
                 Column(
                     modifier = Modifier
-                        .padding(horizontal = 20.dp)
                         .padding(top = 4.dp)
-                        .verticalScroll(rememberScrollState())
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(InsetGroupedSectionSpacing),
                 ) {
+                InsetGroupedSection {
                 // iOS Section 1 — 행 순서: 드론 → 제목 → 좌표 → 주소 → 반경 → 고도 → 시작일 → 종료일.
                 // 좌측 라벨(bold primary), 우측 값(secondary). StatusBadge 제거.
 
@@ -265,8 +272,9 @@ fun ShapeDetailSheet(
                 ShapeDetailRow(label = stringResource(R.string.shape_detail_title_label)) {
                     Text(
                         text = shapeDetailTitleText(shape.title),
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.End,
                     )
                 }
                 ShapeDetailRowDivider()
@@ -283,7 +291,7 @@ fun ShapeDetailSheet(
                 ) {
                     Text(
                         text = shape.baseCoordinate.formattedCoordinate,
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
@@ -304,7 +312,7 @@ fun ShapeDetailSheet(
                     Text(
                         text = formatShapeDetailAddress(shape.address),
                         modifier = Modifier.fillMaxWidth(),
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodyLarge,
                         color = Color(0xFF007AFF), // iOS .blue 정합
                         textAlign = TextAlign.End,
                         maxLines = 1,
@@ -318,7 +326,7 @@ fun ShapeDetailSheet(
                     ShapeDetailRow(label = stringResource(R.string.shape_detail_radius)) {
                         Text(
                             text = formatShapeDetailMeters(shape.radius),
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
@@ -330,7 +338,7 @@ fun ShapeDetailSheet(
                     ShapeDetailRow(label = stringResource(R.string.shape_detail_altitude)) {
                         Text(
                             text = formatShapeDetailMeters(shape.height),
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
@@ -341,7 +349,7 @@ fun ShapeDetailSheet(
                 ShapeDetailRow(label = stringResource(R.string.shape_detail_flight_start)) {
                     Text(
                         text = dateFormat.format(Date(shape.flightStartDate)),
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
@@ -352,25 +360,18 @@ fun ShapeDetailSheet(
                     ShapeDetailRow(label = stringResource(R.string.shape_detail_flight_end)) {
                         Text(
                             text = dateFormat.format(Date(shape.flightEndDate)),
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
 
+                }
+
                 // iOS Section 2 — 메모. 값이 없어도 "-" 로 180dp 섹션을 항상 표시한다.
                 // AndroidView(TextView) + Linkify 로 URL/전화번호를 자동 감지.
                 // 웹 링크는 iOS SafariView처럼 앱 내부 시트로 열고, 전화번호는 시스템 앱으로 전달한다.
-                Spacer(modifier = Modifier.height(12.dp))
-                HorizontalDivider()
-                Spacer(modifier = Modifier.height(12.dp))
-                Text(
-                    text = stringResource(R.string.common_memo),
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Normal,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Spacer(modifier = Modifier.height(8.dp))
+                InsetGroupedSection(header = stringResource(R.string.common_memo)) {
                 MemoLinkifyView(
                     text = formatShapeDetailMemo(shape.memo),
                     textColor = MaterialTheme.colorScheme.onSurfaceVariant.toArgb(),
@@ -381,8 +382,9 @@ fun ShapeDetailSheet(
                         }
                     },
                 )
+                }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(12.dp))
             }
             }
             ShapeDetailCopyToast(
@@ -521,7 +523,8 @@ private fun EllipsisCircleIcon(
             .border(
                 BorderStroke(
                     width = ShapeDetailMoreCircleStrokeWidth,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    // iOS ellipsis.circle 은 accent(파랑) 색이다.
+                    color = MaterialTheme.colorScheme.primary,
                 ),
                 CircleShape,
             ),
@@ -530,7 +533,7 @@ private fun EllipsisCircleIcon(
         Icon(
             imageVector = Icons.Default.MoreHoriz,
             contentDescription = contentDescription,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier.size(ShapeDetailMoreDotsSize),
         )
     }
@@ -571,7 +574,7 @@ private fun ExternalMapActionSheet(
         )
     }
 
-    ModalBottomSheet(
+    DronePassModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
     ) {
@@ -768,7 +771,9 @@ private fun MemoLinkifyView(
                 linksClickable = true
                 setTextIsSelectable(ShapeDetailMemoTextIsSelectable)
                 movementMethod = LinkMovementMethod.getInstance()
-                setPadding(0, 8, 0, 8)
+                val horizontalPaddingPx = (16 * resources.displayMetrics.density).toInt()
+                val verticalPaddingPx = (12 * resources.displayMetrics.density).toInt()
+                setPadding(horizontalPaddingPx, verticalPaddingPx, horizontalPaddingPx, verticalPaddingPx)
             }
         },
         update = { textView ->
@@ -793,7 +798,7 @@ private fun ShapeDetailMemoWebSheet(
         skipPartiallyExpanded = ShapeDetailMemoWebSheetSkipPartiallyExpanded,
     )
 
-    ModalBottomSheet(
+    DronePassModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
     ) {
@@ -928,13 +933,12 @@ private fun ShapeDetailRow(
         modifier = modifier
             .fillMaxWidth()
             .heightIn(min = ShapeDetailRowMinHeight)
-            .padding(vertical = 10.dp),
+            .padding(horizontal = InsetGroupedRowHorizontalPadding, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = label,
             style = MaterialTheme.typography.bodyLarge,
-            fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface,
         )
         Spacer(modifier = Modifier.width(16.dp))
@@ -949,10 +953,7 @@ private fun ShapeDetailRow(
 
 @Composable
 private fun ShapeDetailRowDivider() {
-    HorizontalDivider(
-        thickness = ShapeDetailRowDividerThickness,
-        color = MaterialTheme.colorScheme.outlineVariant,
-    )
+    InsetGroupedDivider()
 }
 
 /**

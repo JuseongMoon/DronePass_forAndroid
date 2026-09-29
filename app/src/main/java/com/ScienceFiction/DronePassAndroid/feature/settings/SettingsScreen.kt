@@ -22,7 +22,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -40,6 +39,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalContext
 import com.ScienceFiction.DronePassAndroid.subscription.EntitlementState
 import com.ScienceFiction.DronePassAndroid.subscription.LegacyKind
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ScienceFiction.DronePassAndroid.R
@@ -54,6 +54,17 @@ import com.ScienceFiction.DronePassAndroid.feature.weather.WeatherForecastConten
 import com.ScienceFiction.DronePassAndroid.feature.weather.WeatherInfoTopic
 import com.ScienceFiction.DronePassAndroid.feature.weather.WeatherSheetHeader
 import com.ScienceFiction.DronePassAndroid.feature.weather.WeatherViewModel
+import com.ScienceFiction.DronePassAndroid.ui.component.DronePassModalBottomSheet
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.material.icons.filled.UnfoldMore
+import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedDivider
+import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedRow
+import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedSection
+import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedSectionSpacing
+import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedToggleRow
+import com.ScienceFiction.DronePassAndroid.ui.theme.IosSecondaryLabel
+import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGroupedBackground
+import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGreen
 
 internal data class LanguageSelectionAction(
     val languageToApply: AppLanguage?,
@@ -85,6 +96,7 @@ internal fun resolveLanguageSelectionAction(
 fun SettingsScreen(
     settingsViewModel: SettingsViewModel = hiltViewModel(),
     onAccountSessionEnded: () -> Unit = {},
+    contentBottomPadding: Dp = 0.dp,
 ) {
     var showDroneListSheet by remember { mutableStateOf(false) }
     var showAppInfoSheet by remember { mutableStateOf(false) }
@@ -96,19 +108,21 @@ fun SettingsScreen(
         onNavigateToAppInfo = { showAppInfoSheet = true },
         onNavigateToPatchNotes = { showPatchNotesSheet = true },
         onAccountSessionEnded = onAccountSessionEnded,
+        contentBottomPadding = contentBottomPadding,
     )
 
     if (showDroneListSheet) {
-        ModalBottomSheet(
+        DronePassModalBottomSheet(
             onDismissRequest = { showDroneListSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            containerColor = IosSystemGroupedBackground,
         ) {
-            DroneListScreen()
+            DroneListScreen(onClose = { showDroneListSheet = false })
         }
     }
 
     if (showAppInfoSheet) {
-        ModalBottomSheet(
+        DronePassModalBottomSheet(
             onDismissRequest = { showAppInfoSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         ) {
@@ -117,7 +131,7 @@ fun SettingsScreen(
     }
 
     if (showPatchNotesSheet) {
-        ModalBottomSheet(
+        DronePassModalBottomSheet(
             onDismissRequest = { showPatchNotesSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         ) {
@@ -134,6 +148,7 @@ private fun SettingsMainContent(
     onNavigateToAppInfo: () -> Unit,
     onNavigateToPatchNotes: () -> Unit,
     onAccountSessionEnded: () -> Unit,
+    contentBottomPadding: Dp,
 ) {
     val hideExpiredShapes by settingsViewModel.hideExpiredShapes.collectAsStateWithLifecycle()
     val hideNotStartedShapes by settingsViewModel.hideNotStartedShapes.collectAsStateWithLifecycle()
@@ -169,262 +184,244 @@ private fun SettingsMainContent(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
+                .padding(top = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(InsetGroupedSectionSpacing),
         ) {
-            // ===== 1. 내 정보 섹션 =====
-            SectionHeader(title = stringResource(R.string.settings_section_my_info))
-
-            // 프로필 (iOS: 로그인 시 "My Profile" → ProfileView 시트, 비로그인 시 "Sign In / Sign Up" → LoginView)
-            SettingsItem(
-                title = if (isLoggedIn) {
-                    stringResource(R.string.settings_profile_my)
-                } else {
-                    stringResource(R.string.settings_profile_login)
-                },
-                onClick = {
-                    if (isLoggedIn) {
-                        showProfileSheet = true
+            // ===== 1. 내 정보 (iOS: 내 프로필 / 로그인 + 내 드론 관리하기) =====
+            InsetGroupedSection(header = stringResource(R.string.settings_section_my_info)) {
+                InsetGroupedRow(
+                    title = if (isLoggedIn) {
+                        stringResource(R.string.settings_profile_my)
                     } else {
-                        showLoginSheet = true
-                    }
-                },
-            )
-
-            HorizontalDivider(modifier = Modifier.padding(start = 16.dp))
-
-            SectionHeader(title = stringResource(R.string.subscription_plan))
-            SettingsItem(
-                title = when {
-                    plan.isPaidSubscriber && plan.legacyKind == LegacyKind.EARLY_ACCESS -> stringResource(R.string.subscription_pro) + " · " + stringResource(R.string.subscription_early_badge)
-                    plan.legacyKind == LegacyKind.EARLY_ACCESS -> stringResource(R.string.subscription_early_badge) + " · " + stringResource(R.string.subscription_early_lifetime)
-                    plan.entitlement == EntitlementState.PRO -> stringResource(R.string.subscription_pro)
-                    else -> stringResource(R.string.subscription_free)
-                },
-                onClick = { settingsViewModel.subscriptionManager.showPaywall("settings") },
-            )
-            SettingsItem(
-                title = stringResource(R.string.subscription_usage, quotaUsage.shapes, quotaLimits.freeShapes, quotaUsage.sketches, quotaLimits.freeSketches, quotaUsage.drones, quotaLimits.freeDrones),
-                onClick = { settingsViewModel.subscriptionManager.showPaywall("settings") },
-            )
-            SettingsItem(
-                title = stringResource(R.string.subscription_benefits),
-                onClick = { settingsViewModel.subscriptionManager.showPaywall("settings") },
-            )
-            if (plan.isPaidSubscriber) {
-                SettingsItem(
-                    title = stringResource(R.string.subscription_manage),
-                    onClick = { settingsViewModel.subscriptionManager.openManagement(context) },
+                        stringResource(R.string.settings_profile_login)
+                    },
+                    showChevron = true,
+                    onClick = {
+                        if (isLoggedIn) showProfileSheet = true else showLoginSheet = true
+                    },
+                )
+                InsetGroupedDivider()
+                InsetGroupedRow(
+                    title = stringResource(R.string.settings_drone_manage),
+                    showChevron = true,
+                    onClick = onNavigateToDroneList,
                 )
             }
-            if (plan.paymentIssue) Text(stringResource(R.string.subscription_payment_issue), modifier = Modifier.padding(horizontal = 16.dp))
-            Text(stringResource(R.string.subscription_cross_platform_notice), modifier = Modifier.padding(horizontal = 16.dp))
 
-            HorizontalDivider(modifier = Modifier.padding(start = 16.dp))
-
-            // 드론 관리
-            SettingsItem(
-                title = stringResource(R.string.settings_drone_manage),
-                onClick = onNavigateToDroneList,
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // ===== 2. 비행 환경 섹션 =====
-            SectionHeader(title = stringResource(R.string.settings_section_flight_environment))
-
-            // KP 지수 (iOS settings.kp.current 정합 — "현재 Kp 지수: 4.5" + 클릭 시 시트)
-            SettingsItem(
-                title = stringResource(R.string.settings_kp_index_current, currentKpString),
-                onClick = { showKpForecastSheet = true },
-                showArrow = true,
-            )
-
-            HorizontalDivider(modifier = Modifier.padding(start = 16.dp))
-
-            // 날씨 정보 (iOS settings.weather.current 정합 — 클릭 시 시트)
-            SettingsItem(
-                title = stringResource(R.string.settings_weather_current),
-                onClick = { showWeatherSheet = true },
-                showArrow = true,
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // ===== 3. 알림 섹션 =====
-            SectionHeader(title = stringResource(R.string.settings_section_notifications))
-
-            // POST_NOTIFICATIONS (Android 13+) + SCHEDULE_EXACT_ALARM (Android 12+)
-            // 권한 부재 시 안내 카드 표시 + 요청/설정 진입 흐름 제공
-            NotificationPermissionRequest()
-
-            // 도형 만료 알림 (iOS settings.notification.shapeExpiry — 알림 섹션 첫 행)
-            SettingsToggleItem(
-                title = stringResource(R.string.settings_end_date_alarm),
-                subtitle = stringResource(R.string.settings_end_date_alarm_subtitle),
-                checked = endDateAlarmEnabled,
-                onCheckedChange = { settingsViewModel.toggleEndDateAlarm(it) },
-            )
-
-            HorizontalDivider(modifier = Modifier.padding(start = 16.dp))
-
-            // 일출 알림
-            SettingsToggleItem(
-                title = stringResource(R.string.settings_sunrise_alarm),
-                subtitle = stringResource(R.string.settings_sunrise_alarm_subtitle),
-                checked = sunriseAlarmEnabled,
-                onCheckedChange = { settingsViewModel.toggleSunriseAlarm(it) },
-            )
-
-            HorizontalDivider(modifier = Modifier.padding(start = 16.dp))
-
-            // 일몰 알림
-            SettingsToggleItem(
-                title = stringResource(R.string.settings_sunset_alarm),
-                subtitle = stringResource(R.string.settings_sunset_alarm_subtitle),
-                checked = sunsetAlarmEnabled,
-                onCheckedChange = { settingsViewModel.toggleSunsetAlarm(it) },
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // ===== 4. 지도 표시 섹션 (iOS settings.section.mapDisplay 정합 순서) =====
-            SectionHeader(title = stringResource(R.string.settings_section_map_display))
-
-            // 화면 항상 켜기
-            SettingsToggleItem(
-                title = stringResource(R.string.settings_keep_screen_awake),
-                subtitle = stringResource(R.string.settings_keep_screen_awake_subtitle),
-                checked = keepScreenAwake,
-                onCheckedChange = { settingsViewModel.toggleKeepScreenAwake(it) },
-            )
-
-            HorizontalDivider(modifier = Modifier.padding(start = 16.dp))
-
-            // 시작 전 도형 숨기기
-            SettingsToggleItem(
-                title = stringResource(R.string.settings_hide_not_started),
-                subtitle = stringResource(R.string.settings_hide_not_started_subtitle),
-                checked = hideNotStartedShapes,
-                onCheckedChange = { settingsViewModel.toggleHideNotStartedShapes(it) },
-            )
-
-            HorizontalDivider(modifier = Modifier.padding(start = 16.dp))
-
-            // 만료 도형 숨기기
-            SettingsToggleItem(
-                title = stringResource(R.string.settings_hide_expired),
-                subtitle = stringResource(R.string.settings_hide_expired_subtitle),
-                checked = hideExpiredShapes,
-                onCheckedChange = { settingsViewModel.toggleHideExpiredShapes(it) },
-            )
-
-            HorizontalDivider(modifier = Modifier.padding(start = 16.dp))
-
-            // 만료된 도형 전체 삭제 (destructive — iOS settings.shape.deleteExpired Role.destructive 정합)
-            SettingsItem(
-                title = stringResource(R.string.settings_delete_expired_shapes),
-                titleColor = MaterialTheme.colorScheme.error,
-                onClick = { showDeleteExpiredDialog = true },
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // ===== 6. 앱 섹션 =====
-            SectionHeader(title = stringResource(R.string.settings_section_app_info))
-
-            // 언어 (iOS settings.language Picker 정합 — Material DropdownMenu)
-            Box {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { showLanguageMenu = true }
-                        .padding(horizontal = 16.dp, vertical = 14.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = stringResource(R.string.settings_language),
-                        style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.weight(1f),
+            // ===== 2. 구독 (iOS subscription.settings.*: 플랜 / 도형 / 스케치 선 / 드론 / 알아보기 / 구매 복원) =====
+            val isPro = plan.entitlement == EntitlementState.PRO
+            InsetGroupedSection(
+                header = stringResource(R.string.subscription_settings_section),
+                footer = buildList {
+                    if (plan.paymentIssue) add(stringResource(R.string.subscription_payment_issue))
+                    add(stringResource(R.string.subscription_cross_platform_notice))
+                }.joinToString("\n"),
+            ) {
+                InsetGroupedRow(
+                    title = stringResource(R.string.subscription_plan),
+                    value = when {
+                        plan.isPaidSubscriber && plan.legacyKind == LegacyKind.EARLY_ACCESS -> stringResource(R.string.subscription_pro) + " · " + stringResource(R.string.subscription_early_badge)
+                        plan.legacyKind == LegacyKind.EARLY_ACCESS -> stringResource(R.string.subscription_early_lifetime)
+                        isPro -> stringResource(R.string.subscription_pro)
+                        else -> stringResource(R.string.subscription_free)
+                    },
+                    valueColor = if (isPro) IosSystemGreen else IosSecondaryLabel,
+                )
+                if (!isPro) {
+                    SubscriptionUsageRow(
+                        title = stringResource(R.string.subscription_settings_shapes),
+                        used = quotaUsage.shapes,
+                        limit = quotaLimits.freeShapes,
                     )
-                    Text(
-                        text = stringResource(currentLanguage.displayNameRes),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    SubscriptionUsageRow(
+                        title = stringResource(R.string.subscription_settings_sketches),
+                        used = quotaUsage.sketches,
+                        limit = quotaLimits.freeSketches,
                     )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Icon(
-                        imageVector = Icons.Default.ChevronRight,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(SettingsItemChevronSize),
+                    SubscriptionUsageRow(
+                        title = stringResource(R.string.subscription_settings_drones),
+                        used = quotaUsage.drones,
+                        limit = quotaLimits.freeDrones,
                     )
                 }
-                DropdownMenu(
-                    expanded = showLanguageMenu,
-                    onDismissRequest = { showLanguageMenu = false },
-                ) {
-                    AppLanguage.entries.forEach { lang ->
-                        DropdownMenuItem(
-                            text = { Text(stringResource(lang.displayNameRes)) },
-                            trailingIcon = if (lang == currentLanguage) {
-                                {
-                                    Icon(
-                                        imageVector = Icons.Default.Check,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary,
-                                    )
-                                }
-                            } else null,
-                            onClick = {
-                                showLanguageMenu = false
-                                val action = resolveLanguageSelectionAction(
-                                    selectedLanguage = lang,
-                                    currentLanguage = currentLanguage,
-                                )
-                                action.languageToApply?.let { language ->
-                                    showLanguageChangeAlert = action.showRestartAlert
-                                    settingsViewModel.setLanguage(language)
-                                }
-                            },
-                        )
-                    }
+                InsetGroupedDivider()
+                InsetGroupedRow(
+                    title = if (isPro) {
+                        stringResource(R.string.subscription_benefits)
+                    } else {
+                        stringResource(R.string.subscription_learn_more)
+                    },
+                    titleColor = MaterialTheme.colorScheme.primary,
+                    onClick = { settingsViewModel.subscriptionManager.showPaywall("settings") },
+                )
+                if (plan.isPaidSubscriber) {
+                    InsetGroupedDivider()
+                    InsetGroupedRow(
+                        title = stringResource(R.string.subscription_manage),
+                        titleColor = MaterialTheme.colorScheme.primary,
+                        onClick = { settingsViewModel.subscriptionManager.openManagement(context) },
+                    )
                 }
+                InsetGroupedDivider()
+                InsetGroupedRow(
+                    title = stringResource(R.string.subscription_restore),
+                    titleColor = MaterialTheme.colorScheme.primary,
+                    onClick = { settingsViewModel.subscriptionManager.restore() },
+                )
             }
 
-            HorizontalDivider(modifier = Modifier.padding(start = 16.dp))
+            // ===== 3. 비행 환경 =====
+            InsetGroupedSection(header = stringResource(R.string.settings_section_flight_environment)) {
+                InsetGroupedRow(
+                    title = stringResource(R.string.settings_kp_index_current, currentKpString),
+                    showChevron = true,
+                    onClick = { showKpForecastSheet = true },
+                )
+                InsetGroupedDivider()
+                InsetGroupedRow(
+                    title = stringResource(R.string.settings_weather_current),
+                    showChevron = true,
+                    onClick = { showWeatherSheet = true },
+                )
+            }
 
-            // 한국 현지 기능 (iOS settings.koreaFeatures.toggle 정합)
-            SettingsToggleItem(
-                title = stringResource(R.string.settings_korea_features),
-                checked = koreaFeaturesEnabled,
-                onCheckedChange = { newValue ->
-                    settingsViewModel.toggleKoreaFeatures(newValue)
-                    koreaFeaturesAlertOn = newValue
-                },
-            )
+            // ===== 4. 알림 =====
+            InsetGroupedSection(header = stringResource(R.string.settings_section_notifications)) {
+                    // POST_NOTIFICATIONS (Android 13+) + SCHEDULE_EXACT_ALARM (Android 12+)
+                    // 권한이 없을 때만 섹션 첫 행에 안내를 표시한다.
+                    NotificationPermissionRequest()
+                    InsetGroupedToggleRow(
+                        title = stringResource(R.string.settings_end_date_alarm),
+                        subtitle = stringResource(R.string.settings_end_date_alarm_subtitle),
+                        checked = endDateAlarmEnabled,
+                        onCheckedChange = { settingsViewModel.toggleEndDateAlarm(it) },
+                    )
+                    InsetGroupedDivider()
+                    InsetGroupedToggleRow(
+                        title = stringResource(R.string.settings_sunrise_alarm),
+                        subtitle = stringResource(R.string.settings_sunrise_alarm_subtitle),
+                        checked = sunriseAlarmEnabled,
+                        onCheckedChange = { settingsViewModel.toggleSunriseAlarm(it) },
+                    )
+                    InsetGroupedDivider()
+                    InsetGroupedToggleRow(
+                        title = stringResource(R.string.settings_sunset_alarm),
+                        subtitle = stringResource(R.string.settings_sunset_alarm_subtitle),
+                        checked = sunsetAlarmEnabled,
+                        onCheckedChange = { settingsViewModel.toggleSunsetAlarm(it) },
+                    )
+            }
 
-            HorizontalDivider(modifier = Modifier.padding(start = 16.dp))
+            // ===== 5. 지도 표시 =====
+            InsetGroupedSection(header = stringResource(R.string.settings_section_map_display)) {
+                InsetGroupedToggleRow(
+                    title = stringResource(R.string.settings_keep_screen_awake),
+                    subtitle = stringResource(R.string.settings_keep_screen_awake_subtitle),
+                    checked = keepScreenAwake,
+                    onCheckedChange = { settingsViewModel.toggleKeepScreenAwake(it) },
+                )
+                InsetGroupedDivider()
+                InsetGroupedToggleRow(
+                    title = stringResource(R.string.settings_hide_not_started),
+                    subtitle = stringResource(R.string.settings_hide_not_started_subtitle),
+                    checked = hideNotStartedShapes,
+                    onCheckedChange = { settingsViewModel.toggleHideNotStartedShapes(it) },
+                )
+                InsetGroupedDivider()
+                InsetGroupedToggleRow(
+                    title = stringResource(R.string.settings_hide_expired),
+                    subtitle = stringResource(R.string.settings_hide_expired_subtitle),
+                    checked = hideExpiredShapes,
+                    onCheckedChange = { settingsViewModel.toggleHideExpiredShapes(it) },
+                )
+                InsetGroupedDivider()
+                // destructive — iOS settings.shape.deleteExpired Role.destructive 정합
+                InsetGroupedRow(
+                    title = stringResource(R.string.settings_delete_expired_shapes),
+                    titleColor = MaterialTheme.colorScheme.error,
+                    onClick = { showDeleteExpiredDialog = true },
+                )
+            }
 
-            // 앱 소개
-            SettingsItem(
-                title = stringResource(R.string.settings_app_intro),
-                onClick = onNavigateToAppInfo,
-            )
+            // ===== 6. 앱 =====
+            InsetGroupedSection(header = stringResource(R.string.settings_section_app_info)) {
+                // 언어 (iOS Picker 메뉴 정합 — Material DropdownMenu)
+                Box {
+                    InsetGroupedRow(
+                        title = stringResource(R.string.settings_language),
+                        value = stringResource(currentLanguage.displayNameRes),
+                        onClick = { showLanguageMenu = true },
+                        trailing = {
+                            Icon(
+                                imageVector = Icons.Default.UnfoldMore,
+                                contentDescription = null,
+                                tint = IosSecondaryLabel,
+                                modifier = Modifier.size(16.dp),
+                            )
+                        },
+                    )
+                    DropdownMenu(
+                        expanded = showLanguageMenu,
+                        onDismissRequest = { showLanguageMenu = false },
+                        modifier = Modifier.align(Alignment.TopEnd),
+                    ) {
+                        AppLanguage.entries.forEach { lang ->
+                            DropdownMenuItem(
+                                text = { Text(stringResource(lang.displayNameRes)) },
+                                trailingIcon = if (lang == currentLanguage) {
+                                    {
+                                        Icon(
+                                            imageVector = Icons.Default.Check,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.primary,
+                                        )
+                                    }
+                                } else null,
+                                onClick = {
+                                    showLanguageMenu = false
+                                    val action = resolveLanguageSelectionAction(
+                                        selectedLanguage = lang,
+                                        currentLanguage = currentLanguage,
+                                    )
+                                    action.languageToApply?.let { language ->
+                                        showLanguageChangeAlert = action.showRestartAlert
+                                        settingsViewModel.setLanguage(language)
+                                    }
+                                },
+                            )
+                        }
+                    }
+                }
+                InsetGroupedDivider()
+                InsetGroupedToggleRow(
+                    title = stringResource(R.string.settings_korea_features),
+                    checked = koreaFeaturesEnabled,
+                    onCheckedChange = { newValue ->
+                        settingsViewModel.toggleKoreaFeatures(newValue)
+                        koreaFeaturesAlertOn = newValue
+                    },
+                )
+                InsetGroupedDivider()
+                InsetGroupedRow(
+                    title = stringResource(R.string.settings_app_intro),
+                    titleColor = MaterialTheme.colorScheme.primary,
+                    onClick = onNavigateToAppInfo,
+                )
+                InsetGroupedDivider()
+                InsetGroupedRow(
+                    title = stringResource(R.string.settings_patch_notes),
+                    titleColor = MaterialTheme.colorScheme.primary,
+                    onClick = onNavigateToPatchNotes,
+                )
+            }
 
-            HorizontalDivider(modifier = Modifier.padding(start = 16.dp))
-
-            // 패치노트
-            SettingsItem(
-                title = stringResource(R.string.settings_patch_notes),
-                onClick = onNavigateToPatchNotes,
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(12.dp + contentBottomPadding))
         }
     }
 
     // 프로필 시트 (iOS ProfileView 정합)
     if (showProfileSheet) {
-        ModalBottomSheet(
+        DronePassModalBottomSheet(
             onDismissRequest = {
                 showProfileSheet = false
                 settingsViewModel.checkAuthState()
@@ -443,7 +440,7 @@ private fun SettingsMainContent(
 
     // 로그인 시트 (iOS SettingView: 비로그인 시 LoginView sheet)
     if (showLoginSheet) {
-        ModalBottomSheet(
+        DronePassModalBottomSheet(
             onDismissRequest = {
                 showLoginSheet = false
                 settingsViewModel.checkAuthState()
@@ -512,7 +509,7 @@ private fun SettingsMainContent(
     if (showKpForecastSheet) {
         val kpViewModel: KpViewModel = hiltViewModel()
         val kpIsLoading by kpViewModel.isLoading.collectAsStateWithLifecycle()
-        ModalBottomSheet(
+        DronePassModalBottomSheet(
             onDismissRequest = { showKpForecastSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         ) {
@@ -534,7 +531,7 @@ private fun SettingsMainContent(
     if (showWeatherSheet) {
         val weatherViewModel: WeatherViewModel = hiltViewModel()
         val weatherIsLoading by weatherViewModel.isLoading.collectAsStateWithLifecycle()
-        ModalBottomSheet(
+        DronePassModalBottomSheet(
             onDismissRequest = { showWeatherSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         ) {
@@ -561,7 +558,7 @@ private fun SettingsMainContent(
 
     // KP 정보 가이드 (iOS KPInfoView 정합)
     if (showKpInfoSheet) {
-        ModalBottomSheet(
+        DronePassModalBottomSheet(
             onDismissRequest = { showKpInfoSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         ) {
@@ -575,7 +572,7 @@ private fun SettingsMainContent(
         val selectedCategory by weatherViewModel.selectedCategory.collectAsStateWithLifecycle()
         val isUsingGps by weatherViewModel.isUsingGps.collectAsStateWithLifecycle()
         val locationAccuracyMeters by weatherViewModel.locationAccuracyMeters.collectAsStateWithLifecycle()
-        ModalBottomSheet(
+        DronePassModalBottomSheet(
             onDismissRequest = { showWeatherInfoSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         ) {
@@ -622,3 +619,15 @@ private fun SettingsMainContent(
 
 // 재사용 컴포넌트(SectionHeader / SettingsItem / SettingsToggleItem)는
 // SettingsComponents.kt 에 internal 로 이전 — ProfileScreen 등에서 동일 시각 정합으로 재사용.
+
+
+/** 무료 플랜 사용량 행. iOS 처럼 한도에 도달하면 값을 빨간색으로 표시한다. */
+@Composable
+private fun SubscriptionUsageRow(title: String, used: Int, limit: Int) {
+    InsetGroupedDivider()
+    InsetGroupedRow(
+        title = title,
+        value = stringResource(R.string.subscription_usage_value, used, limit),
+        valueColor = if (used >= limit) MaterialTheme.colorScheme.error else IosSecondaryLabel,
+    )
+}

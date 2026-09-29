@@ -28,7 +28,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -69,6 +68,7 @@ import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.phoneNumber
 import com.ScienceFiction.DronePassAndroid.core.util.AltitudeUnit
 import java.text.SimpleDateFormat
 import java.util.Locale
+import com.ScienceFiction.DronePassAndroid.ui.component.DronePassModalBottomSheet
 
 private val SecondaryTextColor: Color
     @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
@@ -161,7 +161,7 @@ fun VWorldZoneDetailSheet(
         resolveVWorldZoneDetailSheetMinHeight(zone.layer)
     }
 
-    ModalBottomSheet(
+    DronePassModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState
     ) {

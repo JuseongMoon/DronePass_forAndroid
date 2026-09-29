@@ -108,7 +108,6 @@ fun KpForecastLineChart(
     val predicted = parsed.map { it.isPredicted }
     val pointColors = kpChartPointColors(parsed.map { it.item.kp })
     val pointLabels = parsed.map { formatKpChartPointLabel(it.item.kp) }
-    val xLabelTimes = parsed.map { it.timeMillis }
     val primaryColor = MaterialTheme.colorScheme.primary
 
     KpChartCard(
@@ -125,6 +124,8 @@ fun KpForecastLineChart(
             KpChartState.Data -> ScrollableTimeChartViewport(
                 dataPoints = dataPoints,
                 visibleDomainMs = KpForecastVisibleDomainMs,
+                // 첫 화면은 현재 시각 부근. 예보 데이터에 빈 구간이 있어도 지금 값부터 보이게 한다.
+                initialScrollTimeMs = System.currentTimeMillis() - KpForecastLabelIntervalMs,
             ) { chartModifier ->
                 WeatherLineChart(
                     dataPoints = dataPoints,
@@ -134,8 +135,9 @@ fun KpForecastLineChart(
                     dangerThreshold = 7.0,
                     yAxisRange = 0.0..9.0,
                     yLabelStep = KpYAxisLabelStep,
+                    // 데이터 점 시각이 아니라 3시간 고정 간격으로 라벨을 찍는다.
+                    // NOAA 예보에 하루가 통째로 빠지는 경우가 있어, 점 기준이면 축 라벨이 사라진다.
                     xLabelIntervalMs = KpForecastLabelIntervalMs,
-                    xLabelTimesMs = xLabelTimes,
                     currentTimeMs = System.currentTimeMillis(),
                     predicted = predicted,
                     pointColors = pointColors,
@@ -253,7 +255,8 @@ private fun Kp27DayLineChart(longTermForecast: List<Kp27DayForecast>) {
     val dataPoints = parsedForecast.map { (timeMs, forecast) -> timeMs to forecast.kp }
     val pointColors = kpChartPointColors(parsedForecast.map { (_, forecast) -> forecast.kp })
     val pointLabels = parsedForecast.map { (_, forecast) -> formatKpChartPointLabel(forecast.kp) }
-    val xLabelTimes = parsedForecast.map { (timeMs, _) -> timeMs }
+    // 하루 간격 날짜 라벨은 폰 폭에서 겹치므로 이틀 간격으로 찍는다.
+    val xLabelTimes = parsedForecast.map { (timeMs, _) -> timeMs }.filterIndexed { index, _ -> index % 2 == 0 }
     val primaryColor = MaterialTheme.colorScheme.primary
 
     ScrollableTimeChartViewport(
@@ -271,6 +274,8 @@ private fun Kp27DayLineChart(longTermForecast: List<Kp27DayForecast>) {
             xLabelIntervalMs = Kp27DayLabelIntervalMs,
             xLabelTimesMs = xLabelTimes,
             currentTimeMs = kp27DayCurrentMarkerMillis(),
+            // 점이 정오 UTC(한국 21시)라 시각 형식이면 모든 라벨이 "21" 이 된다. 날짜로 표시한다.
+            xLabelFormatter = { formatKp27DayAxisLabel(it) },
             pointColors = pointColors,
             pointLabels = pointLabels,
             lineSegmentColors = pointColors,
@@ -492,3 +497,9 @@ private fun LegendItem(level: KpLevel, label: String) {
         )
     }
 }
+
+internal fun formatKp27DayAxisLabel(
+    timeMillis: Long,
+    timeZone: TimeZone = TimeZone.getDefault(),
+    locale: Locale = Locale.getDefault(),
+): String = SimpleDateFormat("MM/dd", locale).apply { this.timeZone = timeZone }.format(java.util.Date(timeMillis))

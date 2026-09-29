@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.ui.navigation
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
@@ -98,6 +99,7 @@ import com.ScienceFiction.DronePassAndroid.feature.settings.SettingsScreen
 import com.ScienceFiction.DronePassAndroid.feature.sketch.SketchViewModel
 import com.ScienceFiction.DronePassAndroid.service.ForegroundNotification
 import com.ScienceFiction.DronePassAndroid.service.ForegroundNotificationBus
+import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGroupedBackground
 import kotlinx.coroutines.delay
 
 // MARK: - iOS MainTabView 와 동등한 시각/치수 토큰
@@ -111,6 +113,10 @@ internal val TabBarPhoneBottomPadding = 15.dp
 internal val TabBarTabletBottomPadding = 20.dp
 internal const val FloatingTabBarUsesNavigationBarsPadding = true
 private val TabBarShadowElevation = 8.dp
+
+// 폰 오버레이는 떠 있는 탭바 아래에 깔린다. iOS 는 오버레이가 탭바를 덮지만, Android 는 탭 전환을
+// 바로 할 수 있도록 탭바를 위에 두고 목록 끝에 탭바 높이만큼 스크롤 여백을 준다.
+internal val OverlayContentTabBarClearance = TabBarHeight + 12.dp
 private val TabButtonWidth = 60.dp
 
 // iOS .font(.system(size: 20, weight: .medium)) 와 정확히 일치
@@ -128,7 +134,7 @@ private val TabSelectedColor = Color(0xFF007AFF)
 private val TabUnselectedColor = Color(0xFF8E8E93)
 
 // iOS .ultraThinMaterial 라이트 모드 톤 — minSdk 28 이라 blur 불가, 동일 톤 색으로 흉내
-private val OverlayBackgroundColor = Color(0xFFF7F7F8)
+private val OverlayBackgroundColor = IosSystemGroupedBackground
 
 // iOS Color(UIColor.systemBackground) — 오버레이 상단 핸들/헤더 영역
 internal val OverlayHeaderBackgroundColor = Color.White
@@ -579,6 +585,16 @@ internal fun MainScreen(
         settingsSheetHeightFraction = dragEnd.sheetHeightFraction
         if (dragEnd.shouldDismiss) {
             showSettingsOverlay = false
+        }
+    }
+
+    // Android 뒤로가기는 열린 화면을 먼저 닫는다. 스케치 모드 → 설정/저장 오버레이 순서로 닫고,
+    // 아무것도 없을 때만 시스템 기본 동작(앱 종료)으로 넘긴다. iOS 에는 없는 시스템 동작이다.
+    BackHandler(enabled = isSketchMode || showSettingsOverlay || showSavedListOverlay) {
+        when {
+            isSketchMode -> sketchViewModel.exitSketchMode()
+            showSettingsOverlay -> showSettingsOverlay = false
+            else -> dismissSavedListOverlay()
         }
     }
 
@@ -1365,6 +1381,7 @@ private fun SavedListOverlay(
                     onSelectionConsumed = onSelectionConsumed,
                     focusShapeId = focusShapeId,
                     onFocusConsumed = onFocusConsumed,
+                    contentBottomPadding = OverlayContentTabBarClearance,
                     viewModel = savedListViewModel,
                 )
             }
@@ -1538,6 +1555,7 @@ private fun SettingsOverlay(
                 }
                 SettingsScreen(
                     onAccountSessionEnded = onAccountSessionEnded,
+                    contentBottomPadding = OverlayContentTabBarClearance,
                 )
             }
         }

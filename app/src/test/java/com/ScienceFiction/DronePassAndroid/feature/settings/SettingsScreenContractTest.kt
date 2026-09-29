@@ -94,7 +94,7 @@ class SettingsScreenContractTest {
     }
 
     @Test
-    fun `언어 선택 행 chevron 도 iOS 설정 행 토큰을 따른다`() {
+    fun `언어 선택 행은 iOS Picker 메뉴처럼 위아래 화살표를 표시한다`() {
         val source = resolveProjectFile(
             "src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsScreen.kt",
             "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsScreen.kt",
@@ -105,8 +105,8 @@ class SettingsScreenContractTest {
             tokens = listOf(
                 "R.string.settings_section_app_info",
                 "R.string.settings_language",
-                "Icons.Default.ChevronRight",
-                "Modifier.size(SettingsItemChevronSize)",
+                "showLanguageMenu = true",
+                "Icons.Default.UnfoldMore",
             ),
         )
     }
@@ -147,30 +147,35 @@ class SettingsScreenContractTest {
             tokens = listOf(
                 "R.string.settings_section_flight_environment",
                 "R.string.settings_kp_index_current",
+                "showChevron = true",
                 "onClick = { showKpForecastSheet = true }",
-                "showArrow = true",
                 "R.string.settings_weather_current",
+                "showChevron = true",
                 "onClick = { showWeatherSheet = true }",
-                "showArrow = true",
             ),
         )
     }
 
     @Test
-    fun `설정 일반 진입 행은 iOS처럼 chevron 을 노출하지 않는다`() {
+    fun `설정 chevron 은 다른 화면으로 이동하는 행에만 표시한다`() {
         val source = resolveProjectFile(
             "src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsScreen.kt",
             "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/SettingsScreen.kt",
         ).readText()
 
-        assertEquals(2, Regex("showArrow = true").findAll(source).count())
+        // Android 는 이동 행(프로필, 드론 관리, KP, 날씨)에 chevron 을 둔다. 동작 행은 파란 텍스트로 구분한다.
+        assertEquals(4, Regex("showChevron = true").findAll(source).count())
         assertAppearsInOrder(
             source = source,
             tokens = listOf(
+                "R.string.settings_profile_login",
+                "showChevron = true",
+                "R.string.settings_drone_manage",
+                "showChevron = true",
                 "R.string.settings_kp_index_current",
-                "showArrow = true",
+                "showChevron = true",
                 "R.string.settings_weather_current",
-                "showArrow = true",
+                "showChevron = true",
                 "R.string.settings_end_date_alarm",
             ),
         )
@@ -229,7 +234,7 @@ class SettingsScreenContractTest {
                 "if (showDroneListSheet)",
                 "onDismissRequest = { showDroneListSheet = false }",
                 "skipPartiallyExpanded = true",
-                "DroneListScreen()",
+                "DroneListScreen(onClose = { showDroneListSheet = false })",
             ),
         )
     }

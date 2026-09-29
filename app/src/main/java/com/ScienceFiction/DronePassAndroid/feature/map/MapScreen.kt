@@ -159,6 +159,11 @@ fun MapScreen(
 
     // 화면 항상 켜기 설정 (Phase 3.4 B-M3 양방향 적용)
     val keepScreenOn by viewModel.keepScreenOn.collectAsStateWithLifecycle()
+    val isSketchModeActive by sketchViewModel.isSketchMode.collectAsStateWithLifecycle()
+    LaunchedEffect(naverMap, isSketchModeActive) {
+        // 스케치 툴바가 왼쪽 아래 현위치 버튼을 덮으므로 스케치 중에는 숨긴다.
+        naverMap?.uiSettings?.isLocationButtonEnabled = !isSketchModeActive
+    }
     val activeShapesForPendingRequests by viewModel.activeShapes.collectAsStateWithLifecycle()
     val visibleShapesForPendingRequests by viewModel.filteredShapes.collectAsStateWithLifecycle()
     val pendingNewShapeRequest by viewModel.pendingNewShapeRequest.collectAsStateWithLifecycle()

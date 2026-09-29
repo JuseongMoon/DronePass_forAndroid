@@ -22,11 +22,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -42,13 +39,19 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ScienceFiction.DronePassAndroid.R
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedDivider
+import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedRowMinHeight
+import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedSection
+import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedSectionSpacing
+import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGray3
+import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGroupedBackground
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.PaletteColor
 
 internal val DroneListAddIconSize = 20.dp
 internal val DroneListAddIconTextSpacing = 8.dp
-internal val DroneListEmptyFooterHorizontalPadding = 16.dp
-internal val DroneListEmptyFooterVerticalPadding = 8.dp
 
 /**
  * 드론 관리 목록 화면
@@ -57,6 +60,7 @@ internal val DroneListEmptyFooterVerticalPadding = 8.dp
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DroneListScreen(
+    onClose: (() -> Unit)? = null,
     droneViewModel: DroneViewModel = hiltViewModel()
 ) {
     val drones by droneViewModel.activeDrones.collectAsStateWithLifecycle()
@@ -65,63 +69,60 @@ fun DroneListScreen(
     val selectedDrone by droneViewModel.selectedDrone.collectAsStateWithLifecycle()
     val deleteError by droneViewModel.deleteError.collectAsStateWithLifecycle()
 
-    Scaffold(
-        topBar = {
-            LargeTopAppBar(
-                title = {
-                    Text(
-                        text = stringResource(R.string.drone_list_title),
-                        fontWeight = FontWeight.Bold
-                    )
-                },
-            )
-        }
-    ) { innerPadding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
-            contentPadding = PaddingValues(bottom = 24.dp),
-        ) {
-            item {
-                DroneListSectionHeader(text = stringResource(R.string.drone_list_section_my))
-            }
-
-            if (drones.isEmpty()) {
-                item {
-                    Text(
-                        text = stringResource(R.string.drone_list_empty),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(
-                            horizontal = DroneListEmptyFooterHorizontalPadding,
-                            vertical = DroneListEmptyFooterVerticalPadding,
-                        ),
-                    )
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(IosSystemGroupedBackground),
+        contentPadding = PaddingValues(bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(InsetGroupedSectionSpacing),
+    ) {
+        item {
+            // iOS Large Title. 시트 안이라 AppBar 대신 가벼운 헤더를 쓰고, 닫기 버튼을 둔다.
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 20.dp, end = 8.dp, top = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = stringResource(R.string.drone_list_title),
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f),
+                )
+                if (onClose != null) {
+                    TextButton(onClick = onClose) {
+                        Text(stringResource(R.string.common_close), fontWeight = FontWeight.SemiBold)
+                    }
                 }
-            } else {
-                itemsIndexed(drones, key = { _, drone -> drone.id }) { index, drone ->
+            }
+        }
+
+        item {
+            InsetGroupedSection(
+                header = stringResource(R.string.drone_list_section_my),
+                footer = if (drones.isEmpty()) stringResource(R.string.drone_list_empty) else null,
+            ) {
+                drones.forEachIndexed { index, drone ->
                     DroneListItem(
                         drone = drone,
                         onClick = { droneViewModel.selectDrone(drone.id) }
                     )
                     if (index != drones.lastIndex) {
-                        HorizontalDivider(
-                            modifier = Modifier.padding(start = 68.dp),
-                            color = MaterialTheme.colorScheme.outlineVariant
-                        )
+                        InsetGroupedDivider(startIndent = 52.dp)
                     }
                 }
             }
+        }
 
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
+        item {
+            InsetGroupedSection {
                 DroneAddItem(onClick = droneViewModel::requestAddDrone)
             }
+        }
 
-            item {
-                Spacer(modifier = Modifier.height(20.dp))
-                DroneListSectionHeader(text = stringResource(R.string.drone_list_section_usage))
+        item {
+            InsetGroupedSection(header = stringResource(R.string.drone_list_section_usage)) {
                 DroneUsageSection()
             }
         }
@@ -227,6 +228,7 @@ private fun DroneListItem(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() }
+            .heightIn(min = InsetGroupedRowMinHeight)
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -243,7 +245,7 @@ private fun DroneListItem(
                     )
             )
 
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(16.dp))
         }
 
         Text(
@@ -253,6 +255,13 @@ private fun DroneListItem(
             modifier = Modifier.weight(1f),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
+        )
+        // iOS 는 chevron 이 없어 누를 수 있는 행인지 알기 어렵다. Android 는 표시한다.
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+            contentDescription = null,
+            tint = IosSystemGray3,
+            modifier = Modifier.size(20.dp),
         )
     }
 }
@@ -290,7 +299,7 @@ private fun DroneUsageSection() {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+            .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Text(
@@ -304,14 +313,4 @@ private fun DroneUsageSection() {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
-}
-
-@Composable
-private fun DroneListSectionHeader(text: String) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.labelMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 18.dp, bottom = 6.dp),
-    )
 }

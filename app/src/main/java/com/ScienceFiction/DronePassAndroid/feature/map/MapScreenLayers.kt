@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -61,6 +60,7 @@ import com.ScienceFiction.DronePassAndroid.feature.weather.WeatherSheetHeader
 import com.ScienceFiction.DronePassAndroid.feature.weather.WeatherViewModel
 import com.naver.maps.map.NaverMap
 import com.naver.maps.map.MapView
+import com.ScienceFiction.DronePassAndroid.ui.component.DronePassModalBottomSheet
 
 /**
  * MapScreen 의 자식 Composable 4종.
@@ -798,7 +798,7 @@ internal fun MapBottomSheets(
     // KP 지수 — iOS KPForecastView 정합 (헤더 + 본문)
     if (showKpSheet) {
         val kpIsLoading by kpViewModel.isLoading.collectAsStateWithLifecycle()
-        ModalBottomSheet(
+        DronePassModalBottomSheet(
             onDismissRequest = onDismissKpSheet,
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         ) {
@@ -819,7 +819,7 @@ internal fun MapBottomSheets(
     // 날씨 — iOS WeatherForecastView 정합 (헤더 + 본문)
     if (showWeatherSheet) {
         val weatherIsLoading by weatherViewModel.isLoading.collectAsStateWithLifecycle()
-        ModalBottomSheet(
+        DronePassModalBottomSheet(
             onDismissRequest = onDismissWeatherSheet,
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         ) {
@@ -846,7 +846,7 @@ internal fun MapBottomSheets(
 
     // KP 정보 가이드 — iOS KPForecastView info.circle sheet 정합.
     if (showKpInfoSheet) {
-        ModalBottomSheet(
+        DronePassModalBottomSheet(
             onDismissRequest = { showKpInfoSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         ) {
@@ -859,7 +859,7 @@ internal fun MapBottomSheets(
         val selectedCategory by weatherViewModel.selectedCategory.collectAsStateWithLifecycle()
         val isUsingGps by weatherViewModel.isUsingGps.collectAsStateWithLifecycle()
         val locationAccuracyMeters by weatherViewModel.locationAccuracyMeters.collectAsStateWithLifecycle()
-        ModalBottomSheet(
+        DronePassModalBottomSheet(
             onDismissRequest = { showWeatherInfoSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         ) {

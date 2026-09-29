@@ -23,7 +23,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -53,6 +52,7 @@ import com.ScienceFiction.DronePassAndroid.feature.settings.SettingsItem
 import java.text.DateFormat
 import java.util.Date
 import java.util.Locale
+import com.ScienceFiction.DronePassAndroid.ui.component.DronePassModalBottomSheet
 
 internal const val ProfileDocumentSheetSkipPartiallyExpanded = false
 internal val ProfileInfoSectionVerticalPadding = 12.dp
@@ -396,7 +396,7 @@ fun ProfileScreen(
     // 약관/개인정보 두 번째 시트 (iOS `.sheet(showTerms)` 정합)
     // 자체 서버(sciencefiction.co.kr) 에서 마크다운 fetch → 자체 렌더링.
     webDocTarget?.let { target ->
-        ModalBottomSheet(
+        DronePassModalBottomSheet(
             onDismissRequest = { webDocTarget = null },
             sheetState = rememberModalBottomSheetState(
                 skipPartiallyExpanded = ProfileDocumentSheetSkipPartiallyExpanded,

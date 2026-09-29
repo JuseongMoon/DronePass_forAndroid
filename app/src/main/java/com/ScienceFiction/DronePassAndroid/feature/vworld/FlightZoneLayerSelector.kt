@@ -30,7 +30,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -50,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.FlightZoneLayer
+import com.ScienceFiction.DronePassAndroid.ui.component.DronePassModalBottomSheet
 
 /**
  * 비행구역 레이어 선택 BottomSheet (iOS LayerSelectionSheet 정합)
@@ -101,7 +101,7 @@ fun FlightZoneLayerSelector(
     // Localized displayName 가나다순 정렬 (iOS sorted(by: $0.displayName < $1.displayName))
     val sortedLayers = sortedFlightZoneLayersForSelector { context.getString(it.displayNameRes) }
 
-    ModalBottomSheet(
+    DronePassModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         dragHandle = null

@@ -24,7 +24,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -56,6 +55,7 @@ import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.core.ui.currentWindowSizeDp
 import com.ScienceFiction.DronePassAndroid.feature.document.PrivacyPolicyScreen
 import com.ScienceFiction.DronePassAndroid.feature.document.TermsOfServiceScreen
+import com.ScienceFiction.DronePassAndroid.ui.component.DronePassModalBottomSheet
 
 internal const val LoginTabletBreakpointDp = 600
 internal val LoginScreenHorizontalPadding = 0.dp
@@ -301,7 +301,7 @@ fun LoginScreen(
     }
 
     docTarget?.let { target ->
-        ModalBottomSheet(
+        DronePassModalBottomSheet(
             onDismissRequest = { docTarget = null },
             sheetState = rememberModalBottomSheetState(
                 skipPartiallyExpanded = LoginDocumentSheetSkipPartiallyExpanded,

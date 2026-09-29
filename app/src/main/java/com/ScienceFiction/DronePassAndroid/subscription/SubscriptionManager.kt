@@ -66,7 +66,12 @@ data class PlanStatus(
     }
 }
 
-data class PaywallRequest(val source: String, val updateRequired: Boolean = false)
+/** [limitKind] 는 무료 한도에 걸려 열린 페이월일 때만 채운다. 페이월 상단 안내 문구를 고른다. */
+data class PaywallRequest(
+    val source: String,
+    val updateRequired: Boolean = false,
+    val limitKind: QuotaLimitKind? = null,
+)
 data class QuotaUsage(val shapes: Int = 0, val sketches: Int = 0, val drones: Int = 0)
 
 @Singleton
@@ -316,9 +321,9 @@ class SubscriptionManager @Inject constructor(
         activity.startActivity(intent)
     }
 
-    fun showPaywall(source: String) {
+    fun showPaywall(source: String, limitKind: QuotaLimitKind? = null) {
         analytics.logPaywallView(source)
-        _paywallRequests.tryEmit(PaywallRequest(source))
+        _paywallRequests.tryEmit(PaywallRequest(source, limitKind = limitKind))
     }
 
     suspend fun allow(action: QuotaAction, source: String): Boolean {
@@ -333,7 +338,7 @@ class SubscriptionManager @Inject constructor(
         }
         if (QuotaPolicy.evaluate(action, { count }, _status.value.entitlement, _limits.value) == QuotaDecision.Allowed) return true
         analytics.logQuotaBlock(action.limitKind.name.lowercase())
-        showPaywall(source)
+        showPaywall(source, action.limitKind)
         return false
     }
 

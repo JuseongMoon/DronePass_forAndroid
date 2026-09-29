@@ -12,14 +12,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -32,6 +29,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.ScienceFiction.DronePassAndroid.ui.theme.IosSecondaryLabel
+import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedDivider
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -93,7 +94,8 @@ fun NotificationPermissionRequest(
     // 두 권한 모두 OK 면 카드 자체를 그리지 않음
     if (!shouldRenderNotificationPermissionRequest(notificationPermissionGranted, exactAlarmGranted)) return
 
-    Column(modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+    // 설정의 '알림' 섹션 카드 안 첫 행들로 그린다. 각 안내 행 아래에 구분선을 둔다.
+    Column(modifier = modifier.fillMaxWidth()) {
         if (!notificationPermissionGranted) {
             PermissionCard(
                 icon = Icons.Default.NotificationsActive,
@@ -106,7 +108,7 @@ fun NotificationPermissionRequest(
                     }
                 }
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            InsetGroupedDivider()
         }
 
         if (!exactAlarmGranted) {
@@ -117,7 +119,7 @@ fun NotificationPermissionRequest(
                 buttonText = stringResource(R.string.exact_alarm_permission_open_settings),
                 onClick = { openExactAlarmSettings(context) }
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            InsetGroupedDivider()
         }
     }
 
@@ -131,38 +133,35 @@ private fun PermissionCard(
     buttonText: String,
     onClick: () -> Unit
 ) {
-    Card(
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.tertiaryContainer
-        ),
-        modifier = Modifier.fillMaxWidth()
+    // 섹션 카드 안의 한 행. 주황 아이콘으로 주의만 표시한다.
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 16.dp, top = 12.dp, bottom = 12.dp, end = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onTertiaryContainer
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.tertiary
+        )
+        Spacer(modifier = Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.SemiBold,
             )
-            Spacer(modifier = Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onTertiaryContainer
-                )
-                Text(
-                    text = description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onTertiaryContainer
-                )
-            }
-            Spacer(modifier = Modifier.width(8.dp))
-            TextButton(onClick = onClick) {
-                Text(buttonText)
-            }
+            Text(
+                text = description,
+                fontSize = 13.sp,
+                lineHeight = 17.sp,
+                color = IosSecondaryLabel,
+                modifier = Modifier.padding(top = 2.dp),
+            )
+        }
+        TextButton(onClick = onClick) {
+            Text(buttonText, fontWeight = FontWeight.SemiBold)
         }
     }
 }

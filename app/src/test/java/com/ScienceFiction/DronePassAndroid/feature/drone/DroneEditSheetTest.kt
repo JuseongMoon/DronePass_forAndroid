@@ -74,7 +74,7 @@ class DroneEditSheetTest {
         assertEquals(24.dp, DroneColorPickerCircleSize)
         assertEquals(8.dp, DroneColorPickerCircleTextSpacing)
         assertEquals(12.dp, DroneColorPickerRowVerticalPadding)
-        assertEquals(40.dp, DroneColorPickerDividerStartPadding)
+        assertEquals(56.dp, DroneColorPickerDividerStartPadding)
         assertEquals(17.dp, DroneColorPickerCheckmarkSize)
         assertEquals(17.sp, DroneColorPickerLabelFontSize)
         assertEquals(0.2f, DroneColorPickerCircleBorderAlpha, 0f)

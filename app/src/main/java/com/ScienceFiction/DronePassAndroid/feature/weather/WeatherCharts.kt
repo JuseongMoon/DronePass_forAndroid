@@ -22,6 +22,10 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.foundation.ScrollState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -141,8 +145,11 @@ internal fun WeatherLineChart(
     lineSegmentColors: List<Color>? = null,
     backgroundZones: List<BackgroundZone> = emptyList(),
     chartHeight: Dp = WeatherLineChartDefaultHeight,
+    xLabelFormatter: (Long) -> String = { formatIosTimeChartAxisLabel(it) },
 ) {
     if (dataPoints.isEmpty()) return
+    // 가로 스크롤 뷰포트 안이면 Y축을 스크롤 위치에 고정해 그린다 (iOS chartScrollableAxes 정합).
+    val horizontalScroll = LocalChartHorizontalScroll.current
 
     val onSurface = MaterialTheme.colorScheme.onSurface
     val onSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant
@@ -156,8 +163,11 @@ internal fun WeatherLineChart(
             .fillMaxWidth()
             .height(chartHeight)
     ) {
-        val leftPadding = 48f
-        val rightPadding = 16f
+        val scrollX = horizontalScroll?.value?.toFloat() ?: 0f
+        val lineStrokePx = 2.dp.toPx()
+        val pointRadiusPx = 3.dp.toPx()
+        val labelGapPx = 6.dp.toPx()
+        val rightPadding = 12.dp.toPx()
         val shouldDrawCurrentMarker = shouldDrawWeatherCurrentMarker(
             currentTimeMs = currentTimeMs,
             dataStartMs = dataPoints.first().first,
@@ -168,12 +178,7 @@ internal fun WeatherLineChart(
             hasCurrentTimeLabel = shouldDrawCurrentMarker && currentTimeLabel != null,
             axisLabelPx = axisLabelPx,
         )
-        val bottomPadding = 28f
-
-        val chartWidth = size.width - leftPadding - rightPadding
-        val chartHeight = size.height - topPadding - bottomPadding
-
-        if (chartWidth <= 0 || chartHeight <= 0 || dataPoints.size < 2) return@Canvas
+        val bottomPadding = axisLabelPx + 10.dp.toPx()
 
         // Y축 범위 계산 — yAxisRange 가 명시되면 그대로 사용, 아니면 데이터 기반 자동 + 10% 패딩.
         val (yMin, yMax) = if (yAxisRange != null) {
@@ -186,6 +191,23 @@ internal fun WeatherLineChart(
             (rawMin - padding10) to (rawMax + padding10)
         }
 
+        // Y축 라벨 값과 폭 — 가장 긴 라벨이 잘리지 않도록 왼쪽 여백을 라벨 폭으로 잡는다.
+        val yLabelPaint = Paint().apply {
+            color = onSurfaceVariant.copy(alpha = 0.8f).toArgb()
+            textSize = axisLabelPx
+            textAlign = Paint.Align.RIGHT
+            isAntiAlias = true
+        }
+        val yLabelValues = resolveWeatherChartYLabelValues(yMin, yMax, yLabelStep)
+        val yLabelTexts = yLabelValues.map(formatValue)
+        val leftPadding = (yLabelTexts.maxOfOrNull { yLabelPaint.measureText(it) } ?: 0f) + labelGapPx * 2
+        // iOS plotDimension(startPadding:) 처럼 첫 점을 축에서 살짝 띄워 점 라벨이 잘리지 않게 한다.
+        val plotStartInset = 10.dp.toPx()
+        val chartWidth = size.width - leftPadding - rightPadding - plotStartInset
+        val chartHeight = size.height - topPadding - bottomPadding
+
+        if (chartWidth <= 0 || chartHeight <= 0 || dataPoints.size < 2) return@Canvas
+
         // X축 범위
         val xMin = dataPoints.first().first.toDouble()
         val xMax = dataPoints.last().first.toDouble()
@@ -193,11 +215,13 @@ internal fun WeatherLineChart(
 
         // 좌표 변환 함수
         fun toScreenX(time: Long): Float =
-            leftPadding + ((time.toDouble() - xMin) / xRange * chartWidth).toFloat()
+            leftPadding + plotStartInset + ((time.toDouble() - xMin) / xRange * chartWidth).toFloat()
 
         fun toScreenY(value: Double): Float =
             topPadding + ((yMax - value) / (yMax - yMin) * chartHeight).toFloat()
 
+        // 플롯은 고정된 Y축 오른쪽에만 그린다. 스크롤로 밀려난 부분은 축 아래로 가려진다.
+        clipRect(left = scrollX + leftPadding, top = 0f, right = size.width, bottom = size.height) {
         // ── 배경 색상 영역 (옵션) ──
         // 예: KP 의 0-5 초록 / 5-7 노랑 / 7-9 빨강 zone
         backgroundZones.forEach { zone ->
@@ -212,65 +236,25 @@ internal fun WeatherLineChart(
             }
         }
 
-        // 격자선 (수평). yLabelStep 이 있으면 iOS AxisMarks 처럼 각 라벨마다 표시한다.
-        if (yLabelStep == null || yLabelStep <= 0.0) {
-            val gridCount = 3
-            for (i in 0..gridCount) {
-                val y = topPadding + chartHeight * i / gridCount
-                drawLine(
-                    color = onSurfaceVariant.copy(alpha = 0.1f),
-                    start = Offset(leftPadding, y),
-                    end = Offset(size.width - rightPadding, y),
-                    strokeWidth = 1f
-                )
-            }
-        }
-
-        // Y축 라벨 — yLabelStep 명시 시 그 간격으로 0..yMax 표시. 기본은 3개(상/중/하).
-        val yLabelPaint = Paint().apply {
-            color = onSurfaceVariant.copy(alpha = 0.7f).toArgb()
-            textSize = axisLabelPx
-            textAlign = Paint.Align.RIGHT
-            isAntiAlias = true
-        }
-        if (yLabelStep != null && yLabelStep > 0.0) {
-            var v = yMin
-            while (v <= yMax + 0.0001) {
-                val y = toScreenY(v)
-                drawLine(
-                    color = onSurfaceVariant.copy(alpha = 0.1f),
-                    start = Offset(leftPadding, y),
-                    end = Offset(size.width - rightPadding, y),
-                    strokeWidth = 1f
-                )
-                drawContext.canvas.nativeCanvas.drawText(
-                    formatValue(v),
-                    leftPadding - 6f,
-                    y + 6f,
-                    yLabelPaint
-                )
-                v += yLabelStep
-            }
-        } else {
-            for (i in 0..2) {
-                val value = yMax - (yMax - yMin) * i / 2
-                val y = topPadding + chartHeight * i / 2
-                drawContext.canvas.nativeCanvas.drawText(
-                    formatValue(value),
-                    leftPadding - 6f,
-                    y + 6f,
-                    yLabelPaint
-                )
-            }
+        // 격자선 (수평) — Y축 라벨마다 한 줄.
+        yLabelValues.forEach { v ->
+            val y = toScreenY(v)
+            drawLine(
+                color = onSurfaceVariant.copy(alpha = 0.12f),
+                start = Offset(leftPadding, y),
+                end = Offset(size.width - rightPadding, y),
+                strokeWidth = 1f
+            )
         }
 
         // X축 시간 라벨 — xLabelIntervalMs 명시 시 그 간격, 기본 3시간.
         val xLabelPaint = Paint().apply {
-            color = onSurfaceVariant.copy(alpha = 0.7f).toArgb()
+            color = onSurfaceVariant.copy(alpha = 0.8f).toArgb()
             textSize = axisLabelPx
             textAlign = Paint.Align.CENTER
             isAntiAlias = true
         }
+        val xDateLabelPaint = Paint(xLabelPaint).apply { typeface = Typeface.DEFAULT_BOLD }
         val intervalMs = xLabelIntervalMs ?: (3 * 60 * 60 * 1000L)
         val labelTimes = resolveTimeChartLabelTimes(
             dataStartMs = dataPoints.first().first,
@@ -281,11 +265,13 @@ internal fun WeatherLineChart(
         for (labelTime in labelTimes) {
             val x = toScreenX(labelTime)
             if (x >= leftPadding && x <= size.width - rightPadding) {
+                val label = xLabelFormatter(labelTime)
                 drawContext.canvas.nativeCanvas.drawText(
-                    formatIosTimeChartAxisLabel(labelTime),
+                    label,
                     x,
-                    size.height - 2f,
-                    xLabelPaint
+                    size.height - 4.dp.toPx(),
+                    // iOS 처럼 날짜가 바뀌는 자정 라벨(MM/dd)은 굵게 표시한다.
+                    if (xLabelTimesMs == null && '/' in label) xDateLabelPaint else xLabelPaint
                 )
                 // 수직 격자선
                 drawLine(
@@ -409,7 +395,7 @@ internal fun WeatherLineChart(
             drawPath(
                 path = linePath,
                 color = lineColor,
-                style = Stroke(width = 3f)
+                style = Stroke(width = lineStrokePx)
             )
         } else {
             val linePath = Path()
@@ -456,7 +442,7 @@ internal fun WeatherLineChart(
                     color = if (isPredictedSegment) segmentColor.copy(alpha = 0.6f) else segmentColor,
                     start = screenPoints[i],
                     end = screenPoints[i + 1],
-                    strokeWidth = 3f,
+                    strokeWidth = lineStrokePx,
                     pathEffect = if (isPredictedSegment) predictedDash else null,
                 )
             }
@@ -466,7 +452,7 @@ internal fun WeatherLineChart(
         pointColors?.let { colors ->
             screenPoints.forEachIndexed { idx, point ->
                 val color = colors.getOrNull(idx) ?: lineColor
-                drawCircle(color = color, radius = 4f, center = point)
+                drawCircle(color = color, radius = pointRadiusPx, center = point)
             }
         }
 
@@ -487,7 +473,36 @@ internal fun WeatherLineChart(
                 )
             }
         }
+        } // clipRect (plot area)
+
+        // 고정 Y축 라벨
+        yLabelValues.forEachIndexed { index, v ->
+            drawContext.canvas.nativeCanvas.drawText(
+                yLabelTexts[index],
+                scrollX + leftPadding - labelGapPx,
+                toScreenY(v) + axisLabelPx * 0.35f,
+                yLabelPaint
+            )
+        }
     }
+}
+
+/** Y축 라벨 값. [step] 이 있으면 yMin 부터 그 간격, 없으면 상/중/하 3개. */
+internal fun resolveWeatherChartYLabelValues(
+    yMin: Double,
+    yMax: Double,
+    step: Double?,
+): List<Double> {
+    if (step != null && step > 0.0) {
+        val values = mutableListOf<Double>()
+        var v = yMin
+        while (v <= yMax + 0.0001) {
+            values += v
+            v += step
+        }
+        return values
+    }
+    return listOf(yMax, (yMax + yMin) / 2, yMin)
 }
 
 private fun DrawScope.drawWeatherThresholdLine(
@@ -627,11 +642,19 @@ internal fun formatIosTimeChartAxisLabel(
     }.format(Date(timeMillis))
 }
 
+/** 가로 스크롤 차트의 스크롤 상태. [WeatherLineChart] 가 Y축을 고정 위치에 그리는 데 쓴다. */
+internal val LocalChartHorizontalScroll = staticCompositionLocalOf<ScrollState?> { null }
+
+/**
+ * 가로 스크롤 시계열 차트 뷰포트.
+ * [initialScrollTimeMs] 를 주면 처음 표시할 때 그 시각이 왼쪽 1/5 지점에 오도록 스크롤한다.
+ */
 @Composable
 internal fun ScrollableTimeChartViewport(
     dataPoints: List<Pair<Long, Double>>,
     visibleDomainMs: Long,
     modifier: Modifier = Modifier,
+    initialScrollTimeMs: Long? = null,
     content: @Composable (Modifier) -> Unit,
 ) {
     val scrollState = rememberScrollState()
@@ -640,10 +663,37 @@ internal fun ScrollableTimeChartViewport(
         val widthScale = remember(dataPoints, visibleDomainMs) {
             resolveScrollableTimeChartWidthScale(dataPoints, visibleDomainMs)
         }
-        Box(modifier = Modifier.horizontalScroll(scrollState)) {
-            content(Modifier.width(viewportWidth * widthScale))
+        val viewportWidthPx = constraints.maxWidth
+        LaunchedEffect(dataPoints, initialScrollTimeMs, viewportWidthPx) {
+            val target = resolveInitialChartScrollPx(
+                dataPoints = dataPoints,
+                targetTimeMs = initialScrollTimeMs ?: return@LaunchedEffect,
+                contentWidthPx = viewportWidthPx * widthScale,
+                viewportWidthPx = viewportWidthPx.toFloat(),
+            )
+            scrollState.scrollTo(target)
+        }
+        CompositionLocalProvider(LocalChartHorizontalScroll provides scrollState) {
+            Box(modifier = Modifier.horizontalScroll(scrollState)) {
+                content(Modifier.width(viewportWidth * widthScale))
+            }
         }
     }
+}
+
+internal fun resolveInitialChartScrollPx(
+    dataPoints: List<Pair<Long, Double>>,
+    targetTimeMs: Long,
+    contentWidthPx: Float,
+    viewportWidthPx: Float,
+): Int {
+    if (dataPoints.size < 2 || contentWidthPx <= viewportWidthPx) return 0
+    val start = dataPoints.first().first
+    val end = dataPoints.last().first
+    if (end <= start) return 0
+    val fraction = ((targetTimeMs - start).toDouble() / (end - start)).coerceIn(0.0, 1.0)
+    val target = fraction * contentWidthPx - viewportWidthPx * 0.2
+    return target.coerceIn(0.0, (contentWidthPx - viewportWidthPx).toDouble()).toInt()
 }
 
 internal fun resolveScrollableTimeChartWidthScale(

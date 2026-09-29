@@ -40,7 +40,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -69,8 +68,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ScienceFiction.DronePassAndroid.R
+import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedDivider
+import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedSection
+import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedSectionSpacing
+import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGroupedBackground
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.PaletteColor
+import com.ScienceFiction.DronePassAndroid.ui.component.DronePassModalBottomSheet
 
 /**
  * 드론 상세 BottomSheet.
@@ -124,9 +128,10 @@ fun DroneDetailSheet(
         showCopyToast = false
     }
 
-    ModalBottomSheet(
+    DronePassModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
+        containerColor = IosSystemGroupedBackground,
     ) {
         Box(
             modifier = Modifier
@@ -154,10 +159,11 @@ fun DroneDetailSheet(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 20.dp)
                         .padding(top = 4.dp)
                         .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(InsetGroupedSectionSpacing),
                 ) {
+                    InsetGroupedSection {
                     DroneDetailTextRow(
                         label = stringResource(R.string.drone_detail_name),
                         value = drone.name,
@@ -165,9 +171,9 @@ fun DroneDetailSheet(
                         onCopy = ::copyAndShowToast,
                         valueFontWeight = FontWeight.Medium,
                     )
+                    }
 
-                    Spacer(modifier = Modifier.height(12.dp))
-                    DroneDetailSectionHeader(text = stringResource(R.string.drone_detail_section_basic))
+                    InsetGroupedSection(header = stringResource(R.string.drone_detail_section_basic)) {
                     val colorLabel = drone.paletteColor?.localizedLabel()
                     DroneDetailColorRow(
                         label = stringResource(R.string.drone_detail_color),
@@ -175,7 +181,7 @@ fun DroneDetailSheet(
                         colorLabel = colorLabel,
                         onCopy = ::copyAndShowToast,
                     )
-                    HorizontalDivider()
+                    InsetGroupedDivider()
                     DroneDetailBlockRow(
                         label = stringResource(R.string.drone_detail_serial_number),
                         value = droneDetailOptionalText(
@@ -186,9 +192,9 @@ fun DroneDetailSheet(
                         isPlaceholder = isDroneDetailPlaceholder(drone.serialNumber),
                         onCopy = ::copyAndShowToast,
                     )
+                    }
 
-                    Spacer(modifier = Modifier.height(12.dp))
-                    DroneDetailSectionHeader(text = stringResource(R.string.drone_detail_section_specs))
+                    InsetGroupedSection(header = stringResource(R.string.drone_detail_section_specs)) {
                     DroneDetailBlockRow(
                         label = stringResource(R.string.drone_detail_takeoff_weight),
                         value = droneDetailOptionalText(
@@ -199,7 +205,7 @@ fun DroneDetailSheet(
                         isPlaceholder = isDroneDetailPlaceholder(drone.takeoffWeight),
                         onCopy = ::copyAndShowToast,
                     )
-                    HorizontalDivider()
+                    InsetGroupedDivider()
                     DroneDetailBlockRow(
                         label = stringResource(R.string.drone_detail_size),
                         value = droneDetailOptionalText(
@@ -210,16 +216,16 @@ fun DroneDetailSheet(
                         isPlaceholder = isDroneDetailPlaceholder(drone.size),
                         onCopy = ::copyAndShowToast,
                     )
+                    }
 
-                    Spacer(modifier = Modifier.height(12.dp))
-                    DroneDetailSectionHeader(text = stringResource(R.string.drone_detail_section_memo))
+                    InsetGroupedSection(header = stringResource(R.string.drone_detail_section_memo)) {
                     val memoText = droneDetailOptionalText(
                         drone.memo,
                         emptyFallback = stringResource(R.string.drone_detail_memo_empty),
                     )
                     Text(
                         text = memoText,
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodyLarge,
                         color = if (isDroneDetailPlaceholder(drone.memo)) {
                             MaterialTheme.colorScheme.onSurfaceVariant
                         } else {
@@ -228,10 +234,11 @@ fun DroneDetailSheet(
                         modifier = Modifier
                             .fillMaxWidth()
                             .copyOnLongPress(drone.memo, ::copyAndShowToast)
-                            .padding(vertical = 10.dp),
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
                     )
+                    }
 
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
                 }
             }
             DroneDetailCopyToast(
@@ -375,7 +382,8 @@ private fun DroneDetailEllipsisCircleIcon(
             .border(
                 BorderStroke(
                     width = DroneDetailMoreCircleStrokeWidth,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    // iOS ellipsis.circle 은 accent(파랑) 색이다.
+                    color = MaterialTheme.colorScheme.primary,
                 ),
                 CircleShape,
             ),
@@ -384,7 +392,7 @@ private fun DroneDetailEllipsisCircleIcon(
         Icon(
             imageVector = Icons.Default.MoreHoriz,
             contentDescription = contentDescription,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier.size(DroneDetailMoreDotsSize),
         )
     }
@@ -420,7 +428,7 @@ private fun DroneDeleteWithShapesActionSheet(
         skipPartiallyExpanded = DroneDeleteShapeHandlingSkipPartiallyExpanded,
     )
 
-    ModalBottomSheet(
+    DronePassModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
     ) {
@@ -507,7 +515,7 @@ private fun DroneMoveTargetSheet(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var selectedDroneId by remember(drones) { mutableStateOf<String?>(null) }
 
-    ModalBottomSheet(
+    DronePassModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
     ) {
@@ -669,7 +677,7 @@ private fun DroneDetailTextRow(
         modifier = Modifier
             .fillMaxWidth()
             .copyOnLongPress(copyText, onCopy)
-            .padding(vertical = 10.dp),
+            .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
@@ -697,7 +705,7 @@ private fun DroneDetailColorRow(
         modifier = Modifier
             .fillMaxWidth()
             .copyOnLongPress(colorLabel, onCopy)
-            .padding(vertical = 10.dp),
+            .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
@@ -743,7 +751,7 @@ private fun DroneDetailBlockRow(
         modifier = Modifier
             .fillMaxWidth()
             .copyOnLongPress(copyText, onCopy)
-            .padding(vertical = 10.dp),
+            .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Text(
