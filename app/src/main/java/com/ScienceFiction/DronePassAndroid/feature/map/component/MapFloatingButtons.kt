@@ -1,5 +1,11 @@
 package com.ScienceFiction.DronePassAndroid.feature.map.component
 
+import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.layout.onSizeChanged
+import com.naver.maps.map.widget.ZoomControlView
+import com.naver.maps.map.NaverMap
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -17,7 +23,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Draw
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material3.FloatingActionButton
@@ -67,9 +72,11 @@ internal val MapCreateShapeButtonSize = 60.dp
 internal val MapCreateShapeIconSize = 28.dp
 internal val MapCreateShapeButtonShadowElevation = 6.dp
 internal val MapSketchButtonSize = 45.dp
+internal val MapZoomControlToSketchSpacing = 10.dp
 internal val MapSketchIconSize = 21.dp
 internal val MapSketchButtonShadowElevation = 4.dp
-internal val MapSketchButtonIcon: ImageVector = Icons.Default.Draw
+/** iOS sketchButton 의 SF Symbols pencil.tip 과 같은 모양. */
+internal val MapSketchButtonIconRes: Int = R.drawable.ic_pencil_tip_ios_like
 internal val MapStatusGroupSpacing = 8.dp
 internal val MapKpButtonHorizontalPadding = 12.dp
 internal val MapKpButtonVerticalPadding = 8.dp
@@ -138,7 +145,12 @@ fun MapFloatingButtons(
     weatherUtcOffsetSeconds: Int? = null,
     onWeatherClick: () -> Unit = {},
     isTabletLayout: Boolean = false,
+    naverMap: NaverMap? = null,
+    isSketchMode: Boolean = false,
 ) {
+    val density = LocalDensity.current
+    // 스케치 모드에서도 확대/축소를 같은 자리에 두기 위해, 숨긴 버튼 묶음의 높이를 기억해 둔다(iOS 는 SDK 컨트롤이 그대로 남는다).
+    var statusGroupHeight by remember { mutableStateOf(0.dp) }
     val paddings = remember(isTabletLayout) {
         resolveMapFloatingButtonPaddings(isTablet = isTabletLayout)
     }
@@ -147,7 +159,7 @@ fun MapFloatingButtons(
         // 좌측 하단: 비행구역 레이어 FAB
         // iOS leftBottomButtonsView: .padding(.bottom, safeArea + 100)
         // 한국 특화 기능 OFF 시 FAB 숨김 (iOS isKoreaFeaturesEnabled 정합).
-        if (koreaFeaturesEnabled) {
+        if (koreaFeaturesEnabled && !isSketchMode) {
             FlightZoneLayerFab(
                 count = flightZoneVisibleLayerCount,
                 onClick = onShowFlightZoneLayers,
@@ -167,103 +179,126 @@ fun MapFloatingButtons(
                 .padding(end = paddings.edge, bottom = paddings.statusGroupBottom),
             horizontalAlignment = Alignment.End
         ) {
-            // 스케치 모드 진입 FAB
-            SmallFloatingActionButton(
-                onClick = onEnterSketchMode,
-                modifier = Modifier.size(MapSketchButtonSize),
-                shape = CircleShape,
-                containerColor = MaterialTheme.colorScheme.surface,
-                contentColor = MapFloatingAccentColor,
-                elevation = FloatingActionButtonDefaults.elevation(
-                    defaultElevation = MapSketchButtonShadowElevation,
-                    pressedElevation = MapSketchButtonShadowElevation,
-                    focusedElevation = MapSketchButtonShadowElevation,
-                    hoveredElevation = MapSketchButtonShadowElevation,
-                ),
-            ) {
-                Icon(
-                    imageVector = MapSketchButtonIcon,
-                    contentDescription = stringResource(R.string.map_fab_sketch),
-                    modifier = Modifier.size(MapSketchIconSize)
+            // 확대/축소 컨트롤. SDK 기본 위치(화면 세로 가운데)에 두면 화면 높이에 따라 스케치 버튼과 겹친다.
+            // 스택 맨 위에 붙여 iOS 실측 간격(축소 아래 → 스케치 위 약 10pt)을 어느 화면에서나 유지한다.
+            if (naverMap != null) {
+                AndroidView(
+                    factory = { context -> ZoomControlView(context) },
+                    update = { view -> view.map = naverMap },
                 )
+                Spacer(modifier = Modifier.height(MapZoomControlToSketchSpacing))
             }
 
-            Spacer(modifier = Modifier.height(MapStatusGroupSpacing))
-
-            // KP 지수 버튼
-            // iOS `kpIndexButton` 정합: "KP" 라벨 + 값(or "-"), 둘 다 동일한 레벨 색상으로 표시.
-            //   - 라벨은 "KP" (대문자) — iOS Text("KP")
-            //   - 값 표시는 데이터 있으면 "5.0", 없으면 "-" — iOS `currentKPString`
-            //   - 인디케이터 원 제거: 색상은 두 텍스트 자체에 직접 적용
-            Surface(
-                onClick = onShowKpForecast,
-                shape = RoundedCornerShape(MapKpButtonCornerRadius),
-                color = MaterialTheme.colorScheme.surface,
-                shadowElevation = MapKpButtonShadowElevation
-            ) {
-                val kpValueText = remember(currentKpValue) {
-                    formatMapKpValue(currentKpValue)
-                }
-                Row(
-                    modifier = Modifier.padding(
-                        horizontal = MapKpButtonHorizontalPadding,
-                        vertical = MapKpButtonVerticalPadding,
-                    ),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(MapKpButtonTextSpacing)
+            if (isSketchMode) {
+                Spacer(modifier = Modifier.height(statusGroupHeight))
+            } else {
+                Column(
+                    modifier = Modifier.onSizeChanged { size ->
+                        statusGroupHeight = with(density) { size.height.toDp() }
+                    },
+                    horizontalAlignment = Alignment.End,
                 ) {
-                    Text(
-                        text = "KP",
-                        fontSize = MapKpButtonTextSize,
-                        fontWeight = FontWeight.Bold,
-                        color = kpLevelColor
-                    )
-                    Text(
-                        text = kpValueText,
-                        fontSize = MapKpButtonTextSize,
-                        fontWeight = FontWeight.Bold,
-                        color = kpLevelColor
+                    // 스케치 모드 진입 FAB
+                    SmallFloatingActionButton(
+                        onClick = onEnterSketchMode,
+                        modifier = Modifier.size(MapSketchButtonSize),
+                        shape = CircleShape,
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        contentColor = MapFloatingAccentColor,
+                        elevation = FloatingActionButtonDefaults.elevation(
+                            defaultElevation = MapSketchButtonShadowElevation,
+                            pressedElevation = MapSketchButtonShadowElevation,
+                            focusedElevation = MapSketchButtonShadowElevation,
+                            hoveredElevation = MapSketchButtonShadowElevation,
+                        ),
+                    ) {
+                        Icon(
+                            imageVector = ImageVector.vectorResource(MapSketchButtonIconRes),
+                            contentDescription = stringResource(R.string.map_fab_sketch),
+                            modifier = Modifier.size(MapSketchIconSize)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(MapStatusGroupSpacing))
+
+                    // KP 지수 버튼
+                    // iOS `kpIndexButton` 정합: "KP" 라벨 + 값(or "-"), 둘 다 동일한 레벨 색상으로 표시.
+                    //   - 라벨은 "KP" (대문자) — iOS Text("KP")
+                    //   - 값 표시는 데이터 있으면 "5.0", 없으면 "-" — iOS `currentKPString`
+                    //   - 인디케이터 원 제거: 색상은 두 텍스트 자체에 직접 적용
+                    Surface(
+                        onClick = onShowKpForecast,
+                        shape = RoundedCornerShape(MapKpButtonCornerRadius),
+                        color = MaterialTheme.colorScheme.surface,
+                        shadowElevation = MapKpButtonShadowElevation
+                    ) {
+                        val kpValueText = remember(currentKpValue) {
+                            formatMapKpValue(currentKpValue)
+                        }
+                        Row(
+                            modifier = Modifier.padding(
+                                horizontal = MapKpButtonHorizontalPadding,
+                                vertical = MapKpButtonVerticalPadding,
+                            ),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(MapKpButtonTextSpacing)
+                        ) {
+                            Text(
+                                text = "KP",
+                                fontSize = MapKpButtonTextSize,
+                                fontWeight = FontWeight.Bold,
+                                color = kpLevelColor
+                            )
+                            Text(
+                                text = kpValueText,
+                                fontSize = MapKpButtonTextSize,
+                                fontWeight = FontWeight.Bold,
+                                color = kpLevelColor
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(MapStatusGroupSpacing))
+
+                    // 날씨 오버레이 카드 (KP 아래)
+                    WeatherOverlayCard(
+                        currentWeather = currentWeather,
+                        sunrise = sunrise,
+                        sunset = sunset,
+                        sunriseTimes = sunriseTimes,
+                        sunsetTimes = sunsetTimes,
+                        onClick = onWeatherClick,
+                        utcOffsetSeconds = weatherUtcOffsetSeconds,
                     )
                 }
             }
-
-            Spacer(modifier = Modifier.height(MapStatusGroupSpacing))
-
-            // 날씨 오버레이 카드 (KP 아래)
-            WeatherOverlayCard(
-                currentWeather = currentWeather,
-                sunrise = sunrise,
-                sunset = sunset,
-                sunriseTimes = sunriseTimes,
-                sunsetTimes = sunsetTimes,
-                onClick = onWeatherClick,
-                utcOffsetSeconds = weatherUtcOffsetSeconds,
-            )
         }
 
         // 도형 추가 FAB — iOS plusButtonView: .padding(.bottom, safeArea + 90)
-        FloatingActionButton(
-            onClick = onCreateShape,
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .navigationBarsPadding()
-                .padding(end = paddings.edge, bottom = paddings.createShapeBottom)
-                .size(MapCreateShapeButtonSize),
-            shape = CircleShape,
-            containerColor = Color.White,
-            contentColor = MapFloatingAccentColor,
-            elevation = FloatingActionButtonDefaults.elevation(
-                defaultElevation = MapCreateShapeButtonShadowElevation,
-                pressedElevation = MapCreateShapeButtonShadowElevation,
-                focusedElevation = MapCreateShapeButtonShadowElevation,
-                hoveredElevation = MapCreateShapeButtonShadowElevation,
-            ),
-        ) {
-            Icon(
-                imageVector = Icons.Default.Add,
-                contentDescription = stringResource(R.string.map_fab_add_shape),
-                modifier = Modifier.size(MapCreateShapeIconSize)
-            )
+        if (!isSketchMode) {
+            FloatingActionButton(
+                onClick = onCreateShape,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .navigationBarsPadding()
+                    .padding(end = paddings.edge, bottom = paddings.createShapeBottom)
+                    .size(MapCreateShapeButtonSize),
+                shape = CircleShape,
+                containerColor = Color.White,
+                contentColor = MapFloatingAccentColor,
+                elevation = FloatingActionButtonDefaults.elevation(
+                    defaultElevation = MapCreateShapeButtonShadowElevation,
+                    pressedElevation = MapCreateShapeButtonShadowElevation,
+                    focusedElevation = MapCreateShapeButtonShadowElevation,
+                    hoveredElevation = MapCreateShapeButtonShadowElevation,
+                ),
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = stringResource(R.string.map_fab_add_shape),
+                    modifier = Modifier.size(MapCreateShapeIconSize)
+                )
+            }
         }
     }
 }
@@ -351,6 +386,8 @@ private fun FlightZoneLayerFab(
                 Text(
                     text = badge,
                     fontSize = FlightZoneFabBadgeFontSize,
+                    // 본문 스타일의 24sp 줄 높이를 물려받으면 숫자가 아이콘에서 멀어진다(iOS .system(size: 10)).
+                    lineHeight = FlightZoneFabBadgeFontSize,
                     fontWeight = FontWeight.Bold,
                     color = FlightZoneActiveColor,
                 )

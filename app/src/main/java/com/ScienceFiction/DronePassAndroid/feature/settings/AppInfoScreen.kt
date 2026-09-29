@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.settings
 
+import androidx.compose.ui.draw.rotate
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -63,11 +64,14 @@ import com.ScienceFiction.DronePassAndroid.core.util.openUriSafely
 internal val AppInfoIntroIconSize = 60.dp
 internal val AppInfoIntroSymbolSize = 36.dp
 internal val AppInfoIntroSpacing = 12.dp
-internal val AppInfoFeatureIconSize = 32.dp
-internal val AppInfoFeatureCircleSymbolSize = 20.dp
+// iOS: .title2 SF 심볼(원형 채움 지름 약 26pt)을 32pt 프레임 안에 둔다.
+internal val AppInfoFeatureIconSize = 26.dp
+internal val AppInfoFeatureIconFrameSize = 32.dp
+internal val AppInfoFeatureCircleSymbolSize = 15.dp
 internal val AppInfoFeatureHorizontalSpacing = 12.dp
 internal val AppInfoFeatureTitleDescriptionSpacing = 4.dp
-internal val AppInfoFeatureVerticalPadding = 4.dp
+// iOS List 행 기본 여백(약 8pt) + FeatureRow .padding(.vertical, 4)
+internal val AppInfoFeatureVerticalPadding = 12.dp
 internal val AppInfoFeatureHorizontalPadding = 16.dp
 internal enum class AppInfoFeatureIconStyle {
     Plain,
@@ -301,7 +305,10 @@ private fun AppInfoIntroIcon() {
             imageVector = Icons.Default.AirplanemodeActive,
             contentDescription = null,
             tint = Color.White,
-            modifier = Modifier.size(AppInfoIntroSymbolSize),
+            // iOS airplane 심볼은 오른쪽을 향한다.
+            modifier = Modifier
+                .size(AppInfoIntroSymbolSize)
+                .rotate(90f),
         )
     }
 }
@@ -323,11 +330,16 @@ private fun FeatureRow(
             ),
         verticalAlignment = Alignment.Top,
     ) {
-        FeatureIcon(
-            icon = icon,
-            iconColor = iconColor,
-            iconStyle = iconStyle,
-        )
+        Box(
+            modifier = Modifier.size(AppInfoFeatureIconFrameSize),
+            contentAlignment = Alignment.Center,
+        ) {
+            FeatureIcon(
+                icon = icon,
+                iconColor = iconColor,
+                iconStyle = iconStyle,
+            )
+        }
         Spacer(modifier = Modifier.width(AppInfoFeatureHorizontalSpacing))
         Column(modifier = Modifier.weight(1f)) {
             Text(

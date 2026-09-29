@@ -113,10 +113,6 @@ internal val TabBarPhoneBottomPadding = 15.dp
 internal val TabBarTabletBottomPadding = 20.dp
 internal const val FloatingTabBarUsesNavigationBarsPadding = true
 private val TabBarShadowElevation = 8.dp
-
-// 폰 오버레이는 떠 있는 탭바 아래에 깔린다. iOS 는 오버레이가 탭바를 덮지만, Android 는 탭 전환을
-// 바로 할 수 있도록 탭바를 위에 두고 목록 끝에 탭바 높이만큼 스크롤 여백을 준다.
-internal val OverlayContentTabBarClearance = TabBarHeight + 12.dp
 private val TabButtonWidth = 60.dp
 
 // iOS .font(.system(size: 20, weight: .medium)) 와 정확히 일치
@@ -209,8 +205,9 @@ private const val SheetFractionExpandTrigger = 0.7f
 private val SavedOverlayPhoneMaxHeight = 500.dp
 internal const val MainOverlaysUseNavigationBarsPadding = true
 internal const val SavedOverlayInitialFocusDelayMs = 500L
-internal const val MainOverlayZIndex = 1f
-internal const val MainFloatingTabBarZIndex = 2f
+// iOS MainTabView 는 저장·설정 오버레이를 탭바 위에 .overlay 로 올린다. 오버레이가 열리면 탭바를 덮는다.
+internal const val MainFloatingTabBarZIndex = 1f
+internal const val MainOverlayZIndex = 2f
 internal const val MainNotificationPopupZIndex = 3f
 
 internal fun resolveMainStartDestination(): String = Screen.Map.route
@@ -790,9 +787,8 @@ internal fun MainScreen(
             )
         }
 
-        // Floating tab bar — 오버레이가 떠 있어도 탭 전환이 가능해야 하므로
-        // SavedList/Settings 오버레이 위에 둔다. 포그라운드 알림 팝업은 아래 블록에서
-        // 가장 위에 표시된다.
+        // Floating tab bar — iOS 처럼 저장·설정 오버레이가 열리면 그 아래에 가려진다.
+        // 포그라운드 알림 팝업은 아래 블록에서 가장 위에 표시된다.
         if (shouldShowFloatingTabBar(isSketchMode = isSketchMode)) {
             FloatingTabBar(
                 tabs = tabScreens,
@@ -1381,7 +1377,6 @@ private fun SavedListOverlay(
                     onSelectionConsumed = onSelectionConsumed,
                     focusShapeId = focusShapeId,
                     onFocusConsumed = onFocusConsumed,
-                    contentBottomPadding = OverlayContentTabBarClearance,
                     viewModel = savedListViewModel,
                 )
             }
@@ -1555,7 +1550,6 @@ private fun SettingsOverlay(
                 }
                 SettingsScreen(
                     onAccountSessionEnded = onAccountSessionEnded,
-                    contentBottomPadding = OverlayContentTabBarClearance,
                 )
             }
         }

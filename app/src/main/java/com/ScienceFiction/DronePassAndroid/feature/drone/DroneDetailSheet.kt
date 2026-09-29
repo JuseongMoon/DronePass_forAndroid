@@ -1,5 +1,7 @@
 package com.ScienceFiction.DronePassAndroid.feature.drone
 
+import com.ScienceFiction.DronePassAndroid.ui.component.IosMenuDivider
+import com.ScienceFiction.DronePassAndroid.ui.component.IosDropdownMenu
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -33,7 +35,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -350,7 +351,7 @@ private fun DroneDetailNavigationHeader(
                     contentDescription = stringResource(R.string.drone_detail_more_menu),
                 )
             }
-            DropdownMenu(
+            IosDropdownMenu(
                 expanded = menuExpanded,
                 onDismissRequest = { onMenuExpandedChange(false) },
             ) {
@@ -358,6 +359,7 @@ private fun DroneDetailNavigationHeader(
                     text = { Text(stringResource(R.string.common_edit)) },
                     onClick = onEdit,
                 )
+                IosMenuDivider()
                 DropdownMenuItem(
                     text = {
                         Text(

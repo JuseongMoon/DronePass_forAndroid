@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.kp
 
+import androidx.compose.material.icons.outlined.Info
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,7 +21,6 @@ import androidx.compose.material.icons.filled.Brightness6
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Circle
 import androidx.compose.material.icons.filled.Error
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Card
@@ -111,7 +111,7 @@ fun KpSheetHeader(
                         modifier = Modifier.size(KpSheetNavigationHeaderActionWidth),
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Info,
+                            imageVector = Icons.Outlined.Info,
                             contentDescription = stringResource(R.string.kp_info_button),
                             tint = MaterialTheme.colorScheme.primary,
                         )

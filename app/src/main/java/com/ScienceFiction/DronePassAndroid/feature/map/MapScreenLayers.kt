@@ -11,7 +11,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -247,12 +249,14 @@ internal fun MapFloatingControls(
         screenHeight = windowSize.height,
         isTablet = isTabletLayout,
     )
+    val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
 
     Box(modifier = modifier.fillMaxSize()) {
         // 드론 선택 드롭다운 (상단 우측)
         // iOS `droneDropdownView`: .padding(.top, safeAreaInsets.top + dropdownTopPadding)
-        // dropdownTopPadding 은 화면 크기별 40~60dp. 안드로이드는 statusBarsPadding 으로
-        // 상태바 영역을 보호한 뒤, iOS iPhone 12/13/14/15 기준값(40dp) 을 추가 오프셋으로 사용한다.
+        // iOS 지도 화면은 ignoresSafeArea 안에서 측정해 safeAreaInsets.top 이 0 이다. 그래서 칩은
+        // 화면 맨 위에서 dropdownTopPadding(40~60) 만큼 떨어진다. Android 도 화면 위 기준으로 두되,
+        // 상태바가 더 긴 기기에서 겹치지 않도록 상태바 높이보다는 아래에 둔다.
         if (shouldShowMapDroneDropdown(isSketchMode = isSketchMode)) {
             DroneSelectionDropdown(
                 activeDrones = activeDrones,
@@ -262,40 +266,43 @@ internal fun MapFloatingControls(
                 onToggleHighlight = { viewModel.toggleDroneHighlight(it) },
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .statusBarsPadding()
-                    .padding(top = droneDropdownTopPadding, end = 16.dp),
+                    .padding(
+                        top = maxOf(droneDropdownTopPadding, statusBarTop),
+                        end = 16.dp,
+                    ),
             )
         }
 
-        // 플로팅 버튼 (좌측 비행구역 FAB + 우측 도형/스케치/KP/날씨)
-        if (!isSketchMode) {
-            MapFloatingButtons(
-                onCreateShape = {
-                    val target = naverMap?.cameraPosition?.target
-                    val center = resolveCreateShapeCoordinateFromMapCenter(
-                        latitude = target?.latitude,
-                        longitude = target?.longitude,
-                    )
-                    viewModel.onCreateShapeRequested(center)
-                },
-                onEnterSketchMode = { sketchViewModel.enterSketchMode() },
-                onShowFlightZoneLayers = { viewModel.toggleLayerSelector() },
-                flightZoneVisibleLayerCount = visibleLayerCount,
-                koreaFeaturesEnabled = koreaFeaturesEnabled,
-                currentKpValue = currentKp?.kp,
-                kpLevelColor = Color(kpLevel.color.toInt()),
-                onShowKpForecast = onShowKpForecast,
-                currentWeather = weatherData?.current,
-                sunrise = weatherData?.sunrise,
-                sunset = weatherData?.sunset,
-                sunriseTimes = weatherData?.sunriseTimes.orEmpty(),
-                sunsetTimes = weatherData?.sunsetTimes.orEmpty(),
-                weatherUtcOffsetSeconds = weatherData?.utcOffsetSeconds,
-                onWeatherClick = onShowWeather,
-                isTabletLayout = isTabletLayout,
-                modifier = Modifier.fillMaxSize(),
-            )
-        }
+        // 플로팅 버튼 (좌측 비행구역 FAB + 우측 확대축소/스케치/KP/날씨 + 도형 추가).
+        // 스케치 모드에서는 확대/축소만 남긴다.
+        MapFloatingButtons(
+            onCreateShape = {
+                val target = naverMap?.cameraPosition?.target
+                val center = resolveCreateShapeCoordinateFromMapCenter(
+                    latitude = target?.latitude,
+                    longitude = target?.longitude,
+                )
+                viewModel.onCreateShapeRequested(center)
+            },
+            onEnterSketchMode = { sketchViewModel.enterSketchMode() },
+            onShowFlightZoneLayers = { viewModel.toggleLayerSelector() },
+            flightZoneVisibleLayerCount = visibleLayerCount,
+            koreaFeaturesEnabled = koreaFeaturesEnabled,
+            currentKpValue = currentKp?.kp,
+            kpLevelColor = Color(kpLevel.color.toInt()),
+            onShowKpForecast = onShowKpForecast,
+            currentWeather = weatherData?.current,
+            sunrise = weatherData?.sunrise,
+            sunset = weatherData?.sunset,
+            sunriseTimes = weatherData?.sunriseTimes.orEmpty(),
+            sunsetTimes = weatherData?.sunsetTimes.orEmpty(),
+            weatherUtcOffsetSeconds = weatherData?.utcOffsetSeconds,
+            onWeatherClick = onShowWeather,
+            isTabletLayout = isTabletLayout,
+            naverMap = naverMap,
+            isSketchMode = isSketchMode,
+            modifier = Modifier.fillMaxSize(),
+        )
     }
 }
 

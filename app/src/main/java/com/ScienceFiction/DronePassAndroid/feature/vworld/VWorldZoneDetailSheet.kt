@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.vworld
 
+import com.ScienceFiction.DronePassAndroid.feature.shape.ShapeDetailFirstSectionTopPadding
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
@@ -187,7 +188,8 @@ fun VWorldZoneDetailSheet(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 4.dp),
+                    // iOS insetGrouped 첫 섹션 위 여백(도형 상세와 같은 20pt).
+                    .padding(top = ShapeDetailFirstSectionTopPadding),
                 verticalArrangement = Arrangement.spacedBy(InsetGroupedSectionSpacing),
             ) {
                 // 기본 정보 섹션 (iOS Section 첫 번째)

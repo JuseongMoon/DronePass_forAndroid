@@ -14,7 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -338,7 +338,7 @@ fun WeatherSheetHeader(
                         modifier = Modifier.size(WeatherSheetNavigationHeaderActionWidth),
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Info,
+                            imageVector = Icons.Outlined.Info,
                             contentDescription = stringResource(R.string.weather_info_button),
                             tint = MaterialTheme.colorScheme.primary,
                         )

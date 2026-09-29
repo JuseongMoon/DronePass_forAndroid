@@ -54,7 +54,7 @@ internal val IosSunTimelineRowHeight = 60.dp
 internal val IosSunTimelineRowSpacing = 8.dp
 internal val IosSunTimelineSideSlotWidth = 56.dp
 internal val IosSunTimelineSideIconTimeSpacing = 4.dp
-internal val IosSunTimelineSideIconSize = 24.dp
+internal val IosSunTimelineSideIconSize = 32.dp
 internal val IosSunTimelineSideTimeFontSize = 12.sp
 internal val IosSunTimelineProgressLineHeight = 2.dp
 internal val IosSunTimelineMarkerSpacing = 2.dp
@@ -105,28 +105,30 @@ fun SunTimeline(
         )
     }
 
-    Card(
+    Column(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(IosWeatherForecastCardCornerRadius),
-        colors = CardDefaults.cardColors(
-            containerColor = IosWeatherForecastCardContainerColor,
-        ),
+        verticalArrangement = Arrangement.spacedBy(IosWeatherForecastCardSpacing),
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(IosWeatherForecastCardPadding),
-            verticalArrangement = Arrangement.spacedBy(IosWeatherForecastCardSpacing),
+        // iOS sunriseSunsetCard: 제목(title3 semibold secondary)은 회색 카드 밖에 둔다.
+        Text(
+            text = stringResource(R.string.weather_section_sunrise_sunset),
+            fontSize = IosSunTimelineTitleFontSize,
+            fontWeight = IosSunTimelineTitleFontWeight,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(IosWeatherForecastCardCornerRadius),
+            colors = CardDefaults.cardColors(
+                containerColor = IosWeatherForecastCardContainerColor,
+            ),
         ) {
-            // Title row (iOS: title3 semibold secondary)
-            Text(
-                text = stringResource(R.string.weather_section_sunrise_sunset),
-                fontSize = IosSunTimelineTitleFontSize,
-                fontWeight = IosSunTimelineTitleFontWeight,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-
-            Column(verticalArrangement = Arrangement.spacedBy(IosSunTimelineInnerSpacing)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(IosWeatherForecastCardPadding),
+                verticalArrangement = Arrangement.spacedBy(IosSunTimelineInnerSpacing),
+            ) {
                 TimelineProgressBar(
                     timelineState = timelineState,
                     now = nowDateTime,

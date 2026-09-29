@@ -1,5 +1,9 @@
 package com.ScienceFiction.DronePassAndroid.feature.shape
 
+import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.foundation.text.BasicText
+import com.ScienceFiction.DronePassAndroid.ui.component.IosMenuDivider
+import com.ScienceFiction.DronePassAndroid.ui.component.IosDropdownMenu
 import android.text.format.DateFormat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -36,7 +40,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -98,13 +101,13 @@ import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedDivider
 import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedRowHorizontalPadding
 import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedRowMinHeight
 import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedSection
-import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedSectionSpacing
 import com.ScienceFiction.DronePassAndroid.ui.theme.IosSeparator
 import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGray2
 import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGray3
 import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGroupedBackground
 
-internal const val CoordinateInputSheetSkipPartiallyExpanded = false
+// iOS ShapeEditView 는 CoordinateView 에 .fraction(0.85) 단일 detent 를 건다(실기기 확인).
+internal const val CoordinateInputSheetSkipPartiallyExpanded = true
 internal const val CoordinateInputSheetInteractiveDismissEnabled = true
 internal const val CoordinateInputSheetHeightFraction = 0.85f
 internal val CoordinateInputNavigationHeaderHeight = 44.dp
@@ -124,6 +127,8 @@ internal val CoordinateGuideTextSize = 15.sp
 internal val CoordinateGuideFormatTitleTextSize = 12.sp
 internal val CoordinateGuideExampleTextSize = 11.sp
 internal val ShapeEditMemoMinHeight = 170.dp
+internal val ShapeEditSectionSpacing = 35.dp
+internal const val ShapeEditAddressMinimumScaleFactor = 0.5f
 internal val ShapeEditNavigationHeaderHeight = 44.dp
 internal val ShapeEditNavigationActionSlotWidth = 80.dp
 internal const val ShapeEditAddressRowValueMaxLines = 1
@@ -420,7 +425,8 @@ fun ShapeEditScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(InsetGroupedSectionSpacing),
+                // iOS Form 은 헤더 없는 섹션 사이도 약 35pt 띄운다.
+                verticalArrangement = Arrangement.spacedBy(ShapeEditSectionSpacing),
             ) {
                 Spacer(modifier = Modifier.height(0.dp))
 
@@ -469,11 +475,12 @@ fun ShapeEditScreen(
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
-                        DropdownMenu(
+                        IosDropdownMenu(
                             expanded = showDroneDropdown,
                             onDismissRequest = { showDroneDropdown = false },
                         ) {
-                            drones.forEach { drone ->
+                            drones.forEachIndexed { index, drone ->
+                                if (index > 0) IosMenuDivider()
                                 DropdownMenuItem(
                                     text = {
                                         Row(
@@ -538,6 +545,8 @@ fun ShapeEditScreen(
                     } else {
                         MaterialTheme.colorScheme.onSurface
                     },
+                    // 좁은 화면에서 좌표 끝의 방위(E)만 다음 줄로 넘어가지 않도록 한 줄에 맞춰 줄인다.
+                    valueAutoShrink = true,
                     onClick = {
                         coordinateInputText = initialCoordinateInputSheetText(coordinateText)
                         coordinateInputValidation = null
@@ -562,6 +571,8 @@ fun ShapeEditScreen(
                         },
                         valueMaxLines = ShapeEditAddressRowValueMaxLines,
                         valueOverflow = TextOverflow.Ellipsis,
+                        // iOS .lineLimit(1).minimumScaleFactor(0.5): 긴 주소는 글자를 줄여 한 줄에 담는다.
+                        valueAutoShrink = true,
                         onClick = { showAddressSearch = true },
                     )
                 } else {
@@ -642,6 +653,7 @@ fun ShapeEditScreen(
                     Text(
                         text = stringResource(R.string.shape_edit_date_only_mode),
                         style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Bold,
                     )
                     DronePassSwitch(
                         checked = isDateOnly,
@@ -660,8 +672,18 @@ fun ShapeEditScreen(
                 }
                 }
 
-                // ===== Section 4: 메모 (iOS MemoSection 정합 — minHeight 170pt) =====
-                InsetGroupedSection(header = stringResource(R.string.shape_edit_label_memo)) {
+                // ===== Section 4: 메모 (iOS MemoSection 정합 — 카드 안 굵은 제목 + minHeight 170pt) =====
+                InsetGroupedSection {
+                    Text(
+                        text = stringResource(R.string.shape_edit_label_memo),
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(
+                            start = InsetGroupedRowHorizontalPadding,
+                            end = InsetGroupedRowHorizontalPadding,
+                            top = 12.dp,
+                        ),
+                    )
                     FormPlainTextField(
                         value = memo,
                         onValueChange = { memo = it },
@@ -671,7 +693,12 @@ fun ShapeEditScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .heightIn(min = ShapeEditMemoMinHeight)
-                            .padding(InsetGroupedRowHorizontalPadding),
+                            .padding(
+                                start = InsetGroupedRowHorizontalPadding,
+                                end = InsetGroupedRowHorizontalPadding,
+                                top = 8.dp,
+                                bottom = InsetGroupedRowHorizontalPadding,
+                            ),
                     )
                 }
 
@@ -942,10 +969,8 @@ private fun ShapeEditNavigationHeader(
             onClick = onSave,
             modifier = Modifier.width(ShapeEditNavigationActionSlotWidth),
         ) {
-            Text(
-                text = stringResource(R.string.shape_edit_navigation_save),
-                fontWeight = FontWeight.SemiBold,
-            )
+            // iOS 툴바 trailing Button 은 기본 굵기다.
+            Text(text = stringResource(R.string.shape_edit_navigation_save))
         }
     }
 }
@@ -1223,6 +1248,8 @@ private fun EditFormRow(
         Text(
             text = label,
             style = MaterialTheme.typography.bodyLarge,
+            // iOS Form 라벨은 .bold()
+            fontWeight = FontWeight.Bold,
         )
         Spacer(modifier = Modifier.weight(1f))
         content()
@@ -1250,6 +1277,8 @@ private fun EditFormTextFieldRow(
         Text(
             text = label,
             style = MaterialTheme.typography.bodyLarge,
+            // iOS Form 라벨은 .bold()
+            fontWeight = FontWeight.Bold,
         )
         Spacer(modifier = Modifier.width(16.dp))
         FormPlainTextField(
@@ -1320,6 +1349,8 @@ private fun EditFormDateRow(
         Text(
             text = label,
             style = MaterialTheme.typography.bodyLarge,
+            // iOS Form 라벨은 .bold()
+            fontWeight = FontWeight.Bold,
             modifier = Modifier.weight(1f),
         )
         Text(
@@ -1384,6 +1415,7 @@ private fun EditFormClickableRow(
     valueColor: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onSurface,
     valueMaxLines: Int = Int.MAX_VALUE,
     valueOverflow: TextOverflow = TextOverflow.Clip,
+    valueAutoShrink: Boolean = false,
     onClick: () -> Unit,
 ) {
     Row(
@@ -1397,17 +1429,34 @@ private fun EditFormClickableRow(
         Text(
             text = label,
             style = MaterialTheme.typography.bodyLarge,
+            // iOS Form 라벨은 .bold()
+            fontWeight = FontWeight.Bold,
         )
         Spacer(modifier = Modifier.width(12.dp))
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyLarge,
-            color = valueColor,
-            modifier = Modifier.weight(1f),
-            textAlign = TextAlign.End,
-            maxLines = valueMaxLines,
-            overflow = valueOverflow,
-        )
+        if (valueAutoShrink) {
+            val valueStyle = MaterialTheme.typography.bodyLarge
+            BasicText(
+                text = value,
+                style = valueStyle.copy(color = valueColor, textAlign = TextAlign.End),
+                modifier = Modifier.weight(1f),
+                maxLines = 1,
+                overflow = valueOverflow,
+                autoSize = TextAutoSize.StepBased(
+                    minFontSize = valueStyle.fontSize * ShapeEditAddressMinimumScaleFactor,
+                    maxFontSize = valueStyle.fontSize,
+                ),
+            )
+        } else {
+            Text(
+                text = value,
+                style = MaterialTheme.typography.bodyLarge,
+                color = valueColor,
+                modifier = Modifier.weight(1f),
+                textAlign = TextAlign.End,
+                maxLines = valueMaxLines,
+                overflow = valueOverflow,
+            )
+        }
         Spacer(modifier = Modifier.width(4.dp))
         Icon(
             imageVector = Icons.AutoMirrored.Default.KeyboardArrowRight,

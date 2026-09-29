@@ -205,9 +205,9 @@ class MainScreenStartDestinationTest {
     }
 
     @Test
-    fun `하단 탭바는 저장과 설정 오버레이보다 위에서 입력을 받는다`() {
-        assertTrue(MainFloatingTabBarZIndex > MainOverlayZIndex)
-        assertTrue(MainNotificationPopupZIndex > MainFloatingTabBarZIndex)
+    fun `저장과 설정 오버레이는 iOS처럼 하단 탭바를 덮는다`() {
+        assertTrue(MainOverlayZIndex > MainFloatingTabBarZIndex)
+        assertTrue(MainNotificationPopupZIndex > MainOverlayZIndex)
     }
 
     @Test

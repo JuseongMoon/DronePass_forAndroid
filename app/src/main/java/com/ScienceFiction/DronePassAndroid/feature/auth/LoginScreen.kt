@@ -80,11 +80,14 @@ internal val LoginProviderIconTextSpacing = 8.dp
 internal val LoginProviderTextSize = 19.sp
 internal val LoginTitleTextSize = 20.sp
 internal val LoginTermsTextSize = 13.sp
-internal val LoginGoogleButtonTopSpacing = 8.dp
+// iOS 실측: Apple 버튼 아래 → Google 버튼 위 약 16pt
+internal val LoginGoogleButtonTopSpacing = 16.dp
 internal val LoginGoogleButtonShadowElevation = 3.dp
 internal val LoginTermsTopSpacing = 8.dp
 internal val LoginSkipButtonTopSpacing = 16.dp
-internal val LoginTermsLineSpacing = 2.dp
+internal val LoginTermsLineSpacing = 0.dp
+// iOS .footnote 줄 높이(실측 약 16pt). 기본 본문 줄 높이(24sp)를 물려받지 않게 한다.
+internal val LoginTermsLineHeight = 16.sp
 internal const val LoginDocumentSheetSkipPartiallyExpanded = false
 
 internal fun resolveLoginVerticalPadding(isTablet: Boolean) =
@@ -410,6 +413,7 @@ private fun LoginTermsNotice(
         Text(
             text = stringResource(R.string.login_terms_intro),
             fontSize = LoginTermsTextSize,
+            lineHeight = LoginTermsLineHeight,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
@@ -420,6 +424,7 @@ private fun LoginTermsNotice(
             Text(
                 text = stringResource(R.string.login_terms_service),
                 fontSize = LoginTermsTextSize,
+                lineHeight = LoginTermsLineHeight,
                 color = MaterialTheme.colorScheme.primary,
                 textDecoration = TextDecoration.Underline,
                 modifier = Modifier.clickable(onClick = onTermsClick),
@@ -427,11 +432,13 @@ private fun LoginTermsNotice(
             Text(
                 text = ", ",
                 fontSize = LoginTermsTextSize,
+                lineHeight = LoginTermsLineHeight,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
                 text = stringResource(R.string.login_terms_privacy),
                 fontSize = LoginTermsTextSize,
+                lineHeight = LoginTermsLineHeight,
                 color = MaterialTheme.colorScheme.primary,
                 textDecoration = TextDecoration.Underline,
                 modifier = Modifier.clickable(onClick = onPrivacyClick),
@@ -439,12 +446,14 @@ private fun LoginTermsNotice(
             Text(
                 text = stringResource(R.string.login_terms_middle),
                 fontSize = LoginTermsTextSize,
+                lineHeight = LoginTermsLineHeight,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
         Text(
             text = stringResource(R.string.login_terms_agree),
             fontSize = LoginTermsTextSize,
+            lineHeight = LoginTermsLineHeight,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )

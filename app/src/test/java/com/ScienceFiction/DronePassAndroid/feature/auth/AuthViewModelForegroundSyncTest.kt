@@ -549,10 +549,10 @@ class AuthViewModelForegroundSyncTest {
         assertEquals(19.sp, LoginProviderTextSize)
         assertEquals(20.sp, LoginTitleTextSize)
         assertEquals(13.sp, LoginTermsTextSize)
-        assertEquals(8.dp, LoginGoogleButtonTopSpacing)
+        assertEquals(16.dp, LoginGoogleButtonTopSpacing) // iOS 실측
         assertEquals(3.dp, LoginGoogleButtonShadowElevation)
         assertEquals(8.dp, LoginTermsTopSpacing)
         assertEquals(16.dp, LoginSkipButtonTopSpacing)
-        assertEquals(2.dp, LoginTermsLineSpacing)
+        assertEquals(0.dp, LoginTermsLineSpacing) // iOS VStack(spacing: 0)
     }
 }

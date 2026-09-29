@@ -1,0 +1,16 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- SF Symbols pencil.tip 과 같은 구성: 원뿔형 연필 끝 + 채운 심 + 물결 모양 밑단 -->
+    <path
+        android:pathData="M12,3.2L13.95,8.7H10.05Z"
+        android:fillColor="@android:color/black" />
+    <path
+        android:pathData="M6.4,19.2L12,3.2L17.6,19.2M6.4,19.2Q8.3,17.5 10.1,19.2Q12,20.9 13.9,19.2Q15.7,17.5 17.6,19.2"
+        android:strokeColor="@android:color/black"
+        android:strokeWidth="2.1"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+</vector>

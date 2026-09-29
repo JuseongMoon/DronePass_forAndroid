@@ -1,5 +1,10 @@
 package com.ScienceFiction.DronePassAndroid.feature.weather
 
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.ui.res.vectorResource
+import androidx.compose.material.icons.filled.ArrowUpward
+import com.ScienceFiction.DronePassAndroid.ui.component.IosMenuDivider
+import com.ScienceFiction.DronePassAndroid.ui.component.IosDropdownMenu
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -22,9 +27,6 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Navigation
-import androidx.compose.material.icons.filled.Opacity
-import androidx.compose.material.icons.filled.Storm
 import androidx.compose.material.icons.filled.Thermostat
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.WaterDrop
@@ -32,7 +34,6 @@ import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -116,11 +117,13 @@ internal val IosWeatherDataCellCornerRadius = 12.dp
 internal val IosWeatherDataCellHorizontalPadding = 12.dp
 internal val IosWeatherDataCellVerticalPadding = 12.dp
 internal val IosWeatherDataCellMinHeight = 62.dp
-internal val IosWeatherDataCellIconSize = 24.dp
+internal val IosWeatherDataCellIconSize = 28.dp
 internal val IosWeatherDataCellIconSlotWidth = 32.dp
 internal val IosWeatherDataCellWarningIconSize = 16.dp
 internal val IosWeatherDataCellContainerColor = Color(0xFFFFFFFF)
 internal val IosWeatherDataCellLabelFontSize = 17.sp
+// 320dp(삼성 화면 크기 최대 확대)에서도 "순간풍속증가량" 이 잘리지 않는 비율
+internal const val IosWeatherDataCellLabelMinimumScale = 0.55f
 internal val IosWeatherDataCellLabelWithSubTextFontSize = 15.sp
 internal val IosWeatherDataCellValueFontSize = 20.sp
 internal val IosWeatherDataCellValueWithSubTextFontSize = 17.sp
@@ -256,187 +259,198 @@ internal fun CurrentWeatherSection(
         hasError = error != null,
     )
 
-    Card(
+    Column(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(IosWeatherForecastCardCornerRadius),
-        colors = CardDefaults.cardColors(
-            containerColor = IosWeatherForecastCardContainerColor,
-        ),
+        verticalArrangement = Arrangement.spacedBy(IosWeatherForecastCardSpacing),
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(IosWeatherForecastCardPadding),
-            verticalArrangement = Arrangement.spacedBy(IosWeatherForecastCardSpacing),
+        // iOS currentWeatherCard: 제목·드론 무게 메뉴는 회색 카드 밖, 날씨 내용만 카드 안에 둔다.
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = stringResource(R.string.weather_section_current),
+                fontSize = IosCurrentWeatherHeaderTitleFontSize,
+                fontWeight = IosCurrentWeatherHeaderTitleFontWeight,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(modifier = Modifier.weight(1f))
+            Text(
+                text = stringResource(R.string.weather_drone_weight_label),
+                fontSize = IosCurrentWeatherHeaderDroneWeightFontSize,
+                fontWeight = IosCurrentWeatherHeaderRegularFontWeight,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            DroneCategoryMenu(category = category, onCategoryChanged = onCategoryChanged)
+        }
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(IosWeatherForecastCardCornerRadius),
+            colors = CardDefaults.cardColors(
+                containerColor = IosWeatherForecastCardContainerColor,
+            ),
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = stringResource(R.string.weather_section_current),
-                    fontSize = IosCurrentWeatherHeaderTitleFontSize,
-                    fontWeight = IosCurrentWeatherHeaderTitleFontWeight,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Spacer(modifier = Modifier.weight(1f))
-                Text(
-                    text = stringResource(R.string.weather_drone_weight_label),
-                    fontSize = IosCurrentWeatherHeaderDroneWeightFontSize,
-                    fontWeight = IosCurrentWeatherHeaderRegularFontWeight,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Spacer(modifier = Modifier.width(6.dp))
-                DroneCategoryMenu(category = category, onCategoryChanged = onCategoryChanged)
-            }
-
-            when (contentState) {
-                CurrentWeatherContentState.Loading -> CurrentWeatherLoadingState()
-                CurrentWeatherContentState.Error -> {
-                    val message = error?.formatArg?.let { formatArg ->
-                        stringResource(error.messageRes, formatArg)
-                    } ?: error?.let {
-                        stringResource(it.messageRes)
-                    }.orEmpty()
-                    CurrentWeatherErrorState(message = message)
-                }
-                CurrentWeatherContentState.Data -> {
-                    Box {
-                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            PreviewBlock(
-                                weatherIcon = WeatherCodeMapper.conditionIcon(
-                                    condition = current?.condition,
-                                    precipitationIntensity = current?.precipitation,
-                                ),
-                                conditionText = stringResource(
-                                    WeatherCodeMapper.conditionDescriptionRes(current?.condition),
-                                ),
-                                temperatureText = formatNullableIosTemperatureDegrees(current?.temperature),
-                                temperatureColor = current?.temperature?.let(::interpolateTemperatureColor) ?: Color.Gray,
-                                maxTemperatureText = maxTemperatureText,
-                                minTemperatureText = minTemperatureText,
-                            )
-
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(IosWeatherForecastCardPadding),
+                verticalArrangement = Arrangement.spacedBy(IosWeatherForecastCardSpacing),
+            ) {
+                when (contentState) {
+                    CurrentWeatherContentState.Loading -> CurrentWeatherLoadingState()
+                    CurrentWeatherContentState.Error -> {
+                        val message = error?.formatArg?.let { formatArg ->
+                            stringResource(error.messageRes, formatArg)
+                        } ?: error?.let {
+                            stringResource(it.messageRes)
+                        }.orEmpty()
+                        CurrentWeatherErrorState(message = message)
+                    }
+                    CurrentWeatherContentState.Data -> {
+                        Box {
                             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                    WeatherDataCell(
-                                        modifier = Modifier.weight(1f),
-                                        icon = Icons.Default.Thermostat,
-                                        iconColor = current?.temperature?.let(::interpolateTemperatureColor) ?: Color.Gray,
-                                        label = stringResource(R.string.weather_temperature),
-                                        value = formatNullableIosTemperatureDegrees(current?.temperature),
-                                        warningIcon = tempWarning,
-                                        onClick = { onWeatherInfoRequested(WeatherInfoTopic.Temperature) },
-                                    )
-                                    WeatherDataCell(
-                                        modifier = Modifier.weight(1f),
-                                        icon = Icons.Default.Air,
-                                        iconColor = WindSpeedGreen,
-                                        label = stringResource(R.string.weather_wind_speed),
-                                        value = formatIosMetersPerSecond(current?.windSpeed),
-                                        warningIcon = windWarning,
-                                        onClick = { onWeatherInfoRequested(WeatherInfoTopic.WindSpeed) },
-                                    )
+                                PreviewBlock(
+                                    weatherIcon = WeatherCodeMapper.conditionIcon(
+                                        condition = current?.condition,
+                                        precipitationIntensity = current?.precipitation,
+                                    ),
+                                    conditionText = stringResource(
+                                        WeatherCodeMapper.conditionDescriptionRes(current?.condition),
+                                    ),
+                                    temperatureText = formatNullableIosTemperatureDegrees(current?.temperature),
+                                    temperatureColor = current?.temperature?.let(::interpolateTemperatureColor) ?: Color.Gray,
+                                    maxTemperatureText = maxTemperatureText,
+                                    minTemperatureText = minTemperatureText,
+                                )
+
+                                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                        WeatherDataCell(
+                                            modifier = Modifier.weight(1f),
+                                            icon = Icons.Default.Thermostat,
+                                            iconColor = current?.temperature?.let(::interpolateTemperatureColor) ?: Color.Gray,
+                                            label = stringResource(R.string.weather_temperature),
+                                            value = formatNullableIosTemperatureDegrees(current?.temperature),
+                                            warningIcon = tempWarning,
+                                            onClick = { onWeatherInfoRequested(WeatherInfoTopic.Temperature) },
+                                        )
+                                        WeatherDataCell(
+                                            modifier = Modifier.weight(1f),
+                                            icon = Icons.Default.Air,
+                                            iconColor = WindSpeedGreen,
+                                            label = stringResource(R.string.weather_wind_speed),
+                                            value = formatIosMetersPerSecond(current?.windSpeed),
+                                            warningIcon = windWarning,
+                                            onClick = { onWeatherInfoRequested(WeatherInfoTopic.WindSpeed) },
+                                        )
+                                    }
+                                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                        WeatherDataCell(
+                                            modifier = Modifier.weight(1f),
+                                            icon = Icons.Default.ArrowUpward, // iOS arrow.up
+                                            iconColor = WindArrowTeal,
+                                            label = stringResource(R.string.weather_wind_direction),
+                                            value = current?.windDirection
+                                                ?.let { stringResource(resolveWindDirectionLabelRes(it)) }
+                                                ?: MissingWeatherValueText,
+                                            rotation = current?.windDirection?.toFloat(),
+                                        )
+                                        WeatherDataCell(
+                                            modifier = Modifier.weight(1f),
+                                            icon = ImageVector.vectorResource(R.drawable.ic_wind_snow_ios_like), // iOS wind.snow
+                                            iconColor = GustOrange,
+                                            label = stringResource(R.string.weather_gust_difference),
+                                            value = formatIosMetersPerSecond(gustDiff),
+                                            warningIcon = gustWarning,
+                                            subText = gustSubText?.let { stringResource(it) },
+                                            onClick = { onWeatherInfoRequested(WeatherInfoTopic.GustDifference) },
+                                        )
+                                    }
+                                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                        WeatherDataCell(
+                                            modifier = Modifier.weight(1f),
+                                            icon = ImageVector.vectorResource(R.drawable.ic_cloud_rain_fill_ios_like), // iOS cloud.rain.fill (고정)
+                                            iconColor = PrecipitationBlue,
+                                            label = stringResource(resolvePrecipitationLabelRes(current?.condition)),
+                                            value = formatIosPrecipitationIntensity(
+                                                precipitation = current?.precipitation,
+                                                isSnowing = WeatherCodeMapper.isSnowing(current?.condition),
+                                            ),
+                                            warningIcon = precipWarning,
+                                            onClick = { onWeatherInfoRequested(WeatherInfoTopic.Precipitation) },
+                                        )
+                                        WeatherDataCell(
+                                            modifier = Modifier.weight(1f),
+                                            icon = Icons.Default.Visibility,
+                                            iconColor = VisibilityPurple,
+                                            label = stringResource(R.string.weather_visibility),
+                                            value = formatNullableIosVisibilityKilometers(visibility),
+                                            warningIcon = visibilityWarning,
+                                            onClick = { onWeatherInfoRequested(WeatherInfoTopic.Visibility) },
+                                        )
+                                    }
+                                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                        WeatherDataCell(
+                                            modifier = Modifier.weight(1f),
+                                            icon = Icons.Default.WaterDrop, // iOS drop.fill
+                                            iconColor = CriCyan,
+                                            label = stringResource(R.string.weather_cri),
+                                            value = formatIosCri(current?.cri),
+                                            warningIcon = criWarning,
+                                            onClick = { onWeatherInfoRequested(WeatherInfoTopic.Cri) },
+                                        )
+                                        Spacer(modifier = Modifier.weight(1f))
+                                    }
                                 }
-                                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                    WeatherDataCell(
-                                        modifier = Modifier.weight(1f),
-                                        icon = Icons.Default.Navigation,
-                                        iconColor = WindArrowTeal,
-                                        label = stringResource(R.string.weather_wind_direction),
-                                        value = current?.windDirection
-                                            ?.let { stringResource(resolveWindDirectionLabelRes(it)) }
-                                            ?: MissingWeatherValueText,
-                                        rotation = current?.windDirection?.toFloat(),
-                                    )
-                                    WeatherDataCell(
-                                        modifier = Modifier.weight(1f),
-                                        icon = Icons.Default.Storm,
-                                        iconColor = GustOrange,
-                                        label = stringResource(R.string.weather_gust_difference),
-                                        value = formatIosMetersPerSecond(gustDiff),
-                                        warningIcon = gustWarning,
-                                        subText = gustSubText?.let { stringResource(it) },
-                                        onClick = { onWeatherInfoRequested(WeatherInfoTopic.GustDifference) },
-                                    )
-                                }
-                                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                    WeatherDataCell(
-                                        modifier = Modifier.weight(1f),
-                                        icon = Icons.Default.WaterDrop,
-                                        iconColor = PrecipitationBlue,
-                                        label = stringResource(resolvePrecipitationLabelRes(current?.condition)),
-                                        value = formatIosPrecipitationIntensity(
-                                            precipitation = current?.precipitation,
-                                            isSnowing = WeatherCodeMapper.isSnowing(current?.condition),
+
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(top = IosWeatherDisclaimerTopPadding),
+                                    horizontalArrangement = Arrangement.End,
+                                    verticalAlignment = Alignment.Top,
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Info,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                                            alpha = IosWeatherDisclaimerColorAlpha,
                                         ),
-                                        warningIcon = precipWarning,
-                                        onClick = { onWeatherInfoRequested(WeatherInfoTopic.Precipitation) },
+                                        modifier = Modifier
+                                            .padding(top = 1.dp)
+                                            .size(IosWeatherDisclaimerIconSize),
                                     )
-                                    WeatherDataCell(
-                                        modifier = Modifier.weight(1f),
-                                        icon = Icons.Default.Visibility,
-                                        iconColor = VisibilityPurple,
-                                        label = stringResource(R.string.weather_visibility),
-                                        value = formatNullableIosVisibilityKilometers(visibility),
-                                        warningIcon = visibilityWarning,
-                                        onClick = { onWeatherInfoRequested(WeatherInfoTopic.Visibility) },
+                                    Spacer(modifier = Modifier.width(IosWeatherDisclaimerSpacing))
+                                    Text(
+                                        text = stringResource(R.string.weather_disclaimer),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        // iOS caption2: 아이콘이 오른쪽 정렬된 문장 바로 앞에 붙도록 폭을 채우지 않는다.
+                                        fontSize = 11.sp,
+                                        lineHeight = 14.sp,
+                                        modifier = Modifier.weight(1f, fill = false),
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                                            alpha = IosWeatherDisclaimerColorAlpha,
+                                        ),
+                                        textAlign = TextAlign.End,
                                     )
-                                }
-                                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                    WeatherDataCell(
-                                        modifier = Modifier.weight(1f),
-                                        icon = Icons.Default.Opacity,
-                                        iconColor = CriCyan,
-                                        label = stringResource(R.string.weather_cri),
-                                        value = formatIosCri(current?.cri),
-                                        warningIcon = criWarning,
-                                        onClick = { onWeatherInfoRequested(WeatherInfoTopic.Cri) },
-                                    )
-                                    Spacer(modifier = Modifier.weight(1f))
                                 }
                             }
 
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(top = IosWeatherDisclaimerTopPadding),
-                                horizontalArrangement = Arrangement.End,
-                                verticalAlignment = Alignment.Top,
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Info,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(
-                                        alpha = IosWeatherDisclaimerColorAlpha,
-                                    ),
-                                    modifier = Modifier.size(IosWeatherDisclaimerIconSize),
-                                )
-                                Spacer(modifier = Modifier.width(IosWeatherDisclaimerSpacing))
-                                Text(
-                                    text = stringResource(R.string.weather_disclaimer),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(
-                                        alpha = IosWeatherDisclaimerColorAlpha,
-                                    ),
-                                    textAlign = TextAlign.End,
-                                )
-                            }
-                        }
-
-                        if (shouldShowReloadingIndicator) {
-                            Box(
-                                modifier = Modifier
-                                    .align(Alignment.TopEnd)
-                                    .clip(RoundedCornerShape(IosWeatherReloadingIndicatorCornerRadius))
-                                    .background(
-                                        IosWeatherForecastCardContainerColor.copy(
-                                            alpha = IosWeatherReloadingIndicatorBackgroundAlpha,
-                                        ),
+                            if (shouldShowReloadingIndicator) {
+                                Box(
+                                    modifier = Modifier
+                                        .align(Alignment.TopEnd)
+                                        .clip(RoundedCornerShape(IosWeatherReloadingIndicatorCornerRadius))
+                                        .background(
+                                            IosWeatherForecastCardContainerColor.copy(
+                                                alpha = IosWeatherReloadingIndicatorBackgroundAlpha,
+                                            ),
+                                        )
+                                        .padding(IosWeatherReloadingIndicatorPadding),
+                                ) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(IosWeatherReloadingIndicatorSize),
+                                        strokeWidth = IosWeatherReloadingIndicatorStrokeWidth,
                                     )
-                                    .padding(IosWeatherReloadingIndicatorPadding),
-                            ) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(IosWeatherReloadingIndicatorSize),
-                                    strokeWidth = IosWeatherReloadingIndicatorStrokeWidth,
-                                )
+                                }
                             }
                         }
                     }
@@ -527,7 +541,10 @@ private fun DroneCategoryMenu(
                     imageVector = Icons.AutoMirrored.Filled.Send,
                     contentDescription = null,
                     tint = WeatherIconBlue,
-                    modifier = Modifier.size(IosWeatherDroneCategoryLeadingIconSize),
+                    // iOS paperplane.fill 은 오른쪽 위를 향한다.
+                    modifier = Modifier
+                        .size(IosWeatherDroneCategoryLeadingIconSize)
+                        .rotate(-35f),
                 )
                 Text(
                     text = stringResource(category.labelRes),
@@ -543,11 +560,12 @@ private fun DroneCategoryMenu(
                 )
             }
         }
-        DropdownMenu(
+        IosDropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
         ) {
-            DroneCategory.entries.forEach { entry ->
+            DroneCategory.entries.forEachIndexed { index, entry ->
+                if (index > 0) IosMenuDivider()
                 DropdownMenuItem(
                     text = {
                         Column {
@@ -640,26 +658,22 @@ private fun PreviewBlock(
                         color = MaterialTheme.colorScheme.onSurface,
                     )
                 }
-                Row(horizontalArrangement = Arrangement.spacedBy(IosCurrentWeatherPreviewTemperatureRangeSpacing)) {
-                    Text(
-                        text = stringResource(R.string.weather_temperature_high_prefix) + maxTemperatureText,
-                        fontSize = IosCurrentWeatherPreviewTemperatureRangeFontSize,
-                        fontWeight = IosCurrentWeatherPreviewRegularFontWeight,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Text(
-                        text = "~",
-                        fontSize = IosCurrentWeatherPreviewTemperatureRangeFontSize,
-                        fontWeight = IosCurrentWeatherPreviewRegularFontWeight,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Text(
-                        text = stringResource(R.string.weather_temperature_low_prefix) + minTemperatureText,
-                        fontSize = IosCurrentWeatherPreviewTemperatureRangeFontSize,
-                        fontWeight = IosCurrentWeatherPreviewRegularFontWeight,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
+                // 좁은 화면(320dp 등)에서도 "최고 ~ 최저" 가 단어 중간에서 끊기지 않도록 한 줄로 두고 글자를 줄인다.
+                val rangeStyle = TextStyle(
+                    fontSize = IosCurrentWeatherPreviewTemperatureRangeFontSize,
+                    fontWeight = IosCurrentWeatherPreviewRegularFontWeight,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                BasicText(
+                    text = stringResource(R.string.weather_temperature_high_prefix) + maxTemperatureText +
+                        "  ~  " + stringResource(R.string.weather_temperature_low_prefix) + minTemperatureText,
+                    style = rangeStyle,
+                    maxLines = 1,
+                    autoSize = TextAutoSize.StepBased(
+                        minFontSize = IosCurrentWeatherPreviewTemperatureRangeFontSize * 0.7f,
+                        maxFontSize = IosCurrentWeatherPreviewTemperatureRangeFontSize,
+                    ),
+                )
             }
         }
     }
@@ -717,20 +731,28 @@ private fun WeatherDataCell(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(if (hasSubText) 1.dp else 2.dp),
             ) {
-                Text(
+                val labelFontSize = if (hasSubText) {
+                    IosWeatherDataCellLabelWithSubTextFontSize
+                } else {
+                    IosWeatherDataCellLabelFontSize
+                }
+                // 긴 라벨(순간풍속증가량 등)은 잘리지 않도록 한 줄 안에서 글자를 줄인다.
+                BasicText(
                     text = label,
-                    fontSize = if (hasSubText) {
-                        IosWeatherDataCellLabelWithSubTextFontSize
-                    } else {
-                        IosWeatherDataCellLabelFontSize
-                    },
-                    fontWeight = if (hasSubText) {
-                        IosWeatherDataCellRegularFontWeight
-                    } else {
-                        IosWeatherDataCellHeadlineFontWeight
-                    },
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = TextStyle(
+                        fontSize = labelFontSize,
+                        fontWeight = if (hasSubText) {
+                            IosWeatherDataCellRegularFontWeight
+                        } else {
+                            IosWeatherDataCellHeadlineFontWeight
+                        },
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    ),
                     maxLines = 1,
+                    autoSize = TextAutoSize.StepBased(
+                        minFontSize = labelFontSize * IosWeatherDataCellLabelMinimumScale,
+                        maxFontSize = labelFontSize,
+                    ),
                 )
                 val valueFontSize = if (hasSubText) {
                     IosWeatherDataCellValueWithSubTextFontSize

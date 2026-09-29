@@ -1,5 +1,7 @@
 package com.ScienceFiction.DronePassAndroid.feature.settings
 
+import com.ScienceFiction.DronePassAndroid.ui.component.IosMenuDivider
+import com.ScienceFiction.DronePassAndroid.ui.component.IosDropdownMenu
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -36,7 +38,6 @@ import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -562,11 +563,12 @@ private fun WeatherCategoryMenu(
             )
         }
 
-        DropdownMenu(
+        IosDropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
         ) {
-            DroneCategory.entries.forEach { entry ->
+            DroneCategory.entries.forEachIndexed { index, entry ->
+                if (index > 0) IosMenuDivider()
                 DropdownMenuItem(
                     text = {
                         Row(

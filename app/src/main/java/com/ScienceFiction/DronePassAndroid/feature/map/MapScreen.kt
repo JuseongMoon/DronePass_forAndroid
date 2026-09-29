@@ -117,6 +117,8 @@ fun MapScreen(
     val displayDensity = density.density
     LaunchedEffect(sketchOverlayManager, displayDensity) {
         sketchOverlayManager.setDensity(displayDensity)
+        overlayManager.setDensity(displayDensity)
+        flightZoneOverlayManager.setDensity(displayDensity)
     }
 
     // 좌측 하단 컨트롤(내 위치 버튼/로고/축척)이 floating tab bar 위로 떠 보이도록 bottom 패딩 적용.
@@ -160,10 +162,7 @@ fun MapScreen(
     // 화면 항상 켜기 설정 (Phase 3.4 B-M3 양방향 적용)
     val keepScreenOn by viewModel.keepScreenOn.collectAsStateWithLifecycle()
     val isSketchModeActive by sketchViewModel.isSketchMode.collectAsStateWithLifecycle()
-    LaunchedEffect(naverMap, isSketchModeActive) {
-        // 스케치 툴바가 왼쪽 아래 현위치 버튼을 덮으므로 스케치 중에는 숨긴다.
-        naverMap?.uiSettings?.isLocationButtonEnabled = !isSketchModeActive
-    }
+    // iOS 는 스케치 모드에서도 현위치 버튼(showLocationButton)을 그대로 둔다.
     val activeShapesForPendingRequests by viewModel.activeShapes.collectAsStateWithLifecycle()
     val visibleShapesForPendingRequests by viewModel.filteredShapes.collectAsStateWithLifecycle()
     val pendingNewShapeRequest by viewModel.pendingNewShapeRequest.collectAsStateWithLifecycle()
@@ -366,7 +365,8 @@ fun MapScreen(
                         )
                         map.uiSettings.apply {
                             isLocationButtonEnabled = true
-                            isZoomControlEnabled = true
+                            // 확대/축소는 MapFloatingButtons 의 오른쪽 버튼 스택에 ZoomControlView 로 둔다.
+                            isZoomControlEnabled = false
                             isCompassEnabled = true
                         }
                         map.setContentPadding(0, 0, 0, mapBottomPaddingPx)

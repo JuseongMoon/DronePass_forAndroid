@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.ui.component
 
+import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGreen
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -29,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -47,6 +50,7 @@ import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGray4
 internal val InsetGroupedHorizontalMargin = 16.dp
 internal val InsetGroupedCornerRadius = 12.dp
 internal val InsetGroupedRowHorizontalPadding = 16.dp
+internal val InsetGroupedRowValueMaxWidth = 220.dp
 internal val InsetGroupedRowMinHeight = 48.dp
 internal val InsetGroupedSectionSpacing = 20.dp
 
@@ -120,6 +124,7 @@ fun InsetGroupedRow(
     enabled: Boolean = true,
     onClick: (() -> Unit)? = null,
     trailing: (@Composable RowScope.() -> Unit)? = null,
+    valueAccessory: (@Composable RowScope.() -> Unit)? = null,
 ) {
     Row(
         modifier = modifier
@@ -141,21 +146,30 @@ fun InsetGroupedRow(
             if (subtitle != null) {
                 Text(
                     text = subtitle,
-                    fontSize = 13.sp,
-                    lineHeight = 17.sp,
+                    // iOS 설정 행 설명은 .caption(12pt)
+                    fontSize = 12.sp,
+                    lineHeight = 16.sp,
                     color = IosSecondaryLabel,
                     modifier = Modifier.padding(top = 2.dp),
                 )
             }
         }
-        if (value != null) {
+        if (valueAccessory != null) {
+            // iOS HStack(제목, Spacer, 배지, 값) 처럼 값 바로 앞에 붙는 요소.
             Spacer(modifier = Modifier.width(12.dp))
+            valueAccessory()
+        }
+        if (value != null) {
+            Spacer(modifier = Modifier.width(if (valueAccessory != null) 6.dp else 12.dp))
+            // 값은 오른쪽에 붙고, 길면 제목을 밀어 줄바꿈시키지 않도록 최대 폭에서 말줄임한다.
             Text(
                 text = value,
                 style = MaterialTheme.typography.bodyLarge,
                 color = valueColor,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.End,
+                modifier = Modifier.widthIn(max = InsetGroupedRowValueMaxWidth),
             )
         }
         if (trailing != null) {
@@ -214,7 +228,8 @@ fun DronePassSwitch(
         enabled = enabled,
         colors = SwitchDefaults.colors(
             checkedThumbColor = Color.White,
-            checkedTrackColor = MaterialTheme.colorScheme.primary,
+            // iOS Toggle 기본 tint(시스템 초록). DronePass iOS 는 tint 를 바꾸지 않는다.
+            checkedTrackColor = IosSystemGreen,
             checkedBorderColor = Color.Transparent,
             uncheckedThumbColor = Color.White,
             uncheckedTrackColor = IosSystemGray4,

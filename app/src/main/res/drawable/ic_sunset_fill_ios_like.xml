@@ -3,31 +3,24 @@
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
+    <!-- SF Symbols sunset.fill 과 같은 구성: 채운 반원 해 + 지평선 + 빛살 + 화살표 -->
     <path
-        android:pathData="M4,18H20"
-        android:fillColor="@android:color/transparent"
+        android:pathData="M6.6,19.4A5.4,5.4 0,0 1,17.4 19.4Z"
+        android:fillColor="@android:color/black" />
+    <path
+        android:pathData="M2.2,19.4H21.8"
         android:strokeColor="@android:color/black"
-        android:strokeWidth="2"
+        android:strokeWidth="1.9"
         android:strokeLineCap="round" />
     <path
-        android:pathData="M8,18C8,15.79 9.79,14 12,14C14.21,14 16,15.79 16,18"
-        android:fillColor="@android:color/transparent"
+        android:pathData="M2.8,15.2L4.6,16.1M21.2,15.2L19.4,16.1M5.6,10.6L6.9,12M18.4,10.6L17.1,12"
         android:strokeColor="@android:color/black"
-        android:strokeWidth="2"
-        android:strokeLineCap="round"
-        android:strokeLineJoin="round" />
+        android:strokeWidth="1.9"
+        android:strokeLineCap="round" />
     <path
-        android:pathData="M12,8V12M9.5,9.5L12,12L14.5,9.5"
-        android:fillColor="@android:color/transparent"
+        android:pathData="M12,3.2V11.5M9.1,8.6L12,11.5L14.9,8.6"
         android:strokeColor="@android:color/black"
-        android:strokeWidth="2"
-        android:strokeLineCap="round"
-        android:strokeLineJoin="round" />
-    <path
-        android:pathData="M12,4V5.5M5.8,11.8L7,13M18.2,11.8L17,13"
-        android:fillColor="@android:color/transparent"
-        android:strokeColor="@android:color/black"
-        android:strokeWidth="1.7"
+        android:strokeWidth="1.9"
         android:strokeLineCap="round"
         android:strokeLineJoin="round" />
 </vector>

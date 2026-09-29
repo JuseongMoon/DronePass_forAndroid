@@ -50,7 +50,7 @@ class SettingsScreenContractTest {
     }
 
     @Test
-    fun `설정 섹션 헤더와 토글 설명은 iOS footnote 보조색 스타일을 따른다`() {
+    fun `설정 섹션 헤더는 footnote, 토글 설명은 caption 보조색 스타일을 따른다`() {
         val source = resolveProjectFile(
             "src/main/java/com/ScienceFiction/DronePassAndroid/ui/component/InsetGrouped.kt",
             "app/src/main/java/com/ScienceFiction/DronePassAndroid/ui/component/InsetGrouped.kt",
@@ -65,7 +65,8 @@ class SettingsScreenContractTest {
                 "color = IosSecondaryLabel",
                 "fun InsetGroupedRow(",
                 "if (subtitle != null)",
-                "fontSize = 13.sp",
+                // iOS SettingView 토글 설명은 .caption(12pt)
+                "fontSize = 12.sp",
                 "color = IosSecondaryLabel",
             ),
         )

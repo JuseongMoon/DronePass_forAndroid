@@ -30,7 +30,7 @@
     <!-- LoginScreen -->
     <string name="login_logo_description">DronePass logo</string>
     <string name="login_title">Sign In / Sign Up</string>
-    <string name="login_apple">Continue with Apple</string>
+    <string name="login_apple">Sign in with Apple</string>
     <string name="login_google">Sign in with Google</string>
     <string name="login_error_title">Login Error</string>
     <string name="login_error_unknown" tools:ignore="UnusedResources">Unknown error</string>
@@ -88,10 +88,10 @@
     <string name="weather_drone_category_class2_examples">Agricultural/Industrial Drones</string>
     <string name="weather_temperature">Temperature</string>
     <string name="weather_unknown">Unknown</string>
-    <string name="weather_gust_difference">Gust difference</string>
+    <string name="weather_gust_difference">Gust Difference</string>
     <string name="weather_precipitation">Precipitation</string>
     <string name="weather_snowfall">Snowfall</string>
-    <string name="weather_cri">Condensation Risk (CRI)</string>
+    <string name="weather_cri">CRI</string>
     <string name="weather_gust_warning">Local gust risk</string>
     <string name="weather_condition_clear">Clear</string>
     <string name="weather_condition_mostly_clear">Mostly Clear</string>
@@ -821,6 +821,10 @@
     <string name="subscription_early_lifetime">All Pro features, free for life</string>
     <string name="subscription_benefits">View Pro benefits</string>
     <string name="subscription_manage">Manage subscription</string>
+    <string name="subscription_plan_early_access">Lifetime Pro</string>
+    <string name="subscription_plan_legacy">DronePass Pro (existing user)</string>
+    <string name="subscription_settings_early_access_desc">Thank you for joining us early. Early Access members get all Pro features free for life.</string>
+    <string name="subscription_settings_legacy_desc">Thank you for using DronePass before subscriptions were introduced. Existing users get Pro free for life.</string>
     <string name="subscription_settings_section">Subscription</string>
     <string name="subscription_settings_shapes">Shapes</string>
     <string name="subscription_settings_sketches">Sketch lines</string>

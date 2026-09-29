@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.vworld
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -375,13 +376,14 @@ private fun LayerItem(
     isChecked: Boolean,
     onToggle: () -> Unit
 ) {
+    // Surface(onClick) 는 최소 터치 높이 48dp 를 강제해 iOS 행(약 40pt)보다 커진다. 클릭은 Row 에 건다.
     Surface(
-        onClick = onToggle,
         color = if (isChecked) SelectedRowBackground else Color.Transparent
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .clickable(onClick = onToggle)
                 .padding(vertical = 6.dp, horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {

@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.profile
 
+import androidx.compose.ui.text.font.FontWeight
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
@@ -523,6 +524,8 @@ private fun ProfileCloudSyncToggleItem(
             Text(
                 text = title,
                 style = MaterialTheme.typography.bodyLarge,
+                // iOS .font(.headline)
+                fontWeight = FontWeight.SemiBold,
             )
             Text(
                 text = subtitle,

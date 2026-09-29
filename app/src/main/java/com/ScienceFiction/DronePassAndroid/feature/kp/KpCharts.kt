@@ -35,7 +35,6 @@ import com.ScienceFiction.DronePassAndroid.core.util.openUriSafely
 import com.ScienceFiction.DronePassAndroid.domain.model.Kp27DayForecast
 import com.ScienceFiction.DronePassAndroid.domain.model.KpIndexData
 import com.ScienceFiction.DronePassAndroid.domain.model.KpLevel
-import com.ScienceFiction.DronePassAndroid.feature.weather.BackgroundZone
 import com.ScienceFiction.DronePassAndroid.feature.weather.ScrollableTimeChartViewport
 import com.ScienceFiction.DronePassAndroid.feature.weather.WeatherLineChart
 import java.text.ParsePosition
@@ -44,9 +43,6 @@ import java.util.Locale
 import java.util.TimeZone
 
 // ─── 색상 상수 ─────────────────────────────────────────────
-private val ZoneGreen = Color(0xFF4CAF50)
-private val ZoneYellow = Color(0xFFFFC107)
-private val ZoneRed = Color(0xFFF44336)
 internal val KpForecastChartHeight = 250.dp
 private const val KpForecastPastWindowMs = 6L * 60 * 60 * 1000
 private const val KpForecastFutureWindowMs = 48L * 60 * 60 * 1000
@@ -130,7 +126,8 @@ fun KpForecastLineChart(
                 WeatherLineChart(
                     dataPoints = dataPoints,
                     modifier = chartModifier,
-                    lineColor = primaryColor,
+                    // iOS AreaMark 는 KPLevel 색으로 채운다. 가장 높은 KP 수준의 색을 쓴다.
+                    lineColor = kpAreaColor(dataPoints, pointColors) ?: primaryColor,
                     warningThreshold = 5.0,
                     dangerThreshold = 7.0,
                     yAxisRange = 0.0..9.0,
@@ -143,17 +140,22 @@ fun KpForecastLineChart(
                     pointColors = pointColors,
                     pointLabels = pointLabels,
                     lineSegmentColors = pointColors,
-                    backgroundZones = listOf(
-                        BackgroundZone(0.0..5.0, ZoneGreen),
-                        BackgroundZone(5.0..7.0, ZoneYellow),
-                        BackgroundZone(7.0..9.0, ZoneRed),
-                    ),
+                    // iOS KPForecastView 는 구간 배경 없이 수준 색 영역(0.3→0.1)만 채운다.
+                    fillAlpha = KpChartAreaFillAlpha,
                     formatValue = { it.toInt().toString() },
                     chartHeight = KpForecastChartHeight,
                 )
             }
         }
     }
+}
+
+internal const val KpChartAreaFillAlpha = 0.3f
+
+internal fun kpAreaColor(dataPoints: List<Pair<Long, Double>>, pointColors: List<Color>): Color? {
+    if (dataPoints.size != pointColors.size) return null
+    val maxIndex = dataPoints.indices.maxByOrNull { dataPoints[it].second } ?: return null
+    return pointColors[maxIndex]
 }
 
 internal data class KpForecastChartPoint(
@@ -266,7 +268,8 @@ private fun Kp27DayLineChart(longTermForecast: List<Kp27DayForecast>) {
         WeatherLineChart(
             dataPoints = dataPoints,
             modifier = chartModifier,
-            lineColor = primaryColor,
+            // iOS AreaMark 는 KPLevel 색으로 채운다. 가장 높은 KP 수준의 색을 쓴다.
+                    lineColor = kpAreaColor(dataPoints, pointColors) ?: primaryColor,
             warningThreshold = 5.0,
             dangerThreshold = 7.0,
             yAxisRange = 0.0..9.0,
@@ -279,11 +282,8 @@ private fun Kp27DayLineChart(longTermForecast: List<Kp27DayForecast>) {
             pointColors = pointColors,
             pointLabels = pointLabels,
             lineSegmentColors = pointColors,
-            backgroundZones = listOf(
-                BackgroundZone(0.0..5.0, ZoneGreen),
-                BackgroundZone(5.0..7.0, ZoneYellow),
-                BackgroundZone(7.0..9.0, ZoneRed),
-            ),
+            // iOS KPForecastView 는 구간 배경 없이 수준 색 영역(0.3→0.1)만 채운다.
+            fillAlpha = KpChartAreaFillAlpha,
             formatValue = { it.toInt().toString() },
             chartHeight = KpForecastChartHeight,
         )

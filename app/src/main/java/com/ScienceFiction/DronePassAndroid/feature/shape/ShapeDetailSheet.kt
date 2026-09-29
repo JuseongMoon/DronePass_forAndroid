@@ -1,5 +1,14 @@
 package com.ScienceFiction.DronePassAndroid.feature.shape
 
+import com.ScienceFiction.DronePassAndroid.ui.component.IosMenuDivider
+import com.ScienceFiction.DronePassAndroid.ui.component.IosDropdownMenu
+import com.ScienceFiction.DronePassAndroid.ui.component.DronePassSheetGrabberVerticalPadding
+import com.ScienceFiction.DronePassAndroid.ui.component.DronePassSheetGrabberHeight
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.WindowInsets
+import java.util.Locale
+import java.text.NumberFormat
 import android.content.ActivityNotFoundException
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -43,7 +52,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -178,7 +186,10 @@ fun ShapeDetailSheet(
 ) {
     val context = LocalContext.current
     val hapticFeedback = LocalHapticFeedback.current
-    val sheetHeight = currentWindowSizeDp().height * ShapeDetailSheetHeightFraction
+    // iOS .fraction(0.8) 는 상단 안전 영역을 뺀 높이 기준이며 그래버까지 포함한다.
+    val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val sheetHeight = (currentWindowSizeDp().height - statusBarTop) * ShapeDetailSheetHeightFraction -
+        DronePassSheetGrabberHeight - DronePassSheetGrabberVerticalPadding * 2
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val coroutineScope = rememberCoroutineScope()
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
@@ -254,7 +265,8 @@ fun ShapeDetailSheet(
 
                 Column(
                     modifier = Modifier
-                        .padding(top = 4.dp)
+                        // iOS insetGrouped 첫 섹션 위 여백(내비게이션 바 아래 약 20pt).
+                        .padding(top = ShapeDetailFirstSectionTopPadding)
                         .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(InsetGroupedSectionSpacing),
                 ) {
@@ -487,7 +499,7 @@ private fun ShapeDetailNavigationHeader(
                     contentDescription = stringResource(R.string.shape_detail_more_menu),
                 )
             }
-            DropdownMenu(
+            IosDropdownMenu(
                 expanded = menuExpanded,
                 onDismissRequest = { onMenuExpandedChange(false) },
             ) {
@@ -495,10 +507,12 @@ private fun ShapeDetailNavigationHeader(
                     text = { Text(stringResource(R.string.shape_detail_edit)) },
                     onClick = onEdit,
                 )
+                IosMenuDivider()
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.shape_detail_duplicate)) },
                     onClick = onDuplicate,
                 )
+                IosMenuDivider()
                 DropdownMenuItem(
                     text = {
                         Text(
@@ -659,7 +673,9 @@ private fun tryStartActivity(context: Context, intent: Intent): Boolean = try {
     false
 }
 
-internal fun formatShapeDetailMeters(value: Double): String = "${value.toInt()} m"
+/** iOS `Text("\(Int(value)) m")` 는 지역 설정의 자릿수 구분 기호를 붙인다(예: 1,200 m). */
+internal fun formatShapeDetailMeters(value: Double, locale: Locale = Locale.getDefault()): String =
+    "${NumberFormat.getIntegerInstance(locale).format(value.toLong())} m"
 
 internal fun formatShapeDetailAddress(address: String?): String {
     return address ?: "-"
@@ -682,6 +698,7 @@ internal val ShapeDetailCopyToastHorizontalPadding = 16.dp
 internal val ShapeDetailCopyToastVerticalPadding = 10.dp
 internal val ShapeDetailCopyHapticFeedbackType = HapticFeedbackType.LongPress
 internal val ShapeDetailRowMinHeight = 44.dp
+internal val ShapeDetailFirstSectionTopPadding = 20.dp
 internal val ShapeDetailRowDividerThickness = 0.5.dp
 internal val ShapeDetailMemoHeight = 180.dp
 internal const val ShapeDetailExternalMapSkipPartiallyExpanded = true
@@ -939,6 +956,7 @@ private fun ShapeDetailRow(
         Text(
             text = label,
             style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface,
         )
         Spacer(modifier = Modifier.width(16.dp))

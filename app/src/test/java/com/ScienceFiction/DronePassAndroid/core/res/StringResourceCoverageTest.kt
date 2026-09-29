@@ -35,7 +35,7 @@ class StringResourceCoverageTest {
     @Test
     fun `login strings match iOS localizations`() {
         assertEquals("로그인 / 회원가입", stringResourceValue("values/strings.xml", "login_title"))
-        assertEquals("Apple로 계속하기", stringResourceValue("values/strings.xml", "login_apple"))
+        assertEquals("Apple로 로그인", stringResourceValue("values/strings.xml", "login_apple")) // iOS SignInWithAppleButton(.signIn)
         assertEquals("Google로 로그인", stringResourceValue("values/strings.xml", "login_google"))
         assertEquals("로그인 / 회원가입 시", stringResourceValue("values/strings.xml", "login_terms_intro"))
         assertEquals("이용약관", stringResourceValue("values/strings.xml", "login_terms_service"))
@@ -70,7 +70,7 @@ class StringResourceCoverageTest {
         )
         assertEquals("계속(삭제)", stringResourceValue("values/strings.xml", "login_account_switch_confirm"))
         assertEquals("Sign In / Sign Up", stringResourceValue("values-en/strings.xml", "login_title"))
-        assertEquals("Continue with Apple", stringResourceValue("values-en/strings.xml", "login_apple"))
+        assertEquals("Sign in with Apple", stringResourceValue("values-en/strings.xml", "login_apple"))
         assertEquals("Sign in with Google", stringResourceValue("values-en/strings.xml", "login_google"))
         assertEquals("Login Error", stringResourceValue("values-en/strings.xml", "login_error_title"))
         assertEquals("Unknown error", stringResourceValue("values-en/strings.xml", "login_error_unknown"))
@@ -339,7 +339,7 @@ class StringResourceCoverageTest {
         assertEquals("좌표 입력", stringResourceValue("values/strings.xml", "coordinate_title"))
         assertEquals("취소", stringResourceValue("values/strings.xml", "coordinate_cancel"))
         assertEquals("확인", stringResourceValue("values/strings.xml", "coordinate_confirm"))
-        assertEquals("좌표 입력", stringResourceValue("values/strings.xml", "coordinate_placeholder"))
+        assertEquals("좌표를 입력해주세요", stringResourceValue("values/strings.xml", "coordinate_placeholder")) // iOS coordinate.placeholder
         assertEquals("유효한 좌표 형식입니다", stringResourceValue("values/strings.xml", "coordinate_validation_valid"))
         assertEquals("잘못된 좌표 형식입니다", stringResourceValue("values/strings.xml", "coordinate_validation_invalid"))
         assertEquals("주소 검색 실패", stringResourceValue("values/strings.xml", "coordinate_alert_address_not_found_title"))
@@ -1209,7 +1209,7 @@ class StringResourceCoverageTest {
         assertEquals("드론 무게:", stringResourceValue("values/strings.xml", "weather_drone_weight_label"))
         assertEquals("알 수 없음", stringResourceValue("values/strings.xml", "weather_unknown"))
         assertEquals("강설량", stringResourceValue("values/strings.xml", "weather_snowfall"))
-        assertEquals("맑음", stringResourceValue("values/strings.xml", "weather_condition_clear"))
+        assertEquals("청명함", stringResourceValue("values/strings.xml", "weather_condition_clear")) // iOS WeatherCondition.accessibilityDescription
         assertEquals("폭설", stringResourceValue("values/strings.xml", "weather_condition_heavy_snow"))
         assertEquals("뇌우", stringResourceValue("values/strings.xml", "weather_condition_thunderstorms"))
         assertEquals("일몰까지", stringResourceValue("values/strings.xml", "weather_until_sunset"))

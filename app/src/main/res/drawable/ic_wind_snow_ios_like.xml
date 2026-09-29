@@ -1,0 +1,17 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- SF Symbols wind.snow 과 같은 구성: 바람 줄 3개 + 눈송이 2개 -->
+    <path
+        android:pathData="M2.5,9H12A2.4,2.4 0,1 0,9.6 6.6M2.5,13H15.5A2.4,2.4 0,1 1,13.1 15.4M2.5,17H9"
+        android:strokeColor="@android:color/black"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M19,3.6V7.4M17.35,4.55L20.65,6.45M17.35,6.45L20.65,4.55M19,16.1V19.9M17.35,17.05L20.65,18.95M17.35,18.95L20.65,17.05"
+        android:strokeColor="@android:color/black"
+        android:strokeWidth="1.4"
+        android:strokeLineCap="round" />
+</vector>

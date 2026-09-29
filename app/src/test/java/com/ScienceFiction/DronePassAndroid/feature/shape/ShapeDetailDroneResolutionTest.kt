@@ -145,9 +145,10 @@ class ShapeDetailDroneResolutionTest {
     }
 
     @Test
-    fun `상세 반경과 고도 값은 iOS처럼 정수 미터로 표시한다`() {
-        assertEquals("150 m", formatShapeDetailMeters(150.9))
-        assertEquals("100000 m", formatShapeDetailMeters(100_000.0))
+    fun `상세 반경과 고도 값은 iOS처럼 자릿수 구분 기호가 붙은 정수 미터로 표시한다`() {
+        assertEquals("150 m", formatShapeDetailMeters(150.9, java.util.Locale.KOREA))
+        assertEquals("1,200 m", formatShapeDetailMeters(1_200.0, java.util.Locale.KOREA))
+        assertEquals("100,000 m", formatShapeDetailMeters(100_000.0, java.util.Locale.US))
     }
 
     @Test

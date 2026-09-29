@@ -76,6 +76,7 @@ internal val DroneDropdownSelectionButtonHeight = DroneDropdownTriggerDiameter
 internal val DroneDropdownTriggerSize = DroneDropdownTriggerDiameter
 internal val DroneDropdownControlVerticalAlignment: Alignment.Vertical = Alignment.Top
 internal val DroneDropdownTextSize = 14.sp
+internal val DroneDropdownMenuLineHeight = 17.sp
 internal const val DroneDropdownPopupFocusable = false
 internal const val DroneDropdownPopupDismissOnClickOutside = false
 internal const val DroneDropdownPopupDismissOnBackPress = false
@@ -238,6 +239,8 @@ fun DroneSelectionDropdown(
                                     Text(
                                         text = drone.name,
                                         fontSize = DroneDropdownTextSize,
+                                        // 본문 스타일의 24sp 줄 높이 대신 글자 크기에 맞춘다(iOS 행 높이와 맞춤).
+                                        lineHeight = DroneDropdownMenuLineHeight,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
                                 }

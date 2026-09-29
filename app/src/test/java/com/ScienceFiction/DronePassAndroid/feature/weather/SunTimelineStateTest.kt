@@ -126,7 +126,7 @@ class SunTimelineStateTest {
         assertEquals(8.dp, IosSunTimelineRowSpacing)
         assertEquals(56.dp, IosSunTimelineSideSlotWidth)
         assertEquals(4.dp, IosSunTimelineSideIconTimeSpacing)
-        assertEquals(24.dp, IosSunTimelineSideIconSize)
+        assertEquals(32.dp, IosSunTimelineSideIconSize) // SF sunrise.fill 24pt 글리프의 실제 폭(약 30pt)에 맞춤
         assertEquals(12.sp, IosSunTimelineSideTimeFontSize)
         assertEquals(2.dp, IosSunTimelineProgressLineHeight)
         assertEquals(2.dp, IosSunTimelineMarkerSpacing)

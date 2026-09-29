@@ -27,8 +27,8 @@ class ShapeEditDefaultsTest {
     }
 
     @Test
-    fun `좌표 입력 시트는 iOS처럼 중간 detent 를 허용한다`() {
-        assertFalse(CoordinateInputSheetSkipPartiallyExpanded)
+    fun `좌표 입력 시트는 iOS처럼 85퍼센트 단일 detent 로 바로 펼친다`() {
+        assertTrue(CoordinateInputSheetSkipPartiallyExpanded)
     }
 
     @Test

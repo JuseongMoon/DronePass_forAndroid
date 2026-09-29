@@ -74,11 +74,14 @@ class AppInfoScreenTest {
         assertEquals(60.dp, AppInfoIntroIconSize)
         assertEquals(36.dp, AppInfoIntroSymbolSize)
         assertEquals(12.dp, AppInfoIntroSpacing)
-        assertEquals(32.dp, AppInfoFeatureIconSize)
-        assertEquals(20.dp, AppInfoFeatureCircleSymbolSize)
+        // .title2 원형 심볼 실측 지름(약 26pt)과 32pt 프레임
+        assertEquals(26.dp, AppInfoFeatureIconSize)
+        assertEquals(32.dp, AppInfoFeatureIconFrameSize)
+        assertEquals(15.dp, AppInfoFeatureCircleSymbolSize)
         assertEquals(12.dp, AppInfoFeatureHorizontalSpacing)
         assertEquals(4.dp, AppInfoFeatureTitleDescriptionSpacing)
-        assertEquals(4.dp, AppInfoFeatureVerticalPadding)
+        // List 행 기본 여백 + .padding(.vertical, 4)
+        assertEquals(12.dp, AppInfoFeatureVerticalPadding)
         assertEquals(16.dp, AppInfoFeatureHorizontalPadding)
     }
 

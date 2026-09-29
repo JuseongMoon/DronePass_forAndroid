@@ -136,7 +136,7 @@ class WeatherForecastParityTest {
         assertEquals(12.dp, IosWeatherDataCellHorizontalPadding)
         assertEquals(12.dp, IosWeatherDataCellVerticalPadding)
         assertEquals(62.dp, IosWeatherDataCellMinHeight)
-        assertEquals(24.dp, IosWeatherDataCellIconSize)
+        assertEquals(28.dp, IosWeatherDataCellIconSize) // SF 24pt semibold 글리프의 실제 크기
         assertEquals(32.dp, IosWeatherDataCellIconSlotWidth)
         assertEquals(16.dp, IosWeatherDataCellWarningIconSize)
         assertEquals(0xFFFFFFFF.toInt(), IosWeatherDataCellContainerColor.toArgb())
@@ -795,5 +795,12 @@ class WeatherForecastParityTest {
 
     private companion object {
         const val HourMs = 60 * 60 * 1000L
+    }
+
+    @Test
+    fun `차트 Y축 자동 눈금은 iOS Charts 처럼 보기 좋은 간격을 쓴다`() {
+        assertEquals(listOf(0.0, 5.0, 10.0, 15.0), resolveWeatherChartYLabelValues(0.0, 15.0, null))
+        assertEquals(listOf(0.0, 2.0, 4.0, 6.0, 8.0, 10.0), resolveWeatherChartYLabelValues(0.0, 10.0, null))
+        assertEquals(listOf(10.0, 15.0, 20.0, 25.0, 30.0, 35.0), resolveWeatherChartYLabelValues(10.0, 35.0, 5.0))
     }
 }

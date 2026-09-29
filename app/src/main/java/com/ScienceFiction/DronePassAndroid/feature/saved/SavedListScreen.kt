@@ -71,7 +71,6 @@ fun SavedListScreen(
     onSelectionConsumed: () -> Unit = {},
     focusShapeId: String? = null,
     onFocusConsumed: () -> Unit = {},
-    contentBottomPadding: Dp = 0.dp,
     viewModel: SavedListViewModel = hiltViewModel()
 ) {
     val notStartedShapes by viewModel.notStartedShapes.collectAsStateWithLifecycle()
@@ -179,7 +178,7 @@ fun SavedListScreen(
                     start = SavedListContentHorizontalPadding,
                     end = SavedListContentHorizontalPadding,
                     top = SavedListContentVerticalPadding,
-                    bottom = SavedListContentVerticalPadding + contentBottomPadding,
+                    bottom = SavedListContentVerticalPadding,
                 ),
                 verticalArrangement = Arrangement.spacedBy(SavedListRowVerticalSpacing),
             ) {

@@ -1,4 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.settings
+import com.ScienceFiction.DronePassAndroid.ui.component.IosMenuDivider
+import com.ScienceFiction.DronePassAndroid.ui.component.IosDropdownMenu
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,7 +18,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -39,8 +40,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalContext
 import com.ScienceFiction.DronePassAndroid.subscription.EntitlementState
 import com.ScienceFiction.DronePassAndroid.subscription.LegacyKind
+import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemOrange
+import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedRowHorizontalPadding
+import com.ScienceFiction.DronePassAndroid.subscription.EarlyAccessBadge
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.feature.auth.AuthState
@@ -96,7 +102,6 @@ internal fun resolveLanguageSelectionAction(
 fun SettingsScreen(
     settingsViewModel: SettingsViewModel = hiltViewModel(),
     onAccountSessionEnded: () -> Unit = {},
-    contentBottomPadding: Dp = 0.dp,
 ) {
     var showDroneListSheet by remember { mutableStateOf(false) }
     var showAppInfoSheet by remember { mutableStateOf(false) }
@@ -108,7 +113,6 @@ fun SettingsScreen(
         onNavigateToAppInfo = { showAppInfoSheet = true },
         onNavigateToPatchNotes = { showPatchNotesSheet = true },
         onAccountSessionEnded = onAccountSessionEnded,
-        contentBottomPadding = contentBottomPadding,
     )
 
     if (showDroneListSheet) {
@@ -150,7 +154,6 @@ private fun SettingsMainContent(
     onNavigateToAppInfo: () -> Unit,
     onNavigateToPatchNotes: () -> Unit,
     onAccountSessionEnded: () -> Unit,
-    contentBottomPadding: Dp,
 ) {
     val hideExpiredShapes by settingsViewModel.hideExpiredShapes.collectAsStateWithLifecycle()
     val hideNotStartedShapes by settingsViewModel.hideNotStartedShapes.collectAsStateWithLifecycle()
@@ -221,29 +224,44 @@ private fun SettingsMainContent(
             ) {
                 InsetGroupedRow(
                     title = stringResource(R.string.subscription_plan),
-                    value = when {
-                        plan.isPaidSubscriber && plan.legacyKind == LegacyKind.EARLY_ACCESS -> stringResource(R.string.subscription_pro) + " · " + stringResource(R.string.subscription_early_badge)
-                        plan.legacyKind == LegacyKind.EARLY_ACCESS -> stringResource(R.string.subscription_early_lifetime)
-                        isPro -> stringResource(R.string.subscription_pro)
-                        else -> stringResource(R.string.subscription_free)
+                    // iOS SettingView.planTitle: 평생 무료 대상은 결제 여부와 관계없이 그 이름을 먼저 보여 준다.
+                    value = when (plan.legacyKind) {
+                        LegacyKind.EARLY_ACCESS -> stringResource(R.string.subscription_plan_early_access)
+                        LegacyKind.ORIGINAL_DOWNLOAD -> stringResource(R.string.subscription_plan_legacy)
+                        null -> if (isPro) stringResource(R.string.subscription_pro) else stringResource(R.string.subscription_free)
                     },
                     valueColor = if (isPro) IosSystemGreen else IosSecondaryLabel,
+                    valueAccessory = if (plan.legacyKind == LegacyKind.EARLY_ACCESS) {
+                        { EarlyAccessBadge() }
+                    } else {
+                        null
+                    },
                 )
-                if (!isPro) {
-                    SubscriptionUsageRow(
-                        title = stringResource(R.string.subscription_settings_shapes),
-                        used = quotaUsage.shapes,
-                        limit = quotaLimits.freeShapes,
-                    )
-                    SubscriptionUsageRow(
-                        title = stringResource(R.string.subscription_settings_sketches),
-                        used = quotaUsage.sketches,
-                        limit = quotaLimits.freeSketches,
-                    )
-                    SubscriptionUsageRow(
-                        title = stringResource(R.string.subscription_settings_drones),
-                        used = quotaUsage.drones,
-                        limit = quotaLimits.freeDrones,
+                // iOS usageRow: 사용량은 항상 보이고, 한도는 무료 플랜일 때만 함께 보인다.
+                SubscriptionUsageRow(
+                    title = stringResource(R.string.subscription_settings_shapes),
+                    used = quotaUsage.shapes,
+                    limit = quotaLimits.freeShapes.takeUnless { isPro },
+                )
+                SubscriptionUsageRow(
+                    title = stringResource(R.string.subscription_settings_sketches),
+                    used = quotaUsage.sketches,
+                    limit = quotaLimits.freeSketches.takeUnless { isPro },
+                )
+                SubscriptionUsageRow(
+                    title = stringResource(R.string.subscription_settings_drones),
+                    used = quotaUsage.drones,
+                    limit = quotaLimits.freeDrones.takeUnless { isPro },
+                )
+                when (plan.legacyKind) {
+                    LegacyKind.EARLY_ACCESS -> SubscriptionCaptionRow(stringResource(R.string.subscription_settings_early_access_desc))
+                    LegacyKind.ORIGINAL_DOWNLOAD -> SubscriptionCaptionRow(stringResource(R.string.subscription_settings_legacy_desc))
+                    null -> Unit
+                }
+                if (plan.isPaidSubscriber && plan.legacyKind != null) {
+                    SubscriptionCaptionRow(
+                        text = stringResource(R.string.subscription_legacy_subscribed),
+                        color = IosSystemOrange,
                     )
                 }
                 InsetGroupedDivider()
@@ -264,12 +282,15 @@ private fun SettingsMainContent(
                         onClick = { settingsViewModel.subscriptionManager.openManagement(context) },
                     )
                 }
-                InsetGroupedDivider()
-                InsetGroupedRow(
-                    title = stringResource(R.string.subscription_restore),
-                    titleColor = MaterialTheme.colorScheme.primary,
-                    onClick = { settingsViewModel.subscriptionManager.restore() },
-                )
+                // iOS 는 Pro 가 아닐 때만 구매 복원을 보여 준다.
+                if (!isPro) {
+                    InsetGroupedDivider()
+                    InsetGroupedRow(
+                        title = stringResource(R.string.subscription_restore),
+                        titleColor = MaterialTheme.colorScheme.primary,
+                        onClick = { settingsViewModel.subscriptionManager.restore() },
+                    )
+                }
             }
 
             // ===== 3. 비행 환경 =====
@@ -362,12 +383,13 @@ private fun SettingsMainContent(
                             )
                         },
                     )
-                    DropdownMenu(
+                    IosDropdownMenu(
                         expanded = showLanguageMenu,
                         onDismissRequest = { showLanguageMenu = false },
                         modifier = Modifier.align(Alignment.TopEnd),
                     ) {
-                        AppLanguage.entries.forEach { lang ->
+                        AppLanguage.entries.forEachIndexed { index, lang ->
+                            if (index > 0) IosMenuDivider()
                             DropdownMenuItem(
                                 text = { Text(stringResource(lang.displayNameRes)) },
                                 trailingIcon = if (lang == currentLanguage) {
@@ -417,7 +439,7 @@ private fun SettingsMainContent(
                 )
             }
 
-            Spacer(modifier = Modifier.height(12.dp + contentBottomPadding))
+            Spacer(modifier = Modifier.height(12.dp))
         }
     }
 
@@ -621,13 +643,28 @@ private fun SettingsMainContent(
 }
 
 
-/** 무료 플랜 사용량 행. iOS 처럼 한도에 도달하면 값을 빨간색으로 표시한다. */
+/** 사용량 행. iOS 처럼 [limit] 이 있으면(무료 플랜) "n / 한도" 로 쓰고 한도에 도달하면 빨간색으로 표시한다. */
 @Composable
-private fun SubscriptionUsageRow(title: String, used: Int, limit: Int) {
+private fun SubscriptionUsageRow(title: String, used: Int, limit: Int?) {
     InsetGroupedDivider()
     InsetGroupedRow(
         title = title,
-        value = stringResource(R.string.subscription_usage_value, used, limit),
-        valueColor = if (used >= limit) MaterialTheme.colorScheme.error else IosSecondaryLabel,
+        value = if (limit != null) stringResource(R.string.subscription_usage_value, used, limit) else used.toString(),
+        valueColor = if (limit != null && used >= limit) MaterialTheme.colorScheme.error else IosSecondaryLabel,
+    )
+}
+
+/** 구독 섹션 안의 caption 안내 행(iOS `.font(.caption)`). */
+@Composable
+private fun SubscriptionCaptionRow(text: String, color: Color = IosSecondaryLabel) {
+    InsetGroupedDivider()
+    Text(
+        text = text,
+        fontSize = 12.sp,
+        lineHeight = 16.sp,
+        color = color,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = InsetGroupedRowHorizontalPadding, vertical = 10.dp),
     )
 }

@@ -1,5 +1,7 @@
 package com.ScienceFiction.DronePassAndroid.subscription
 
+import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.draw.rotate
 import android.app.Activity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -23,7 +25,6 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Flight
 import androidx.compose.material.icons.filled.Gesture
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.outlined.Circle
 import androidx.compose.material.icons.outlined.VerifiedUser
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -41,6 +42,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
@@ -257,15 +259,15 @@ private fun BenefitsCard(limits: QuotaLimits) {
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        BenefitRow(Icons.Outlined.Circle, stringResource(R.string.subscription_benefit_shapes, limits.freeShapes))
+        BenefitRow(ImageVector.vectorResource(R.drawable.ic_circle_dashed_ios_like), stringResource(R.string.subscription_benefit_shapes, limits.freeShapes))
         BenefitRow(Icons.Default.Gesture, stringResource(R.string.subscription_benefit_sketches, limits.freeSketches))
-        BenefitRow(Icons.Default.Flight, stringResource(R.string.subscription_benefit_drones, limits.freeDrones))
+        BenefitRow(Icons.Default.Flight, stringResource(R.string.subscription_benefit_drones, limits.freeDrones), iconRotation = 90f)
         BenefitRow(Icons.Outlined.VerifiedUser, stringResource(R.string.subscription_benefit_keep_data))
     }
 }
 
 @Composable
-private fun BenefitRow(icon: ImageVector, text: String) {
+private fun BenefitRow(icon: ImageVector, text: String, iconRotation: Float = 0f) {
     Row(verticalAlignment = Alignment.Top) {
         Icon(
             imageVector = icon,
@@ -273,11 +275,29 @@ private fun BenefitRow(icon: ImageVector, text: String) {
             tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier
                 .padding(top = 1.dp)
-                .size(22.dp),
+                .size(22.dp)
+                .rotate(iconRotation),
         )
         Spacer(Modifier.width(12.dp))
         Text(text = text, style = MaterialTheme.typography.bodyLarge)
     }
+}
+
+/** iOS EarlyAccessBadge: 주황→분홍 그라데이션 캡슐. 설정의 플랜 행과 Pro 혜택 카드가 함께 쓴다. */
+@Composable
+internal fun EarlyAccessBadge() {
+    Text(
+        text = stringResource(R.string.subscription_early_badge),
+        fontSize = 10.sp,
+        lineHeight = 12.sp,
+        fontWeight = FontWeight.Black,
+        letterSpacing = 0.8.sp,
+        color = Color.White,
+        modifier = Modifier
+            .clip(RoundedCornerShape(50))
+            .background(Brush.horizontalGradient(listOf(Color(0xFFFF9500), Color(0xFFFF2D55))))
+            .padding(horizontal = 8.dp, vertical = 3.dp),
+    )
 }
 
 @Composable
@@ -290,16 +310,7 @@ private fun EarlyAccessCard() {
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Text(
-            text = stringResource(R.string.subscription_early_badge),
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Black,
-            color = Color.White,
-            modifier = Modifier
-                .clip(RoundedCornerShape(50))
-                .background(Color(0xFFFF9500))
-                .padding(horizontal = 10.dp, vertical = 3.dp),
-        )
+        EarlyAccessBadge()
         Text(stringResource(R.string.subscription_early_title), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
         Text(stringResource(R.string.subscription_early_message), style = MaterialTheme.typography.bodyMedium)
         Text(stringResource(R.string.subscription_early_lifetime), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
