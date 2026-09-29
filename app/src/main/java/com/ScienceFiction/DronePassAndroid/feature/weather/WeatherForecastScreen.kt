@@ -31,6 +31,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.res.painterResource
+import androidx.compose.foundation.Image
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -51,7 +56,10 @@ import java.text.DateFormat
 import java.util.Date
 import java.util.Locale
 
-internal const val WeatherDataSourceUrl = "https://open-meteo.com/"
+/** Apple WeatherKit 법적 고지·데이터 출처 페이지. 날씨 화면에 반드시 링크해야 한다. */
+internal const val WeatherKitLegalAttributionUrl = "https://weatherkit.apple.com/legal-attribution.html"
+internal val WeatherKitLogoHeight = 14.dp
+private val WeatherStaleNoticeColor = Color(0xFFFF9500)
 internal val WeatherSheetNavigationHeaderHeight = 44.dp
 internal val WeatherSheetNavigationHeaderActionWidth = 44.dp
 internal val WeatherSheetNavigationHeaderHorizontalPadding = 8.dp
@@ -203,42 +211,68 @@ private fun WeatherForecastBody(
             item { CriChart(hourlyData = chartHours) }
         }
 
-        // ④ 마지막 업데이트 시간
-        if (lastUpdateTime != null) {
-            item {
-                val formatted = remember(lastUpdateTime) { formatWeatherLastUpdateTime(lastUpdateTime) }
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp),
-                    horizontalArrangement = Arrangement.End,
-                ) {
-                    Text(
-                        text = stringResource(R.string.weather_last_update, formatted),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-        }
-
-        // ⑤ 데이터 출처 (iOS Apple Weather attribution 대응)
+        // ④ 마지막 업데이트 + 출처 (Apple WeatherKit 출처 표시 요구 사항)
         item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp),
-                horizontalArrangement = Arrangement.End,
-            ) {
-                Text(
-                    text = stringResource(R.string.weather_data_source),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.clickable {
-                        openUriSafely(uriHandler, WeatherDataSourceUrl)
-                    },
-                )
-            }
+            WeatherAttributionFooter(
+                lastUpdateTime = lastUpdateTime,
+                isStale = data.isStale,
+                onLegalAttributionClick = { openUriSafely(uriHandler, WeatherKitLegalAttributionUrl) },
+            )
+        }
+    }
+}
+
+/**
+ * 날씨 화면 하단.
+ * - 마지막 업데이트: 중계 서버가 Apple 응답을 받은 시각
+ * - 서버가 만료된 캐시를 준 경우(stale) 주황색 안내
+ * - Apple Weather 로고 + 법적 고지 링크 (Android 는 Apple 로고 글자가 없어 공식 로고 이미지를 쓴다)
+ */
+@Composable
+private fun WeatherAttributionFooter(
+    lastUpdateTime: Long?,
+    isStale: Boolean,
+    onLegalAttributionClick: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp),
+        horizontalAlignment = Alignment.End,
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        if (isStale) {
+            Text(
+                text = stringResource(R.string.weather_stale_notice),
+                style = MaterialTheme.typography.labelSmall,
+                color = WeatherStaleNoticeColor,
+                textAlign = TextAlign.End,
+            )
+        }
+        if (lastUpdateTime != null) {
+            val formatted = remember(lastUpdateTime) { formatWeatherLastUpdateTime(lastUpdateTime) }
+            Text(
+                text = stringResource(R.string.weather_last_update, formatted),
+                style = MaterialTheme.typography.labelSmall,
+                color = if (isStale) WeatherStaleNoticeColor else MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Image(
+                painter = painterResource(R.drawable.apple_weather_logo),
+                contentDescription = stringResource(R.string.weather_attribution_logo),
+                modifier = Modifier.height(WeatherKitLogoHeight),
+            )
+            Text(
+                text = stringResource(R.string.weather_attribution_legal),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.primary,
+                textDecoration = TextDecoration.Underline,
+                modifier = Modifier.clickable(onClick = onLegalAttributionClick),
+            )
         }
     }
 }

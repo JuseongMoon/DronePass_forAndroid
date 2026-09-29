@@ -1,198 +1,200 @@
 package com.ScienceFiction.DronePassAndroid.core.data.repository
 
-import com.ScienceFiction.DronePassAndroid.core.data.remote.weather.WeatherApi
-import com.ScienceFiction.DronePassAndroid.core.data.remote.weather.WeatherResponse
+import com.ScienceFiction.DronePassAndroid.core.data.remote.weather.WeatherKitDataSource
+import com.ScienceFiction.DronePassAndroid.core.data.remote.weather.WeatherKitHour
+import com.ScienceFiction.DronePassAndroid.core.data.remote.weather.WeatherKitResponse
 import com.ScienceFiction.DronePassAndroid.core.util.CRICalculator
 import com.ScienceFiction.DronePassAndroid.core.util.CurrentCriSmoother
 import com.ScienceFiction.DronePassAndroid.core.util.DroneCategory
 import com.ScienceFiction.DronePassAndroid.core.util.GustDifferenceCalculator
 import com.ScienceFiction.DronePassAndroid.domain.model.CurrentWeatherData
 import com.ScienceFiction.DronePassAndroid.domain.model.HourlyWeatherData
+import com.ScienceFiction.DronePassAndroid.domain.model.WeatherCondition
 import com.ScienceFiction.DronePassAndroid.domain.model.WeatherData
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import java.time.LocalDateTime
+import java.time.Instant
 import java.time.ZoneId
-import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.math.abs
+
+/** WeatherKit 풍속·돌풍(km/h) → 앱 표시 단위(m/s). iOS `converted(to: .metersPerSecond)` 와 같다. */
+internal const val KMH_PER_MPS = 3.6
+
+/** 그래프·예보 계산에 쓰는 미래 범위. iOS FORECAST_DAYS(3일)와 같다. */
+internal const val WEATHER_FORECAST_HORIZON_MS = 72L * 60L * 60L * 1000L
+
+/** 일출·일몰을 넘겨 줄 날 수. 알림 예약과 타임라인은 오늘·내일·모레만 쓴다. */
+internal const val WEATHER_SUN_EVENT_DAYS = 3
+
+/**
+ * 복귀 갱신과 3분 타이머가 거의 같이 울리는 경우 같은 요청을 한 번만 보내기 위한 창.
+ * 실제 유효 기간 캐시는 중계 서버가 지키므로 클라이언트는 이 짧은 창만 둔다.
+ */
+private const val DUPLICATE_REQUEST_WINDOW_MS = 10_000L
+
+/** WeatherKit 격자(0.01°) 안의 위치 이동은 같은 예보다. */
+private const val WEATHERKIT_GRID_DEGREES = 0.01
 
 @Singleton
 class WeatherRepository @Inject constructor(
-    private val weatherApi: WeatherApi
+    private val dataSource: WeatherKitDataSource,
 ) {
-    // 3분 캐시 — 동시 fetchWeather 호출에서 가시성 + R/M/W 직렬화.
-    @Volatile private var cachedData: WeatherData? = null
-    @Volatile private var cachedLatitude: Double = 0.0
-    @Volatile private var cachedLongitude: Double = 0.0
-    @Volatile private var cacheTimestamp: Long = 0L
-    @Volatile private var cachedCategory: DroneCategory = DroneCategory.IosDefault
-    private val cacheMutex = Mutex()
+    private val requestMutex = Mutex()
     private val currentCriSmoother = CurrentCriSmoother()
 
-    companion object {
-        private const val CACHE_DURATION_MS = 3 * 60 * 1000L // 3분
-        private const val LOCATION_THRESHOLD = 0.01 // 약 1km 이내 위치 변경은 캐시 사용
-    }
+    @Volatile private var lastResult: WeatherData? = null
+    @Volatile private var lastLatitude: Double = Double.NaN
+    @Volatile private var lastLongitude: Double = Double.NaN
+    @Volatile private var lastCategory: DroneCategory = DroneCategory.IosDefault
+    @Volatile private var lastFetchedAtElapsed: Long = 0L
 
-    /**
-     * 날씨 데이터 가져오기 (3분 캐시 적용)
-     */
     suspend fun fetchWeather(
         latitude: Double,
         longitude: Double,
-        category: DroneCategory = DroneCategory.IosDefault
-    ): Result<WeatherData> {
-        // 캐시 hit-path: 락 없이 빠르게 검사 (@Volatile 가시성 보장)
-        if (isCacheHit(latitude, longitude, category)) {
-            cachedData?.let { return Result.success(it) }
+        category: DroneCategory = DroneCategory.IosDefault,
+        nowMillis: () -> Long = System::currentTimeMillis,
+    ): Result<WeatherData> = requestMutex.withLock {
+        val now = nowMillis()
+        if (isDuplicateRequest(latitude, longitude, category, now)) {
+            lastResult?.let { return@withLock Result.success(it) }
         }
-
-        // miss-path: 직렬화하여 동일 좌표 동시 호출이 동일 API 를 다회 호출하지 않도록.
-        return cacheMutex.withLock {
-            if (isCacheHit(latitude, longitude, category)) {
-                cachedData?.let { return@withLock Result.success(it) }
-            }
-            try {
-                val response = weatherApi.getWeather(latitude = latitude, longitude = longitude)
-                val weatherData = mapToWeatherData(response, category)
-
-                cachedData = weatherData
-                cachedLatitude = latitude
-                cachedLongitude = longitude
-                cachedCategory = category
-                cacheTimestamp = System.currentTimeMillis()
-
-                Result.success(weatherData)
-            } catch (e: Exception) {
-                Result.failure(e)
-            }
-        }
-    }
-
-    private fun isCacheHit(latitude: Double, longitude: Double, category: DroneCategory): Boolean {
-        val locationChanged = kotlin.math.abs(latitude - cachedLatitude) > LOCATION_THRESHOLD ||
-                kotlin.math.abs(longitude - cachedLongitude) > LOCATION_THRESHOLD
-        val categoryChanged = cachedCategory != category
-        return !locationChanged && !categoryChanged &&
-                cachedData != null &&
-                System.currentTimeMillis() - cacheTimestamp < CACHE_DURATION_MS
-    }
-
-    /**
-     * 캐시 무효화 (수동 갱신 시)
-     */
-    fun invalidateCache() {
-        cacheTimestamp = 0L
-    }
-
-    /**
-     * API 응답 -> 도메인 모델 변환
-     */
-    private fun mapToWeatherData(response: WeatherResponse, category: DroneCategory): WeatherData {
-        val currentData = response.current?.let { current ->
-            val temp = current.temperature ?: 0.0
-            val dewPt = current.dewPoint ?: 0.0
-            val wind = current.windSpeed ?: 0.0
-            val gusts = current.windGusts
-            val cri = if (current.temperature != null && current.dewPoint != null) {
-                CRICalculator.calculateUnrounded(
-                    current.temperature,
-                    current.dewPoint,
-                    current.visibility?.div(1000.0),
-                ).takeIf { it.isFinite() }?.let(currentCriSmoother::smooth)
-            } else null
-
-            CurrentWeatherData(
-                temperature = temp,
-                dewPoint = dewPt,
-                windSpeed = wind,
-                windDirection = current.windDirection ?: 0.0,
-                windGusts = gusts,
-                precipitation = current.precipitation ?: 0.0,
-                visibility = current.visibility?.div(1000.0),
-                weatherCode = current.weatherCode ?: 0,
-                cri = cri,
-                gustDifferenceLevel = GustDifferenceCalculator.evaluate(wind, gusts, category)
+        runCatching {
+            val zone = ZoneId.systemDefault()
+            val response = dataSource.fetch(latitude, longitude, zone.id)
+            mapWeatherKitResponse(
+                response = response,
+                category = category,
+                nowMillis = now,
+                zone = zone,
+                smoothCurrentCri = currentCriSmoother::smooth,
             )
+        }.onSuccess { data ->
+            lastResult = data
+            lastLatitude = latitude
+            lastLongitude = longitude
+            lastCategory = category
+            lastFetchedAtElapsed = now
         }
-
-        val hourlyData = mapHourlyData(
-            hourly = response.hourly,
-            utcOffsetSeconds = response.utcOffsetSeconds,
-        )
-
-        val sunriseTimes = response.daily?.sunrise.orEmpty()
-        val sunsetTimes = response.daily?.sunset.orEmpty()
-        val sunrise = sunriseTimes.firstOrNull()
-        val sunset = sunsetTimes.firstOrNull()
-
-        return WeatherData(
-            current = currentData,
-            hourlyForecast = hourlyData,
-            sunrise = sunrise,
-            sunset = sunset,
-            sunriseTimes = sunriseTimes,
-            sunsetTimes = sunsetTimes,
-            utcOffsetSeconds = response.utcOffsetSeconds,
-        )
     }
 
-    /**
-     * 시간별 예보 데이터 매핑
-     */
-    private fun mapHourlyData(
-        hourly: com.ScienceFiction.DronePassAndroid.core.data.remote.weather.HourlyWeather?,
-        utcOffsetSeconds: Int?,
-    ): List<HourlyWeatherData> {
-        if (hourly == null) return emptyList()
+    private fun isDuplicateRequest(
+        latitude: Double,
+        longitude: Double,
+        category: DroneCategory,
+        nowMillis: Long,
+    ): Boolean = lastResult != null &&
+        category == lastCategory &&
+        abs(latitude - lastLatitude) < WEATHERKIT_GRID_DEGREES &&
+        abs(longitude - lastLongitude) < WEATHERKIT_GRID_DEGREES &&
+        nowMillis - lastFetchedAtElapsed in 0 until DUPLICATE_REQUEST_WINDOW_MS
 
-        val times = hourly.time ?: return emptyList()
-        val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
-        val responseOffset = runCatching {
-            utcOffsetSeconds?.let(ZoneOffset::ofTotalSeconds)
-        }.getOrNull()
-
-        return times.indices.mapNotNull { i ->
-            try {
-                val timeStr = times[i]
-                val localDateTime = LocalDateTime.parse(timeStr, formatter)
-                val instant = responseOffset
-                    ?.let { localDateTime.atOffset(it).toInstant() }
-                    ?: localDateTime.atZone(ZoneId.systemDefault()).toInstant()
-                val epochMillis = instant.toEpochMilli()
-
-                val temperatureForCri = hourly.temperature?.getOrNull(i)
-                val dewPointForCri = hourly.dewPoint?.getOrNull(i)
-                val temp = temperatureForCri ?: 0.0
-                val dewPt = dewPointForCri ?: 0.0
-                val wind = hourly.windSpeed?.getOrNull(i) ?: 0.0
-                val gusts = hourly.windGusts?.getOrNull(i)
-                val visibilityMeters = hourly.visibility?.getOrNull(i) ?: 10000.0
-                val cri = if (temperatureForCri != null && dewPointForCri != null) {
-                    CRICalculator.calculate(
-                        temperatureForCri,
-                        dewPointForCri,
-                        hourly.visibility?.getOrNull(i)?.div(1000.0),
-                    ).takeIf { it.isFinite() }
-                } else null
-
-                HourlyWeatherData(
-                    time = epochMillis,
-                    temperature = temp,
-                    windSpeed = wind,
-                    windDirection = hourly.windDirection?.getOrNull(i) ?: 0.0,
-                    windGusts = gusts,
-                    gustDifference = GustDifferenceCalculator.calculateObservedGustDifference(wind, gusts),
-                    precipitation = hourly.precipitation?.getOrNull(i) ?: 0.0,
-                    visibility = visibilityMeters / 1000.0, // m -> km
-                    dewPoint = dewPt,
-                    cri = cri
-                )
-            } catch (e: Exception) {
-                null
-            }
-        }
+    /** 수동 새로고침·카테고리 변경: 중복 요청 창을 비워 서버에 다시 묻는다. */
+    fun invalidateCache() {
+        lastFetchedAtElapsed = 0L
     }
 }
+
+/**
+ * 중계 서버 응답 → 도메인 모델. 단위·구간 규칙은 iOS `WeatherManager.fetchWeatherData` 를 따른다.
+ * - 풍속·돌풍 km/h → m/s, 시정 m → km
+ * - 현재 강수는 precipitationIntensity(mm/h), 시간별 강수는 precipitationAmount(mm)
+ * - 시간별은 서버가 준 정시-3시간부터 지금+72시간까지
+ */
+internal fun mapWeatherKitResponse(
+    response: WeatherKitResponse,
+    category: DroneCategory,
+    nowMillis: Long,
+    zone: ZoneId,
+    smoothCurrentCri: (Double) -> Double = { it },
+): WeatherData {
+    val current = response.currentWeather?.let { current ->
+        val temperature = current.temperature
+        val dewPoint = current.temperatureDewPoint
+        val windSpeed = (current.windSpeed ?: 0.0) / KMH_PER_MPS
+        val windGust = current.windGust?.div(KMH_PER_MPS)
+        val visibilityKm = current.visibility?.div(1000.0)
+        val cri = if (temperature != null && dewPoint != null) {
+            CRICalculator.calculateUnrounded(temperature, dewPoint, visibilityKm)
+                .takeIf { it.isFinite() }
+                ?.let(smoothCurrentCri)
+        } else {
+            null
+        }
+        CurrentWeatherData(
+            temperature = temperature ?: 0.0,
+            dewPoint = dewPoint ?: 0.0,
+            windSpeed = windSpeed,
+            windDirection = current.windDirection ?: 0.0,
+            windGusts = windGust,
+            precipitation = current.precipitationIntensity ?: 0.0,
+            visibility = visibilityKm,
+            condition = WeatherCondition.fromAppleCode(current.conditionCode),
+            cri = cri,
+            gustDifferenceLevel = GustDifferenceCalculator.evaluate(windSpeed, windGust, category),
+        )
+    }
+
+    val horizon = nowMillis + WEATHER_FORECAST_HORIZON_MS
+    val hourly = response.forecastHourly?.hours.orEmpty()
+        .mapNotNull { hour -> hour.toHourlyWeatherData() }
+        .filter { it.time <= horizon }
+        .sortedBy { it.time }
+
+    val days = response.forecastDaily?.days.orEmpty()
+        .sortedBy { it.forecastStart }
+        .take(WEATHER_SUN_EVENT_DAYS)
+    val sunriseTimes = days.mapNotNull { it.sunrise.toLocalMinuteString(zone) }
+    val sunsetTimes = days.mapNotNull { it.sunset.toLocalMinuteString(zone) }
+
+    return WeatherData(
+        current = current,
+        hourlyForecast = hourly,
+        sunrise = sunriseTimes.firstOrNull(),
+        sunset = sunsetTimes.firstOrNull(),
+        sunriseTimes = sunriseTimes,
+        sunsetTimes = sunsetTimes,
+        utcOffsetSeconds = zone.rules.getOffset(Instant.ofEpochMilli(nowMillis)).totalSeconds,
+        fetchedAtMillis = response.fetchedAt.toEpochMillisOrNull(),
+        isStale = response.stale == true,
+        dataSourceAttributionUrl = response.currentWeather?.metadata?.attributionURL,
+    )
+}
+
+private fun WeatherKitHour.toHourlyWeatherData(): HourlyWeatherData? {
+    val time = forecastStart.toEpochMillisOrNull() ?: return null
+    val windSpeed = (windSpeed ?: 0.0) / KMH_PER_MPS
+    val windGust = windGust?.div(KMH_PER_MPS)
+    val visibilityKm = visibility?.div(1000.0)
+    val cri = if (temperature != null && temperatureDewPoint != null) {
+        CRICalculator.calculate(temperature, temperatureDewPoint, visibilityKm).takeIf { it.isFinite() }
+    } else {
+        null
+    }
+    return HourlyWeatherData(
+        time = time,
+        temperature = temperature ?: 0.0,
+        windSpeed = windSpeed,
+        windDirection = windDirection ?: 0.0,
+        windGusts = windGust,
+        gustDifference = GustDifferenceCalculator.calculateObservedGustDifference(windSpeed, windGust),
+        precipitation = precipitationAmount ?: 0.0,
+        visibility = visibilityKm ?: 0.0,
+        dewPoint = temperatureDewPoint ?: 0.0,
+        cri = cri,
+    )
+}
+
+private val LocalMinuteFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")
+
+/**
+ * 일출·일몰 UTC 시각 → 기기 시간대의 "yyyy-MM-ddTHH:mm".
+ * 타임라인·알림 예약은 이 현지 시각 문자열과 [WeatherData.utcOffsetSeconds] 를 함께 쓴다.
+ */
+private fun String?.toLocalMinuteString(zone: ZoneId): String? =
+    this?.let { runCatching { Instant.parse(it).atZone(zone).format(LocalMinuteFormatter) }.getOrNull() }
+
+private fun String?.toEpochMillisOrNull(): Long? =
+    this?.let { runCatching { Instant.parse(it).toEpochMilli() }.getOrNull() }

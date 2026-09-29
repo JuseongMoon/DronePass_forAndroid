@@ -24,6 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ScienceFiction.DronePassAndroid.core.util.WeatherCodeMapper
+import com.ScienceFiction.DronePassAndroid.domain.model.WeatherCondition
 import com.ScienceFiction.DronePassAndroid.core.util.interpolateTemperatureColor
 import com.ScienceFiction.DronePassAndroid.core.util.nextSunEvent
 import com.ScienceFiction.DronePassAndroid.domain.model.CurrentWeatherData
@@ -52,9 +53,9 @@ internal fun resolveSunEventOverlayIcon(isNextSunset: Boolean): SunEventOverlayI
     if (isNextSunset) SunEventOverlayIcon.Sunset else SunEventOverlayIcon.Sunrise
 
 internal fun resolveWeatherOverlayWeatherIcon(
-    weatherCode: Int?,
+    condition: WeatherCondition?,
     precipitation: Double?,
-): ImageVector = WeatherCodeMapper.weatherCodeToIosPrecipitationIcon(weatherCode, precipitation)
+): ImageVector = WeatherCodeMapper.conditionIcon(condition, precipitation)
 
 internal fun weatherOverlayTemperatureText(temperature: Double?): String =
     temperature?.let {
@@ -115,7 +116,7 @@ fun WeatherOverlayCard(
             ) {
                 Icon(
                     imageVector = resolveWeatherOverlayWeatherIcon(
-                        weatherCode = currentWeather?.weatherCode,
+                        condition = currentWeather?.condition,
                         precipitation = currentWeather?.precipitation,
                     ),
                     contentDescription = null,

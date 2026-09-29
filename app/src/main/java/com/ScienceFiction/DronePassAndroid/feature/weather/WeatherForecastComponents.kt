@@ -65,6 +65,7 @@ import com.ScienceFiction.DronePassAndroid.core.util.GustDifferenceLevel
 import com.ScienceFiction.DronePassAndroid.core.util.WeatherCodeMapper
 import com.ScienceFiction.DronePassAndroid.core.util.interpolateTemperatureColor
 import com.ScienceFiction.DronePassAndroid.domain.model.HourlyWeatherData
+import com.ScienceFiction.DronePassAndroid.domain.model.WeatherCondition
 import com.ScienceFiction.DronePassAndroid.domain.model.WeatherData
 import java.util.Locale
 
@@ -194,13 +195,8 @@ internal fun resolveGustDifferenceSubTextRes(level: GustDifferenceLevel): Int? =
 
 internal fun resolveCurrentWeatherVisibility(data: WeatherData): Double? = data.current?.visibility
 
-internal fun isSnowingWeatherCode(weatherCode: Int?): Boolean = when (weatherCode) {
-    71, 73, 75, 77, 85, 86 -> true
-    else -> false
-}
-
-internal fun resolvePrecipitationLabelRes(weatherCode: Int?): Int =
-    if (isSnowingWeatherCode(weatherCode)) R.string.weather_snowfall else R.string.weather_precipitation
+internal fun resolvePrecipitationLabelRes(condition: WeatherCondition?): Int =
+    if (WeatherCodeMapper.isSnowing(condition)) R.string.weather_snowfall else R.string.weather_precipitation
 
 internal fun resolveCurrentWeatherContentState(
     hourlyForecast: List<HourlyWeatherData>,
@@ -305,13 +301,13 @@ internal fun CurrentWeatherSection(
                     Box {
                         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                             PreviewBlock(
-                                weatherIcon = WeatherCodeMapper.weatherCodeToIosPrecipitationIcon(
-                                    code = current?.weatherCode,
-                                    precipitation = current?.precipitation,
+                                weatherIcon = WeatherCodeMapper.conditionIcon(
+                                    condition = current?.condition,
+                                    precipitationIntensity = current?.precipitation,
                                 ),
-                                conditionText = current?.weatherCode
-                                    ?.let { stringResource(WeatherCodeMapper.weatherCodeToDescriptionRes(it)) }
-                                    ?: stringResource(R.string.weather_unknown),
+                                conditionText = stringResource(
+                                    WeatherCodeMapper.conditionDescriptionRes(current?.condition),
+                                ),
                                 temperatureText = formatNullableIosTemperatureDegrees(current?.temperature),
                                 temperatureColor = current?.temperature?.let(::interpolateTemperatureColor) ?: Color.Gray,
                                 maxTemperatureText = maxTemperatureText,
@@ -366,10 +362,10 @@ internal fun CurrentWeatherSection(
                                         modifier = Modifier.weight(1f),
                                         icon = Icons.Default.WaterDrop,
                                         iconColor = PrecipitationBlue,
-                                        label = stringResource(resolvePrecipitationLabelRes(current?.weatherCode)),
+                                        label = stringResource(resolvePrecipitationLabelRes(current?.condition)),
                                         value = formatIosPrecipitationIntensity(
                                             precipitation = current?.precipitation,
-                                            isSnowing = isSnowingWeatherCode(current?.weatherCode),
+                                            isSnowing = WeatherCodeMapper.isSnowing(current?.condition),
                                         ),
                                         warningIcon = precipWarning,
                                         onClick = { onWeatherInfoRequested(WeatherInfoTopic.Precipitation) },

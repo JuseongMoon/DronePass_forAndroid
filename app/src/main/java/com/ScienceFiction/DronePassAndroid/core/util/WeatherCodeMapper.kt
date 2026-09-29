@@ -3,84 +3,120 @@ package com.ScienceFiction.DronePassAndroid.core.util
 import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AcUnit
+import androidx.compose.material.icons.filled.Air
 import androidx.compose.material.icons.filled.Cloud
+import androidx.compose.material.icons.filled.Dehaze
 import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material.icons.filled.Grain
+import androidx.compose.material.icons.filled.Thunderstorm
 import androidx.compose.material.icons.filled.Umbrella
-import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material.icons.filled.WbCloudy
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.ScienceFiction.DronePassAndroid.R
+import com.ScienceFiction.DronePassAndroid.domain.model.WeatherCondition
 
 /**
- * WMO 날씨 코드 -> 설명/아이콘 매핑
+ * WeatherKit 날씨 상태 → 설명/아이콘 매핑.
+ *
+ * 아이콘 규칙은 iOS `WeatherManager.precipitationIconName` 을 따른다. SF Symbol 을
+ * 가장 가까운 Material 아이콘으로 옮겼다.
  */
 object WeatherCodeMapper {
 
     @StringRes
-    fun weatherCodeToDescriptionRes(code: Int): Int = when (code) {
-        0 -> R.string.weather_condition_clear
-        1 -> R.string.weather_condition_mostly_clear
-        2 -> R.string.weather_condition_partly_cloudy
-        3 -> R.string.weather_condition_overcast
-        4, 5 -> R.string.weather_condition_haze // WMO 04: smoke / 05: haze
-        10 -> R.string.weather_condition_mist
-        45, 48 -> R.string.weather_condition_fog
-        51, 53, 55 -> R.string.weather_condition_drizzle
-        56, 57 -> R.string.weather_condition_freezing_drizzle
-        61, 63, 65 -> R.string.weather_condition_rain
-        66, 67 -> R.string.weather_condition_freezing_rain
-        71, 73, 75 -> R.string.weather_condition_snow
-        77 -> R.string.weather_condition_snow_grains
-        80, 81, 82 -> R.string.weather_condition_showers
-        85, 86 -> R.string.weather_condition_snow_showers
-        95 -> R.string.weather_condition_thunderstorm
-        96, 99 -> R.string.weather_condition_thunderstorm_hail
-        else -> R.string.weather_unknown
+    fun conditionDescriptionRes(condition: WeatherCondition?): Int = when (condition) {
+        WeatherCondition.CLEAR -> R.string.weather_condition_clear
+        WeatherCondition.MOSTLY_CLEAR -> R.string.weather_condition_mostly_clear
+        WeatherCondition.PARTLY_CLOUDY -> R.string.weather_condition_partly_cloudy
+        WeatherCondition.MOSTLY_CLOUDY -> R.string.weather_condition_mostly_cloudy
+        WeatherCondition.CLOUDY -> R.string.weather_condition_cloudy
+        WeatherCondition.FOGGY -> R.string.weather_condition_foggy
+        WeatherCondition.HAZE -> R.string.weather_condition_haze
+        WeatherCondition.SMOKY -> R.string.weather_condition_smoky
+        WeatherCondition.BREEZY -> R.string.weather_condition_breezy
+        WeatherCondition.WINDY -> R.string.weather_condition_windy
+        WeatherCondition.DRIZZLE -> R.string.weather_condition_drizzle
+        WeatherCondition.RAIN -> R.string.weather_condition_rain
+        WeatherCondition.HEAVY_RAIN -> R.string.weather_condition_heavy_rain
+        WeatherCondition.ISOLATED_THUNDERSTORMS -> R.string.weather_condition_isolated_thunderstorms
+        WeatherCondition.SCATTERED_THUNDERSTORMS -> R.string.weather_condition_scattered_thunderstorms
+        WeatherCondition.STRONG_STORMS -> R.string.weather_condition_strong_storms
+        WeatherCondition.THUNDERSTORMS -> R.string.weather_condition_thunderstorms
+        WeatherCondition.FRIGID -> R.string.weather_condition_frigid
+        WeatherCondition.HAIL -> R.string.weather_condition_hail
+        WeatherCondition.HOT -> R.string.weather_condition_hot
+        WeatherCondition.FLURRIES -> R.string.weather_condition_flurries
+        WeatherCondition.SLEET -> R.string.weather_condition_sleet
+        WeatherCondition.SNOW -> R.string.weather_condition_snow
+        WeatherCondition.SUN_FLURRIES -> R.string.weather_condition_sun_flurries
+        WeatherCondition.SUN_SHOWERS -> R.string.weather_condition_sun_showers
+        WeatherCondition.WINTRY_MIX -> R.string.weather_condition_wintry_mix
+        WeatherCondition.BLIZZARD -> R.string.weather_condition_blizzard
+        WeatherCondition.BLOWING_DUST -> R.string.weather_condition_blowing_dust
+        WeatherCondition.BLOWING_SNOW -> R.string.weather_condition_blowing_snow
+        WeatherCondition.FREEZING_DRIZZLE -> R.string.weather_condition_freezing_drizzle
+        WeatherCondition.FREEZING_RAIN -> R.string.weather_condition_freezing_rain
+        WeatherCondition.HEAVY_SNOW -> R.string.weather_condition_heavy_snow
+        WeatherCondition.HURRICANE -> R.string.weather_condition_hurricane
+        WeatherCondition.TROPICAL_STORM -> R.string.weather_condition_tropical_storm
+        null -> R.string.weather_unknown
     }
 
-    fun weatherCodeToIcon(code: Int): ImageVector = when (code) {
-        0 -> Icons.Default.WbSunny
-        1, 2 -> Icons.Default.WbCloudy
-        3 -> Icons.Default.Cloud
-        4, 5, 10 -> Icons.Default.Cloud
-        45, 48 -> Icons.Default.Cloud
-        51, 53, 55, 56, 57 -> Icons.Default.Grain
-        61, 63, 65, 66, 67 -> Icons.Default.Umbrella
-        71, 73, 75, 77 -> Icons.Default.AcUnit
-        80, 81, 82 -> Icons.Default.WaterDrop
-        85, 86 -> Icons.Default.AcUnit
-        95 -> Icons.Default.FlashOn
-        96, 99 -> Icons.Default.FlashOn
-        else -> Icons.Default.Cloud
+    /**
+     * iOS `WeatherManager.isSnowing`: 강수 표시를 강설(cm/h)로 바꾸는 상태.
+     */
+    fun isSnowing(condition: WeatherCondition?): Boolean = when (condition) {
+        WeatherCondition.SNOW,
+        WeatherCondition.BLOWING_SNOW,
+        WeatherCondition.HEAVY_SNOW,
+        WeatherCondition.FLURRIES -> true
+        else -> false
     }
 
     /**
      * iOS `WeatherManager.precipitationIconName` 대응.
      *
-     * iOS 는 WeatherCondition 이 비/눈이어도 실제 precipitationIntensity 가 0 이면
-     * 강수 아이콘 대신 일반 상태 아이콘으로 폴백한다. Open-Meteo 의 WMO code 와
-     * 현재 precipitation 값을 함께 사용해 같은 표시 의도를 맞춘다.
+     * 상태가 비/눈이어도 실제 강수 강도가 0 이면 강수 아이콘 대신 일반 상태 아이콘을 쓴다.
      */
-    fun weatherCodeToIosPrecipitationIcon(code: Int?, precipitation: Double?): ImageVector {
-        if (code == null) return Icons.Default.Cloud
+    fun conditionIcon(condition: WeatherCondition?, precipitationIntensity: Double?): ImageVector {
+        if (condition == null) return Icons.Default.Cloud
 
-        val hasPrecipitation = (precipitation ?: 0.0) > 0.0
+        val hasPrecipitation = (precipitationIntensity ?: 0.0) > 0.0
         if (hasPrecipitation) {
-            return when (code) {
-                51, 53, 55, 56, 57 -> Icons.Default.Grain
-                61, 63, 65, 66, 67, 80, 81, 82 -> Icons.Default.Umbrella
-                71, 73, 75, 77, 85, 86 -> Icons.Default.AcUnit
-                95, 96, 99 -> Icons.Default.FlashOn
+            return when (condition) {
+                WeatherCondition.RAIN, WeatherCondition.HEAVY_RAIN -> Icons.Default.Umbrella
+                WeatherCondition.DRIZZLE -> Icons.Default.Grain
+                WeatherCondition.SNOW,
+                WeatherCondition.BLOWING_SNOW,
+                WeatherCondition.HEAVY_SNOW,
+                WeatherCondition.FLURRIES -> Icons.Default.AcUnit
+                WeatherCondition.SLEET,
+                WeatherCondition.FREEZING_RAIN,
+                WeatherCondition.FREEZING_DRIZZLE,
+                WeatherCondition.WINTRY_MIX,
+                WeatherCondition.HAIL -> Icons.Default.Grain
+                WeatherCondition.ISOLATED_THUNDERSTORMS,
+                WeatherCondition.STRONG_STORMS,
+                WeatherCondition.THUNDERSTORMS,
+                WeatherCondition.SCATTERED_THUNDERSTORMS -> Icons.Default.Thunderstorm
                 else -> Icons.Default.Umbrella
             }
         }
 
-        return when (code) {
-            0, 1 -> Icons.Default.WbSunny
-            2 -> Icons.Default.WbCloudy
-            95, 96, 99 -> Icons.Default.FlashOn
+        return when (condition) {
+            WeatherCondition.CLEAR, WeatherCondition.MOSTLY_CLEAR -> Icons.Default.WbSunny
+            WeatherCondition.PARTLY_CLOUDY -> Icons.Default.WbCloudy
+            WeatherCondition.MOSTLY_CLOUDY, WeatherCondition.CLOUDY -> Icons.Default.Cloud
+            WeatherCondition.FOGGY, WeatherCondition.HAZE, WeatherCondition.SMOKY -> Icons.Default.Dehaze
+            WeatherCondition.BREEZY, WeatherCondition.WINDY -> Icons.Default.Air
+            WeatherCondition.BLIZZARD,
+            WeatherCondition.BLOWING_DUST,
+            WeatherCondition.BLOWING_SNOW -> Icons.Default.Air
+            WeatherCondition.ISOLATED_THUNDERSTORMS,
+            WeatherCondition.STRONG_STORMS,
+            WeatherCondition.THUNDERSTORMS,
+            WeatherCondition.SCATTERED_THUNDERSTORMS -> Icons.Default.FlashOn
             else -> Icons.Default.Cloud
         }
     }

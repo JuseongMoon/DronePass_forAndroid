@@ -29,6 +29,9 @@ import java.text.DateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
+import com.ScienceFiction.DronePassAndroid.domain.model.WeatherCondition
+import com.ScienceFiction.DronePassAndroid.core.data.remote.weather.WeatherServiceFailure
+import com.ScienceFiction.DronePassAndroid.core.data.remote.weather.WeatherServiceException
 
 class WeatherForecastParityTest {
 
@@ -403,8 +406,21 @@ class WeatherForecastParityTest {
     }
 
     @Test
-    fun `weather data source text opens the Android provider attribution URL`() {
-        assertEquals("https://open-meteo.com/", WeatherDataSourceUrl)
+    fun `weather footer links Apple WeatherKit legal attribution`() {
+        assertEquals("https://weatherkit.apple.com/legal-attribution.html", WeatherKitLegalAttributionUrl)
+    }
+
+    @Test
+    fun `relay failures pick a specific weather error message`() {
+        assertEquals(
+            WeatherError.ServiceUnavailable,
+            resolveWeatherLoadError(WeatherServiceException(WeatherServiceFailure.UNAVAILABLE)),
+        )
+        assertEquals(
+            WeatherError.AppVerification,
+            resolveWeatherLoadError(WeatherServiceException(WeatherServiceFailure.APP_VERIFICATION)),
+        )
+        assertTrue(resolveWeatherLoadError(IllegalStateException("offline")) is WeatherError.LoadFailed)
     }
 
     @Test
@@ -478,12 +494,9 @@ class WeatherForecastParityTest {
 
     @Test
     fun `current precipitation label and unit switch to snowfall for iOS snow conditions`() {
-        assertFalse(isSnowingWeatherCode(61))
-        assertEquals(R.string.weather_precipitation, resolvePrecipitationLabelRes(61))
-
-        assertTrue(isSnowingWeatherCode(71))
-        assertTrue(isSnowingWeatherCode(86))
-        assertEquals(R.string.weather_snowfall, resolvePrecipitationLabelRes(71))
+        assertEquals(R.string.weather_precipitation, resolvePrecipitationLabelRes(WeatherCondition.RAIN))
+        assertEquals(R.string.weather_snowfall, resolvePrecipitationLabelRes(WeatherCondition.SNOW))
+        assertEquals(R.string.weather_snowfall, resolvePrecipitationLabelRes(WeatherCondition.FLURRIES))
     }
 
     @Test
@@ -767,7 +780,7 @@ class WeatherForecastParityTest {
         windGusts = null,
         precipitation = 0.0,
         visibility = visibility,
-        weatherCode = 0,
+        condition = WeatherCondition.CLEAR,
         cri = 0.0,
         gustDifferenceLevel = GustDifferenceLevel.SAFE,
     )

@@ -4,6 +4,7 @@ import android.app.Application
 import com.ScienceFiction.DronePassAndroid.feature.settings.initializeAppLanguage
 import com.ScienceFiction.DronePassAndroid.service.FcmService
 import com.ScienceFiction.DronePassAndroid.service.NotificationScheduleRestorer
+import com.google.firebase.appcheck.FirebaseAppCheck
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
 
@@ -23,6 +24,8 @@ class DronePassApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        // WeatherKit 중계 함수 호출에 App Check 토큰이 필요하다. Firebase 호출보다 먼저 설치한다.
+        FirebaseAppCheck.getInstance().installAppCheckProviderFactory(appCheckProviderFactory())
         initializeAppLanguage(this)
         // 알림 채널 생성 (Android 8.0+)
         FcmService.createNotificationChannel(this)

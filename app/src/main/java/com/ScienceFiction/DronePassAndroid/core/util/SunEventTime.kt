@@ -64,7 +64,7 @@ fun nextSunEvent(
  * 여러 날짜의 ISO 일출/일몰 문자열에서 현재 이후의 가장 가까운 이벤트를 고른다.
  *
  * iOS 는 WeatherManager 가 오늘 일출/일몰과 내일 일출을 함께 보관하고, 일몰 이후에는
- * `tomorrowSunriseTime` 까지의 남은 시간을 표시한다. Open-Meteo daily 배열도 같은 정보를
+ * `tomorrowSunriseTime` 까지의 남은 시간을 표시한다. WeatherKit daily 배열도 같은 정보를
  * 주므로 리스트 기반 계산을 우선 사용한다.
  */
 fun nextSunEvent(

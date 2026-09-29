@@ -19,6 +19,8 @@ import com.ScienceFiction.DronePassAndroid.service.NotificationScheduleRestorer
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
+import com.ScienceFiction.DronePassAndroid.core.data.remote.weather.WeatherServiceException
+import com.ScienceFiction.DronePassAndroid.core.data.remote.weather.WeatherServiceFailure
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -157,10 +159,14 @@ class WeatherViewModel @Inject constructor(
     /**
      * 화면이 START 상태일 때만 3분 간격 자동 갱신을 시작한다.
      * Composable 의 DisposableEffect(ON_START) 에서 호출한다.
+     *
+     * 앱으로 돌아오면(START) 곧바로 한 번 갱신한다. 유효 기간 안의 요청은 중계 서버 캐시가
+     * 받아 주므로 Apple 호출이 늘지 않고, 시작 직후 init 갱신과 겹치면 리포지토리가 한 번만 보낸다.
      */
     fun startAutoRefresh() {
         if (autoRefreshJob?.isActive == true) return
         autoRefreshJob = viewModelScope.launch {
+            fetchCurrentLocationAndWeather()
             while (isActive) {
                 delay(WeatherAutoRefreshIntervalMs)
                 weatherRepository.invalidateCache()
@@ -259,7 +265,8 @@ class WeatherViewModel @Inject constructor(
             .onSuccess { data ->
                 _weatherData.value = data
                 _error.value = null
-                _lastUpdateTime.value = System.currentTimeMillis()
+                // 중계 서버가 Apple 응답을 받은 시각. 만료 캐시(stale)를 받으면 그 시각이 그대로 보인다.
+                _lastUpdateTime.value = data.fetchedAtMillis ?: System.currentTimeMillis()
                 if (isUserLocationBacked) {
                     runCatching { cacheSunAlarmLocation(latitude, longitude) }
                     runCatching {
@@ -268,7 +275,7 @@ class WeatherViewModel @Inject constructor(
                 }
             }
             .onFailure { cause ->
-                _error.value = WeatherError.LoadFailed(cause.localizedMessage)
+                _error.value = resolveWeatherLoadError(cause)
             }
         _isLoading.value = false
     }
@@ -312,7 +319,13 @@ sealed class WeatherError(
     /** 위치 서비스 비활성 / 마지막 위치도 없음 */
     data object LocationUnavailable : WeatherError(R.string.weather_error_location_unavailable)
 
-    /** Open-Meteo API 호출 실패 (네트워크/서버 오류) */
+    /** 중계 서버 상한 초과 등으로 줄 수 있는 날씨가 없음 (`unavailable`) */
+    data object ServiceUnavailable : WeatherError(R.string.weather_error_service_unavailable)
+
+    /** App Check 검증 실패 (`permission-denied`) — 비공식 빌드나 오래된 앱 */
+    data object AppVerification : WeatherError(R.string.weather_error_app_verification)
+
+    /** 날씨 호출 실패 (네트워크 오류 등) */
     data class LoadFailed(
         val detail: String?,
     ) : WeatherError(
@@ -326,4 +339,12 @@ sealed class WeatherError(
 
     /** 분류 불가 — 마지막 폴백 */
     data object Unknown : WeatherError(R.string.weather_error_unknown)
+}
+
+internal fun resolveWeatherLoadError(cause: Throwable): WeatherError = when (
+    (cause as? WeatherServiceException)?.failure
+) {
+    WeatherServiceFailure.UNAVAILABLE -> WeatherError.ServiceUnavailable
+    WeatherServiceFailure.APP_VERIFICATION -> WeatherError.AppVerification
+    else -> WeatherError.LoadFailed(cause.localizedMessage)
 }

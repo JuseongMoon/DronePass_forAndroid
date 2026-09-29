@@ -7,7 +7,6 @@ import com.ScienceFiction.DronePassAndroid.core.data.remote.kp.KpGfzApi
 import com.ScienceFiction.DronePassAndroid.core.data.remote.kp.KpNoaa27DayApi
 import com.ScienceFiction.DronePassAndroid.core.data.remote.kp.KpNoaaApi
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.VWorldApi
-import com.ScienceFiction.DronePassAndroid.core.data.remote.weather.WeatherApi
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import dagger.Module
@@ -78,7 +77,7 @@ object NetworkModule {
     }
 
     /**
-     * VWorld / Kp / Weather API 용 범용 OkHttpClient (네이버 헤더 없음).
+     * VWorld / Kp API 용 범용 OkHttpClient (네이버 헤더 없음).
      */
     @Provides
     @Singleton
@@ -259,27 +258,5 @@ object NetworkModule {
     @Singleton
     fun provideKpGfzApi(@Named("kpGfzRetrofit") retrofit: Retrofit): KpGfzApi {
         return retrofit.create(KpGfzApi::class.java)
-    }
-
-    // ===== Weather API (Open-Meteo) =====
-
-    @Provides
-    @Singleton
-    @Named("weatherRetrofit")
-    fun provideWeatherRetrofit(
-        @Named("GenericOkHttp") okHttpClient: OkHttpClient,
-        moshi: Moshi
-    ): Retrofit {
-        return Retrofit.Builder()
-            .baseUrl("https://api.open-meteo.com/")
-            .client(okHttpClient)
-            .addConverterFactory(MoshiConverterFactory.create(moshi))
-            .build()
-    }
-
-    @Provides
-    @Singleton
-    fun provideWeatherApi(@Named("weatherRetrofit") retrofit: Retrofit): WeatherApi {
-        return retrofit.create(WeatherApi::class.java)
     }
 }

@@ -394,6 +394,10 @@ dependencies {
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.functions)
+    // WeatherKit 중계 함수(getAndroidWeather)는 App Check 토큰을 요구한다.
+    // 릴리스는 Play Integrity, 디버그 빌드만 디버그 공급자를 쓴다(src/debug · src/release 소스셋).
+    implementation(libs.firebase.appcheck.playintegrity)
+    debugImplementation(libs.firebase.appcheck.debug)
     implementation(libs.firebase.messaging)
     implementation(libs.firebase.crashlytics)
     implementation(libs.firebase.analytics)
