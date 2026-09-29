@@ -127,7 +127,7 @@ class DroneSelectionStateTest {
     }
 
     @Test
-    fun `전체 선택 상태에서 새 드론이 추가되면 새 드론도 선택된다`() {
+    fun `동기화로 새 드론이 들어와도 iOS처럼 자동 선택하지 않는다`() {
         val state = DroneSelectionState()
         state.syncActiveDrones(listOf(DroneModel(id = "drone-a", name = "A")))
 
@@ -138,8 +138,47 @@ class DroneSelectionStateTest {
             )
         )
 
-        assertEquals(setOf("drone-a", "drone-b"), state.selectedDroneIds.value)
+        assertEquals(setOf("drone-a"), state.selectedDroneIds.value)
         assertEquals("drone-a", state.selectedDroneId.value)
+    }
+
+    @Test
+    fun `사용자가 모두 해제해 저장한 선택은 다음 실행에서도 비어 있다`() {
+        val state = DroneSelectionState()
+        state.onPersistedSelectionLoaded(StoredDroneSelection(selectedDroneId = null, selectedDroneIds = emptySet()))
+
+        state.syncActiveDrones(listOf(DroneModel(id = "drone-a", name = "A")))
+
+        assertTrue(state.selectedDroneIds.value.isEmpty())
+    }
+
+    @Test
+    fun `저장값이 없는 첫 실행은 전체 선택한다`() {
+        val state = DroneSelectionState()
+        state.onPersistedSelectionLoaded(StoredDroneSelection(selectedDroneId = null, selectedDroneIds = null))
+
+        state.syncActiveDrones(
+            listOf(DroneModel(id = "drone-a", name = "A"), DroneModel(id = "drone-b", name = "B"))
+        )
+
+        assertEquals(setOf("drone-a", "drone-b"), state.selectedDroneIds.value)
+    }
+
+    @Test
+    fun `저장된 선택이 활성 드론과 하나도 겹치지 않으면 iOS처럼 전체 선택으로 복구한다`() {
+        val state = DroneSelectionState()
+        state.onPersistedSelectionLoaded(StoredDroneSelection(selectedDroneId = null, selectedDroneIds = setOf("gone")))
+
+        state.syncActiveDrones(listOf(DroneModel(id = "drone-a", name = "A")))
+
+        assertEquals(setOf("drone-a"), state.selectedDroneIds.value)
+    }
+
+    @Test
+    fun `빈 선택도 iOS 키에 저장한다`() {
+        val preferences = mutablePreferencesOf()
+        preferences.writeDroneSelectedIds(emptySet())
+        assertEquals(emptySet<String>(), storedDroneSelectedIds(preferences))
     }
 
     @Test
@@ -441,5 +480,16 @@ class DroneSelectionStateTest {
             baseCoordinate = Coordinate(37.0, 127.0),
             droneId = droneId,
         )
+    }
+
+    @Test
+    fun `로딩 전 빈 드론 목록이 먼저 와도 복원한 선택을 유지한다`() {
+        val state = DroneSelectionState()
+        state.onPersistedSelectionLoaded(StoredDroneSelection(selectedDroneId = null, selectedDroneIds = setOf("drone-a")))
+
+        state.syncActiveDrones(emptyList())
+        state.syncActiveDrones(listOf(DroneModel(id = "drone-a", name = "A"), DroneModel(id = "drone-b", name = "B")))
+
+        assertEquals(setOf("drone-a"), state.selectedDroneIds.value)
     }
 }

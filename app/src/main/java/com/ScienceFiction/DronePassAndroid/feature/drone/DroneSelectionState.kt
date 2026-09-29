@@ -55,6 +55,8 @@ class DroneSelectionState private constructor(
     private var lastActiveDroneIds: Set<String> = emptySet()
     private var hasLoadedPersistedSelection = !loadPersistedSelection
     private var hasExplicitRuntimeSelection = false
+    /** 저장된 다중 선택값이 있었는지(비어 있는 선택 포함). 없으면 첫 실행으로 보고 전체 선택한다. */
+    private var hasSavedSelection = false
     private var pendingActiveDrones: List<DroneModel>? = null
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -74,8 +76,11 @@ class DroneSelectionState private constructor(
         selection.selectedDroneId?.let { savedDroneId ->
             _selectedDroneId.value = savedDroneId
         }
-        if (selection.selectedDroneIds.isNotEmpty() && !hasExplicitRuntimeSelection) {
-            _selectedDroneIds.value = selection.selectedDroneIds
+        selection.selectedDroneIds?.let { savedIds ->
+            hasSavedSelection = true
+            if (!hasExplicitRuntimeSelection) {
+                _selectedDroneIds.value = savedIds
+            }
         }
         hasLoadedPersistedSelection = true
 
@@ -87,10 +92,12 @@ class DroneSelectionState private constructor(
     }
 
     /**
-     * iOS setupInitialDroneIfNeeded 정합.
-     * 첫 활성 드론 목록 로드 시 저장된 다중 선택이 없으면 전체 선택하고, 저장된 선택이 있으면
-     * 활성 드론에 해당하는 ID 만 복원한다. 전체가 선택된 상태에서 새 드론이 추가되면
-     * 새 드론도 선택 목록에 포함한다. 사용자가 직접 모두 해제한 런타임 상태는 유지한다.
+     * iOS DroneManager.restoreSelection / dronesDidChange 정합.
+     * - 첫 로드: 저장값이 없으면(첫 실행) 전체 선택, 있으면 활성 드론에 해당하는 ID 만 복원한다.
+     *   사용자가 모두 해제해 둔 상태(빈 선택)도 그대로 복원한다.
+     *   저장된 ID 가 활성 드론과 하나도 겹치지 않으면(손상된 값) 전체 선택으로 되돌린다.
+     * - 이후 목록 변경(실시간 동기화 등): 선택은 그대로 두고 사라진 드론만 뺀다.
+     *   다른 기기에서 들어온 드론은 자동 선택하지 않는다(iOS 와 같이 칩에 나타나지 않음).
      * 사용자가 추가한 새 드론은 [addDroneToSelection] 에서 iOS addDrone 처럼 명시 선택한다.
      */
     @Synchronized
@@ -102,25 +109,18 @@ class DroneSelectionState private constructor(
 
         val activeIds = activeDrones.map { it.id }.toSet()
         if (activeIds.isEmpty()) {
-            if (!hasCompletedInitialLoad) {
-                _selectedDroneId.value = null
-                _selectedDroneIds.value = emptySet()
-                _highlightedDroneIds.value = emptySet()
-                lastActiveDroneIds = emptySet()
-            }
+            // 로컬 드론 로딩 전의 빈 목록. 복원한 선택을 지우면 곧 들어올 실제 목록 기준으로 빈 선택이 저장된다.
             return
         }
 
         val current = _selectedDroneIds.value
         val selectedExisting = current.intersect(activeIds)
-        val wasAllSelected = hasCompletedInitialLoad &&
-            lastActiveDroneIds.isNotEmpty() &&
-            current.containsAll(lastActiveDroneIds)
 
         val nextSelectedIds = when {
-            !hasCompletedInitialLoad && current.isEmpty() -> activeIds
-            !hasCompletedInitialLoad -> selectedExisting
-            wasAllSelected -> activeIds
+            !hasCompletedInitialLoad && !hasSavedSelection && current.isEmpty() -> activeIds
+            // iOS restoreSelection 의 손상 복구: 저장값에서 복원한 선택이 활성 드론과 전혀 겹치지 않을 때만.
+            !hasCompletedInitialLoad && hasSavedSelection && !hasExplicitRuntimeSelection &&
+                current.isNotEmpty() && selectedExisting.isEmpty() -> activeIds
             else -> selectedExisting
         }
         val nextSelectedDroneId = _selectedDroneId.value
@@ -196,9 +196,10 @@ class DroneSelectionState private constructor(
         hasCompletedInitialLoad = false
         lastActiveDroneIds = emptySet()
         hasExplicitRuntimeSelection = false
+        hasSavedSelection = false
         pendingActiveDrones = null
         saveSelectedDroneId(null)
-        saveSelectedDroneIds(emptySet())
+        clearSavedSelectedDroneIds()
     }
 
     fun toggleDroneHighlight(droneId: String) {
@@ -216,6 +217,17 @@ class DroneSelectionState private constructor(
         scope.launch {
             store.edit { preferences ->
                 preferences.writeDroneSelectedIds(ids)
+            }
+        }
+    }
+
+    /** 계정 전환: 저장값을 지워 새 계정의 첫 로드가 전체 선택으로 시작하게 한다. */
+    private fun clearSavedSelectedDroneIds() {
+        val store = dataStore ?: return
+        scope.launch {
+            store.edit { preferences ->
+                preferences.remove(DroneSelectionPreferenceKeys.SELECTED_DRONE_IDS)
+                preferences.remove(DroneSelectionPreferenceKeys.LEGACY_SELECTED_DRONE_IDS)
             }
         }
     }
@@ -238,7 +250,8 @@ internal object DroneSelectionPreferenceKeys {
 
 internal data class StoredDroneSelection(
     val selectedDroneId: String?,
-    val selectedDroneIds: Set<String>,
+    /** null 이면 저장값 없음(첫 실행). 빈 집합은 사용자가 모두 해제해 둔 상태. */
+    val selectedDroneIds: Set<String>?,
 )
 
 internal fun storedDroneSelection(preferences: Preferences): StoredDroneSelection {
@@ -248,10 +261,9 @@ internal fun storedDroneSelection(preferences: Preferences): StoredDroneSelectio
     )
 }
 
-internal fun storedDroneSelectedIds(preferences: Preferences): Set<String> {
+internal fun storedDroneSelectedIds(preferences: Preferences): Set<String>? {
     return preferences[DroneSelectionPreferenceKeys.SELECTED_DRONE_IDS]
         ?: preferences[DroneSelectionPreferenceKeys.LEGACY_SELECTED_DRONE_IDS]
-        ?: emptySet()
 }
 
 internal fun MutablePreferences.writeDroneSelectedDroneId(id: String?) {
@@ -262,12 +274,9 @@ internal fun MutablePreferences.writeDroneSelectedDroneId(id: String?) {
     }
 }
 
+/** 빈 선택도 저장한다(iOS UserDefaults 에 빈 배열 저장과 같음). 다음 실행에서 해제 상태를 복원한다. */
 internal fun MutablePreferences.writeDroneSelectedIds(ids: Set<String>) {
-    if (ids.isEmpty()) {
-        remove(DroneSelectionPreferenceKeys.SELECTED_DRONE_IDS)
-    } else {
-        this[DroneSelectionPreferenceKeys.SELECTED_DRONE_IDS] = ids
-    }
+    this[DroneSelectionPreferenceKeys.SELECTED_DRONE_IDS] = ids
     remove(DroneSelectionPreferenceKeys.LEGACY_SELECTED_DRONE_IDS)
 }
 
