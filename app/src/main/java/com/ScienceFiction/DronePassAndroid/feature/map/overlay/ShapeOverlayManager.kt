@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.map.overlay
 
+import kotlin.math.roundToInt
 import android.graphics.Color
 import com.ScienceFiction.DronePassAndroid.core.util.parseIosOpaqueRgbHexColor
 import com.ScienceFiction.DronePassAndroid.domain.model.Coordinate
@@ -85,6 +86,16 @@ internal fun calculateMapOverlayOutlineColor(
     }
 }
 
+/**
+ * iOS NMFOverlay.outlineWidth 는 pt, Android 네이버 SDK 의 outlineWidth 는 px 단위다.
+ * iOS 와 같은 값(pt)을 dp 로 보고 px 로 바꿔야 두께가 같아진다(이 변환이 없으면 약 1/3 두께).
+ */
+internal const val MapOverlayFocusHighlightOutlinePoints = 5
+
+internal fun mapOverlayPointsToPx(points: Int, density: Float): Int =
+    (points * density).roundToInt().coerceAtLeast(1)
+
+/** iOS 와 같은 pt 값. 실제 SDK 에는 [mapOverlayPointsToPx] 로 바꿔 넣는다. */
 internal fun calculateMapOverlayOutlineWidth(shape: ShapeModel): Int {
     return if (shape.isNotStarted) 1 else 2
 }
@@ -121,6 +132,13 @@ internal fun uniqueMapOverlayShapesByFirstId(shapes: List<ShapeModel>): List<Sha
 class ShapeOverlayManager {
 
     private var naverMap: NaverMap? = null
+
+    /** 외곽선 pt → px 변환용 display density. */
+    private var density: Float = android.content.res.Resources.getSystem().displayMetrics.density
+
+    fun setDensity(density: Float) {
+        this.density = density.coerceAtLeast(0.5f)
+    }
 
     /** shapeId → Overlay 매핑. Diff 기반으로 신규/변경/삭제만 반영한다. */
     private val overlays = mutableMapOf<String, Overlay>()
@@ -232,7 +250,7 @@ class ShapeOverlayManager {
                     this.radius = radius
                     this.color = calculateFillColor(shape)
                     this.outlineColor = calculateOutlineColor(shape)
-                    this.outlineWidth = calculateOutlineWidth(shape)
+                    this.outlineWidth = mapOverlayPointsToPx(calculateOutlineWidth(shape), density)
                 }
             }
             null -> return
@@ -270,7 +288,7 @@ class ShapeOverlayManager {
             this.radius = radius
             this.color = Color.TRANSPARENT
             this.outlineColor = parseColorSafe(MapOverlayFocusHighlightHex)
-            this.outlineWidth = 5
+            this.outlineWidth = mapOverlayPointsToPx(MapOverlayFocusHighlightOutlinePoints, density)
             this.globalZIndex = 60
             this.map = naverMap
         }

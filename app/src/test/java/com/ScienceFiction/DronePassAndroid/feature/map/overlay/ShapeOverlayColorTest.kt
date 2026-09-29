@@ -106,4 +106,13 @@ class ShapeOverlayColorTest {
             flightEndDate = flightEndDate,
         )
     }
+
+    @Test
+    fun `외곽선은 iOS pt 값을 dp 로 보고 px 로 바꾼다`() {
+        // 갤럭시 A34(450dpi, density 2.8125): iOS 2pt 선 → 6px
+        assertEquals(6, mapOverlayPointsToPx(2, 2.8125f))
+        assertEquals(14, mapOverlayPointsToPx(5, 2.8125f))
+        // 저밀도에서도 최소 1px
+        assertEquals(1, mapOverlayPointsToPx(1, 0.5f))
+    }
 }

@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.vworld
 
+import com.ScienceFiction.DronePassAndroid.feature.map.overlay.mapOverlayPointsToPx
 import android.util.Log
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.DroneZoneFeature
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.FlightZoneLayer
@@ -17,7 +18,18 @@ import com.naver.maps.map.overlay.PolygonOverlay
  * 네이버 지도에 비행구역 폴리곤을 표시/관리한다.
  * 레이어별 표시/숨기기, 터치 핸들러, 메모리 최적화를 담당한다.
  */
+/** iOS FlightZoneOverlayManager 의 outlineWidth(pt). 기본 2, 선택 4. */
+internal const val FlightZoneOutlinePoints = 2
+internal const val FlightZoneSelectedOutlinePoints = 4
+
 class FlightZoneOverlayManager {
+
+    /** 외곽선 pt → px 변환용 display density. */
+    private var density: Float = android.content.res.Resources.getSystem().displayMetrics.density
+
+    fun setDensity(density: Float) {
+        this.density = density.coerceAtLeast(0.5f)
+    }
 
     companion object {
         private const val TAG = "FlightZoneOverlay"
@@ -101,7 +113,7 @@ class FlightZoneOverlayManager {
                         this.holes = holes
                         this.color = layer.fillColor.toInt()
                         this.outlineColor = layer.borderColor.toInt()
-                        this.outlineWidth = 2
+                        this.outlineWidth = mapOverlayPointsToPx(FlightZoneOutlinePoints, density)
                         this.globalZIndex = BASE_Z_INDEX - layer.priority
                         this.map = map
 
@@ -179,7 +191,7 @@ class FlightZoneOverlayManager {
      * 선택된 오버레이 해제. VWorld 상세 시트가 닫힐 때 iOS 와 동일하게 호출한다.
      */
     fun clearSelection() {
-        selectedOverlay?.outlineWidth = 2
+        selectedOverlay?.outlineWidth = mapOverlayPointsToPx(FlightZoneOutlinePoints, density)
         selectedOverlay = null
     }
 
@@ -238,9 +250,9 @@ class FlightZoneOverlayManager {
     }
 
     private fun selectOverlay(overlay: PolygonOverlay) {
-        selectedOverlay?.outlineWidth = 2
+        selectedOverlay?.outlineWidth = mapOverlayPointsToPx(FlightZoneOutlinePoints, density)
         selectedOverlay = overlay
-        selectedOverlay?.outlineWidth = 4
+        selectedOverlay?.outlineWidth = mapOverlayPointsToPx(FlightZoneSelectedOutlinePoints, density)
     }
 }
 
