@@ -34,9 +34,7 @@ import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material.icons.filled.WbCloudy
 import androidx.compose.material.icons.filled.WbTwilight
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -54,6 +52,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ScienceFiction.DronePassAndroid.BuildConfig
 import com.ScienceFiction.DronePassAndroid.R
+import androidx.compose.foundation.layout.Arrangement
+import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedDivider
+import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedSection
+import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedSectionSpacing
+import com.ScienceFiction.DronePassAndroid.ui.component.SheetLargeTitleHeader
+import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGroupedBackground
 import com.ScienceFiction.DronePassAndroid.core.util.openUriSafely
 
 internal val AppInfoIntroIconSize = 60.dp
@@ -113,35 +117,29 @@ internal fun appInfoEmailUri(email: String): String = "mailto:$email"
 fun AppInfoScreen(
     onBack: () -> Unit,
 ) {
-    Column(modifier = Modifier.fillMaxSize()) {
-        LargeTopAppBar(
-            title = {
-                Text(
-                    text = stringResource(R.string.app_info_title),
-                    fontWeight = FontWeight.Bold,
-                )
-            },
-            actions = {
-                TextButton(onClick = onBack) {
-                    Text(
-                        text = stringResource(R.string.common_close),
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                }
-            },
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(IosSystemGroupedBackground),
+    ) {
+        SheetLargeTitleHeader(
+            title = stringResource(R.string.app_info_title),
+            closeText = stringResource(R.string.common_close),
+            onClose = onBack,
         )
 
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(bottom = 32.dp),
+                .padding(top = 8.dp, bottom = 32.dp),
+            verticalArrangement = Arrangement.spacedBy(InsetGroupedSectionSpacing),
         ) {
-            AppInfoSectionHeader(title = stringResource(R.string.app_info_section_intro))
+            InsetGroupedSection(header = stringResource(R.string.app_info_section_intro)) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                    .padding(horizontal = 16.dp, vertical = 20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 AppInfoIntroIcon()
@@ -155,8 +153,8 @@ fun AppInfoScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-            AppInfoSectionHeader(title = stringResource(R.string.app_info_section_drone_management))
+            }
+            InsetGroupedSection(header = stringResource(R.string.app_info_section_drone_management)) {
             FeatureRow(
                 icon = AppInfoMultiDroneIcon,
                 iconColor = Color(0xFF007AFF),
@@ -164,7 +162,7 @@ fun AppInfoScreen(
                 title = stringResource(R.string.app_info_feature_multi_drone_title),
                 description = stringResource(R.string.app_info_feature_multi_drone_desc),
             )
-            HorizontalDivider(modifier = Modifier.padding(start = 64.dp))
+            InsetGroupedDivider(startIndent = 64.dp)
             FeatureRow(
                 icon = Icons.Default.Map,
                 iconColor = Color(0xFF34C759),
@@ -172,7 +170,7 @@ fun AppInfoScreen(
                 title = stringResource(R.string.app_info_feature_visualization_title),
                 description = stringResource(R.string.app_info_feature_visualization_desc),
             )
-            HorizontalDivider(modifier = Modifier.padding(start = 64.dp))
+            InsetGroupedDivider(startIndent = 64.dp)
             FeatureRow(
                 icon = Icons.Default.Notifications,
                 iconColor = Color(0xFFFF9500),
@@ -181,22 +179,22 @@ fun AppInfoScreen(
                 description = stringResource(R.string.app_info_feature_expiration_alert_desc),
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
-            AppInfoSectionHeader(title = stringResource(R.string.app_info_section_environmental_info))
+            }
+            InsetGroupedSection(header = stringResource(R.string.app_info_section_environmental_info)) {
             FeatureRow(
                 icon = AppInfoWeatherIcon,
                 iconColor = Color(0xFF5AC8FA),
                 title = stringResource(R.string.app_info_feature_weather_title),
                 description = stringResource(R.string.app_info_feature_weather_desc),
             )
-            HorizontalDivider(modifier = Modifier.padding(start = 64.dp))
+            InsetGroupedDivider(startIndent = 64.dp)
             FeatureRow(
                 icon = AppInfoKpIndexIcon,
                 iconColor = Color(0xFFAF52DE),
                 title = stringResource(R.string.app_info_feature_kp_index_title),
                 description = stringResource(R.string.app_info_feature_kp_index_desc),
             )
-            HorizontalDivider(modifier = Modifier.padding(start = 64.dp))
+            InsetGroupedDivider(startIndent = 64.dp)
             FeatureRow(
                 icon = AppInfoSunriseSunsetIcon,
                 iconColor = Color(0xFFFF2D55),
@@ -204,22 +202,22 @@ fun AppInfoScreen(
                 description = stringResource(R.string.app_info_feature_sunrise_sunset_desc),
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
-            AppInfoSectionHeader(title = stringResource(R.string.app_info_section_shapes_and_map))
+            }
+            InsetGroupedSection(header = stringResource(R.string.app_info_section_shapes_and_map)) {
             FeatureRow(
                 icon = AppInfoShapeManagementIcon,
                 iconColor = Color(0xFF5856D6),
                 title = stringResource(R.string.app_info_feature_shape_management_title),
                 description = stringResource(R.string.app_info_feature_shape_management_desc),
             )
-            HorizontalDivider(modifier = Modifier.padding(start = 64.dp))
+            InsetGroupedDivider(startIndent = 64.dp)
             FeatureRow(
                 icon = Icons.Default.ContentCopy,
                 iconColor = Color(0xFF5AC8FA),
                 title = stringResource(R.string.app_info_feature_shape_duplicate_title),
                 description = stringResource(R.string.app_info_feature_shape_duplicate_desc),
             )
-            HorizontalDivider(modifier = Modifier.padding(start = 64.dp))
+            InsetGroupedDivider(startIndent = 64.dp)
             FeatureRow(
                 icon = Icons.Default.Search,
                 iconColor = AppInfoSearchIconColor,
@@ -228,15 +226,15 @@ fun AppInfoScreen(
                 description = stringResource(R.string.app_info_feature_search_desc),
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
-            AppInfoSectionHeader(title = stringResource(R.string.app_info_section_cloud_and_data))
+            }
+            InsetGroupedSection(header = stringResource(R.string.app_info_section_cloud_and_data)) {
             FeatureRow(
                 icon = AppInfoCloudSyncIcon,
                 iconColor = Color(0xFF007AFF),
                 title = stringResource(R.string.app_info_feature_cloud_sync_title),
                 description = stringResource(R.string.app_info_feature_cloud_sync_desc),
             )
-            HorizontalDivider(modifier = Modifier.padding(start = 64.dp))
+            InsetGroupedDivider(startIndent = 64.dp)
             FeatureRow(
                 icon = AppInfoDroneOnestopIcon,
                 iconColor = Color(0xFF34C759),
@@ -244,22 +242,22 @@ fun AppInfoScreen(
                 description = stringResource(R.string.app_info_feature_drone_onestop_desc),
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
-            AppInfoSectionHeader(title = stringResource(R.string.app_info_section_version))
+            }
+            InsetGroupedSection(header = stringResource(R.string.app_info_section_version)) {
             InfoRow(
                 icon = Icons.Default.Info,
                 title = stringResource(R.string.app_info_version_app),
                 value = appInfoVersionValue(BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE),
             )
-            HorizontalDivider(modifier = Modifier.padding(start = 64.dp))
+            InsetGroupedDivider(startIndent = 64.dp)
             InfoRow(
                 icon = AppInfoBuildNumberIcon,
                 title = stringResource(R.string.app_info_version_build),
                 value = appInfoBuildNumberValue(BuildConfig.VERSION_CODE),
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
-            AppInfoSectionHeader(title = stringResource(R.string.app_info_section_contact))
+            }
+            InsetGroupedSection(header = stringResource(R.string.app_info_section_contact)) {
             val contactCompany = stringResource(R.string.app_info_contact_company)
             val contactEmail = stringResource(R.string.app_info_contact_email)
             val contactDisplay = appInfoContactDisplay(contactCompany, contactEmail)
@@ -270,30 +268,20 @@ fun AppInfoScreen(
                 )
             }
             if (contactDisplay.showDivider) {
-                HorizontalDivider(modifier = Modifier.padding(start = 64.dp))
+                InsetGroupedDivider(startIndent = 64.dp)
             }
             if (contactDisplay.showEmail) {
                 ContactEmailRow(email = contactEmail)
+            }
             }
             Text(
                 text = stringResource(R.string.app_info_contact_message),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                modifier = Modifier.padding(horizontal = 32.dp),
             )
         }
     }
-}
-
-@Composable
-private fun AppInfoSectionHeader(title: String) {
-    Text(
-        text = title,
-        style = MaterialTheme.typography.titleSmall,
-        fontWeight = FontWeight.SemiBold,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-    )
 }
 
 @Composable

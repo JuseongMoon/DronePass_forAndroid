@@ -16,7 +16,7 @@ class PatchNotesScreenTest {
         assertAppearsInOrder(
             source = source,
             tokens = listOf(
-                "LargeTopAppBar",
+                "SheetLargeTitleHeader(",
                 "R.string.patch_notes_title",
                 "R.string.common_close",
                 "PatchNotesContent()",

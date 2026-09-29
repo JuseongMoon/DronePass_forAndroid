@@ -125,6 +125,7 @@ fun SettingsScreen(
         DronePassModalBottomSheet(
             onDismissRequest = { showAppInfoSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            containerColor = IosSystemGroupedBackground,
         ) {
             AppInfoScreen(onBack = { showAppInfoSheet = false })
         }
@@ -134,6 +135,7 @@ fun SettingsScreen(
         DronePassModalBottomSheet(
             onDismissRequest = { showPatchNotesSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            containerColor = IosSystemGroupedBackground,
         ) {
             PatchNotesScreen(onBack = { showPatchNotesSheet = false })
         }

@@ -32,8 +32,8 @@ class ShapeEditDefaultsTest {
     }
 
     @Test
-    fun `좌표 입력 시트는 iOS ShapeEditView처럼 외부 인터랙티브 닫기를 막는다`() {
-        assertFalse(CoordinateInputSheetInteractiveDismissEnabled)
+    fun `좌표 입력 시트는 Android 뒤로가기와 바깥 탭으로 닫힌다`() {
+        assertTrue(CoordinateInputSheetInteractiveDismissEnabled)
     }
 
     @Test

@@ -83,7 +83,7 @@ class AppInfoScreenTest {
     }
 
     @Test
-    fun `앱 정보 섹션 헤더는 iOS AppInfoView headline 스타일을 따른다`() {
+    fun `앱 정보는 시트 large title 헤더와 inset grouped 섹션을 쓴다`() {
         val source = resolveProjectFile(
             "src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/AppInfoScreen.kt",
             "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/settings/AppInfoScreen.kt",
@@ -92,11 +92,10 @@ class AppInfoScreenTest {
         assertAppearsInOrder(
             source = source,
             tokens = listOf(
-                "private fun AppInfoSectionHeader",
-                "style = MaterialTheme.typography.titleSmall",
-                "fontWeight = FontWeight.SemiBold",
-                "color = MaterialTheme.colorScheme.onSurfaceVariant",
-                "modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)",
+                "SheetLargeTitleHeader(",
+                "R.string.app_info_title",
+                "R.string.common_close",
+                "InsetGroupedSection(header = stringResource(R.string.app_info_section_intro))",
             ),
         )
     }
@@ -111,33 +110,33 @@ class AppInfoScreenTest {
         assertAppearsInOrder(
             source = source,
             tokens = listOf(
-                "AppInfoSectionHeader(title = stringResource(R.string.app_info_section_intro))",
+                "InsetGroupedSection(header = stringResource(R.string.app_info_section_intro))",
                 "R.string.app_info_section_intro",
                 "R.string.app_info_description",
-                "AppInfoSectionHeader(title = stringResource(R.string.app_info_section_drone_management))",
+                "InsetGroupedSection(header = stringResource(R.string.app_info_section_drone_management))",
                 "R.string.app_info_section_drone_management",
                 "R.string.app_info_feature_multi_drone_title",
                 "R.string.app_info_feature_visualization_title",
                 "R.string.app_info_feature_expiration_alert_title",
-                "AppInfoSectionHeader(title = stringResource(R.string.app_info_section_environmental_info))",
+                "InsetGroupedSection(header = stringResource(R.string.app_info_section_environmental_info))",
                 "R.string.app_info_section_environmental_info",
                 "R.string.app_info_feature_weather_title",
                 "R.string.app_info_feature_kp_index_title",
                 "R.string.app_info_feature_sunrise_sunset_title",
-                "AppInfoSectionHeader(title = stringResource(R.string.app_info_section_shapes_and_map))",
+                "InsetGroupedSection(header = stringResource(R.string.app_info_section_shapes_and_map))",
                 "R.string.app_info_section_shapes_and_map",
                 "R.string.app_info_feature_shape_management_title",
                 "R.string.app_info_feature_shape_duplicate_title",
                 "R.string.app_info_feature_search_title",
-                "AppInfoSectionHeader(title = stringResource(R.string.app_info_section_cloud_and_data))",
+                "InsetGroupedSection(header = stringResource(R.string.app_info_section_cloud_and_data))",
                 "R.string.app_info_section_cloud_and_data",
                 "R.string.app_info_feature_cloud_sync_title",
                 "R.string.app_info_feature_drone_onestop_title",
-                "AppInfoSectionHeader(title = stringResource(R.string.app_info_section_version))",
+                "InsetGroupedSection(header = stringResource(R.string.app_info_section_version))",
                 "R.string.app_info_section_version",
                 "R.string.app_info_version_app",
                 "R.string.app_info_version_build",
-                "AppInfoSectionHeader(title = stringResource(R.string.app_info_section_contact))",
+                "InsetGroupedSection(header = stringResource(R.string.app_info_section_contact))",
                 "R.string.app_info_section_contact",
                 "R.string.app_info_contact_company",
                 "R.string.app_info_contact_email",

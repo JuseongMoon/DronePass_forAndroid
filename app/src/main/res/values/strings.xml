@@ -407,6 +407,7 @@
     <string name="shape_edit_search_address">주소 검색</string>
     <string name="search_address_title">주소 검색</string>
     <string name="search_address_placeholder">도로명 또는 지번 주소로 검색</string>
+    <string name="search_address_no_results">검색 결과가 없습니다</string>
     <string name="search_address_guide">도로명 주소와 지번 주소 모두 검색 가능합니다</string>
     <string name="search_address_example">검색 예시:</string>
     <string name="search_address_example_road_1">• 서초대로78길 24 (도로명)</string>

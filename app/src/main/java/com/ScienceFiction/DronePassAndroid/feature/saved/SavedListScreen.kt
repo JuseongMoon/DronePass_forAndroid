@@ -46,6 +46,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ScienceFiction.DronePassAndroid.R
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.unit.sp
+import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedCornerRadius
+import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedDivider
+import com.ScienceFiction.DronePassAndroid.ui.theme.IosSecondaryLabel
+import com.ScienceFiction.DronePassAndroid.ui.theme.IosSecondarySystemGroupedBackground
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 import com.ScienceFiction.DronePassAndroid.feature.shape.ShapeDetailSheet
@@ -185,19 +194,21 @@ fun SavedListScreen(
                     // (예: flightStartDate == flightEndDate == 현재시각) 등 잠재적 race 에서
                     // 동일 id 가 두 섹션에 동시 등장 시 LazyColumn 이
                     // IllegalStateException("Key was already used") 으로 크래시하는 것을 방지.
-                    items(notStartedShapes, key = { "notStarted-${it.id}" }) { shape ->
-                        SwipeToDeleteItem(
-                            onDelete = { viewModel.deleteShapeFromList(shape) }
-                        ) {
-                            SavedShapeListItem(
-                                shape = shape,
-                                isSelected = shape.id == selectedShapeId,
-                                onClick = {
-                                    viewModel.selectShapeForMapFocus(shape.id)
-                                    onNavigateToMapWithShape(shape.id)
-                                },
-                                onDetailClick = { viewModel.onShapeSelected(shape.id) },
-                            )
+                    itemsIndexed(notStartedShapes, key = { _, item -> "notStarted-${item.id}" }) { index, shape ->
+                        SavedShapeSectionCardRow(index = index, count = notStartedShapes.size) {
+                            SwipeToDeleteItem(
+                                onDelete = { viewModel.deleteShapeFromList(shape) }
+                            ) {
+                                SavedShapeListItem(
+                                    shape = shape,
+                                    isSelected = shape.id == selectedShapeId,
+                                    onClick = {
+                                        viewModel.selectShapeForMapFocus(shape.id)
+                                        onNavigateToMapWithShape(shape.id)
+                                    },
+                                    onDetailClick = { viewModel.onShapeSelected(shape.id) },
+                                )
+                            }
                         }
                     }
                 }
@@ -212,19 +223,21 @@ fun SavedListScreen(
                             title = stringResource(R.string.saved_section_active)
                         )
                     }
-                    items(activeShapes, key = { "active-${it.id}" }) { shape ->
-                        SwipeToDeleteItem(
-                            onDelete = { viewModel.deleteShapeFromList(shape) }
-                        ) {
-                            SavedShapeListItem(
-                                shape = shape,
-                                isSelected = shape.id == selectedShapeId,
-                                onClick = {
-                                    viewModel.selectShapeForMapFocus(shape.id)
-                                    onNavigateToMapWithShape(shape.id)
-                                },
-                                onDetailClick = { viewModel.onShapeSelected(shape.id) },
-                            )
+                    itemsIndexed(activeShapes, key = { _, item -> "active-${item.id}" }) { index, shape ->
+                        SavedShapeSectionCardRow(index = index, count = activeShapes.size) {
+                            SwipeToDeleteItem(
+                                onDelete = { viewModel.deleteShapeFromList(shape) }
+                            ) {
+                                SavedShapeListItem(
+                                    shape = shape,
+                                    isSelected = shape.id == selectedShapeId,
+                                    onClick = {
+                                        viewModel.selectShapeForMapFocus(shape.id)
+                                        onNavigateToMapWithShape(shape.id)
+                                    },
+                                    onDetailClick = { viewModel.onShapeSelected(shape.id) },
+                                )
+                            }
                         }
                     }
                 }
@@ -239,19 +252,21 @@ fun SavedListScreen(
                             title = stringResource(R.string.saved_section_expired)
                         )
                     }
-                    items(expiredShapes, key = { "expired-${it.id}" }) { shape ->
-                        SwipeToDeleteItem(
-                            onDelete = { viewModel.deleteShapeFromList(shape) }
-                        ) {
-                            SavedShapeListItem(
-                                shape = shape,
-                                isSelected = shape.id == selectedShapeId,
-                                onClick = {
-                                    viewModel.selectShapeForMapFocus(shape.id)
-                                    onNavigateToMapWithShape(shape.id)
-                                },
-                                onDetailClick = { viewModel.onShapeSelected(shape.id) },
-                            )
+                    itemsIndexed(expiredShapes, key = { _, item -> "expired-${item.id}" }) { index, shape ->
+                        SavedShapeSectionCardRow(index = index, count = expiredShapes.size) {
+                            SwipeToDeleteItem(
+                                onDelete = { viewModel.deleteShapeFromList(shape) }
+                            ) {
+                                SavedShapeListItem(
+                                    shape = shape,
+                                    isSelected = shape.id == selectedShapeId,
+                                    onClick = {
+                                        viewModel.selectShapeForMapFocus(shape.id)
+                                        onNavigateToMapWithShape(shape.id)
+                                    },
+                                    onDetailClick = { viewModel.onShapeSelected(shape.id) },
+                                )
+                            }
                         }
                     }
                 }
@@ -445,22 +460,55 @@ private fun SwipeToDeleteItem(
 private fun SectionHeader(
     title: String,
 ) {
+    // iOS insetGrouped 섹션 헤더: 카드 안쪽 여백에 맞춘 작은 회색 글씨.
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = SavedListSectionHeaderMinHeight)
-            .padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .padding(start = 16.dp, end = 16.dp, top = 4.dp),
+        verticalAlignment = Alignment.Bottom
     ) {
         Text(
             text = title,
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            fontSize = 13.sp,
+            color = IosSecondaryLabel,
+            modifier = Modifier.padding(bottom = 6.dp),
         )
     }
 }
 
-internal val SavedListSectionHeaderMinHeight = 40.dp
+/**
+ * 섹션 안 한 행을 iOS insetGrouped 카드 조각으로 그린다.
+ * 첫 행은 위 모서리, 마지막 행은 아래 모서리를 둥글게 하고 행 사이에 구분선을 둔다.
+ */
+@Composable
+private fun SavedShapeSectionCardRow(
+    index: Int,
+    count: Int,
+    content: @Composable () -> Unit,
+) {
+    val radius = InsetGroupedCornerRadius
+    val shape = when {
+        count == 1 -> RoundedCornerShape(radius)
+        index == 0 -> RoundedCornerShape(topStart = radius, topEnd = radius)
+        index == count - 1 -> RoundedCornerShape(bottomStart = radius, bottomEnd = radius)
+        else -> RectangleShape
+    }
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(IosSecondarySystemGroupedBackground),
+    ) {
+        content()
+        if (index < count - 1) {
+            InsetGroupedDivider(startIndent = SavedShapeRowDividerStartIndent)
+        }
+    }
+}
+
+internal val SavedListSectionHeaderMinHeight = 32.dp
+internal val SavedShapeRowDividerStartIndent = 32.dp
 internal val SavedListTopOffset = (-10).dp
 internal val SavedListContentHorizontalPadding = 16.dp
 internal val SavedListContentVerticalPadding = 8.dp

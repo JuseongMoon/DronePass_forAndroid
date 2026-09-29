@@ -54,6 +54,7 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
@@ -90,6 +91,7 @@ import java.util.Calendar
 import java.util.Date
 import kotlinx.coroutines.launch
 import com.ScienceFiction.DronePassAndroid.ui.component.DronePassModalBottomSheet
+import com.ScienceFiction.DronePassAndroid.ui.component.rememberGuardedSheetState
 import androidx.compose.ui.graphics.SolidColor
 import com.ScienceFiction.DronePassAndroid.ui.component.DronePassSwitch
 import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedDivider
@@ -103,7 +105,7 @@ import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGray3
 import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGroupedBackground
 
 internal const val CoordinateInputSheetSkipPartiallyExpanded = false
-internal const val CoordinateInputSheetInteractiveDismissEnabled = false
+internal const val CoordinateInputSheetInteractiveDismissEnabled = true
 internal const val CoordinateInputSheetHeightFraction = 0.85f
 internal val CoordinateInputNavigationHeaderHeight = 44.dp
 internal val CoordinateInputNavigationActionHorizontalPadding = 8.dp
@@ -162,7 +164,17 @@ fun ShapeEditScreen(
         shape = shape,
         isDuplicateMode = isDuplicateMode,
     )
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    // 바깥 탭·아래로 끌기·뒤로가기: 변경이 있으면 시트를 닫지 않고 확인 알림을 띄운다.
+    // (시트가 먼저 사라진 뒤 알림만 남던 문제 방지)
+    val sheetGestureGuard = remember { ShapeEditSheetGestureGuard() }
+    val sheetState = rememberGuardedSheetState {
+        if (sheetGestureGuard.hasChanges) {
+            sheetGestureGuard.onDismissBlocked()
+            false
+        } else {
+            true
+        }
+    }
 
     val editKey = if (isDuplicateMode) "duplicate-${shape?.id}" else shape?.id
     val defaultTitle = stringResource(R.string.shape_edit_default_title)
@@ -294,6 +306,11 @@ fun ShapeEditScreen(
         selectedDroneId = selectedDroneId,
         initialDroneId = initialDroneId,
     )
+
+    SideEffect {
+        sheetGestureGuard.hasChanges = hasChanges
+        sheetGestureGuard.onDismissBlocked = { showCancelAlert = true }
+    }
 
     // 취소 핸들러 — 변경사항 있으면 알림, 없으면 즉시 닫기 (iOS Toolbar 정합)
     val handleCancel: () -> Unit = {
@@ -882,6 +899,12 @@ fun ShapeEditScreen(
             onDismiss = { showAddressSearch = false },
         )
     }
+}
+
+/** 시트 제스처 판단에 쓰는 최신 값. 컴포지션 밖(시트 콜백)에서만 읽는다. */
+private class ShapeEditSheetGestureGuard {
+    var hasChanges: Boolean = false
+    var onDismissBlocked: () -> Unit = {}
 }
 
 /**

@@ -44,6 +44,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.ScienceFiction.DronePassAndroid.R
+import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedDivider
+import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedSection
+import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedSectionSpacing
+import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGroupedBackground
 import com.ScienceFiction.DronePassAndroid.core.data.local.PublicContactInfo
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.DroneZoneFeature
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.FlightZoneLayer
@@ -163,7 +167,8 @@ fun VWorldZoneDetailSheet(
 
     DronePassModalBottomSheet(
         onDismissRequest = onDismiss,
-        sheetState = sheetState
+        sheetState = sheetState,
+        containerColor = IosSystemGroupedBackground,
     ) {
         Column(
             modifier = Modifier
@@ -182,9 +187,11 @@ fun VWorldZoneDetailSheet(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
+                    .padding(top = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(InsetGroupedSectionSpacing),
             ) {
                 // 기본 정보 섹션 (iOS Section 첫 번째)
+                InsetGroupedSection {
                 ZoneTypeRow(layer = zone.layer)
 
                 if (zone.zoneCode != null) {
@@ -205,10 +212,11 @@ fun VWorldZoneDetailSheet(
                         lower = formattedLowerAltitude
                     )
                 }
+                }
 
                 // 임시비행금지구역 — NOTAM 섹션
                 if (zone.layer == FlightZoneLayer.TEMPORARY_PROHIBITED) {
-                    SectionHeader(title = stringResource(R.string.zone_detail_notam_title))
+                    InsetGroupedSection(header = stringResource(R.string.zone_detail_notam_title)) {
 
                     DetailRow(
                         label = stringResource(R.string.zone_detail_notam_status),
@@ -241,11 +249,12 @@ fun VWorldZoneDetailSheet(
                             valueColor = if (days <= 7) NotamRemainingWarningColor else null
                         )
                     }
+                    }
                 }
 
                 // 사전협의구역 — 관리기관 섹션
                 if (zone.layer == FlightZoneLayer.PRIOR_CONSULTATION) {
-                    SectionHeader(title = stringResource(R.string.zone_detail_authority_title))
+                    InsetGroupedSection(header = stringResource(R.string.zone_detail_authority_title)) {
 
                     var hasAuthorityRow = false
                     zone.authorityNameKor?.let {
@@ -278,11 +287,12 @@ fun VWorldZoneDetailSheet(
                             phone = it
                         )
                     }
+                    }
                 }
 
                 // 문화재보호구역 — 문화재 섹션
                 if (zone.layer == FlightZoneLayer.CULTURAL_HERITAGE) {
-                    SectionHeader(title = stringResource(R.string.zone_detail_heritage_title))
+                    InsetGroupedSection(header = stringResource(R.string.zone_detail_heritage_title)) {
 
                     var hasHeritageRow = false
                     zone.heritageName?.let {
@@ -321,11 +331,12 @@ fun VWorldZoneDetailSheet(
                             )
                         )
                     }
+                    }
                 }
 
                 // 공공기관 섹션 (사전협의 외 모든 레이어 — iOS publicContact)
                 if (zone.layer != FlightZoneLayer.PRIOR_CONSULTATION && publicContact != null) {
-                    SectionHeader(title = stringResource(R.string.zone_detail_authority_title))
+                    InsetGroupedSection(header = stringResource(R.string.zone_detail_authority_title)) {
 
                     DetailRow(
                         label = stringResource(R.string.zone_detail_authority_name),
@@ -336,6 +347,7 @@ fun VWorldZoneDetailSheet(
                         label = stringResource(R.string.zone_detail_authority_contact),
                         phone = publicContact.phoneNumber
                     )
+                    }
                 }
             }
         }
@@ -428,7 +440,7 @@ private fun ZoneTypeRow(layer: FlightZoneLayer) {
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = VWorldZoneDetailRowMinHeight)
-            .padding(vertical = 8.dp),
+            .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
@@ -477,7 +489,7 @@ private fun AltitudeRow(upper: String?, lower: String?) {
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = VWorldZoneDetailRowMinHeight)
-            .padding(vertical = 8.dp),
+            .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
@@ -512,22 +524,8 @@ private fun AltitudeRow(upper: String?, lower: String?) {
  * 섹션 헤더 (iOS Section header — caption 회색, 위 spacing)
  */
 @Composable
-private fun SectionHeader(title: String) {
-    Spacer(modifier = Modifier.height(16.dp))
-    Text(
-        text = title,
-        style = MaterialTheme.typography.labelMedium,
-        color = SecondaryTextColor,
-        modifier = Modifier.padding(vertical = 4.dp)
-    )
-}
-
-@Composable
 private fun VWorldZoneDetailRowDivider() {
-    HorizontalDivider(
-        thickness = VWorldZoneDetailRowDividerThickness,
-        color = MaterialTheme.colorScheme.outlineVariant,
-    )
+    InsetGroupedDivider()
 }
 
 /**
@@ -539,7 +537,7 @@ private fun DetailRow(label: String, value: String, valueColor: Color? = null) {
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = VWorldZoneDetailRowMinHeight)
-            .padding(vertical = 8.dp),
+            .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
@@ -567,7 +565,7 @@ private fun PhoneNumberRow(label: String, phone: String) {
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = VWorldZoneDetailRowMinHeight)
-            .padding(vertical = 8.dp),
+            .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(

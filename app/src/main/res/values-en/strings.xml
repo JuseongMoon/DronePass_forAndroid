@@ -335,6 +335,7 @@
     <string name="shape_edit_search_address">Search address</string>
     <string name="search_address_title">Search Address</string>
     <string name="search_address_placeholder">Search by road or lot address</string>
+    <string name="search_address_no_results">No results found</string>
     <string name="search_address_guide">Both road and lot addresses are searchable</string>
     <string name="search_address_example">Search examples:</string>
     <string name="search_address_example_road_1">• 78-gil Seocho-daero 24 (Road name)</string>

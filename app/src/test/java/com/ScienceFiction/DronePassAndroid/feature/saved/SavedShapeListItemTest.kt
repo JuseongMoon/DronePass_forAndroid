@@ -115,7 +115,7 @@ class SavedShapeListItemTest {
     @Test
     fun `저장 목록 행 레이아웃 토큰은 iOS ShapeListRow 값을 따른다`() {
         assertEquals(55.dp, SavedShapeRowMinHeight)
-        assertEquals(4.dp, SavedShapeRowHorizontalPadding)
+        assertEquals(16.dp, SavedShapeRowHorizontalPadding)
         assertEquals(12.dp, SavedShapeInfoLeadingSpacing)
         assertEquals(8.dp, SavedShapeDetailLeadingSpacing)
         assertEquals(30.dp, SavedShapeDetailButtonWidth)

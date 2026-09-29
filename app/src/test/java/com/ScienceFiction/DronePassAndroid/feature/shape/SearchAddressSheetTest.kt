@@ -16,13 +16,14 @@ import java.io.File
 class SearchAddressSheetTest {
 
     @Test
-    fun `주소 검색 시트는 iOS처럼 medium large 전환을 위해 부분 확장을 허용한다`() {
-        assertFalse(SearchAddressSheetSkipPartiallyExpanded)
+    fun `주소 검색 시트는 iOS fraction 0_85 처럼 처음부터 크게 열어 키보드 위 결과 공간을 확보한다`() {
+        assertTrue(SearchAddressSheetSkipPartiallyExpanded)
     }
 
     @Test
-    fun `주소 검색 시트는 iOS ShapeEditView처럼 외부 인터랙티브 닫기를 막는다`() {
-        assertFalse(SearchAddressSheetInteractiveDismissEnabled)
+    fun `주소 검색 시트는 Android 뒤로가기와 바깥 탭으로 닫힌다`() {
+        // 닫기를 무시하면 Material 시트가 화면에서만 사라지고 열린 상태로 남는다.
+        assertTrue(SearchAddressSheetInteractiveDismissEnabled)
     }
 
     @Test

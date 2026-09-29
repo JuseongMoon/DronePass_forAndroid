@@ -18,9 +18,12 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetState
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -95,6 +98,26 @@ private fun View.findDialogWindow(): Window? {
         current = current.parent
     }
     return null
+}
+
+/**
+ * 바깥 탭·아래로 끌기·뒤로가기로 닫히기 전에 [canDismiss] 로 먼저 확인하는 시트 상태.
+ *
+ * Material 시트는 onDismissRequest 를 무시해도 스스로 숨겨져, 화면에서는 사라졌는데
+ * 열린 상태로 남는 문제가 생긴다. 닫기를 막아야 하는 시트는 이 상태를 쓴다.
+ * [canDismiss] 가 false 를 돌려주면 시트는 그대로 남고 onDismissRequest 도 불리지 않는다.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun rememberGuardedSheetState(
+    skipPartiallyExpanded: Boolean = true,
+    canDismiss: () -> Boolean,
+): SheetState {
+    val latestCanDismiss by rememberUpdatedState(canDismiss)
+    return rememberModalBottomSheetState(
+        skipPartiallyExpanded = skipPartiallyExpanded,
+        confirmValueChange = { target -> target != SheetValue.Hidden || latestCanDismiss() },
+    )
 }
 
 @Composable

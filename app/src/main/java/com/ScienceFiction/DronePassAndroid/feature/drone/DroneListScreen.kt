@@ -44,6 +44,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedDivider
 import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedRowMinHeight
 import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedSection
+import com.ScienceFiction.DronePassAndroid.ui.component.SheetLargeTitleHeader
 import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedSectionSpacing
 import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGray3
 import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGroupedBackground
@@ -77,25 +78,11 @@ fun DroneListScreen(
         verticalArrangement = Arrangement.spacedBy(InsetGroupedSectionSpacing),
     ) {
         item {
-            // iOS Large Title. 시트 안이라 AppBar 대신 가벼운 헤더를 쓰고, 닫기 버튼을 둔다.
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 20.dp, end = 8.dp, top = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = stringResource(R.string.drone_list_title),
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.weight(1f),
-                )
-                if (onClose != null) {
-                    TextButton(onClick = onClose) {
-                        Text(stringResource(R.string.common_close), fontWeight = FontWeight.SemiBold)
-                    }
-                }
-            }
+            SheetLargeTitleHeader(
+                title = stringResource(R.string.drone_list_title),
+                closeText = stringResource(R.string.common_close),
+                onClose = onClose,
+            )
         }
 
         item {

@@ -21,6 +21,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -223,4 +225,35 @@ fun DronePassSwitch(
             Spacer(modifier = Modifier.size(SwitchDefaults.IconSize))
         },
     )
+}
+
+/**
+ * 시트 안 화면의 iOS Large Title 헤더. Material LargeTopAppBar 는 시트 안에서 큰 빈 공간을 만들어서
+ * 제목과 닫기 버튼만 가볍게 그린다.
+ */
+@Composable
+fun SheetLargeTitleHeader(
+    title: String,
+    modifier: Modifier = Modifier,
+    closeText: String? = null,
+    onClose: (() -> Unit)? = null,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(start = 20.dp, end = 8.dp, top = 4.dp, bottom = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.weight(1f),
+        )
+        if (onClose != null && closeText != null) {
+            TextButton(onClick = onClose) {
+                Text(closeText, fontWeight = FontWeight.SemiBold)
+            }
+        }
+    }
 }

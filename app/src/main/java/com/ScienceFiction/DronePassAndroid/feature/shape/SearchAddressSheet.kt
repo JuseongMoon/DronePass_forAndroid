@@ -44,6 +44,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
@@ -70,8 +72,8 @@ data class AddressSearchResult(
     val coordinate: Coordinate?
 )
 
-internal const val SearchAddressSheetSkipPartiallyExpanded = false
-internal const val SearchAddressSheetInteractiveDismissEnabled = false
+internal const val SearchAddressSheetSkipPartiallyExpanded = true
+internal const val SearchAddressSheetInteractiveDismissEnabled = true
 internal const val SearchAddressSheetHeightFraction = 0.85f
 internal val SearchAddressSheetHorizontalPadding = 16.dp
 internal val SearchAddressNavigationHeaderHeight = 44.dp
@@ -149,6 +151,7 @@ internal enum class SearchAddressContentMode {
     LOADING,
     ERROR,
     GUIDE,
+    NO_RESULTS,
     RESULTS,
 }
 
@@ -156,10 +159,12 @@ internal fun resolveSearchAddressContentMode(
     isLoading: Boolean,
     errorMessage: String?,
     hasResults: Boolean,
+    hasSearched: Boolean = false,
 ): SearchAddressContentMode {
     return when {
         isLoading -> SearchAddressContentMode.LOADING
         errorMessage != null -> SearchAddressContentMode.ERROR
+        !hasResults && hasSearched -> SearchAddressContentMode.NO_RESULTS
         !hasResults -> SearchAddressContentMode.GUIDE
         else -> SearchAddressContentMode.RESULTS
     }
@@ -208,12 +213,20 @@ fun SearchAddressSheet(
     var results by remember { mutableStateOf<List<GeocodingAddress>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    // 검색을 한 번이라도 실행했는지. 결과 0건을 처음 안내 화면과 구분하는 데 쓴다.
+    var hasSearched by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
     val searchErrorPrefix = stringResource(R.string.search_address_error_prefix)
     val searchErrorFallback = stringResource(R.string.search_address_error)
 
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
+
     fun submitSearch() {
         if (!shouldEnableSearchAddressSubmit(query)) return
+        // 결과 목록이 키보드에 가리지 않도록 검색하면 입력 포커스를 풀고 키보드를 내린다.
+        focusManager.clearFocus(force = true)
+        keyboardController?.hide()
 
         coroutineScope.launch {
             isLoading = true
@@ -221,6 +234,7 @@ fun SearchAddressSheet(
             try {
                 val response = geocodingApi.geocode(query)
                 results = geocodingResponseToAddresses(response).getOrThrow()
+                hasSearched = true
             } catch (e: Exception) {
                 errorMessage = formatSearchAddressErrorMessage(
                     causeMessage = e.message,
@@ -274,7 +288,10 @@ fun SearchAddressSheet(
             ) {
                 SearchAddressInputField(
                     query = query,
-                    onQueryChange = { query = it },
+                    onQueryChange = {
+                        query = it
+                        hasSearched = false
+                    },
                     onClear = {
                         query = ""
                     },
@@ -301,6 +318,7 @@ fun SearchAddressSheet(
                     isLoading = isLoading,
                     errorMessage = errorMessage,
                     hasResults = results.isNotEmpty(),
+                    hasSearched = hasSearched,
                 )
             ) {
                 SearchAddressContentMode.LOADING -> {
@@ -319,6 +337,20 @@ fun SearchAddressSheet(
                         modifier = Modifier
                             .fillMaxWidth()
                             .weight(1f),
+                    )
+                }
+                SearchAddressContentMode.NO_RESULTS -> {
+                    // iOS 는 결과가 없어도 처음 안내만 다시 보여 줘서 검색이 됐는지 알기 어렵다.
+                    Text(
+                        text = stringResource(R.string.search_address_no_results),
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier
+                            .align(Alignment.CenterHorizontally)
+                            .padding(top = 8.dp, bottom = 12.dp),
+                    )
+                    SearchAddressGuideCard(
+                        modifier = Modifier.align(Alignment.CenterHorizontally),
                     )
                 }
                 SearchAddressContentMode.GUIDE -> {

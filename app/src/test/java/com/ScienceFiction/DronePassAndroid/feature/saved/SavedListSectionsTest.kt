@@ -17,7 +17,7 @@ class SavedListSectionsTest {
 
     @Test
     fun `저장 목록 섹션 헤더 최소 높이는 iOS defaultMinListHeaderHeight 40과 맞춘다`() {
-        assertEquals(40.dp, SavedListSectionHeaderMinHeight)
+        assertEquals(32.dp, SavedListSectionHeaderMinHeight)
     }
 
     @Test

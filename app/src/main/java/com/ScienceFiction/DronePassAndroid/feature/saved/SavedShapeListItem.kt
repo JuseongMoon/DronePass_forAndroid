@@ -72,6 +72,8 @@ fun SavedShapeListItem(
             .padding(
                 start = SavedShapeRowHorizontalPadding,
                 end = SavedShapeRowHorizontalPadding,
+                top = SavedShapeRowVerticalPadding,
+                bottom = SavedShapeRowVerticalPadding,
             ),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -147,7 +149,8 @@ fun SavedShapeListItem(
 }
 
 internal val SavedShapeRowMinHeight = 55.dp
-internal val SavedShapeRowHorizontalPadding = 4.dp
+internal val SavedShapeRowHorizontalPadding = 16.dp
+internal val SavedShapeRowVerticalPadding = 10.dp
 internal val SavedShapeInfoLeadingSpacing = 12.dp
 internal val SavedShapeDetailLeadingSpacing = 8.dp
 internal val SavedShapeDetailButtonWidth = 30.dp
