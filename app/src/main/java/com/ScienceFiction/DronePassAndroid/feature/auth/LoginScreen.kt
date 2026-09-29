@@ -118,6 +118,13 @@ fun LoginScreen(
     onSkipLogin: () -> Unit,
     showSkipLogin: Boolean = false,
 ) {
+    // AuthViewModel 은 화면 간에 공유된다. 회원 탈퇴·로그아웃이 다른 화면(프로필)에서 일어나면
+    // 이전 LoggedIn 상태가 남아, 로그인 화면이 열리자마자 onLoginSuccess 로 닫혔다.
+    // 첫 구성에서 Firebase 의 실제 로그인 상태로 먼저 맞춘 뒤 상태를 읽는다.
+    remember(viewModel) {
+        viewModel.checkAuthState()
+        true
+    }
     val authState by viewModel.authState.collectAsStateWithLifecycle()
     val accountSwitchConfirmation by viewModel.accountSwitchConfirmation.collectAsStateWithLifecycle()
     val context = LocalContext.current

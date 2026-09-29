@@ -12,7 +12,6 @@ import com.ScienceFiction.DronePassAndroid.core.data.local.room.mapper.toEntity
 import com.ScienceFiction.DronePassAndroid.core.data.remote.firebase.DroneFirebaseStore
 import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncPreferenceKeys
 import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncMergeResult
-import com.ScienceFiction.DronePassAndroid.core.data.sync.filterServerNewer
 import com.ScienceFiction.DronePassAndroid.core.data.sync.isCloudSyncEnabled
 import com.ScienceFiction.DronePassAndroid.core.data.sync.shouldUpdateServerMetadataAfterFullSync
 import com.ScienceFiction.DronePassAndroid.core.data.sync.shouldRunImmediateCloudSync
@@ -23,22 +22,21 @@ import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.util.Locale
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
 
-internal fun shouldKeepLocalDroneMissingOnServer(
-    localDroneUpdatedAt: Long,
-    lastSyncTime: Long?,
-): Boolean {
-    return lastSyncTime == null || localDroneUpdatedAt > lastSyncTime
-}
-
+/**
+ * 드론 전체 동기화 병합. iOS `DroneRepository.merge` 와 같은 규칙이다.
+ * - id 기준으로 합치고, 양쪽에 있으면 updatedAt 이 늦은 쪽(같으면 서버)을 쓴다.
+ * - 서버의 삭제 표시(deletedAt)도 병합에 넣어 다른 기기에서 지운 드론이 되살아나지 않게 한다.
+ * - 서버에 없는 로컬 드론은 지우지 않고 올린다. 계정을 탈퇴한 뒤 다른 계정에 로그인해도
+ *   로컬 도형과 원래 드론(id·이름)이 함께 따라가야 하기 때문이다. 삭제 기록은 올리지 않는다.
+ * - 이름이 같아도 id 가 다르면 별개 드론으로 둔다.
+ */
 internal fun mergeDronesForFullSync(
     localDrones: List<DroneModel>,
     serverDrones: List<DroneModel>,
-    lastSyncTime: Long?,
 ): SyncMergeResult<DroneModel> {
     val serverById = serverDrones.associateBy { it.id }
     val localById = localDrones.associateBy { it.id }
@@ -49,19 +47,14 @@ internal fun mergeDronesForFullSync(
         val server = serverById[id]
         when {
             local != null && server != null -> if (server.updatedAt >= local.updatedAt) server else local
-            local != null -> local.takeIf {
-                shouldKeepLocalDroneMissingOnServer(
-                    localDroneUpdatedAt = it.updatedAt,
-                    lastSyncTime = lastSyncTime,
-                )
-            }
-            else -> server
+            else -> local ?: server
         }
     }
 
+    // 서버에 없는 드론의 삭제 기록은 올리지 않는다(iOS DroneRepository.merge 와 같음).
     val toUpload = merged.filter { drone ->
         val server = serverById[drone.id]
-        server == null || drone.updatedAt > server.updatedAt
+        if (server == null) drone.deletedAt == null else drone.updatedAt > server.updatedAt
     }
 
     return SyncMergeResult(merged, toUpload)
@@ -242,77 +235,7 @@ class DroneRepository @Inject constructor(
     // ===== Firebase 동기화 메서드 =====
 
     /**
-     * Room 로컬 데이터를 Firebase에 업로드
-     */
-    suspend fun syncToFirebase() {
-        val userId = auth.currentUser?.uid ?: run {
-            Log.d(TAG, "syncToFirebase: 로그인 상태가 아닙니다.")
-            return
-        }
-
-        try {
-            val localDrones = droneDao.getAllDronesOnce()
-                .map { it.toDomain() }
-                .filterValidForFirebaseWrite("syncToFirebase")
-            if (localDrones.isNotEmpty()) {
-                droneFirebaseStore.saveDrones(userId, localDrones)
-                droneFirebaseStore.updateServerMetadata(userId)
-                Log.d(TAG, "syncToFirebase: ${localDrones.size}개 드론 업로드 완료")
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "syncToFirebase 실패", e)
-            throw e
-        }
-    }
-
-    /**
-     * Firebase 데이터를 Room 로컬 DB로 다운로드 (LWW 적용).
-     */
-    suspend fun syncFromFirebase() {
-        val userId = auth.currentUser?.uid ?: run {
-            Log.d(TAG, "syncFromFirebase: 로그인 상태가 아닙니다.")
-            return
-        }
-
-        try {
-            val serverDrones = droneFirebaseStore.loadAllDronesIncludingDeleted(userId).getOrThrow()
-            val localDrones = droneDao.getAllDronesOnce().map { it.toDomain() }
-            val lastSyncTime = dataStore.data.first()[SyncPreferenceKeys.LAST_SYNC_TIME]
-            val serverIds = serverDrones.mapTo(mutableSetOf()) { it.id }
-            val staleLocalIds = localDrones
-                .filter { it.id !in serverIds }
-                .filterNot {
-                    shouldKeepLocalDroneMissingOnServer(
-                        localDroneUpdatedAt = it.updatedAt,
-                        lastSyncTime = lastSyncTime,
-                    )
-                }
-                .map { it.id }
-            val toApply = filterServerNewer(
-                local = localDrones,
-                server = serverDrones,
-                idOf = { it.id },
-                updatedAtOf = { it.updatedAt },
-            )
-            if (staleLocalIds.isNotEmpty()) {
-                droneDao.deleteDronesByIds(staleLocalIds)
-            }
-            if (toApply.isNotEmpty()) {
-                droneDao.insertDrones(toApply.map { it.toEntity() })
-            }
-            Log.d(TAG, "syncFromFirebase: 서버=${serverDrones.size}, LWW 통과=${toApply.size}")
-        } catch (e: Exception) {
-            Log.e(TAG, "syncFromFirebase 실패", e)
-            throw e
-        }
-    }
-
-    /**
-     * 양방향 동기화 (LWW 충돌 해결).
-     *
-     * 서버에 없는 로컬 드론은 상대 플랫폼/계정 정리/레거시 hard delete 등으로
-     * 문서가 실제 삭제된 경우일 수 있다. 마지막 동기화 시각 이전 항목이면
-     * 원격 삭제로 보고 재업로드하지 않는다.
+     * 양방향 동기화 (LWW 충돌 해결). 병합 규칙은 [mergeDronesForFullSync] 참고.
      */
     suspend fun performFullSync() {
         val userId = auth.currentUser?.uid ?: run {
@@ -323,21 +246,11 @@ class DroneRepository @Inject constructor(
         try {
             val localDrones = droneDao.getAllDronesOnce().map { it.toDomain() }
             val serverDrones = droneFirebaseStore.loadAllDronesIncludingDeleted(userId).getOrThrow()
-            val lastSyncTime = dataStore.data.first()[SyncPreferenceKeys.LAST_SYNC_TIME]
-
             val result = mergeDronesForFullSync(
                 localDrones = localDrones,
                 serverDrones = serverDrones,
-                lastSyncTime = lastSyncTime,
             )
 
-            val mergedIds = result.merged.mapTo(mutableSetOf()) { it.id }
-            val staleLocalIds = localDrones
-                .map { it.id }
-                .filter { it !in mergedIds }
-            if (staleLocalIds.isNotEmpty()) {
-                droneDao.deleteDronesByIds(staleLocalIds)
-            }
             if (result.merged.isNotEmpty()) droneDao.insertDrones(result.merged.map { it.toEntity() })
 
             val toUpload = result.toUpload.filterValidForFirebaseWrite("performFullSync/upload")

@@ -39,9 +39,6 @@ interface DroneDao {
     @Delete
     suspend fun deleteDrone(drone: DroneEntity)
 
-    @Query("DELETE FROM drones WHERE id IN (:ids)")
-    suspend fun deleteDronesByIds(ids: List<String>)
-
     @Query("DELETE FROM drones")
     suspend fun deleteAllDrones()
 }

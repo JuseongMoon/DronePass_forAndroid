@@ -16,7 +16,6 @@ class DroneSyncMergeTest {
         val result = mergeDronesForFullSync(
             localDrones = listOf(local),
             serverDrones = emptyList(),
-            lastSyncTime = null,
         )
 
         assertEquals(listOf("local-only"), result.merged.map { it.id })
@@ -24,17 +23,58 @@ class DroneSyncMergeTest {
     }
 
     @Test
-    fun `이전 동기화 이후 서버에서 사라진 로컬 드론은 원격 삭제로 보고 되살리지 않는다`() {
-        val local = drone(id = "ios-deleted", updatedAt = 20L)
+    fun `서버에 없는 로컬 드론은 동기화 이력과 관계없이 유지하고 업로드한다`() {
+        // 계정을 탈퇴한 뒤 다른 계정에 로그인해도 원래 드론(id·이름)이 도형과 함께 따라가야 한다.
+        val local = drone(id = "from-previous-account", updatedAt = 20L)
 
         val result = mergeDronesForFullSync(
             localDrones = listOf(local),
             serverDrones = emptyList(),
-            lastSyncTime = 30L,
         )
 
-        assertEquals(emptyList<DroneModel>(), result.merged)
-        assertEquals(emptyList<DroneModel>(), result.toUpload)
+        assertEquals(listOf("from-previous-account"), result.merged.map { it.id })
+        assertEquals(listOf("from-previous-account"), result.toUpload.map { it.id })
+    }
+
+    @Test
+    fun `이름이 같아도 id 가 다르면 별개 드론으로 둔다`() {
+        val local = drone(id = "local-avata", updatedAt = 20L, name = "Avata")
+        val server = drone(id = "server-avata", updatedAt = 30L, name = "Avata")
+
+        val result = mergeDronesForFullSync(
+            localDrones = listOf(local),
+            serverDrones = listOf(server),
+        )
+
+        assertEquals(setOf("local-avata", "server-avata"), result.merged.map { it.id }.toSet())
+        assertEquals(listOf("local-avata"), result.toUpload.map { it.id })
+    }
+
+    @Test
+    fun `서버에 없는 드론의 로컬 삭제 기록은 업로드하지 않는다`() {
+        val deletedLocally = drone(id = "never-synced-deleted", updatedAt = 40L).copy(deletedAt = 40L)
+        val activeLocal = drone(id = "never-synced-active", updatedAt = 40L)
+
+        val result = mergeDronesForFullSync(
+            localDrones = listOf(deletedLocally, activeLocal),
+            serverDrones = emptyList(),
+        )
+
+        assertEquals(listOf("never-synced-active"), result.toUpload.map { it.id })
+    }
+
+    @Test
+    fun `서버에 있는 드론의 로컬 삭제는 더 최신이면 업로드한다`() {
+        val server = drone(id = "synced", updatedAt = 20L)
+        val deletedLocally = drone(id = "synced", updatedAt = 40L).copy(deletedAt = 40L)
+
+        val result = mergeDronesForFullSync(
+            localDrones = listOf(deletedLocally),
+            serverDrones = listOf(server),
+        )
+
+        assertEquals(listOf("synced"), result.toUpload.map { it.id })
+        assertEquals(40L, result.toUpload.single().deletedAt)
     }
 
     @Test
@@ -44,7 +84,6 @@ class DroneSyncMergeTest {
         val result = mergeDronesForFullSync(
             localDrones = emptyList(),
             serverDrones = listOf(server),
-            lastSyncTime = 30L,
         )
 
         assertEquals(listOf("server-only"), result.merged.map { it.id })
@@ -58,7 +97,6 @@ class DroneSyncMergeTest {
         val result = mergeDronesForFullSync(
             localDrones = listOf(local),
             serverDrones = emptyList(),
-            lastSyncTime = 30L,
         )
 
         assertEquals(listOf("offline-created"), result.merged.map { it.id })
@@ -75,7 +113,6 @@ class DroneSyncMergeTest {
         val result = mergeDronesForFullSync(
             localDrones = listOf(localWinner, serverWinnerLocal),
             serverDrones = listOf(localWinnerServer, serverWinner),
-            lastSyncTime = 30L,
         )
 
         assertEquals(
@@ -86,13 +123,6 @@ class DroneSyncMergeTest {
             result.merged.associate { it.id to it.name },
         )
         assertEquals(listOf("local-winner"), result.toUpload.map { it.id })
-    }
-
-    @Test
-    fun `서버에 없는 로컬 드론 유지 여부는 마지막 동기화 시각으로 판단한다`() {
-        assertTrue(shouldKeepLocalDroneMissingOnServer(localDroneUpdatedAt = 40L, lastSyncTime = 30L))
-        assertTrue(shouldKeepLocalDroneMissingOnServer(localDroneUpdatedAt = 40L, lastSyncTime = null))
-        assertFalse(shouldKeepLocalDroneMissingOnServer(localDroneUpdatedAt = 30L, lastSyncTime = 30L))
     }
 
     @Test

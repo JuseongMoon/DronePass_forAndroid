@@ -362,11 +362,12 @@ class RealtimeSyncManager @Inject constructor(
             Log.d(TAG, "Shape/Drone 실시간 동기화 시작")
 
             // Shape/Drone 동기화 (Room Flow 가 UI 까지 자동 전파되므로 별도 콜백 불필요)
-            shapeRepository.performFullSync()
-            Log.d(TAG, "Shape 동기화 완료")
-
+            // 도형이 드론 id 를 가리키므로 드론을 먼저 올린다.
             droneRepository.performFullSync()
             Log.d(TAG, "Drone 동기화 완료")
+
+            shapeRepository.performFullSync()
+            Log.d(TAG, "Shape 동기화 완료")
 
             // 동기화 시각 업데이트
             lastShapeSyncTime = System.currentTimeMillis()

@@ -641,8 +641,9 @@ class AuthViewModel @Inject constructor(
     private suspend fun performFullSync(selectAllDronesAfterSync: Boolean): FullSyncResult {
         try {
             Log.d(TAG, "Firebase 양방향 동기화 시작")
-            shapeRepository.performFullSync()
+            // 도형이 드론 id 를 가리키므로 드론을 먼저 올린다(iOS 로그인 동기화와 같은 순서).
             droneRepository.performFullSync()
+            shapeRepository.performFullSync()
             droneRepository.ensureDefaultDroneIfNeeded()
             saveSyncedShapeBaseline()
             val shapeSyncTime = System.currentTimeMillis()
