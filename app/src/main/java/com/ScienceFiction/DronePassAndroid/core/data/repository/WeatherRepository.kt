@@ -69,7 +69,8 @@ class WeatherRepository @Inject constructor(
                 category = category,
                 nowMillis = now,
                 zone = zone,
-                smoothCurrentCri = currentCriSmoother::smooth,
+                // 샘플 시각은 이 요청을 넣는 순간의 시계(iOS CRISmoother 와 같음).
+                smoothCurrentCri = { cri -> currentCriSmoother.smooth(cri, now) },
             )
         }.onSuccess { data ->
             lastResult = data

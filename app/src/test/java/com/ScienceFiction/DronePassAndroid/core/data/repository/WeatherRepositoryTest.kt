@@ -141,6 +141,23 @@ class WeatherRepositoryTest {
     }
 
     @Test
+    fun `returning after more than 15 minutes restarts the current CRI average`() = runBlocking {
+        val dataSource = FakeDataSource(
+            WeatherKitResponse(currentWeather = current(temperature = 20.0, dewPoint = 20.0)),
+        )
+        val repository = WeatherRepository(dataSource)
+        var now = 1_000_000L
+        repository.fetchWeather(37.0, 127.0, nowMillis = { now }).getOrThrow()
+
+        dataSource.response = WeatherKitResponse(currentWeather = current(temperature = 25.0, dewPoint = 5.0))
+        now += 16 * 60_000L
+        val afterGap = repository.fetchWeather(37.0, 127.0, nowMillis = { now }).getOrThrow()
+
+        // 오래된 샘플(100)이 섞이지 않고 새 값만으로 시작한다.
+        assertEquals(CRICalculator.calculate(25.0, 5.0, 10.0), afterGap.current?.cri ?: -1.0, 0.0)
+    }
+
+    @Test
     fun `hourly gust difference uses observed gust in meters per second`() {
         val response = WeatherKitResponse(
             forecastHourly = WeatherKitHourlyForecast(

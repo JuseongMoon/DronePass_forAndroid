@@ -51,13 +51,34 @@ object CRICalculator {
     }
 }
 
+/** 평균 창(5샘플 × 3분). 직전 샘플과 이 간격을 넘겨 벌어지면 평균을 새로 시작한다. */
+internal const val CRI_SMOOTHER_RESET_GAP_MS = 15L * 60L * 1000L
+
+/**
+ * 현재 CRI 이동 평균. iOS `CRISmoother` 와 같은 규칙이다.
+ * - 최근 [maxSamples] 개 평균을 반올림한다.
+ * - 새 샘플이 직전 샘플보다 [resetGapMs] 를 **초과**해서 늦으면(백그라운드·잠금 뒤 복귀) 버퍼를 비우고 새로 쌓는다.
+ *   정확히 [resetGapMs] 이면 유지한다. 기기 시계가 거꾸로 가면 간격을 0으로 보고 유지한다.
+ * - 샘플 시각은 샘플을 넣는 순간의 기기 시각이다(서버 fetchedAt 아님).
+ */
 internal class CurrentCriSmoother(
     private val maxSamples: Int = 5,
+    private val resetGapMs: Long = CRI_SMOOTHER_RESET_GAP_MS,
+    private val nowMillis: () -> Long = System::currentTimeMillis,
 ) {
     private val samples = ArrayDeque<Double>()
+    private var lastSampleAtMillis: Long? = null
 
-    fun smooth(nextCri: Double): Double {
+    fun smooth(nextCri: Double): Double = smooth(nextCri, nowMillis())
+
+    fun smooth(nextCri: Double, atMillis: Long): Double {
         if (!nextCri.isFinite()) return nextCri
+
+        val previous = lastSampleAtMillis
+        if (previous != null && (atMillis - previous).coerceAtLeast(0L) > resetGapMs) {
+            samples.clear()
+        }
+        lastSampleAtMillis = atMillis
 
         samples.addLast(nextCri.coerceIn(1.0, 100.0))
         while (samples.size > maxSamples) {
@@ -67,7 +88,11 @@ internal class CurrentCriSmoother(
         return (samples.sum() / samples.size).roundToInt().toDouble()
     }
 
+    /** 현재 버퍼 크기. 테스트에서 초기화 여부를 확인하는 데 쓴다. */
+    internal val sampleCount: Int get() = samples.size
+
     fun reset() {
         samples.clear()
+        lastSampleAtMillis = null
     }
 }
