@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "307728758098-mevff4i5pjdtbu7416o2nemmko6488hm.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.ScienceFiction.DronePassAndroid",
+            "certificate_hash": "55330b59551b2a3ef3794a699884a533b682a707"
+          }
+        },
+        {
           "client_id": "307728758098-mkl9co7na7aqvjobf3u67fvhinpi6ulm.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {

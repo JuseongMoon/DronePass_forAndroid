@@ -22,6 +22,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.lifecycle.lifecycleScope
+import com.ScienceFiction.DronePassAndroid.app.LaunchPermissionSequence
 import com.ScienceFiction.DronePassAndroid.core.data.NotificationPreferenceKeys
 import com.ScienceFiction.DronePassAndroid.core.data.storedLaunchNotificationPermissionRequested
 import com.ScienceFiction.DronePassAndroid.core.analytics.UserActivityTracker
@@ -134,6 +135,8 @@ class MainActivity : ComponentActivity() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
 
         lifecycleScope.launch {
+            // 지도 화면의 위치 권한 요청이 끝난 뒤에 묻는다. 동시에 요청하면 이 요청이 버려진다.
+            LaunchPermissionSequence.locationRequestSettled.first { it }
             val alreadyRequested = dataStore.data
                 .map(::storedLaunchNotificationPermissionRequested)
                 .first()

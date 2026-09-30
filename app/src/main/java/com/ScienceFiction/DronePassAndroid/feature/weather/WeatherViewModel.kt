@@ -143,6 +143,15 @@ class WeatherViewModel @Inject constructor(
     }
 
     /**
+     * 위치 권한이 새로 허용된 직후 한 번 다시 불러온다.
+     * 첫 실행에서는 권한을 허용하기 전에 보낸 요청이 권한 오류로 끝나, 그대로 두면 다음 자동 갱신(3분)까지
+     * "위치 권한이 필요합니다" 가 남는다.
+     */
+    fun refreshAfterLocationPermissionGranted() {
+        viewModelScope.launch { fetchCurrentLocationAndWeather() }
+    }
+
+    /**
      * 수동 갱신
      */
     fun refreshWeather(showRefreshMessage: Boolean = true) {

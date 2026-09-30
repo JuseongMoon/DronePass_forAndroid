@@ -40,6 +40,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.ScienceFiction.DronePassAndroid.app.LaunchPermissionSequence
 import com.ScienceFiction.DronePassAndroid.BuildConfig
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.domain.model.Coordinate
@@ -142,6 +143,8 @@ fun MapScreen(
             Manifest.permission.ACCESS_FINE_LOCATION,
             Manifest.permission.ACCESS_COARSE_LOCATION,
         ),
+        // 위치 요청이 끝나야 MainActivity 가 알림 권한을 묻는다(동시 요청은 한쪽이 버려진다).
+        onPermissionsResult = { LaunchPermissionSequence.markLocationRequestSettled() },
     )
     val fineLocationGranted = locationPermissionsState.permissions
         .firstOrNull { it.permission == Manifest.permission.ACCESS_FINE_LOCATION }
@@ -178,6 +181,8 @@ fun MapScreen(
     LaunchedEffect(Unit) {
         if (!locationPermissionGranted) {
             locationPermissionsState.launchMultiplePermissionRequest()
+        } else {
+            LaunchPermissionSequence.markLocationRequestSettled()
         }
     }
 
@@ -243,6 +248,15 @@ fun MapScreen(
                 onDuplicateShapeConsumed()
             }
         }
+    }
+
+    // 권한이 거부 → 허용으로 바뀐 순간 날씨를 다시 불러온다(첫 실행 권한 요청 직후).
+    var wasLocationPermissionGranted by remember { mutableStateOf(locationPermissionGranted) }
+    LaunchedEffect(locationPermissionGranted) {
+        if (locationPermissionGranted && !wasLocationPermissionGranted) {
+            weatherViewModel.refreshAfterLocationPermissionGranted()
+        }
+        wasLocationPermissionGranted = locationPermissionGranted
     }
 
     // 위치 추적 설정 — 권한과 mapReady 가 모두 충족된 시점에 단 1회.
