@@ -104,6 +104,9 @@ class SubscriptionManager @Inject constructor(
     val usage: StateFlow<QuotaUsage> = _usage.asStateFlow()
     private val _productPrice = MutableStateFlow<String?>(null)
     val productPrice: StateFlow<String?> = _productPrice.asStateFlow()
+    private val _isLoadingProducts = MutableStateFlow(false)
+    /** 상품 정보를 불러오는 중. iOS `isLoadingProducts` 처럼 페이월이 ProgressView 를 보여 준다. */
+    val isLoadingProducts: StateFlow<Boolean> = _isLoadingProducts.asStateFlow()
     private val _paywallRequests = MutableSharedFlow<PaywallRequest>(extraBufferCapacity = 4)
     val paywallRequests = _paywallRequests.asSharedFlow()
     private val _messages = MutableSharedFlow<String>(extraBufferCapacity = 4)
@@ -193,9 +196,14 @@ class SubscriptionManager @Inject constructor(
                 if (result.responseCode == BillingClient.BillingResponseCode.OK) {
                     refreshPurchases()
                     queryProduct()
+                } else {
+                    _isLoadingProducts.value = false
                 }
             }
-            override fun onBillingServiceDisconnected() { connecting = false }
+            override fun onBillingServiceDisconnected() {
+                connecting = false
+                _isLoadingProducts.value = false
+            }
         })
     }
 
@@ -265,6 +273,7 @@ class SubscriptionManager @Inject constructor(
 
     /** 페이월 "다시 시도": 상품 정보를 다시 불러온다. */
     fun reloadProducts() {
+        _isLoadingProducts.value = true
         if (billing.isReady) queryProduct() else connectBilling()
     }
 
@@ -273,7 +282,9 @@ class SubscriptionManager @Inject constructor(
             listOf(QueryProductDetailsParams.Product.newBuilder().setProductId(PRODUCT_ID)
                 .setProductType(BillingClient.ProductType.SUBS).build()),
         ).build()
+        _isLoadingProducts.value = true
         billing.queryProductDetailsAsync(params) { result, products ->
+            _isLoadingProducts.value = false
             if (result.responseCode != BillingClient.BillingResponseCode.OK) {
                 onLoaded?.invoke(null)
                 return@queryProductDetailsAsync

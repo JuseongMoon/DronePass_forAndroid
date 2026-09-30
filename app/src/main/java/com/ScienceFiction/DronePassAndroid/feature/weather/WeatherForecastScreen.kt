@@ -378,7 +378,8 @@ fun WeatherSheetHeader(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Refresh,
-                        contentDescription = stringResource(R.string.weather_refresh),
+                        // 버튼 라벨은 "새로고침". "새로고침되었습니다." 는 완료 토스트 문구다.
+                        contentDescription = stringResource(R.string.weather_refresh_button),
                         tint = MaterialTheme.colorScheme.primary,
                     )
                 }

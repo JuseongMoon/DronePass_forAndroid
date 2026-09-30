@@ -16,7 +16,7 @@ class MapFloatingButtonsTest {
         val paddings = resolveMapFloatingButtonPaddings(isTablet = false)
 
         assertEquals(12.dp, paddings.edge)
-        assertEquals(100.dp, paddings.flightZoneBottom)
+        assertEquals(144.dp, paddings.flightZoneBottom)
         assertEquals(170.dp, paddings.statusGroupBottom)
         assertEquals(90.dp, paddings.createShapeBottom)
     }
@@ -26,7 +26,7 @@ class MapFloatingButtonsTest {
         val paddings = resolveMapFloatingButtonPaddings(isTablet = true)
 
         assertEquals(20.dp, paddings.edge)
-        assertEquals(100.dp, paddings.flightZoneBottom)
+        assertEquals(144.dp, paddings.flightZoneBottom)
         assertEquals(170.dp, paddings.statusGroupBottom)
         assertEquals(90.dp, paddings.createShapeBottom)
     }

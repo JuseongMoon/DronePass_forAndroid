@@ -1,7 +1,7 @@
 package com.ScienceFiction.DronePassAndroid.feature.drone
 
+import com.ScienceFiction.DronePassAndroid.core.util.shouldShowAppCopyConfirmation
 import com.ScienceFiction.DronePassAndroid.ui.component.IosNavBarButtonFontSize
-import com.ScienceFiction.DronePassAndroid.feature.shape.ShapeDetailFirstSectionTopPadding
 import com.ScienceFiction.DronePassAndroid.ui.component.IosMenuDivider
 import com.ScienceFiction.DronePassAndroid.ui.component.IosDropdownMenu
 import android.content.ClipData
@@ -122,6 +122,8 @@ fun DroneDetailSheet(
     fun copyAndShowToast(text: String) {
         copyToClipboard(context, text)
         hapticFeedback.performHapticFeedback(DroneDetailCopyHapticFeedbackType)
+        // Android 13+ 는 시스템이 복사 확인을 띄우므로 앱 토스트는 겹치지 않게 생략한다.
+        if (!shouldShowAppCopyConfirmation()) return
         copyToastMessage = copiedMessage
         showCopyToast = true
         copyToastGeneration += 1
@@ -543,9 +545,11 @@ private fun DroneMoveTargetSheet(
         containerColor = IosSystemGroupedBackground,
         dragHandle = { Spacer(modifier = Modifier.height(DroneSheetTopInset)) },
     ) {
+        // iOS DroneSelectionSheet 도 기본 `.sheet`(large) 라 화면 높이까지 연다.
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .fillMaxHeight()
                 .navigationBarsPadding(),
         ) {
             DroneMoveTargetNavigationHeader(
@@ -559,7 +563,7 @@ private fun DroneMoveTargetSheet(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = ShapeDetailFirstSectionTopPadding, bottom = 24.dp)
+                    .padding(top = DroneEditFirstSectionTopPadding, bottom = 24.dp)
                     .verticalScroll(rememberScrollState()),
             ) {
                 InsetGroupedSection(header = stringResource(R.string.drone_select_move_shape)) {

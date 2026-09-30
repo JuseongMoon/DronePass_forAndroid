@@ -46,6 +46,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -92,12 +93,18 @@ fun SubscriptionPaywall(
 ) {
     val status by manager.status.collectAsStateWithLifecycle()
     val price by manager.productPrice.collectAsStateWithLifecycle()
+    val isLoadingProducts by manager.isLoadingProducts.collectAsStateWithLifecycle()
     val limits by manager.limits.collectAsStateWithLifecycle()
     var document by remember { mutableStateOf<String?>(null) }
     var isRestoring by remember { mutableStateOf(false) }
     var restoreNotFound by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val isPro = status.entitlement == EntitlementState.PRO
+
+    // iOS PaywallView `.task { loadProducts() }`: 가격을 아직 못 받았으면 열릴 때 다시 불러온다.
+    LaunchedEffect(Unit) {
+        if (manager.productPrice.value == null) manager.reloadProducts()
+    }
 
     DronePassModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -219,6 +226,9 @@ fun SubscriptionPaywall(
                                 onClick = { manager.purchase(activity, request.source) },
                                 enabled = !isRestoring,
                             )
+                        } else if (isLoadingProducts) {
+                            // iOS: 상품을 불러오는 동안 ProgressView
+                            CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                         } else {
                             // iOS: 상품을 못 불러오면 구독 버튼 대신 안내와 "다시 시도"
                             Text(

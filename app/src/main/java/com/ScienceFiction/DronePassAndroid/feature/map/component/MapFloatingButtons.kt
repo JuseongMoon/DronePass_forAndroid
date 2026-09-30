@@ -160,7 +160,8 @@ fun MapFloatingButtons(
 
     Box(modifier = modifier.fillMaxSize()) {
         // 좌측 하단: 비행구역 레이어 FAB
-        // iOS leftBottomButtonsView: .padding(.bottom, safeArea + 100)
+        // iOS 는 SDK 현위치 버튼 바로 위(약 15pt 간격)에 둔다. Android 현위치 버튼은 지도 하단 콘텐츠 여백
+        // (MapBottomContentPadding) 때문에 화면 아래에서 약 139dp 까지 올라와 있어, 그 위로 올려 겹치지 않게 한다.
         // 한국 특화 기능 OFF 시 FAB 숨김 (iOS isKoreaFeaturesEnabled 정합).
         if (koreaFeaturesEnabled && !isSketchMode) {
             FlightZoneLayerFab(
@@ -308,6 +309,9 @@ fun MapFloatingButtons(
     }
 }
 
+/** SDK 현위치 버튼(아래 87~139dp) 위. 보이는 카드 간격이 iOS 처럼 약 10pt 가 되도록 맞춘다. */
+internal val MapFlightZoneFabBottom = 144.dp
+
 internal data class MapFloatingButtonPaddings(
     val edge: Dp,
     val flightZoneBottom: Dp,
@@ -319,7 +323,7 @@ internal fun resolveMapFloatingButtonPaddings(
     isTablet: Boolean,
 ): MapFloatingButtonPaddings = MapFloatingButtonPaddings(
     edge = if (isTablet) 20.dp else 12.dp,
-    flightZoneBottom = 100.dp,
+    flightZoneBottom = MapFlightZoneFabBottom,
     statusGroupBottom = 170.dp,
     createShapeBottom = 90.dp,
 )

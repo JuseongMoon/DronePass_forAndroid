@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.shape
 
+import com.ScienceFiction.DronePassAndroid.core.util.shouldShowAppCopyConfirmation
 import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGray
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.text.BasicText
@@ -227,6 +228,8 @@ fun ShapeDetailSheet(
     fun copyAndShowToast(text: String) {
         copyToClipboard(context, text)
         hapticFeedback.performHapticFeedback(ShapeDetailCopyHapticFeedbackType)
+        // Android 13+ 는 시스템이 복사 확인을 띄우므로 앱 토스트는 겹치지 않게 생략한다.
+        if (!shouldShowAppCopyConfirmation()) return
         copyToastMessage = copiedMessage
         showCopyToast = true
         copyToastGeneration += 1

@@ -1,6 +1,5 @@
 package com.ScienceFiction.DronePassAndroid.feature.vworld
 
-import com.ScienceFiction.DronePassAndroid.feature.shape.ShapeDetailFirstSectionTopPadding
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
@@ -112,6 +111,7 @@ internal fun resolvePublicContactLookupName(zone: DroneZoneFeature): String? =
     zone.zoneCode ?: zone.layer.displayName
 
 internal val VWorldZoneDetailRowMinHeight = 44.dp
+internal val VWorldZoneDetailFirstSectionTopPadding = 42.dp
 internal val VWorldZoneDetailRowDividerThickness = 0.5.dp
 internal val VWorldZoneDetailZoneTypeMarkerSize = 12.dp
 internal val VWorldZoneDetailZoneTypeMarkerBorderWidth = 0.dp
@@ -188,8 +188,8 @@ fun VWorldZoneDetailSheet(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    // iOS insetGrouped 첫 섹션 위 여백(도형 상세와 같은 20pt).
-                    .padding(top = ShapeDetailFirstSectionTopPadding),
+                    // iOS: inline 제목 중심 → 첫 카드 약 64pt (드론 상세와 같다).
+                    .padding(top = VWorldZoneDetailFirstSectionTopPadding),
                 verticalArrangement = Arrangement.spacedBy(InsetGroupedSectionSpacing),
             ) {
                 // 기본 정보 섹션 (iOS Section 첫 번째)
@@ -443,7 +443,7 @@ private fun ZoneTypeRow(layer: FlightZoneLayer) {
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = VWorldZoneDetailRowMinHeight)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = 16.dp, vertical = 11.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
@@ -492,7 +492,7 @@ private fun AltitudeRow(upper: String?, lower: String?) {
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = VWorldZoneDetailRowMinHeight)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = 16.dp, vertical = 11.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
@@ -546,7 +546,7 @@ private fun DetailRow(
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = VWorldZoneDetailRowMinHeight)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = 16.dp, vertical = 11.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
@@ -574,7 +574,7 @@ private fun PhoneNumberRow(label: String, phone: String) {
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = VWorldZoneDetailRowMinHeight)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = 16.dp, vertical = 11.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(

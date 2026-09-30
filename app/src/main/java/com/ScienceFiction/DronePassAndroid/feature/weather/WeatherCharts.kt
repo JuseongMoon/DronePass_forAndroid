@@ -252,6 +252,15 @@ internal fun WeatherLineChart(
         fun toScreenY(value: Double): Float =
             topPadding + ((yMax - value) / (yMax - yMin) * chartHeight).toFloat()
 
+        // X축 시간 라벨(격자선·글자 공통) — xLabelIntervalMs 명시 시 그 간격, 기본 3시간.
+        val intervalMs = xLabelIntervalMs ?: (3 * 60 * 60 * 1000L)
+        val labelTimes = resolveTimeChartLabelTimes(
+            dataStartMs = dataPoints.first().first,
+            dataEndMs = dataPoints.last().first,
+            intervalMs = intervalMs,
+            explicitLabelTimesMs = xLabelTimesMs,
+        )
+
         // 플롯은 고정된 Y축 오른쪽에만 그린다. 스크롤로 밀려난 부분은 축 아래로 가려진다.
         clipRect(left = scrollX + leftPadding, top = 0f, right = size.width, bottom = size.height) {
         // ── 배경 색상 영역 (옵션) ──
@@ -279,29 +288,10 @@ internal fun WeatherLineChart(
             )
         }
 
-        // X축 시간 라벨 — xLabelIntervalMs 명시 시 그 간격, 기본 3시간.
-        val intervalMs = xLabelIntervalMs ?: (3 * 60 * 60 * 1000L)
-        val labelTimes = resolveTimeChartLabelTimes(
-            dataStartMs = dataPoints.first().first,
-            dataEndMs = dataPoints.last().first,
-            intervalMs = intervalMs,
-            explicitLabelTimesMs = xLabelTimesMs,
-        )
         for (labelTime in labelTimes) {
             val x = toScreenX(labelTime)
             if (x >= leftPadding && x <= size.width - rightPadding) {
-                val label = xLabelFormatter(labelTime)
-                drawContext.canvas.nativeCanvas.drawText(
-                    label,
-                    x,
-                    size.height - 4.dp.toPx(),
-                    // iOS 처럼 날짜가 바뀌는 자정 라벨(MM/dd)은 굵게 표시한다.
-                    when {
-                        xLabelTimesMs != null -> xExplicitLabelPaint // KP 장기 예보 날짜(iOS .medium)
-                        '/' in label -> xDateLabelPaint
-                        else -> xLabelPaint
-                    }
-                )
+                // 라벨 글자는 플롯 clip 밖에서 따로 그린다(아래 X축 라벨).
                 // 수직 격자선
                 drawLine(
                     color = onSurfaceVariant.copy(alpha = WeatherChartGridAlpha),
@@ -539,6 +529,27 @@ internal fun WeatherLineChart(
             }
         }
         } // clipRect (plot area)
+
+        // X축 라벨. iOS 처럼 스크롤하지 않은 처음 위치에서는 첫 라벨(예: 27일 예보 "09/28")이 축 쪽으로
+        // 넘쳐도 온전히 보이고, 스크롤하면 플롯 경계에서 잘린다.
+        fun xLabelPaintFor(label: String): Paint = when {
+            xLabelTimesMs != null -> xExplicitLabelPaint // KP 장기 예보 날짜(iOS .medium)
+            '/' in label -> xDateLabelPaint // iOS 처럼 날짜가 바뀌는 자정 라벨(MM/dd)은 굵게
+            else -> xLabelPaint
+        }
+        val visibleXLabels = labelTimes
+            .map { it to toScreenX(it) }
+            .filter { (_, x) -> x >= leftPadding && x <= size.width - rightPadding }
+            .map { (time, x) -> xLabelFormatter(time) to x }
+        val firstXLabelOverflowPx = visibleXLabels.firstOrNull()?.let { (label, x) ->
+            (xLabelPaintFor(label).measureText(label) / 2f - (x - leftPadding)).coerceAtLeast(0f)
+        } ?: 0f
+        val xLabelClipLeft = scrollX + leftPadding - (firstXLabelOverflowPx - scrollX).coerceAtLeast(0f)
+        clipRect(left = xLabelClipLeft, top = 0f, right = size.width, bottom = size.height) {
+            visibleXLabels.forEach { (label, x) ->
+                drawContext.canvas.nativeCanvas.drawText(label, x, size.height - 4.dp.toPx(), xLabelPaintFor(label))
+            }
+        }
 
         // 고정 Y축 라벨
         yLabelValues.forEachIndexed { index, v ->
