@@ -1,5 +1,7 @@
 package com.ScienceFiction.DronePassAndroid.feature.weather
 
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.material.icons.filled.ArrowUpward
@@ -72,7 +74,7 @@ import java.util.Locale
 
 // iOS 색상 (1:1 매핑)
 private val WeatherIconBlue = Color(0xFF007AFF)
-private val WindArrowTeal = Color(0xFF30B0C0)
+private val WindArrowTeal = Color(0xFF30B0C7) // iOS .teal
 private val WindSpeedGreen = Color(0xFF34C759)
 private val GustOrange = Color(0xFFFF9500)
 private val PrecipitationBlue = Color(0xFF007AFF)
@@ -95,8 +97,9 @@ internal val IosWeatherDroneCategoryButtonHorizontalPadding = 10.dp
 internal val IosWeatherDroneCategoryButtonVerticalPadding = 6.dp
 internal val IosWeatherDroneCategoryButtonSpacing = 4.dp
 internal const val IosWeatherDroneCategoryButtonBackgroundAlpha = 0.1f
-internal val IosWeatherDroneCategoryLeadingIconSize = 12.dp
-internal val IosWeatherDroneCategoryChevronIconSize = 11.dp
+// SF .caption 글리프 ≈ Material 15dp
+internal val IosWeatherDroneCategoryLeadingIconSize = 15.dp
+internal val IosWeatherDroneCategoryChevronIconSize = 18.dp
 internal val IosWeatherDroneCategoryLabelFontSize = 15.sp
 internal val IosWeatherDroneCategoryLabelFontWeight = FontWeight.Medium
 internal val IosWeatherDroneCategoryCheckmarkSize = 15.dp
@@ -114,12 +117,15 @@ internal val IosCurrentWeatherPreviewTemperatureFontWeight = FontWeight.SemiBold
 internal val IosCurrentWeatherPreviewRegularFontWeight = FontWeight.Normal
 internal val IosCurrentWeatherPreviewTemperatureRangeSpacing = 8.dp
 internal val IosWeatherDataCellCornerRadius = 12.dp
+/** iOS 기본 ProgressView 크기 */
+internal val IosProgressViewSize = 20.dp
 internal val IosWeatherDataCellHorizontalPadding = 12.dp
 internal val IosWeatherDataCellVerticalPadding = 12.dp
 internal val IosWeatherDataCellMinHeight = 62.dp
 internal val IosWeatherDataCellIconSize = 28.dp
 internal val IosWeatherDataCellIconSlotWidth = 32.dp
-internal val IosWeatherDataCellWarningIconSize = 16.dp
+// SF 16pt 글리프 ≈ Material 20dp
+internal val IosWeatherDataCellWarningIconSize = 20.dp
 internal val IosWeatherDataCellContainerColor = Color(0xFFFFFFFF)
 internal val IosWeatherDataCellLabelFontSize = 17.sp
 // 320dp(삼성 화면 크기 최대 확대)에서도 "순간풍속증가량" 이 잘리지 않는 비율
@@ -132,7 +138,7 @@ internal val IosWeatherDataCellHeadlineFontWeight = FontWeight.SemiBold
 internal val IosWeatherDataCellRegularFontWeight = FontWeight.Normal
 internal val IosWeatherDataCellValueFontWeight = FontWeight.SemiBold
 internal val IosWeatherDisclaimerTopPadding = 8.dp
-internal val IosWeatherDisclaimerIconSize = 12.dp
+internal val IosWeatherDisclaimerIconSize = 14.dp
 internal val IosWeatherDisclaimerSpacing = 4.dp
 internal const val IosWeatherDisclaimerColorAlpha = 1f
 internal val IosWeatherReloadingIndicatorCornerRadius = 8.dp
@@ -228,8 +234,9 @@ internal fun CurrentWeatherSection(
     val current = data.current
 
     val temperatureRange = resolveForecastTemperatureRange(data.hourlyForecast)
-    val maxTemperatureText = formatNullableIosTemperatureDegrees(temperatureRange?.first ?: current?.temperature)
-    val minTemperatureText = formatNullableIosTemperatureDegrees(temperatureRange?.second ?: current?.temperature)
+    // iOS WeatherManager: 예보가 없으면 최고·최저는 "-"
+    val maxTemperatureText = formatNullableIosTemperatureDegrees(temperatureRange?.first)
+    val minTemperatureText = formatNullableIosTemperatureDegrees(temperatureRange?.second)
     val visibility = resolveCurrentWeatherVisibility(data)
     val gustDiff = current?.let { GustDifferenceCalculator.calculateGustDifference(it.windSpeed, it.windGusts) }
 
@@ -278,14 +285,19 @@ internal fun CurrentWeatherSection(
                 fontWeight = IosCurrentWeatherHeaderRegularFontWeight,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Spacer(modifier = Modifier.width(6.dp))
+            Spacer(modifier = Modifier.width(8.dp))
             DroneCategoryMenu(category = category, onCategoryChanged = onCategoryChanged)
         }
+        // iOS 는 로딩·오류 상태를 회색 카드 없이 그리고, 데이터가 있을 때만 카드 배경을 깐다.
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(IosWeatherForecastCardCornerRadius),
             colors = CardDefaults.cardColors(
-                containerColor = IosWeatherForecastCardContainerColor,
+                containerColor = if (contentState == CurrentWeatherContentState.Data) {
+                    IosWeatherForecastCardContainerColor
+                } else {
+                    Color.Transparent
+                },
             ),
         ) {
             Column(
@@ -468,7 +480,11 @@ private fun CurrentWeatherLoadingState() {
             .height(IosCurrentWeatherEmptyStateHeight),
         contentAlignment = Alignment.Center,
     ) {
-        CircularProgressIndicator()
+        // iOS 기본 ProgressView(약 20pt)
+        CircularProgressIndicator(
+            modifier = Modifier.size(IosProgressViewSize),
+            strokeWidth = 2.dp,
+        )
     }
 }
 
@@ -483,14 +499,15 @@ private fun CurrentWeatherErrorState(message: String) {
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Icon(
-            imageVector = Icons.Default.Warning,
+            imageVector = Icons.Outlined.Warning, // iOS exclamationmark.triangle
             contentDescription = null,
             tint = GustOrange,
             modifier = Modifier.size(40.dp),
         )
         Text(
             text = message,
-            style = MaterialTheme.typography.labelSmall,
+            // iOS .caption
+            style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
@@ -641,21 +658,21 @@ private fun PreviewBlock(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Row(
-                    verticalAlignment = Alignment.Bottom,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
+                // iOS HStack(alignment: .firstTextBaseline)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
                         text = temperatureText,
                         fontSize = IosCurrentWeatherPreviewTemperatureFontSize,
                         fontWeight = IosCurrentWeatherPreviewTemperatureFontWeight,
                         color = temperatureColor,
+                        modifier = Modifier.alignByBaseline(),
                     )
                     Text(
                         text = conditionText,
                         fontSize = IosCurrentWeatherPreviewConditionFontSize,
                         fontWeight = IosCurrentWeatherPreviewRegularFontWeight,
                         color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.alignByBaseline(),
                     )
                 }
                 // 좁은 화면(320dp 등)에서도 "최고 ~ 최저" 가 단어 중간에서 끊기지 않도록 한 줄로 두고 글자를 줄인다.
@@ -695,7 +712,12 @@ private fun WeatherDataCell(
     Card(
         modifier = modifier.then(
             if (onClick != null) {
-                Modifier.clickable(onClick = onClick)
+                // iOS onTapGesture: 누름 효과 없음
+                Modifier.clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onClick,
+                )
             } else {
                 Modifier
             }

@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.drone
 
+import com.ScienceFiction.DronePassAndroid.ui.component.IosNavBarButtonFontSize
 import com.ScienceFiction.DronePassAndroid.feature.shape.ShapeDetailFirstSectionTopPadding
 import com.ScienceFiction.DronePassAndroid.ui.component.IosMenuDivider
 import com.ScienceFiction.DronePassAndroid.ui.component.IosDropdownMenu
@@ -23,6 +24,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -91,7 +93,8 @@ internal val DroneMoveTargetNavigationHeaderHeight = 44.dp
 internal val DroneMoveTargetNavigationHeaderSideWidth = 88.dp
 internal val DroneMoveTargetColorIndicatorSize = 16.dp
 internal val DroneMoveTargetColorIndicatorBorderWidth = 1.dp
-internal val DroneMoveTargetCheckmarkSize = 20.dp
+// iOS checkmark .body 글리프 ≈ Material 22dp
+internal val DroneMoveTargetCheckmarkSize = 22.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -130,14 +133,18 @@ fun DroneDetailSheet(
         showCopyToast = false
     }
 
+    // iOS DroneDetailView 시트에는 끌기 손잡이가 없다.
     DronePassModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         containerColor = IosSystemGroupedBackground,
+        dragHandle = { Spacer(modifier = Modifier.height(DroneSheetTopInset)) },
     ) {
+        // iOS `.sheet` 기본(large detent)처럼 내용 길이와 관계없이 화면 높이까지 연다.
         Box(
             modifier = Modifier
                 .fillMaxWidth()
+                .fillMaxHeight()
                 .navigationBarsPadding(),
         ) {
             Column(modifier = Modifier.fillMaxWidth()) {
@@ -161,7 +168,7 @@ fun DroneDetailSheet(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = ShapeDetailFirstSectionTopPadding)
+                        .padding(top = DroneDetailFirstSectionTopPadding)
                         .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(InsetGroupedSectionSpacing),
                 ) {
@@ -439,11 +446,16 @@ private fun DroneDeleteWithShapesActionSheet(
                 .padding(horizontal = 20.dp)
                 .padding(bottom = 12.dp),
         ) {
+            // iOS 액션 시트: 가운데 정렬 13pt 회색 제목·안내, 20pt 버튼
             Text(
                 text = stringResource(R.string.drone_detail_shape_handling_title),
-                style = MaterialTheme.typography.titleMedium,
+                fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(bottom = 8.dp),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 4.dp),
             )
             Text(
                 text = pluralStringResource(
@@ -452,9 +464,12 @@ private fun DroneDeleteWithShapesActionSheet(
                     drone.name,
                     shapeCount,
                 ),
-                style = MaterialTheme.typography.bodyMedium,
+                fontSize = 13.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(bottom = 12.dp),
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 12.dp),
             )
 
             DroneDeleteOptionRow(
@@ -474,7 +489,11 @@ private fun DroneDeleteWithShapesActionSheet(
                     .fillMaxWidth()
                     .padding(top = 8.dp),
             ) {
-                Text(stringResource(R.string.common_cancel))
+                Text(
+                    stringResource(R.string.common_cancel),
+                    fontSize = IosActionSheetButtonFontSize,
+                    fontWeight = FontWeight.SemiBold,
+                )
             }
         }
     }
@@ -490,12 +509,14 @@ private fun DroneDeleteOptionRow(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(vertical = 12.dp),
+            .padding(vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center,
     ) {
         Text(
             text = text,
-            style = MaterialTheme.typography.bodyMedium,
+            fontSize = IosActionSheetButtonFontSize,
+            textAlign = TextAlign.Center,
             color = if (isDestructive) {
                 MaterialTheme.colorScheme.error
             } else {
@@ -515,9 +536,12 @@ private fun DroneMoveTargetSheet(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var selectedDroneId by remember(drones) { mutableStateOf<String?>(null) }
 
+    // iOS DroneSelectionSheet: insetGrouped List (회색 배경 + 흰 섹션)
     DronePassModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
+        containerColor = IosSystemGroupedBackground,
+        dragHandle = { Spacer(modifier = Modifier.height(DroneSheetTopInset)) },
     ) {
         Column(
             modifier = Modifier
@@ -535,19 +559,19 @@ private fun DroneMoveTargetSheet(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp)
-                    .padding(top = 4.dp, bottom = 24.dp)
+                    .padding(top = ShapeDetailFirstSectionTopPadding, bottom = 24.dp)
                     .verticalScroll(rememberScrollState()),
             ) {
-                DroneDetailSectionHeader(text = stringResource(R.string.drone_select_move_shape))
-                drones.forEachIndexed { index, targetDrone ->
-                    DroneMoveTargetRow(
-                        drone = targetDrone,
-                        isSelected = selectedDroneId == targetDrone.id,
-                        onClick = { selectedDroneId = targetDrone.id },
-                    )
-                    if (index != drones.lastIndex) {
-                        HorizontalDivider(modifier = Modifier.padding(start = 40.dp))
+                InsetGroupedSection(header = stringResource(R.string.drone_select_move_shape)) {
+                    drones.forEachIndexed { index, targetDrone ->
+                        DroneMoveTargetRow(
+                            drone = targetDrone,
+                            isSelected = selectedDroneId == targetDrone.id,
+                            onClick = { selectedDroneId = targetDrone.id },
+                        )
+                        if (index != drones.lastIndex) {
+                            InsetGroupedDivider(startIndent = 40.dp)
+                        }
                     }
                 }
             }
@@ -576,7 +600,7 @@ private fun DroneMoveTargetNavigationHeader(
             contentAlignment = Alignment.CenterStart,
         ) {
             TextButton(onClick = onCancel) {
-                Text(stringResource(R.string.common_cancel))
+                Text(stringResource(R.string.common_cancel), fontSize = IosNavBarButtonFontSize, fontWeight = FontWeight.Normal)
             }
         }
         Text(
@@ -596,7 +620,7 @@ private fun DroneMoveTargetNavigationHeader(
                 onClick = onConfirm,
                 enabled = canConfirm,
             ) {
-                Text(stringResource(R.string.drone_select_confirm))
+                Text(stringResource(R.string.drone_select_confirm), fontSize = IosNavBarButtonFontSize, fontWeight = FontWeight.Normal)
             }
         }
     }
@@ -612,7 +636,8 @@ private fun DroneMoveTargetRow(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(vertical = 12.dp),
+            // iOS List 행 좌우 여백 16
+            .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         drone.paletteColor?.takeIf(::shouldShowDroneMoveTargetColorIndicator)?.let { paletteColor ->
@@ -631,7 +656,8 @@ private fun DroneMoveTargetRow(
         }
         Text(
             text = drone.name,
-            style = MaterialTheme.typography.bodyLarge,
+            // iOS .system(size: 16)
+            fontSize = 16.sp,
             modifier = Modifier.weight(1f),
         )
         if (isSelected) {
@@ -656,16 +682,6 @@ internal fun copyableDroneDetailText(text: String?): String? =
     text?.takeIf { it.isNotEmpty() }
 
 @Composable
-private fun DroneDetailSectionHeader(text: String) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.labelMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(top = 8.dp, bottom = 6.dp),
-    )
-}
-
-@Composable
 private fun DroneDetailTextRow(
     label: String,
     value: String,
@@ -677,7 +693,7 @@ private fun DroneDetailTextRow(
         modifier = Modifier
             .fillMaxWidth()
             .copyOnLongPress(copyText, onCopy)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = 16.dp, vertical = 11.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
@@ -705,7 +721,7 @@ private fun DroneDetailColorRow(
         modifier = Modifier
             .fillMaxWidth()
             .copyOnLongPress(colorLabel, onCopy)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = 16.dp, vertical = 11.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
@@ -750,8 +766,9 @@ private fun DroneDetailBlockRow(
         modifier = Modifier
             .fillMaxWidth()
             .copyOnLongPress(copyText, onCopy)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+            // iOS 2줄 행 높이 약 61pt: 캡션과 값 사이 2pt
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         Text(
             text = label,
@@ -787,7 +804,8 @@ internal val DroneDetailCopyToastBottomPadding = 50.dp
 internal val DroneDetailCopyToastTextSize = 14.sp
 internal val DroneDetailCopyToastHorizontalPadding = 16.dp
 internal val DroneDetailCopyToastVerticalPadding = 10.dp
-internal val DroneDetailCopyHapticFeedbackType = HapticFeedbackType.LongPress
+// iOS CopyableTextModifier: UINotificationFeedbackGenerator .success
+internal val DroneDetailCopyHapticFeedbackType = HapticFeedbackType.Confirm
 
 @Composable
 private fun DroneDetailCopyToast(
@@ -831,3 +849,13 @@ private fun copyToClipboard(context: Context, text: String) {
     val clip = ClipData.newPlainText(context.getString(R.string.drone_detail_clipboard_label), text)
     clipboardManager.setPrimaryClip(clip)
 }
+
+/** iOS 액션 시트 버튼 글자 크기 */
+internal val IosActionSheetButtonFontSize = 20.sp
+
+/** 끌기 손잡이 없는 시트 위쪽 여백 */
+// iOS 시트 inline 제목 중심은 시트 위쪽에서 약 27pt(헤더 44 의 가운데 + 5).
+internal val DroneSheetTopInset = 5.dp
+
+/** iOS Form 첫 섹션(헤더 없음)은 inline 제목 중심에서 약 65pt 아래에서 시작한다. */
+internal val DroneDetailFirstSectionTopPadding = 42.dp

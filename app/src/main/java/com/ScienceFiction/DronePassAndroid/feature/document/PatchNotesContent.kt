@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.document
 
+import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -43,7 +44,8 @@ internal val PatchNoteSectionCornerRadius = 12.dp
 internal val PatchNoteSectionSpacing = 16.dp
 internal val PatchNoteHeaderLeadingPadding = 5.dp
 internal val PatchNoteDateTrailingPadding = 10.dp
-internal val PatchNoteFeatureTitleIconSize = 16.dp
+// SF .subheadline 글리프 ≈ Material 19dp
+internal val PatchNoteFeatureTitleIconSize = 19.dp
 internal val PatchNoteFeatureDescriptionLeadingPadding = 20.dp
 internal val PatchNoteFeatureGroupSpacing = 12.dp
 internal val PatchNoteFeatureItemSpacing = 6.dp
@@ -157,21 +159,24 @@ private fun PatchNoteHeader(note: PatchNote) {
         modifier = Modifier.padding(start = PatchNoteHeaderLeadingPadding),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.Bottom,
-        ) {
+        // iOS HStack(alignment: .firstTextBaseline)
+        Row(modifier = Modifier.fillMaxWidth()) {
             Text(
                 text = note.version,
                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.alignByBaseline(),
             )
             Spacer(modifier = Modifier.weight(1f))
             Text(
                 text = note.date,
+                // iOS .callout(16)
                 style = MaterialTheme.typography.bodyMedium,
+                fontSize = 16.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(end = PatchNoteDateTrailingPadding),
+                modifier = Modifier
+                    .alignByBaseline()
+                    .padding(end = PatchNoteDateTrailingPadding),
             )
         }
         if (shouldShowPatchNoteTitle(note.title)) {
@@ -278,7 +283,8 @@ private fun ErrorContent() {
         Spacer(modifier = Modifier.height(PatchNotesEmptyStateSpacing))
         Text(
             text = stringResource(R.string.patch_notes_error_message),
-            style = MaterialTheme.typography.bodySmall,
+            // iOS .subheadline
+            style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth(),

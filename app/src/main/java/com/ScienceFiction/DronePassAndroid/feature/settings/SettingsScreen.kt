@@ -1,4 +1,5 @@
 package com.ScienceFiction.DronePassAndroid.feature.settings
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.foundation.lazy.rememberLazyListState
 import com.ScienceFiction.DronePassAndroid.ui.component.IosMenuDivider
 import com.ScienceFiction.DronePassAndroid.ui.component.IosDropdownMenu
@@ -121,6 +122,8 @@ fun SettingsScreen(
             onDismissRequest = { showDroneListSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
             containerColor = IosSystemGroupedBackground,
+            // iOS NavigationView large 제목 시트에는 그래버가 없다. 헤더가 내비게이션 바 높이를 비운다.
+            dragHandle = null,
         ) {
             DroneListScreen()
         }
@@ -131,6 +134,8 @@ fun SettingsScreen(
             onDismissRequest = { showAppInfoSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
             containerColor = IosSystemGroupedBackground,
+            // iOS NavigationView large 제목 시트에는 그래버가 없다. 헤더가 내비게이션 바 높이를 비운다.
+            dragHandle = null,
         ) {
             AppInfoScreen(onBack = { showAppInfoSheet = false })
         }
@@ -141,6 +146,8 @@ fun SettingsScreen(
             onDismissRequest = { showPatchNotesSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
             containerColor = IosSystemGroupedBackground,
+            // iOS NavigationView large 제목 시트에는 그래버가 없다. 헤더가 내비게이션 바 높이를 비운다.
+            dragHandle = null,
         ) {
             PatchNotesScreen(onBack = { showPatchNotesSheet = false })
         }
@@ -167,6 +174,8 @@ private fun SettingsMainContent(
     val plan by settingsViewModel.subscriptionManager.status.collectAsStateWithLifecycle()
     val quotaLimits by settingsViewModel.subscriptionManager.limits.collectAsStateWithLifecycle()
     val quotaUsage by settingsViewModel.subscriptionManager.usage.collectAsStateWithLifecycle()
+    var isRestoringPurchases by remember { mutableStateOf(false) }
+    var restoreResultRes by remember { mutableStateOf<Int?>(null) }
     val context = LocalContext.current
 
     val currentLanguage by settingsViewModel.currentLanguage.collectAsStateWithLifecycle()
@@ -212,14 +221,13 @@ private fun SettingsMainContent(
                 )
             }
 
-            // ===== 2. 구독 (iOS subscription.settings.*: 플랜 / 도형 / 스케치 선 / 드론 / 알아보기 / 구매 복원) =====
+            // ===== 2. 구독 (iOS SettingView.subscriptionSection) =====
+            // 플랜 / 사용량 / 결제 문제·평생 무료 안내 / 구독 관리 / 알아보기·혜택 / 구매 복원
             val isPro = plan.entitlement == EntitlementState.PRO
+            val isConfirmedFree = plan.entitlement == EntitlementState.FREE
             InsetGroupedSection(
                 header = stringResource(R.string.subscription_settings_section),
-                footer = buildList {
-                    if (plan.paymentIssue) add(stringResource(R.string.subscription_payment_issue))
-                    add(stringResource(R.string.subscription_cross_platform_notice))
-                }.joinToString("\n"),
+                footer = stringResource(R.string.subscription_cross_platform_notice),
             ) {
                 InsetGroupedRow(
                     title = stringResource(R.string.subscription_plan),
@@ -227,7 +235,11 @@ private fun SettingsMainContent(
                     value = when (plan.legacyKind) {
                         LegacyKind.EARLY_ACCESS -> stringResource(R.string.subscription_plan_early_access)
                         LegacyKind.ORIGINAL_DOWNLOAD -> stringResource(R.string.subscription_plan_legacy)
-                        null -> if (isPro) stringResource(R.string.subscription_pro) else stringResource(R.string.subscription_free)
+                        null -> when (plan.entitlement) {
+                            EntitlementState.PRO -> stringResource(R.string.subscription_pro)
+                            EntitlementState.FREE -> stringResource(R.string.subscription_free)
+                            EntitlementState.UNKNOWN -> stringResource(R.string.subscription_plan_checking)
+                        }
                     },
                     valueColor = if (isPro) IosSystemGreen else IosSecondaryLabel,
                     valueAccessory = if (plan.legacyKind == LegacyKind.EARLY_ACCESS) {
@@ -236,22 +248,29 @@ private fun SettingsMainContent(
                         null
                     },
                 )
-                // iOS usageRow: 사용량은 항상 보이고, 한도는 무료 플랜일 때만 함께 보인다.
+                // iOS usageRow: 사용량은 항상 보이고, 한도는 무료 플랜으로 확정됐을 때만 함께 보인다.
                 SubscriptionUsageRow(
                     title = stringResource(R.string.subscription_settings_shapes),
                     used = quotaUsage.shapes,
-                    limit = quotaLimits.freeShapes.takeUnless { isPro },
+                    limit = quotaLimits.freeShapes.takeIf { isConfirmedFree },
                 )
                 SubscriptionUsageRow(
                     title = stringResource(R.string.subscription_settings_sketches),
                     used = quotaUsage.sketches,
-                    limit = quotaLimits.freeSketches.takeUnless { isPro },
+                    limit = quotaLimits.freeSketches.takeIf { isConfirmedFree },
                 )
                 SubscriptionUsageRow(
                     title = stringResource(R.string.subscription_settings_drones),
                     used = quotaUsage.drones,
-                    limit = quotaLimits.freeDrones.takeUnless { isPro },
+                    limit = quotaLimits.freeDrones.takeIf { isConfirmedFree },
                 )
+                // iOS: 무료 플랜의 결제 재시도(billing retry) 상태에서만 안내한다.
+                if (plan.paymentIssue && isConfirmedFree) {
+                    SubscriptionCaptionRow(
+                        text = stringResource(R.string.subscription_billing_retry_message),
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
                 when (plan.legacyKind) {
                     LegacyKind.EARLY_ACCESS -> SubscriptionCaptionRow(stringResource(R.string.subscription_settings_early_access_desc))
                     LegacyKind.ORIGINAL_DOWNLOAD -> SubscriptionCaptionRow(stringResource(R.string.subscription_settings_legacy_desc))
@@ -261,6 +280,14 @@ private fun SettingsMainContent(
                     SubscriptionCaptionRow(
                         text = stringResource(R.string.subscription_legacy_subscribed),
                         color = IosSystemOrange,
+                    )
+                }
+                if (plan.isPaidSubscriber || plan.paymentIssue) {
+                    InsetGroupedDivider()
+                    InsetGroupedRow(
+                        title = stringResource(R.string.subscription_manage),
+                        titleColor = MaterialTheme.colorScheme.primary,
+                        onClick = { settingsViewModel.subscriptionManager.openManagement(context) },
                     )
                 }
                 InsetGroupedDivider()
@@ -273,21 +300,34 @@ private fun SettingsMainContent(
                     titleColor = MaterialTheme.colorScheme.primary,
                     onClick = { settingsViewModel.subscriptionManager.showPaywall("settings") },
                 )
-                if (plan.isPaidSubscriber) {
-                    InsetGroupedDivider()
-                    InsetGroupedRow(
-                        title = stringResource(R.string.subscription_manage),
-                        titleColor = MaterialTheme.colorScheme.primary,
-                        onClick = { settingsViewModel.subscriptionManager.openManagement(context) },
-                    )
-                }
-                // iOS 는 Pro 가 아닐 때만 구매 복원을 보여 준다.
+                // iOS 는 Pro 가 아닐 때만 구매 복원을 보여 주고, 복원 중에는 스피너와 함께 비활성화한다.
                 if (!isPro) {
                     InsetGroupedDivider()
                     InsetGroupedRow(
                         title = stringResource(R.string.subscription_restore),
                         titleColor = MaterialTheme.colorScheme.primary,
-                        onClick = { settingsViewModel.subscriptionManager.restore() },
+                        enabled = !isRestoringPurchases,
+                        onClick = {
+                            isRestoringPurchases = true
+                            settingsViewModel.subscriptionManager.restore { restored ->
+                                isRestoringPurchases = false
+                                restoreResultRes = if (restored) {
+                                    R.string.subscription_restore_success
+                                } else {
+                                    R.string.subscription_restore_not_found
+                                }
+                            }
+                        },
+                        trailing = if (isRestoringPurchases) {
+                            {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(18.dp),
+                                    strokeWidth = 2.dp,
+                                )
+                            }
+                        } else {
+                            null
+                        },
                     )
                 }
             }
@@ -378,7 +418,8 @@ private fun SettingsMainContent(
                                 imageVector = Icons.Default.UnfoldMore,
                                 contentDescription = null,
                                 tint = IosSecondaryLabel,
-                                modifier = Modifier.size(16.dp),
+                                // SF chevron.up.chevron.down 글리프 ≈ Material 20dp
+                                modifier = Modifier.size(20.dp),
                             )
                         },
                     )
@@ -391,15 +432,18 @@ private fun SettingsMainContent(
                             if (index > 0) IosMenuDivider()
                             DropdownMenuItem(
                                 text = { Text(stringResource(lang.displayNameRes)) },
-                                trailingIcon = if (lang == currentLanguage) {
-                                    {
+                                // iOS Picker 메뉴: 선택 표시가 왼쪽에 오고, 다른 항목도 그 자리를 비워 글자를 맞춘다.
+                                leadingIcon = {
+                                    if (lang == currentLanguage) {
                                         Icon(
                                             imageVector = Icons.Default.Check,
                                             contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.primary,
+                                            tint = MaterialTheme.colorScheme.onSurface,
                                         )
+                                    } else {
+                                        Spacer(modifier = Modifier.size(24.dp))
                                     }
-                                } else null,
+                                },
                                 onClick = {
                                     showLanguageMenu = false
                                     val action = resolveLanguageSelectionAction(
@@ -451,6 +495,8 @@ private fun SettingsMainContent(
             },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
             containerColor = IosSystemGroupedBackground,
+            // iOS NavigationView large 제목 시트에는 그래버가 없다. 헤더가 내비게이션 바 높이를 비운다.
+            dragHandle = null,
         ) {
             ProfileScreen(
                 onDismiss = {
@@ -552,6 +598,21 @@ private fun SettingsMainContent(
                 )
             }
         }
+    }
+
+    // iOS 구매 복원 결과 알림
+    restoreResultRes?.let { messageRes ->
+        AlertDialog(
+            onDismissRequest = { restoreResultRes = null },
+            // iOS 복원 결과 알림 제목
+            title = { Text(stringResource(R.string.subscription_pro)) },
+            text = { Text(stringResource(messageRes)) },
+            confirmButton = {
+                TextButton(onClick = { restoreResultRes = null }) {
+                    Text(stringResource(R.string.common_confirm))
+                }
+            },
+        )
     }
 
     // 날씨 예보 시트 (iOS .sheet showWeatherInfoSheet 정합)

@@ -540,7 +540,7 @@ class StringResourceCoverageTest {
         assertEquals("일출/일몰 정보 및 알림", stringResourceValue("values/strings.xml", "app_info_feature_sunrise_sunset_title"))
         assertEquals("현재 위치의 일출/일몰 시간과 알림", stringResourceValue("values/strings.xml", "app_info_feature_sunrise_sunset_desc"))
         assertEquals("반경 기반 도형 생성 및 관리", stringResourceValue("values/strings.xml", "app_info_feature_shape_management_title"))
-        assertEquals("원, 사각형, 다각형, 선 생성/편집", stringResourceValue("values/strings.xml", "app_info_feature_shape_management_desc"))
+        assertEquals("반경을 지정한 원형 비행 구역 생성/편집", stringResourceValue("values/strings.xml", "app_info_feature_shape_management_desc"))
         assertEquals("도형 복제 및 정렬 기능", stringResourceValue("values/strings.xml", "app_info_feature_shape_duplicate_title"))
         assertEquals("도형 복사 및 다양한 정렬 옵션", stringResourceValue("values/strings.xml", "app_info_feature_shape_duplicate_desc"))
         assertEquals("주소 검색 및 길찾기", stringResourceValue("values/strings.xml", "app_info_feature_search_title"))
@@ -583,7 +583,7 @@ class StringResourceCoverageTest {
         assertEquals("Sunrise/Sunset Info and Notifications", stringResourceValue("values-en/strings.xml", "app_info_feature_sunrise_sunset_title"))
         assertEquals("Sunrise/sunset times and notifications for current location", stringResourceValue("values-en/strings.xml", "app_info_feature_sunrise_sunset_desc"))
         assertEquals("Radius-Based Shape Creation and Management", stringResourceValue("values-en/strings.xml", "app_info_feature_shape_management_title"))
-        assertEquals("Create/edit circles, rectangles, polygons, lines", stringResourceValue("values-en/strings.xml", "app_info_feature_shape_management_desc"))
+        assertEquals("Create/edit radius-based circles", stringResourceValue("values-en/strings.xml", "app_info_feature_shape_management_desc"))
         assertEquals("Shape Duplication and Alignment", stringResourceValue("values-en/strings.xml", "app_info_feature_shape_duplicate_title"))
         assertEquals("Copy shapes and various alignment options", stringResourceValue("values-en/strings.xml", "app_info_feature_shape_duplicate_desc"))
         assertEquals("Address Search and Navigation", stringResourceValue("values-en/strings.xml", "app_info_feature_search_title"))
@@ -924,7 +924,7 @@ class StringResourceCoverageTest {
         assertEquals("로그아웃", stringResourceValue("values/strings.xml", "profile_account_logout"))
         assertEquals("회원 탈퇴", stringResourceValue("values/strings.xml", "profile_account_delete"))
         assertEquals(
-            "계정과 클라우드 데이터가 삭제되며, 로컬 데이터는 기기에 유지됩니다.",
+            "탈퇴 시 계정만 삭제되며, 로컬 데이터는 계속 사용할 수 있습니다.",
             stringResourceValue("values/strings.xml", "profile_account_delete_desc"),
         )
         assertEquals("탈퇴하기", stringResourceValue("values/strings.xml", "profile_delete_account_button"))
@@ -984,7 +984,7 @@ class StringResourceCoverageTest {
         assertEquals("Sign Out", stringResourceValue("values-en/strings.xml", "profile_account_logout"))
         assertEquals("Delete Account", stringResourceValue("values-en/strings.xml", "profile_account_delete"))
         assertEquals(
-            "Your account and cloud data will be deleted. Local data will remain on this device.",
+            "Only the account will be deleted. Local data will remain available.",
             stringResourceValue("values-en/strings.xml", "profile_account_delete_desc"),
         )
         assertEquals("Are you sure you want to sign out?", stringResourceValue("values-en/strings.xml", "profile_logout_message"))

@@ -40,7 +40,7 @@ class DroneSelectionDropdownTest {
     @Test
     fun `선택된 드론이 없을 때 iOS처럼 드론 아이콘을 사용한다`() {
         assertEquals(R.drawable.ic_drone, DroneDropdownEmptyIconRes)
-        assertEquals(12.dp, DroneDropdownEmptyIconSize)
+        assertEquals(15.dp, DroneDropdownEmptyIconSize)
     }
 
     @Test
@@ -51,7 +51,7 @@ class DroneSelectionDropdownTest {
     @Test
     fun `드론 드롭다운 텍스트와 chevron 크기는 iOS MainFloatingButtonView 와 맞춘다`() {
         assertEquals(14.sp, DroneDropdownTextSize)
-        assertEquals(10.dp, DroneDropdownChevronIconSize)
+        assertEquals(18.dp, DroneDropdownChevronIconSize) // SF 10pt 글리프 크기
     }
 
     @Test

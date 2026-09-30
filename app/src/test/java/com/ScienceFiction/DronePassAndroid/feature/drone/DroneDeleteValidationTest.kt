@@ -179,7 +179,7 @@ class DroneDeleteValidationTest {
         assertEquals(14.sp, DroneDetailCopyToastTextSize)
         assertEquals(16.dp, DroneDetailCopyToastHorizontalPadding)
         assertEquals(10.dp, DroneDetailCopyToastVerticalPadding)
-        assertEquals(HapticFeedbackType.LongPress, DroneDetailCopyHapticFeedbackType)
+        assertEquals(HapticFeedbackType.Confirm, DroneDetailCopyHapticFeedbackType)
     }
 
     @Test
@@ -192,7 +192,7 @@ class DroneDeleteValidationTest {
     fun `재할당 대상 드론 행 토큰은 iOS DroneSelectionSheet 치수를 따른다`() {
         assertEquals(16.dp, DroneMoveTargetColorIndicatorSize)
         assertEquals(1.dp, DroneMoveTargetColorIndicatorBorderWidth)
-        assertEquals(20.dp, DroneMoveTargetCheckmarkSize)
+        assertEquals(22.dp, DroneMoveTargetCheckmarkSize)
     }
 
     @Test

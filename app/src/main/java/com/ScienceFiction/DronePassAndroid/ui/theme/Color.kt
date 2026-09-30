@@ -29,4 +29,8 @@ val IosLabel = Color(0xFF1C1C1E)
 val IosSecondaryLabel = Color(0xFF8A8A8E)
 val IosSystemRed = Color(0xFFFF3B30)
 val IosSystemGreen = Color(0xFF34C759)
+/** iOS .gray (systemGray) */
+val IosSystemGray = Color(0xFF8E8E93)
+/** iOS placeholderText(#3C3C43 30%) 를 흰 배경에 얹은 색 */
+val IosPlaceholderText = Color(0xFFC4C4C6)
 val IosSystemOrange = Color(0xFFFF9500)

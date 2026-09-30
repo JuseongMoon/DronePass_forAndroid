@@ -228,7 +228,7 @@ class KpChartsTest {
         assertEquals(10.dp, IosCurrentKpDetailLeadingPadding)
         assertEquals(8.dp, IosCurrentKpDetailSpacing)
         assertEquals(6.dp, IosCurrentKpLevelRowSpacing)
-        assertEquals(20.dp, IosCurrentKpLevelIconSize)
+        assertEquals(24.dp, IosCurrentKpLevelIconSize)
         assertEquals(20.sp, IosCurrentKpSectionTitleFontSize)
         assertEquals(20.sp, IosCurrentKpLevelNameFontSize)
         assertEquals(12.sp, IosCurrentKpLevelDescriptionFontSize)

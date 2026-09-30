@@ -1,6 +1,8 @@
 package com.ScienceFiction.DronePassAndroid.feature.document
 
-import com.ScienceFiction.DronePassAndroid.ui.component.SheetHeaderDivider
+import androidx.compose.foundation.clickable
+import androidx.compose.material3.HorizontalDivider
+import com.ScienceFiction.DronePassAndroid.ui.component.IosNavBarButtonFontSize
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,7 +23,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -82,14 +83,19 @@ fun DocumentScreen(
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.weight(1f),
             )
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.common_close))
-            }
+            // iOS Button(.font(.body), .blue): Material 최소 터치 높이 없이 글자만 둔다.
+            Text(
+                text = stringResource(R.string.common_close),
+                fontSize = IosNavBarButtonFontSize,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.clickable(onClick = onDismiss),
+            )
         }
+        // iOS 약관 헤더는 아래 0.5pt 선을 항상 그린다.
         val documentScrollState = rememberScrollState()
-        SheetHeaderDivider(
-            visible = documentScrollState.canScrollBackward,
+        HorizontalDivider(
             thickness = DocumentDividerThickness,
+            color = MaterialTheme.colorScheme.outlineVariant,
         )
 
         // 본문 — 상태별 분기
@@ -169,7 +175,7 @@ private fun ErrorContent(
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = DocumentStateMinHeight)
-            .padding(32.dp),
+            .padding(16.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -188,7 +194,8 @@ private fun ErrorContent(
         Spacer(modifier = Modifier.height(DocumentEmptyStateSpacing))
         Text(
             text = stringResource(messageResId),
-            style = MaterialTheme.typography.bodySmall,
+            // iOS .subheadline
+            style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(modifier = Modifier.height(DocumentErrorRetryTopSpacing))

@@ -114,8 +114,8 @@ class WeatherForecastParityTest {
         assertEquals(6.dp, IosWeatherDroneCategoryButtonVerticalPadding)
         assertEquals(4.dp, IosWeatherDroneCategoryButtonSpacing)
         assertEquals(0.1f, IosWeatherDroneCategoryButtonBackgroundAlpha, 0f)
-        assertEquals(12.dp, IosWeatherDroneCategoryLeadingIconSize)
-        assertEquals(11.dp, IosWeatherDroneCategoryChevronIconSize)
+        assertEquals(15.dp, IosWeatherDroneCategoryLeadingIconSize)
+        assertEquals(18.dp, IosWeatherDroneCategoryChevronIconSize)
         assertEquals(15.sp, IosWeatherDroneCategoryLabelFontSize)
         assertEquals(FontWeight.Medium, IosWeatherDroneCategoryLabelFontWeight)
         assertEquals(15.dp, IosWeatherDroneCategoryCheckmarkSize)
@@ -138,10 +138,10 @@ class WeatherForecastParityTest {
         assertEquals(62.dp, IosWeatherDataCellMinHeight)
         assertEquals(28.dp, IosWeatherDataCellIconSize) // SF 24pt semibold 글리프의 실제 크기
         assertEquals(32.dp, IosWeatherDataCellIconSlotWidth)
-        assertEquals(16.dp, IosWeatherDataCellWarningIconSize)
+        assertEquals(20.dp, IosWeatherDataCellWarningIconSize)
         assertEquals(0xFFFFFFFF.toInt(), IosWeatherDataCellContainerColor.toArgb())
         assertEquals(8.dp, IosWeatherDisclaimerTopPadding)
-        assertEquals(12.dp, IosWeatherDisclaimerIconSize)
+        assertEquals(14.dp, IosWeatherDisclaimerIconSize)
         assertEquals(4.dp, IosWeatherDisclaimerSpacing)
         assertEquals(1f, IosWeatherDisclaimerColorAlpha, 0f)
         assertEquals(16.dp, IosWeatherChartCardCornerRadius)
@@ -392,11 +392,11 @@ class WeatherForecastParityTest {
                 IosWeatherCriChartColor.toArgb(),
             ),
             listOf(
-                0xFF4CAF50.toInt(),
-                0xFF5856D6.toInt(),
-                0xFF2196F3.toInt(),
-                0xFF9C27B0.toInt(),
-                0xFF00BCD4.toInt(),
+                0xFF34C759.toInt(), // .green
+                0xFF5856D6.toInt(), // .indigo
+                0xFF007AFF.toInt(), // .blue
+                0xFFAF52DE.toInt(), // .purple
+                0xFF32ADE6.toInt(), // .cyan
             ),
         )
         assertEquals(

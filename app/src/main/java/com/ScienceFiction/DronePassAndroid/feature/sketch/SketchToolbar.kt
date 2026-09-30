@@ -1,5 +1,7 @@
 package com.ScienceFiction.DronePassAndroid.feature.sketch
 
+import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGray
+import androidx.compose.material.icons.outlined.Delete
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
@@ -31,7 +33,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.automirrored.filled.Redo
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -70,7 +71,10 @@ import com.ScienceFiction.DronePassAndroid.core.util.parseIosOpaqueRgbHexColor
 import java.util.Locale
 
 internal val SketchToolbarButtonSize = 32.dp
-internal val SketchToolbarIconSize = 18.dp
+// iOS SF 18pt 글리프 ≈ Material 22dp
+internal val SketchToolbarIconSize = 22.dp
+/** SF trash 18pt 글리프 ≈ Material Delete 22dp */
+internal val SketchToolbarTrashIconSize = 22.dp
 internal val SketchToolbarContainerCornerRadius = 30.dp
 internal val SketchToolbarHorizontalPadding = 16.dp
 internal val SketchToolbarVerticalPadding = 12.dp
@@ -286,7 +290,7 @@ fun SketchToolbar(
                 onColorChanged = onColorChanged,
                 onStrokeWidthChanged = onStrokeWidthChanged,
                 onOpacityChanged = onOpacityChanged,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                modifier = Modifier.padding(horizontal = 16.dp)
             )
         }
 
@@ -294,7 +298,8 @@ fun SketchToolbar(
         Surface(
             modifier = Modifier
                 .wrapContentWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
+                // iOS 툴바는 탭바와 같은 높이(하단 15pt)에 붙는다. 위쪽 카드와의 간격은 8.
+                .padding(start = 16.dp, end = 16.dp, top = 8.dp),
             shape = RoundedCornerShape(SketchToolbarContainerCornerRadius),
             color = sketchToolbarMaterialColor(MaterialTheme.colorScheme.surface),
             shadowElevation = SketchToolbarShadowElevation,
@@ -328,7 +333,7 @@ fun SketchToolbar(
                     painter = painterResource(SketchEraserIconRes),
                     contentDescription = stringResource(R.string.sketch_eraser),
                     isActive = isEraserMode,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint = IosSystemGray, // iOS 비활성 지우개 .gray
                     onClick = {
                         showPenSettings = false
                         if (!isEraserMode) {
@@ -477,10 +482,10 @@ private fun DeleteAllButton(
     ) {
         if (sketchCount > 0) {
             Icon(
-                imageVector = Icons.Default.Delete,
+                imageVector = Icons.Outlined.Delete, // iOS trash (테두리형)
                 contentDescription = stringResource(R.string.sketch_delete_all),
                 tint = MaterialTheme.colorScheme.error,
-                modifier = Modifier.size(SketchToolbarIconSize),
+                modifier = Modifier.size(SketchToolbarTrashIconSize),
             )
             Box(
                 modifier = Modifier
@@ -503,10 +508,11 @@ private fun DeleteAllButton(
             }
         } else {
             Icon(
-                imageVector = Icons.Default.Delete,
+                imageVector = Icons.Outlined.Delete,
                 contentDescription = stringResource(R.string.sketch_delete_all),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f),
-                modifier = Modifier.size(SketchToolbarIconSize),
+                // iOS 비활성 휴지통은 .gray 불투명
+                tint = IosSystemGray,
+                modifier = Modifier.size(SketchToolbarTrashIconSize),
             )
         }
     }

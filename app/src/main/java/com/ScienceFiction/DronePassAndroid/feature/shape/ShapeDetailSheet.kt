@@ -1,5 +1,10 @@
 package com.ScienceFiction.DronePassAndroid.feature.shape
 
+import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGray
+import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import com.ScienceFiction.DronePassAndroid.ui.component.IosNavBarButtonFontSize
 import com.ScienceFiction.DronePassAndroid.ui.component.IosMenuDivider
 import com.ScienceFiction.DronePassAndroid.ui.component.IosDropdownMenu
 import com.ScienceFiction.DronePassAndroid.ui.component.DronePassSheetGrabberVerticalPadding
@@ -294,7 +299,10 @@ fun ShapeDetailSheet(
                 // 좌표 — DMS 표시 + 길게 누름으로 십진수 복사 (iOS copyableText 정합)
                 ShapeDetailRow(
                     label = stringResource(R.string.shape_detail_coordinate),
+                    // iOS copyableText: 길게 눌러 복사만 하고 누름 효과는 없다.
                     modifier = Modifier.combinedClickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
                         onClick = {},
                         onLongClick = {
                             copyAndShowToast(shape.baseCoordinate.decimalCoordinate)
@@ -313,6 +321,8 @@ fun ShapeDetailSheet(
                 ShapeDetailRow(
                     label = stringResource(R.string.shape_detail_address),
                     modifier = Modifier.combinedClickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
                         onClick = { showExternalMapDialog = true },
                         onLongClick = {
                             copyableShapeDetailAddress(shape.address)?.let { address ->
@@ -321,14 +331,18 @@ fun ShapeDetailSheet(
                         },
                     ),
                 ) {
-                    Text(
+                    // iOS .lineLimit(1).minimumScaleFactor(0.5): 긴 주소는 글자를 줄여 한 줄에 담는다.
+                    val addressStyle = MaterialTheme.typography.bodyLarge
+                    BasicText(
                         text = formatShapeDetailAddress(shape.address),
                         modifier = Modifier.fillMaxWidth(),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = Color(0xFF007AFF), // iOS .blue 정합
-                        textAlign = TextAlign.End,
+                        style = addressStyle.copy(color = Color(0xFF007AFF), textAlign = TextAlign.End),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
+                        autoSize = TextAutoSize.StepBased(
+                            minFontSize = addressStyle.fontSize * 0.5f,
+                            maxFontSize = addressStyle.fontSize,
+                        ),
                     )
                 }
 
@@ -599,17 +613,25 @@ private fun ExternalMapActionSheet(
                 .padding(horizontal = 20.dp)
                 .padding(bottom = 12.dp),
         ) {
+            // iOS confirmationDialog: 가운데 정렬 13pt 회색 제목·안내
             Text(
                 text = stringResource(R.string.shape_detail_open_external_map),
-                style = MaterialTheme.typography.titleMedium,
+                fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(bottom = 8.dp),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 4.dp),
             )
             Text(
                 text = stringResource(R.string.shape_detail_navigation_message),
-                style = MaterialTheme.typography.bodyMedium,
+                fontSize = 13.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(bottom = 12.dp),
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 12.dp),
             )
             targets.forEachIndexed { index, target ->
                 TextButton(
@@ -623,7 +645,7 @@ private fun ExternalMapActionSheet(
                 ) {
                     Text(
                         text = stringResource(target.provider.labelRes),
-                        style = MaterialTheme.typography.bodyLarge,
+                        fontSize = 20.sp, // iOS 액션 시트 버튼
                     )
                 }
                 if (index != targets.lastIndex) {
@@ -638,7 +660,11 @@ private fun ExternalMapActionSheet(
                     .fillMaxWidth()
                     .padding(top = 8.dp),
             ) {
-                Text(stringResource(R.string.common_cancel))
+                Text(
+                    stringResource(R.string.common_cancel),
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.SemiBold,
+                )
             }
         }
     }
@@ -696,7 +722,8 @@ internal val ShapeDetailCopyToastBottomPadding = 50.dp
 internal val ShapeDetailCopyToastTextSize = 14.sp
 internal val ShapeDetailCopyToastHorizontalPadding = 16.dp
 internal val ShapeDetailCopyToastVerticalPadding = 10.dp
-internal val ShapeDetailCopyHapticFeedbackType = HapticFeedbackType.LongPress
+// iOS UINotificationFeedbackGenerator .success
+internal val ShapeDetailCopyHapticFeedbackType = HapticFeedbackType.Confirm
 internal val ShapeDetailRowMinHeight = 44.dp
 internal val ShapeDetailFirstSectionTopPadding = 20.dp
 internal val ShapeDetailRowDividerThickness = 0.5.dp
@@ -788,6 +815,9 @@ private fun MemoLinkifyView(
                 linksClickable = true
                 setTextIsSelectable(ShapeDetailMemoTextIsSelectable)
                 movementMethod = LinkMovementMethod.getInstance()
+                // iOS UITextView 링크는 tint(#007AFF). AppCompat 기본 colorAccent(청록)를 쓰지 않는다.
+                setLinkTextColor(0xFF007AFF.toInt())
+                highlightColor = 0x33007AFF
                 val horizontalPaddingPx = (16 * resources.displayMetrics.density).toInt()
                 val verticalPaddingPx = (12 * resources.displayMetrics.density).toInt()
                 setPadding(horizontalPaddingPx, verticalPaddingPx, horizontalPaddingPx, verticalPaddingPx)
@@ -836,7 +866,7 @@ private fun ShapeDetailMemoWebSheet(
                 },
                 actions = {
                     TextButton(onClick = onDismiss) {
-                        Text(stringResource(R.string.common_close))
+                        Text(stringResource(R.string.common_close), fontSize = IosNavBarButtonFontSize, fontWeight = FontWeight.Normal)
                     }
                 },
             )
@@ -950,7 +980,7 @@ private fun ShapeDetailRow(
         modifier = modifier
             .fillMaxWidth()
             .heightIn(min = ShapeDetailRowMinHeight)
-            .padding(horizontal = InsetGroupedRowHorizontalPadding, vertical = 12.dp),
+            .padding(horizontal = InsetGroupedRowHorizontalPadding, vertical = 11.dp), // 17pt 본문(22) + 11×2 = iOS 44pt 행
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
@@ -999,7 +1029,7 @@ private fun DroneStatusValue(drone: DroneModel?, droneId: String?) {
                 }
                 Text(
                     text = drone.name,
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
@@ -1008,11 +1038,11 @@ private fun DroneStatusValue(drone: DroneModel?, droneId: String?) {
                     imageVector = Icons.Default.Warning,
                     contentDescription = null,
                     tint = Color(0xFFFF9500), // iOS .orange
-                    modifier = Modifier.size(12.dp),
+                    modifier = Modifier.size(15.dp),
                 )
                 Text(
                     text = stringResource(R.string.shape_detail_drone_deleted),
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodyLarge,
                     color = Color(0xFFFF9500),
                     fontStyle = FontStyle.Italic,
                 )
@@ -1021,13 +1051,13 @@ private fun DroneStatusValue(drone: DroneModel?, droneId: String?) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.HelpOutline,
                     contentDescription = null,
-                    tint = Color.Gray,
-                    modifier = Modifier.size(12.dp),
+                    tint = IosSystemGray,
+                    modifier = Modifier.size(15.dp),
                 )
                 Text(
                     text = stringResource(R.string.shape_detail_drone_unassigned),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color.Gray,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = IosSystemGray,
                     fontStyle = FontStyle.Italic,
                 )
             }

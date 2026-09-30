@@ -138,7 +138,7 @@ class SunTimelineStateTest {
         assertEquals(16.dp, IosSunTimelineCurrentBadgeIconSize)
         assertEquals(8.dp, IosSunTimelineCurrentBadgeShadowElevation)
         assertEquals(6.dp, IosSunTimelineRemainingSpacing)
-        assertEquals(14.dp, IosSunTimelineRemainingIconSize)
+        assertEquals(17.dp, IosSunTimelineRemainingIconSize)
         assertEquals(15.sp, IosSunTimelineRemainingFontSize)
         assertEquals(FontWeight.Normal, IosSunTimelineRegularFontWeight)
         assertEquals(FontWeight.SemiBold, IosSunTimelineSemiboldFontWeight)

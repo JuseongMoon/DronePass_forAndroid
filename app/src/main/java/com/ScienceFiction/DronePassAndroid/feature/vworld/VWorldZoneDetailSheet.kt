@@ -270,7 +270,8 @@ fun VWorldZoneDetailSheet(
                         if (hasAuthorityRow) VWorldZoneDetailRowDivider()
                         DetailRow(
                             label = stringResource(R.string.zone_detail_authority_name_eng),
-                            value = it
+                            value = it,
+                            valueCaption = true,
                         )
                         hasAuthorityRow = true
                     }
@@ -415,7 +416,7 @@ private fun NavigationHeader(
         Text(
             text = title,
             style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Medium,
+            fontWeight = FontWeight.SemiBold,
             textAlign = TextAlign.Center,
             modifier = Modifier.weight(1f)
         )
@@ -447,7 +448,7 @@ private fun ZoneTypeRow(layer: FlightZoneLayer) {
     ) {
         Text(
             text = stringResource(R.string.zone_detail_zone_type),
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodyLarge,
             fontWeight = FontWeight.Bold
         )
         Spacer(modifier = Modifier.weight(1f))
@@ -463,7 +464,7 @@ private fun ZoneTypeRow(layer: FlightZoneLayer) {
             )
             Text(
                 text = stringResource(layer.displayNameRes),
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodyLarge,
                 color = SecondaryTextColor
             )
         }
@@ -496,7 +497,7 @@ private fun AltitudeRow(upper: String?, lower: String?) {
     ) {
         Text(
             text = stringResource(R.string.zone_detail_altitude_limit),
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodyLarge,
             fontWeight = FontWeight.Bold
         )
         Spacer(modifier = Modifier.weight(1f))
@@ -534,7 +535,13 @@ private fun VWorldZoneDetailRowDivider() {
  * 라벨-값 행 (iOS HStack with Spacer 정합 — width 고정 없음)
  */
 @Composable
-private fun DetailRow(label: String, value: String, valueColor: Color? = null) {
+private fun DetailRow(
+    label: String,
+    value: String,
+    valueColor: Color? = null,
+    // iOS 영문 기관명 값은 .caption
+    valueCaption: Boolean = false,
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -544,13 +551,13 @@ private fun DetailRow(label: String, value: String, valueColor: Color? = null) {
     ) {
         Text(
             text = label,
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodyLarge,
             fontWeight = FontWeight.Bold
         )
         Spacer(modifier = Modifier.weight(1f))
         Text(
             text = value,
-            style = MaterialTheme.typography.bodyMedium,
+            style = if (valueCaption) MaterialTheme.typography.bodySmall else MaterialTheme.typography.bodyLarge,
             color = valueColor ?: SecondaryTextColor,
             textAlign = TextAlign.End
         )
@@ -572,13 +579,13 @@ private fun PhoneNumberRow(label: String, phone: String) {
     ) {
         Text(
             text = label,
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodyLarge,
             fontWeight = FontWeight.Bold
         )
         Spacer(modifier = Modifier.weight(1f))
         Text(
             text = phone,
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodyLarge,
             color = PhoneLinkColor,
             modifier = Modifier.clickable {
                 openVWorldPhoneDialer(context, phone)

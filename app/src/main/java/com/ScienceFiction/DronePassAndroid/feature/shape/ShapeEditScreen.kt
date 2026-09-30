@@ -1,5 +1,8 @@
 package com.ScienceFiction.DronePassAndroid.feature.shape
 
+import com.ScienceFiction.DronePassAndroid.ui.theme.IosPlaceholderText
+import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGray
+import com.ScienceFiction.DronePassAndroid.ui.component.IosNavBarButtonFontSize
 import com.ScienceFiction.DronePassAndroid.ui.component.SheetHeaderDivider
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.text.BasicText
@@ -103,8 +106,6 @@ import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedRowHorizonta
 import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedRowMinHeight
 import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedSection
 import com.ScienceFiction.DronePassAndroid.ui.theme.IosSeparator
-import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGray2
-import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGray3
 import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGroupedBackground
 
 // iOS ShapeEditView 는 CoordinateView 에 .fraction(0.85) 단일 detent 를 건다(실기기 확인).
@@ -293,7 +294,7 @@ fun ShapeEditScreen(
     val showRadiusField = shouldShowShapeEditRadiusField(shape)
 
     val dateFormat = remember { shapeEditDateOnlyFormat() }
-    val dateTimeFormat = remember { localizedShapeDateTimeFormat() }
+    val timeFormat = remember { java.text.DateFormat.getTimeInstance(java.text.DateFormat.SHORT) }
 
     // ===== hasChanges 계산 (iOS ShapeEditViewModel.hasChanges 정합) =====
     val hasChanges = hasShapeEditContentChanges(
@@ -462,11 +463,12 @@ fun ShapeEditScreen(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
-                            Spacer(modifier = Modifier.width(4.dp))
+                            // iOS HStack(spacing: 8), chevron.down .caption
+                            Spacer(modifier = Modifier.width(8.dp))
                             Icon(
                                 imageVector = Icons.Default.KeyboardArrowDown,
                                 contentDescription = null,
-                                modifier = Modifier.size(16.dp),
+                                modifier = Modifier.size(20.dp),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
@@ -482,25 +484,15 @@ fun ShapeEditScreen(
                                             modifier = Modifier.fillMaxWidth(),
                                             verticalAlignment = Alignment.CenterVertically,
                                         ) {
-                                            drone.paletteColor
-                                                ?.takeIf(::shouldShowShapeEditDroneColorIndicator)
-                                                ?.let { paletteColor ->
-                                                    Box(
-                                                        modifier = Modifier
-                                                            .size(12.dp)
-                                                            .clip(CircleShape)
-                                                            .background(paletteColor.composeColor)
-                                                    )
-                                                    Spacer(modifier = Modifier.width(8.dp))
-                                                }
+                                            // iOS Menu 항목은 글자·체크만 보인다(색 점 Circle 은 메뉴에서 그려지지 않는다).
                                             Text(drone.name)
                                             if (shouldShowShapeEditDroneSelectionCheckmark(drone.id, selectedDroneId)) {
                                                 Spacer(modifier = Modifier.weight(1f))
                                                 Icon(
                                                     imageVector = Icons.Default.Check,
                                                     contentDescription = null,
-                                                    modifier = Modifier.size(16.dp),
-                                                    tint = MaterialTheme.colorScheme.primary,
+                                                    modifier = Modifier.size(20.dp),
+                                                    tint = MaterialTheme.colorScheme.onSurface,
                                                 )
                                             }
                                         }
@@ -536,7 +528,7 @@ fun ShapeEditScreen(
                         placeholder = stringResource(R.string.shape_edit_coordinate_placeholder),
                     ),
                     valueColor = if (isShapeEditPlaceholder(coordinateText)) {
-                        MaterialTheme.colorScheme.onSurfaceVariant
+                        IosSystemGray // iOS .gray
                     } else {
                         MaterialTheme.colorScheme.onSurface
                     },
@@ -560,7 +552,7 @@ fun ShapeEditScreen(
                             placeholder = stringResource(R.string.shape_edit_address_search_placeholder),
                         ),
                         valueColor = if (isShapeEditPlaceholder(address)) {
-                            MaterialTheme.colorScheme.onSurfaceVariant
+                            IosSystemGray // iOS .gray
                         } else {
                             MaterialTheme.colorScheme.onSurface
                         },
@@ -619,10 +611,11 @@ fun ShapeEditScreen(
 
                 InsetGroupedSection {
                 // 시작일
+                // iOS compact DatePicker: 날짜+시간 모드에서는 날짜 칸과 시간 칸을 따로 보여 준다.
                 EditFormDateRow(
                     label = stringResource(R.string.shape_edit_start_date),
-                    value = if (isDateOnly) dateFormat.format(Date(flightStartDate))
-                        else dateTimeFormat.format(Date(flightStartDate)),
+                    value = dateFormat.format(Date(flightStartDate)),
+                    timeValue = if (isDateOnly) null else timeFormat.format(Date(flightStartDate)),
                     onClick = { showStartDatePicker = true },
                 )
                 InsetGroupedDivider()
@@ -630,8 +623,8 @@ fun ShapeEditScreen(
                 // 종료일
                 EditFormDateRow(
                     label = stringResource(R.string.shape_edit_end_date),
-                    value = if (isDateOnly) dateFormat.format(Date(flightEndDate))
-                        else dateTimeFormat.format(Date(flightEndDate)),
+                    value = dateFormat.format(Date(flightEndDate)),
+                    timeValue = if (isDateOnly) null else timeFormat.format(Date(flightEndDate)),
                     onClick = { showEndDatePicker = true },
                 )
                 InsetGroupedDivider()
@@ -683,6 +676,7 @@ fun ShapeEditScreen(
                         value = memo,
                         onValueChange = { memo = it },
                         placeholder = stringResource(R.string.shape_edit_placeholder_memo),
+                        placeholderColor = IosSystemGray,
                         singleLine = false,
                         textAlign = TextAlign.Start,
                         modifier = Modifier
@@ -948,7 +942,7 @@ private fun ShapeEditNavigationHeader(
             onClick = onCancel,
             modifier = Modifier.width(ShapeEditNavigationActionSlotWidth),
         ) {
-            Text(stringResource(R.string.shape_edit_navigation_cancel))
+            Text(stringResource(R.string.shape_edit_navigation_cancel), fontSize = IosNavBarButtonFontSize, fontWeight = FontWeight.Normal)
         }
         Spacer(modifier = Modifier.weight(1f))
         TextButton(
@@ -956,7 +950,7 @@ private fun ShapeEditNavigationHeader(
             modifier = Modifier.width(ShapeEditNavigationActionSlotWidth),
         ) {
             // iOS 툴바 trailing Button 은 기본 굵기다.
-            Text(text = stringResource(R.string.shape_edit_navigation_save))
+            Text(text = stringResource(R.string.shape_edit_navigation_save), fontSize = IosNavBarButtonFontSize, fontWeight = FontWeight.Normal)
         }
     }
 }
@@ -1005,7 +999,7 @@ private fun CoordinateInputSheet(
                         horizontal = CoordinateInputNavigationActionHorizontalPadding,
                     ),
                 ) {
-                    Text(stringResource(R.string.coordinate_cancel))
+                    Text(stringResource(R.string.coordinate_cancel), fontSize = IosNavBarButtonFontSize, fontWeight = FontWeight.Normal)
                 }
                 Text(
                     text = stringResource(R.string.coordinate_title),
@@ -1022,7 +1016,7 @@ private fun CoordinateInputSheet(
                         horizontal = CoordinateInputNavigationActionHorizontalPadding,
                     ),
                 ) {
-                    Text(stringResource(R.string.coordinate_confirm))
+                    Text(stringResource(R.string.coordinate_confirm), fontSize = IosNavBarButtonFontSize, fontWeight = FontWeight.Normal)
                 }
             }
             val coordinateScrollState = rememberScrollState()
@@ -1059,7 +1053,7 @@ private fun CoordinateInputSheet(
                             vertical = SearchAddressSearchButtonVerticalPadding,
                         ),
                     ) {
-                        Text(stringResource(R.string.common_search))
+                        Text(stringResource(R.string.common_search), fontSize = 17.sp, fontWeight = FontWeight.Normal)
                     }
                 }
 
@@ -1146,8 +1140,9 @@ private fun CoordinateAddressResultCard(
         )
         Text(
             text = result.originalText,
+            // iOS .subheadline .gray
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = IosSystemGray,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
         )
@@ -1169,7 +1164,8 @@ private fun CoordinateInputSearchField(
             .clip(RoundedCornerShape(SearchAddressBarCornerRadius))
             .background(SearchAddressBarBackgroundColor)
             .padding(SearchAddressBarInnerPadding),
-        textStyle = MaterialTheme.typography.bodyMedium.copy(
+        // iOS 검색칸 .body(17)
+        textStyle = MaterialTheme.typography.bodyLarge.copy(
             color = MaterialTheme.colorScheme.onSurface,
         ),
         singleLine = true,
@@ -1184,13 +1180,13 @@ private fun CoordinateInputSearchField(
                     imageVector = Icons.Default.Search,
                     contentDescription = null,
                     tint = SearchAddressBarIconColor,
-                    modifier = Modifier.size(18.dp),
+                    modifier = Modifier.size(22.dp),
                 )
                 Box(modifier = Modifier.weight(1f)) {
                     if (coordinateText.isEmpty()) {
                         Text(
                             text = stringResource(R.string.coordinate_placeholder),
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = MaterialTheme.typography.bodyLarge,
                             color = SearchAddressBarIconColor,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
@@ -1207,7 +1203,7 @@ private fun CoordinateInputSearchField(
                             imageVector = Icons.Default.Cancel,
                             contentDescription = stringResource(R.string.common_clear),
                             tint = SearchAddressBarIconColor,
-                            modifier = Modifier.size(18.dp),
+                            modifier = Modifier.size(22.dp),
                         )
                     }
                 }
@@ -1290,6 +1286,8 @@ private fun FormPlainTextField(
     keyboardType: KeyboardType = KeyboardType.Text,
     singleLine: Boolean = true,
     textAlign: TextAlign = TextAlign.End,
+    // iOS TextField placeholder(placeholderText). TextEditor 메모 오버레이는 .gray.
+    placeholderColor: Color = IosPlaceholderText,
 ) {
     val textStyle = MaterialTheme.typography.bodyLarge.copy(
         color = MaterialTheme.colorScheme.onSurface,
@@ -1308,7 +1306,7 @@ private fun FormPlainTextField(
                 if (value.isEmpty()) {
                     Text(
                         text = placeholder,
-                        style = textStyle.copy(color = IosSystemGray2),
+                        style = textStyle.copy(color = placeholderColor),
                         maxLines = if (singleLine) 1 else Int.MAX_VALUE,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -1325,6 +1323,7 @@ private fun EditFormDateRow(
     label: String,
     value: String,
     onClick: () -> Unit,
+    timeValue: String? = null,
 ) {
     Row(
         modifier = Modifier
@@ -1338,19 +1337,32 @@ private fun EditFormDateRow(
             style = MaterialTheme.typography.bodyLarge,
             // iOS Form 라벨은 .bold()
             fontWeight = FontWeight.Bold,
+            maxLines = 1,
+            softWrap = false,
             modifier = Modifier.weight(1f),
         )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier
-                .clip(RoundedCornerShape(8.dp))
-                .background(IosSystemGroupedBackground)
-                .clickable(onClick = onClick)
-                .padding(horizontal = 12.dp, vertical = 7.dp),
-        )
+        EditFormDatePill(text = value, onClick = onClick)
+        if (timeValue != null) {
+            Spacer(modifier = Modifier.width(8.dp))
+            EditFormDatePill(text = timeValue, onClick = onClick)
+        }
     }
+}
+
+/** iOS compact DatePicker 의 회색 캡슐 */
+@Composable
+private fun EditFormDatePill(text: String, onClick: () -> Unit) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.bodyLarge,
+        color = MaterialTheme.colorScheme.onSurface,
+        maxLines = 1,
+        modifier = Modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(IosSystemGroupedBackground)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 7.dp),
+    )
 }
 
 @Composable
@@ -1449,7 +1461,7 @@ private fun EditFormClickableRow(
             imageVector = Icons.AutoMirrored.Default.KeyboardArrowRight,
             contentDescription = null,
             modifier = Modifier.size(20.dp),
-            tint = IosSystemGray3,
+            tint = IosSystemGray, // iOS chevron.right .gray
         )
     }
 }
@@ -1537,7 +1549,7 @@ private fun ShapeDateTimeSelectionSheet(
                     onClick = { applyCurrentSelectionAndDismiss() },
                     modifier = Modifier.width(64.dp),
                 ) {
-                    Text(stringResource(R.string.common_cancel))
+                    Text(stringResource(R.string.common_cancel), fontSize = IosNavBarButtonFontSize, fontWeight = FontWeight.Normal)
                 }
                 Text(
                     text = title,

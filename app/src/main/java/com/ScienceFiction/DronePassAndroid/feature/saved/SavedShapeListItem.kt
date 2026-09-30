@@ -1,5 +1,8 @@
 package com.ScienceFiction.DronePassAndroid.feature.saved
 
+import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGroupedBackground
+import com.ScienceFiction.DronePassAndroid.ui.theme.IosSecondarySystemGroupedBackground
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -61,6 +64,9 @@ fun SavedShapeListItem(
         modifier = modifier
             .fillMaxWidth()
             .heightIn(min = SavedShapeRowMinHeight)
+            // 불투명한 행 배경: 스와이프 중 뒤의 삭제 배경이 글자 뒤로 비치지 않게 한다.
+            // iOS listRowBackground: 선택 시 accent 15% 를 그룹 배경(#F2F2F7) 위에 얹는다.
+            .background(if (isSelected) IosSystemGroupedBackground else IosSecondarySystemGroupedBackground)
             .background(
                 if (isSelected) {
                     MaterialTheme.colorScheme.primary.copy(alpha = SavedShapeSelectedBackgroundAlpha)
@@ -68,7 +74,12 @@ fun SavedShapeListItem(
                     Color.Transparent
                 }
             )
-            .clickable(onClick = onClick)
+            // iOS onTapGesture: 누름 효과 없음
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick,
+            )
             .padding(
                 start = SavedShapeRowHorizontalPadding,
                 end = SavedShapeRowHorizontalPadding,
@@ -149,12 +160,14 @@ fun SavedShapeListItem(
 }
 
 internal val SavedShapeRowMinHeight = 55.dp
-internal val SavedShapeRowHorizontalPadding = 16.dp
+// iOS: List 여백 16 + 색 막대·셰브런 .padding(4)
+internal val SavedShapeRowHorizontalPadding = 20.dp
 internal val SavedShapeRowVerticalPadding = 10.dp
 internal val SavedShapeInfoLeadingSpacing = 12.dp
 internal val SavedShapeDetailLeadingSpacing = 8.dp
 internal val SavedShapeDetailButtonWidth = 30.dp
-internal val SavedShapeDetailChevronSize = 12.dp
+// iOS chevron.right .caption (Material ChevronRight 20dp 글리프가 같은 크기)
+internal val SavedShapeDetailChevronSize = 20.dp
 internal const val SavedShapeSelectedBackgroundAlpha = 0.15f
 internal val SavedShapeInfoVerticalSpacing = 4.dp
 internal val SavedShapeTitleFontSize = 17.sp

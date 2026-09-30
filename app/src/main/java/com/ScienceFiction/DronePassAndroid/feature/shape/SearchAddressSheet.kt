@@ -1,5 +1,8 @@
 package com.ScienceFiction.DronePassAndroid.feature.shape
 
+import androidx.compose.material.icons.outlined.Warning
+import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGray5
+import com.ScienceFiction.DronePassAndroid.ui.component.IosNavBarButtonFontSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -24,7 +27,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
@@ -269,7 +271,7 @@ fun SearchAddressSheet(
                     onClick = onDismiss,
                     modifier = Modifier.align(Alignment.CenterStart),
                 ) {
-                    Text(stringResource(R.string.common_cancel))
+                    Text(stringResource(R.string.common_cancel), fontSize = IosNavBarButtonFontSize, fontWeight = FontWeight.Normal)
                 }
                 Text(
                     text = stringResource(R.string.search_address_title),
@@ -307,7 +309,7 @@ fun SearchAddressSheet(
                         vertical = SearchAddressSearchButtonVerticalPadding,
                     ),
                 ) {
-                    Text(stringResource(R.string.common_search))
+                    Text(stringResource(R.string.common_search), fontSize = 17.sp, fontWeight = FontWeight.Normal)
                 }
             }
 
@@ -340,15 +342,7 @@ fun SearchAddressSheet(
                     )
                 }
                 SearchAddressContentMode.NO_RESULTS -> {
-                    // iOS 는 결과가 없어도 처음 안내만 다시 보여 줘서 검색이 됐는지 알기 어렵다.
-                    Text(
-                        text = stringResource(R.string.search_address_no_results),
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier
-                            .align(Alignment.CenterHorizontally)
-                            .padding(top = 8.dp, bottom = 12.dp),
-                    )
+                    // iOS SearchAddressView 처럼 결과가 없으면 처음 안내 카드를 다시 보여 준다.
                     SearchAddressGuideCard(
                         modifier = Modifier.align(Alignment.CenterHorizontally),
                     )
@@ -403,7 +397,8 @@ private fun SearchAddressInputField(
             .clip(RoundedCornerShape(SearchAddressBarCornerRadius))
             .background(SearchAddressBarBackgroundColor)
             .padding(SearchAddressBarInnerPadding),
-        textStyle = MaterialTheme.typography.bodyMedium.copy(
+        // iOS 검색칸 .body(17)
+        textStyle = MaterialTheme.typography.bodyLarge.copy(
             color = MaterialTheme.colorScheme.onSurface,
         ),
         singleLine = true,
@@ -418,13 +413,13 @@ private fun SearchAddressInputField(
                     imageVector = Icons.Default.Search,
                     contentDescription = stringResource(R.string.shape_edit_search_address),
                     tint = SearchAddressBarIconColor,
-                    modifier = Modifier.size(18.dp),
+                    modifier = Modifier.size(22.dp), // SF .body 글리프
                 )
                 Box(modifier = Modifier.weight(1f)) {
                     if (query.isEmpty()) {
                         Text(
                             text = stringResource(R.string.search_address_placeholder),
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = MaterialTheme.typography.bodyLarge,
                             color = SearchAddressBarIconColor,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
@@ -441,7 +436,7 @@ private fun SearchAddressInputField(
                             imageVector = Icons.Default.Cancel,
                             contentDescription = stringResource(R.string.common_clear),
                             tint = SearchAddressBarIconColor,
-                            modifier = Modifier.size(18.dp),
+                            modifier = Modifier.size(22.dp),
                         )
                     }
                 }
@@ -461,7 +456,7 @@ private fun SearchAddressErrorView(
         verticalArrangement = Arrangement.Center,
     ) {
         Icon(
-            imageVector = Icons.Default.Warning,
+            imageVector = Icons.Outlined.Warning, // iOS exclamationmark.triangle
             contentDescription = null,
             tint = MaterialTheme.colorScheme.error,
             modifier = Modifier
@@ -471,7 +466,7 @@ private fun SearchAddressErrorView(
         Text(
             text = message,
             color = MaterialTheme.colorScheme.error,
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodyLarge,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(horizontal = 16.dp),
         )
@@ -545,7 +540,7 @@ private fun AddressResultItem(
             )
             .clip(cardShape)
             .background(MaterialTheme.colorScheme.surface)
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, cardShape)
+            .border(1.dp, IosSystemGray5, cardShape) // iOS systemGray5
             .clickable(onClick = onClick)
             .padding(SearchAddressResultCardContentPadding),
         verticalArrangement = Arrangement.spacedBy(SearchAddressResultCardRowSpacing),
@@ -571,7 +566,8 @@ private fun AddressDisplayRowView(
         AddressTypeBadge(type = row.type)
         Text(
             text = row.text,
-            style = MaterialTheme.typography.bodyMedium,
+            // iOS .body .medium
+            style = MaterialTheme.typography.bodyLarge,
             fontWeight = FontWeight.Medium,
             color = MaterialTheme.colorScheme.onSurface,
             maxLines = 2,
@@ -598,7 +594,8 @@ private fun AddressBuildingNameRow(
         )
         Text(
             text = buildingName,
-            style = MaterialTheme.typography.bodySmall,
+            // iOS .subheadline
+            style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
@@ -617,7 +614,8 @@ private fun AddressTypeBadge(
 
     Text(
         text = label,
-        style = MaterialTheme.typography.labelSmall,
+        // iOS .caption
+        style = MaterialTheme.typography.bodySmall,
         fontWeight = FontWeight.SemiBold,
         color = Color.White,
         modifier = Modifier

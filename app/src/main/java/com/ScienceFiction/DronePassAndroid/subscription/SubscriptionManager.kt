@@ -263,6 +263,11 @@ class SubscriptionManager @Inject constructor(
         }
     }
 
+    /** 페이월 "다시 시도": 상품 정보를 다시 불러온다. */
+    fun reloadProducts() {
+        if (billing.isReady) queryProduct() else connectBilling()
+    }
+
     private fun queryProduct(onLoaded: ((ProductDetails?) -> Unit)? = null) {
         val params = QueryProductDetailsParams.newBuilder().setProductList(
             listOf(QueryProductDetailsParams.Product.newBuilder().setProductId(PRODUCT_ID)
@@ -309,9 +314,13 @@ class SubscriptionManager @Inject constructor(
         if (result.responseCode != BillingClient.BillingResponseCode.OK) analytics.logPurchaseFail(source, "error")
     }
 
-    fun restore() {
+    /** [onResult] 는 복원된 구독이 있으면 true (iOS SettingView 의 복원 결과 알림용). */
+    fun restore(onResult: ((Boolean) -> Unit)? = null) {
         analytics.logRestoreTap()
-        refreshPurchases { restored -> analytics.logRestoreResult(restored) }
+        refreshPurchases { restored ->
+            analytics.logRestoreResult(restored)
+            onResult?.invoke(restored)
+        }
     }
 
     fun openManagement(activity: Context) {

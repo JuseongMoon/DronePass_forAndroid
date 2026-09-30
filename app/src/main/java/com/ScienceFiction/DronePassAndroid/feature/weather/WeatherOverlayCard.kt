@@ -1,5 +1,7 @@
 package com.ScienceFiction.DronePassAndroid.feature.weather
 
+import androidx.compose.runtime.remember
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -32,7 +34,7 @@ import java.util.Locale
 
 // iOS MainFloatingButtonView.weatherWindIconButton 의 색상을 그대로 매핑.
 private val WeatherIconColor = Color(0xFF007AFF) // iOS .blue
-private val WindArrowColor = Color(0xFF30B0C0) // iOS .teal
+private val WindArrowColor = Color(0xFF30B0C7) // iOS .teal
 private val SunEventColor = Color(0xFFFF9500) // iOS .orange
 
 internal val WeatherOverlayCardHorizontalPadding = 12.dp
@@ -41,7 +43,8 @@ internal val WeatherOverlayCardCornerRadius = 12.dp
 internal val WeatherOverlayCardShadowElevation = 4.dp
 internal val WeatherOverlayCardGroupSpacing = 8.dp
 internal val WeatherOverlayCardRowSpacing = 8.dp
-internal val WeatherOverlayCardIconSize = 21.dp
+// iOS .system(size: 21, weight: .semibold) 글리프는 Material 21dp 아이콘보다 커서 24dp 로 맞춘다.
+internal val WeatherOverlayCardIconSize = 24.dp
 internal val WeatherOverlayCardTextSize = 16.sp
 
 internal enum class SunEventOverlayIcon {
@@ -96,8 +99,13 @@ fun WeatherOverlayCard(
     val windRotationDegrees = weatherOverlayWindRotationDegrees(currentWeather?.windDirection)
     val temperatureColor = interpolateTemperatureColor(currentWeather?.temperature)
 
+    // iOS .buttonStyle(.plain): 누름 효과 없음
     Surface(
-        modifier = modifier.clickable(onClick = onClick),
+        modifier = modifier.clickable(
+            interactionSource = remember { MutableInteractionSource() },
+            indication = null,
+            onClick = onClick,
+        ),
         shape = RoundedCornerShape(WeatherOverlayCardCornerRadius),
         color = MaterialTheme.colorScheme.surface,
         shadowElevation = WeatherOverlayCardShadowElevation,

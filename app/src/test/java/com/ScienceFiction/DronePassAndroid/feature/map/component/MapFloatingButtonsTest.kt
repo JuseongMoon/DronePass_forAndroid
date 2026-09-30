@@ -39,7 +39,7 @@ class MapFloatingButtonsTest {
     @Test
     fun `shape and sketch FAB sizes match iOS MainFloatingButtonView`() {
         assertEquals(60.dp, MapCreateShapeButtonSize)
-        assertEquals(28.dp, MapCreateShapeIconSize)
+        assertEquals(36.dp, MapCreateShapeIconSize) // SF 28pt 글리프 크기
         assertEquals(6.dp, MapCreateShapeButtonShadowElevation)
         assertEquals(45.dp, MapSketchButtonSize)
         assertEquals(21.dp, MapSketchIconSize)
@@ -78,7 +78,7 @@ class MapFloatingButtonsTest {
         assertEquals(50.dp, FlightZoneFabSize)
         assertEquals(12.dp, FlightZoneFabCornerRadius)
         assertEquals(4.dp, FlightZoneFabShadowElevation)
-        assertEquals(22.dp, FlightZoneFabIconSize)
+        assertEquals(27.dp, FlightZoneFabIconSize)
         assertEquals(10f, FlightZoneFabBadgeFontSize.value, 0f)
         assertEquals(4.dp, FlightZoneFabVerticalSpacing)
     }

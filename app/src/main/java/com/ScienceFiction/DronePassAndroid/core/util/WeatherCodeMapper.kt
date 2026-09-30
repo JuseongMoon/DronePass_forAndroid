@@ -4,11 +4,6 @@ import com.ScienceFiction.DronePassAndroid.core.ui.IosWeatherSymbols
 import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Air
-import androidx.compose.material.icons.filled.Cloud
-import androidx.compose.material.icons.filled.Dehaze
-import androidx.compose.material.icons.filled.FlashOn
-import androidx.compose.material.icons.filled.WbCloudy
-import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.domain.model.WeatherCondition
@@ -77,7 +72,7 @@ object WeatherCodeMapper {
      * 상태가 비/눈이어도 실제 강수 강도가 0 이면 강수 아이콘 대신 일반 상태 아이콘을 쓴다.
      */
     fun conditionIcon(condition: WeatherCondition?, precipitationIntensity: Double?): ImageVector {
-        if (condition == null) return Icons.Default.Cloud
+        if (condition == null) return IosWeatherSymbols.Cloud
 
         val hasPrecipitation = (precipitationIntensity ?: 0.0) > 0.0
         if (hasPrecipitation) {
@@ -92,7 +87,7 @@ object WeatherCodeMapper {
                 WeatherCondition.FREEZING_RAIN,
                 WeatherCondition.FREEZING_DRIZZLE,
                 WeatherCondition.WINTRY_MIX -> IosWeatherSymbols.CloudSleet
-                WeatherCondition.HAIL -> IosWeatherSymbols.CloudSleet
+                WeatherCondition.HAIL -> IosWeatherSymbols.CloudHail
                 WeatherCondition.ISOLATED_THUNDERSTORMS,
                 WeatherCondition.STRONG_STORMS,
                 WeatherCondition.THUNDERSTORMS,
@@ -102,19 +97,19 @@ object WeatherCodeMapper {
         }
 
         return when (condition) {
-            WeatherCondition.CLEAR, WeatherCondition.MOSTLY_CLEAR -> Icons.Default.WbSunny
-            WeatherCondition.PARTLY_CLOUDY -> Icons.Default.WbCloudy
-            WeatherCondition.MOSTLY_CLOUDY, WeatherCondition.CLOUDY -> Icons.Default.Cloud
-            WeatherCondition.FOGGY, WeatherCondition.HAZE, WeatherCondition.SMOKY -> Icons.Default.Dehaze
-            WeatherCondition.BREEZY, WeatherCondition.WINDY -> Icons.Default.Air
+            WeatherCondition.CLEAR, WeatherCondition.MOSTLY_CLEAR -> IosWeatherSymbols.SunMax
+            WeatherCondition.PARTLY_CLOUDY -> IosWeatherSymbols.CloudSun
+            WeatherCondition.MOSTLY_CLOUDY, WeatherCondition.CLOUDY -> IosWeatherSymbols.Cloud
+            WeatherCondition.FOGGY, WeatherCondition.HAZE, WeatherCondition.SMOKY -> IosWeatherSymbols.CloudFog
+            WeatherCondition.BREEZY, WeatherCondition.WINDY -> Icons.Default.Air // iOS wind
             WeatherCondition.BLIZZARD,
             WeatherCondition.BLOWING_DUST,
-            WeatherCondition.BLOWING_SNOW -> Icons.Default.Air
+            WeatherCondition.BLOWING_SNOW -> IosWeatherSymbols.WindSnow
             WeatherCondition.ISOLATED_THUNDERSTORMS,
             WeatherCondition.STRONG_STORMS,
             WeatherCondition.THUNDERSTORMS,
-            WeatherCondition.SCATTERED_THUNDERSTORMS -> Icons.Default.FlashOn
-            else -> Icons.Default.Cloud
+            WeatherCondition.SCATTERED_THUNDERSTORMS -> IosWeatherSymbols.CloudBolt
+            else -> IosWeatherSymbols.Cloud
         }
     }
 }

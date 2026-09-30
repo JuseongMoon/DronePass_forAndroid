@@ -154,7 +154,7 @@ private fun PermissionCard(
             )
             Text(
                 text = description,
-                fontSize = 13.sp,
+                fontSize = 12.sp, // 다른 설정 설명(.caption)과 같게
                 lineHeight = 17.sp,
                 color = IosSecondaryLabel,
                 modifier = Modifier.padding(top = 2.dp),

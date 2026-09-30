@@ -43,7 +43,8 @@ private val LightColorScheme = lightColorScheme(
     surface = Color.White,
     onSurface = IosLabel,
     surfaceVariant = IosSystemGroupedBackground,
-    onSurfaceVariant = Color(0xFF6B7280),
+    // iOS .secondary(#3C3C43 60%) 를 흰 배경에 얹은 색. 보조 글자·아이콘 전반에 쓰인다.
+    onSurfaceVariant = IosSecondaryLabel,
     // Material 3 기본 팔레트(보라)가 시트·다이얼로그·메뉴 배경으로 새어 나오지 않도록
     // surface 계열 토큰을 모두 iOS 흰색/회색 계열로 명시한다.
     surfaceTint = Color.White,

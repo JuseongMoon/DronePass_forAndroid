@@ -1,7 +1,7 @@
 package com.ScienceFiction.DronePassAndroid.feature.settings
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Block
+import androidx.compose.material.icons.filled.Dangerous
 import androidx.compose.material.icons.filled.Brightness6
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Circle
@@ -53,7 +53,7 @@ class InfoGuideSheetsTest {
         assertEquals(Icons.Default.Brightness6, kpInfoLevelIcon(KpLevel.G2))
         assertEquals(Icons.Default.Error, kpInfoLevelIcon(KpLevel.G3))
         assertEquals(Icons.Default.Warning, kpInfoLevelIcon(KpLevel.G4))
-        assertEquals(Icons.Default.Block, kpInfoLevelIcon(KpLevel.G5))
+        assertEquals(Icons.Default.Dangerous, kpInfoLevelIcon(KpLevel.G5)) // iOS xmark.octagon.fill
     }
 
     @Test
@@ -175,7 +175,7 @@ class InfoGuideSheetsTest {
     fun `weather guide category menu uses iOS compact selector tokens`() {
         assertEquals(8.dp, WeatherGuideCategoryMenuHorizontalPadding)
         assertEquals(4.dp, WeatherGuideCategoryMenuVerticalPadding)
-        assertEquals(12.dp, WeatherGuideCategoryMenuIconSize)
+        assertEquals(20.dp, WeatherGuideCategoryMenuIconSize)
     }
 
     @Test
@@ -190,7 +190,7 @@ class InfoGuideSheetsTest {
     @Test
     fun `info guide cards use iOS leading icon and note spacing tokens`() {
         assertEquals(50.dp, InfoGuideLeadingIconSlotWidth)
-        assertEquals(30.dp, InfoGuideLeadingIconSize)
+        assertEquals(36.dp, InfoGuideLeadingIconSize) // SF 30pt 글리프
         assertEquals(8.dp, InfoGuideElementNoteTopPadding)
     }
 

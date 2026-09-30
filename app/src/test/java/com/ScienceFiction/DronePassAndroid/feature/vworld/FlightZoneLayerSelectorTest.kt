@@ -93,7 +93,7 @@ class FlightZoneLayerSelectorTest {
 
     @Test
     fun `전체 선택 버튼은 iOS subheadline Label 크기를 따른다`() {
-        assertEquals(15.dp, FlightZoneLayerSelectorActionIconSize)
+        assertEquals(18.dp, FlightZoneLayerSelectorActionIconSize)
         assertEquals(15.sp, FlightZoneLayerSelectorActionTextSize)
     }
 

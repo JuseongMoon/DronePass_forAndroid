@@ -1,5 +1,16 @@
 package com.ScienceFiction.DronePassAndroid.subscription
 
+import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemOrange
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material.icons.filled.AllInclusive
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Verified
+import androidx.compose.material.icons.filled.CardGiftcard
+import androidx.compose.ui.platform.LocalContext
+import com.ScienceFiction.DronePassAndroid.ui.component.IosNavBarButtonFontSize
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.draw.rotate
 import android.app.Activity
@@ -65,6 +76,8 @@ private val PaywallCtaHeight = 54.dp
 private val PaywallHeroSize = 64.dp
 private val PaywallStarYellow = Color(0xFFFFCC00)
 private val PaywallLimitBannerColor = Color(0xFFFF9500).copy(alpha = 0.12f)
+/** iOS .callout */
+private val PaywallCalloutSize = 16.sp
 
 /**
  * iOS PaywallView 구성: 닫기 → 히어로 → (한도 안내) → 혜택 카드 → 가격 → 구독 버튼 → 구매 복원 → 법적 고지.
@@ -81,6 +94,9 @@ fun SubscriptionPaywall(
     val price by manager.productPrice.collectAsStateWithLifecycle()
     val limits by manager.limits.collectAsStateWithLifecycle()
     var document by remember { mutableStateOf<String?>(null) }
+    var isRestoring by remember { mutableStateOf(false) }
+    var restoreNotFound by remember { mutableStateOf(false) }
+    val context = LocalContext.current
     val isPro = status.entitlement == EntitlementState.PRO
 
     DronePassModalBottomSheet(
@@ -96,18 +112,25 @@ fun SubscriptionPaywall(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_close)) }
+                TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_close), fontSize = IosNavBarButtonFontSize, fontWeight = FontWeight.Normal) }
             }
 
             PaywallHero()
             Spacer(Modifier.height(24.dp))
 
             if (request.updateRequired) {
+                // iOS updateSection: 전체 안내 + 스토어 업데이트 버튼
                 PaywallBanner(stringResource(R.string.subscription_update_required))
+                Spacer(Modifier.height(24.dp))
+                PaywallPrimaryButton(
+                    text = stringResource(R.string.subscription_update_button),
+                    onClick = { openPlayStoreListing(context) },
+                )
+                Spacer(Modifier.height(24.dp))
             } else {
                 if (status.legacyKind == LegacyKind.EARLY_ACCESS) {
                     EarlyAccessCard()
-                    Spacer(Modifier.height(16.dp))
+                    Spacer(Modifier.height(24.dp))
                 }
                 request.limitKind?.let { kind ->
                     PaywallBanner(
@@ -117,68 +140,127 @@ fun SubscriptionPaywall(
                             QuotaLimitKind.DRONES -> stringResource(R.string.subscription_limit_drones, limits.freeDrones)
                         },
                     )
-                    Spacer(Modifier.height(16.dp))
+                    Spacer(Modifier.height(24.dp))
                 }
-                if (status.paymentIssue) {
-                    PaywallBanner(
-                        text = stringResource(R.string.subscription_payment_issue),
-                        background = MaterialTheme.colorScheme.errorContainer,
-                    )
-                    Spacer(Modifier.height(16.dp))
+                // iOS billingRetryBanner: 무료 플랜의 결제 재시도 상태 — 안내 + 구독 관리 버튼(빨강 0.1 배경)
+                if (status.paymentIssue && !isPro) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(PaywallCardCornerRadius))
+                            .background(MaterialTheme.colorScheme.error.copy(alpha = 0.1f))
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Text(
+                            text = stringResource(R.string.subscription_billing_retry_message),
+                            fontSize = PaywallCalloutSize,
+                            textAlign = TextAlign.Center,
+                        )
+                        Text(
+                            text = stringResource(R.string.subscription_manage),
+                            fontSize = PaywallCalloutSize,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.clickable { manager.openManagement(activity) },
+                        )
+                    }
+                    Spacer(Modifier.height(24.dp))
                 }
 
                 BenefitsCard(limits)
                 Spacer(Modifier.height(24.dp))
 
-                if (isPro) {
-                    ProStatusLabel()
-                    if (status.isPaidSubscriber) {
-                        TextButton(onClick = { manager.openManagement(activity) }) {
-                            Text(stringResource(R.string.subscription_manage))
+                // iOS planSection
+                when {
+                    status.legacyKind == LegacyKind.EARLY_ACCESS && !status.isPaidSubscriber -> Unit // 카드가 이미 안내
+                    status.legacyKind == LegacyKind.ORIGINAL_DOWNLOAD && !status.isPaidSubscriber ->
+                        ProStatusLabel(
+                            icon = Icons.Default.CardGiftcard, // iOS gift.fill
+                            text = stringResource(R.string.subscription_status_legacy),
+                        )
+                    isPro -> {
+                        ProStatusLabel(
+                            icon = Icons.Default.Verified, // iOS checkmark.seal.fill
+                            text = stringResource(R.string.subscription_status_active),
+                        )
+                        if (status.legacyKind != null) {
+                            Text(
+                                text = stringResource(R.string.subscription_legacy_subscribed),
+                                fontSize = 12.sp,
+                                color = IosSystemOrange,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.padding(top = 12.dp),
+                            )
+                        }
+                        if (status.isPaidSubscriber) {
+                            TextButton(onClick = { manager.openManagement(activity) }) {
+                                Text(stringResource(R.string.subscription_manage), fontSize = 17.sp, fontWeight = FontWeight.Normal)
+                            }
                         }
                     }
-                    if (status.isPaidSubscriber && status.legacyKind != null) {
-                        FinePrint(stringResource(R.string.subscription_legacy_subscribed))
+                    else -> {
+                        val currentPrice = price
+                        if (currentPrice != null) {
+                            Text(
+                                text = stringResource(R.string.subscription_product_name),
+                                style = MaterialTheme.typography.titleMedium,
+                            )
+                            Text(
+                                text = stringResource(R.string.subscription_paywall_price, currentPrice),
+                                fontSize = 22.sp, // iOS .title2 bold
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(top = 4.dp),
+                            )
+                            Spacer(Modifier.height(12.dp))
+                            PaywallPrimaryButton(
+                                text = stringResource(R.string.subscription_subscribe),
+                                onClick = { manager.purchase(activity, request.source) },
+                                enabled = !isRestoring,
+                            )
+                        } else {
+                            // iOS: 상품을 못 불러오면 구독 버튼 대신 안내와 "다시 시도"
+                            Text(
+                                text = stringResource(R.string.subscription_product_unavailable),
+                                fontSize = PaywallCalloutSize,
+                                color = IosSecondaryLabel,
+                                textAlign = TextAlign.Center,
+                            )
+                            TextButton(onClick = manager::reloadProducts) {
+                                Text(stringResource(R.string.subscription_product_retry), fontSize = 17.sp, fontWeight = FontWeight.Normal)
+                            }
+                        }
+                        Spacer(Modifier.height(4.dp))
+                        TextButton(
+                            enabled = !isRestoring,
+                            onClick = {
+                                isRestoring = true
+                                manager.restore { restored ->
+                                    isRestoring = false
+                                    if (!restored) {
+                                        restoreNotFound = true
+                                    } else if (request.limitKind != null) {
+                                        // iOS: 한도 때문에 뜬 페이월은 복원 성공 시 닫는다.
+                                        onDismiss()
+                                    }
+                                }
+                            },
+                        ) {
+                            if (isRestoring) {
+                                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                            } else {
+                                Text(stringResource(R.string.subscription_restore), fontSize = 17.sp, fontWeight = FontWeight.Normal)
+                            }
+                        }
                     }
-                } else if (!status.paymentIssue) {
-                    Text(
-                        text = stringResource(R.string.subscription_product_name),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                    val currentPrice = price
-                    if (currentPrice != null) {
-                        Text(
-                            text = stringResource(R.string.subscription_paywall_price, currentPrice),
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(top = 2.dp),
-                        )
-                    } else {
-                        FinePrint(stringResource(R.string.subscription_product_unavailable))
-                    }
-                    Spacer(Modifier.height(16.dp))
-                    Button(
-                        onClick = { manager.purchase(activity, request.source) },
-                        enabled = currentPrice != null,
-                        shape = RoundedCornerShape(14.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(PaywallCtaHeight),
-                    ) {
-                        Text(
-                            text = stringResource(R.string.subscription_subscribe),
-                            fontSize = 17.sp,
-                            fontWeight = FontWeight.SemiBold,
-                        )
-                    }
-                    TextButton(onClick = manager::restore) {
-                        Text(stringResource(R.string.subscription_restore), fontSize = 16.sp)
-                    }
-                    FinePrint(stringResource(R.string.subscription_paywall_renewal))
                 }
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(24.dp))
+                // iOS legalSection: 자동 갱신 고지는 구매할 수 있거나 구독 중인 사람에게 보인다(평생 무료 제외).
+                if (status.legacyKind == null || status.isPaidSubscriber) {
+                    FinePrint(stringResource(R.string.subscription_paywall_renewal))
+                    Spacer(Modifier.height(8.dp))
+                }
                 FinePrint(stringResource(R.string.subscription_cross_platform_notice))
             }
 
@@ -186,14 +268,25 @@ fun SubscriptionPaywall(
                 horizontalArrangement = Arrangement.Center,
                 modifier = Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 16.dp),
             ) {
+                // iOS legalSection 링크 .caption(12)
                 TextButton(onClick = { document = "terms" }) {
-                    Text(stringResource(R.string.subscription_terms), fontSize = 13.sp)
+                    Text(stringResource(R.string.subscription_terms), fontSize = 12.sp, fontWeight = FontWeight.Normal)
                 }
                 TextButton(onClick = { document = "privacy" }) {
-                    Text(stringResource(R.string.subscription_privacy), fontSize = 13.sp)
+                    Text(stringResource(R.string.subscription_privacy), fontSize = 12.sp, fontWeight = FontWeight.Normal)
                 }
             }
         }
+    }
+    if (restoreNotFound) {
+        AlertDialog(
+            onDismissRequest = { restoreNotFound = false },
+            title = { Text(stringResource(R.string.subscription_pro)) },
+            text = { Text(stringResource(R.string.subscription_restore_not_found)) },
+            confirmButton = {
+                TextButton(onClick = { restoreNotFound = false }) { Text(stringResource(R.string.common_confirm)) }
+            },
+        )
     }
     when (document) {
         "terms" -> DronePassModalBottomSheet(onDismissRequest = { document = null }) { TermsOfServiceScreen(onDismiss = { document = null }) }
@@ -217,7 +310,8 @@ private fun PaywallHero() {
             modifier = Modifier.size(40.dp),
         )
     }
-    Spacer(Modifier.height(12.dp))
+    // iOS header VStack(spacing: 8)
+    Spacer(Modifier.height(8.dp))
     Text(
         text = stringResource(R.string.subscription_pro),
         fontSize = 28.sp,
@@ -228,7 +322,7 @@ private fun PaywallHero() {
         style = MaterialTheme.typography.bodyMedium,
         color = IosSecondaryLabel,
         textAlign = TextAlign.Center,
-        modifier = Modifier.padding(top = 4.dp),
+        modifier = Modifier.padding(top = 8.dp),
     )
 }
 
@@ -239,7 +333,7 @@ private fun PaywallBanner(
 ) {
     Text(
         text = text,
-        style = MaterialTheme.typography.bodyMedium,
+        fontSize = PaywallCalloutSize, // iOS .callout
         textAlign = TextAlign.Center,
         modifier = Modifier
             .fillMaxWidth()
@@ -279,7 +373,7 @@ private fun BenefitRow(icon: ImageVector, text: String, iconRotation: Float = 0f
                 .rotate(iconRotation),
         )
         Spacer(Modifier.width(12.dp))
-        Text(text = text, style = MaterialTheme.typography.bodyLarge)
+        Text(text = text, fontSize = PaywallCalloutSize) // iOS .callout
     }
 }
 
@@ -290,7 +384,7 @@ internal fun EarlyAccessBadge() {
         text = stringResource(R.string.subscription_early_badge),
         fontSize = 10.sp,
         lineHeight = 12.sp,
-        fontWeight = FontWeight.Black,
+        fontWeight = FontWeight.ExtraBold, // iOS .heavy
         letterSpacing = 0.8.sp,
         color = Color.White,
         modifier = Modifier
@@ -302,31 +396,55 @@ internal fun EarlyAccessBadge() {
 
 @Composable
 private fun EarlyAccessCard() {
+    // iOS EarlyAccessCard: 가운데 정렬, sparkles, 주황→분홍 0.12 그라데이션 + 1.5 테두리
+    val gradient = listOf(Color(0xFFFF9500), Color(0xFFFF2D55))
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(Color(0xFFFF9500).copy(alpha = 0.10f))
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+            .background(Brush.linearGradient(gradient.map { it.copy(alpha = 0.12f) }))
+            .border(1.5.dp, Brush.linearGradient(gradient), RoundedCornerShape(16.dp))
+            .padding(20.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         EarlyAccessBadge()
-        Text(stringResource(R.string.subscription_early_title), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-        Text(stringResource(R.string.subscription_early_message), style = MaterialTheme.typography.bodyMedium)
-        Text(stringResource(R.string.subscription_early_lifetime), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+        Icon(
+            imageVector = Icons.Default.AutoAwesome, // iOS sparkles
+            contentDescription = null,
+            tint = Color(0xFFFF9500),
+            modifier = Modifier.size(36.dp),
+        )
+        Text(stringResource(R.string.subscription_early_title), fontSize = 20.sp, fontWeight = FontWeight.Bold)
+        Text(
+            stringResource(R.string.subscription_early_message),
+            fontSize = PaywallCalloutSize,
+            textAlign = TextAlign.Center,
+        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Default.AllInclusive, contentDescription = null, tint = IosSystemGreen, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(6.dp))
+            Text(
+                stringResource(R.string.subscription_early_lifetime),
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold,
+                color = IosSystemGreen,
+            )
+        }
     }
 }
 
 @Composable
-private fun ProStatusLabel() {
+private fun ProStatusLabel(icon: ImageVector, text: String) {
+    // iOS Label(.headline, .green)
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Icon(Icons.Default.CheckCircle, contentDescription = null, tint = IosSystemGreen, modifier = Modifier.size(22.dp))
+        Icon(icon, contentDescription = null, tint = IosSystemGreen, modifier = Modifier.size(22.dp))
         Spacer(Modifier.width(8.dp))
         Text(
-            text = stringResource(R.string.subscription_pro),
+            text = text,
             style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.SemiBold,
             color = IosSystemGreen,
+            textAlign = TextAlign.Center,
         )
     }
 }
@@ -344,4 +462,33 @@ private fun FinePrint(text: String) {
             .heightIn(min = 0.dp)
             .padding(top = 4.dp),
     )
+}
+
+@Composable
+private fun PaywallPrimaryButton(text: String, onClick: () -> Unit, enabled: Boolean = true) {
+    Button(
+        onClick = onClick,
+        enabled = enabled,
+        shape = RoundedCornerShape(14.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(PaywallCtaHeight),
+    ) {
+        Text(text = text, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+    }
+}
+
+private fun openPlayStoreListing(context: android.content.Context) {
+    val packageName = context.packageName
+    val market = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("market://details?id=$packageName"))
+        .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+    runCatching { context.startActivity(market) }.onFailure {
+        context.startActivity(
+            android.content.Intent(
+                android.content.Intent.ACTION_VIEW,
+                android.net.Uri.parse("https://play.google.com/store/apps/details?id=$packageName"),
+            ).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK),
+        )
+    }
 }

@@ -1,17 +1,22 @@
 package com.ScienceFiction.DronePassAndroid.ui.component
 
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.runtime.getValue
 import androidx.compose.animation.core.animateFloatAsState
 import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGreen
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -31,6 +36,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -42,8 +48,6 @@ import com.ScienceFiction.DronePassAndroid.ui.theme.IosLabel
 import com.ScienceFiction.DronePassAndroid.ui.theme.IosSecondaryLabel
 import com.ScienceFiction.DronePassAndroid.ui.theme.IosSecondarySystemGroupedBackground
 import com.ScienceFiction.DronePassAndroid.ui.theme.IosSeparator
-import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGray3
-import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGray4
 
 /*
  * iOS `List(.insetGrouped)` / `Form` 톤을 Compose 로 옮긴 공통 컴포넌트.
@@ -53,22 +57,31 @@ import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGray4
 internal val InsetGroupedHorizontalMargin = 16.dp
 internal val InsetGroupedCornerRadius = 12.dp
 internal val InsetGroupedRowHorizontalPadding = 16.dp
+/** iOS 내비게이션 바 버튼(취소/저장/완료/닫기) 글자 크기 */
+val IosNavBarButtonFontSize = 17.sp
+internal val InsetGroupedFootnoteHeaderStyle = TextStyle(fontSize = 13.sp)
+internal val InsetGroupedHeadlineHeaderStyle = TextStyle(fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+internal val IosSwitchOffTrack = androidx.compose.ui.graphics.Color(0xFFE9E9EA)
 internal val InsetGroupedRowValueMaxWidth = 220.dp
-internal val InsetGroupedRowMinHeight = 48.dp
-internal val InsetGroupedSectionSpacing = 20.dp
+// iOS List 기본 행 높이
+internal val InsetGroupedRowMinHeight = 44.dp
+// iOS insetGrouped List 의 섹션 사이 간격(카드 끝 → 다음 카드/헤더 약 35pt)
+internal val InsetGroupedSectionSpacing = 35.dp
 
 @Composable
 fun InsetGroupedSection(
     modifier: Modifier = Modifier,
     header: String? = null,
     footer: String? = null,
+    // iOS 기본 섹션 헤더는 footnote(13). 화면에 따라 `.font(.headline)` 을 쓰면 [InsetGroupedHeadlineHeaderStyle].
+    headerStyle: TextStyle = InsetGroupedFootnoteHeaderStyle,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
         if (header != null) {
             Text(
                 text = header,
-                fontSize = 13.sp,
+                style = headerStyle,
                 color = IosSecondaryLabel,
                 modifier = Modifier.padding(
                     start = InsetGroupedHorizontalMargin + InsetGroupedRowHorizontalPadding,
@@ -91,21 +104,35 @@ fun InsetGroupedSection(
                 fontSize = 13.sp,
                 lineHeight = 18.sp,
                 color = IosSecondaryLabel,
-                modifier = Modifier.padding(
-                    start = InsetGroupedHorizontalMargin + InsetGroupedRowHorizontalPadding,
-                    end = InsetGroupedHorizontalMargin + InsetGroupedRowHorizontalPadding,
-                    top = 6.dp,
-                ),
+                modifier = Modifier
+                    .padding(
+                        start = InsetGroupedHorizontalMargin + InsetGroupedRowHorizontalPadding,
+                        end = InsetGroupedHorizontalMargin + InsetGroupedRowHorizontalPadding,
+                        top = 6.dp,
+                    )
+                    // iOS 는 푸터가 있는 섹션 뒤 간격이 약 8pt 좁다. 푸터 아래를 섹션 간격에 겹쳐 맞춘다.
+                    .layout { measurable, constraints ->
+                        val placeable = measurable.measure(constraints)
+                        val overlap = InsetGroupedFooterSpacingOverlap.roundToPx()
+                        layout(placeable.width, (placeable.height - overlap).coerceAtLeast(0)) {
+                            placeable.place(0, 0)
+                        }
+                    },
             )
         }
     }
 }
 
+internal val InsetGroupedFooterSpacingOverlap = 8.dp
+
 /** 섹션 안 행 사이 구분선. iOS 처럼 왼쪽을 들여 쓴다. */
 @Composable
-fun InsetGroupedDivider(startIndent: androidx.compose.ui.unit.Dp = InsetGroupedRowHorizontalPadding) {
+fun InsetGroupedDivider(
+    startIndent: androidx.compose.ui.unit.Dp = InsetGroupedRowHorizontalPadding,
+    endIndent: androidx.compose.ui.unit.Dp = 0.dp,
+) {
     HorizontalDivider(
-        modifier = Modifier.padding(start = startIndent),
+        modifier = Modifier.padding(start = startIndent, end = endIndent),
         thickness = 0.5.dp,
         color = IosSeparator,
     )
@@ -153,7 +180,8 @@ fun InsetGroupedRow(
                     fontSize = 12.sp,
                     lineHeight = 16.sp,
                     color = IosSecondaryLabel,
-                    modifier = Modifier.padding(top = 2.dp),
+                    // iOS VStack(spacing: 4)
+                    modifier = Modifier.padding(top = 4.dp),
                 )
             }
         }
@@ -184,7 +212,8 @@ fun InsetGroupedRow(
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                 contentDescription = null,
-                tint = IosSystemGray3,
+                // iOS 설정 행 chevron.right: .caption, .secondary (Material 20dp 글리프 ≈ SF .caption)
+                tint = IosSecondaryLabel,
                 modifier = Modifier.size(20.dp),
             )
         }
@@ -224,6 +253,8 @@ fun DronePassSwitch(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
 ) {
+    // Material 최소 터치 크기(48dp) 여백을 빼 iOS 44pt 행 높이를 지킨다(스위치 자체는 32dp 높이).
+    CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides Dp.Unspecified) {
     Switch(
         checked = checked,
         onCheckedChange = onCheckedChange,
@@ -235,7 +266,8 @@ fun DronePassSwitch(
             checkedTrackColor = IosSystemGreen,
             checkedBorderColor = Color.Transparent,
             uncheckedThumbColor = Color.White,
-            uncheckedTrackColor = IosSystemGray4,
+            // iOS UISwitch off 트랙(systemFill 계열, 흰 배경 위 #E9E9EA)
+            uncheckedTrackColor = IosSwitchOffTrack,
             uncheckedBorderColor = Color.Transparent,
         ),
         thumbContent = {
@@ -243,11 +275,16 @@ fun DronePassSwitch(
             Spacer(modifier = Modifier.size(SwitchDefaults.IconSize))
         },
     )
+    }
 }
 
 /**
  * 시트 안 화면의 iOS Large Title 헤더. Material LargeTopAppBar 는 시트 안에서 큰 빈 공간을 만들어서
  * 제목과 닫기 버튼만 가볍게 그린다.
+ *
+ * iOS `NavigationView` + `.large` 제목처럼 위에 inline 내비게이션 바 높이([SheetLargeTitleNavBarHeight])를
+ * 비워 두고(닫기 버튼은 이 줄 오른쪽), 큰 제목은 그 아래 줄에 둔다. 이 헤더를 쓰는 시트는
+ * iOS 처럼 그래버 없이(`dragHandle = null`) 띄운다.
  */
 @Composable
 fun SheetLargeTitleHeader(
@@ -256,25 +293,37 @@ fun SheetLargeTitleHeader(
     closeText: String? = null,
     onClose: (() -> Unit)? = null,
 ) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(start = 20.dp, end = 8.dp, top = 4.dp, bottom = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.weight(1f),
-        )
-        if (onClose != null && closeText != null) {
-            TextButton(onClick = onClose) {
-                Text(closeText, fontWeight = FontWeight.SemiBold)
+    Column(modifier = modifier.fillMaxWidth()) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(SheetLargeTitleNavBarHeight)
+                .padding(horizontal = 8.dp),
+            contentAlignment = Alignment.CenterEnd,
+        ) {
+            if (onClose != null && closeText != null) {
+                TextButton(onClick = onClose) {
+                    Text(closeText, fontWeight = FontWeight.SemiBold, fontSize = IosNavBarButtonFontSize)
+                }
             }
         }
+        Text(
+            text = title,
+            // iOS .large 내비게이션 제목: 34pt bold
+            fontSize = 34.sp,
+            lineHeight = 41.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = SheetLargeTitleTopPadding, bottom = 4.dp),
+        )
     }
 }
+
+/** iOS inline 내비게이션 바 높이. large 제목은 이 아래에 놓인다. */
+internal val SheetLargeTitleNavBarHeight = 44.dp
+internal val SheetLargeTitleTopPadding = 14.dp
+
+/** large 제목 줄 아래부터 첫 섹션(헤더)까지 간격. iOS 제목 중심 → 첫 섹션 헤더 약 54pt 에 맞춘다. */
+internal val SheetLargeTitleContentGap = 21.dp
 
 /**
  * 시트 내비게이션 헤더 아래 hairline. iOS inline 내비게이션 바처럼 콘텐츠가 헤더 밑으로

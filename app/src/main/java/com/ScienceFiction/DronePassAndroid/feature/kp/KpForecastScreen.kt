@@ -71,7 +71,8 @@ internal val IosCurrentKpCardHorizontalSpacing = 12.dp
 internal val IosCurrentKpDetailLeadingPadding = 10.dp
 internal val IosCurrentKpDetailSpacing = 8.dp
 internal val IosCurrentKpLevelRowSpacing = 6.dp
-internal val IosCurrentKpLevelIconSize = 20.dp
+// SF 20pt 글리프 ≈ Material 24dp
+internal val IosCurrentKpLevelIconSize = 24.dp
 internal val IosCurrentKpSectionTitleFontSize = 20.sp
 internal val IosCurrentKpLevelNameFontSize = 20.sp
 internal val IosCurrentKpLevelDescriptionFontSize = 12.sp

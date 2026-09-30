@@ -64,9 +64,10 @@ class ProfileSheetParityTest {
         assertSourceOrder(
             infoSectionSource,
             listOf(
-                "style = MaterialTheme.typography.bodyLarge",
+                // iOS 내 정보 행 .subheadline(15)
+                "style = MaterialTheme.typography.bodyMedium",
                 "Spacer(modifier = Modifier.width(ProfileInfoValueLeadingSpacing))",
-                "style = MaterialTheme.typography.bodyLarge",
+                "style = MaterialTheme.typography.bodyMedium",
                 "color = MaterialTheme.colorScheme.onSurfaceVariant",
                 "textAlign = TextAlign.End",
             ),

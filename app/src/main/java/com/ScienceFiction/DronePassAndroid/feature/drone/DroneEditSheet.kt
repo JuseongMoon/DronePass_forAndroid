@@ -1,5 +1,10 @@
 package com.ScienceFiction.DronePassAndroid.feature.drone
 
+import com.ScienceFiction.DronePassAndroid.ui.theme.IosPlaceholderText
+import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedRowMinHeight
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.foundation.text.BasicTextField
+import com.ScienceFiction.DronePassAndroid.ui.component.IosNavBarButtonFontSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -26,7 +31,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -63,8 +67,11 @@ internal val DroneEditNavigationHeaderSideWidth = 88.dp
 internal val DroneColorPickerCircleSize = 24.dp
 internal val DroneColorPickerCircleTextSpacing = 8.dp
 internal val DroneColorPickerRowVerticalPadding = 12.dp
+internal val DroneColorPickerListVerticalPadding = 10.dp
+internal val DroneEditFirstSectionTopPadding = 24.dp
 internal val DroneColorPickerDividerStartPadding = 56.dp
-internal val DroneColorPickerCheckmarkSize = 17.dp
+// iOS checkmark .body 글리프 ≈ Material 22dp
+internal val DroneColorPickerCheckmarkSize = 22.dp
 internal val DroneColorPickerLabelFontSize = 17.sp
 internal const val DroneColorPickerCircleBorderAlpha = 0.2f
 
@@ -149,10 +156,12 @@ fun DroneEditSheet(
         }
     }
 
+    // iOS DroneEditView 시트에는 끌기 손잡이가 없다.
     DronePassModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         containerColor = IosSystemGroupedBackground,
+        dragHandle = { Spacer(modifier = Modifier.height(DroneSheetTopInset)) },
     ) {
         Column(
             modifier = Modifier
@@ -176,7 +185,8 @@ fun DroneEditSheet(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 4.dp)
+                    // iOS: inline 제목 중심 → 첫 섹션 헤더 약 54pt
+                    .padding(top = DroneEditFirstSectionTopPadding)
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(InsetGroupedSectionSpacing),
             ) {
@@ -306,7 +316,7 @@ private fun DroneEditNavigationHeader(
             contentAlignment = Alignment.CenterStart,
         ) {
             TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.common_cancel))
+                Text(stringResource(R.string.common_cancel), fontSize = IosNavBarButtonFontSize, fontWeight = FontWeight.Normal)
             }
         }
         Text(
@@ -326,7 +336,7 @@ private fun DroneEditNavigationHeader(
                 onClick = onSave,
                 enabled = canSave,
             ) {
-                Text(primaryActionText)
+                Text(primaryActionText, fontSize = IosNavBarButtonFontSize, fontWeight = FontWeight.Normal)
             }
         }
     }
@@ -354,29 +364,32 @@ private fun DroneEditInputField(
     textStyle: TextStyle = MaterialTheme.typography.bodyLarge,
 ) {
     val placeholderText = resolveDroneEditPlaceholderText(placeholder)
-    TextField(
+    // iOS Form TextField: 44pt 행, 16pt 좌우 여백, placeholderText 색. Material TextField(56dp)는 쓰지 않는다.
+    BasicTextField(
         value = value,
         onValueChange = onValueChange,
-        modifier = modifier.fillMaxWidth(),
-        placeholder = placeholderText?.let { resolvedPlaceholder ->
-            {
-                Text(
-                    text = resolvedPlaceholder,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        },
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(min = InsetGroupedRowMinHeight),
         singleLine = singleLine,
         minLines = minLines,
-        textStyle = textStyle,
-        colors = TextFieldDefaults.colors(
-            focusedContainerColor = Color.Transparent,
-            unfocusedContainerColor = Color.Transparent,
-            disabledContainerColor = Color.Transparent,
-            focusedIndicatorColor = Color.Transparent,
-            unfocusedIndicatorColor = Color.Transparent,
-            disabledIndicatorColor = Color.Transparent,
-        ),
+        textStyle = textStyle.copy(color = MaterialTheme.colorScheme.onSurface),
+        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+        decorationBox = { innerTextField ->
+            Box(
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 11.dp),
+                contentAlignment = Alignment.CenterStart,
+            ) {
+                if (value.isEmpty() && placeholderText != null) {
+                    Text(
+                        text = placeholderText,
+                        style = textStyle,
+                        color = IosPlaceholderText,
+                    )
+                }
+                innerTextField()
+            }
+        },
     )
 }
 
@@ -426,7 +439,8 @@ fun ColorPickerGrid(
     onColorSelected: (PaletteColor) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier.fillMaxWidth()) {
+    // iOS ColorPickerGrid 는 목록 위아래에 여백이 있어 카드 안쪽이 약 10pt 더 넓다.
+    Column(modifier = modifier.fillMaxWidth().padding(vertical = DroneColorPickerListVerticalPadding)) {
         colors.forEachIndexed { index, color ->
             ColorPickerRow(
                 color = color,
@@ -434,7 +448,8 @@ fun ColorPickerGrid(
                 onClick = { onColorSelected(color) },
             )
             if (index != colors.lastIndex) {
-                InsetGroupedDivider(startIndent = DroneColorPickerDividerStartPadding)
+                // iOS 색상 목록은 한 행 안의 커스텀 목록이라 구분선이 오른쪽 여백 앞에서 끝난다.
+                InsetGroupedDivider(startIndent = DroneColorPickerDividerStartPadding, endIndent = 16.dp)
             }
         }
     }

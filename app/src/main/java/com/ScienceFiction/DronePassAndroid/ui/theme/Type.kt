@@ -4,6 +4,7 @@ import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 
 /**
@@ -41,28 +42,39 @@ val Typography = Typography(
         lineHeight = 28.sp,
         letterSpacing = 0.sp,
     ),
+    // iOS .headline (17 semibold) — 시트 내비게이션 제목, 카드 제목
     titleMedium = TextStyle(
         fontFamily = DefaultFontFamily,
-        fontWeight = FontWeight.Medium,
-        fontSize = 16.sp,
-        lineHeight = 24.sp,
-        letterSpacing = 0.15.sp,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 17.sp,
+        lineHeight = 22.sp,
+        letterSpacing = 0.sp,
     ),
 
-    // Body: 본문 (도형 메모, 설명, 일반 텍스트)
+    // Body: iOS Dynamic Type 기본 크기에 맞춘다. 자간은 iOS 처럼 0.
+    // bodyLarge = .body(17), bodyMedium = .subheadline(15), bodySmall = .caption(12)
+    // MaterialTheme 이 기본 Text 스타일로 bodyLarge 를 제공하므로, 글자 크기만 지정한 Text 도
+    // 이 줄 높이를 물려받는다. 고정 sp 대신 글자 크기 비율(iOS 17/22)로 둬 작은 글자가 22sp 줄을 차지하지 않게 한다.
     bodyLarge = TextStyle(
         fontFamily = DefaultFontFamily,
         fontWeight = FontWeight.Normal,
-        fontSize = 16.sp,
-        lineHeight = 24.sp,
-        letterSpacing = 0.5.sp,
+        fontSize = 17.sp,
+        lineHeight = (22f / 17f).em,
+        letterSpacing = 0.sp,
     ),
     bodyMedium = TextStyle(
         fontFamily = DefaultFontFamily,
         fontWeight = FontWeight.Normal,
-        fontSize = 14.sp,
+        fontSize = 15.sp,
         lineHeight = 20.sp,
-        letterSpacing = 0.25.sp,
+        letterSpacing = 0.sp,
+    ),
+    bodySmall = TextStyle(
+        fontFamily = DefaultFontFamily,
+        fontWeight = FontWeight.Normal,
+        fontSize = 12.sp,
+        lineHeight = 16.sp,
+        letterSpacing = 0.sp,
     ),
 
     // Label: 버튼/캡션 (KpLevel 라벨, 비행구역 칩)
@@ -73,11 +85,12 @@ val Typography = Typography(
         lineHeight = 20.sp,
         letterSpacing = 0.1.sp,
     ),
+    // iOS .caption2 (11)
     labelSmall = TextStyle(
         fontFamily = DefaultFontFamily,
-        fontWeight = FontWeight.Medium,
+        fontWeight = FontWeight.Normal,
         fontSize = 11.sp,
-        lineHeight = 16.sp,
-        letterSpacing = 0.5.sp,
+        lineHeight = 13.sp,
+        letterSpacing = 0.sp,
     ),
 )

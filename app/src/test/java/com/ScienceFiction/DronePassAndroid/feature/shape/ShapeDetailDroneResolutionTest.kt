@@ -113,7 +113,7 @@ class ShapeDetailDroneResolutionTest {
         assertEquals(14.sp, ShapeDetailCopyToastTextSize)
         assertEquals(16.dp, ShapeDetailCopyToastHorizontalPadding)
         assertEquals(10.dp, ShapeDetailCopyToastVerticalPadding)
-        assertEquals(HapticFeedbackType.LongPress, ShapeDetailCopyHapticFeedbackType)
+        assertEquals(HapticFeedbackType.Confirm, ShapeDetailCopyHapticFeedbackType)
     }
 
     @Test

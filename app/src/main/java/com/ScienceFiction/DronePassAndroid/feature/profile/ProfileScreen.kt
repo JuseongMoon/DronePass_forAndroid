@@ -1,5 +1,8 @@
 package com.ScienceFiction.DronePassAndroid.feature.profile
 
+import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedRowMinHeight
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.ui.text.font.FontWeight
 import android.app.Activity
 import android.content.Context
@@ -48,6 +51,7 @@ import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedDivider
 import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedRow
 import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedSection
 import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedSectionSpacing
+import com.ScienceFiction.DronePassAndroid.ui.component.SheetLargeTitleContentGap
 import com.ScienceFiction.DronePassAndroid.ui.component.SheetLargeTitleHeader
 import com.ScienceFiction.DronePassAndroid.ui.theme.IosSeparator
 import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGroupedBackground
@@ -134,31 +138,34 @@ fun ProfileScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
-                .padding(top = 8.dp),
+                .padding(top = SheetLargeTitleContentGap),
             verticalArrangement = Arrangement.spacedBy(InsetGroupedSectionSpacing),
         ) {
-            // ===== 1. 내 정보 섹션 =====
-            InsetGroupedSection(header = stringResource(R.string.profile_section_my_info)) {
-                ProfileInfoSection(
-                    email = profileEmail ?: stringResource(R.string.profile_info_email_hidden),
-                    loginProvider = profileLoginProviderDisplayText(profileLoginProvider),
-                    joinDate = joinDateMillis?.let(::formatProfileJoinDate)
-                        ?: stringResource(R.string.profile_info_join_unknown),
-                    shapeCount = stringResource(R.string.profile_info_count_unit, activeShapeCount),
-                    sketchCount = stringResource(R.string.profile_info_count_unit, activeSketchCount),
-                    droneCount = stringResource(R.string.profile_info_count_unit, activeDroneCount),
-                    expiredShapeCount = stringResource(R.string.profile_info_count_unit, expiredShapeCount),
-                )
-            }
+            // iOS .listSectionSpacing(10): 내 정보 카드와 로그아웃 사이만 10pt 로 붙인다.
+            Column(verticalArrangement = Arrangement.spacedBy(ProfileInfoToLogoutSectionSpacing)) {
+                // ===== 1. 내 정보 섹션 =====
+                InsetGroupedSection(header = stringResource(R.string.profile_section_my_info)) {
+                    ProfileInfoSection(
+                        email = profileEmail ?: stringResource(R.string.profile_info_email_hidden),
+                        loginProvider = profileLoginProviderDisplayText(profileLoginProvider),
+                        joinDate = joinDateMillis?.let(::formatProfileJoinDate)
+                            ?: stringResource(R.string.profile_info_join_unknown),
+                        shapeCount = stringResource(R.string.profile_info_count_unit, activeShapeCount),
+                        sketchCount = stringResource(R.string.profile_info_count_unit, activeSketchCount),
+                        droneCount = stringResource(R.string.profile_info_count_unit, activeDroneCount),
+                        expiredShapeCount = stringResource(R.string.profile_info_count_unit, expiredShapeCount),
+                    )
+                }
 
-            // iOS ProfileView: 내 정보 카드와 로그아웃은 별도 Section 이다.
-            InsetGroupedSection {
-                InsetGroupedRow(
-                    title = stringResource(R.string.profile_account_logout),
-                    titleColor = MaterialTheme.colorScheme.error,
-                    onClick = { if (!isAccountActionInProgress) showLogoutDialog = true },
-                    enabled = shouldEnableProfileAccountAction(isAccountActionInProgress),
-                )
+                // iOS ProfileView: 내 정보 카드와 로그아웃은 별도 Section 이다.
+                InsetGroupedSection {
+                    InsetGroupedRow(
+                        title = stringResource(R.string.profile_account_logout),
+                        titleColor = MaterialTheme.colorScheme.error,
+                        onClick = { if (!isAccountActionInProgress) showLogoutDialog = true },
+                        enabled = shouldEnableProfileAccountAction(isAccountActionInProgress),
+                    )
+                }
             }
 
             // ===== 2. 동기화 섹션 =====
@@ -191,7 +198,11 @@ fun ProfileScreen(
                     text = lastSyncDisplay,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                    // iOS List 행 최소 높이 44
+                    modifier = Modifier
+                        .heightIn(min = InsetGroupedRowMinHeight)
+                        .wrapContentHeight(Alignment.CenterVertically)
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
                 )
 
                 // 수동 백업 (로그인 + 토글 ON 시만 표시)
@@ -289,6 +300,8 @@ fun ProfileScreen(
                 Column {
                     Text(stringResource(R.string.profile_delete_account_message))
                     if (subscriptionPlan.isPaidSubscriber) {
+                        // iOS: 본문 뒤 "\n\n" 으로 이어 붙인다.
+                        Spacer(modifier = Modifier.height(12.dp))
                         Text(stringResource(R.string.subscription_delete_warning))
                         TextButton(onClick = { viewModel.subscriptionManager.openManagement(context) }) {
                             Text(stringResource(R.string.subscription_manage))
@@ -321,10 +334,8 @@ fun ProfileScreen(
             onDismissRequest = { showDeleteFinalDialog = false },
             title = { Text(stringResource(R.string.profile_delete_account_final_title)) },
             text = {
-                Column {
-                    Text(stringResource(R.string.profile_delete_account_final_message))
-                    if (subscriptionPlan.isPaidSubscriber) Text(stringResource(R.string.subscription_delete_warning))
-                }
+                // iOS finalConfirm 은 "되돌릴 수 없다" 한 줄만 보여 준다.
+                Text(stringResource(R.string.profile_delete_account_final_message))
             },
             confirmButton = {
                 TextButton(onClick = {
@@ -479,15 +490,16 @@ private fun ProfileInfoRow(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        // iOS 내 정보 행은 .subheadline(15)
         Text(
             text = title,
-            style = MaterialTheme.typography.bodyLarge,
+            style = MaterialTheme.typography.bodyMedium,
         )
         Spacer(modifier = Modifier.width(ProfileInfoValueLeadingSpacing))
         // 이메일처럼 긴 값은 두 줄로 끊지 않고 가운데를 줄여 한 줄로 보여 준다.
         Text(
             text = value,
-            style = MaterialTheme.typography.bodyLarge,
+            style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.End,
             maxLines = 1,
@@ -517,7 +529,11 @@ private fun ProfileCloudSyncToggleItem(
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(modifier = Modifier.weight(1f)) {
+        // iOS VStack(alignment: .leading, spacing: 4)
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
             Text(
                 text = title,
                 style = MaterialTheme.typography.bodyLarge,

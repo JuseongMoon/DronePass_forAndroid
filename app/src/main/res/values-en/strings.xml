@@ -349,7 +349,6 @@
     <string name="shape_edit_search_address">Search address</string>
     <string name="search_address_title">Search Address</string>
     <string name="search_address_placeholder">Search by road or lot address</string>
-    <string name="search_address_no_results">No results found</string>
     <string name="search_address_guide">Both road and lot addresses are searchable</string>
     <string name="search_address_example">Search examples:</string>
     <string name="search_address_example_road_1">• 78-gil Seocho-daero 24 (Road name)</string>
@@ -442,7 +441,7 @@
 
     <string name="profile_account_logout">Sign Out</string>
     <string name="profile_account_delete">Delete Account</string>
-    <string name="profile_account_delete_desc">Your account and cloud data will be deleted. Local data will remain on this device.</string>
+    <string name="profile_account_delete_desc">Only the account will be deleted. Local data will remain available.</string>
     <string name="profile_logout_message">Are you sure you want to sign out?</string>
     <string name="profile_delete_account_button">Delete</string>
     <string name="profile_delete_account_message">Your account will be deleted and cloud sync will stop.\n\nShapes, drones, and sketches saved on this device will remain available.\n\nIf you later enable cloud sync with another account, they may sync to that account.\n\nAre you sure you want to delete your account?</string>
@@ -567,7 +566,7 @@
     <string name="app_info_feature_sunrise_sunset_title">Sunrise/Sunset Info and Notifications</string>
     <string name="app_info_feature_sunrise_sunset_desc">Sunrise/sunset times and notifications for current location</string>
     <string name="app_info_feature_shape_management_title">Radius-Based Shape Creation and Management</string>
-    <string name="app_info_feature_shape_management_desc">Create/edit circles, rectangles, polygons, lines</string>
+    <string name="app_info_feature_shape_management_desc">Create/edit radius-based circles</string>
     <string name="app_info_feature_shape_duplicate_title">Shape Duplication and Alignment</string>
     <string name="app_info_feature_shape_duplicate_desc">Copy shapes and various alignment options</string>
     <string name="app_info_feature_search_title">Address Search and Navigation</string>
@@ -841,13 +840,23 @@
     <string name="subscription_product_name">DronePass Pro Yearly</string>
     <string name="subscription_product_unavailable">Couldn\'t load subscription details. Please check your network connection.</string>
     <string name="subscription_cross_platform_notice">Subscriptions purchased on iPhone are not yet recognized on Android.</string>
-    <string name="subscription_payment_issue">Please check your payment information.</string>
     <string name="subscription_paywall_price">%1$s / year</string>
     <string name="subscription_paywall_renewal">Your subscription renews automatically each year. Cancel any time in Google Play.</string>
     <string name="subscription_restore">Restore purchases</string>
     <string name="subscription_terms">Terms of Service · EULA</string>
     <string name="subscription_privacy">Privacy Policy</string>
-    <string name="subscription_update_required">Update the app to create new items.</string>
-    <string name="subscription_delete_warning">Deleting your account does not cancel your subscription.</string>
+    <string name="subscription_update_required">Please update to the latest version to create new shapes and sketches. Your existing data remains available.</string>
+    <string name="subscription_delete_warning">Deleting your account does not cancel your DronePass Pro subscription. To cancel it, use Manage Subscription first.</string>
     <string name="subscription_legacy_subscribed">Your lifetime Pro access continues even if you cancel your subscription.</string>
+    <string name="subscription_plan_checking">Checking…</string>
+    <string name="subscription_billing_retry_message">Your subscription is paused due to a billing issue. Please check your payment information.</string>
+    <string name="subscription_restore_success">Your subscription has been restored.</string>
+    <string name="subscription_restore_not_found">No subscription to restore was found.</string>
+    <string name="sketch_quota_counter">Lines %1$d / %2$d</string>
+    <string name="sketch_quota_upgrade">Go Pro</string>
+    <string name="sketch_quota_blocked">The free plan includes up to %1$d lines. Erase lines or upgrade to Pro.</string>
+    <string name="subscription_status_active">Pro is active</string>
+    <string name="subscription_status_legacy">You have Pro free for life as an existing user</string>
+    <string name="subscription_product_retry">Try Again</string>
+    <string name="subscription_update_button">Update on Google Play</string>
 </resources>

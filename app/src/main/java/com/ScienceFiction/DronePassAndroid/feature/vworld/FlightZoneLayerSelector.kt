@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.vworld
 
+import com.ScienceFiction.DronePassAndroid.ui.component.IosNavBarButtonFontSize
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -71,7 +72,7 @@ internal val FlightZoneLayerSelectorLegalNoticeBorderColor = Color(0x4D007AFF) /
 internal val FlightZoneLayerSelectorStatHeaderOuterHorizontalPadding = 0.dp
 internal val FlightZoneLayerSelectorStatHeaderOuterVerticalPadding = 0.dp
 internal val FlightZoneLayerSelectorDividerLeadingPadding = 60.dp
-internal val FlightZoneLayerSelectorActionIconSize = 15.dp
+internal val FlightZoneLayerSelectorActionIconSize = 18.dp
 internal val FlightZoneLayerSelectorActionTextSize = 15.sp
 internal val FlightZoneLayerSelectorBulkActionHapticType = HapticFeedbackType.LongPress
 internal val FlightZoneLayerSelectorRowToggleHapticType = HapticFeedbackType.TextHandleMove
@@ -144,7 +145,8 @@ fun FlightZoneLayerSelector(
                         imageVector = Icons.Default.Info,
                         contentDescription = null,
                         tint = InfoBannerAccent,
-                        modifier = Modifier.size(20.dp)
+                        // iOS info.circle.fill 20pt ≈ Material 24dp
+                        modifier = Modifier.size(24.dp)
                     )
                     Spacer(modifier = Modifier.width(10.dp))
                     Text(
@@ -166,7 +168,8 @@ fun FlightZoneLayerSelector(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                    // iOS .padding() — 사방 16
+                    .padding(16.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 BigActionButton(
@@ -239,7 +242,7 @@ private fun NavigationHeader(
         Text(
             text = title,
             style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Medium,
+            fontWeight = FontWeight.SemiBold,
             textAlign = TextAlign.Center,
             modifier = Modifier.weight(1f)
         )
@@ -249,6 +252,8 @@ private fun NavigationHeader(
         ) {
             Text(
                 text = trailingText,
+                fontSize = IosNavBarButtonFontSize,
+                fontWeight = FontWeight.Normal,
                 color = InfoBannerAccent
             )
         }
@@ -357,9 +362,9 @@ private fun BigActionButton(
             )
             Text(
                 text = text,
+                // iOS Label .subheadline (보통 굵기)
                 style = MaterialTheme.typography.bodyMedium.copy(
                     fontSize = FlightZoneLayerSelectorActionTextSize,
-                    fontWeight = FontWeight.Medium,
                 ),
                 color = contentColor,
             )
@@ -395,7 +400,8 @@ private fun LayerItem(
                     imageVector = if (isChecked) Icons.Default.CheckCircle else Icons.Outlined.Circle,
                     contentDescription = null,
                     tint = if (isChecked) InfoBannerAccent else Color.Gray,
-                    modifier = Modifier.size(24.dp)
+                    // SF 24pt circle 글리프(지름 약 22pt) ≈ Material 원 아이콘 26dp
+                    modifier = Modifier.size(26.dp)
                 )
             }
 

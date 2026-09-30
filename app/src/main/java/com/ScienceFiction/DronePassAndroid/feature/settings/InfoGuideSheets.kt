@@ -1,5 +1,10 @@
 package com.ScienceFiction.DronePassAndroid.feature.settings
 
+import androidx.compose.material.icons.filled.NearMe
+import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGroupedBackground
+import androidx.compose.material.icons.filled.Dangerous
+import androidx.compose.ui.unit.Dp
+import com.ScienceFiction.DronePassAndroid.ui.component.IosNavBarButtonFontSize
 import com.ScienceFiction.DronePassAndroid.ui.component.SheetHeaderDivider
 import com.ScienceFiction.DronePassAndroid.ui.component.IosMenuDivider
 import com.ScienceFiction.DronePassAndroid.ui.component.IosDropdownMenu
@@ -23,15 +28,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Air
-import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.Brightness6
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Circle
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.Opacity
-import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Storm
 import androidx.compose.material.icons.filled.Thermostat
 import androidx.compose.material.icons.filled.Visibility
@@ -68,14 +70,16 @@ import kotlinx.coroutines.delay
 
 internal val WeatherGuideCategoryMenuHorizontalPadding = 8.dp
 internal val WeatherGuideCategoryMenuVerticalPadding = 4.dp
-internal val WeatherGuideCategoryMenuIconSize = 12.dp
+// SF chevron.down .caption 글리프 ≈ Material ExpandMore 20dp
+internal val WeatherGuideCategoryMenuIconSize = 20.dp
 internal val InfoGuideHeaderHeight = 44.dp
 internal val InfoGuideHeaderActionWidth = 72.dp
 internal val InfoGuideHeaderHorizontalPadding = 8.dp
 internal val InfoGuideHeaderDividerThickness = 0.5.dp
 internal val InfoGuideSectionTitleFontSize = 20.sp
 internal val InfoGuideLeadingIconSlotWidth = 50.dp
-internal val InfoGuideLeadingIconSize = 30.dp
+// SF 30pt semibold 글리프 ≈ Material 36dp
+internal val InfoGuideLeadingIconSize = 36.dp
 internal val InfoGuideElementNoteTopPadding = 8.dp
 
 @Composable
@@ -176,7 +180,7 @@ private fun InfoGuideScaffold(
                 contentAlignment = Alignment.CenterEnd,
             ) {
                 TextButton(onClick = onDismiss) {
-                    Text(stringResource(R.string.common_close))
+                    Text(stringResource(R.string.common_close), fontSize = IosNavBarButtonFontSize, fontWeight = FontWeight.Normal)
                 }
             }
         }
@@ -203,7 +207,8 @@ private fun GuideSection(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+            // iOS secondarySystemBackground
+            containerColor = IosSystemGroupedBackground,
         ),
     ) {
         Column(
@@ -245,7 +250,8 @@ private fun KpOverviewCard() {
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+            // iOS secondarySystemBackground
+            containerColor = IosSystemGroupedBackground,
         ),
     ) {
         Column(
@@ -255,7 +261,7 @@ private fun KpOverviewCard() {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     text = stringResource(R.string.kp_info_what_body),
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 GuideBullet(textRes = R.string.kp_info_what_bullet_range)
@@ -267,12 +273,12 @@ private fun KpOverviewCard() {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     text = stringResource(R.string.kp_info_drone_title),
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.SemiBold,
                 )
                 Text(
                     text = stringResource(R.string.kp_info_drone_body),
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 GuideBullet(textRes = R.string.kp_info_relation_bullet_gps_accuracy)
@@ -290,16 +296,16 @@ private fun KpOverviewCard() {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     text = stringResource(R.string.kp_info_sources_title),
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.SemiBold,
                 )
                 Text(
                     text = stringResource(R.string.kp_info_sources_body),
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                GuideBullet(textRes = R.string.kp_info_source_gfz)
-                GuideBullet(textRes = R.string.kp_info_source_noaa)
+                GuideBullet(textRes = R.string.kp_info_source_gfz, indent = 8.dp)
+                GuideBullet(textRes = R.string.kp_info_source_noaa, indent = 8.dp)
                 Text(
                     text = stringResource(R.string.kp_info_source_difference),
                     style = MaterialTheme.typography.bodySmall,
@@ -307,9 +313,9 @@ private fun KpOverviewCard() {
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.padding(top = 4.dp),
                 )
-                GuideBullet(textRes = R.string.kp_info_source_reason_station)
-                GuideBullet(textRes = R.string.kp_info_source_reason_interval)
-                GuideBullet(textRes = R.string.kp_info_source_reason_forecast)
+                GuideBullet(textRes = R.string.kp_info_source_reason_station, caption = true, indent = 8.dp)
+                GuideBullet(textRes = R.string.kp_info_source_reason_interval, caption = true, indent = 8.dp)
+                GuideBullet(textRes = R.string.kp_info_source_reason_forecast, caption = true, indent = 8.dp)
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.Top,
@@ -339,7 +345,8 @@ private fun WeatherOverviewCard(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+            // iOS secondarySystemBackground
+            containerColor = IosSystemGroupedBackground,
         ),
     ) {
         Column(
@@ -349,7 +356,7 @@ private fun WeatherOverviewCard(
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     text = stringResource(R.string.weather_info_importance_body),
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 GuideBullet(textRes = R.string.weather_info_importance_bullet_factors)
@@ -368,12 +375,12 @@ private fun WeatherOverviewCard(
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     text = stringResource(R.string.weather_info_safety_title),
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.SemiBold,
                 )
                 Text(
                     text = stringResource(R.string.weather_info_safety_body),
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 GuideBullet(textRes = R.string.weather_info_safety_bullet_comprehensive)
@@ -413,14 +420,14 @@ private fun WeatherLocationAccuracyCard(accuracyMeters: Double) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
-                imageVector = Icons.Default.Place,
+                imageVector = Icons.Default.NearMe, // iOS location.fill
                 contentDescription = null,
                 tint = warningColor,
                 modifier = Modifier.size(18.dp),
             )
             Text(
                 text = stringResource(R.string.weather_info_location_title),
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodyLarge,
                 color = warningColor,
                 fontWeight = FontWeight.SemiBold,
             )
@@ -431,7 +438,7 @@ private fun WeatherLocationAccuracyCard(accuracyMeters: Double) {
                 R.string.weather_info_location_wifi,
                 accuracyMeters.toInt(),
             ),
-            style = MaterialTheme.typography.bodySmall,
+            style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         GuideBullet(
@@ -455,7 +462,8 @@ private fun WeatherElementGuideCard(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+            // iOS secondarySystemBackground
+            containerColor = IosSystemGroupedBackground,
         ),
     ) {
         Column(
@@ -481,7 +489,8 @@ private fun WeatherElementGuideCard(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = stringResource(item.titleRes),
-                        style = MaterialTheme.typography.titleMedium,
+                        // iOS .title3 semibold
+                        fontSize = 20.sp,
                         fontWeight = FontWeight.SemiBold,
                     )
                     Text(
@@ -553,7 +562,8 @@ private fun WeatherCategoryMenu(
         ) {
             Text(
                 text = stringResource(category.labelRes),
-                style = MaterialTheme.typography.bodySmall,
+                // iOS .subheadline medium
+                style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Medium,
             )
             Icon(
@@ -584,7 +594,8 @@ private fun WeatherCategoryMenu(
                                 )
                                 Text(
                                     text = stringResource(entry.descriptionRes),
-                                    style = MaterialTheme.typography.bodySmall,
+                                    // iOS .caption2
+                                    style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
@@ -628,14 +639,17 @@ private fun WeatherElementDetailRow(level: WeatherElementLevelItem) {
             )
             Text(
                 text = formattedStringResource(level.rangeRes, level.rangeArgs),
-                style = MaterialTheme.typography.bodySmall,
+                // iOS .subheadline semibold
+                style = MaterialTheme.typography.bodyMedium,
                 color = color,
                 fontWeight = FontWeight.SemiBold,
             )
         }
-        GuideBullet(textRes = level.descriptionRes)
+        // iOS elementDetailRow: 두 줄 모두 .caption
+        GuideBullet(textRes = level.descriptionRes, caption = true)
         GuideBullet(
             textRes = level.adviceRes,
+            caption = true,
             color = adviceColor,
             fontWeight = if (level.level == WeatherSafetyLevel.DANGER) {
                 FontWeight.Medium
@@ -694,7 +708,8 @@ private fun KpLevelGuideCard(item: KpLevelGuideItem) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = stringResource(item.nameRes),
-                        style = MaterialTheme.typography.titleMedium,
+                        // iOS .title3 semibold
+                        fontSize = 20.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = item.color,
                     )
@@ -731,19 +746,24 @@ private fun GuideBullet(
     @StringRes textRes: Int,
     color: Color = MaterialTheme.colorScheme.onSurfaceVariant,
     fontWeight: FontWeight = FontWeight.Normal,
+    // iOS 글머리표는 .subheadline(15). 보조 설명 목록만 .caption(12).
+    caption: Boolean = false,
+    indent: Dp = 0.dp,
 ) {
+    val style = if (caption) MaterialTheme.typography.bodySmall else MaterialTheme.typography.bodyMedium
     Row(
+        modifier = Modifier.padding(start = indent),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.Top,
     ) {
         Text(
             text = "•",
-            style = MaterialTheme.typography.bodySmall,
+            style = style,
             color = color,
         )
         Text(
             text = stringResource(textRes),
-            style = MaterialTheme.typography.bodySmall,
+            style = style,
             color = color,
             fontWeight = fontWeight,
         )
@@ -1000,7 +1020,7 @@ internal fun kpInfoLevelIcon(level: KpLevel): ImageVector = when (level) {
     KpLevel.G2 -> Icons.Default.Brightness6
     KpLevel.G3 -> Icons.Default.Error
     KpLevel.G4 -> Icons.Default.Warning
-    KpLevel.G5 -> Icons.Default.Block
+    KpLevel.G5 -> Icons.Default.Dangerous // iOS xmark.octagon.fill
 }
 
 internal fun weatherElementGuideItems(category: DroneCategory): List<WeatherElementGuideItem> {
@@ -1177,8 +1197,8 @@ internal fun weatherElementGuideItems(category: DroneCategory): List<WeatherElem
             topic = WeatherInfoTopic.Cri,
             titleRes = R.string.weather_info_cri_title,
             safeRangeRes = R.string.weather_info_cri_safe_range,
-            icon = Icons.Default.Opacity,
-            iconColor = Color(0xFF5E5CE6),
+            icon = Icons.Default.WaterDrop, // iOS drop.fill
+            iconColor = Color(0xFF5856D6), // iOS .indigo
             levels = listOf(
                 WeatherElementLevelItem(
                     rangeRes = R.string.weather_info_cri_range_safe,

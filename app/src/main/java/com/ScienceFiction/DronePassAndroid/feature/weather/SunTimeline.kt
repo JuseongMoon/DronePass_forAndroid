@@ -64,21 +64,21 @@ internal val IosSunTimelineCurrentBadgeSize = 36.dp
 internal val IosSunTimelineCurrentBadgeIconSize = 16.dp
 internal val IosSunTimelineCurrentBadgeShadowElevation = 8.dp
 internal val IosSunTimelineRemainingSpacing = 6.dp
-internal val IosSunTimelineRemainingIconSize = 14.dp
+internal val IosSunTimelineRemainingIconSize = 17.dp
 internal val IosSunTimelineRemainingFontSize = 15.sp
 internal val IosSunTimelineRegularFontWeight = FontWeight.Normal
 internal val IosSunTimelineSemiboldFontWeight = FontWeight.SemiBold
 
 // iOS daytime gradient (orange.opacity(0.8) → yellow.opacity(0.6))
 private val DaytimeGradientColors = listOf(
-    Color(0xFFFF9500).copy(alpha = 0.85f),
-    Color(0xFFFFCC00).copy(alpha = 0.65f),
+    Color(0xFFFF9500).copy(alpha = 0.8f),
+    Color(0xFFFFCC00).copy(alpha = 0.6f),
 )
 
 // iOS night gradient (indigo.opacity(0.8) → purple.opacity(0.6))
 private val NighttimeGradientColors = listOf(
-    Color(0xFF5856D6).copy(alpha = 0.85f),
-    Color(0xFFAF52DE).copy(alpha = 0.65f),
+    Color(0xFF5856D6).copy(alpha = 0.8f),
+    Color(0xFFAF52DE).copy(alpha = 0.6f),
 )
 
 /**
@@ -133,7 +133,9 @@ fun SunTimeline(
                 )
 
                 // 남은 시간 (HStack)
+                // iOS VStack 기본 가운데 정렬: "일몰까지 X시간 Y분 남음" 을 카드 가운데에 둔다.
                 Row(
+                    modifier = Modifier.align(Alignment.CenterHorizontally),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(IosSunTimelineRemainingSpacing),
                 ) {

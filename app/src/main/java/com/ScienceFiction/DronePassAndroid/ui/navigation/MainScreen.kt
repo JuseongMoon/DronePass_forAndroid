@@ -116,7 +116,8 @@ private val TabBarShadowElevation = 8.dp
 private val TabButtonWidth = 60.dp
 
 // iOS .font(.system(size: 20, weight: .medium)) 와 정확히 일치
-internal val TabIconSize = 20.dp
+// iOS SF 20pt medium 글리프(24pt 프레임) ≈ Material 24dp
+internal val TabIconSize = 24.dp
 internal val TabIconFrameHeight = 24.dp
 internal val TabLabelFrameHeight = 16.dp
 internal val TabLabelTextSize = 11.sp
@@ -154,8 +155,9 @@ internal val SavedOverlaySortChipContentSpacing = 4.dp
 internal const val SavedOverlaySortChipBackgroundAlpha = 0.1f
 internal val SavedOverlaySortChipPhoneTextSize = 12.sp
 internal val SavedOverlaySortChipTabletTextSize = 11.sp
-internal val SavedOverlaySortChipPhoneIconSize = 12.dp
-internal val SavedOverlaySortChipTabletIconSize = 11.dp
+// iOS .caption SF 글리프 ≈ Material 15dp
+internal val SavedOverlaySortChipPhoneIconSize = 15.dp
+internal val SavedOverlaySortChipTabletIconSize = 14.dp
 internal val SettingsOverlayHeaderHorizontalPadding = 16.dp
 internal val SettingsOverlayHeaderBottomPadding = 4.dp
 
@@ -980,7 +982,8 @@ private fun PushNotificationOverlay(
                     tint = TabSelectedColor,
                     modifier = Modifier
                         .padding(top = NotificationPopupIconTopPadding)
-                        .size(40.dp),
+                        // iOS bell.fill 40pt 글리프 ≈ 46dp
+                        .size(46.dp),
                 )
                 Text(
                     text = notification.title,

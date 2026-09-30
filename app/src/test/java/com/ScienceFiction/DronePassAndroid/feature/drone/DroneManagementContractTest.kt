@@ -123,7 +123,7 @@ class DroneManagementContractTest {
                 "private fun DroneMoveTargetSheet(",
                 "DroneMoveTargetNavigationHeader(",
                 "canConfirm = selectedDroneId != null",
-                "DroneDetailSectionHeader(text = stringResource(R.string.drone_select_move_shape))",
+                "InsetGroupedSection(header = stringResource(R.string.drone_select_move_shape))",
                 "DroneMoveTargetRow(",
                 "selectedDroneId = targetDrone.id",
                 "private fun DroneMoveTargetNavigationHeader(",

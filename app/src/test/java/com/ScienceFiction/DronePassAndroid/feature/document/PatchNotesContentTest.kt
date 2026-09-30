@@ -21,7 +21,7 @@ class PatchNotesContentTest {
         assertEquals(16.dp, PatchNoteSectionSpacing)
         assertEquals(5.dp, PatchNoteHeaderLeadingPadding)
         assertEquals(10.dp, PatchNoteDateTrailingPadding)
-        assertEquals(16.dp, PatchNoteFeatureTitleIconSize)
+        assertEquals(19.dp, PatchNoteFeatureTitleIconSize)
         assertEquals(20.dp, PatchNoteFeatureDescriptionLeadingPadding)
         assertEquals(12.dp, PatchNoteFeatureGroupSpacing)
         assertEquals(6.dp, PatchNoteFeatureItemSpacing)

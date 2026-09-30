@@ -421,7 +421,6 @@
     <string name="shape_edit_search_address">주소 검색</string>
     <string name="search_address_title">주소 검색</string>
     <string name="search_address_placeholder">도로명 또는 지번 주소로 검색</string>
-    <string name="search_address_no_results">검색 결과가 없습니다</string>
     <string name="search_address_guide">도로명 주소와 지번 주소 모두 검색 가능합니다</string>
     <string name="search_address_example">검색 예시:</string>
     <string name="search_address_example_road_1">• 서초대로78길 24 (도로명)</string>
@@ -477,7 +476,7 @@
     <string name="app_info_feature_sunrise_sunset_title">일출/일몰 정보 및 알림</string>
     <string name="app_info_feature_sunrise_sunset_desc">현재 위치의 일출/일몰 시간과 알림</string>
     <string name="app_info_feature_shape_management_title">반경 기반 도형 생성 및 관리</string>
-    <string name="app_info_feature_shape_management_desc">원, 사각형, 다각형, 선 생성/편집</string>
+    <string name="app_info_feature_shape_management_desc">반경을 지정한 원형 비행 구역 생성/편집</string>
     <string name="app_info_feature_shape_duplicate_title">도형 복제 및 정렬 기능</string>
     <string name="app_info_feature_shape_duplicate_desc">도형 복사 및 다양한 정렬 옵션</string>
     <string name="app_info_feature_search_title">주소 검색 및 길찾기</string>
@@ -794,7 +793,7 @@
 
     <string name="profile_account_logout">로그아웃</string>
     <string name="profile_account_delete">회원 탈퇴</string>
-    <string name="profile_account_delete_desc">계정과 클라우드 데이터가 삭제되며, 로컬 데이터는 기기에 유지됩니다.</string>
+    <string name="profile_account_delete_desc">탈퇴 시 계정만 삭제되며, 로컬 데이터는 계속 사용할 수 있습니다.</string>
     <string name="profile_logout_message">로그아웃하시겠습니까?</string>
     <string name="profile_delete_account_button">탈퇴하기</string>
     <string name="profile_delete_account_message">계정이 삭제되고\n클라우드 동기화가 중단됩니다.\n\n기기에 저장된 도형, 드론, 스케치는\n계속 사용할 수 있습니다.\n\n이후 다른 계정에서 클라우드 동기화를 켜면\n해당 계정으로 동기화될 수 있습니다.\n\n정말 탈퇴하시겠습니까?</string>
@@ -851,13 +850,23 @@
     <string name="subscription_product_name">DronePass Pro 연간</string>
     <string name="subscription_product_unavailable">구독 상품 정보를 불러올 수 없습니다. 네트워크 연결을 확인해 주세요.</string>
     <string name="subscription_cross_platform_notice">iPhone에서 구매한 구독은 아직 Android에서 인식되지 않습니다.</string>
-    <string name="subscription_payment_issue">결제 정보를 확인해 주세요.</string>
     <string name="subscription_paywall_price">%1$s / 년</string>
     <string name="subscription_paywall_renewal">구독은 매년 자동 갱신됩니다. 언제든 Google Play에서 해지할 수 있습니다.</string>
     <string name="subscription_restore">구매 복원</string>
     <string name="subscription_terms">이용약관 · EULA</string>
     <string name="subscription_privacy">개인정보처리방침</string>
-    <string name="subscription_update_required">새 항목을 만들려면 앱을 업데이트해 주세요.</string>
-    <string name="subscription_delete_warning">계정을 삭제해도 구독은 해지되지 않습니다.</string>
-    <string name="subscription_legacy_subscribed">평생 무료 대상이라 구독을 해지해도 Pro가 유지됩니다.</string>
+    <string name="subscription_update_required">새 도형과 스케치를 만들려면 앱을 최신 버전으로 업데이트해 주세요. 기존 데이터는 그대로 볼 수 있습니다.</string>
+    <string name="subscription_delete_warning">DronePass Pro 구독은 계정을 삭제해도 해지되지 않습니다. 해지하려면 먼저 \'구독 관리\'에서 해지해 주세요.</string>
+    <string name="subscription_legacy_subscribed">평생 무료 대상이라 구독을 해지해도 Pro가 그대로 유지됩니다.</string>
+    <string name="subscription_plan_checking">확인 중…</string>
+    <string name="subscription_billing_retry_message">결제에 문제가 있어 구독이 일시 중지되었습니다. 결제 정보를 확인해 주세요.</string>
+    <string name="subscription_restore_success">구독이 복원되었습니다.</string>
+    <string name="subscription_restore_not_found">복원할 구독을 찾지 못했습니다.</string>
+    <string name="sketch_quota_counter">선 %1$d / %2$d</string>
+    <string name="sketch_quota_upgrade">Pro 보기</string>
+    <string name="sketch_quota_blocked">무료 플랜은 선을 %1$d개까지 그릴 수 있습니다. 기존 선을 지우거나 Pro로 업그레이드하세요.</string>
+    <string name="subscription_status_active">Pro 이용 중</string>
+    <string name="subscription_status_legacy">기존 사용자 혜택으로 Pro를 평생 무료로 이용 중입니다</string>
+    <string name="subscription_product_retry">다시 시도</string>
+    <string name="subscription_update_button">Play 스토어에서 업데이트</string>
 </resources>

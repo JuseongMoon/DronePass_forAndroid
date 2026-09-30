@@ -1,8 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.weather
 
 import com.ScienceFiction.DronePassAndroid.core.ui.IosWeatherSymbols
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ScienceFiction.DronePassAndroid.R
@@ -39,7 +37,7 @@ class WeatherOverlayCardTest {
     @Test
     fun `weather icon falls back to iOS cloud when current weather is unavailable`() {
         assertEquals(
-            Icons.Default.Cloud.name,
+            IosWeatherSymbols.Cloud.name,
             resolveWeatherOverlayWeatherIcon(condition = null, precipitation = null).name,
         )
     }
@@ -60,7 +58,7 @@ class WeatherOverlayCardTest {
         assertEquals(4.dp, WeatherOverlayCardShadowElevation)
         assertEquals(8.dp, WeatherOverlayCardGroupSpacing)
         assertEquals(8.dp, WeatherOverlayCardRowSpacing)
-        assertEquals(21.dp, WeatherOverlayCardIconSize)
+        assertEquals(24.dp, WeatherOverlayCardIconSize) // SF 21pt semibold 글리프 크기
         assertEquals(16.sp, WeatherOverlayCardTextSize)
     }
 

@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.saved
 
+import androidx.compose.material.icons.outlined.Inbox
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -19,8 +20,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Inbox
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -410,6 +409,8 @@ private fun SwipeToDeleteItem(
     content: @Composable () -> Unit
 ) {
     val dismissState = rememberSwipeToDismissBoxState(
+        // iOS 전체 스와이프 삭제처럼 절반 이상 밀어야 삭제된다.
+        positionalThreshold = { totalDistance -> totalDistance * SavedShapeSwipeDeleteThresholdFraction },
         confirmValueChange = { dismissValue ->
             if (shouldDeleteSavedShapeOnSwipe(dismissValue)) {
                 onDelete()
@@ -439,11 +440,11 @@ private fun SwipeToDeleteItem(
                 contentAlignment = Alignment.CenterEnd
             ) {
                 if (showDeleteBackground) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = stringResource(R.string.common_delete),
-                        tint = MaterialTheme.colorScheme.onError,
-                        modifier = Modifier.size(24.dp)
+                    // iOS .onDelete 는 빨간 바탕에 "삭제" 글자를 보여 준다.
+                    Text(
+                        text = stringResource(R.string.common_delete),
+                        color = MaterialTheme.colorScheme.onError,
+                        style = MaterialTheme.typography.bodyLarge,
                     )
                 }
             }
@@ -506,8 +507,11 @@ private fun SavedShapeSectionCardRow(
     }
 }
 
-internal val SavedListSectionHeaderMinHeight = 32.dp
-internal val SavedShapeRowDividerStartIndent = 32.dp
+// iOS defaultMinListHeaderHeight 40
+internal const val SavedShapeSwipeDeleteThresholdFraction = 0.5f
+internal val SavedListSectionHeaderMinHeight = 40.dp
+// 글자 시작 위치(20 + 막대 4 + 12)
+internal val SavedShapeRowDividerStartIndent = 36.dp
 internal val SavedListTopOffset = (-10).dp
 internal val SavedListContentHorizontalPadding = 16.dp
 internal val SavedListContentVerticalPadding = 8.dp
@@ -528,7 +532,8 @@ internal enum class SavedListEmptyIconStyle {
     SEARCH,
 }
 
-internal val SavedListEmptyIconSize = 48.dp
+// SF 48pt 글리프 ≈ Material 58dp
+internal val SavedListEmptyIconSize = 58.dp
 internal val SavedListEmptyVerticalSpacing = 16.dp
 internal val SavedListEmptySecondaryColor = Color(0xFF8E8E93)
 @DrawableRes
@@ -584,7 +589,7 @@ private fun EmptyState(
         ) {
             when (iconStyle) {
                 SavedListEmptyIconStyle.INBOX -> Icon(
-                    imageVector = Icons.Default.Inbox,
+                    imageVector = Icons.Outlined.Inbox, // iOS tray
                     contentDescription = null,
                     modifier = Modifier.size(SavedListEmptyIconSize),
                     tint = SavedListEmptySecondaryColor,
@@ -604,8 +609,8 @@ private fun EmptyState(
             }
             Text(
                 text = title,
+                // iOS .headline
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Medium,
                 color = SavedListEmptySecondaryColor,
                 textAlign = TextAlign.Center,
             )

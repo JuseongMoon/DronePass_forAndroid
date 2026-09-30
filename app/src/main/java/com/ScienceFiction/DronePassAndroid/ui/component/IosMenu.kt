@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.ui.component
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -28,17 +29,21 @@ fun IosDropdownMenu(
     offset: DpOffset = DpOffset(0.dp, 0.dp),
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    DropdownMenu(
-        expanded = expanded,
-        onDismissRequest = onDismissRequest,
-        modifier = modifier.widthIn(min = IosMenuMinWidth),
-        offset = offset,
-        shape = RoundedCornerShape(IosMenuCornerRadius),
-        containerColor = IosMenuBackground,
-        tonalElevation = 0.dp,
-        shadowElevation = 16.dp,
-        content = content,
-    )
+    // DropdownMenuItem 은 typography.labelLarge(14sp Medium)를 쓴다. iOS 메뉴 항목은 17pt 보통이라 이 메뉴 안에서만 바꾼다.
+    val typography = MaterialTheme.typography
+    MaterialTheme(typography = typography.copy(labelLarge = typography.bodyLarge)) {
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = onDismissRequest,
+            modifier = modifier.widthIn(min = IosMenuMinWidth),
+            offset = offset,
+            shape = RoundedCornerShape(IosMenuCornerRadius),
+            containerColor = IosMenuBackground,
+            tonalElevation = 0.dp,
+            shadowElevation = 16.dp,
+            content = content,
+        )
+    }
 }
 
 /** iOS 메뉴 항목 사이 구분선. */

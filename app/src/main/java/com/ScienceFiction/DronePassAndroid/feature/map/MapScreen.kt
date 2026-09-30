@@ -1,5 +1,7 @@
 package com.ScienceFiction.DronePassAndroid.feature.map
 
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.layout.size
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
@@ -412,9 +414,16 @@ fun MapScreen(
             sketchViewModel = sketchViewModel,
         )
 
-        // 지도 로딩 중 인디케이터
-        if (!mapReady) {
-            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+        // iOS MainView: 비행구역 레이어를 불러오는 동안 가운데 파란 ProgressView(1.2배). 지도 준비 중 표시는 없다.
+        val flightZonesLoading by viewModel.flightZonesLoading.collectAsStateWithLifecycle()
+        if (flightZonesLoading) {
+            CircularProgressIndicator(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .size(24.dp),
+                color = Color(0xFF007AFF),
+                strokeWidth = 2.5.dp,
+            )
         }
 
         // ── 자식 2: 드론 드롭다운 + FAB + KP/Weather 카드 ──

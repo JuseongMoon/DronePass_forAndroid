@@ -1,5 +1,7 @@
 package com.ScienceFiction.DronePassAndroid.feature.kp
 
+import com.ScienceFiction.DronePassAndroid.feature.weather.IosProgressViewSize
+import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -13,7 +15,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -257,8 +258,8 @@ private fun Kp27DayLineChart(longTermForecast: List<Kp27DayForecast>) {
     val dataPoints = parsedForecast.map { (timeMs, forecast) -> timeMs to forecast.kp }
     val pointColors = kpChartPointColors(parsedForecast.map { (_, forecast) -> forecast.kp })
     val pointLabels = parsedForecast.map { (_, forecast) -> formatKpChartPointLabel(forecast.kp) }
-    // 하루 간격 날짜 라벨은 폰 폭에서 겹치므로 이틀 간격으로 찍는다.
-    val xLabelTimes = parsedForecast.map { (timeMs, _) -> timeMs }.filterIndexed { index, _ -> index % 2 == 0 }
+    // iOS 처럼 모든 날짜에 라벨을 찍는다(MM/dd, medium).
+    val xLabelTimes = parsedForecast.map { (timeMs, _) -> timeMs }
     val primaryColor = MaterialTheme.colorScheme.primary
 
     ScrollableTimeChartViewport(
@@ -415,7 +416,8 @@ private fun KpChartLoadingPlaceholder() {
             .height(IosKpChartPlaceholderHeight),
         contentAlignment = androidx.compose.ui.Alignment.Center,
     ) {
-        CircularProgressIndicator()
+        // iOS 기본 ProgressView(약 20pt)
+        CircularProgressIndicator(modifier = Modifier.size(IosProgressViewSize), strokeWidth = 2.dp)
     }
 }
 
@@ -429,7 +431,7 @@ private fun KpChartErrorPlaceholder(message: String) {
         verticalArrangement = Arrangement.Center,
     ) {
         Icon(
-            imageVector = Icons.Default.Warning,
+            imageVector = Icons.Outlined.Warning, // iOS exclamationmark.triangle
             contentDescription = null,
             tint = IosKpChartErrorIconColor,
             modifier = Modifier.size(IosKpChartErrorIconSize),

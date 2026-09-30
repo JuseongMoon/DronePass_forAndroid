@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.weather
 
+import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemRed
 import kotlin.math.log10
 import kotlin.math.pow
 import kotlin.math.abs
@@ -73,11 +74,11 @@ internal val IosWeatherChartCardSpacing = IosWeatherForecastCardSpacing
 internal val IosWeatherChartCardContainerColor = IosWeatherForecastCardContainerColor
 internal const val IosWeatherChartVisibleDomainMs = 12L * 60 * 60 * 1000
 internal const val IosWeatherChartXLabelIntervalMs = 60L * 60 * 1000
-internal val IosWeatherWindSpeedChartColor = Color(0xFF4CAF50)
+internal val IosWeatherWindSpeedChartColor = Color(0xFF34C759) // iOS .green
 internal val IosWeatherGustDifferenceChartColor = Color(0xFF5856D6)
-internal val IosWeatherPrecipitationChartColor = Color(0xFF2196F3)
-internal val IosWeatherVisibilityChartColor = Color(0xFF9C27B0)
-internal val IosWeatherCriChartColor = Color(0xFF00BCD4)
+internal val IosWeatherPrecipitationChartColor = Color(0xFF007AFF) // iOS .blue
+internal val IosWeatherVisibilityChartColor = Color(0xFFAF52DE) // iOS .purple
+internal val IosWeatherCriChartColor = Color(0xFF32ADE6) // iOS .cyan
 internal val IosWeatherCriChartYRange = 0.0..100.0
 internal val IosWeatherRuleMarkBlue = Color(0xFF007AFF)
 internal val IosWeatherRuleMarkOrange = Color(0xFFFF9500)
@@ -129,7 +130,8 @@ internal fun WeatherLineChart(
     dataPoints: List<Pair<Long, Double>>,
     modifier: Modifier = Modifier,
     lineColor: Color = MaterialTheme.colorScheme.primary,
-    fillAlpha: Float = 0.1f,
+    // iOS AreaMark LinearGradient opacity 0.3(위) → 0.1(아래)
+    fillAlpha: Float = WeatherChartAreaTopAlpha,
     warningThreshold: Double? = null,
     dangerThreshold: Double? = null,
     invertWarning: Boolean = false,
@@ -165,7 +167,8 @@ internal fun WeatherLineChart(
     val axisLabelPx = with(LocalDensity.current) { 11.sp.toPx() }
 
     // 가로 스크롤 중에는 프레임마다 다시 그리므로 텍스트 Paint 는 한 번 만들어 재사용한다.
-    val axisLabelArgb = onSurfaceVariant.copy(alpha = 0.8f).toArgb()
+    // iOS Swift Charts 축 라벨: .secondary 그대로
+    val axisLabelArgb = onSurfaceVariant.toArgb()
     val pointLabelArgb = onSurface.toArgb()
     val yLabelPaint = remember(axisLabelArgb, axisLabelPx) {
         Paint().apply {
@@ -184,6 +187,9 @@ internal fun WeatherLineChart(
         }
     }
     val xDateLabelPaint = remember(xLabelPaint) { Paint(xLabelPaint).apply { typeface = Typeface.DEFAULT_BOLD } }
+    val xExplicitLabelPaint = remember(xLabelPaint) {
+        Paint(xLabelPaint).apply { typeface = Typeface.create(Typeface.DEFAULT, 500, false) }
+    }
     val pointLabelPaint = remember(pointLabelArgb, axisLabelPx) {
         Paint().apply {
             color = pointLabelArgb
@@ -266,7 +272,7 @@ internal fun WeatherLineChart(
         yLabelValues.forEach { v ->
             val y = toScreenY(v)
             drawLine(
-                color = onSurfaceVariant.copy(alpha = 0.12f),
+                color = onSurfaceVariant.copy(alpha = WeatherChartGridAlpha),
                 start = Offset(leftPadding, y),
                 end = Offset(size.width - rightPadding, y),
                 strokeWidth = 1f
@@ -290,11 +296,15 @@ internal fun WeatherLineChart(
                     x,
                     size.height - 4.dp.toPx(),
                     // iOS 처럼 날짜가 바뀌는 자정 라벨(MM/dd)은 굵게 표시한다.
-                    if (xLabelTimesMs == null && '/' in label) xDateLabelPaint else xLabelPaint
+                    when {
+                        xLabelTimesMs != null -> xExplicitLabelPaint // KP 장기 예보 날짜(iOS .medium)
+                        '/' in label -> xDateLabelPaint
+                        else -> xLabelPaint
+                    }
                 )
                 // 수직 격자선
                 drawLine(
-                    color = onSurfaceVariant.copy(alpha = 0.06f),
+                    color = onSurfaceVariant.copy(alpha = WeatherChartGridAlpha),
                     start = Offset(x, topPadding),
                     end = Offset(x, topPadding + chartHeight),
                     strokeWidth = 1f
@@ -341,7 +351,7 @@ internal fun WeatherLineChart(
         if (shouldDrawCurrentMarker && currentTimeMs != null) {
             val nowX = toScreenX(currentTimeMs)
             drawLine(
-                color = Color(0xFFFF0000),
+                color = IosSystemRed, // iOS .red
                 start = Offset(nowX, topPadding),
                 end = Offset(nowX, topPadding + chartHeight),
                 // iOS RuleMark lineWidth: 2 (pt)
@@ -405,7 +415,7 @@ internal fun WeatherLineChart(
                     } ?: Brush.verticalGradient(
                         colors = listOf(
                             lineColor.copy(alpha = fillAlpha),
-                            lineColor.copy(alpha = 0.01f)
+                            lineColor.copy(alpha = fillAlpha * WeatherChartAreaBottomRatio)
                         ),
                         startY = topPadding,
                         endY = topPadding + chartHeight
@@ -432,13 +442,41 @@ internal fun WeatherLineChart(
             fillPath.lineTo(screenPoints.first().x, topPadding + chartHeight)
             fillPath.close()
 
+            val perSegmentFill = fillValueGradient == null &&
+                lineSegmentColors != null && lineSegmentColors.size >= screenPoints.size - 1
             clipRect(
                 left = leftPadding,
                 top = topPadding,
                 right = size.width - rightPadding,
                 bottom = topPadding + chartHeight
             ) {
-                drawPath(
+                // iOS KP AreaMark 처럼 구간마다 그 수준 색으로 채운다.
+                if (perSegmentFill) {
+                    val bottomY = topPadding + chartHeight
+                    for (seg in 0 until screenPoints.size - 1) {
+                        val color = lineSegmentColors!![seg]
+                        val a = screenPoints[seg]
+                        val b = screenPoints[seg + 1]
+                        val segmentPath = Path().apply {
+                            moveTo(a.x, a.y)
+                            lineTo(b.x, b.y)
+                            lineTo(b.x, bottomY)
+                            lineTo(a.x, bottomY)
+                            close()
+                        }
+                        drawPath(
+                            path = segmentPath,
+                            brush = Brush.verticalGradient(
+                                colors = listOf(
+                                    color.copy(alpha = fillAlpha),
+                                    color.copy(alpha = fillAlpha * WeatherChartAreaBottomRatio),
+                                ),
+                                startY = topPadding,
+                                endY = bottomY,
+                            ),
+                        )
+                    }
+                } else drawPath(
                     path = fillPath,
                     brush = fillValueGradient?.let { stops ->
                         weatherValueGradientBrush(
@@ -452,7 +490,7 @@ internal fun WeatherLineChart(
                     } ?: Brush.verticalGradient(
                         colors = listOf(
                             lineColor.copy(alpha = fillAlpha),
-                            lineColor.copy(alpha = 0.01f)
+                            lineColor.copy(alpha = fillAlpha * WeatherChartAreaBottomRatio)
                         ),
                         startY = topPadding,
                         endY = topPadding + chartHeight
@@ -471,7 +509,8 @@ internal fun WeatherLineChart(
                     segmentStartIndex = i,
                 )
                 drawLine(
-                    color = if (isPredictedSegment) segmentColor.copy(alpha = 0.6f) else segmentColor,
+                    // iOS 는 예측 구간도 같은 색(점선만 다름)으로 그린다.
+                    color = segmentColor,
                     start = screenPoints[i],
                     end = screenPoints[i + 1],
                     strokeWidth = lineStrokePx,
@@ -661,7 +700,8 @@ internal fun resolveTimeChartLabelTimes(
     if (intervalMs <= 0L) return emptyList()
 
     val labelTimes = mutableListOf<Long>()
-    val startLabel = ((dataStartMs / intervalMs) + 1) * intervalMs
+    // iOS AxisMarks(values:) 는 첫 데이터 시각도 라벨을 찍는다(정각이면 포함).
+    val startLabel = ((dataStartMs + intervalMs - 1) / intervalMs) * intervalMs
     var labelTime = startLabel
     while (labelTime <= dataEndMs) {
         labelTimes.add(labelTime)
@@ -770,6 +810,10 @@ internal fun resolveWeatherChartAutoYRange(
     return rawMin to rawMax + (rawMax - rawMin) * 0.1
 }
 internal val WeatherChartDefaultPointRadius = 3.dp
+internal const val WeatherChartAreaTopAlpha = 0.3f
+internal const val WeatherChartAreaBottomRatio = 1f / 3f
+/** iOS AxisGridLine: 가로·세로 같은 옅은 선 */
+internal const val WeatherChartGridAlpha = 0.1f
 internal val WeatherChartRuleMarkWidth = 1.dp
 internal val WeatherChartRuleMarkDash = 5.dp
 /** iOS 온도 PointMark symbolSize(60) ≈ 지름 7.7pt */
@@ -867,7 +911,6 @@ fun TemperatureChart(
                 dataPoints = dataPoints,
                 modifier = chartModifier,
                 lineColor = Color(0xFFFF6B35),
-                fillAlpha = 0.15f,
                 yAxisRange = yAxisRange,
                 thresholdLines = thresholdLines,
                 yAxisLabel = "\u00B0C",
@@ -924,7 +967,6 @@ fun WindSpeedChart(
                 dataPoints = dataPoints,
                 modifier = chartModifier,
                 lineColor = lineColor,
-                fillAlpha = 0.1f,
                 thresholdLines = thresholdLines,
                 yAxisLabel = "m/s",
                 formatValue = { String.format(Locale.ROOT, "%.0f", it) },
@@ -969,7 +1011,6 @@ fun GustDifferenceChart(
                 dataPoints = dataPoints,
                 modifier = chartModifier,
                 lineColor = lineColor,
-                fillAlpha = 0.1f,
                 thresholdLines = thresholdLines,
                 yAxisLabel = "m/s",
                 formatValue = { String.format(Locale.ROOT, "%.0f", it) },
@@ -1013,7 +1054,6 @@ fun PrecipitationChart(
                 dataPoints = dataPoints,
                 modifier = chartModifier,
                 lineColor = lineColor,
-                fillAlpha = 0.1f,
                 yAxisRange = 0.0..yMax,
                 yAxisLabel = "mm/h",
                 formatValue = { String.format(Locale.ROOT, "%.1f", it) },
@@ -1046,7 +1086,6 @@ fun VisibilityChart(
                 dataPoints = dataPoints,
                 modifier = chartModifier,
                 lineColor = lineColor,
-                fillAlpha = 0.1f,
                 thresholdLines = thresholdLines,
                 yAxisLabel = "km",
                 formatValue = { String.format(Locale.ROOT, "%.0f", it) },
@@ -1090,7 +1129,6 @@ fun CriChart(
                 dataPoints = dataPoints,
                 modifier = chartModifier,
                 lineColor = lineColor,
-                fillAlpha = 0.1f,
                 yAxisRange = IosWeatherCriChartYRange,
                 thresholdLines = thresholdLines,
                 yAxisLabel = "%",
@@ -1157,15 +1195,17 @@ internal fun ChartCard(
             ) {
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.Bold,
+                    // iOS .title3 semibold
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.weight(1f),
                 )
                 unitLabel?.let { label ->
                     Text(
                         text = label,
-                        style = MaterialTheme.typography.labelSmall,
+                        // iOS .caption
+                        style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }

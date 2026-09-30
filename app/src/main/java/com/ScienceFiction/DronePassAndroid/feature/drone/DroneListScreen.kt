@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.drone
 
+import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -43,13 +44,15 @@ import androidx.compose.foundation.layout.heightIn
 import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedDivider
 import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedRowMinHeight
 import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedSection
+import com.ScienceFiction.DronePassAndroid.ui.component.SheetLargeTitleContentGap
 import com.ScienceFiction.DronePassAndroid.ui.component.SheetLargeTitleHeader
 import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedSectionSpacing
 import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGroupedBackground
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.PaletteColor
 
-internal val DroneListAddIconSize = 20.dp
+// iOS plus.circle.fill .body 글리프 ≈ Material 24dp
+internal val DroneListAddIconSize = 24.dp
 internal val DroneListAddIconTextSpacing = 8.dp
 
 /**
@@ -67,44 +70,45 @@ fun DroneListScreen(
     val selectedDrone by droneViewModel.selectedDrone.collectAsStateWithLifecycle()
     val deleteError by droneViewModel.deleteError.collectAsStateWithLifecycle()
 
-    LazyColumn(
+    Column(
         modifier = Modifier
             .fillMaxSize()
             .background(IosSystemGroupedBackground),
-        contentPadding = PaddingValues(bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(InsetGroupedSectionSpacing),
     ) {
-        item {
-            // iOS DroneListView 는 닫기 버튼 없이 시트를 끌어 내려 닫는다.
-            SheetLargeTitleHeader(title = stringResource(R.string.drone_list_title))
-        }
-
-        item {
-            InsetGroupedSection(
-                header = stringResource(R.string.drone_list_section_my),
-                footer = if (drones.isEmpty()) stringResource(R.string.drone_list_empty) else null,
-            ) {
-                drones.forEachIndexed { index, drone ->
-                    DroneListItem(
-                        drone = drone,
-                        onClick = { droneViewModel.selectDrone(drone.id) }
-                    )
-                    if (index != drones.lastIndex) {
-                        InsetGroupedDivider(startIndent = 52.dp)
+        // iOS DroneListView 는 닫기 버튼 없이 시트를 끌어 내려 닫는다.
+        SheetLargeTitleHeader(title = stringResource(R.string.drone_list_title))
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(top = SheetLargeTitleContentGap, bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(InsetGroupedSectionSpacing),
+        ) {
+            item {
+                InsetGroupedSection(
+                    header = stringResource(R.string.drone_list_section_my),
+                    footer = if (drones.isEmpty()) stringResource(R.string.drone_list_empty) else null,
+                ) {
+                    drones.forEachIndexed { index, drone ->
+                        DroneListItem(
+                            drone = drone,
+                            onClick = { droneViewModel.selectDrone(drone.id) }
+                        )
+                        if (index != drones.lastIndex) {
+                            InsetGroupedDivider(startIndent = 44.dp) // 16 + 원 20 + 간격 8
+                        }
                     }
                 }
             }
-        }
 
-        item {
-            InsetGroupedSection {
-                DroneAddItem(onClick = droneViewModel::requestAddDrone)
+            item {
+                InsetGroupedSection {
+                    DroneAddItem(onClick = droneViewModel::requestAddDrone)
+                }
             }
-        }
 
-        item {
-            InsetGroupedSection(header = stringResource(R.string.drone_list_section_usage)) {
-                DroneUsageSection()
+            item {
+                InsetGroupedSection(header = stringResource(R.string.drone_list_section_usage)) {
+                    DroneUsageSection()
+                }
             }
         }
     }
@@ -226,12 +230,15 @@ private fun DroneListItem(
                     )
             )
 
-            Spacer(modifier = Modifier.width(16.dp))
+            // iOS HStack 기본 간격 8
+            Spacer(modifier = Modifier.width(8.dp))
         }
 
         Text(
             text = drone.name,
             style = MaterialTheme.typography.bodyLarge,
+            // iOS .system(size: 16, weight: .medium)
+            fontSize = 16.sp,
             fontWeight = FontWeight.Medium,
             modifier = Modifier.weight(1f),
             maxLines = 1,

@@ -98,7 +98,7 @@ class AppInfoScreenTest {
                 "SheetLargeTitleHeader(",
                 "R.string.app_info_title",
                 "R.string.common_close",
-                "InsetGroupedSection(header = stringResource(R.string.app_info_section_intro))",
+                "header = stringResource(R.string.app_info_section_intro),",
             ),
         )
     }
@@ -113,37 +113,38 @@ class AppInfoScreenTest {
         assertAppearsInOrder(
             source = source,
             tokens = listOf(
-                "InsetGroupedSection(header = stringResource(R.string.app_info_section_intro))",
+                "header = stringResource(R.string.app_info_section_intro),",
                 "R.string.app_info_section_intro",
                 "R.string.app_info_description",
-                "InsetGroupedSection(header = stringResource(R.string.app_info_section_drone_management))",
+                "header = stringResource(R.string.app_info_section_drone_management),",
                 "R.string.app_info_section_drone_management",
                 "R.string.app_info_feature_multi_drone_title",
                 "R.string.app_info_feature_visualization_title",
                 "R.string.app_info_feature_expiration_alert_title",
-                "InsetGroupedSection(header = stringResource(R.string.app_info_section_environmental_info))",
+                "header = stringResource(R.string.app_info_section_environmental_info),",
                 "R.string.app_info_section_environmental_info",
                 "R.string.app_info_feature_weather_title",
                 "R.string.app_info_feature_kp_index_title",
                 "R.string.app_info_feature_sunrise_sunset_title",
-                "InsetGroupedSection(header = stringResource(R.string.app_info_section_shapes_and_map))",
+                "header = stringResource(R.string.app_info_section_shapes_and_map),",
                 "R.string.app_info_section_shapes_and_map",
                 "R.string.app_info_feature_shape_management_title",
                 "R.string.app_info_feature_shape_duplicate_title",
                 "R.string.app_info_feature_search_title",
-                "InsetGroupedSection(header = stringResource(R.string.app_info_section_cloud_and_data))",
+                "header = stringResource(R.string.app_info_section_cloud_and_data),",
                 "R.string.app_info_section_cloud_and_data",
                 "R.string.app_info_feature_cloud_sync_title",
                 "R.string.app_info_feature_drone_onestop_title",
-                "InsetGroupedSection(header = stringResource(R.string.app_info_section_version))",
+                "header = stringResource(R.string.app_info_section_version),",
                 "R.string.app_info_section_version",
                 "R.string.app_info_version_app",
                 "R.string.app_info_version_build",
-                "InsetGroupedSection(header = stringResource(R.string.app_info_section_contact))",
+                "header = stringResource(R.string.app_info_section_contact),",
                 "R.string.app_info_section_contact",
+                // iOS 처럼 문의 안내는 연락처 섹션 footer
+                "R.string.app_info_contact_message",
                 "R.string.app_info_contact_company",
                 "R.string.app_info_contact_email",
-                "R.string.app_info_contact_message",
             ),
         )
     }
@@ -183,7 +184,7 @@ class AppInfoScreenTest {
 
     @Test
     fun `클라우드 동기화 기능 아이콘은 iOS icloud fill 의미와 맞는 클라우드 동기화 아이콘을 사용한다`() {
-        assertEquals("Filled.CloudSync", AppInfoCloudSyncIcon.name)
+        assertEquals("Filled.Cloud", AppInfoCloudSyncIcon.name)
     }
 
     @Test
@@ -193,7 +194,7 @@ class AppInfoScreenTest {
 
     @Test
     fun `빌드 번호 행 아이콘은 iOS number circle 의미와 맞는 숫자 아이콘을 사용한다`() {
-        assertEquals("Filled.Numbers", AppInfoBuildNumberIcon.name)
+        assertEquals("IosNumberCircle", AppInfoBuildNumberIcon.name)
     }
 
     @Test

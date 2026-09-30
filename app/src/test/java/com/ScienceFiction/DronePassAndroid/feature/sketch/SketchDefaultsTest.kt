@@ -163,7 +163,7 @@ class SketchDefaultsTest {
     @Test
     fun `스케치 툴바 치수는 iOS SketchToolbarView 와 맞춘다`() {
         assertEquals(32.dp, SketchToolbarButtonSize)
-        assertEquals(18.dp, SketchToolbarIconSize)
+        assertEquals(22.dp, SketchToolbarIconSize)
         assertEquals(R.drawable.ic_eraser, SketchEraserIconRes)
         assertEquals(30.dp, SketchToolbarContainerCornerRadius)
         assertEquals(16.dp, SketchToolbarHorizontalPadding)

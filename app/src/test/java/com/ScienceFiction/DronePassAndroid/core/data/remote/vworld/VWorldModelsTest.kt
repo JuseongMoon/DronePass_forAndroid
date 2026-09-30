@@ -68,35 +68,35 @@ class VWorldModelsTest {
     @Test
     fun `오버레이 색상은 iOS FlightZoneLayer overlayColor와 borderUIColor를 따른다`() {
         assertEquals(0x4DFF3B30, FlightZoneLayer.PROHIBITED.fillColor)
-        assertEquals(0xFFFF3B30, FlightZoneLayer.PROHIBITED.borderColor)
+        assertEquals(0xFFFF0000, FlightZoneLayer.PROHIBITED.borderColor)
         assertEquals(0x4DFF3B30, FlightZoneLayer.TEMPORARY_PROHIBITED.fillColor)
-        assertEquals(0xFFFF3B30, FlightZoneLayer.TEMPORARY_PROHIBITED.borderColor)
+        assertEquals(0xFFFF0000, FlightZoneLayer.TEMPORARY_PROHIBITED.borderColor)
 
         assertEquals(0x4DFF9500, FlightZoneLayer.CONTROL_ZONE.fillColor)
-        assertEquals(0xFFFF9500, FlightZoneLayer.CONTROL_ZONE.borderColor)
+        assertEquals(0xFFFF8000, FlightZoneLayer.CONTROL_ZONE.borderColor)
         assertEquals(0x4DFF9500, FlightZoneLayer.RESTRICTED.fillColor)
-        assertEquals(0xFFFF9500, FlightZoneLayer.RESTRICTED.borderColor)
+        assertEquals(0xFFFF8000, FlightZoneLayer.RESTRICTED.borderColor)
         assertEquals(0x4DFF9500, FlightZoneLayer.DANGER.fillColor)
-        assertEquals(0xFFFF9500, FlightZoneLayer.DANGER.borderColor)
+        assertEquals(0xFFFF8000, FlightZoneLayer.DANGER.borderColor)
 
         assertEquals(0x4DFFCC00, FlightZoneLayer.ALERT.fillColor)
-        assertEquals(0xFFFFCC00, FlightZoneLayer.ALERT.borderColor)
+        assertEquals(0xFFFFFF00, FlightZoneLayer.ALERT.borderColor)
         assertEquals(0x4DFFCC00, FlightZoneLayer.ATZ.fillColor)
-        assertEquals(0xFFFFCC00, FlightZoneLayer.ATZ.borderColor)
+        assertEquals(0xFFFFFF00, FlightZoneLayer.ATZ.borderColor)
         assertEquals(0x4DFFCC00, FlightZoneLayer.OBSTACLE.fillColor)
-        assertEquals(0xFFFFCC00, FlightZoneLayer.OBSTACLE.borderColor)
+        assertEquals(0xFFFFFF00, FlightZoneLayer.OBSTACLE.borderColor)
 
         assertEquals(0x4D007AFF, FlightZoneLayer.ULTRALIGHT.fillColor)
-        assertEquals(0xFF007AFF, FlightZoneLayer.ULTRALIGHT.borderColor)
+        assertEquals(0xFF0000FF, FlightZoneLayer.ULTRALIGHT.borderColor)
         assertEquals(0x4D007AFF, FlightZoneLayer.LANDING_FIELD.fillColor)
-        assertEquals(0xFF007AFF, FlightZoneLayer.LANDING_FIELD.borderColor)
+        assertEquals(0xFF0000FF, FlightZoneLayer.LANDING_FIELD.borderColor)
         assertEquals(0x4D007AFF, FlightZoneLayer.PRIOR_CONSULTATION.fillColor)
-        assertEquals(0xFF007AFF, FlightZoneLayer.PRIOR_CONSULTATION.borderColor)
+        assertEquals(0xFF0000FF, FlightZoneLayer.PRIOR_CONSULTATION.borderColor)
 
         assertEquals(0x4D34C759, FlightZoneLayer.CULTURAL_HERITAGE.fillColor)
-        assertEquals(0xFF34C759, FlightZoneLayer.CULTURAL_HERITAGE.borderColor)
+        assertEquals(0xFF00FF00, FlightZoneLayer.CULTURAL_HERITAGE.borderColor)
         assertEquals(0x4D34C759, FlightZoneLayer.NATIONAL_PARK.fillColor)
-        assertEquals(0xFF34C759, FlightZoneLayer.NATIONAL_PARK.borderColor)
+        assertEquals(0xFF00FF00, FlightZoneLayer.NATIONAL_PARK.borderColor)
     }
 
     @Test

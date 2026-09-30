@@ -1,5 +1,7 @@
 package com.ScienceFiction.DronePassAndroid.feature.map.component
 
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.layout.onSizeChanged
@@ -16,7 +18,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -69,7 +70,8 @@ import java.util.Locale
  */
 internal val MapFloatingAccentColor = Color(0xFF007AFF) // iOS systemBlue / Color.accentColor
 internal val MapCreateShapeButtonSize = 60.dp
-internal val MapCreateShapeIconSize = 28.dp
+// iOS plus 28pt 글리프 ≈ Material Add 36dp
+internal val MapCreateShapeIconSize = 36.dp
 internal val MapCreateShapeButtonShadowElevation = 6.dp
 internal val MapSketchButtonSize = 45.dp
 internal val MapZoomControlToSketchSpacing = 10.dp
@@ -87,7 +89,8 @@ internal val MapKpButtonTextSize = 16.sp
 internal val FlightZoneFabSize = 50.dp
 internal val FlightZoneFabCornerRadius = 12.dp
 internal val FlightZoneFabShadowElevation = 4.dp
-internal val FlightZoneFabIconSize = 22.dp
+// iOS map 22pt 글리프 ≈ Material 27dp
+internal val FlightZoneFabIconSize = 27.dp
 internal val FlightZoneFabBadgeFontSize = 10.sp
 internal val FlightZoneFabVerticalSpacing = 4.dp
 internal const val FlightZoneFabIdleScale = 1.0f
@@ -165,7 +168,6 @@ fun MapFloatingButtons(
                 onClick = onShowFlightZoneLayers,
                 modifier = Modifier
                     .align(Alignment.BottomStart)
-                    .navigationBarsPadding()
                     .padding(start = paddings.edge, bottom = paddings.flightZoneBottom)
             )
         }
@@ -175,7 +177,6 @@ fun MapFloatingButtons(
         Column(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .navigationBarsPadding()
                 .padding(end = paddings.edge, bottom = paddings.statusGroupBottom),
             horizontalAlignment = Alignment.End
         ) {
@@ -226,8 +227,13 @@ fun MapFloatingButtons(
                     //   - 라벨은 "KP" (대문자) — iOS Text("KP")
                     //   - 값 표시는 데이터 있으면 "5.0", 없으면 "-" — iOS `currentKPString`
                     //   - 인디케이터 원 제거: 색상은 두 텍스트 자체에 직접 적용
+                    // iOS .buttonStyle(.plain): 최소 터치 크기(48dp) 여백·누름 효과 없이 VStack(spacing: 8) 간격을 지킨다.
                     Surface(
-                        onClick = onShowKpForecast,
+                        modifier = Modifier.clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = onShowKpForecast,
+                        ),
                         shape = RoundedCornerShape(MapKpButtonCornerRadius),
                         color = MaterialTheme.colorScheme.surface,
                         shadowElevation = MapKpButtonShadowElevation
@@ -280,7 +286,6 @@ fun MapFloatingButtons(
                 onClick = onCreateShape,
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .navigationBarsPadding()
                     .padding(end = paddings.edge, bottom = paddings.createShapeBottom)
                     .size(MapCreateShapeButtonSize),
                 shape = CircleShape,

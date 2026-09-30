@@ -97,6 +97,7 @@ class SketchViewModel @Inject constructor(
     private val _quotaBlockedCount = MutableStateFlow<Int?>(null)
     val quotaBlockedCount: StateFlow<Int?> = _quotaBlockedCount.asStateFlow()
     val quotaLimits = subscriptionManager.limits
+    val subscriptionStatus = subscriptionManager.status
     private val pendingCreatedSketchIds = mutableSetOf<String>()
     fun showSketchPaywall() = subscriptionManager.showPaywall("sketch", QuotaLimitKind.SKETCHES)
 

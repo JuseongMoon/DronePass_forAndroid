@@ -1,5 +1,9 @@
 package com.ScienceFiction.DronePassAndroid.feature.map.component
 
+import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGray
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.MutableTransitionState
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
@@ -66,8 +70,10 @@ import com.ScienceFiction.DronePassAndroid.feature.drone.selectedDronesForIosDro
 internal val DroneDropdownMenuItemHorizontalPadding = 12.dp
 internal val DroneDropdownMenuItemVerticalPadding = 8.dp
 internal val DroneDropdownShadowElevation = 4.dp
-internal val DroneDropdownEmptyIconSize = 12.dp
-internal val DroneDropdownChevronIconSize = 10.dp
+// iOS drone 12pt medium 글리프 ≈ 15dp
+internal val DroneDropdownEmptyIconSize = 15.dp
+// iOS chevron.down 10pt semibold 글리프 ≈ Material KeyboardArrowDown 18dp
+internal val DroneDropdownChevronIconSize = 18.dp
 internal val DroneDropdownTriggerDiameter = 32.dp
 internal val DroneDropdownChevronReservedWidth = 40.dp
 internal val DroneDropdownChipHorizontalSpacing = 8.dp
@@ -128,7 +134,7 @@ fun DroneSelectionDropdown(
                             painter = painterResource(DroneDropdownEmptyIconRes),
                             contentDescription = null,
                             modifier = Modifier.size(DroneDropdownEmptyIconSize),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                            tint = IosSystemGray, // iOS .gray
                         )
                         Text(
                             text = stringResource(R.string.drone_dropdown_select),
@@ -160,8 +166,10 @@ fun DroneSelectionDropdown(
             )
         }
 
-        // 드롭다운 메뉴 (Popup)
-        if (showDropdown) {
+        // 드롭다운 메뉴 (Popup). 닫힐 때도 애니메이션이 끝날 때까지 Popup 을 유지한다.
+        val menuVisibility = remember { MutableTransitionState(false) }
+        menuVisibility.targetState = showDropdown
+        if (menuVisibility.currentState || menuVisibility.targetState) {
             Popup(
                 alignment = Alignment.TopEnd,
                 offset = IntOffset(0, triggerHeight + with(density) { 4.dp.roundToPx() }),
@@ -175,16 +183,19 @@ fun DroneSelectionDropdown(
                     dismissOnClickOutside = DroneDropdownPopupDismissOnClickOutside,
                 )
             ) {
+                // iOS .transition(.scale(0.8).combined(with: .opacity)), easeInOut 0.2
                 AnimatedVisibility(
-                    visible = true,
+                    visibleState = menuVisibility,
                     enter = scaleIn(
-                        animationSpec = tween(200),
+                        animationSpec = tween(200, easing = FastOutSlowInEasing),
+                        initialScale = 0.8f,
                         transformOrigin = TransformOrigin(1f, 0f)
                     ) + fadeIn(animationSpec = tween(200)),
                     exit = scaleOut(
-                        animationSpec = tween(150),
+                        animationSpec = tween(200, easing = FastOutSlowInEasing),
+                        targetScale = 0.8f,
                         transformOrigin = TransformOrigin(1f, 0f)
-                    ) + fadeOut(animationSpec = tween(150))
+                    ) + fadeOut(animationSpec = tween(200))
                 ) {
                     Surface(
                         // iOS `.fixedSize(horizontal: true, vertical: false)` 정합:
@@ -220,11 +231,12 @@ fun DroneSelectionDropdown(
                                         else
                                             Icons.Outlined.Circle,
                                         contentDescription = null,
-                                        modifier = Modifier.size(16.dp),
+                                        // SF 16pt circle 글리프 ≈ Material 19dp
+                                        modifier = Modifier.size(19.dp),
                                         tint = if (isSelected)
                                             MaterialTheme.colorScheme.primary
                                         else
-                                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                                            IosSystemGray // iOS .gray
                                     )
 
                                     // 드론 색상 원
@@ -363,8 +375,13 @@ private fun DroneChip(
             null
     ) {
         Row(
+            // iOS .buttonStyle(.plain): 누름 효과 없음
             modifier = Modifier
-                .clickable(onClick = onClick)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onClick,
+                )
                 .fillMaxHeight()
                 .padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,

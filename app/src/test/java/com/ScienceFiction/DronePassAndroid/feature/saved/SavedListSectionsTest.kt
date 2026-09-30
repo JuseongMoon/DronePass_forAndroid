@@ -17,7 +17,7 @@ class SavedListSectionsTest {
 
     @Test
     fun `저장 목록 섹션 헤더 최소 높이는 iOS defaultMinListHeaderHeight 40과 맞춘다`() {
-        assertEquals(32.dp, SavedListSectionHeaderMinHeight)
+        assertEquals(40.dp, SavedListSectionHeaderMinHeight)
     }
 
     @Test
@@ -589,7 +589,7 @@ class SavedListSectionsTest {
 
     @Test
     fun `저장 목록 빈 상태 UI 토큰은 iOS EmptyStateView 값을 따른다`() {
-        assertEquals(48.dp, SavedListEmptyIconSize)
+        assertEquals(58.dp, SavedListEmptyIconSize)
         assertEquals(16.dp, SavedListEmptyVerticalSpacing)
         assertEquals(0xFF8E8E93.toInt(), SavedListEmptySecondaryColor.toArgb())
     }

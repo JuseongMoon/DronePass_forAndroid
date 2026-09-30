@@ -12,7 +12,7 @@ class DroneListScreenTest {
 
     @Test
     fun `드론 추가 행은 iOS plus circle 행 토큰을 따른다`() {
-        assertEquals(20.dp, DroneListAddIconSize)
+        assertEquals(24.dp, DroneListAddIconSize)
         assertEquals(8.dp, DroneListAddIconTextSpacing)
     }
 

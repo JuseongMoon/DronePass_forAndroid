@@ -1,5 +1,22 @@
 package com.ScienceFiction.DronePassAndroid.feature.map
 
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.material3.MaterialTheme
+import com.ScienceFiction.DronePassAndroid.R
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.widthIn
+import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemOrange
+import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemRed
+import com.ScienceFiction.DronePassAndroid.subscription.EntitlementState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import android.annotation.SuppressLint
 import android.graphics.PointF
@@ -465,6 +482,7 @@ internal fun MapSketchInput(
     val activeSketches by sketchViewModel.activeSketches.collectAsStateWithLifecycle()
     val quotaBlockedCount by sketchViewModel.quotaBlockedCount.collectAsStateWithLifecycle()
     val quotaLimits by sketchViewModel.quotaLimits.collectAsStateWithLifecycle()
+    val subscriptionStatus by sketchViewModel.subscriptionStatus.collectAsStateWithLifecycle()
     val windowSize = currentWindowSizeDp()
     val isTabletLayout = windowSize.width >= MapTabletBreakpointDp.dp
 
@@ -523,12 +541,20 @@ internal fun MapSketchInput(
             modifier = Modifier.align(Alignment.BottomCenter),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-        quotaBlockedCount?.let { count ->
-            Surface {
-                TextButton(onClick = sketchViewModel::showSketchPaywall) {
-                    Text("선 $count/${quotaLimits.freeSketches} · Pro 보기")
-                }
-            }
+        // iOS sketchQuotaCard: 한도에 막혔거나, 무료 플랜에서 한도 30개 전부터 보인다.
+        val sketchLimit = quotaLimits.freeSketches
+        val showsQuotaCard = quotaBlockedCount != null ||
+            (subscriptionStatus.entitlement == EntitlementState.FREE &&
+                activeSketches.size >= sketchLimit - SketchQuotaWarningMargin)
+        if (showsQuotaCard) {
+            SketchQuotaCard(
+                count = quotaBlockedCount ?: activeSketches.size,
+                limit = sketchLimit,
+                isBlocked = quotaBlockedCount != null,
+                onUpgrade = sketchViewModel::showSketchPaywall,
+            )
+            // iOS VStack(spacing: 8): 한도 카드 ↔ 펜 카드/툴바
+            Spacer(modifier = Modifier.height(8.dp))
         }
         SketchToolbar(
             currentColor = currentColor,
@@ -885,6 +911,60 @@ internal fun MapBottomSheets(
                 isUsingGps = isUsingGps,
                 locationAccuracyMeters = locationAccuracyMeters,
             )
+        }
+    }
+}
+
+internal const val SketchQuotaWarningMargin = 30
+
+@Composable
+private fun SketchQuotaCard(
+    count: Int,
+    limit: Int,
+    isBlocked: Boolean,
+    onUpgrade: () -> Unit,
+) {
+    Surface(
+        modifier = Modifier
+            .padding(horizontal = 16.dp)
+            .widthIn(max = 340.dp),
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
+        shadowElevation = 8.dp,
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = stringResource(R.string.sketch_quota_counter, count, limit),
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (count >= limit) IosSystemRed else IosSystemOrange,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+                Spacer(modifier = Modifier.weight(1f).widthIn(min = 8.dp))
+                Text(
+                    text = stringResource(R.string.sketch_quota_upgrade),
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color.White,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(MaterialTheme.colorScheme.primary)
+                        .clickable(onClick = onUpgrade)
+                        .padding(horizontal = 10.dp, vertical = 4.dp),
+                )
+            }
+            if (isBlocked) {
+                Text(
+                    text = stringResource(R.string.sketch_quota_blocked, limit),
+                    fontSize = 12.sp,
+                    lineHeight = 16.sp,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+            }
         }
     }
 }

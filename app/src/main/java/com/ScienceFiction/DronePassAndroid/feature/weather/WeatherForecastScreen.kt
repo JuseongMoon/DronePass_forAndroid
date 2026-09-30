@@ -176,7 +176,8 @@ private fun WeatherForecastBody(
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         state = listState,
-        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 16.dp),
+        // iOS: 위 16, 아래는 출처 줄 .padding(.bottom, 8)
+        contentPadding = PaddingValues(start = 8.dp, end = 8.dp, top = 16.dp, bottom = 8.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         // ① 일출/일몰 카드
@@ -242,9 +243,10 @@ private fun WeatherAttributionFooter(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp),
+            // iOS: 각 줄 .padding(.horizontal) + 상위 VStack(spacing: 16)
+            .padding(horizontal = 16.dp),
         horizontalAlignment = Alignment.End,
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         if (isStale) {
             Text(
