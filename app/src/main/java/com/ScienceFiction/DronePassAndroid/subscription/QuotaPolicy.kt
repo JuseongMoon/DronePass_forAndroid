@@ -24,7 +24,7 @@ data class QuotaLimits(val freeShapes: Int, val freeSketches: Int, val freeDrone
         QuotaLimits(maxOf(freeShapes, it.freeShapes), maxOf(freeSketches, it.freeSketches), maxOf(freeDrones, it.freeDrones))
     } ?: this
 
-    companion object { val fallback = QuotaLimits(100, 300, 3) }
+    companion object { val fallback = QuotaLimits(30, 100, 3) }
 }
 
 sealed interface QuotaDecision {
@@ -46,7 +46,7 @@ data class LegacyCutoff(val iosOriginalBuildBefore: Int, val accountCreatedBefor
         LegacyCutoff(maxOf(iosOriginalBuildBefore, it.iosOriginalBuildBefore), maxOf(accountCreatedBefore, it.accountCreatedBefore))
     } ?: this
 
-    companion object { val fallback = LegacyCutoff(102, Instant.parse("2026-09-22T00:00:00Z")) }
+    companion object { val fallback = LegacyCutoff(102, Instant.parse("2026-11-05T15:00:00Z")) }
 }
 
 enum class LegacyKind { EARLY_ACCESS, ORIGINAL_DOWNLOAD }

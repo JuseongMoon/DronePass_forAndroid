@@ -543,7 +543,7 @@ internal fun MapSketchInput(
             modifier = Modifier.align(Alignment.BottomCenter),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-        // iOS sketchQuotaCard: 한도에 막혔거나, 무료 플랜에서 한도 30개 전부터 보인다.
+        // iOS sketchQuotaCard: 한도에 막혔거나, 무료 플랜에서 한도 10획 전부터 보인다.
         val sketchLimit = quotaLimits.freeSketches
         val showsQuotaCard = quotaBlockedCount != null ||
             (subscriptionStatus.entitlement == EntitlementState.FREE &&
@@ -917,7 +917,7 @@ internal fun MapBottomSheets(
     }
 }
 
-internal const val SketchQuotaWarningMargin = 30
+internal const val SketchQuotaWarningMargin = 10
 
 @Composable
 private fun SketchQuotaCard(

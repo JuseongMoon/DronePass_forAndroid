@@ -24,6 +24,7 @@ class SubscriptionStateTest {
         assertNull(RemoteSubscriptionConfig.parse("""{"schemaVersion":1.5}"""))
         val config = RemoteSubscriptionConfig.parse("""{"schemaVersion":1,"free":{"shapes":100.5,"sketches":300,"drones":3},"legacy":{"iosOriginalBuildBefore":102,"accountCreatedBefore":"2026-09-22T00:00:00Z"}}""")!!
         assertNull(config.limits)
-        assertTrue(config.legacyCutoff == LegacyCutoff.fallback)
+        // 한도 칸이 잘못돼도 올바른 기준일 칸은 그대로 읽는다.
+        assertTrue(config.legacyCutoff == LegacyCutoff(102, java.time.Instant.parse("2026-09-22T00:00:00Z")))
     }
 }
