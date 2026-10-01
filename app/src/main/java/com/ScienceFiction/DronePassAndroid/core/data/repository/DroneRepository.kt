@@ -55,7 +55,7 @@ internal fun isUntouchedDefaultDrone(drone: DroneModel): Boolean =
  * 드론 전체 동기화 결과.
  * - [discardedLocalDroneIds]: 병합 결과·업로드에서 빼고 로컬에서도 지울 기기 기본 드론
  * - [reassignedShapeDroneIds]: 도형의 droneId 를 바꿀 맵(지운 기기 드론 → 서버 기본 드론)
- * - [selectionReplacements]: 선택돼 있던 지운 드론을 대신할 서버 드론
+ * - [selectionReplacements]: 선택돼 있던 지운 드론을 대신할 드론(규칙 1 은 D, 규칙 2 는 남은 드론의 이름순 첫째)
  */
 internal data class DroneSyncMergeResult(
     val merged: List<DroneModel>,
@@ -114,6 +114,7 @@ internal fun mergeDronesForFullSync(
     val discarded = mutableSetOf<String>()
     val reassigned = mutableMapOf<String, String>()
     val selection = mutableMapOf<String, String>()
+    val fallbackSelectionIds = mutableSetOf<String>()
     if (fallbackServer != null) {
         localDrones
             .filter { it.id !in serverById && isUntouchedDefaultDrone(it) }
@@ -121,19 +122,26 @@ internal fun mergeDronesForFullSync(
                 when {
                     serverDefault != null -> {
                         discarded += local.id
-                        if (local.id in referenced) reassigned[local.id] = serverDefault.id
+                        // 도형이 쓰지 않아도 맵에는 넣는다(iOS fixture 와 같음). 실제로 바뀌는 도형이 없을 뿐이다.
+                        reassigned[local.id] = serverDefault.id
                         selection[local.id] = serverDefault.id
                     }
                     local.id !in referenced -> {
                         discarded += local.id
-                        selection[local.id] = fallbackServer.id
+                        fallbackSelectionIds += local.id
                     }
                 }
             }
     }
 
+    val merged = mergedAll.filter { it.id !in discarded }
+    // D 가 없어 버린 L 의 선택은 iOS 처럼 남은 활성 드론을 이름순으로 정렬한 첫째로 옮긴다.
+    sortActiveDronesForIosList(merged.filter { it.deletedAt == null }).firstOrNull()?.let { first ->
+        fallbackSelectionIds.forEach { selection[it] = first.id }
+    }
+
     return DroneSyncMergeResult(
-        merged = mergedAll.filter { it.id !in discarded },
+        merged = merged,
         toUpload = toUploadAll.filter { it.id !in discarded },
         discardedLocalDroneIds = discarded,
         reassignedShapeDroneIds = reassigned,
