@@ -912,7 +912,7 @@
     <string name="terms_notice_title">Updates to Terms of Service and Privacy Policy</string>
     <string name="terms_notice_effective">Updated Terms of Service apply from %1$s, and the Privacy Policy has also been updated.</string>
     <string name="terms_notice_item_pro">• DronePass Pro subscription introduced (₩29,000 per year, renews every year, purchase after signing in, applies only in the app from the store where purchased)</string>
-    <string name="terms_notice_item_free">• Free plan: create up to 100 shapes, 300 sketch lines and 3 drones (existing data is kept)</string>
+    <string name="terms_notice_item_free">• Free plan: create up to 30 shapes, 100 sketch lines and 3 drones (existing data is kept)</string>
     <string name="terms_notice_item_existing">• Existing users, such as accounts created before 00:00 KST on %1$s, get Pro free for as long as DronePass is offered</string>
     <string name="terms_notice_disagree">If you do not agree to the updated Terms of Service, you may terminate your agreement by deleting your account without penalty, and if you subscribe to Pro, we refund the remaining period (Settings &gt; Manage Subscription &gt; Cancel or Request a Refund). Subscriptions must be canceled separately in the app store.</string>
     <string name="terms_notice_view_terms">View Terms of Service</string>

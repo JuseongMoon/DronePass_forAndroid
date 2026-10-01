@@ -45,7 +45,7 @@ class LocationConsentRulesTest {
             isLocationPurposeAllowed(state(p1Status = LocationConsentStatus.AGREED, ageConfirmed = false), p1, LOCATION_TERMS_VERSION),
         )
         assertFalse(
-            isLocationPurposeAllowed(state(p1Status = LocationConsentStatus.AGREED, version = "2026-10-12"), p1, LOCATION_TERMS_VERSION),
+            isLocationPurposeAllowed(state(p1Status = LocationConsentStatus.AGREED, version = "2026-10-06"), p1, LOCATION_TERMS_VERSION),
         )
         assertFalse(isLocationPurposeAllowed(state(p2Status = LocationConsentStatus.WITHDRAWN), p2, LOCATION_TERMS_VERSION))
         assertFalse(isAnyLocationPurposeAllowed(state(LocationConsentStatus.DECLINED, LocationConsentStatus.WITHDRAWN), LOCATION_TERMS_VERSION))
@@ -257,6 +257,14 @@ class LocationConsentRulesTest {
         assertTrue(termsNoticeNeeded(shownVersion = null, currentVersion = TERMS_NOTICE_VERSION))
         assertTrue(termsNoticeNeeded(shownVersion = "2026-01-01", currentVersion = TERMS_NOTICE_VERSION))
         assertFalse(termsNoticeNeeded(shownVersion = TERMS_NOTICE_VERSION, currentVersion = TERMS_NOTICE_VERSION))
+    }
+
+    @Test
+    fun `legal dates are the confirmed N and T`() {
+        assertEquals("2026-10-07", LOCATION_TERMS_VERSION)
+        assertEquals("2026-11-06", TERMS_NOTICE_VERSION)
+        assertEquals("2026년 11월 6일", formatLegalDate(TERMS_NOTICE_VERSION, Locale.KOREAN))
+        assertEquals("November 6, 2026", formatLegalDate(TERMS_NOTICE_VERSION, Locale.ENGLISH))
     }
 
     @Test

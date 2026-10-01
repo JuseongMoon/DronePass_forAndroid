@@ -11,11 +11,11 @@ import java.util.Locale
  */
 
 /** `{N}`: 위치기반서비스 이용약관 게시·시행일. 저장된 동의 버전이 이보다 낮으면 다시 동의를 받는다. */
-const val LOCATION_TERMS_VERSION = "2026-10-13"
+const val LOCATION_TERMS_VERSION = "2026-10-07"
 
 /** `{T}`: 개정 이용약관·개인정보 처리방침 시행일(N+30). 약관 개정 안내를 한 번만 띄우는 키. */
-const val TERMS_NOTICE_VERSION = "2026-11-12"
+const val TERMS_NOTICE_VERSION = "2026-11-06"
 
-/** 화면용 날짜. 한국어 "2026년 11월 12일", 영어 "November 12, 2026". */
+/** 화면용 날짜. 한국어 "2026년 11월 6일", 영어 "November 6, 2026". */
 internal fun formatLegalDate(isoDate: String, locale: Locale): String =
     LocalDate.parse(isoDate).format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).withLocale(locale))
