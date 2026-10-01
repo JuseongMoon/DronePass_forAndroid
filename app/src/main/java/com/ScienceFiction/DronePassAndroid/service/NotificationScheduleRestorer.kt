@@ -1,6 +1,11 @@
 package com.ScienceFiction.DronePassAndroid.service
 
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
 import android.util.Log
+import androidx.core.content.ContextCompat
+import dagger.hilt.android.qualifiers.ApplicationContext
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import com.ScienceFiction.DronePassAndroid.core.data.repository.ShapeRepository
@@ -35,6 +40,7 @@ class NotificationScheduleRestorer @Inject constructor(
     private val shapeRepository: ShapeRepository,
     private val locationConsentRepository: LocationConsentRepository,
     private val mapCenterStore: MapCenterStore,
+    @ApplicationContext private val appContext: Context,
 ) {
     companion object {
         private const val TAG = "NotificationScheduleRestorer"
@@ -99,7 +105,10 @@ class NotificationScheduleRestorer @Inject constructor(
         sunriseEnabled: Boolean,
         sunsetEnabled: Boolean,
     ) {
-        val (lat, lon) = if (locationConsentRepository.isAllowed(LocationPurpose.WEATHER_AND_SUN)) {
+        // OS 위치 권한을 끈 것은 "일시 중지"라 캐시한 기기 위치도 쓰지 않고 지도 중심으로 대체한다.
+        val useDeviceLocation = locationConsentRepository.isAllowed(LocationPurpose.WEATHER_AND_SUN) &&
+            hasLocationPermission(appContext)
+        val (lat, lon) = if (useDeviceLocation) {
             val location = storedSunAlarmLocation(preferences)
             if (location == null) {
                 Log.w(TAG, "저장된 위치가 없어 일출/일몰 알림 복구를 건너뜀")
@@ -143,3 +152,8 @@ class NotificationScheduleRestorer @Inject constructor(
         }
     }
 }
+
+private fun hasLocationPermission(context: Context): Boolean =
+    listOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION).any {
+        ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
+    }

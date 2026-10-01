@@ -60,6 +60,19 @@ internal fun shouldFetchWeatherAfterCategorySelection(
     return refreshWeather
 }
 
+internal enum class WeatherLocationSource { DEVICE, MAP_CENTER, UNAVAILABLE }
+
+/**
+ * 날씨 기준 위치 결정. 동의가 없거나 OS 위치 권한을 끈 경우(일시 중지, 위치약관 제9조②)는 지도 중심으로
+ * 대체한다. 동의·권한이 있는데 위치를 못 읽은 경우는 대체하지 않고 오류로 둔다.
+ */
+internal fun resolveWeatherLocationSource(result: DeviceLocationResult): WeatherLocationSource = when (result) {
+    is DeviceLocationResult.Available -> WeatherLocationSource.DEVICE
+    DeviceLocationResult.NotAllowed,
+    DeviceLocationResult.PermissionDenied -> WeatherLocationSource.MAP_CENTER
+    DeviceLocationResult.Unavailable -> WeatherLocationSource.UNAVAILABLE
+}
+
 /** 날씨·일출/일몰의 기준 위치. 화면(지도 카드·시트)에 표시한다(사양 v2 A-8). */
 enum class WeatherLocationBasis(@StringRes val labelRes: Int) {
     /** 날씨·일출/일몰(P2)에 동의해 기기 위치로 받았다. */
@@ -212,20 +225,18 @@ class WeatherViewModel @Inject constructor(
         _isLoading.value = true
         _error.value = null
 
-        when (
-            // 일출·일몰 시각도 같은 날씨 응답(회사 서버 경유 WeatherKit)에서 온다.
-            val result = deviceLocationReader.read(
-                LocationUsage(LocationUsagePurpose.WEATHER, LocationRecipient.WEATHERKIT_VIA_SERVER),
-                LocationUsage(LocationUsagePurpose.SUNRISE_SUNSET, LocationRecipient.WEATHERKIT_VIA_SERVER),
-            )
-        ) {
-            is DeviceLocationResult.Available -> fetchWeatherForUserLocation(
-                location = result.location,
+        // 일출·일몰 시각도 같은 날씨 응답(회사 서버 경유 WeatherKit)에서 온다.
+        val result = deviceLocationReader.read(
+            LocationUsage(LocationUsagePurpose.WEATHER, LocationRecipient.WEATHERKIT_VIA_SERVER),
+            LocationUsage(LocationUsagePurpose.SUNRISE_SUNSET, LocationRecipient.WEATHERKIT_VIA_SERVER),
+        )
+        when (resolveWeatherLocationSource(result)) {
+            WeatherLocationSource.DEVICE -> fetchWeatherForUserLocation(
+                location = (result as DeviceLocationResult.Available).location,
                 categoryOverride = categoryOverride,
             )
-            DeviceLocationResult.NotAllowed -> fetchWeatherForMapCenter(categoryOverride)
-            DeviceLocationResult.PermissionDenied -> failWeatherLocation(WeatherError.LocationPermission)
-            DeviceLocationResult.Unavailable -> failWeatherLocation(WeatherError.LocationUnavailable)
+            WeatherLocationSource.MAP_CENTER -> fetchWeatherForMapCenter(categoryOverride)
+            WeatherLocationSource.UNAVAILABLE -> failWeatherLocation(WeatherError.LocationUnavailable)
         }
     }
 

@@ -887,7 +887,6 @@
     <string name="location_current_location_button">현재 위치</string>
     <string name="weather_basis_map_center">지도 중심 기준</string>
     <string name="settings_section_location">위치정보</string>
-    <string name="settings_location_withdraw_message">위치정보 이용 동의를 철회할까요? 현재 위치 기능이 꺼지고, 이 기기에 저장된 위치정보 이용 기록과 마지막 위치가 삭제됩니다.</string>
     <string name="settings_location_withdraw">철회</string>
     <string name="settings_location_os_hint">기기 설정에서 위치 권한도 끌 수 있습니다.</string>
     <string name="settings_location_open_settings">기기 설정 열기</string>
@@ -945,7 +944,7 @@
     <string name="subscription_contract_period">이용기간</string>
     <string name="subscription_contract_period_value">1년(1년마다 자동 갱신)</string>
     <string name="subscription_contract_start">시작일</string>
-    <string name="subscription_contract_next_renewal">다음 갱신일</string>
+    <string name="subscription_contract_next_renewal">다음 갱신 예정일</string>
     <string name="subscription_contract_not_renewing">자동 갱신 해지됨</string>
     <string name="subscription_contract_renewal">자동 갱신·해지 방법</string>
     <string name="subscription_contract_refund">환불 기준</string>
@@ -961,4 +960,6 @@
     <string name="subscription_mail_unavailable">메일 앱을 열 수 없습니다. support@sciencefiction.co.kr 로 보내 주세요.</string>
     <string name="business_info_hosting_label">호스팅서비스 제공자</string>
     <string name="terms_notice_item_refund">• 결제·갱신 후 7일 이내 전액 환불, 그 뒤 해지하면 남은 기간 환급(위약금 없음)</string>
+    <string name="settings_location_withdraw_message_map">지도 현재 위치 표시 동의를 철회할까요? 지도에 현재 위치가 표시되지 않고, 이 기능의 위치정보 이용 기록이 기기와 회사 서버에서 삭제됩니다.</string>
+    <string name="settings_location_withdraw_message_weather">현재 위치 날씨·일출/일몰 동의를 철회할까요? 날씨·일출/일몰은 지도 중심 기준으로 바뀌고, 이 기능의 위치정보 이용 기록과 이 기기에 저장된 마지막 위치가 삭제됩니다(서버 기록 포함).</string>
 </resources>

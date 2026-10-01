@@ -120,4 +120,38 @@ class DeviceLocationGateTest {
         assertEquals(busan, store.weatherBasisCenter())
         assertEquals(busan, store.lastViewedCenter())
     }
+
+    @Test
+    fun `weather falls back to the map center without consent or with OS permission paused`() {
+        assertEquals(
+            com.ScienceFiction.DronePassAndroid.feature.weather.WeatherLocationSource.MAP_CENTER,
+            com.ScienceFiction.DronePassAndroid.feature.weather.resolveWeatherLocationSource(DeviceLocationResult.NotAllowed),
+        )
+        // OS 권한을 끈 것은 일시 중지: 동의·기록은 그대로 두고 지도 중심으로 대체한다.
+        assertEquals(
+            com.ScienceFiction.DronePassAndroid.feature.weather.WeatherLocationSource.MAP_CENTER,
+            com.ScienceFiction.DronePassAndroid.feature.weather.resolveWeatherLocationSource(DeviceLocationResult.PermissionDenied),
+        )
+        // 동의·권한이 있는데 위치를 못 읽으면 지도 중심으로 바꾸지 않는다.
+        assertEquals(
+            com.ScienceFiction.DronePassAndroid.feature.weather.WeatherLocationSource.UNAVAILABLE,
+            com.ScienceFiction.DronePassAndroid.feature.weather.resolveWeatherLocationSource(DeviceLocationResult.Unavailable),
+        )
+        assertEquals(
+            com.ScienceFiction.DronePassAndroid.feature.weather.WeatherLocationSource.DEVICE,
+            com.ScienceFiction.DronePassAndroid.feature.weather.resolveWeatherLocationSource(DeviceLocationResult.Available(seoul)),
+        )
+    }
+
+    @Test
+    fun `pausing by OS permission keeps the consent and records`() = runBlocking {
+        val repository = LocationConsentRepository(testPreferencesDataStore(folder.root))
+        repository.submitConsent(setOf(LocationPurpose.WEATHER_AND_SUN), ageConfirmed = true)
+        repository.recordUsage(weather)
+        val reader = DeviceLocationReader(repository, CountingDeviceLocationSource { throw SecurityException() })
+
+        assertEquals(DeviceLocationResult.PermissionDenied, reader.read(weather))
+        assertTrue(repository.isAllowed(LocationPurpose.WEATHER_AND_SUN))
+        assertEquals(1, repository.usageRecords.first().size)
+    }
 }

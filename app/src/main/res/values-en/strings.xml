@@ -877,7 +877,6 @@
     <string name="location_current_location_button">Current location</string>
     <string name="weather_basis_map_center">Based on map center</string>
     <string name="settings_section_location">Location Data</string>
-    <string name="settings_location_withdraw_message">Withdraw location consent? Current-location features will be turned off, and the location usage history and last known location stored on this device will be deleted.</string>
     <string name="settings_location_withdraw">Withdraw</string>
     <string name="settings_location_os_hint">You can also turn off location permission in your device settings.</string>
     <string name="settings_location_open_settings">Open Settings</string>
@@ -935,7 +934,7 @@
     <string name="subscription_contract_period">Term</string>
     <string name="subscription_contract_period_value">1 year (renews automatically every year)</string>
     <string name="subscription_contract_start">Start Date</string>
-    <string name="subscription_contract_next_renewal">Next Renewal</string>
+    <string name="subscription_contract_next_renewal">Next Renewal (Scheduled)</string>
     <string name="subscription_contract_not_renewing">Auto-renewal canceled</string>
     <string name="subscription_contract_renewal">Auto-Renewal and Cancellation</string>
     <string name="subscription_contract_refund">Refund Policy</string>
@@ -951,4 +950,6 @@
     <string name="subscription_mail_unavailable">Couldn\'t open a mail app. Please email support@sciencefiction.co.kr.</string>
     <string name="business_info_hosting_label">Hosting Providers</string>
     <string name="terms_notice_item_refund">• Full refund within 7 days of a payment or renewal; after that, refund for the remaining period on cancellation (no penalty)</string>
+    <string name="settings_location_withdraw_message_map">Withdraw consent to showing your current location on the map? Your current location will no longer be shown, and the location usage history for this feature will be deleted from this device and the Company’s server.</string>
+    <string name="settings_location_withdraw_message_weather">Withdraw consent to weather and sunrise/sunset for your current location? These will switch to the map center, and the location usage history for this feature (including server records) and the last location stored on this device will be deleted.</string>
 </resources>

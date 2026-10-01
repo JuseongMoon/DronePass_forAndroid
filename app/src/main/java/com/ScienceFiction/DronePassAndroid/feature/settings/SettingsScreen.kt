@@ -753,7 +753,16 @@ private fun SettingsMainContent(
     locationPurposeToWithdraw?.let { purpose ->
         AlertDialog(
             onDismissRequest = { locationPurposeToWithdraw = null },
-            text = { Text(stringResource(R.string.settings_location_withdraw_message)) },
+            text = {
+                Text(
+                    stringResource(
+                        when (purpose) {
+                            LocationPurpose.CURRENT_LOCATION -> R.string.settings_location_withdraw_message_map
+                            LocationPurpose.WEATHER_AND_SUN -> R.string.settings_location_withdraw_message_weather
+                        },
+                    ),
+                )
+            },
             confirmButton = {
                 TextButton(
                     onClick = {

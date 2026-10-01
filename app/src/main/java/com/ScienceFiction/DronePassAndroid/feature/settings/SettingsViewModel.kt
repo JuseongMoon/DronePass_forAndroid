@@ -284,11 +284,12 @@ class SettingsViewModel @Inject constructor(
         )
         val resolved = when (result) {
             is DeviceLocationResult.Available -> result.location.latitude to result.location.longitude
-            DeviceLocationResult.NotAllowed -> {
+            // 동의가 없거나 OS 권한을 끈 경우(일시 중지)는 지도 중심으로 대체한다.
+            DeviceLocationResult.NotAllowed,
+            DeviceLocationResult.PermissionDenied -> {
                 val center = mapCenterStore.weatherBasisCenter()
                 return center.latitude to center.longitude
             }
-            DeviceLocationResult.PermissionDenied,
             DeviceLocationResult.Unavailable -> {
                 Log.w(TAG, "위치 조회 실패, 일출/일몰 알림 예약 건너뜀: $result")
                 null
