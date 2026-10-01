@@ -198,7 +198,8 @@ class SubscriptionManager @Inject constructor(
 
     private fun legacyKind(): LegacyKind? {
         val createdAt = auth.currentUser?.metadata?.creationTimestamp?.takeIf { it > 0 }?.let(Instant::ofEpochMilli)
-        return LegacyPolicy.legacyKind(null, false, createdAt, cutoff)
+        // Android 는 스토어 환경(샌드박스 여부)을 알 수 없으므로 계정 경로를 그대로 쓴다.
+        return LegacyPolicy.legacyKind(null, false, createdAt, cutoff, isKnownSandbox = false)
     }
 
     private fun connectBilling() {

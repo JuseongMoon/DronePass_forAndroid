@@ -52,14 +52,30 @@ data class LegacyCutoff(val iosOriginalBuildBefore: Int, val accountCreatedBefor
 enum class LegacyKind { EARLY_ACCESS, ORIGINAL_DOWNLOAD }
 
 object LegacyPolicy {
-    fun legacyKind(originalAppVersion: String?, isProductionEnvironment: Boolean, accountCreatedAt: Instant?, cutoff: LegacyCutoff): LegacyKind? {
-        if (accountCreatedAt != null && accountCreatedAt < cutoff.accountCreatedBefore) return LegacyKind.EARLY_ACCESS
+    /**
+     * [isKnownSandbox] 는 iOS 가 StoreKit 환경을 sandbox·xcode 로 **확인한** 경우만 true 다(심사·TestFlight 에서
+     * 기준일 전 계정으로 구매 버튼이 사라지지 않게 계정 경로를 건너뛴다). 환경을 알 수 없으면 false 로 계정 경로를
+     * 유지한다. Android 는 환경을 알 수 없으므로 항상 false 다.
+     */
+    fun legacyKind(
+        originalAppVersion: String?,
+        isProductionEnvironment: Boolean,
+        accountCreatedAt: Instant?,
+        cutoff: LegacyCutoff,
+        isKnownSandbox: Boolean = false,
+    ): LegacyKind? {
+        if (!isKnownSandbox && accountCreatedAt != null && accountCreatedAt < cutoff.accountCreatedBefore) return LegacyKind.EARLY_ACCESS
         val build = originalAppVersion?.trim()?.toIntOrNull()
         return if (isProductionEnvironment && build != null && build < cutoff.iosOriginalBuildBefore) LegacyKind.ORIGINAL_DOWNLOAD else null
     }
 
-    fun isLegacyUser(originalAppVersion: String?, isProductionEnvironment: Boolean, accountCreatedAt: Instant?, cutoff: LegacyCutoff): Boolean =
-        legacyKind(originalAppVersion, isProductionEnvironment, accountCreatedAt, cutoff) != null
+    fun isLegacyUser(
+        originalAppVersion: String?,
+        isProductionEnvironment: Boolean,
+        accountCreatedAt: Instant?,
+        cutoff: LegacyCutoff,
+        isKnownSandbox: Boolean = false,
+    ): Boolean = legacyKind(originalAppVersion, isProductionEnvironment, accountCreatedAt, cutoff, isKnownSandbox) != null
 }
 
 fun isVersionOlder(current: String, minimum: String): Boolean {

@@ -78,11 +78,19 @@ class SubscriptionContractTest {
 
     @Test fun `all legacy and merge cases match shared fixture`() {
         val root = fixture()
-        root.cases("legacyCases").forEach { row ->
+        val legacyCases = root.cases("legacyCases")
+        assertEquals(14, legacyCases.size)
+        legacyCases.forEach { row ->
             val date = row.optionalString("accountCreatedAt")?.let(Instant::parse)
             val version = row.optionalString("originalAppVersion")
-            val kind = LegacyPolicy.legacyKind(version, row.bool("isProduction"), date, LegacyCutoff.fallback)
-            assertEquals(row.string("name"), row.bool("expectedLegacy"), LegacyPolicy.isLegacyUser(version, row.bool("isProduction"), date, LegacyCutoff.fallback))
+            // 선택 필드: 없으면 환경을 알 수 없음(false)
+            val knownSandbox = row["isKnownSandbox"] as? Boolean ?: false
+            val kind = LegacyPolicy.legacyKind(version, row.bool("isProduction"), date, LegacyCutoff.fallback, knownSandbox)
+            assertEquals(
+                row.string("name"),
+                row.bool("expectedLegacy"),
+                LegacyPolicy.isLegacyUser(version, row.bool("isProduction"), date, LegacyCutoff.fallback, knownSandbox),
+            )
             val expected = row.optionalString("expectedKind")
             assertEquals(row.string("name"), expected, kind?.let { if (it == LegacyKind.EARLY_ACCESS) "earlyAccess" else "originalDownload" })
         }
