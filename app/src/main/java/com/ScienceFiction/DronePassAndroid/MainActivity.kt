@@ -36,7 +36,12 @@ import com.ScienceFiction.DronePassAndroid.feature.settings.storedKeepScreenAwak
 import com.ScienceFiction.DronePassAndroid.service.AppForegroundState
 import com.ScienceFiction.DronePassAndroid.subscription.PaywallRequest
 import com.ScienceFiction.DronePassAndroid.subscription.SubscriptionManager
+import com.ScienceFiction.DronePassAndroid.subscription.SubscriptionContractScreen
 import com.ScienceFiction.DronePassAndroid.subscription.SubscriptionPaywall
+import com.ScienceFiction.DronePassAndroid.ui.component.DronePassModalBottomSheet
+import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGroupedBackground
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.rememberModalBottomSheetState
 import com.ScienceFiction.DronePassAndroid.service.ForegroundNotification
 import com.ScienceFiction.DronePassAndroid.service.extractForegroundNotification
 import com.ScienceFiction.DronePassAndroid.service.extractNotificationShapeId
@@ -64,6 +69,7 @@ class MainActivity : ComponentActivity() {
         super.attachBaseContext(localizedAppLanguageContext(newBase))
     }
 
+    @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         setTheme(R.style.Theme_DronePassAndroid)
         super.onCreate(savedInstanceState)
@@ -84,6 +90,11 @@ class MainActivity : ComponentActivity() {
             LaunchedEffect(subscriptionManager) {
                 subscriptionManager.messages.collect { subscriptionMessage = it }
             }
+            // 구매 직후 계약 내용을 시트로 보여 준다(사양 v2 C-5).
+            var showPurchaseContract by remember { mutableStateOf(false) }
+            LaunchedEffect(subscriptionManager) {
+                subscriptionManager.purchaseCompleted.collect { showPurchaseContract = true }
+            }
             DronePassAndroidTheme {
                 MainScreen(
                     initialFocusShapeId = initialFocusShapeId.value,
@@ -97,6 +108,16 @@ class MainActivity : ComponentActivity() {
                 )
                 paywallRequest?.let { request ->
                     SubscriptionPaywall(subscriptionManager, request, this, onDismiss = { paywallRequest = null })
+                }
+                if (showPurchaseContract) {
+                    DronePassModalBottomSheet(
+                        onDismissRequest = { showPurchaseContract = false },
+                        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                        containerColor = IosSystemGroupedBackground,
+                        dragHandle = null,
+                    ) {
+                        SubscriptionContractScreen(subscriptionManager, onClose = { showPurchaseContract = false })
+                    }
                 }
                 // 첫 실행: 약관 개정 안내(기존 설치) → 위치정보 이용 동의. 설정·지도에서 다시 연 동의 화면도 여기서 띄운다.
                 val legalLaunchViewModel: LegalLaunchViewModel = hiltViewModel()

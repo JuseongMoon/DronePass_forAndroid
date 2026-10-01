@@ -1,10 +1,18 @@
 package com.ScienceFiction.DronePassAndroid.core.data.remote.weather
 
-import com.google.firebase.functions.FirebaseFunctions
-import com.google.firebase.functions.FirebaseFunctionsException
+import com.ScienceFiction.DronePassAndroid.core.di.WeatherCallableUrl
+import com.ScienceFiction.DronePassAndroid.core.di.WeatherHttpClient
+import com.squareup.moshi.JsonReader
 import com.squareup.moshi.Moshi
-import kotlinx.coroutines.tasks.await
-import org.json.JSONObject
+import com.squareup.moshi.Types
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
+import okio.Buffer
+import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.math.abs
@@ -33,27 +41,107 @@ class WeatherServiceException(
 
 internal const val WEATHERKIT_CALLABLE_NAME = "getAndroidWeather"
 
+/** callable HTTP 프로토콜의 App Check 헤더. 이 요청에 붙는 헤더는 이것과 Content-Type 뿐이다. */
+internal const val AppCheckHeader = "X-Firebase-AppCheck"
+
+/** `https://{region}-{projectId}.cloudfunctions.net/getAndroidWeather` */
+internal fun weatherCallableUrl(projectId: String, region: String): String =
+    "https://$region-$projectId.cloudfunctions.net/$WEATHERKIT_CALLABLE_NAME"
+
+/** App Check 토큰 공급. 테스트에서는 가짜로 바꾼다. */
+interface AppCheckTokenSource {
+    /** 받지 못하면 null(서버가 permission-denied 로 거절한다). */
+    suspend fun token(): String?
+}
+
 /**
  * Firebase callable `getAndroidWeather` 로 WeatherKit 날씨를 받는다.
- * App Check 토큰은 Firebase SDK 가 자동으로 붙인다(Application 에서 공급자 설치).
+ *
+ * Functions SDK 를 쓰지 않고 callable HTTP 프로토콜로 직접 부른다. SDK 는 로그인 토큰(Authorization)과
+ * FCM 토큰(Firebase-Instance-ID-Token)을 붙이는데, 둘 다 계정과 이어질 수 있어 위치가 담긴 요청에는 넣지 않는다
+ * (사양 v2 F). 이 요청의 헤더는 Content-Type 과 App Check 토큰뿐이다([buildWeatherCallableRequest]).
+ * 위치가 담긴 요청이라 로깅 인터셉터가 없는 전용 클라이언트를 쓴다.
  */
 @Singleton
 class FirebaseWeatherKitDataSource @Inject constructor(
-    private val functions: FirebaseFunctions,
+    @WeatherHttpClient private val client: OkHttpClient,
+    @WeatherCallableUrl private val url: String,
+    private val appCheck: AppCheckTokenSource,
     private val moshi: Moshi,
 ) : WeatherKitDataSource {
 
     override suspend fun fetch(latitude: Double, longitude: Double, timezone: String): WeatherKitResponse {
-        val request = weatherKitRequest(latitude, longitude, timezone)
-        val data = try {
-            functions.getHttpsCallable(WEATHERKIT_CALLABLE_NAME).call(request).await().getData()
-        } catch (e: FirebaseFunctionsException) {
-            throw WeatherServiceException(e.code.toWeatherServiceFailure(), e)
+        val body = weatherCallableBody(weatherKitRequest(latitude, longitude, timezone), moshi)
+        val request = buildWeatherCallableRequest(url, body, appCheck.token())
+        val (code, responseBody) = try {
+            withContext(Dispatchers.IO) {
+                client.newCall(request).execute().use { response -> response.code to response.body?.string().orEmpty() }
+            }
+        } catch (e: IOException) {
+            throw WeatherServiceException(WeatherServiceFailure.OTHER, e)
         }
-        val map = data as? Map<*, *>
-            ?: throw WeatherServiceException(WeatherServiceFailure.OTHER, IllegalStateException("Unexpected weather payload"))
-        return parseWeatherKitResponse(JSONObject(map).toString(), moshi)
+        return parseWeatherCallableResponse(code, responseBody, moshi)
     }
+}
+
+/** callable 요청 본문 `{"data": {...}}`. */
+internal fun weatherCallableBody(data: Map<String, Any>, moshi: Moshi): String {
+    val type = Types.newParameterizedType(Map::class.java, String::class.java, Any::class.java)
+    return moshi.adapter<Map<String, Any>>(type).toJson(mapOf("data" to data))
+}
+
+internal fun buildWeatherCallableRequest(url: String, body: String, appCheckToken: String?): Request =
+    Request.Builder()
+        .url(url)
+        .post(body.toRequestBody("application/json; charset=utf-8".toMediaType()))
+        .apply { if (appCheckToken != null) header(AppCheckHeader, appCheckToken) }
+        .build()
+
+/** callable 응답: 성공은 `{"result": {...}}`, 실패는 `{"error": {"status": "...", ...}}`. */
+internal fun parseWeatherCallableResponse(httpCode: Int, body: String, moshi: Moshi): WeatherKitResponse {
+    var result: WeatherKitResponse? = null
+    var errorStatus: String? = null
+    try {
+        val reader = JsonReader.of(Buffer().writeUtf8(body))
+        reader.beginObject()
+        while (reader.hasNext()) {
+            when (reader.nextName()) {
+                "result" -> result = moshi.adapter(WeatherKitResponse::class.java).fromJson(reader)
+                "error" -> {
+                    reader.beginObject()
+                    while (reader.hasNext()) {
+                        if (reader.nextName() == "status") errorStatus = reader.nextString() else reader.skipValue()
+                    }
+                    reader.endObject()
+                }
+                else -> reader.skipValue()
+            }
+        }
+        reader.endObject()
+    } catch (e: Exception) {
+        if (httpCode !in 200..299) throw WeatherServiceException(weatherFailureForHttp(httpCode, null), e)
+        throw WeatherServiceException(WeatherServiceFailure.OTHER, e)
+    }
+    if (errorStatus != null || httpCode !in 200..299) {
+        throw WeatherServiceException(
+            weatherFailureForHttp(httpCode, errorStatus),
+            IllegalStateException("getAndroidWeather failed: ${errorStatus ?: httpCode}"),
+        )
+    }
+    return result ?: throw WeatherServiceException(WeatherServiceFailure.OTHER, IllegalStateException("Empty weather payload"))
+}
+
+internal fun weatherFailureForHttp(httpCode: Int, status: String?): WeatherServiceFailure = when (status) {
+    "UNAVAILABLE" -> WeatherServiceFailure.UNAVAILABLE
+    "PERMISSION_DENIED", "UNAUTHENTICATED" -> WeatherServiceFailure.APP_VERIFICATION
+    "INVALID_ARGUMENT" -> WeatherServiceFailure.INVALID_REQUEST
+    null -> when (httpCode) {
+        503 -> WeatherServiceFailure.UNAVAILABLE
+        401, 403 -> WeatherServiceFailure.APP_VERIFICATION
+        400 -> WeatherServiceFailure.INVALID_REQUEST
+        else -> WeatherServiceFailure.OTHER
+    }
+    else -> WeatherServiceFailure.OTHER
 }
 
 /**
@@ -74,14 +162,6 @@ internal fun weatherGridCoordinate(value: Double): Double {
     if (!value.isFinite()) return value
     val rounded = Math.signum(value) * Math.round((abs(value) + 1e-10) * 100) / 100
     return if (rounded == 0.0) 0.0 else rounded
-}
-
-internal fun FirebaseFunctionsException.Code.toWeatherServiceFailure(): WeatherServiceFailure = when (this) {
-    FirebaseFunctionsException.Code.UNAVAILABLE -> WeatherServiceFailure.UNAVAILABLE
-    FirebaseFunctionsException.Code.PERMISSION_DENIED,
-    FirebaseFunctionsException.Code.UNAUTHENTICATED -> WeatherServiceFailure.APP_VERIFICATION
-    FirebaseFunctionsException.Code.INVALID_ARGUMENT -> WeatherServiceFailure.INVALID_REQUEST
-    else -> WeatherServiceFailure.OTHER
 }
 
 /** callable 결과 JSON(= fixture 와 같은 형식)을 응답 모델로 바꾼다. */

@@ -44,23 +44,26 @@ class FusedDeviceLocationSource @Inject constructor(
 
 sealed interface DeviceLocationResult {
     data class Available(val location: DeviceLocation) : DeviceLocationResult
-    /** 위치 동의가 없어 위치 API 를 부르지 않았다. */
+    /** 그 목적의 위치 동의가 없어 위치 API 를 부르지 않았다. */
     data object NotAllowed : DeviceLocationResult
     data object PermissionDenied : DeviceLocationResult
     data object Unavailable : DeviceLocationResult
 }
 
 /**
- * 기기 위치를 읽는 유일한 길. 동의 게이트를 먼저 확인하고, 실제로 위치를 읽었을 때만
- * 목적별 이용 기록을 남긴다.
+ * 기기 위치를 읽는 유일한 길. 목적별 동의 게이트를 먼저 확인하고, 실제로 위치를 읽었을 때만
+ * 확인자료(시간·목적·제공받는 자)를 남긴다.
  */
 @Singleton
 class DeviceLocationReader @Inject constructor(
     private val consentRepository: LocationConsentRepository,
     private val source: DeviceLocationSource,
 ) {
-    suspend fun read(vararg purposes: LocationUsagePurpose): DeviceLocationResult {
-        if (!consentRepository.isAllowed()) return DeviceLocationResult.NotAllowed
+    /** [usages] 는 모두 같은 동의 목적이어야 한다(예: 날씨 조회와 일출·일몰 계산은 둘 다 P2). */
+    suspend fun read(vararg usages: LocationUsage): DeviceLocationResult {
+        val purposes = usages.map { it.purpose.consentPurpose }.toSet()
+        require(purposes.size == 1) { "Location usages must share one consent purpose" }
+        if (!consentRepository.isAllowed(purposes.single())) return DeviceLocationResult.NotAllowed
         val location = try {
             source.currentOrLastKnown()
         } catch (e: SecurityException) {
@@ -70,7 +73,7 @@ class DeviceLocationReader @Inject constructor(
         } catch (e: Exception) {
             return DeviceLocationResult.Unavailable
         } ?: return DeviceLocationResult.Unavailable
-        purposes.forEach { consentRepository.recordUsage(it) }
+        usages.forEach { consentRepository.recordUsage(it) }
         return DeviceLocationResult.Available(location)
     }
 }

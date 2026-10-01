@@ -138,6 +138,9 @@ fun MapScreen(
 
     // factory 에서 등록한 NaverMap 리스너 참조 — onDispose 에서 해제할 수 있도록 보관.
     var cameraIdleListener by remember { mutableStateOf<NaverMap.OnCameraIdleListener?>(null) }
+    var cameraChangeListener by remember { mutableStateOf<NaverMap.OnCameraChangeListener?>(null) }
+    // 카메라가 기기 위치를 따라가 멈춘 상태인지. 그런 지도 중심은 기기 위치와 같아 날씨 기준으로 기록하지 않는다.
+    val cameraFollow = remember { CameraDeviceLocationFollow() }
     var mapLongClickListener by remember { mutableStateOf<NaverMap.OnMapLongClickListener?>(null) }
 
     // 위치 권한
@@ -182,14 +185,16 @@ fun MapScreen(
 
     // 위치정보 이용 동의(위치정보법 제19조). 동의하기 전에는 OS 위치 권한도 묻지 않고 위치 API 도 부르지 않는다.
     val locationAllowed by viewModel.locationAllowed.collectAsStateWithLifecycle()
+    val anyLocationPurposeAllowed by viewModel.anyLocationPurposeAllowed.collectAsStateWithLifecycle()
     val legalLaunchCompleted by LegalLaunchSequence.flowCompleted.collectAsStateWithLifecycle()
     val locationUsable = locationAllowed == true && locationPermissionGranted
     var showLocationConsentRequired by remember { mutableStateOf(false) }
 
-    // 권한 요청: 약관 안내·동의 화면이 끝난 뒤, 동의했을 때만 묻는다(설정에서 새로 동의한 때 포함).
+    // 권한 요청: 약관 안내·동의 화면이 끝난 뒤, 어느 목적이든 동의했을 때만 묻는다(설정에서 새로 동의한 때 포함).
+    // Android 는 동의 화면을 눈에 띄는 고지로 쓰고 동의 직후 런타임 권한을 묻는다(사양 v2 A-4).
     // 동의하지 않았거나 이미 허용돼 있으면 위치 요청이 끝난 것으로 보고 알림 권한 차례로 넘긴다.
-    LaunchedEffect(legalLaunchCompleted, locationAllowed) {
-        val allowed = locationAllowed ?: return@LaunchedEffect
+    LaunchedEffect(legalLaunchCompleted, anyLocationPurposeAllowed) {
+        val allowed = anyLocationPurposeAllowed ?: return@LaunchedEffect
         if (!legalLaunchCompleted) return@LaunchedEffect
         if (allowed && !locationPermissionGranted) {
             locationPermissionsState.launchMultiplePermissionRequest()
@@ -292,7 +297,7 @@ fun MapScreen(
         if (!mapReady) return@LaunchedEffect
         if (locationUsable) {
             map.uiSettings.isLocationButtonEnabled = true
-            setupLocationTracking(map, context)
+            setupLocationTracking(map, context, cameraFollow)
             viewModel.onDeviceLocationShown()
         } else {
             stopLocationTracking(map)
@@ -451,7 +456,10 @@ fun MapScreen(
                         val cameraListener = NaverMap.OnCameraIdleListener {
                             viewModel.updateCurrentBoundsFrom(map)
                             // 위치 동의가 없을 때의 날씨 기준 위치. 동의 상태에서는 저장소가 무시한다.
-                            viewModel.onMapCenterSettled(Coordinate.fromLatLng(map.cameraPosition.target))
+                            viewModel.onMapCenterSettled(
+                                center = Coordinate.fromLatLng(map.cameraPosition.target),
+                                followsDeviceLocation = cameraFollow.followsDeviceLocation,
+                            )
                             // iOS removeOverlaysOutsideViewport(buffer=0.2) 매핑:
                             // viewport 밖 폴리곤 가시성만 토글해 그리기 비용을 줄인다.
                             // 인스턴스는 캐시에 유지하므로 카메라 재진입 시 즉시 복원된다.
@@ -459,6 +467,12 @@ fun MapScreen(
                         }
                         map.addOnCameraIdleListener(cameraListener)
                         cameraIdleListener = cameraListener
+
+                        val changeListener = NaverMap.OnCameraChangeListener { reason, _ ->
+                            cameraFollow.onCameraChange(reason)
+                        }
+                        map.addOnCameraChangeListener(changeListener)
+                        cameraChangeListener = changeListener
 
                         val longClickListener = NaverMap.OnMapLongClickListener { _, latLng ->
                             if (
@@ -575,10 +589,12 @@ fun MapScreen(
             // factory 에서 등록한 NaverMap 리스너 제거 (중복 등록 방지)
             naverMap?.let { map ->
                 cameraIdleListener?.let { map.removeOnCameraIdleListener(it) }
+                cameraChangeListener?.let { map.removeOnCameraChangeListener(it) }
                 map.onMapLongClickListener = null
                 map.onSymbolClickListener = null
             }
             cameraIdleListener = null
+            cameraChangeListener = null
             mapLongClickListener = null
 
             // OverlayManager 3종 detach → NaverMap 참조 해제 (Activity 누수 방지)
@@ -628,7 +644,8 @@ internal fun shouldRequestCurrentLocationFallback(lastLocationAvailable: Boolean
     return !lastLocationAvailable
 }
 
-private fun centerMapOnUserLocation(map: NaverMap, location: Location) {
+private fun centerMapOnUserLocation(map: NaverMap, location: Location, cameraFollow: CameraDeviceLocationFollow) {
+    cameraFollow.beforeMoveToDeviceLocation()
     map.cameraPosition = CameraPosition(
         LatLng(location.latitude, location.longitude),
         MapUserLocationZoomLevel,
@@ -636,7 +653,11 @@ private fun centerMapOnUserLocation(map: NaverMap, location: Location) {
 }
 
 @SuppressLint("MissingPermission")
-private fun setupLocationTracking(map: NaverMap, context: android.content.Context) {
+private fun setupLocationTracking(
+    map: NaverMap,
+    context: android.content.Context,
+    cameraFollow: CameraDeviceLocationFollow,
+) {
     try {
         val activity = context as? Activity ?: run {
             Log.e("MapScreen", "Context is not an Activity, cannot setup location tracking")
@@ -653,7 +674,7 @@ private fun setupLocationTracking(map: NaverMap, context: android.content.Contex
                 Priority.PRIORITY_BALANCED_POWER_ACCURACY,
                 CancellationTokenSource().token,
             ).addOnSuccessListener { currentLocation ->
-                currentLocation?.let { centerMapOnUserLocation(map, it) }
+                currentLocation?.let { centerMapOnUserLocation(map, it, cameraFollow) }
             }.addOnFailureListener { error ->
                 Log.w("MapScreen", "현재 위치 fallback 조회 실패: ${error.message}")
             }
@@ -662,7 +683,7 @@ private fun setupLocationTracking(map: NaverMap, context: android.content.Contex
         fusedLocationClient.lastLocation.addOnSuccessListener { location ->
             val lastLocationAvailable = location != null
             if (lastLocationAvailable) {
-                location?.let { centerMapOnUserLocation(map, it) }
+                location?.let { centerMapOnUserLocation(map, it, cameraFollow) }
             } else if (shouldRequestCurrentLocationFallback(lastLocationAvailable)) {
                 requestCurrentLocationFallback()
             }
@@ -681,6 +702,34 @@ private fun stopLocationTracking(map: NaverMap) {
     map.locationSource = null
     map.locationOverlay.isVisible = false
     map.uiSettings.isLocationButtonEnabled = false
+}
+
+/**
+ * 카메라가 기기 위치를 따라가 있는지 추적한다. 기기 위치로 옮긴 카메라(앱이 현재 위치로 옮긴 경우, SDK 추적 모드)의
+ * 중심은 기기 위치와 같으므로, 이용자가 직접 옮기기 전까지 날씨 기준 지도 중심으로 쓰지 않는다.
+ */
+internal class CameraDeviceLocationFollow {
+    @Volatile var followsDeviceLocation: Boolean = false
+        private set
+    private var pendingDeviceLocationMove = false
+
+    fun beforeMoveToDeviceLocation() {
+        pendingDeviceLocationMove = true
+    }
+
+    fun onCameraChange(reason: Int) {
+        when (reason) {
+            CameraUpdate.REASON_LOCATION -> followsDeviceLocation = true
+            CameraUpdate.REASON_DEVELOPER -> {
+                // 앱이 현재 위치로 옮긴 경우만 기기 위치다. 도형 포커스 등 다른 이동은 이용자 콘텐츠의 위치다.
+                followsDeviceLocation = pendingDeviceLocationMove
+                pendingDeviceLocationMove = false
+            }
+            CameraUpdate.REASON_GESTURE -> followsDeviceLocation = false
+            // 확대·축소 버튼, 콘텐츠 패딩 변경은 중심을 바꾸지 않는다.
+            else -> Unit
+        }
+    }
 }
 
 private const val LOCATION_PERMISSION_REQUEST_CODE = 1000

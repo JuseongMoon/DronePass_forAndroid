@@ -31,7 +31,8 @@ import com.ScienceFiction.DronePassAndroid.ui.component.DronePassModalBottomShee
 private enum class TermsNoticeDocument { TERMS, PRIVACY }
 
 /**
- * 3.6.0 이용약관·개인정보 처리방침 개정 안내(사양 §6). 업데이트한 기존 설치에 한 번만 띄우고 "확인"으로만 닫는다.
+ * 3.6.0 이용약관·개인정보 처리방침 개정 안내(사양 v2 E). 업데이트한 기존 설치에 한 번만 띄우고 "확인"으로만 닫는다.
+ * 시행일 이후에 뜨므로 사전 고지나 거부 접수 창구가 아니다. 위약금 없는 해지 방법만 안내한다.
  * "보기" 버튼은 앱 안의 기존 약관 화면을 연다.
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -52,9 +53,9 @@ fun TermsNoticeDialog(onConfirm: () -> Unit) {
             ) {
                 Text(stringResource(R.string.terms_notice_effective, effectiveDate))
                 Text(stringResource(R.string.terms_notice_item_pro))
+                Text(stringResource(R.string.terms_notice_item_refund))
                 Text(stringResource(R.string.terms_notice_item_free))
-                Text(stringResource(R.string.terms_notice_item_existing))
-                Text(stringResource(R.string.terms_notice_item_privacy))
+                Text(stringResource(R.string.terms_notice_item_existing, effectiveDate))
                 Text(stringResource(R.string.terms_notice_disagree))
             }
         },

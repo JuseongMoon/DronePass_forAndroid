@@ -19,6 +19,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.ui.unit.sp
@@ -177,7 +178,7 @@ private fun WeatherForecastBody(
     lastUpdateTime: Long?,
     onWeatherInfoRequested: (WeatherInfoTopic) -> Unit,
     listState: LazyListState,
-    locationBasis: WeatherLocationBasis = WeatherLocationBasis.DEVICE,
+    locationBasis: WeatherLocationBasis? = null,
 ) {
     val uriHandler = LocalUriHandler.current
     LazyColumn(
@@ -187,10 +188,10 @@ private fun WeatherForecastBody(
         contentPadding = PaddingValues(start = 8.dp, end = 8.dp, top = 16.dp, bottom = 8.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        // 위치 동의가 없으면 날씨·일출/일몰은 지도 중심 기준이다. 그 기준을 맨 위에 밝힌다.
-        if (locationBasis == WeatherLocationBasis.MAP_CENTER) {
+        // 날씨·일출/일몰의 기준(현재 위치 / 지도 중심)을 맨 위에 밝힌다.
+        if (locationBasis != null) {
             item {
-                WeatherLocationBasisLabel()
+                WeatherLocationBasisLabel(locationBasis)
             }
         }
 
@@ -406,9 +407,9 @@ fun WeatherSheetHeader(
     }
 }
 
-/** "지도 중심 기준" 표시(위치 동의가 없을 때). */
+/** "현재 위치 기준" / "지도 중심 기준" 표시. */
 @Composable
-internal fun WeatherLocationBasisLabel(modifier: Modifier = Modifier) {
+internal fun WeatherLocationBasisLabel(basis: WeatherLocationBasis, modifier: Modifier = Modifier) {
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -416,14 +417,14 @@ internal fun WeatherLocationBasisLabel(modifier: Modifier = Modifier) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
-            imageVector = Icons.Default.Map,
+            imageVector = if (basis == WeatherLocationBasis.DEVICE) Icons.Default.MyLocation else Icons.Default.Map,
             contentDescription = null,
             tint = IosSecondaryLabel,
             modifier = Modifier.size(16.dp),
         )
         Spacer(modifier = Modifier.width(6.dp))
         Text(
-            text = stringResource(R.string.weather_basis_map_center),
+            text = stringResource(basis.labelRes),
             fontSize = 13.sp,
             color = IosSecondaryLabel,
         )

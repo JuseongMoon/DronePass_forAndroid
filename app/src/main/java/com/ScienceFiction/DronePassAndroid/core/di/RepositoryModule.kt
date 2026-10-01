@@ -4,7 +4,9 @@ import com.ScienceFiction.DronePassAndroid.core.data.remote.weather.FirebaseWeat
 import com.ScienceFiction.DronePassAndroid.core.data.remote.weather.WeatherKitDataSource
 import com.ScienceFiction.DronePassAndroid.core.location.DeviceLocationReader
 import com.ScienceFiction.DronePassAndroid.core.location.DeviceLocationSource
+import com.ScienceFiction.DronePassAndroid.core.location.FirebaseLocationUsageServer
 import com.ScienceFiction.DronePassAndroid.core.location.FusedDeviceLocationSource
+import com.ScienceFiction.DronePassAndroid.core.location.LocationUsageServer
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -28,4 +30,8 @@ abstract class RepositoryModule {
     /** 기기 위치: Fused Location. 위치 동의 게이트는 [DeviceLocationReader] 가 맡는다. */
     @Binds
     abstract fun bindDeviceLocationSource(impl: FusedDeviceLocationSource): DeviceLocationSource
+
+    /** 위치정보 이용사실 확인자료 서버(callable `recordLocationUsage`·`deleteLocationUsage`). */
+    @Binds
+    abstract fun bindLocationUsageServer(impl: FirebaseLocationUsageServer): LocationUsageServer
 }

@@ -7,6 +7,8 @@ data class RemoteSubscriptionConfig(
     val limits: QuotaLimits?,
     val legacyCutoff: LegacyCutoff?,
     val minSupportedVersion: String?,
+    /** `features.locationAudit.uploadEnabled`. 값이 없으면 false(확인자료 서버 업로드를 끈다). */
+    val locationAuditUploadEnabled: Boolean = false,
 ) {
     companion object {
         const val URL = "https://sciencefiction.co.kr/dronepass/config/limits.json"
@@ -32,7 +34,9 @@ data class RemoteSubscriptionConfig(
             val date = try { (legacy?.get("accountCreatedBefore") as? String)?.let(Instant::parse) } catch (_: Exception) { null }
             val cutoff = if (build != null && build > 0 && date != null) LegacyCutoff(build, date) else null
             val minimum = (root["minSupportedVersion"] as? Map<*, *>)?.get(platform) as? String
-            return RemoteSubscriptionConfig(limits, cutoff, minimum?.takeIf { it.isNotEmpty() })
+            val locationAudit = (root["features"] as? Map<*, *>)?.get("locationAudit") as? Map<*, *>
+            val uploadEnabled = locationAudit?.get("uploadEnabled") as? Boolean ?: false
+            return RemoteSubscriptionConfig(limits, cutoff, minimum?.takeIf { it.isNotEmpty() }, uploadEnabled)
         }
     }
 }

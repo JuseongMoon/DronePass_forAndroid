@@ -13,7 +13,11 @@ import com.ScienceFiction.DronePassAndroid.core.data.repository.WeatherRepositor
 import com.ScienceFiction.DronePassAndroid.core.location.DeviceLocation
 import com.ScienceFiction.DronePassAndroid.core.location.DeviceLocationReader
 import com.ScienceFiction.DronePassAndroid.core.location.DeviceLocationResult
+import com.ScienceFiction.DronePassAndroid.core.data.remote.weather.weatherGridCoordinate
 import com.ScienceFiction.DronePassAndroid.core.location.LocationConsentRepository
+import com.ScienceFiction.DronePassAndroid.core.location.LocationPurpose
+import com.ScienceFiction.DronePassAndroid.core.location.LocationRecipient
+import com.ScienceFiction.DronePassAndroid.core.location.LocationUsage
 import com.ScienceFiction.DronePassAndroid.core.location.LocationUsagePurpose
 import com.ScienceFiction.DronePassAndroid.core.location.MapCenterStore
 import com.ScienceFiction.DronePassAndroid.core.util.AnalyticsLogger
@@ -56,10 +60,13 @@ internal fun shouldFetchWeatherAfterCategorySelection(
     return refreshWeather
 }
 
-/** 날씨·일출/일몰의 기준 위치. 위치 동의가 없으면 지도 중심을 쓰고 화면에 그 사실을 표시한다. */
-enum class WeatherLocationBasis {
-    DEVICE,
-    MAP_CENTER,
+/** 날씨·일출/일몰의 기준 위치. 화면(지도 카드·시트)에 표시한다(사양 v2 A-8). */
+enum class WeatherLocationBasis(@StringRes val labelRes: Int) {
+    /** 날씨·일출/일몰(P2)에 동의해 기기 위치로 받았다. */
+    DEVICE(R.string.weather_basis_current_location),
+
+    /** 동의가 없어 이용자가 정한 지도 중심으로 받았다. */
+    MAP_CENTER(R.string.weather_basis_map_center),
 }
 
 @HiltViewModel
@@ -94,8 +101,9 @@ class WeatherViewModel @Inject constructor(
     private val _isUsingGps = MutableStateFlow(false)
     val isUsingGps: StateFlow<Boolean> = _isUsingGps.asStateFlow()
 
-    private val _locationBasis = MutableStateFlow(WeatherLocationBasis.DEVICE)
-    val locationBasis: StateFlow<WeatherLocationBasis> = _locationBasis.asStateFlow()
+    /** 첫 요청 전에는 기준을 알 수 없어 표시하지 않는다(null). */
+    private val _locationBasis = MutableStateFlow<WeatherLocationBasis?>(null)
+    val locationBasis: StateFlow<WeatherLocationBasis?> = _locationBasis.asStateFlow()
 
     private val _refreshCompleted = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     val refreshCompleted: SharedFlow<Unit> = _refreshCompleted
@@ -115,7 +123,7 @@ class WeatherViewModel @Inject constructor(
         refreshWeather(showRefreshMessage = false)
         // 위치 동의·철회 즉시 기준 위치를 바꿔 다시 불러온다(철회하면 기기 위치 사용을 바로 멈춘다).
         viewModelScope.launch {
-            locationConsentRepository.allowed.drop(1).collect {
+            locationConsentRepository.allowed(LocationPurpose.WEATHER_AND_SUN).drop(1).collect {
                 weatherRepository.invalidateCache()
                 fetchCurrentLocationAndWeather()
             }
@@ -205,9 +213,10 @@ class WeatherViewModel @Inject constructor(
         _error.value = null
 
         when (
+            // 일출·일몰 시각도 같은 날씨 응답(회사 서버 경유 WeatherKit)에서 온다.
             val result = deviceLocationReader.read(
-                LocationUsagePurpose.WEATHER,
-                LocationUsagePurpose.SUNRISE_SUNSET,
+                LocationUsage(LocationUsagePurpose.WEATHER, LocationRecipient.WEATHERKIT_VIA_SERVER),
+                LocationUsage(LocationUsagePurpose.SUNRISE_SUNSET, LocationRecipient.WEATHERKIT_VIA_SERVER),
             )
         ) {
             is DeviceLocationResult.Available -> fetchWeatherForUserLocation(
@@ -286,7 +295,10 @@ class WeatherViewModel @Inject constructor(
                 runCatching {
                     val scheduled = notificationScheduleRestorer.rescheduleSunAlarmsForWeatherData(data)
                     if (scheduled && isUserLocationBacked) {
-                        locationConsentRepository.recordUsage(LocationUsagePurpose.SUNRISE_ALERT)
+                        // 이미 받은 날씨로 예약만 한다(위치를 새로 보내지 않는다).
+                        locationConsentRepository.recordUsage(
+                            LocationUsage(LocationUsagePurpose.SUNRISE_ALERT, LocationRecipient.NONE),
+                        )
                     }
                 }
             }
@@ -298,10 +310,11 @@ class WeatherViewModel @Inject constructor(
 
     private suspend fun cacheSunAlarmLocation(latitude: Double, longitude: Double) {
         // 읽는 도중 철회됐다면 캐시를 다시 남기지 않는다.
-        if (!locationConsentRepository.isAllowed()) return
+        if (!locationConsentRepository.isAllowed(LocationPurpose.WEATHER_AND_SUN)) return
+        // 앱이 닫혀 있을 때 알림 시각을 다시 계산하는 데만 쓰므로 0.01°로 반올림해 둔다(사양 v2 F).
         dataStore.edit { preferences ->
-            preferences[UserLocationKeys.KEY_LAST_LATITUDE] = latitude
-            preferences[UserLocationKeys.KEY_LAST_LONGITUDE] = longitude
+            preferences[UserLocationKeys.KEY_LAST_LATITUDE] = weatherGridCoordinate(latitude)
+            preferences[UserLocationKeys.KEY_LAST_LONGITUDE] = weatherGridCoordinate(longitude)
         }
     }
 }

@@ -261,6 +261,7 @@ internal fun MapFloatingControls(
     val currentKp by kpViewModel.currentKp.collectAsStateWithLifecycle()
     val kpLevel by kpViewModel.kpLevel.collectAsStateWithLifecycle()
     val weatherData by weatherViewModel.weatherData.collectAsStateWithLifecycle()
+    val weatherLocationBasis by weatherViewModel.locationBasis.collectAsStateWithLifecycle()
     val windowSize = currentWindowSizeDp()
     val isTabletLayout = windowSize.width >= MapTabletBreakpointDp.dp
     val droneDropdownTopPadding = resolveDroneDropdownTopPadding(
@@ -315,6 +316,7 @@ internal fun MapFloatingControls(
             sunriseTimes = weatherData?.sunriseTimes.orEmpty(),
             sunsetTimes = weatherData?.sunsetTimes.orEmpty(),
             weatherUtcOffsetSeconds = weatherData?.utcOffsetSeconds,
+            weatherBasisLabel = weatherLocationBasis?.let { stringResource(it.labelRes) },
             onWeatherClick = onShowWeather,
             isTabletLayout = isTabletLayout,
             naverMap = naverMap,

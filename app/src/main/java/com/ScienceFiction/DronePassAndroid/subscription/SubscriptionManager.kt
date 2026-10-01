@@ -111,6 +111,18 @@ class SubscriptionManager @Inject constructor(
     val paywallRequests = _paywallRequests.asSharedFlow()
     private val _messages = MutableSharedFlow<String>(extraBufferCapacity = 4)
     val messages = _messages.asSharedFlow()
+    private val _signedIn = MutableStateFlow(auth.currentUser != null)
+    /** 구매는 로그인한 상태에서만 한다(사양 v2 C-1). */
+    val signedIn: StateFlow<Boolean> = _signedIn.asStateFlow()
+    private val _activePurchase = MutableStateFlow<SubscriptionPurchaseInfo?>(null)
+    /** 지금 유효한 Google Play 구독의 주문 정보. 계약 내용·해지·환불 요청 화면이 쓴다. */
+    val activePurchase: StateFlow<SubscriptionPurchaseInfo?> = _activePurchase.asStateFlow()
+    private val _purchaseCompleted = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    /** 구매 직후 계약 내용 시트를 띄우기 위한 이벤트(사양 v2 C-5). */
+    val purchaseCompleted = _purchaseCompleted.asSharedFlow()
+
+    /** 해지·환불 요청 메일에 미리 채울 계정 이메일. */
+    val accountEmail: String? get() = auth.currentUser?.email
 
     private var cutoff = LegacyCutoff.fallback
     private val billing = BillingClient.newBuilder(context)
@@ -160,10 +172,12 @@ class SubscriptionManager @Inject constructor(
     }
 
     private fun onAccountChanged() {
+        _signedIn.value = auth.currentUser != null
         val uid = auth.currentUser?.uid
         if (uid == currentUid && _status.value.entitlement != EntitlementState.UNKNOWN) return
         currentUid = uid
         queryGeneration.incrementAndGet()
+        _activePurchase.value = null
         // 로그인 계정에서 받은 평생 무료 권한을 다른 계정에 잠시라도 보여주지 않는다.
         _status.value = PlanStatus()
         val legacy = legacyKind()
@@ -246,6 +260,9 @@ class SubscriptionManager @Inject constructor(
             else -> PlanStatus(EntitlementState.FREE, paymentIssue = suspended, hasPaidSubscription = suspended)
         }
         _status.value = next
+        _activePurchase.value = active?.let {
+            SubscriptionPurchaseInfo(orderId = it.orderId, purchaseTimeMillis = it.purchaseTime, autoRenewing = it.isAutoRenewing)
+        }
         logUsageIfDue()
         if (next.entitlement == EntitlementState.PRO) {
             preferences.edit().putString("uid", currentUid).putString("source", next.source?.name?.lowercase())
@@ -256,7 +273,10 @@ class SubscriptionManager @Inject constructor(
         }
         if (active != null) {
             acknowledge(active)
-            if (fromPurchaseFlow) analytics.logPurchaseSuccess(latestPurchaseSource)
+            if (fromPurchaseFlow) {
+                analytics.logPurchaseSuccess(latestPurchaseSource)
+                _purchaseCompleted.tryEmit(Unit)
+            }
         } else if (fromPurchaseFlow && relevant.any { it.purchaseState == Purchase.PurchaseState.PENDING }) {
             analytics.logPurchaseFail(latestPurchaseSource, "pending")
             _messages.tryEmit("결제가 대기 중입니다. 승인 후 자동으로 적용됩니다.")
@@ -297,6 +317,8 @@ class SubscriptionManager @Inject constructor(
     }
 
     fun purchase(activity: Activity, source: String) {
+        // 로그인 필수(계정 토큰을 붙여 구매한다), 플랜 확인 중에는 평생 무료 대상자의 실수 결제를 막는다(사양 v2 C-1·C-2).
+        if (!canStartPurchase(signedIn = auth.currentUser != null, entitlement = _status.value.entitlement)) return
         latestPurchaseSource = source
         analytics.logPurchaseStart(source)
         if (!billing.isReady) {
@@ -383,6 +405,7 @@ class SubscriptionManager @Inject constructor(
         val cached = preferences.getString("config", null)?.let { RemoteSubscriptionConfig.parse(it) } ?: return
         _limits.value = QuotaLimits.fallback.raised(cached.limits)
         cutoff = LegacyCutoff.fallback.extended(cached.legacyCutoff)
+        RemoteFeatureFlags.update(cached)
     }
 
     private fun logUsageIfDue() {
@@ -417,8 +440,9 @@ class SubscriptionManager @Inject constructor(
             _limits.value = _limits.value.raised(config.limits)
             cutoff = cutoff.extended(config.legacyCutoff)
             currentRemoteMinimum = config.minSupportedVersion
+            RemoteFeatureFlags.update(config)
             val effective = _limits.value
-            val cachedConfig = """{"schemaVersion":1,"free":{"shapes":${effective.freeShapes},"sketches":${effective.freeSketches},"drones":${effective.freeDrones}},"legacy":{"iosOriginalBuildBefore":${cutoff.iosOriginalBuildBefore},"accountCreatedBefore":"${cutoff.accountCreatedBefore}"}}"""
+            val cachedConfig = """{"schemaVersion":1,"free":{"shapes":${effective.freeShapes},"sketches":${effective.freeSketches},"drones":${effective.freeDrones}},"legacy":{"iosOriginalBuildBefore":${cutoff.iosOriginalBuildBefore},"accountCreatedBefore":"${cutoff.accountCreatedBefore}"},"features":{"locationAudit":{"uploadEnabled":${config.locationAuditUploadEnabled}}}}"""
             preferences.edit().putString("config", cachedConfig).apply()
             val newLegacy = legacyKind()
             val old = _status.value

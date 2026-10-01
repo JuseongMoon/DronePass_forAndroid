@@ -101,7 +101,6 @@ fun ProfileScreen(
     val expiredShapeCount by viewModel.expiredShapeCount.collectAsStateWithLifecycle()
     val activeSketchCount by viewModel.activeSketchCount.collectAsStateWithLifecycle()
     val activeDroneCount by viewModel.activeDroneCount.collectAsStateWithLifecycle()
-    val subscriptionPlan by viewModel.subscriptionManager.status.collectAsStateWithLifecycle()
 
     var showLogoutDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -307,13 +306,11 @@ fun ProfileScreen(
             text = {
                 Column {
                     Text(stringResource(R.string.profile_delete_account_message))
-                    if (subscriptionPlan.isPaidSubscriber) {
-                        // iOS: 본문 뒤 "\n\n" 으로 이어 붙인다.
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text(stringResource(R.string.subscription_delete_warning))
-                        TextButton(onClick = { viewModel.subscriptionManager.openManagement(context) }) {
-                            Text(stringResource(R.string.subscription_manage))
-                        }
+                    // 구독 감지 여부와 관계없이 모든 사용자에게 보여 준다(사양 v2 C-7).
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(stringResource(R.string.subscription_delete_warning))
+                    TextButton(onClick = { viewModel.subscriptionManager.openManagement(context) }) {
+                        Text(stringResource(R.string.subscription_manage))
                     }
                 }
             },

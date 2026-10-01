@@ -60,6 +60,9 @@ internal fun resolveWeatherOverlayWeatherIcon(
     precipitation: Double?,
 ): ImageVector = WeatherCodeMapper.conditionIcon(condition, precipitation)
 
+internal val WeatherOverlayCardBasisTextSize = 10.sp
+internal val WeatherOverlayCardBasisColor = Color(0xFF8A8A8E)
+
 internal fun weatherOverlayTemperatureText(temperature: Double?): String =
     temperature?.let {
         String.format(Locale.ROOT, "%.0f°", it)
@@ -88,6 +91,8 @@ fun WeatherOverlayCard(
     sunriseTimes: List<String> = sunrise?.let(::listOf) ?: emptyList(),
     sunsetTimes: List<String> = sunset?.let(::listOf) ?: emptyList(),
     utcOffsetSeconds: Int? = null,
+    /** "현재 위치 기준" / "지도 중심 기준"(사양 v2 A-8). null 이면 표시하지 않는다. */
+    basisLabel: String? = null,
 ) {
     val now = rememberSunEventNow(utcOffsetSeconds)
     val sunEvent = nextSunEvent(
@@ -170,6 +175,16 @@ fun WeatherOverlayCard(
                     fontSize = WeatherOverlayCardTextSize,
                     fontWeight = FontWeight.Bold,
                     color = SunEventColor,
+                )
+            }
+
+            if (basisLabel != null) {
+                Text(
+                    text = basisLabel,
+                    fontSize = WeatherOverlayCardBasisTextSize,
+                    lineHeight = WeatherOverlayCardBasisTextSize,
+                    color = WeatherOverlayCardBasisColor,
+                    maxLines = 1,
                 )
             }
         }

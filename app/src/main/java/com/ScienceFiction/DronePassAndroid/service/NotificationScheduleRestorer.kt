@@ -10,6 +10,9 @@ import com.ScienceFiction.DronePassAndroid.core.data.storedSunAlarmLocation
 import com.ScienceFiction.DronePassAndroid.core.data.storedSunriseAlarmEnabled
 import com.ScienceFiction.DronePassAndroid.core.data.storedSunsetAlarmEnabled
 import com.ScienceFiction.DronePassAndroid.core.location.LocationConsentRepository
+import com.ScienceFiction.DronePassAndroid.core.location.LocationPurpose
+import com.ScienceFiction.DronePassAndroid.core.location.LocationRecipient
+import com.ScienceFiction.DronePassAndroid.core.location.LocationUsage
 import com.ScienceFiction.DronePassAndroid.core.location.LocationUsagePurpose
 import com.ScienceFiction.DronePassAndroid.core.location.MapCenterStore
 import com.ScienceFiction.DronePassAndroid.domain.model.WeatherData
@@ -88,7 +91,7 @@ class NotificationScheduleRestorer @Inject constructor(
     }
 
     /**
-     * 기준 위치: 위치 동의 상태면 마지막으로 읽은 기기 위치(캐시), 아니면 마지막으로 본 지도 중심.
+     * 기준 위치: 날씨·일출/일몰(P2) 동의 상태면 마지막으로 읽은 기기 위치(0.01° 캐시), 아니면 마지막으로 본 지도 중심.
      * 동의 없이는 기기 위치 캐시를 읽지 않는다(철회 때 캐시도 지워진다).
      */
     private suspend fun rescheduleSunAlarms(
@@ -96,13 +99,16 @@ class NotificationScheduleRestorer @Inject constructor(
         sunriseEnabled: Boolean,
         sunsetEnabled: Boolean,
     ) {
-        val (lat, lon) = if (locationConsentRepository.isAllowed()) {
+        val (lat, lon) = if (locationConsentRepository.isAllowed(LocationPurpose.WEATHER_AND_SUN)) {
             val location = storedSunAlarmLocation(preferences)
             if (location == null) {
                 Log.w(TAG, "저장된 위치가 없어 일출/일몰 알림 복구를 건너뜀")
                 return
             }
-            locationConsentRepository.recordUsage(LocationUsagePurpose.SUNRISE_ALERT)
+            // 캐시한 위치로 날씨(일출·일몰 시각)를 받는다.
+            locationConsentRepository.recordUsage(
+                LocationUsage(LocationUsagePurpose.SUNRISE_ALERT, LocationRecipient.WEATHERKIT_VIA_SERVER),
+            )
             location
         } else {
             val center = mapCenterStore.weatherBasisCenter()

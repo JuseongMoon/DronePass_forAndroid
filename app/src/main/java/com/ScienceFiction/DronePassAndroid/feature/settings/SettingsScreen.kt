@@ -42,6 +42,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalContext
 import com.ScienceFiction.DronePassAndroid.subscription.EntitlementState
 import com.ScienceFiction.DronePassAndroid.subscription.LegacyKind
+import com.ScienceFiction.DronePassAndroid.subscription.SubscriptionManageScreen
 import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemOrange
 import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedRowHorizontalPadding
 import com.ScienceFiction.DronePassAndroid.subscription.EarlyAccessBadge
@@ -58,6 +59,7 @@ import com.ScienceFiction.DronePassAndroid.feature.kp.KpForecastContent
 import com.ScienceFiction.DronePassAndroid.feature.profile.ProfileScreen
 import com.ScienceFiction.DronePassAndroid.feature.kp.KpSheetHeader
 import com.ScienceFiction.DronePassAndroid.feature.kp.KpViewModel
+import com.ScienceFiction.DronePassAndroid.core.location.LocationPurpose
 import com.ScienceFiction.DronePassAndroid.feature.legal.BusinessInfoScreen
 import com.ScienceFiction.DronePassAndroid.feature.legal.LocationConsentSettingsViewModel
 import com.ScienceFiction.DronePassAndroid.feature.legal.LocationUsageHistoryScreen
@@ -197,11 +199,14 @@ private fun SettingsMainContent(
     var showLanguageChangeAlert by rememberSaveable { mutableStateOf(false) }
     var koreaFeaturesAlertOn by remember { mutableStateOf<Boolean?>(null) }
     val locationConsentViewModel: LocationConsentSettingsViewModel = hiltViewModel()
-    val locationConsentAllowed by locationConsentViewModel.consentAllowed.collectAsStateWithLifecycle()
+    val currentLocationConsent by locationConsentViewModel.currentLocationAllowed.collectAsStateWithLifecycle()
+    val weatherAndSunConsent by locationConsentViewModel.weatherAndSunAllowed.collectAsStateWithLifecycle()
     val locationUsageRecords by locationConsentViewModel.usageRecords.collectAsStateWithLifecycle()
-    var showLocationWithdrawDialog by remember { mutableStateOf(false) }
+    val locationInstallId by locationConsentViewModel.installId.collectAsStateWithLifecycle()
+    var locationPurposeToWithdraw by remember { mutableStateOf<LocationPurpose?>(null) }
     var showLocationUsageHistory by remember { mutableStateOf(false) }
     var showBusinessInfo by remember { mutableStateOf(false) }
+    var showSubscriptionManage by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -297,10 +302,11 @@ private fun SettingsMainContent(
                 }
                 if (plan.isPaidSubscriber || plan.paymentIssue) {
                     InsetGroupedDivider()
+                    // 계약 내용, 해지·환불 요청, Google Play 구독 관리(사양 v2 C-5·C-6)
                     InsetGroupedRow(
                         title = stringResource(R.string.subscription_manage),
                         titleColor = MaterialTheme.colorScheme.primary,
-                        onClick = { settingsViewModel.subscriptionManager.openManagement(context) },
+                        onClick = { showSubscriptionManage = true },
                     )
                 }
                 InsetGroupedDivider()
@@ -423,18 +429,37 @@ private fun SettingsMainContent(
                 header = stringResource(R.string.settings_section_location),
                 footer = stringResource(R.string.settings_location_footer),
             ) {
+                // 목적별 동의(사양 v2 A-2). 켜기는 동의 화면에서만 저장하고, 끄기는 확인을 받은 뒤 그 목적만 철회한다.
                 InsetGroupedToggleRow(
-                    title = stringResource(R.string.settings_location_consent),
-                    checked = locationConsentAllowed,
+                    title = stringResource(R.string.location_consent_item_map),
+                    checked = currentLocationConsent,
                     onCheckedChange = { turnOn ->
-                        // 켜기는 동의 화면에서만 저장하고, 끄기는 확인을 받은 뒤 철회한다.
-                        if (turnOn) locationConsentViewModel.requestConsent() else showLocationWithdrawDialog = true
+                        if (turnOn) {
+                            locationConsentViewModel.requestConsent()
+                        } else {
+                            locationPurposeToWithdraw = LocationPurpose.CURRENT_LOCATION
+                        }
+                    },
+                )
+                InsetGroupedDivider()
+                InsetGroupedToggleRow(
+                    title = stringResource(R.string.location_consent_item_weather),
+                    checked = weatherAndSunConsent,
+                    onCheckedChange = { turnOn ->
+                        if (turnOn) {
+                            locationConsentViewModel.requestConsent()
+                        } else {
+                            locationPurposeToWithdraw = LocationPurpose.WEATHER_AND_SUN
+                        }
                     },
                 )
                 InsetGroupedDivider()
                 InsetGroupedRow(
                     title = stringResource(R.string.settings_location_history),
-                    onClick = { showLocationUsageHistory = true },
+                    onClick = {
+                        locationConsentViewModel.loadInstallId()
+                        showLocationUsageHistory = true
+                    },
                 )
                 SubscriptionCaptionRow(stringResource(R.string.settings_location_os_hint))
                 InsetGroupedDivider()
@@ -725,15 +750,15 @@ private fun SettingsMainContent(
         }
     }
 
-    if (showLocationWithdrawDialog) {
+    locationPurposeToWithdraw?.let { purpose ->
         AlertDialog(
-            onDismissRequest = { showLocationWithdrawDialog = false },
+            onDismissRequest = { locationPurposeToWithdraw = null },
             text = { Text(stringResource(R.string.settings_location_withdraw_message)) },
             confirmButton = {
                 TextButton(
                     onClick = {
-                        showLocationWithdrawDialog = false
-                        locationConsentViewModel.withdraw()
+                        locationPurposeToWithdraw = null
+                        locationConsentViewModel.withdraw(purpose)
                     },
                 ) {
                     Text(
@@ -743,7 +768,7 @@ private fun SettingsMainContent(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showLocationWithdrawDialog = false }) {
+                TextButton(onClick = { locationPurposeToWithdraw = null }) {
                     Text(stringResource(R.string.common_cancel))
                 }
             },
@@ -759,7 +784,22 @@ private fun SettingsMainContent(
         ) {
             LocationUsageHistoryScreen(
                 records = locationUsageRecords,
+                installId = locationInstallId,
                 onClose = { showLocationUsageHistory = false },
+            )
+        }
+    }
+
+    if (showSubscriptionManage) {
+        DronePassModalBottomSheet(
+            onDismissRequest = { showSubscriptionManage = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            containerColor = IosSystemGroupedBackground,
+            dragHandle = null,
+        ) {
+            SubscriptionManageScreen(
+                manager = settingsViewModel.subscriptionManager,
+                onClose = { showSubscriptionManage = false },
             )
         }
     }

@@ -21,7 +21,11 @@ import com.ScienceFiction.DronePassAndroid.core.data.storedSunriseAlarmEnabled
 import com.ScienceFiction.DronePassAndroid.core.data.storedSunsetAlarmEnabled
 import com.ScienceFiction.DronePassAndroid.core.location.DeviceLocationReader
 import com.ScienceFiction.DronePassAndroid.core.location.DeviceLocationResult
+import com.ScienceFiction.DronePassAndroid.core.data.remote.weather.weatherGridCoordinate
 import com.ScienceFiction.DronePassAndroid.core.location.LocationConsentRepository
+import com.ScienceFiction.DronePassAndroid.core.location.LocationPurpose
+import com.ScienceFiction.DronePassAndroid.core.location.LocationRecipient
+import com.ScienceFiction.DronePassAndroid.core.location.LocationUsage
 import com.ScienceFiction.DronePassAndroid.core.location.LocationUsagePurpose
 import com.ScienceFiction.DronePassAndroid.core.location.MapCenterStore
 import com.ScienceFiction.DronePassAndroid.feature.auth.AuthRepository
@@ -274,7 +278,10 @@ class SettingsViewModel @Inject constructor(
      * 없으면 기기 위치를 읽지 않고 마지막으로 본 지도 중심을 쓴다.
      */
     private suspend fun getSunAlarmLocationOrNull(): Pair<Double, Double>? {
-        val result = deviceLocationReader.read(LocationUsagePurpose.SUNRISE_ALERT)
+        // 이 위치로 날씨(일출·일몰 시각)를 받으므로 제공받는 자는 회사 서버 경유 WeatherKit 이다.
+        val result = deviceLocationReader.read(
+            LocationUsage(LocationUsagePurpose.SUNRISE_ALERT, LocationRecipient.WEATHERKIT_VIA_SERVER),
+        )
         val resolved = when (result) {
             is DeviceLocationResult.Available -> result.location.latitude to result.location.longitude
             DeviceLocationResult.NotAllowed -> {
@@ -289,11 +296,11 @@ class SettingsViewModel @Inject constructor(
         }
 
         // 위치 캐시 갱신 (BootCompletedReceiver 가 재부팅 후 사용). 읽는 도중 철회됐다면 남기지 않는다.
-        if (resolved != null && locationConsentRepository.isAllowed()) {
+        if (resolved != null && locationConsentRepository.isAllowed(LocationPurpose.WEATHER_AND_SUN)) {
             runCatching {
                 dataStore.edit { prefs ->
-                    prefs[UserLocationKeys.KEY_LAST_LATITUDE] = resolved.first
-                    prefs[UserLocationKeys.KEY_LAST_LONGITUDE] = resolved.second
+                    prefs[UserLocationKeys.KEY_LAST_LATITUDE] = weatherGridCoordinate(resolved.first)
+                    prefs[UserLocationKeys.KEY_LAST_LONGITUDE] = weatherGridCoordinate(resolved.second)
                 }
             }.onFailure { Log.w(TAG, "위치 캐시 갱신 실패", it) }
         }

@@ -44,6 +44,7 @@ import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGroupedBackground
 internal const val BusinessInfoKftcUrl = "https://www.ftc.go.kr/bizCommPop.do?wrkr_no=8398603068"
 internal const val BusinessInfoEmail = "support@sciencefiction.co.kr"
 internal const val BusinessInfoRegistrationNumber = "839-86-03068"
+internal const val BusinessInfoHostingProviders = "Google LLC(Firebase), Amazon Web Services, Inc."
 
 private enum class BusinessInfoDocument { TERMS, PRIVACY, LOCATION_TERMS }
 
@@ -89,6 +90,8 @@ fun BusinessInfoScreen(onClose: () -> Unit) {
                 BusinessInfoRow(stringResource(R.string.business_info_ecommerce_label), stringResource(R.string.business_info_ecommerce))
                 InsetGroupedDivider()
                 BusinessInfoRow(stringResource(R.string.business_info_lbs_label), stringResource(R.string.business_info_lbs))
+                InsetGroupedDivider()
+                BusinessInfoRow(stringResource(R.string.business_info_hosting_label), BusinessInfoHostingProviders)
             }
 
             InsetGroupedSection {

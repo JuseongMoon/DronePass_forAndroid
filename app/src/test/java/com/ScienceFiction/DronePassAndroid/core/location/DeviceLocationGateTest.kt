@@ -9,13 +9,16 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 
-/** 동의 상태가 `agreed` 가 아니면 위치 요청이 0건이어야 한다(사양 §1.2). */
+/** 그 목적의 동의 상태가 `agreed` 가 아니면 위치 요청이 0건이어야 한다(사양 §1.2, v2 A-1). */
 class DeviceLocationGateTest {
 
     @get:Rule
     val folder = TemporaryFolder()
 
     private val seoul = DeviceLocation(latitude = 37.566535, longitude = 126.977969, accuracyMeters = 12f)
+    private val weather = LocationUsage(LocationUsagePurpose.WEATHER, LocationRecipient.WEATHERKIT_VIA_SERVER)
+    private val sun = LocationUsage(LocationUsagePurpose.SUNRISE_SUNSET, LocationRecipient.WEATHERKIT_VIA_SERVER)
+    private val map = LocationUsage(LocationUsagePurpose.CURRENT_LOCATION_ON_MAP, LocationRecipient.NONE)
 
     @Test
     fun `no consent record means no location request`() = runBlocking {
@@ -23,11 +26,24 @@ class DeviceLocationGateTest {
         val source = CountingDeviceLocationSource { seoul }
         val reader = DeviceLocationReader(repository, source)
 
-        val result = reader.read(LocationUsagePurpose.WEATHER)
-
-        assertEquals(DeviceLocationResult.NotAllowed, result)
+        assertEquals(DeviceLocationResult.NotAllowed, reader.read(weather))
+        assertEquals(DeviceLocationResult.NotAllowed, reader.read(map))
         assertEquals(0, source.calls)
         assertTrue(repository.usageRecords.first().isEmpty())
+    }
+
+    @Test
+    fun `a purpose that is not agreed makes no location request even when the other is agreed`() = runBlocking {
+        val repository = LocationConsentRepository(testPreferencesDataStore(folder.root))
+        val source = CountingDeviceLocationSource { seoul }
+        val reader = DeviceLocationReader(repository, source)
+        repository.submitConsent(setOf(LocationPurpose.CURRENT_LOCATION), ageConfirmed = true)
+
+        assertEquals(DeviceLocationResult.NotAllowed, reader.read(weather, sun))
+        assertEquals(0, source.calls)
+
+        assertEquals(DeviceLocationResult.Available(seoul), reader.read(map))
+        assertEquals(1, source.calls)
     }
 
     @Test
@@ -36,40 +52,46 @@ class DeviceLocationGateTest {
         val source = CountingDeviceLocationSource { seoul }
         val reader = DeviceLocationReader(repository, source)
 
-        repository.decline()
-        assertEquals(DeviceLocationResult.NotAllowed, reader.read(LocationUsagePurpose.WEATHER))
+        repository.submitConsent(emptySet(), ageConfirmed = false)
+        assertEquals(DeviceLocationResult.NotAllowed, reader.read(weather))
 
-        repository.agree(ageConfirmed = true)
-        repository.withdraw()
-        assertEquals(DeviceLocationResult.NotAllowed, reader.read(LocationUsagePurpose.SUNRISE_ALERT))
+        repository.submitConsent(setOf(LocationPurpose.WEATHER_AND_SUN), ageConfirmed = true)
+        repository.withdraw(LocationPurpose.WEATHER_AND_SUN)
+        assertEquals(DeviceLocationResult.NotAllowed, reader.read(weather))
 
         assertEquals(0, source.calls)
     }
 
     @Test
-    fun `agreed state reads the device location and records each purpose`() = runBlocking {
+    fun `agreed purpose reads the device location and records each usage`() = runBlocking {
         val repository = LocationConsentRepository(testPreferencesDataStore(folder.root))
         val source = CountingDeviceLocationSource { seoul }
         val reader = DeviceLocationReader(repository, source)
-        repository.agree(ageConfirmed = true)
+        repository.submitConsent(setOf(LocationPurpose.WEATHER_AND_SUN), ageConfirmed = true)
 
-        val result = reader.read(LocationUsagePurpose.WEATHER, LocationUsagePurpose.SUNRISE_SUNSET)
+        val result = reader.read(weather, sun)
 
         assertEquals(DeviceLocationResult.Available(seoul), result)
         assertEquals(1, source.calls)
         assertEquals(
-            setOf(LocationUsagePurpose.WEATHER, LocationUsagePurpose.SUNRISE_SUNSET),
-            repository.usageRecords.first().map { it.purpose }.toSet(),
+            setOf(weather, sun),
+            repository.usageRecords.first().map { LocationUsage(it.purpose, it.recipient) }.toSet(),
         )
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `usages of different consent purposes cannot share one read`() = runBlocking<Unit> {
+        val repository = LocationConsentRepository(testPreferencesDataStore(folder.root))
+        DeviceLocationReader(repository, CountingDeviceLocationSource { seoul }).read(weather, map)
     }
 
     @Test
     fun `agreed state without a location fails instead of falling back and records nothing`() = runBlocking {
         val repository = LocationConsentRepository(testPreferencesDataStore(folder.root))
         val reader = DeviceLocationReader(repository, CountingDeviceLocationSource { null })
-        repository.agree(ageConfirmed = true)
+        repository.submitConsent(setOf(LocationPurpose.WEATHER_AND_SUN), ageConfirmed = true)
 
-        assertEquals(DeviceLocationResult.Unavailable, reader.read(LocationUsagePurpose.WEATHER))
+        assertEquals(DeviceLocationResult.Unavailable, reader.read(weather))
         assertTrue(repository.usageRecords.first().isEmpty())
     }
 
@@ -77,32 +99,25 @@ class DeviceLocationGateTest {
     fun `missing OS permission after consent is reported as permission denied`() = runBlocking {
         val repository = LocationConsentRepository(testPreferencesDataStore(folder.root))
         val reader = DeviceLocationReader(repository, CountingDeviceLocationSource { throw SecurityException() })
-        repository.agree(ageConfirmed = true)
+        repository.submitConsent(setOf(LocationPurpose.WEATHER_AND_SUN), ageConfirmed = true)
 
-        assertEquals(DeviceLocationResult.PermissionDenied, reader.read(LocationUsagePurpose.WEATHER))
+        assertEquals(DeviceLocationResult.PermissionDenied, reader.read(weather))
     }
 
     @Test
-    fun `map center is remembered only without consent and falls back to Seoul City Hall`() = runBlocking {
-        val dataStore = testPreferencesDataStore(folder.root)
-        val repository = LocationConsentRepository(dataStore)
-        val store = MapCenterStore(dataStore)
+    fun `map center ignores camera positions that follow the device and falls back to Seoul City Hall`() = runBlocking {
+        val store = MapCenterStore(testPreferencesDataStore(folder.root))
 
         assertEquals(MapFallbackCenter, store.weatherBasisCenter())
 
         val busan = Coordinate(35.1796, 129.0756)
-        store.onMapCenterChanged(busan)
+        store.onMapCenterChanged(busan, followsDeviceLocation = false)
         assertEquals(busan, store.weatherBasisCenter())
         assertEquals(busan, store.lastViewedCenter())
 
-        // 동의 상태에서는 지도가 기기 위치를 따라갈 수 있어 기록하지 않는다.
-        repository.agree(ageConfirmed = true)
-        store.onMapCenterChanged(Coordinate(37.5, 127.0))
+        // 카메라가 기기 위치를 따라간 중심은 기기 위치와 같아 기록하지 않는다.
+        store.onMapCenterChanged(Coordinate(37.5, 127.0), followsDeviceLocation = true)
+        assertEquals(busan, store.weatherBasisCenter())
         assertEquals(busan, store.lastViewedCenter())
-
-        // 철회하면 저장값과 메모리 값이 모두 비워진다.
-        repository.withdraw()
-        store.clearLiveCenter()
-        assertEquals(MapFallbackCenter, store.weatherBasisCenter())
     }
 }

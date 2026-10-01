@@ -79,6 +79,7 @@ class LoginScreenContractTest {
             tokens = listOf(
                 "R.string.login_terms_intro",
                 "R.string.login_terms_service",
+                "R.string.login_terms_conjunction",
                 "R.string.login_terms_privacy",
                 "R.string.login_terms_middle",
                 "R.string.login_terms_agree",
@@ -112,14 +113,22 @@ class LoginScreenContractTest {
     }
 
     @Test
-    fun `로그인 위치기반서비스 약관은 iOS 현재 코드처럼 노출하지 않는다`() {
+    fun `로그인 위치기반서비스 약관은 동의 문장에 넣지 않고 보기 링크로만 둔다`() {
         val source = resolveProjectFile(
             "src/main/java/com/ScienceFiction/DronePassAndroid/feature/auth/LoginScreen.kt",
             "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/auth/LoginScreen.kt",
         ).readText()
 
-        assertTrue(!source.contains("LocationTerms"))
-        assertTrue(!source.contains("login_terms_location"))
+        // 사양 v2 A-9: 위치 동의를 가입 동의에 묶지 않는다. 동의 문장(…agree) 뒤에 별도 보기 링크로 둔다.
+        assertAppearsInOrder(
+            source = source,
+            tokens = listOf(
+                "LoginDocTarget.LocationTerms -> LocationTermsScreen",
+                "R.string.login_terms_agree",
+                "R.string.login_terms_location_view",
+            ),
+        )
+        assertTrue(!source.contains("login_terms_location\""))
     }
 
     private fun assertAppearsInOrder(source: String, tokens: List<String>) {

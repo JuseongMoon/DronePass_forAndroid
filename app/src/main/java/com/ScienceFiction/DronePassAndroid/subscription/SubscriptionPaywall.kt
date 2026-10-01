@@ -66,7 +66,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.feature.document.PrivacyPolicyScreen
 import com.ScienceFiction.DronePassAndroid.feature.document.TermsOfServiceScreen
+import com.ScienceFiction.DronePassAndroid.feature.auth.LoginScreen
 import com.ScienceFiction.DronePassAndroid.feature.legal.BusinessInfoScreen
+import com.ScienceFiction.DronePassAndroid.ui.theme.IosLabel
 import com.ScienceFiction.DronePassAndroid.ui.component.DronePassModalBottomSheet
 import com.ScienceFiction.DronePassAndroid.ui.theme.IosSecondaryLabel
 import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGreen
@@ -96,7 +98,9 @@ fun SubscriptionPaywall(
     val price by manager.productPrice.collectAsStateWithLifecycle()
     val isLoadingProducts by manager.isLoadingProducts.collectAsStateWithLifecycle()
     val limits by manager.limits.collectAsStateWithLifecycle()
+    val signedIn by manager.signedIn.collectAsStateWithLifecycle()
     var document by remember { mutableStateOf<String?>(null) }
+    var showLogin by remember { mutableStateOf(false) }
     var isRestoring by remember { mutableStateOf(false) }
     var restoreNotFound by remember { mutableStateOf(false) }
     val context = LocalContext.current
@@ -232,11 +236,25 @@ fun SubscriptionPaywall(
                                 modifier = Modifier.padding(top = 4.dp),
                             )
                             Spacer(Modifier.height(12.dp))
-                            PaywallPrimaryButton(
-                                text = stringResource(R.string.subscription_subscribe),
-                                onClick = { manager.purchase(activity, request.source) },
-                                enabled = !isRestoring,
-                            )
+                            // 구매 버튼 바로 위(읽을 수 있는 크기): 자동 갱신, 환불(사양 v2 C-3)
+                            PurchaseTermsText(stringResource(R.string.subscription_paywall_renewal))
+                            Spacer(Modifier.height(8.dp))
+                            PurchaseTermsText(stringResource(R.string.subscription_refund_notice))
+                            Spacer(Modifier.height(12.dp))
+                            when {
+                                // 로그인 필수: 로그인한 뒤 이 결제 화면으로 돌아온다(사양 v2 C-1).
+                                !signedIn -> PaywallPrimaryButton(
+                                    text = stringResource(R.string.subscription_sign_in_to_subscribe),
+                                    onClick = { showLogin = true },
+                                )
+                                // 플랜 확인 중에는 구매를 막는다. 평생 무료 대상자의 실수 결제를 막는다(사양 v2 C-2).
+                                status.entitlement == EntitlementState.UNKNOWN -> PaywallCheckingButton()
+                                else -> PaywallPrimaryButton(
+                                    text = stringResource(R.string.subscription_subscribe),
+                                    onClick = { manager.purchase(activity, request.source) },
+                                    enabled = !isRestoring,
+                                )
+                            }
                         } else if (isLoadingProducts) {
                             // iOS: 상품을 불러오는 동안 ProgressView
                             CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
@@ -277,20 +295,23 @@ fun SubscriptionPaywall(
                     }
                 }
                 Spacer(Modifier.height(24.dp))
-                // iOS legalSection: 자동 갱신 고지는 구매할 수 있거나 구독 중인 사람에게 보인다(평생 무료 제외).
-                if (status.legacyKind == null || status.isPaidSubscriber) {
+                // 구독 중인 사람에게는 갱신·환불 기준을 여기서 보여 준다(구매 화면에서는 버튼 위에 있다).
+                if (!showsPurchase && status.isPaidSubscriber) {
                     FinePrint(stringResource(R.string.subscription_paywall_renewal))
                     Spacer(Modifier.height(8.dp))
+                    FinePrint(stringResource(R.string.subscription_refund_notice))
+                    Spacer(Modifier.height(8.dp))
                 }
+                // 구매 버튼 아래: 구매한 스토어에서만 적용, 미성년자, 판매자 정보(사양 v2 C-4)
                 FinePrint(stringResource(R.string.subscription_cross_platform_notice))
                 if (showsPurchase) {
-                    // 전자상거래법 제17조⑥(청약철회 제한 표시)·제13조②(미성년자 취소)·판매자 정보
-                    Spacer(Modifier.height(8.dp))
-                    FinePrint(stringResource(R.string.subscription_withdrawal_notice))
                     Spacer(Modifier.height(8.dp))
                     FinePrint(stringResource(R.string.subscription_minor_notice))
                     Spacer(Modifier.height(8.dp))
-                    SellerLine(onBusinessInfo = { document = "business" })
+                    SellerInformation(
+                        onBusinessInfo = { document = "business" },
+                        modifier = Modifier.padding(top = 4.dp),
+                    )
                 }
             }
 
@@ -306,6 +327,18 @@ fun SubscriptionPaywall(
                     Text(stringResource(R.string.subscription_privacy), fontSize = 12.sp, fontWeight = FontWeight.Normal)
                 }
             }
+        }
+    }
+    if (showLogin) {
+        DronePassModalBottomSheet(
+            onDismissRequest = { showLogin = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        ) {
+            LoginScreen(
+                onLoginSuccess = { showLogin = false },
+                onSkipLogin = { showLogin = false },
+                showSkipLogin = false,
+            )
         }
     }
     if (restoreNotFound) {
@@ -484,32 +517,6 @@ internal fun LifetimeConditionText(modifier: Modifier = Modifier) {
     )
 }
 
-/** "판매자: 주식회사 싸이언스픽션 · 사업자 정보". "사업자 정보"는 사업자 정보 화면으로 가는 링크다. */
-@Composable
-private fun SellerLine(onBusinessInfo: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 4.dp),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = stringResource(R.string.subscription_seller) + " · ",
-            fontSize = 12.sp,
-            lineHeight = 17.sp,
-            color = IosSecondaryLabel,
-        )
-        Text(
-            text = stringResource(R.string.business_info_title),
-            fontSize = 12.sp,
-            lineHeight = 17.sp,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.clickable(onClick = onBusinessInfo),
-        )
-    }
-}
-
 @Composable
 private fun ProStatusLabel(icon: ImageVector, text: String) {
     // iOS Label(.headline, .green)
@@ -522,6 +529,36 @@ private fun ProStatusLabel(icon: ImageVector, text: String) {
             color = IosSystemGreen,
             textAlign = TextAlign.Center,
         )
+    }
+}
+
+/** 구매 버튼 바로 위 고지. 작은 글씨 고지(FinePrint)보다 크게 둔다. */
+@Composable
+private fun PurchaseTermsText(text: String) {
+    Text(
+        text = text,
+        fontSize = 13.sp,
+        lineHeight = 19.sp,
+        color = IosLabel,
+        textAlign = TextAlign.Center,
+        modifier = Modifier.fillMaxWidth(),
+    )
+}
+
+/** 플랜 확인 중: 구매 버튼 자리에 진행 표시를 두고 누를 수 없게 한다. */
+@Composable
+private fun PaywallCheckingButton() {
+    Button(
+        onClick = {},
+        enabled = false,
+        shape = RoundedCornerShape(14.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(PaywallCtaHeight),
+    ) {
+        CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+        Spacer(Modifier.width(10.dp))
+        Text(text = stringResource(R.string.subscription_plan_checking), fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
     }
 }
 

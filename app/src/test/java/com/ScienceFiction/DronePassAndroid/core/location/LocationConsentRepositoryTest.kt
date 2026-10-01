@@ -2,21 +2,24 @@ package com.ScienceFiction.DronePassAndroid.core.location
 
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.longPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import com.ScienceFiction.DronePassAndroid.core.data.UserLocationKeys
 import com.ScienceFiction.DronePassAndroid.core.legal.LOCATION_TERMS_VERSION
-import com.ScienceFiction.DronePassAndroid.domain.model.Coordinate
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.time.Instant
-import java.time.LocalDate
 
 class LocationConsentRepositoryTest {
 
@@ -24,133 +27,147 @@ class LocationConsentRepositoryTest {
     val folder = TemporaryFolder()
 
     private val now = Instant.parse("2026-11-12T03:00:00Z").toEpochMilli()
+    private val p1 = LocationPurpose.CURRENT_LOCATION
+    private val p2 = LocationPurpose.WEATHER_AND_SUN
+    private val mapUsage = LocationUsage(LocationUsagePurpose.CURRENT_LOCATION_ON_MAP, LocationRecipient.NONE)
+    private val weatherUsage = LocationUsage(LocationUsagePurpose.WEATHER, LocationRecipient.WEATHERKIT_VIA_SERVER)
 
     private fun newDataStore(): DataStore<Preferences> = testPreferencesDataStore(folder.root)
 
     @Test
-    fun `consent goes none to agreed to withdrawn to agreed again`() = runBlocking {
-        val repository = LocationConsentRepository(newDataStore())
+    fun `the four consent combinations allow exactly the chosen purposes`() = runBlocking {
+        val combinations = listOf(setOf(p1), setOf(p2), setOf(p1, p2), emptySet())
+        for (chosen in combinations) {
+            val repository = LocationConsentRepository(newDataStore())
+            assertTrue(repository.needsPromptNow())
 
-        assertNull(repository.record.first())
-        assertTrue(repository.needsPromptNow())
-        assertFalse(repository.isAllowed())
+            repository.submitConsent(chosen, ageConfirmed = chosen.isNotEmpty(), nowMillis = now)
 
-        repository.agree(ageConfirmed = true, nowMillis = now)
-        assertTrue(repository.isAllowed())
-        assertFalse(repository.needsPromptNow())
-        assertEquals(LOCATION_TERMS_VERSION, repository.record.first()?.version)
-
-        repository.withdraw(nowMillis = now + 1)
-        assertFalse(repository.isAllowed())
-        assertEquals(LocationConsentStatus.WITHDRAWN, repository.record.first()?.status)
-        // 철회는 다시 묻지 않는다(설정 토글로만 다시 동의).
-        assertFalse(repository.needsPromptNow())
-
-        repository.agree(ageConfirmed = true, nowMillis = now + 2)
-        assertTrue(repository.isAllowed())
-
-        // 동의 이력은 지우지 않고 모두 남는다.
-        assertEquals(
-            listOf(LocationConsentStatus.AGREED, LocationConsentStatus.WITHDRAWN, LocationConsentStatus.AGREED),
-            repository.history.first().map { it.action },
-        )
-    }
-
-    @Test
-    fun `declining is stored and not prompted again for the same terms version`() = runBlocking {
-        val repository = LocationConsentRepository(newDataStore())
-
-        repository.decline(nowMillis = now)
-
-        assertFalse(repository.isAllowed())
-        assertFalse(repository.needsPromptNow())
-        val record = repository.record.first()
-        assertEquals(LocationConsentStatus.DECLINED, record?.status)
-        assertEquals(now, record?.atMillis)
-        assertEquals(false, record?.ageConfirmed)
+            assertEquals("chosen=$chosen", p1 in chosen, repository.isAllowed(p1))
+            assertEquals("chosen=$chosen", p2 in chosen, repository.isAllowed(p2))
+            assertEquals("chosen=$chosen", chosen.isNotEmpty(), repository.anyAllowed.first())
+            assertFalse("chosen=$chosen", repository.needsPromptNow())
+        }
     }
 
     @Test(expected = IllegalArgumentException::class)
     fun `agreeing without the age confirmation is rejected`() = runBlocking {
-        LocationConsentRepository(newDataStore()).agree(ageConfirmed = false, nowMillis = now)
+        LocationConsentRepository(newDataStore()).submitConsent(setOf(p1), ageConfirmed = false, nowMillis = now)
     }
 
     @Test
-    fun `an agreement to older terms is not allowed and asks again`() = runBlocking {
+    fun `withdrawing one purpose keeps the other and deletes only its records and cache`() = runBlocking {
+        val dataStore = newDataStore()
+        val repository = LocationConsentRepository(dataStore)
+        repository.submitConsent(setOf(p1, p2), ageConfirmed = true, nowMillis = now)
+        repository.recordUsage(mapUsage, now)
+        repository.recordUsage(weatherUsage, now)
+        dataStore.edit { preferences ->
+            preferences[UserLocationKeys.KEY_LAST_LATITUDE] = 37.57
+            preferences[UserLocationKeys.KEY_LAST_LONGITUDE] = 126.98
+        }
+
+        repository.withdraw(p2, nowMillis = now + 1)
+
+        assertTrue(repository.isAllowed(p1))
+        assertFalse(repository.isAllowed(p2))
+        assertEquals(listOf(LocationUsagePurpose.CURRENT_LOCATION_ON_MAP), repository.usageRecords.first().map { it.purpose })
+        val preferences = dataStore.data.first()
+        assertNull(preferences[UserLocationKeys.KEY_LAST_LATITUDE])
+        assertNull(preferences[UserLocationKeys.KEY_LAST_LONGITUDE])
+        // 철회해도 다시 묻지 않는다(설정 토글로만 다시 동의).
+        assertFalse(repository.needsPromptNow())
+
+        repository.withdraw(p1, nowMillis = now + 2)
+        assertTrue(repository.usageRecords.first().isEmpty())
+        assertFalse(dataStore.data.first()[LocationConsentKeys.AGE_CONFIRMED] ?: true)
+    }
+
+    @Test
+    fun `only the current state is stored and no consent history remains`() = runBlocking {
+        val dataStore = newDataStore()
+        val repository = LocationConsentRepository(dataStore)
+        repository.submitConsent(setOf(p1, p2), ageConfirmed = true, nowMillis = now)
+        repository.withdraw(p1, nowMillis = now + 1)
+        repository.submitConsent(setOf(p1), ageConfirmed = true, nowMillis = now + 2)
+
+        val consentKeys = dataStore.data.first().asMap().keys.map { it.name }.filter { it.startsWith("location_consent") }.toSet()
+
+        assertEquals(
+            setOf(
+                "location_consent_currentLocation_status",
+                "location_consent_currentLocation_version",
+                "location_consent_currentLocation_at",
+                "location_consent_weatherAndSun_status",
+                "location_consent_weatherAndSun_version",
+                "location_consent_weatherAndSun_at",
+                "location_consent_age_confirmed",
+            ),
+            consentKeys,
+        )
+        assertEquals(now + 2, repository.state.first()[p1]?.atMillis)
+        // 다시 동의할 때 고르지 않은 P2 는 그대로 둔다(동의 시각이 바뀌지 않는다).
+        assertEquals(now, repository.state.first()[p2]?.atMillis)
+        assertEquals(LOCATION_TERMS_VERSION, repository.state.first()[p2]?.version)
+    }
+
+    @Test
+    fun `launch maintenance deletes v1 keys including the consent history`() = runBlocking {
         val dataStore = newDataStore()
         dataStore.edit { preferences ->
-            preferences[LocationConsentKeys.STATUS] = LocationConsentStatus.AGREED.raw
-            preferences[LocationConsentKeys.VERSION] = "2026-01-01"
-            preferences[LocationConsentKeys.AGE_CONFIRMED] = true
+            preferences[stringPreferencesKey("location_consent_status")] = "agreed"
+            preferences[stringPreferencesKey("location_consent_version")] = LOCATION_TERMS_VERSION
+            preferences[longPreferencesKey("location_consent_at")] = 1L
+            preferences[stringPreferencesKey("location_consent_history")] = "1|$LOCATION_TERMS_VERSION|agreed"
+            preferences[stringSetPreferencesKey("location_usage_records")] = setOf("2026-11-12|weather")
+            preferences[booleanPreferencesKey("location_consent_age_confirmed")] = true
         }
         val repository = LocationConsentRepository(dataStore)
 
-        assertFalse(repository.isAllowed())
+        repository.runLaunchMaintenance(nowMillis = now)
+
+        val names = dataStore.data.first().asMap().keys.map { it.name }.toSet()
+        assertFalse(names.contains("location_consent_status"))
+        assertFalse(names.contains("location_consent_history"))
+        assertFalse(names.contains("location_usage_records"))
+        // v1 동의는 v2 목적별 동의로 옮기지 않는다.
+        assertFalse(repository.isAllowed(p1))
         assertTrue(repository.needsPromptNow())
     }
 
     @Test
-    fun `withdrawal deletes usage records and every cached location but keeps the history`() = runBlocking {
-        val dataStore = newDataStore()
-        val repository = LocationConsentRepository(dataStore)
-        val mapCenterStore = MapCenterStore(dataStore)
-        // 동의 전에 본 지도 중심(이용자가 정한 지점)
-        mapCenterStore.onMapCenterChanged(Coordinate(35.1, 129.0))
-        repository.agree(ageConfirmed = true, nowMillis = now)
-        repository.recordUsage(LocationUsagePurpose.WEATHER, nowMillis = now)
-        dataStore.edit { preferences ->
-            preferences[UserLocationKeys.KEY_LAST_LATITUDE] = 37.5
-            preferences[UserLocationKeys.KEY_LAST_LONGITUDE] = 127.0
-        }
+    fun `usage is recorded only while that purpose is agreed`() = runBlocking {
+        val repository = LocationConsentRepository(newDataStore())
+        repository.submitConsent(setOf(p1), ageConfirmed = true, nowMillis = now)
 
-        repository.withdraw(nowMillis = now + 1)
+        repository.recordUsage(weatherUsage, now)
+        repository.recordUsage(mapUsage, now)
 
-        val preferences = dataStore.data.first()
-        assertTrue(repository.usageRecords.first().isEmpty())
-        assertNull(preferences[UserLocationKeys.KEY_LAST_LATITUDE])
-        assertNull(preferences[UserLocationKeys.KEY_LAST_LONGITUDE])
-        assertNull(storedMapCenter(preferences))
-        assertEquals(2, repository.history.first().size)
+        assertEquals(listOf(LocationUsagePurpose.CURRENT_LOCATION_ON_MAP), repository.usageRecords.first().map { it.purpose })
     }
 
     @Test
-    fun `usage is recorded only while consent is agreed`() = runBlocking {
+    fun `server deletion is queued on withdrawal only after something was uploaded`() = runBlocking {
+        val repository = LocationConsentRepository(newDataStore())
+        repository.submitConsent(setOf(p1, p2), ageConfirmed = true, nowMillis = now)
+
+        repository.withdraw(p1, nowMillis = now)
+        assertTrue(repository.uploadState().pendingServerDeletes.isEmpty())
+
+        repository.markUploaded(java.time.LocalDate.of(2026, 11, 11))
+        repository.withdraw(p2, nowMillis = now)
+        assertEquals(setOf("weather", "sunriseSunset", "sunriseAlert"), repository.uploadState().pendingServerDeletes)
+    }
+
+    @Test
+    fun `install id is created once and kept`() = runBlocking {
         val repository = LocationConsentRepository(newDataStore())
 
-        repository.recordUsage(LocationUsagePurpose.WEATHER, nowMillis = now)
-        assertTrue(repository.usageRecords.first().isEmpty())
+        val first = repository.installId()
+        repository.submitConsent(setOf(p1), ageConfirmed = true, nowMillis = now)
+        repository.withdraw(p1, nowMillis = now)
 
-        repository.agree(ageConfirmed = true, nowMillis = now)
-        repository.recordUsage(LocationUsagePurpose.WEATHER, nowMillis = now)
-        repository.recordUsage(LocationUsagePurpose.WEATHER, nowMillis = now + 60_000)
-        repository.recordUsage(LocationUsagePurpose.SUNRISE_ALERT, nowMillis = now)
-
-        assertEquals(
-            listOf(
-                LocationUsageRecord(LocalDate.of(2026, 11, 12), LocationUsagePurpose.WEATHER),
-                LocationUsageRecord(LocalDate.of(2026, 11, 12), LocationUsagePurpose.SUNRISE_ALERT),
-            ),
-            repository.usageRecords.first(),
-        )
-    }
-
-    @Test
-    fun `pruning at launch drops records older than the retention period`() = runBlocking {
-        val dataStore = newDataStore()
-        val repository = LocationConsentRepository(dataStore)
-        dataStore.edit { preferences ->
-            preferences[LocationConsentKeys.USAGE_RECORDS] = setOf(
-                "2026-11-12|weather",
-                "2026-05-06|weather", // 190일 전: 남긴다
-                "2026-05-05|sunriseAlert", // 191일 전: 지운다
-            )
-        }
-
-        repository.pruneUsageRecords(nowMillis = now)
-
-        assertEquals(
-            setOf("2026-11-12|weather", "2026-05-06|weather"),
-            dataStore.data.first()[LocationConsentKeys.USAGE_RECORDS],
-        )
+        assertNotNull(first)
+        assertEquals(first, repository.installId())
     }
 }

@@ -37,18 +37,18 @@ class StringResourceCoverageTest {
         assertEquals("로그인 / 회원가입", stringResourceValue("values/strings.xml", "login_title"))
         assertEquals("Apple로 로그인", stringResourceValue("values/strings.xml", "login_apple")) // iOS SignInWithAppleButton(.signIn)
         assertEquals("Google로 로그인", stringResourceValue("values/strings.xml", "login_google"))
-        assertEquals("로그인 / 회원가입 시", stringResourceValue("values/strings.xml", "login_terms_intro"))
+        // 사양 v2 A-9: "로그인하면 이용약관과 개인정보 처리방침에 동의하게 됩니다." 위치약관은 보기 링크로만 둔다.
+        assertEquals("로그인하면", stringResourceValue("values/strings.xml", "login_terms_intro"))
         assertEquals("이용약관", stringResourceValue("values/strings.xml", "login_terms_service"))
-        assertEquals("개인정보 취급방침", stringResourceValue("values/strings.xml", "login_terms_privacy"))
+        assertEquals("과\\u0020", stringResourceValue("values/strings.xml", "login_terms_conjunction"))
+        assertEquals("개인정보 처리방침", stringResourceValue("values/strings.xml", "login_terms_privacy"))
         assertEquals("에", stringResourceValue("values/strings.xml", "login_terms_middle"))
         assertEquals("\\u0020동의하게 됩니다.", stringResourceValue("values/strings.xml", "login_terms_agree"))
-        assertEquals("By signing in/up, you agree to", stringResourceValue("values-en/strings.xml", "login_terms_intro"))
+        assertEquals("By signing in, you agree to the", stringResourceValue("values-en/strings.xml", "login_terms_intro"))
         assertEquals("Terms of Service", stringResourceValue("values-en/strings.xml", "login_terms_service"))
+        assertEquals("\\u0020and the\\u0020", stringResourceValue("values-en/strings.xml", "login_terms_conjunction"))
         assertEquals("Privacy Policy", stringResourceValue("values-en/strings.xml", "login_terms_privacy"))
-        assertEquals(
-            "\\u0020and",
-            stringResourceValue("values-en/strings.xml", "login_terms_middle"),
-        )
+        assertEquals("", stringResourceValue("values-en/strings.xml", "login_terms_middle"))
         assertEquals(".", stringResourceValue("values-en/strings.xml", "login_terms_agree"))
         assertEquals("로그인 오류", stringResourceValue("values/strings.xml", "login_error_title"))
         assertEquals("알 수 없는 오류", stringResourceValue("values/strings.xml", "login_error_unknown"))
@@ -1203,7 +1203,8 @@ class StringResourceCoverageTest {
 
     @Test
     fun `weather forecast sheet strings match iOS localizations`() {
-        assertEquals("현위치 기반 정보", stringResourceValue("values/strings.xml", "weather_navigation_title"))
+        // 사양 v2 A-8: 지도 중심 기준일 때도 맞도록 제목을 중립화했다(iOS 도 같이 바꾼다).
+        assertEquals("날씨·일출일몰 정보", stringResourceValue("values/strings.xml", "weather_navigation_title"))
         assertEquals("일출/일몰 정보", stringResourceValue("values/strings.xml", "weather_section_sunrise_sunset"))
         assertEquals("현재 날씨", stringResourceValue("values/strings.xml", "weather_section_current"))
         assertEquals("드론 무게:", stringResourceValue("values/strings.xml", "weather_drone_weight_label"))
@@ -1258,7 +1259,7 @@ class StringResourceCoverageTest {
         assertEquals("단위: km", stringResourceValue("values/strings.xml", "weather_unit_km"))
         assertEquals("단위: 자체단위사용", stringResourceValue("values/strings.xml", "weather_unit_custom"))
 
-        assertEquals("Location-based Information", stringResourceValue("values-en/strings.xml", "weather_navigation_title"))
+        assertEquals("Weather & Sunrise/Sunset", stringResourceValue("values-en/strings.xml", "weather_navigation_title"))
         assertEquals("Sunrise/Sunset", stringResourceValue("values-en/strings.xml", "weather_section_sunrise_sunset"))
         assertEquals("Current Weather", stringResourceValue("values-en/strings.xml", "weather_section_current"))
         assertEquals("Drone Weight:", stringResourceValue("values-en/strings.xml", "weather_drone_weight_label"))
@@ -1509,7 +1510,7 @@ class StringResourceCoverageTest {
     fun `document and terms strings match iOS localizations`() {
         assertEquals("닫기", stringResourceValue("values/strings.xml", "common_close"))
         assertEquals("다시 시도", stringResourceValue("values/strings.xml", "common_retry"))
-        assertEquals("개인정보 취급방침", stringResourceValue("values/strings.xml", "login_terms_privacy"))
+        assertEquals("개인정보 처리방침", stringResourceValue("values/strings.xml", "login_terms_privacy"))
         assertEquals("개인정보 취급방침", stringResourceValue("values/strings.xml", "profile_terms_privacy"))
         assertEquals("이용약관", stringResourceValue("values/strings.xml", "document_terms_service_title"))
         assertEquals("개인정보 취급방침", stringResourceValue("values/strings.xml", "document_terms_privacy_title"))

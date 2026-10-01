@@ -53,6 +53,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.core.ui.currentWindowSizeDp
+import com.ScienceFiction.DronePassAndroid.feature.document.LocationTermsScreen
 import com.ScienceFiction.DronePassAndroid.feature.document.PrivacyPolicyScreen
 import com.ScienceFiction.DronePassAndroid.feature.document.TermsOfServiceScreen
 import com.ScienceFiction.DronePassAndroid.ui.component.DronePassModalBottomSheet
@@ -276,6 +277,7 @@ fun LoginScreen(
             LoginTermsNotice(
                 onTermsClick = { docTarget = LoginDocTarget.Terms },
                 onPrivacyClick = { docTarget = LoginDocTarget.Privacy },
+                onLocationTermsClick = { docTarget = LoginDocTarget.LocationTerms },
                 modifier = Modifier.padding(
                     top = LoginTermsTopSpacing,
                     bottom = if (showSkipLogin) 0.dp else termsBottomPadding,
@@ -320,6 +322,7 @@ fun LoginScreen(
             when (target) {
                 LoginDocTarget.Terms -> TermsOfServiceScreen(onDismiss = { docTarget = null })
                 LoginDocTarget.Privacy -> PrivacyPolicyScreen(onDismiss = { docTarget = null })
+                LoginDocTarget.LocationTerms -> LocationTermsScreen(onDismiss = { docTarget = null })
             }
         }
     }
@@ -384,6 +387,9 @@ private tailrec fun Context.findActivity(): Activity? {
 internal sealed class LoginDocTarget {
     data object Terms : LoginDocTarget()
     data object Privacy : LoginDocTarget()
+
+    /** 위치기반서비스 이용약관은 보기 링크로만 둔다. 가입 동의 문장에 묶지 않는다(사양 v2 A-9). */
+    data object LocationTerms : LoginDocTarget()
 }
 
 internal enum class LoginDocumentPresentation {
@@ -403,6 +409,7 @@ internal fun resolveLoginDocumentPresentation(target: LoginDocTarget?): LoginDoc
 private fun LoginTermsNotice(
     onTermsClick: () -> Unit,
     onPrivacyClick: () -> Unit,
+    onLocationTermsClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -430,7 +437,7 @@ private fun LoginTermsNotice(
                 modifier = Modifier.clickable(onClick = onTermsClick),
             )
             Text(
-                text = ", ",
+                text = stringResource(R.string.login_terms_conjunction),
                 fontSize = LoginTermsTextSize,
                 lineHeight = LoginTermsLineHeight,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -456,6 +463,16 @@ private fun LoginTermsNotice(
             lineHeight = LoginTermsLineHeight,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
+        )
+        Text(
+            text = stringResource(R.string.login_terms_location_view),
+            fontSize = LoginTermsTextSize,
+            lineHeight = LoginTermsLineHeight,
+            color = MaterialTheme.colorScheme.primary,
+            textDecoration = TextDecoration.Underline,
+            modifier = Modifier
+                .padding(top = 4.dp)
+                .clickable(onClick = onLocationTermsClick),
         )
     }
 }

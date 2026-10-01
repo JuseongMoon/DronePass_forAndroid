@@ -1,6 +1,9 @@
 package com.ScienceFiction.DronePassAndroid.feature.map
 
 import com.ScienceFiction.DronePassAndroid.core.location.LocationConsentRepository
+import com.ScienceFiction.DronePassAndroid.core.location.LocationPurpose
+import com.ScienceFiction.DronePassAndroid.core.location.LocationRecipient
+import com.ScienceFiction.DronePassAndroid.core.location.LocationUsage
 import com.ScienceFiction.DronePassAndroid.core.location.LocationUsagePurpose
 import com.ScienceFiction.DronePassAndroid.core.location.MapCenterStore
 import com.ScienceFiction.DronePassAndroid.core.location.MapFallbackCenter
@@ -1207,25 +1210,36 @@ class MapViewModel @Inject constructor(
      * 둘 중 하나만 바뀌어도 debounce 후 fetch 한다.
      */
     /**
-     * 위치 동의로 기기 위치를 써도 되는지. 저장값을 읽기 전에는 null 이라 권한 요청 순서를 정하지 않는다.
+     * 현재 위치 표시(P1) 동의로 지도에 기기 위치를 띄워도 되는지. 저장값을 읽기 전에는 null 이라 권한 요청
+     * 순서를 정하지 않는다.
      */
-    val locationAllowed: StateFlow<Boolean?> = locationConsentRepository.allowed
+    val locationAllowed: StateFlow<Boolean?> = locationConsentRepository.allowed(LocationPurpose.CURRENT_LOCATION)
         .map<Boolean, Boolean?> { it }
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
-    /** 지도에 현재 위치를 띄울 때 이용 기록을 남긴다(같은 날은 한 건). */
+    /** 어느 목적이든 동의했는지. OS 위치 권한은 이때만 묻는다(날씨만 동의해도 권한이 필요하다). */
+    val anyLocationPurposeAllowed: StateFlow<Boolean?> = locationConsentRepository.anyAllowed
+        .map<Boolean, Boolean?> { it }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    /** 지도에 현재 위치를 띄울 때 확인자료를 남긴다(같은 시간은 한 건). 위치를 누구에게도 보내지 않는다. */
     fun onDeviceLocationShown() {
         viewModelScope.launch {
-            locationConsentRepository.recordUsage(LocationUsagePurpose.CURRENT_LOCATION_ON_MAP)
+            locationConsentRepository.recordUsage(
+                LocationUsage(LocationUsagePurpose.CURRENT_LOCATION_ON_MAP, LocationRecipient.NONE),
+            )
         }
     }
 
-    /** 카메라가 멈춘 지도 중심. 위치 동의가 없을 때 날씨·일출/일몰 기준 위치가 된다. */
-    fun onMapCenterSettled(center: Coordinate) {
-        viewModelScope.launch { mapCenterStore.onMapCenterChanged(center) }
+    /**
+     * 카메라가 멈춘 지도 중심. 날씨·일출/일몰 동의가 없을 때 그 기준 위치가 된다.
+     * [followsDeviceLocation] 이면(카메라가 기기 위치를 따라간 경우) 기록하지 않는다.
+     */
+    fun onMapCenterSettled(center: Coordinate, followsDeviceLocation: Boolean) {
+        viewModelScope.launch { mapCenterStore.onMapCenterChanged(center, followsDeviceLocation) }
     }
 
-    /** 위치 동의가 없을 때 첫 지도 위치: 마지막으로 본 지도 위치, 없으면 서울시청. */
+    /** 현재 위치 표시 동의가 없을 때 첫 지도 위치: 마지막으로 본 지도 위치, 없으면 서울시청. */
     suspend fun initialMapCenterWithoutLocation(): Coordinate =
         mapCenterStore.lastViewedCenter() ?: MapFallbackCenter
 

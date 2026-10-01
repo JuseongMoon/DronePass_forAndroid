@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.ScienceFiction.DronePassAndroid.R
+import com.ScienceFiction.DronePassAndroid.core.location.LocationPurpose
 import com.ScienceFiction.DronePassAndroid.feature.document.LocationTermsScreen
 import com.ScienceFiction.DronePassAndroid.ui.component.DronePassModalBottomSheet
 import com.ScienceFiction.DronePassAndroid.ui.theme.IosSecondaryLabel
@@ -49,16 +50,24 @@ private val ConsentHorizontalPadding = 20.dp
 private val ConsentButtonHeight = 50.dp
 
 /**
- * 위치정보 이용 동의(선택) 화면. 전체 화면이고 바깥 탭·뒤로 가기로 닫히지 않는다(두 버튼 중 하나로만 끝난다).
- * 만 14세 확인 체크박스는 미리 선택하지 않고, 두 버튼은 같은 크기·같은 강조로 둔다.
+ * 위치정보 이용 동의(선택) 화면. Play "눈에 띄는 고지"를 겸한다. 전체 화면이고 바깥 탭·뒤로 가기로 닫히지 않는다
+ * (두 버튼 중 하나로만 끝난다. 뒤로 가기는 동의가 아니다).
+ * 목적별 체크박스 2개와 만 14세 확인 체크박스는 미리 선택하지 않고, 두 버튼은 같은 크기·같은 강조로 둔다.
+ * "동의하고 계속"은 14세에 체크하고 목적을 하나 이상 고르면 켜진다.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LocationConsentScreen(
-    onAgree: (ageConfirmed: Boolean) -> Unit,
+    onAgree: (purposes: Set<LocationPurpose>, ageConfirmed: Boolean) -> Unit,
     onDecline: () -> Unit,
 ) {
     var ageConfirmed by rememberSaveable { mutableStateOf(false) }
+    var currentLocationChecked by rememberSaveable { mutableStateOf(false) }
+    var weatherAndSunChecked by rememberSaveable { mutableStateOf(false) }
+    val selectedPurposes = buildSet {
+        if (currentLocationChecked) add(LocationPurpose.CURRENT_LOCATION)
+        if (weatherAndSunChecked) add(LocationPurpose.WEATHER_AND_SUN)
+    }
     var showTerms by remember { mutableStateOf(false) }
 
     Dialog(
@@ -95,37 +104,34 @@ fun LocationConsentScreen(
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(12.dp))
                         .background(IosSystemGroupedBackground)
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                        .padding(horizontal = 8.dp, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
-                    ConsentBodyText(stringResource(R.string.location_consent_body_intro))
-                    ConsentBodyText(stringResource(R.string.location_consent_item_map))
-                    ConsentBodyText(stringResource(R.string.location_consent_item_weather))
-                }
-                ConsentBodyText(stringResource(R.string.location_consent_body_storage))
-                ConsentBodyText(stringResource(R.string.location_consent_body_optional), color = IosSecondaryLabel)
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
-                        .toggleable(
-                            value = ageConfirmed,
-                            role = Role.Checkbox,
-                            onValueChange = { ageConfirmed = it },
-                        )
-                        .padding(vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Checkbox(checked = ageConfirmed, onCheckedChange = null)
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        text = stringResource(R.string.location_consent_age),
-                        fontSize = 15.sp,
-                        lineHeight = 21.sp,
-                        fontWeight = FontWeight.SemiBold,
+                    ConsentBodyText(
+                        stringResource(R.string.location_consent_body_intro),
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    )
+                    ConsentCheckboxRow(
+                        text = stringResource(R.string.location_consent_item_map),
+                        checked = currentLocationChecked,
+                        onCheckedChange = { currentLocationChecked = it },
+                    )
+                    ConsentCheckboxRow(
+                        text = stringResource(R.string.location_consent_item_weather),
+                        checked = weatherAndSunChecked,
+                        onCheckedChange = { weatherAndSunChecked = it },
                     )
                 }
+                ConsentBodyText(stringResource(R.string.location_consent_body_storage))
+                ConsentBodyText(stringResource(R.string.location_consent_body_transfer))
+                ConsentBodyText(stringResource(R.string.location_consent_body_optional), color = IosSecondaryLabel)
+
+                ConsentCheckboxRow(
+                    text = stringResource(R.string.location_consent_age),
+                    checked = ageConfirmed,
+                    onCheckedChange = { ageConfirmed = it },
+                    emphasized = true,
+                )
 
                 TextButton(onClick = { showTerms = true }) {
                     Text(stringResource(R.string.location_consent_view_terms), fontSize = 15.sp)
@@ -139,8 +145,8 @@ fun LocationConsentScreen(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 FilledTonalButton(
-                    onClick = { onAgree(ageConfirmed) },
-                    enabled = ageConfirmed,
+                    onClick = { onAgree(selectedPurposes, ageConfirmed) },
+                    enabled = ageConfirmed && selectedPurposes.isNotEmpty(),
                     shape = RoundedCornerShape(14.dp),
                     modifier = Modifier
                         .fillMaxWidth()
@@ -172,6 +178,36 @@ fun LocationConsentScreen(
 }
 
 @Composable
-private fun ConsentBodyText(text: String, color: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onSurface) {
-    Text(text = text, fontSize = 16.sp, lineHeight = 23.sp, color = color)
+private fun ConsentBodyText(
+    text: String,
+    modifier: Modifier = Modifier,
+    color: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onSurface,
+) {
+    Text(text = text, fontSize = 16.sp, lineHeight = 23.sp, color = color, modifier = modifier)
+}
+
+@Composable
+private fun ConsentCheckboxRow(
+    text: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    emphasized: Boolean = false,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .toggleable(value = checked, role = Role.Checkbox, onValueChange = onCheckedChange)
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Checkbox(checked = checked, onCheckedChange = null)
+        Spacer(Modifier.width(8.dp))
+        Text(
+            text = text,
+            fontSize = if (emphasized) 15.sp else 16.sp,
+            lineHeight = 21.sp,
+            fontWeight = if (emphasized) FontWeight.SemiBold else FontWeight.Normal,
+        )
+    }
 }
