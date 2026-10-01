@@ -75,7 +75,7 @@ fun LocationUsageHistoryScreen(
                 }
             }
 
-            InsetGroupedSection(footer = stringResource(R.string.settings_location_footer)) {
+            InsetGroupedSection(footer = stringResource(R.string.location_usage_request_contact)) {
                 if (records.isEmpty()) {
                     InsetGroupedRow(
                         title = stringResource(R.string.settings_location_history_empty),

@@ -425,10 +425,7 @@ private fun SettingsMainContent(
             }
 
             // ===== 6. 위치정보 (위치정보법 제19조·제24조: 선택 동의, 언제든 철회, 이용 기록 열람) =====
-            InsetGroupedSection(
-                header = stringResource(R.string.settings_section_location),
-                footer = stringResource(R.string.settings_location_footer),
-            ) {
+            InsetGroupedSection(header = stringResource(R.string.settings_section_location)) {
                 // 목적별 동의(사양 v2 A-2). 켜기는 동의 화면에서만 저장하고, 끄기는 확인을 받은 뒤 그 목적만 철회한다.
                 InsetGroupedToggleRow(
                     title = stringResource(R.string.location_consent_item_map),

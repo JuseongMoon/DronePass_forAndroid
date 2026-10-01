@@ -146,7 +146,6 @@ fun MapFloatingButtons(
     sunriseTimes: List<String> = sunrise?.let(::listOf) ?: emptyList(),
     sunsetTimes: List<String> = sunset?.let(::listOf) ?: emptyList(),
     weatherUtcOffsetSeconds: Int? = null,
-    weatherBasisLabel: String? = null,
     onWeatherClick: () -> Unit = {},
     isTabletLayout: Boolean = false,
     naverMap: NaverMap? = null,
@@ -277,7 +276,6 @@ fun MapFloatingButtons(
                         sunsetTimes = sunsetTimes,
                         onClick = onWeatherClick,
                         utcOffsetSeconds = weatherUtcOffsetSeconds,
-                        basisLabel = weatherBasisLabel,
                     )
                 }
             }

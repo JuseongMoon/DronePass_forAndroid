@@ -882,7 +882,6 @@
     <string name="settings_location_open_settings">Open Settings</string>
     <string name="settings_location_history">Location Usage History</string>
     <string name="settings_location_history_empty">No records in the last 6 months.</string>
-    <string name="settings_location_footer">For location data requests (access, correction, withdrawal): support@sciencefiction.co.kr (Location Information Manager: Juseong Moon)</string>
     <string name="location_usage_purpose_map">Current location on map</string>
     <string name="location_usage_purpose_weather">Weather lookup</string>
     <string name="location_usage_purpose_sun">Sunrise &amp; sunset calculation</string>
@@ -952,4 +951,5 @@
     <string name="terms_notice_item_refund">• Full refund within 7 days of a payment or renewal; after that, refund for the remaining period on cancellation (no penalty)</string>
     <string name="settings_location_withdraw_message_map">Withdraw consent to showing your current location on the map? Your current location will no longer be shown, and the location usage history for this feature will be deleted from this device and the Company’s server.</string>
     <string name="settings_location_withdraw_message_weather">Withdraw consent to weather and sunrise/sunset for your current location? These will switch to the map center, and the location usage history for this feature (including server records) and the last location stored on this device will be deleted.</string>
+    <string name="location_usage_request_contact">For location data requests (access, correction, withdrawal): support@sciencefiction.co.kr</string>
 </resources>

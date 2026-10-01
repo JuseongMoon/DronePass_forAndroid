@@ -920,7 +920,7 @@ class StringResourceCoverageTest {
             stringResourceValue("values/strings.xml", "profile_sync_footer_enable_info"),
         )
         assertEquals("이용약관", stringResourceValue("values/strings.xml", "profile_terms_service"))
-        assertEquals("개인정보 취급방침", stringResourceValue("values/strings.xml", "profile_terms_privacy"))
+        assertEquals("개인정보 처리방침", stringResourceValue("values/strings.xml", "profile_terms_privacy"))
         assertEquals("로그아웃", stringResourceValue("values/strings.xml", "profile_account_logout"))
         assertEquals("회원 탈퇴", stringResourceValue("values/strings.xml", "profile_account_delete"))
         assertEquals(
@@ -1511,14 +1511,14 @@ class StringResourceCoverageTest {
         assertEquals("닫기", stringResourceValue("values/strings.xml", "common_close"))
         assertEquals("다시 시도", stringResourceValue("values/strings.xml", "common_retry"))
         assertEquals("개인정보 처리방침", stringResourceValue("values/strings.xml", "login_terms_privacy"))
-        assertEquals("개인정보 취급방침", stringResourceValue("values/strings.xml", "profile_terms_privacy"))
+        assertEquals("개인정보 처리방침", stringResourceValue("values/strings.xml", "profile_terms_privacy"))
         assertEquals("이용약관", stringResourceValue("values/strings.xml", "document_terms_service_title"))
-        assertEquals("개인정보 취급방침", stringResourceValue("values/strings.xml", "document_terms_privacy_title"))
+        assertEquals("개인정보 처리방침", stringResourceValue("values/strings.xml", "document_terms_privacy_title"))
         assertEquals("불러오는 중...", stringResourceValue("values/strings.xml", "document_terms_loading"))
         assertEquals("약관을 불러올 수 없습니다.", stringResourceValue("values/strings.xml", "document_terms_service_error_title"))
         assertEquals("잠시 후 다시 시도해주세요.", stringResourceValue("values/strings.xml", "document_terms_service_error_message"))
         assertEquals(
-            "개인정보 취급방침을 불러올 수 없습니다.",
+            "개인정보 처리방침을 불러올 수 없습니다.",
             stringResourceValue("values/strings.xml", "document_terms_privacy_error_title"),
         )
         assertEquals("잠시 후 다시 시도해주세요.", stringResourceValue("values/strings.xml", "document_terms_privacy_error_message"))
