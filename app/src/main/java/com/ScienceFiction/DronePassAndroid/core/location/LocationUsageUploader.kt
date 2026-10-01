@@ -11,14 +11,13 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.tasks.await
-import java.time.LocalDate
 import javax.inject.Inject
 import javax.inject.Singleton
 
 internal const val RecordLocationUsageCallable = "recordLocationUsage"
 internal const val DeleteLocationUsageCallable = "deleteLocationUsage"
 
-/** `recordLocationUsage` 요청 본문(사양 v2 B-3). 좌표는 없다. */
+/** `recordLocationUsage` 요청 본문(서버 계약 B-2026-10-01). 좌표는 없고 값은 고정 코드다. */
 internal fun recordLocationUsageRequest(installId: String, records: List<LocationUsageRecord>): Map<String, Any> = mapOf(
     "installId" to installId,
     "entries" to records.map { record ->
@@ -56,7 +55,7 @@ class FirebaseLocationUsageServer @Inject constructor(
 }
 
 /**
- * 확인자료 서버 동기화. 앱을 실행할 때 서버 삭제 대기열을 먼저 처리하고, 지난 날짜의 기록을 하루 단위로 올린다.
+ * 확인자료 서버 동기화. 앱을 실행할 때 서버 삭제 대기열을 먼저 처리하고, 지난 날짜의 밀린 기록을 한 번에 올린다.
  * 실패하면 다음 실행 때 다시 시도한다. 업로드는 원격 플래그가 켜졌을 때만 한다(서버 함수 배포 전에는 꺼 둔다).
  */
 @Singleton
@@ -94,13 +93,12 @@ class LocationUsageUploader @Inject constructor(
             }
         }
         if (!uploadEnabled) return@withLock
-        val batches = pendingUploadBatches(state.records, state.uploadedThrough, nowMillis)
-        if (batches.isEmpty()) return@withLock
-        val installId = consentRepository.installId()
-        batches.forEach { (date: LocalDate, records) ->
-            server.record(recordLocationUsageRequest(installId, records))
-            consentRepository.markUploaded(date)
-        }
+        // 서버가 installId 당 시간에 한 번만 받으므로 밀린 기록을 한 요청에 담는다(최대 500개).
+        // 실패(resource-exhausted 포함)하면 표시하지 않고 다음 실행 때 다시 보낸다.
+        val batch = pendingUploadBatch(state.records, state.uploaded, nowMillis)
+        if (batch.isEmpty()) return@withLock
+        server.record(recordLocationUsageRequest(consentRepository.installId(), batch))
+        consentRepository.markUploaded(batch)
     }
 
     private companion object {

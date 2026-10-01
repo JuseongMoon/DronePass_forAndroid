@@ -154,7 +154,7 @@ class LocationConsentRepositoryTest {
         repository.withdraw(p1, nowMillis = now)
         assertTrue(repository.uploadState().pendingServerDeletes.isEmpty())
 
-        repository.markUploaded(java.time.LocalDate.of(2026, 11, 11))
+        repository.markUploaded(emptyList())
         repository.withdraw(p2, nowMillis = now)
         assertEquals(setOf("weather", "sunriseSunset", "sunriseAlert"), repository.uploadState().pendingServerDeletes)
     }

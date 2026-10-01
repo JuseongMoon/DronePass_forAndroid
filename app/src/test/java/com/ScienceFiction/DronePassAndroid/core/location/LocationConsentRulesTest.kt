@@ -151,7 +151,7 @@ class LocationConsentRulesTest {
     }
 
     @Test
-    fun `upload batches are past KST days after the last uploaded day`() {
+    fun `one upload batch holds every past unsent record oldest first`() {
         val stored = setOf(
             "2026-11-10T09|weather|weatherKitViaServer",
             "2026-11-11T08|currentLocationOnMap|none",
@@ -160,11 +160,26 @@ class LocationConsentRulesTest {
         )
         val now = Instant.parse("2026-11-12T05:00:00Z").toEpochMilli()
 
-        val batches = pendingUploadBatches(stored, uploadedThrough = LocalDate.of(2026, 11, 10), nowMillis = now)
+        val all = pendingUploadBatch(stored, uploaded = emptySet(), nowMillis = now)
+        assertEquals(listOf("2026-11-10T09", "2026-11-11T08", "2026-11-11T21"), all.map { it.occurredHour })
 
-        assertEquals(listOf(LocalDate.of(2026, 11, 11)), batches.map { it.first })
-        assertEquals(listOf("2026-11-11T08", "2026-11-11T21"), batches.single().second.map { it.occurredHour })
-        assertEquals(2, pendingUploadBatches(stored, uploadedThrough = null, nowMillis = now).size)
+        val rest = pendingUploadBatch(stored, uploaded = setOf("2026-11-10T09|weather|weatherKitViaServer"), nowMillis = now)
+        assertEquals(listOf("2026-11-11T08", "2026-11-11T21"), rest.map { it.occurredHour })
+    }
+
+    @Test
+    fun `upload batch is capped at 500 oldest records`() {
+        val start = LocalDateTime.of(2026, 10, 1, 0, 0)
+        val stored = (0 until 600).map { offset ->
+            "${start.plusHours(offset.toLong()).format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH"))}|weather|weatherKitViaServer"
+        }.toSet()
+        val now = Instant.parse("2026-11-12T05:00:00Z").toEpochMilli()
+
+        val batch = pendingUploadBatch(stored, uploaded = emptySet(), nowMillis = now)
+
+        assertEquals(500, batch.size)
+        assertEquals("2026-10-01T00", batch.first().occurredHour)
+        assertEquals(LocationUsageUploadLimit, batch.size)
     }
 
     @Test
@@ -180,12 +195,47 @@ class LocationConsentRulesTest {
             mapOf(
                 "occurredHour" to "2026-11-12T14",
                 "purpose" to "weather",
-                "acquisitionPath" to "Google Fused Location Provider",
-                "recipient" to "회사 서버 경유 Apple(WeatherKit)",
+                "acquisitionPath" to "googleFusedLocation",
+                "recipient" to "appleWeatherKitViaCompanyServer",
             ),
             entry,
         )
         assertEquals(mapOf("installId" to "install-1", "purpose" to "weather"), deleteLocationUsageRequest("install-1", "weather"))
+    }
+
+    @Test
+    fun `stored records map to server codes and unmappable old entries stay out of uploads`() {
+        val now = Instant.parse("2026-11-12T05:00:00Z").toEpochMilli()
+        val stored = setOf(
+            "2026-11-11T08|weather|weatherKitViaServer", // 기기 저장 코드 → 서버 코드로 바꿔 보낸다
+            "2026-11-11T09|currentLocationOnMap|none",
+            "2026-11-11|weather", // v1 형식
+            "2026-11-11T10|weather|회사 서버 경유 Apple(WeatherKit)", // 표시용 문자열
+            "2026-11-11T11|weather|WeatherKitViaServer", // 대소문자가 다른 값
+            "2026-11-11T12|weather|", // 빈 값
+            "2026-11-11T13|unknownPurpose|none",
+        )
+
+        val batch = pendingUploadBatch(stored, uploaded = emptySet(), nowMillis = now)
+        @Suppress("UNCHECKED_CAST")
+        val entries = recordLocationUsageRequest("install-1", batch)["entries"] as List<Map<String, Any>>
+
+        assertEquals(listOf("2026-11-11T08", "2026-11-11T09"), entries.map { it["occurredHour"] })
+        assertEquals(listOf("appleWeatherKitViaCompanyServer", "none"), entries.map { it["recipient"] })
+        assertTrue(entries.all { it["acquisitionPath"] == "googleFusedLocation" })
+        val allowedRecipients = setOf("none", "appleWeatherKit", "appleWeatherKitViaCompanyServer")
+        assertTrue(entries.all { it["recipient"] in allowedRecipients })
+        // 매핑할 수 없는 항목은 실행할 때 기기 기록에서도 정리된다.
+        assertEquals(
+            setOf("2026-11-11T08|weather|weatherKitViaServer", "2026-11-11T09|currentLocationOnMap|none"),
+            pruneLocationUsageRecords(stored, now),
+        )
+    }
+
+    @Test
+    fun `server receives fixed codes while the screen shows localized labels`() {
+        assertEquals(listOf("none", "appleWeatherKitViaCompanyServer"), LocationRecipient.entries.map { it.uploadValue })
+        assertEquals("googleFusedLocation", LocationAcquisitionPath)
     }
 
     @Test

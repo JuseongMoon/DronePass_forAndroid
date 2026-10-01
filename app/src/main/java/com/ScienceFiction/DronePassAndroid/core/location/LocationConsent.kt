@@ -60,7 +60,8 @@ internal object LocationConsentKeys {
 
     /** 확인자료 서버 업로드: 설치 ID, 올린 마지막 날짜, 한 번이라도 올렸는지, 서버 삭제 대기열. */
     val INSTALL_ID = stringPreferencesKey("location_install_id")
-    val UPLOADED_THROUGH = stringPreferencesKey("location_usage_uploaded_through")
+    /** 서버에 올린 기록(기기 기록과 같은 값). 기록과 함께 보존 기간·철회로 정리한다. */
+    val UPLOADED_RECORDS = stringSetPreferencesKey("location_usage_uploaded_records")
     val EVER_UPLOADED = booleanPreferencesKey("location_usage_ever_uploaded")
     val PENDING_SERVER_DELETES = stringSetPreferencesKey("location_usage_pending_deletes")
 
@@ -78,6 +79,8 @@ internal object LocationConsentKeys {
         longPreferencesKey("location_consent_at"),
         stringPreferencesKey("location_consent_history"),
         stringSetPreferencesKey("location_usage_records"),
+        // 날짜 단위 업로드 표시(서버 계약 확정 전). 기록 단위 표시로 바꿨다.
+        stringPreferencesKey("location_usage_uploaded_through"),
     )
 }
 

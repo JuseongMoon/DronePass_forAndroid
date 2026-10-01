@@ -30,12 +30,16 @@ enum class LocationUsagePurpose(
 }
 
 /**
- * 위치를 제공받는 자. 서버 업로드 값은 사양 B-1 의 문구 그대로다.
+ * 위치를 제공받는 자. 서버에는 고정 코드값을 보내고 화면 표시만 현지화한다(서버 계약 B-2026-10-01).
  * Android 날씨는 회사 서버(getAndroidWeather)를 거쳐 Apple WeatherKit 으로 간다.
  */
 enum class LocationRecipient(val raw: String, val uploadValue: String, @StringRes val labelRes: Int) {
-    NONE("none", "없음", R.string.location_usage_recipient_none),
-    WEATHERKIT_VIA_SERVER("weatherKitViaServer", "회사 서버 경유 Apple(WeatherKit)", R.string.location_usage_recipient_weatherkit),
+    NONE("none", "none", R.string.location_usage_recipient_none),
+    WEATHERKIT_VIA_SERVER(
+        "weatherKitViaServer",
+        "appleWeatherKitViaCompanyServer",
+        R.string.location_usage_recipient_weatherkit,
+    ),
     ;
 
     companion object {
@@ -43,8 +47,11 @@ enum class LocationRecipient(val raw: String, val uploadValue: String, @StringRe
     }
 }
 
-/** 취득 경로(사양 B-1). */
-internal const val LocationAcquisitionPath = "Google Fused Location Provider"
+/** 취득 경로 코드값(서버 계약 B-2026-10-01). 화면에는 표시하지 않는다. */
+internal const val LocationAcquisitionPath = "googleFusedLocation"
+
+/** 서버가 한 요청에 받는 최대 항목 수. */
+internal const val LocationUsageUploadLimit = 500
 
 data class LocationUsage(
     val purpose: LocationUsagePurpose,
@@ -121,19 +128,22 @@ internal fun sortedLocationUsageRecords(stored: Set<String>): List<LocationUsage
         )
 
 /**
- * 서버에 올릴 날짜별 묶음: 마지막으로 올린 날짜 다음부터 어제(KST)까지. 오늘 기록은 하루가 끝난 뒤 올린다.
+ * 서버에 올릴 묶음: 어제(KST)까지의 기록 중 아직 올리지 않은 것을 오래된 순서로 최대 [limit] 개.
+ * 서버가 installId 당 시간에 한 번만 받으므로 밀린 날짜를 모두 한 요청에 담는다. 넘치는 것은 다음 실행 때 보낸다.
+ * 오늘 기록은 하루가 끝난 뒤 올린다.
  */
-internal fun pendingUploadBatches(
+internal fun pendingUploadBatch(
     stored: Set<String>,
-    uploadedThrough: LocalDate?,
+    uploaded: Set<String>,
     nowMillis: Long,
-): List<Pair<LocalDate, List<LocationUsageRecord>>> {
+    limit: Int = LocationUsageUploadLimit,
+): List<LocationUsageRecord> {
     val today = locationUsageDate(nowMillis)
-    return sortedLocationUsageRecords(stored)
-        .filter { it.date < today && (uploadedThrough == null || it.date > uploadedThrough) }
-        .groupBy { it.date }
-        .toSortedMap()
-        .map { (date, records) -> date to records.sortedBy { it.hour } }
+    return (stored - uploaded)
+        .mapNotNull(::decodeLocationUsageRecord)
+        .filter { it.date < today }
+        .sortedWith(compareBy<LocationUsageRecord> { it.hour }.thenBy { it.purpose.ordinal }.thenBy { it.recipient.ordinal })
+        .take(limit)
 }
 
 /** 표시 형식의 시간 부분: `2026-11-12 14:00`. */

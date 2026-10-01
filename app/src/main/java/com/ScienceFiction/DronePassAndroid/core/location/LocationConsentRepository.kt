@@ -10,7 +10,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import java.time.LocalDate
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -79,13 +78,8 @@ class LocationConsentRepository @Inject constructor(
     suspend fun withdraw(purpose: LocationPurpose, nowMillis: Long = System.currentTimeMillis()) {
         dataStore.edit { preferences ->
             preferences.writePurpose(purpose, LocationConsentStatus.WITHDRAWN, nowMillis)
-            val records = preferences[LocationConsentKeys.USAGE_RECORDS].orEmpty()
-            val remaining = removeLocationUsageRecords(records, purpose)
-            if (remaining.isEmpty()) {
-                preferences.remove(LocationConsentKeys.USAGE_RECORDS)
-            } else {
-                preferences[LocationConsentKeys.USAGE_RECORDS] = remaining
-            }
+            preferences.updateRecordSet(LocationConsentKeys.USAGE_RECORDS) { removeLocationUsageRecords(it, purpose) }
+            preferences.updateRecordSet(LocationConsentKeys.UPLOADED_RECORDS) { removeLocationUsageRecords(it, purpose) }
             if (purpose == LocationPurpose.WEATHER_AND_SUN) {
                 // 일출·일몰 알림용으로 캐시한 마지막 기기 위치
                 preferences.remove(UserLocationKeys.KEY_LAST_LATITUDE)
@@ -126,13 +120,8 @@ class LocationConsentRepository @Inject constructor(
     suspend fun runLaunchMaintenance(nowMillis: Long = System.currentTimeMillis()) {
         dataStore.edit { preferences ->
             LocationConsentKeys.LEGACY_V1_KEYS.forEach { preferences.remove(it) }
-            val stored = preferences[LocationConsentKeys.USAGE_RECORDS] ?: return@edit
-            val pruned = pruneLocationUsageRecords(stored, nowMillis)
-            if (pruned.isEmpty()) {
-                preferences.remove(LocationConsentKeys.USAGE_RECORDS)
-            } else if (pruned != stored) {
-                preferences[LocationConsentKeys.USAGE_RECORDS] = pruned
-            }
+            preferences.updateRecordSet(LocationConsentKeys.USAGE_RECORDS) { pruneLocationUsageRecords(it, nowMillis) }
+            preferences.updateRecordSet(LocationConsentKeys.UPLOADED_RECORDS) { pruneLocationUsageRecords(it, nowMillis) }
         }
     }
 
@@ -152,14 +141,18 @@ class LocationConsentRepository @Inject constructor(
         val preferences = dataStore.data.first()
         return LocationUsageUploadState(
             records = preferences[LocationConsentKeys.USAGE_RECORDS].orEmpty(),
-            uploadedThrough = preferences[LocationConsentKeys.UPLOADED_THROUGH]?.let { runCatching { LocalDate.parse(it) }.getOrNull() },
+            uploaded = preferences[LocationConsentKeys.UPLOADED_RECORDS].orEmpty(),
             pendingServerDeletes = preferences[LocationConsentKeys.PENDING_SERVER_DELETES].orEmpty(),
         )
     }
 
-    internal suspend fun markUploaded(date: LocalDate) {
+    /** 서버가 받은 기록을 표시한다. 그사이 철회로 지운 기록은 다시 넣지 않는다. */
+    internal suspend fun markUploaded(records: List<LocationUsageRecord>) {
         dataStore.edit { preferences ->
-            preferences[LocationConsentKeys.UPLOADED_THROUGH] = date.toString()
+            val stillStored = preferences[LocationConsentKeys.USAGE_RECORDS].orEmpty()
+            val uploaded = records.map(::encodeLocationUsageRecord).filter { it in stillStored }
+            preferences[LocationConsentKeys.UPLOADED_RECORDS] =
+                preferences[LocationConsentKeys.UPLOADED_RECORDS].orEmpty() + uploaded
             preferences[LocationConsentKeys.EVER_UPLOADED] = true
         }
     }
@@ -175,6 +168,15 @@ class LocationConsentRepository @Inject constructor(
         }
     }
 
+    private fun MutablePreferences.updateRecordSet(
+        key: Preferences.Key<Set<String>>,
+        transform: (Set<String>) -> Set<String>,
+    ) {
+        val stored = this[key] ?: return
+        val updated = transform(stored)
+        if (updated.isEmpty()) remove(key) else if (updated != stored) this[key] = updated
+    }
+
     private fun MutablePreferences.writePurpose(
         purpose: LocationPurpose,
         status: LocationConsentStatus,
@@ -188,6 +190,6 @@ class LocationConsentRepository @Inject constructor(
 
 internal data class LocationUsageUploadState(
     val records: Set<String>,
-    val uploadedThrough: LocalDate?,
+    val uploaded: Set<String>,
     val pendingServerDeletes: Set<String>,
 )
