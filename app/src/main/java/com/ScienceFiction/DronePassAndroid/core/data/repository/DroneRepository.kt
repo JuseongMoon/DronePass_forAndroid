@@ -7,17 +7,18 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.dao.DroneDao
+import com.ScienceFiction.DronePassAndroid.core.data.local.room.dao.ShapeDao
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.mapper.toDomain
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.mapper.toEntity
 import com.ScienceFiction.DronePassAndroid.core.data.remote.firebase.DroneFirebaseStore
 import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncPreferenceKeys
-import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncMergeResult
 import com.ScienceFiction.DronePassAndroid.core.data.sync.isCloudSyncEnabled
 import com.ScienceFiction.DronePassAndroid.core.data.sync.shouldUpdateServerMetadataAfterFullSync
 import com.ScienceFiction.DronePassAndroid.core.data.sync.shouldRunImmediateCloudSync
 import com.ScienceFiction.DronePassAndroid.core.util.compareIosLocalizedStandardStrings
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.validateForFirebasePersistence
+import com.ScienceFiction.DronePassAndroid.feature.drone.DroneSelectionState
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.util.Locale
@@ -25,6 +26,44 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.math.abs
+
+/** 기기에서 자동으로 만든 기본 드론의 이름(앱 언어별). iOS `drone.edit.defaultName.first` 와 같다. */
+internal val DefaultDroneNames = setOf("내 드론", "My Drone")
+
+/** 기본 드론 색. iOS `PaletteColor.blue` 와 같다. */
+internal const val DefaultDroneColor = "#007AFF"
+
+/** 손대지 않은 기본 드론으로 볼 수 있는 생성·수정 시각 차이. */
+internal const val UntouchedDroneWindowMillis = 1_000L
+
+/**
+ * 손대지 않은 기본 드론: 삭제 표시가 없고, 기본 이름·기본 색(대소문자 무시)이며, 나머지 칸이 모두 비었고
+ * (null·"" 같음), 만든 뒤 수정한 적이 없다(|updatedAt − createdAt| ≤ 1초).
+ */
+internal fun isUntouchedDefaultDrone(drone: DroneModel): Boolean =
+    drone.deletedAt == null &&
+        drone.name in DefaultDroneNames &&
+        drone.color.equals(DefaultDroneColor, ignoreCase = true) &&
+        drone.serialNumber.isNullOrEmpty() &&
+        drone.takeoffWeight.isNullOrEmpty() &&
+        drone.size.isNullOrEmpty() &&
+        drone.memo.isNullOrEmpty() &&
+        abs(drone.updatedAt - drone.createdAt) <= UntouchedDroneWindowMillis
+
+/**
+ * 드론 전체 동기화 결과.
+ * - [discardedLocalDroneIds]: 병합 결과·업로드에서 빼고 로컬에서도 지울 기기 기본 드론
+ * - [reassignedShapeDroneIds]: 도형의 droneId 를 바꿀 맵(지운 기기 드론 → 서버 기본 드론)
+ * - [selectionReplacements]: 선택돼 있던 지운 드론을 대신할 서버 드론
+ */
+internal data class DroneSyncMergeResult(
+    val merged: List<DroneModel>,
+    val toUpload: List<DroneModel>,
+    val discardedLocalDroneIds: Set<String> = emptySet(),
+    val reassignedShapeDroneIds: Map<String, String> = emptyMap(),
+    val selectionReplacements: Map<String, String> = emptyMap(),
+)
 
 /**
  * 드론 전체 동기화 병합. iOS `DroneRepository.merge` 와 같은 규칙이다.
@@ -33,16 +72,25 @@ import javax.inject.Singleton
  * - 서버에 없는 로컬 드론은 지우지 않고 올린다. 계정을 탈퇴한 뒤 다른 계정에 로그인해도
  *   로컬 도형과 원래 드론(id·이름)이 함께 따라가야 하기 때문이다. 삭제 기록은 올리지 않는다.
  * - 이름이 같아도 id 가 다르면 별개 드론으로 둔다.
+ *
+ * 예외: 로그아웃 상태에서 기기가 자동으로 만든 손대지 않은 기본 드론(L, 서버에 id 없음)은 로그인할 때
+ * 계정의 드론과 겹치지 않게 정리한다([localShapeDroneIds] 는 삭제 표시를 포함한 로컬 도형의 droneId).
+ * 1. 서버에 손대지 않은 기본 드론 D 가 있으면 L 을 버리고, L 을 쓰던 도형은 D 로 옮긴다
+ *    (D 가 여럿이면 createdAt 이 가장 이른 것, 같으면 id 사전순).
+ * 2. D 는 없고 살아 있는 서버 드론이 있으면, 도형이 쓰지 않는 L 만 버린다.
+ * 3. 살아 있는 서버 드론이 없으면 L 을 그대로 올린다.
+ * 서버 쪽 드론은 바꾸지 않는다.
  */
 internal fun mergeDronesForFullSync(
     localDrones: List<DroneModel>,
     serverDrones: List<DroneModel>,
-): SyncMergeResult<DroneModel> {
+    localShapeDroneIds: Collection<String?> = emptyList(),
+): DroneSyncMergeResult {
     val serverById = serverDrones.associateBy { it.id }
     val localById = localDrones.associateBy { it.id }
     val allIds = serverById.keys + localById.keys
 
-    val merged = allIds.mapNotNull { id ->
+    val mergedAll = allIds.mapNotNull { id ->
         val local = localById[id]
         val server = serverById[id]
         when {
@@ -52,12 +100,45 @@ internal fun mergeDronesForFullSync(
     }
 
     // 서버에 없는 드론의 삭제 기록은 올리지 않는다(iOS DroneRepository.merge 와 같음).
-    val toUpload = merged.filter { drone ->
+    val toUploadAll = mergedAll.filter { drone ->
         val server = serverById[drone.id]
         if (server == null) drone.deletedAt == null else drone.updatedAt > server.updatedAt
     }
 
-    return SyncMergeResult(merged, toUpload)
+    val earliest = compareBy<DroneModel>({ it.createdAt }, { it.id })
+    val aliveServer = serverDrones.filter { it.deletedAt == null }
+    val serverDefault = aliveServer.filter(::isUntouchedDefaultDrone).minWithOrNull(earliest)
+    val fallbackServer = aliveServer.minWithOrNull(earliest)
+    val referenced = localShapeDroneIds.filterNotNull().toSet()
+
+    val discarded = mutableSetOf<String>()
+    val reassigned = mutableMapOf<String, String>()
+    val selection = mutableMapOf<String, String>()
+    if (fallbackServer != null) {
+        localDrones
+            .filter { it.id !in serverById && isUntouchedDefaultDrone(it) }
+            .forEach { local ->
+                when {
+                    serverDefault != null -> {
+                        discarded += local.id
+                        if (local.id in referenced) reassigned[local.id] = serverDefault.id
+                        selection[local.id] = serverDefault.id
+                    }
+                    local.id !in referenced -> {
+                        discarded += local.id
+                        selection[local.id] = fallbackServer.id
+                    }
+                }
+            }
+    }
+
+    return DroneSyncMergeResult(
+        merged = mergedAll.filter { it.id !in discarded },
+        toUpload = toUploadAll.filter { it.id !in discarded },
+        discardedLocalDroneIds = discarded,
+        reassignedShapeDroneIds = reassigned,
+        selectionReplacements = selection,
+    )
 }
 
 internal fun shouldCreateDefaultDrone(
@@ -82,6 +163,8 @@ internal fun sortActiveDronesForIosList(
 class DroneRepository @Inject constructor(
     private val droneDao: DroneDao,
     private val droneFirebaseStore: DroneFirebaseStore,
+    private val shapeDao: ShapeDao,
+    private val droneSelectionState: DroneSelectionState,
     private val auth: FirebaseAuth,
     private val dataStore: DataStore<Preferences>,
     @ApplicationContext private val context: Context,
@@ -246,12 +329,31 @@ class DroneRepository @Inject constructor(
         try {
             val localDrones = droneDao.getAllDronesOnce().map { it.toDomain() }
             val serverDrones = droneFirebaseStore.loadAllDronesIncludingDeleted(userId).getOrThrow()
+            val localShapes = shapeDao.getAllShapesOnce()
             val result = mergeDronesForFullSync(
                 localDrones = localDrones,
                 serverDrones = serverDrones,
+                localShapeDroneIds = localShapes.map { it.droneId },
             )
 
             if (result.merged.isNotEmpty()) droneDao.insertDrones(result.merged.map { it.toEntity() })
+
+            // 로그인 전에 기기가 만든 손대지 않은 기본 드론: 도형은 계정의 기본 드론으로 옮기고(바로 이어지는
+            // 도형 전체 동기화가 더 늦은 updatedAt 으로 올린다), 드론은 지운다. 삭제 기록은 올리지 않는다.
+            if (result.reassignedShapeDroneIds.isNotEmpty()) {
+                val now = System.currentTimeMillis()
+                val moved = localShapes.mapNotNull { shape ->
+                    val target = shape.droneId?.let(result.reassignedShapeDroneIds::get) ?: return@mapNotNull null
+                    shape.copy(droneId = target, updatedAt = now)
+                }
+                shapeDao.insertShapes(moved)
+                Log.d(TAG, "기기 기본 드론의 도형 ${moved.size}개를 계정 기본 드론으로 옮김")
+            }
+            if (result.discardedLocalDroneIds.isNotEmpty()) {
+                droneDao.deleteDronesByIds(result.discardedLocalDroneIds.toList())
+                droneSelectionState.replaceDrones(result.selectionReplacements)
+                Log.d(TAG, "손대지 않은 기기 기본 드론 ${result.discardedLocalDroneIds.size}대를 정리함")
+            }
 
             val toUpload = result.toUpload.filterValidForFirebaseWrite("performFullSync/upload")
             if (toUpload.isNotEmpty()) {

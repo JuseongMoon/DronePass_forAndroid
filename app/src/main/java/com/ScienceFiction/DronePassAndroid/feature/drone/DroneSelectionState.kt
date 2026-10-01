@@ -188,6 +188,28 @@ class DroneSelectionState private constructor(
         saveSelectedDroneIds(activeIds)
     }
 
+    /**
+     * 로그인 병합에서 지운 기기 기본 드론을 대신할 드론으로 선택·대표 선택·강조를 옮긴다.
+     * 선택돼 있지 않던 드론은 새로 선택하지 않는다.
+     */
+    @Synchronized
+    fun replaceDrones(replacements: Map<String, String>) {
+        if (replacements.isEmpty()) return
+        fun Set<String>.replaced() = map { replacements[it] ?: it }.toSet()
+        val nextSelected = _selectedDroneIds.value.replaced()
+        if (nextSelected != _selectedDroneIds.value) {
+            _selectedDroneIds.value = nextSelected
+            saveSelectedDroneIds(nextSelected)
+        }
+        _selectedDroneId.value?.let { current ->
+            replacements[current]?.let { replacement ->
+                _selectedDroneId.value = replacement
+                saveSelectedDroneId(replacement)
+            }
+        }
+        _highlightedDroneIds.value = _highlightedDroneIds.value.replaced()
+    }
+
     @Synchronized
     fun resetForAccountSwitch() {
         _selectedDroneId.value = null

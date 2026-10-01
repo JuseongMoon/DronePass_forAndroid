@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.core.data.local.room
 
+import com.ScienceFiction.DronePassAndroid.feature.drone.DroneSelectionState
 import android.content.Context
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.room.Room
@@ -277,6 +278,8 @@ class SoftDeleteFilteringIntegrationTest {
         val repository = DroneRepository(
             droneDao = database.droneDao(),
             droneFirebaseStore = DroneFirebaseStore(FirebaseFirestore.getInstance()),
+            shapeDao = database.shapeDao(),
+            droneSelectionState = DroneSelectionState(),
             auth = FirebaseAuth.getInstance(),
             dataStore = dataStore,
             context = context,
