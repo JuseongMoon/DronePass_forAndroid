@@ -18,7 +18,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.ui.unit.sp
+import com.ScienceFiction.DronePassAndroid.ui.theme.IosSecondaryLabel
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -104,6 +108,7 @@ fun WeatherForecastContent(
     val error by viewModel.error.collectAsStateWithLifecycle()
     val selectedCategory by viewModel.selectedCategory.collectAsStateWithLifecycle()
     val lastUpdateTime by viewModel.lastUpdateTime.collectAsStateWithLifecycle()
+    val locationBasis by viewModel.locationBasis.collectAsStateWithLifecycle()
     val refreshMessage = stringResource(R.string.weather_refresh)
     var showRefreshToast by remember { mutableStateOf(false) }
     var refreshToastGeneration by remember { mutableIntStateOf(0) }
@@ -151,6 +156,7 @@ fun WeatherForecastContent(
             lastUpdateTime = lastUpdateTime,
             onWeatherInfoRequested = onWeatherInfoRequested,
             listState = listState,
+            locationBasis = locationBasis,
         )
 
         IosToastMessageOverlay(
@@ -171,6 +177,7 @@ private fun WeatherForecastBody(
     lastUpdateTime: Long?,
     onWeatherInfoRequested: (WeatherInfoTopic) -> Unit,
     listState: LazyListState,
+    locationBasis: WeatherLocationBasis = WeatherLocationBasis.DEVICE,
 ) {
     val uriHandler = LocalUriHandler.current
     LazyColumn(
@@ -180,6 +187,13 @@ private fun WeatherForecastBody(
         contentPadding = PaddingValues(start = 8.dp, end = 8.dp, top = 16.dp, bottom = 8.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
+        // 위치 동의가 없으면 날씨·일출/일몰은 지도 중심 기준이다. 그 기준을 맨 위에 밝힌다.
+        if (locationBasis == WeatherLocationBasis.MAP_CENTER) {
+            item {
+                WeatherLocationBasisLabel()
+            }
+        }
+
         // ① 일출/일몰 카드
         item {
             SunTimeline(
@@ -388,6 +402,30 @@ fun WeatherSheetHeader(
         SheetHeaderDivider(
             visible = showDivider,
             thickness = WeatherSheetNavigationHeaderDividerThickness,
+        )
+    }
+}
+
+/** "지도 중심 기준" 표시(위치 동의가 없을 때). */
+@Composable
+internal fun WeatherLocationBasisLabel(modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = Icons.Default.Map,
+            contentDescription = null,
+            tint = IosSecondaryLabel,
+            modifier = Modifier.size(16.dp),
+        )
+        Spacer(modifier = Modifier.width(6.dp))
+        Text(
+            text = stringResource(R.string.weather_basis_map_center),
+            fontSize = 13.sp,
+            color = IosSecondaryLabel,
         )
     }
 }

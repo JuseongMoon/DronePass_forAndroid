@@ -21,8 +21,13 @@ import androidx.compose.material3.TextButton
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import com.ScienceFiction.DronePassAndroid.app.LaunchPermissionSequence
+import com.ScienceFiction.DronePassAndroid.feature.legal.LegalLaunchViewModel
+import com.ScienceFiction.DronePassAndroid.feature.legal.LocationConsentScreen
+import com.ScienceFiction.DronePassAndroid.feature.legal.TermsNoticeDialog
 import com.ScienceFiction.DronePassAndroid.core.data.NotificationPreferenceKeys
 import com.ScienceFiction.DronePassAndroid.core.data.storedLaunchNotificationPermissionRequested
 import com.ScienceFiction.DronePassAndroid.core.analytics.UserActivityTracker
@@ -92,6 +97,18 @@ class MainActivity : ComponentActivity() {
                 )
                 paywallRequest?.let { request ->
                     SubscriptionPaywall(subscriptionManager, request, this, onDismiss = { paywallRequest = null })
+                }
+                // 첫 실행: 약관 개정 안내(기존 설치) → 위치정보 이용 동의. 설정·지도에서 다시 연 동의 화면도 여기서 띄운다.
+                val legalLaunchViewModel: LegalLaunchViewModel = hiltViewModel()
+                val showTermsNotice by legalLaunchViewModel.showTermsNotice.collectAsStateWithLifecycle()
+                val showLocationConsent by legalLaunchViewModel.showLocationConsent.collectAsStateWithLifecycle()
+                if (showTermsNotice) {
+                    TermsNoticeDialog(onConfirm = legalLaunchViewModel::confirmTermsNotice)
+                } else if (showLocationConsent) {
+                    LocationConsentScreen(
+                        onAgree = legalLaunchViewModel::agreeLocationConsent,
+                        onDecline = legalLaunchViewModel::declineLocationConsent,
+                    )
                 }
                 subscriptionMessage?.let { message ->
                     AlertDialog(

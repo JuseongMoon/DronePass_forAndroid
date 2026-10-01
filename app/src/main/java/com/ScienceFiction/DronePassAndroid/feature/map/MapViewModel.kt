@@ -1,5 +1,9 @@
 package com.ScienceFiction.DronePassAndroid.feature.map
 
+import com.ScienceFiction.DronePassAndroid.core.location.LocationConsentRepository
+import com.ScienceFiction.DronePassAndroid.core.location.LocationUsagePurpose
+import com.ScienceFiction.DronePassAndroid.core.location.MapCenterStore
+import com.ScienceFiction.DronePassAndroid.core.location.MapFallbackCenter
 import android.content.Context
 import android.util.Log
 import androidx.datastore.core.DataStore
@@ -307,6 +311,8 @@ class MapViewModel @Inject constructor(
     private val droneSelectionState: DroneSelectionState,
     private val analyticsLogger: AnalyticsLogger,
     private val subscriptionManager: SubscriptionManager,
+    private val locationConsentRepository: LocationConsentRepository,
+    private val mapCenterStore: MapCenterStore,
     @ApplicationContext private val appContext: Context,
 ) : ViewModel() {
     private var hasCheckedLegacyShapeMigration = false
@@ -1200,6 +1206,29 @@ class MapViewModel @Inject constructor(
      * 실제 비행구역 로드는 [flightZoneLoadCollector] 가 visibleLayers 와 함께 감시하여
      * 둘 중 하나만 바뀌어도 debounce 후 fetch 한다.
      */
+    /**
+     * 위치 동의로 기기 위치를 써도 되는지. 저장값을 읽기 전에는 null 이라 권한 요청 순서를 정하지 않는다.
+     */
+    val locationAllowed: StateFlow<Boolean?> = locationConsentRepository.allowed
+        .map<Boolean, Boolean?> { it }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    /** 지도에 현재 위치를 띄울 때 이용 기록을 남긴다(같은 날은 한 건). */
+    fun onDeviceLocationShown() {
+        viewModelScope.launch {
+            locationConsentRepository.recordUsage(LocationUsagePurpose.CURRENT_LOCATION_ON_MAP)
+        }
+    }
+
+    /** 카메라가 멈춘 지도 중심. 위치 동의가 없을 때 날씨·일출/일몰 기준 위치가 된다. */
+    fun onMapCenterSettled(center: Coordinate) {
+        viewModelScope.launch { mapCenterStore.onMapCenterChanged(center) }
+    }
+
+    /** 위치 동의가 없을 때 첫 지도 위치: 마지막으로 본 지도 위치, 없으면 서울시청. */
+    suspend fun initialMapCenterWithoutLocation(): Coordinate =
+        mapCenterStore.lastViewedCenter() ?: MapFallbackCenter
+
     fun onMapBoundsChanged(
         southWestLat: Double,
         southWestLon: Double,

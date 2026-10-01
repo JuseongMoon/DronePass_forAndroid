@@ -41,10 +41,13 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ScienceFiction.DronePassAndroid.app.LaunchPermissionSequence
+import com.ScienceFiction.DronePassAndroid.app.LegalLaunchSequence
+import com.ScienceFiction.DronePassAndroid.app.LocationConsentPrompt
 import com.ScienceFiction.DronePassAndroid.BuildConfig
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.domain.model.Coordinate
 import com.ScienceFiction.DronePassAndroid.feature.kp.KpViewModel
+import com.ScienceFiction.DronePassAndroid.feature.map.component.LocationConsentRequiredButton
 import com.ScienceFiction.DronePassAndroid.feature.map.overlay.ShapeOverlayManager
 import com.ScienceFiction.DronePassAndroid.feature.sketch.SketchOverlayManager
 import com.ScienceFiction.DronePassAndroid.feature.sketch.SketchViewModel
@@ -177,9 +180,18 @@ fun MapScreen(
         onDispose { view.keepScreenOn = false }
     }
 
-    // 권한 요청 (앱 초기 진입 시 1회)
-    LaunchedEffect(Unit) {
-        if (!locationPermissionGranted) {
+    // 위치정보 이용 동의(위치정보법 제19조). 동의하기 전에는 OS 위치 권한도 묻지 않고 위치 API 도 부르지 않는다.
+    val locationAllowed by viewModel.locationAllowed.collectAsStateWithLifecycle()
+    val legalLaunchCompleted by LegalLaunchSequence.flowCompleted.collectAsStateWithLifecycle()
+    val locationUsable = locationAllowed == true && locationPermissionGranted
+    var showLocationConsentRequired by remember { mutableStateOf(false) }
+
+    // 권한 요청: 약관 안내·동의 화면이 끝난 뒤, 동의했을 때만 묻는다(설정에서 새로 동의한 때 포함).
+    // 동의하지 않았거나 이미 허용돼 있으면 위치 요청이 끝난 것으로 보고 알림 권한 차례로 넘긴다.
+    LaunchedEffect(legalLaunchCompleted, locationAllowed) {
+        val allowed = locationAllowed ?: return@LaunchedEffect
+        if (!legalLaunchCompleted) return@LaunchedEffect
+        if (allowed && !locationPermissionGranted) {
             locationPermissionsState.launchMultiplePermissionRequest()
         } else {
             LaunchPermissionSequence.markLocationRequestSettled()
@@ -259,10 +271,31 @@ fun MapScreen(
         wasLocationPermissionGranted = locationPermissionGranted
     }
 
-    // 위치 추적 설정 — 권한과 mapReady 가 모두 충족된 시점에 단 1회.
-    LaunchedEffect(locationPermissionGranted, mapReady) {
-        if (locationPermissionGranted && mapReady) {
-            naverMap?.let { setupLocationTracking(it, context) }
+    // 위치 동의가 없으면 첫 위치는 마지막으로 본 지도 위치, 없으면 서울시청이다(앱을 연 뒤 1회).
+    var initialCameraResolved by remember { mutableStateOf(false) }
+    LaunchedEffect(mapReady, locationAllowed) {
+        val allowed = locationAllowed ?: return@LaunchedEffect
+        if (!mapReady || initialCameraResolved) return@LaunchedEffect
+        initialCameraResolved = true
+        if (!allowed) {
+            val center = viewModel.initialMapCenterWithoutLocation()
+            naverMap?.cameraPosition = CameraPosition(
+                LatLng(center.latitude, center.longitude),
+                MapInitialZoomLevel,
+            )
+        }
+    }
+
+    // 위치 추적 — 동의·권한·mapReady 가 모두 충족되면 켜고, 철회하면 즉시 끈다.
+    LaunchedEffect(locationUsable, mapReady) {
+        val map = naverMap ?: return@LaunchedEffect
+        if (!mapReady) return@LaunchedEffect
+        if (locationUsable) {
+            map.uiSettings.isLocationButtonEnabled = true
+            setupLocationTracking(map, context)
+            viewModel.onDeviceLocationShown()
+        } else {
+            stopLocationTracking(map)
         }
     }
 
@@ -360,6 +393,28 @@ fun MapScreen(
         )
     }
 
+    if (showLocationConsentRequired) {
+        AlertDialog(
+            onDismissRequest = { showLocationConsentRequired = false },
+            text = { Text(stringResource(R.string.location_consent_required_message)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showLocationConsentRequired = false
+                        LocationConsentPrompt.show()
+                    },
+                ) {
+                    Text(stringResource(R.string.location_consent_required_review))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLocationConsentRequired = false }) {
+                    Text(stringResource(R.string.common_close))
+                }
+            },
+        )
+    }
+
     // 메인 레이아웃 (Box - MainScreen 이 이미 Scaffold 제공)
     Box(modifier = Modifier.fillMaxSize()) {
         // 네이버 지도
@@ -380,7 +435,8 @@ fun MapScreen(
                             MapInitialZoomLevel,
                         )
                         map.uiSettings.apply {
-                            isLocationButtonEnabled = true
+                            // 위치 동의·권한이 확인된 뒤에 켠다. 그 전에는 같은 자리의 안내 버튼을 둔다.
+                            isLocationButtonEnabled = false
                             // 확대/축소는 MapFloatingButtons 의 오른쪽 버튼 스택에 ZoomControlView 로 둔다.
                             isZoomControlEnabled = false
                             isCompassEnabled = true
@@ -394,6 +450,8 @@ fun MapScreen(
 
                         val cameraListener = NaverMap.OnCameraIdleListener {
                             viewModel.updateCurrentBoundsFrom(map)
+                            // 위치 동의가 없을 때의 날씨 기준 위치. 동의 상태에서는 저장소가 무시한다.
+                            viewModel.onMapCenterSettled(Coordinate.fromLatLng(map.cameraPosition.target))
                             // iOS removeOverlaysOutsideViewport(buffer=0.2) 매핑:
                             // viewport 밖 폴리곤 가시성만 토글해 그리기 비용을 줄인다.
                             // 인스턴스는 캐시에 유지하므로 카메라 재진입 시 즉시 복원된다.
@@ -452,6 +510,21 @@ fun MapScreen(
             onShowWeather = { showWeatherSheet = true },
             modifier = Modifier.fillMaxSize(),
         )
+
+        // 위치 동의가 없을 때 SDK 현재 위치 버튼 자리에 같은 모양의 버튼을 두고, 누를 때만 안내한다.
+        if (mapReady && !locationUsable) {
+            LocationConsentRequiredButton(
+                onClick = {
+                    if (locationAllowed == true) {
+                        // 동의는 했지만 OS 권한이 없다: 권한을 다시 묻는다.
+                        locationPermissionsState.launchMultiplePermissionRequest()
+                    } else {
+                        showLocationConsentRequired = true
+                    }
+                },
+                modifier = Modifier.align(Alignment.BottomStart),
+            )
+        }
 
         SnackbarHost(
             hostState = snackbarHostState,
@@ -600,6 +673,14 @@ private fun setupLocationTracking(map: NaverMap, context: android.content.Contex
     } catch (e: Exception) {
         Log.e("MapScreen", "위치 추적 설정 실패: ${e.message}", e)
     }
+}
+
+/** 위치 동의 철회 또는 권한 회수: 위치 갱신을 멈추고 현재 위치 표시와 SDK 버튼을 끈다. */
+private fun stopLocationTracking(map: NaverMap) {
+    map.locationTrackingMode = LocationTrackingMode.None
+    map.locationSource = null
+    map.locationOverlay.isVisible = false
+    map.uiSettings.isLocationButtonEnabled = false
 }
 
 private const val LOCATION_PERMISSION_REQUEST_CODE = 1000

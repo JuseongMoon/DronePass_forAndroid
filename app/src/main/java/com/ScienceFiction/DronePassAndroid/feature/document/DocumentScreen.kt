@@ -250,3 +250,26 @@ fun PrivacyPolicyScreen(
         errorMessageResId = R.string.document_terms_privacy_error_message,
     )
 }
+
+/**
+ * 위치기반서비스 이용약관 화면. 이용약관과 같은 방식으로 원격 문서를 받아 렌더링한다.
+ */
+@Composable
+fun LocationTermsScreen(
+    onDismiss: () -> Unit,
+    viewModel: DocumentViewModel = hiltViewModel(),
+) {
+    val state by viewModel.locationTermsState.collectAsStateWithLifecycle()
+    LaunchedEffect(Unit) {
+        if (shouldAutoLoadParsedDocumentOnEnter(state)) viewModel.loadLocationTerms()
+    }
+    DocumentScreen(
+        title = stringResource(R.string.document_location_terms_title),
+        state = state,
+        onRetry = { viewModel.loadLocationTerms() },
+        onDismiss = onDismiss,
+        loadingTextResId = R.string.document_terms_loading,
+        errorTitleResId = R.string.document_location_terms_error_title,
+        errorMessageResId = R.string.document_terms_service_error_message,
+    )
+}

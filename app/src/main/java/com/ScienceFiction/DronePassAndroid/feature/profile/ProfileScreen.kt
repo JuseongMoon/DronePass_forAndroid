@@ -55,6 +55,7 @@ import com.ScienceFiction.DronePassAndroid.ui.component.SheetLargeTitleContentGa
 import com.ScienceFiction.DronePassAndroid.ui.component.SheetLargeTitleHeader
 import com.ScienceFiction.DronePassAndroid.ui.theme.IosSeparator
 import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGroupedBackground
+import com.ScienceFiction.DronePassAndroid.feature.document.LocationTermsScreen
 import com.ScienceFiction.DronePassAndroid.feature.document.PrivacyPolicyScreen
 import com.ScienceFiction.DronePassAndroid.feature.document.TermsOfServiceScreen
 import java.text.DateFormat
@@ -242,6 +243,13 @@ fun ProfileScreen(
                     showChevron = true,
                     onClick = { webDocTarget = WebDocTarget.Privacy },
                 )
+                InsetGroupedDivider()
+                InsetGroupedRow(
+                    title = stringResource(R.string.profile_terms_location),
+                    titleColor = MaterialTheme.colorScheme.primary,
+                    showChevron = true,
+                    onClick = { webDocTarget = WebDocTarget.LocationTerms },
+                )
             }
 
             // ===== 4. 계정 관리 섹션 (회원 탈퇴만) =====
@@ -398,6 +406,7 @@ fun ProfileScreen(
             when (target) {
                 WebDocTarget.Terms -> TermsOfServiceScreen(onDismiss = { webDocTarget = null })
                 WebDocTarget.Privacy -> PrivacyPolicyScreen(onDismiss = { webDocTarget = null })
+                WebDocTarget.LocationTerms -> LocationTermsScreen(onDismiss = { webDocTarget = null })
             }
         }
     }
@@ -414,6 +423,7 @@ private tailrec fun Context.findActivity(): Activity? {
 private sealed class WebDocTarget {
     data object Terms : WebDocTarget()
     data object Privacy : WebDocTarget()
+    data object LocationTerms : WebDocTarget()
 }
 
 private data class ProfileResultDialog(

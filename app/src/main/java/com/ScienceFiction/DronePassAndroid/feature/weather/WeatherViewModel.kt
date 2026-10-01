@@ -1,7 +1,5 @@
 package com.ScienceFiction.DronePassAndroid.feature.weather
 
-import android.annotation.SuppressLint
-import android.location.Location
 import androidx.annotation.StringRes
 import com.ScienceFiction.DronePassAndroid.R
 import androidx.datastore.core.DataStore
@@ -12,13 +10,16 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ScienceFiction.DronePassAndroid.core.data.UserLocationKeys
 import com.ScienceFiction.DronePassAndroid.core.data.repository.WeatherRepository
+import com.ScienceFiction.DronePassAndroid.core.location.DeviceLocation
+import com.ScienceFiction.DronePassAndroid.core.location.DeviceLocationReader
+import com.ScienceFiction.DronePassAndroid.core.location.DeviceLocationResult
+import com.ScienceFiction.DronePassAndroid.core.location.LocationConsentRepository
+import com.ScienceFiction.DronePassAndroid.core.location.LocationUsagePurpose
+import com.ScienceFiction.DronePassAndroid.core.location.MapCenterStore
 import com.ScienceFiction.DronePassAndroid.core.util.AnalyticsLogger
 import com.ScienceFiction.DronePassAndroid.core.util.DroneCategory
 import com.ScienceFiction.DronePassAndroid.domain.model.WeatherData
 import com.ScienceFiction.DronePassAndroid.service.NotificationScheduleRestorer
-import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.Priority
-import com.google.android.gms.tasks.CancellationTokenSource
 import com.ScienceFiction.DronePassAndroid.core.data.remote.weather.WeatherServiceException
 import com.ScienceFiction.DronePassAndroid.core.data.remote.weather.WeatherServiceFailure
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -30,11 +31,11 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
 private const val WEATHER_GPS_ACCURACY_THRESHOLD_METERS = 50.0
@@ -55,25 +56,18 @@ internal fun shouldFetchWeatherAfterCategorySelection(
     return refreshWeather
 }
 
-internal enum class WeatherLocationFetchSource {
-    CurrentLocation,
-    LastKnownLocation,
-    Unavailable,
-}
-
-internal fun resolveWeatherLocationFetchSource(
-    hasCurrentLocation: Boolean,
-    hasLastKnownLocation: Boolean,
-): WeatherLocationFetchSource = when {
-    hasCurrentLocation -> WeatherLocationFetchSource.CurrentLocation
-    hasLastKnownLocation -> WeatherLocationFetchSource.LastKnownLocation
-    else -> WeatherLocationFetchSource.Unavailable
+/** 날씨·일출/일몰의 기준 위치. 위치 동의가 없으면 지도 중심을 쓰고 화면에 그 사실을 표시한다. */
+enum class WeatherLocationBasis {
+    DEVICE,
+    MAP_CENTER,
 }
 
 @HiltViewModel
 class WeatherViewModel @Inject constructor(
     private val weatherRepository: WeatherRepository,
-    private val fusedLocationClient: FusedLocationProviderClient,
+    private val deviceLocationReader: DeviceLocationReader,
+    private val locationConsentRepository: LocationConsentRepository,
+    private val mapCenterStore: MapCenterStore,
     private val dataStore: DataStore<Preferences>,
     private val analyticsLogger: AnalyticsLogger,
     private val notificationScheduleRestorer: NotificationScheduleRestorer,
@@ -100,6 +94,9 @@ class WeatherViewModel @Inject constructor(
     private val _isUsingGps = MutableStateFlow(false)
     val isUsingGps: StateFlow<Boolean> = _isUsingGps.asStateFlow()
 
+    private val _locationBasis = MutableStateFlow(WeatherLocationBasis.DEVICE)
+    val locationBasis: StateFlow<WeatherLocationBasis> = _locationBasis.asStateFlow()
+
     private val _refreshCompleted = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     val refreshCompleted: SharedFlow<Unit> = _refreshCompleted
 
@@ -116,6 +113,13 @@ class WeatherViewModel @Inject constructor(
     init {
         // 초기 1회 로드만 init 에서. 자동 갱신은 화면이 START 될 때만 시작.
         refreshWeather(showRefreshMessage = false)
+        // 위치 동의·철회 즉시 기준 위치를 바꿔 다시 불러온다(철회하면 기기 위치 사용을 바로 멈춘다).
+        viewModelScope.launch {
+            locationConsentRepository.allowed.drop(1).collect {
+                weatherRepository.invalidateCache()
+                fetchCurrentLocationAndWeather()
+            }
+        }
     }
 
     /**
@@ -193,47 +197,34 @@ class WeatherViewModel @Inject constructor(
     }
 
     /**
-     * 현재 위치 가져와서 날씨 조회
+     * 현재 위치 가져와서 날씨 조회.
+     * 위치 동의가 없으면 기기 위치를 읽지 않고, 그 시점의 지도 중심으로 요청한다.
      */
-    @SuppressLint("MissingPermission")
     private suspend fun fetchCurrentLocationAndWeather(categoryOverride: DroneCategory? = null) {
         _isLoading.value = true
         _error.value = null
 
-        try {
-            val cancellationToken = CancellationTokenSource()
-            val location = fusedLocationClient.getCurrentLocation(
-                Priority.PRIORITY_BALANCED_POWER_ACCURACY,
-                cancellationToken.token
-            ).await()
-            val lastLocation = if (location == null) {
-                fusedLocationClient.lastLocation.await()
-            } else {
-                null
-            }
-
-            when (resolveWeatherLocationFetchSource(location != null, lastLocation != null)) {
-                WeatherLocationFetchSource.CurrentLocation -> fetchWeatherForUserLocation(
-                    location = requireNotNull(location),
-                    categoryOverride = categoryOverride,
-                )
-                WeatherLocationFetchSource.LastKnownLocation -> fetchWeatherForUserLocation(
-                    location = requireNotNull(lastLocation),
-                    categoryOverride = categoryOverride,
-                )
-                WeatherLocationFetchSource.Unavailable -> failWeatherLocation(WeatherError.LocationUnavailable)
-            }
-        } catch (e: SecurityException) {
-            failWeatherLocation(WeatherError.LocationPermission)
-        } catch (e: Exception) {
-            failWeatherLocation(WeatherError.LocationUnavailable)
+        when (
+            val result = deviceLocationReader.read(
+                LocationUsagePurpose.WEATHER,
+                LocationUsagePurpose.SUNRISE_SUNSET,
+            )
+        ) {
+            is DeviceLocationResult.Available -> fetchWeatherForUserLocation(
+                location = result.location,
+                categoryOverride = categoryOverride,
+            )
+            DeviceLocationResult.NotAllowed -> fetchWeatherForMapCenter(categoryOverride)
+            DeviceLocationResult.PermissionDenied -> failWeatherLocation(WeatherError.LocationPermission)
+            DeviceLocationResult.Unavailable -> failWeatherLocation(WeatherError.LocationUnavailable)
         }
     }
 
     private suspend fun fetchWeatherForUserLocation(
-        location: Location,
+        location: DeviceLocation,
         categoryOverride: DroneCategory? = null,
     ) {
+        _locationBasis.value = WeatherLocationBasis.DEVICE
         updateLocationAccuracy(location)
         fetchWeatherInternal(
             latitude = location.latitude,
@@ -243,15 +234,26 @@ class WeatherViewModel @Inject constructor(
         )
     }
 
+    private suspend fun fetchWeatherForMapCenter(categoryOverride: DroneCategory? = null) {
+        _locationBasis.value = WeatherLocationBasis.MAP_CENTER
+        clearLocationAccuracy()
+        val center = mapCenterStore.weatherBasisCenter()
+        fetchWeatherInternal(
+            latitude = center.latitude,
+            longitude = center.longitude,
+            category = categoryOverride ?: selectedCategory.value,
+            isUserLocationBacked = false,
+        )
+    }
+
     private fun failWeatherLocation(error: WeatherError) {
         _error.value = error
         clearLocationAccuracy()
         _isLoading.value = false
     }
 
-    private fun updateLocationAccuracy(location: Location) {
-        val accuracy = if (location.hasAccuracy()) location.accuracy else null
-        val state = resolveWeatherLocationAccuracy(accuracy)
+    private fun updateLocationAccuracy(location: DeviceLocation) {
+        val state = resolveWeatherLocationAccuracy(location.accuracyMeters)
         _locationAccuracyMeters.value = state.accuracyMeters
         _isUsingGps.value = state.isUsingGps
     }
@@ -262,7 +264,9 @@ class WeatherViewModel @Inject constructor(
     }
 
     /**
-     * 날씨 API 호출
+     * 날씨 API 호출.
+     * 일출·일몰 알림은 날씨를 받은 같은 기준 위치(기기 위치 또는 지도 중심)로 다시 예약한다.
+     * 기기 위치 캐시는 동의 상태에서 기기 위치로 받았을 때만 남긴다.
      */
     private suspend fun fetchWeatherInternal(
         latitude: Double,
@@ -278,8 +282,11 @@ class WeatherViewModel @Inject constructor(
                 _lastUpdateTime.value = data.fetchedAtMillis ?: System.currentTimeMillis()
                 if (isUserLocationBacked) {
                     runCatching { cacheSunAlarmLocation(latitude, longitude) }
-                    runCatching {
-                        notificationScheduleRestorer.rescheduleSunAlarmsForWeatherData(data)
+                }
+                runCatching {
+                    val scheduled = notificationScheduleRestorer.rescheduleSunAlarmsForWeatherData(data)
+                    if (scheduled && isUserLocationBacked) {
+                        locationConsentRepository.recordUsage(LocationUsagePurpose.SUNRISE_ALERT)
                     }
                 }
             }
@@ -290,6 +297,8 @@ class WeatherViewModel @Inject constructor(
     }
 
     private suspend fun cacheSunAlarmLocation(latitude: Double, longitude: Double) {
+        // 읽는 도중 철회됐다면 캐시를 다시 남기지 않는다.
+        if (!locationConsentRepository.isAllowed()) return
         dataStore.edit { preferences ->
             preferences[UserLocationKeys.KEY_LAST_LATITUDE] = latitude
             preferences[UserLocationKeys.KEY_LAST_LONGITUDE] = longitude

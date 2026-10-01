@@ -58,6 +58,9 @@ import com.ScienceFiction.DronePassAndroid.feature.kp.KpForecastContent
 import com.ScienceFiction.DronePassAndroid.feature.profile.ProfileScreen
 import com.ScienceFiction.DronePassAndroid.feature.kp.KpSheetHeader
 import com.ScienceFiction.DronePassAndroid.feature.kp.KpViewModel
+import com.ScienceFiction.DronePassAndroid.feature.legal.BusinessInfoScreen
+import com.ScienceFiction.DronePassAndroid.feature.legal.LocationConsentSettingsViewModel
+import com.ScienceFiction.DronePassAndroid.feature.legal.LocationUsageHistoryScreen
 import com.ScienceFiction.DronePassAndroid.feature.weather.WeatherForecastContent
 import com.ScienceFiction.DronePassAndroid.feature.weather.WeatherInfoTopic
 import com.ScienceFiction.DronePassAndroid.feature.weather.WeatherSheetHeader
@@ -193,6 +196,12 @@ private fun SettingsMainContent(
     var showLanguageMenu by remember { mutableStateOf(false) }
     var showLanguageChangeAlert by rememberSaveable { mutableStateOf(false) }
     var koreaFeaturesAlertOn by remember { mutableStateOf<Boolean?>(null) }
+    val locationConsentViewModel: LocationConsentSettingsViewModel = hiltViewModel()
+    val locationConsentAllowed by locationConsentViewModel.consentAllowed.collectAsStateWithLifecycle()
+    val locationUsageRecords by locationConsentViewModel.usageRecords.collectAsStateWithLifecycle()
+    var showLocationWithdrawDialog by remember { mutableStateOf(false) }
+    var showLocationUsageHistory by remember { mutableStateOf(false) }
+    var showBusinessInfo by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -281,6 +290,10 @@ private fun SettingsMainContent(
                         text = stringResource(R.string.subscription_legacy_subscribed),
                         color = IosSystemOrange,
                     )
+                }
+                // "평생 무료"가 나오는 플랜 이름·설명과 같은 화면에 조건 문장을 함께 둔다(사양 §5).
+                if (plan.legacyKind != null) {
+                    SubscriptionCaptionRow(stringResource(R.string.subscription_lifetime_condition))
                 }
                 if (plan.isPaidSubscriber || plan.paymentIssue) {
                     InsetGroupedDivider()
@@ -405,7 +418,34 @@ private fun SettingsMainContent(
                 )
             }
 
-            // ===== 6. 앱 =====
+            // ===== 6. 위치정보 (위치정보법 제19조·제24조: 선택 동의, 언제든 철회, 이용 기록 열람) =====
+            InsetGroupedSection(
+                header = stringResource(R.string.settings_section_location),
+                footer = stringResource(R.string.settings_location_footer),
+            ) {
+                InsetGroupedToggleRow(
+                    title = stringResource(R.string.settings_location_consent),
+                    checked = locationConsentAllowed,
+                    onCheckedChange = { turnOn ->
+                        // 켜기는 동의 화면에서만 저장하고, 끄기는 확인을 받은 뒤 철회한다.
+                        if (turnOn) locationConsentViewModel.requestConsent() else showLocationWithdrawDialog = true
+                    },
+                )
+                InsetGroupedDivider()
+                InsetGroupedRow(
+                    title = stringResource(R.string.settings_location_history),
+                    onClick = { showLocationUsageHistory = true },
+                )
+                SubscriptionCaptionRow(stringResource(R.string.settings_location_os_hint))
+                InsetGroupedDivider()
+                InsetGroupedRow(
+                    title = stringResource(R.string.settings_location_open_settings),
+                    titleColor = MaterialTheme.colorScheme.primary,
+                    onClick = { openAppDetailsSettings(context) },
+                )
+            }
+
+            // ===== 7. 앱 =====
             InsetGroupedSection(header = stringResource(R.string.settings_section_app_info)) {
                 // 언어 (iOS Picker 메뉴 정합 — Material DropdownMenu)
                 Box {
@@ -479,6 +519,13 @@ private fun SettingsMainContent(
                     title = stringResource(R.string.settings_patch_notes),
                     titleColor = MaterialTheme.colorScheme.primary,
                     onClick = onNavigateToPatchNotes,
+                )
+                InsetGroupedDivider()
+                // 전자상거래법 제10조: 사업자 정보는 설정 첫 단계에서 연다.
+                InsetGroupedRow(
+                    title = stringResource(R.string.business_info_title),
+                    titleColor = MaterialTheme.colorScheme.primary,
+                    onClick = { showBusinessInfo = true },
                 )
             }
 
@@ -678,6 +725,56 @@ private fun SettingsMainContent(
         }
     }
 
+    if (showLocationWithdrawDialog) {
+        AlertDialog(
+            onDismissRequest = { showLocationWithdrawDialog = false },
+            text = { Text(stringResource(R.string.settings_location_withdraw_message)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showLocationWithdrawDialog = false
+                        locationConsentViewModel.withdraw()
+                    },
+                ) {
+                    Text(
+                        text = stringResource(R.string.settings_location_withdraw),
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLocationWithdrawDialog = false }) {
+                    Text(stringResource(R.string.common_cancel))
+                }
+            },
+        )
+    }
+
+    if (showLocationUsageHistory) {
+        DronePassModalBottomSheet(
+            onDismissRequest = { showLocationUsageHistory = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            containerColor = IosSystemGroupedBackground,
+            dragHandle = null,
+        ) {
+            LocationUsageHistoryScreen(
+                records = locationUsageRecords,
+                onClose = { showLocationUsageHistory = false },
+            )
+        }
+    }
+
+    if (showBusinessInfo) {
+        DronePassModalBottomSheet(
+            onDismissRequest = { showBusinessInfo = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            containerColor = IosSystemGroupedBackground,
+            dragHandle = null,
+        ) {
+            BusinessInfoScreen(onClose = { showBusinessInfo = false })
+        }
+    }
+
     // 만료된 도형 전체 삭제 확인 다이얼로그
     if (showDeleteExpiredDialog) {
         AlertDialog(
@@ -733,4 +830,13 @@ private fun SubscriptionCaptionRow(text: String, color: Color = IosSecondaryLabe
             .fillMaxWidth()
             .padding(horizontal = InsetGroupedRowHorizontalPadding, vertical = 10.dp),
     )
+}
+
+/** 이 앱의 시스템 설정(권한) 화면. */
+private fun openAppDetailsSettings(context: android.content.Context) {
+    val intent = android.content.Intent(
+        android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+        android.net.Uri.fromParts("package", context.packageName, null),
+    ).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+    runCatching { context.startActivity(intent) }
 }

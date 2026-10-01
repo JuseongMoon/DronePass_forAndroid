@@ -9,6 +9,9 @@ import com.ScienceFiction.DronePassAndroid.core.data.storedEndDateAlarmEnabled
 import com.ScienceFiction.DronePassAndroid.core.data.storedSunAlarmLocation
 import com.ScienceFiction.DronePassAndroid.core.data.storedSunriseAlarmEnabled
 import com.ScienceFiction.DronePassAndroid.core.data.storedSunsetAlarmEnabled
+import com.ScienceFiction.DronePassAndroid.core.location.LocationConsentRepository
+import com.ScienceFiction.DronePassAndroid.core.location.LocationUsagePurpose
+import com.ScienceFiction.DronePassAndroid.core.location.MapCenterStore
 import com.ScienceFiction.DronePassAndroid.domain.model.WeatherData
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -27,6 +30,8 @@ class NotificationScheduleRestorer @Inject constructor(
     private val notificationScheduler: NotificationScheduler,
     private val weatherRepository: WeatherRepository,
     private val shapeRepository: ShapeRepository,
+    private val locationConsentRepository: LocationConsentRepository,
+    private val mapCenterStore: MapCenterStore,
 ) {
     companion object {
         private const val TAG = "NotificationScheduleRestorer"
@@ -61,7 +66,8 @@ class NotificationScheduleRestorer @Inject constructor(
         }
     }
 
-    suspend fun rescheduleSunAlarmsForWeatherData(weatherData: WeatherData) {
+    /** 켜진 일출·일몰 알림을 [weatherData] 로 다시 예약한다. 하나라도 예약했으면 true. */
+    suspend fun rescheduleSunAlarmsForWeatherData(weatherData: WeatherData): Boolean {
         val preferences = dataStore.data.first()
         val sunriseEnabled = storedSunriseAlarmEnabled(preferences)
         val sunsetEnabled = storedSunsetAlarmEnabled(preferences)
@@ -78,19 +84,30 @@ class NotificationScheduleRestorer @Inject constructor(
                 utcOffsetSeconds = weatherData.utcOffsetSeconds,
             )
         }
+        return sunriseEnabled || sunsetEnabled
     }
 
+    /**
+     * 기준 위치: 위치 동의 상태면 마지막으로 읽은 기기 위치(캐시), 아니면 마지막으로 본 지도 중심.
+     * 동의 없이는 기기 위치 캐시를 읽지 않는다(철회 때 캐시도 지워진다).
+     */
     private suspend fun rescheduleSunAlarms(
         preferences: Preferences,
         sunriseEnabled: Boolean,
         sunsetEnabled: Boolean,
     ) {
-        val location = storedSunAlarmLocation(preferences)
-        if (location == null) {
-            Log.w(TAG, "저장된 위치가 없어 일출/일몰 알림 복구를 건너뜀")
-            return
+        val (lat, lon) = if (locationConsentRepository.isAllowed()) {
+            val location = storedSunAlarmLocation(preferences)
+            if (location == null) {
+                Log.w(TAG, "저장된 위치가 없어 일출/일몰 알림 복구를 건너뜀")
+                return
+            }
+            locationConsentRepository.recordUsage(LocationUsagePurpose.SUNRISE_ALERT)
+            location
+        } else {
+            val center = mapCenterStore.weatherBasisCenter()
+            center.latitude to center.longitude
         }
-        val (lat, lon) = location
 
         val weatherData = weatherRepository.fetchWeather(lat, lon).getOrNull()
         if (sunriseEnabled) {

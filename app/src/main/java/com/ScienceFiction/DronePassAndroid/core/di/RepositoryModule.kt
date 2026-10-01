@@ -2,6 +2,9 @@ package com.ScienceFiction.DronePassAndroid.core.di
 
 import com.ScienceFiction.DronePassAndroid.core.data.remote.weather.FirebaseWeatherKitDataSource
 import com.ScienceFiction.DronePassAndroid.core.data.remote.weather.WeatherKitDataSource
+import com.ScienceFiction.DronePassAndroid.core.location.DeviceLocationReader
+import com.ScienceFiction.DronePassAndroid.core.location.DeviceLocationSource
+import com.ScienceFiction.DronePassAndroid.core.location.FusedDeviceLocationSource
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -21,4 +24,8 @@ abstract class RepositoryModule {
     /** 날씨: Firebase callable `getAndroidWeather`(WeatherKit 중계). 테스트는 가짜 소스로 바꾼다. */
     @Binds
     abstract fun bindWeatherKitDataSource(impl: FirebaseWeatherKitDataSource): WeatherKitDataSource
+
+    /** 기기 위치: Fused Location. 위치 동의 게이트는 [DeviceLocationReader] 가 맡는다. */
+    @Binds
+    abstract fun bindDeviceLocationSource(impl: FusedDeviceLocationSource): DeviceLocationSource
 }

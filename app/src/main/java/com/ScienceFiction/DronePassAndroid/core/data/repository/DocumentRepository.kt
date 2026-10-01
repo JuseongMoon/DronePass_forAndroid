@@ -37,11 +37,13 @@ class DocumentRepository @Inject constructor(
 
         private const val PATH_TERMS = "dronepass/terms/termsofservice"
         private const val PATH_PRIVACY = "dronepass/terms/privacypolicy"
+        private const val PATH_LOCATION_TERMS = "dronepass/terms/locationterms"
         private const val PATH_PATCH_NOTES = "dronepass/version-patches"
     }
 
     @Volatile private var cachedTerms: CacheEntry<ParsedDocument>? = null
     @Volatile private var cachedPrivacy: CacheEntry<ParsedDocument>? = null
+    @Volatile private var cachedLocationTerms: CacheEntry<ParsedDocument>? = null
     private val mutex = Mutex()
 
     /** 현재 앱 언어 기준 파일명 suffix 결정. `ko` → `.txt`, 그 외 → `_en.txt`. */
@@ -64,6 +66,14 @@ class DocumentRepository @Inject constructor(
         cacheSet = { cachedPrivacy = it },
         path = localizedPath(PATH_PRIVACY),
         label = "PrivacyPolicy",
+    )
+
+    /** 위치기반서비스 이용약관. 이용약관과 같은 방식(`locationterms.txt` / `_en.txt`). */
+    suspend fun fetchLocationTerms(): Result<ParsedDocument> = fetchCachedDocument(
+        cacheGet = { cachedLocationTerms },
+        cacheSet = { cachedLocationTerms = it },
+        path = localizedPath(PATH_LOCATION_TERMS),
+        label = "LocationTerms",
     )
 
     /**
@@ -89,6 +99,7 @@ class DocumentRepository @Inject constructor(
     fun invalidateCache() {
         cachedTerms = null
         cachedPrivacy = null
+        cachedLocationTerms = null
     }
 
     private suspend fun fetchCachedDocument(

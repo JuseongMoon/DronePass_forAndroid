@@ -66,6 +66,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.feature.document.PrivacyPolicyScreen
 import com.ScienceFiction.DronePassAndroid.feature.document.TermsOfServiceScreen
+import com.ScienceFiction.DronePassAndroid.feature.legal.BusinessInfoScreen
 import com.ScienceFiction.DronePassAndroid.ui.component.DronePassModalBottomSheet
 import com.ScienceFiction.DronePassAndroid.ui.theme.IosSecondaryLabel
 import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGreen
@@ -180,13 +181,19 @@ fun SubscriptionPaywall(
                 Spacer(Modifier.height(24.dp))
 
                 // iOS planSection
+                // 구매 버튼이 보이는 상태(무료·확인 중). 청약철회·미성년자·판매자 고지는 이때만 보여 준다.
+                // (아래 when 의 마지막 else 분기와 같은 조건)
+                val showsPurchase = !isPro && (status.legacyKind == null || status.isPaidSubscriber)
                 when {
                     status.legacyKind == LegacyKind.EARLY_ACCESS && !status.isPaidSubscriber -> Unit // 카드가 이미 안내
                     status.legacyKind == LegacyKind.ORIGINAL_DOWNLOAD && !status.isPaidSubscriber ->
-                        ProStatusLabel(
-                            icon = Icons.Default.CardGiftcard, // iOS gift.fill
-                            text = stringResource(R.string.subscription_status_legacy),
-                        )
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            ProStatusLabel(
+                                icon = Icons.Default.CardGiftcard, // iOS gift.fill
+                                text = stringResource(R.string.subscription_status_legacy),
+                            )
+                            LifetimeConditionText(modifier = Modifier.padding(top = 8.dp))
+                        }
                     isPro -> {
                         ProStatusLabel(
                             icon = Icons.Default.Verified, // iOS checkmark.seal.fill
@@ -200,6 +207,10 @@ fun SubscriptionPaywall(
                                 textAlign = TextAlign.Center,
                                 modifier = Modifier.padding(top = 12.dp),
                             )
+                            // Early Access 는 위 카드에 이미 조건 문장이 있다.
+                            if (status.legacyKind != LegacyKind.EARLY_ACCESS) {
+                                LifetimeConditionText(modifier = Modifier.padding(top = 4.dp))
+                            }
                         }
                         if (status.isPaidSubscriber) {
                             TextButton(onClick = { manager.openManagement(activity) }) {
@@ -272,6 +283,15 @@ fun SubscriptionPaywall(
                     Spacer(Modifier.height(8.dp))
                 }
                 FinePrint(stringResource(R.string.subscription_cross_platform_notice))
+                if (showsPurchase) {
+                    // 전자상거래법 제17조⑥(청약철회 제한 표시)·제13조②(미성년자 취소)·판매자 정보
+                    Spacer(Modifier.height(8.dp))
+                    FinePrint(stringResource(R.string.subscription_withdrawal_notice))
+                    Spacer(Modifier.height(8.dp))
+                    FinePrint(stringResource(R.string.subscription_minor_notice))
+                    Spacer(Modifier.height(8.dp))
+                    SellerLine(onBusinessInfo = { document = "business" })
+                }
             }
 
             Row(
@@ -301,6 +321,12 @@ fun SubscriptionPaywall(
     when (document) {
         "terms" -> DronePassModalBottomSheet(onDismissRequest = { document = null }) { TermsOfServiceScreen(onDismiss = { document = null }) }
         "privacy" -> DronePassModalBottomSheet(onDismissRequest = { document = null }) { PrivacyPolicyScreen(onDismiss = { document = null }) }
+        "business" -> DronePassModalBottomSheet(
+            onDismissRequest = { document = null },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            containerColor = IosSystemGroupedBackground,
+            dragHandle = null,
+        ) { BusinessInfoScreen(onClose = { document = null }) }
     }
 }
 
@@ -441,6 +467,46 @@ private fun EarlyAccessCard() {
                 color = IosSystemGreen,
             )
         }
+        LifetimeConditionText()
+    }
+}
+
+/** "평생 무료" 조건 문장(사양 §5). "평생"이 나오는 화면에 함께 둔다. */
+@Composable
+internal fun LifetimeConditionText(modifier: Modifier = Modifier) {
+    Text(
+        text = stringResource(R.string.subscription_lifetime_condition),
+        fontSize = 12.sp,
+        lineHeight = 16.sp,
+        color = IosSecondaryLabel,
+        textAlign = TextAlign.Center,
+        modifier = modifier,
+    )
+}
+
+/** "판매자: 주식회사 싸이언스픽션 · 사업자 정보". "사업자 정보"는 사업자 정보 화면으로 가는 링크다. */
+@Composable
+private fun SellerLine(onBusinessInfo: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 4.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = stringResource(R.string.subscription_seller) + " · ",
+            fontSize = 12.sp,
+            lineHeight = 17.sp,
+            color = IosSecondaryLabel,
+        )
+        Text(
+            text = stringResource(R.string.business_info_title),
+            fontSize = 12.sp,
+            lineHeight = 17.sp,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.clickable(onClick = onBusinessInfo),
+        )
     }
 }
 

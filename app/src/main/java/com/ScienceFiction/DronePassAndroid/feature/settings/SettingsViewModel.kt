@@ -1,6 +1,5 @@
 package com.ScienceFiction.DronePassAndroid.feature.settings
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log
 import androidx.datastore.core.DataStore
@@ -20,14 +19,16 @@ import com.ScienceFiction.DronePassAndroid.core.data.sync.RealtimeSyncManager
 import com.ScienceFiction.DronePassAndroid.core.data.storedEndDateAlarmEnabled
 import com.ScienceFiction.DronePassAndroid.core.data.storedSunriseAlarmEnabled
 import com.ScienceFiction.DronePassAndroid.core.data.storedSunsetAlarmEnabled
+import com.ScienceFiction.DronePassAndroid.core.location.DeviceLocationReader
+import com.ScienceFiction.DronePassAndroid.core.location.DeviceLocationResult
+import com.ScienceFiction.DronePassAndroid.core.location.LocationConsentRepository
+import com.ScienceFiction.DronePassAndroid.core.location.LocationUsagePurpose
+import com.ScienceFiction.DronePassAndroid.core.location.MapCenterStore
 import com.ScienceFiction.DronePassAndroid.feature.auth.AuthRepository
 import com.ScienceFiction.DronePassAndroid.feature.auth.AuthState
 import com.ScienceFiction.DronePassAndroid.service.FcmService
 import com.ScienceFiction.DronePassAndroid.service.NotificationScheduler
 import com.ScienceFiction.DronePassAndroid.service.buildEndDateAlarmReconcilePlan
-import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.Priority
-import com.google.android.gms.tasks.CancellationTokenSource
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
@@ -41,7 +42,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
 @HiltViewModel
@@ -55,7 +55,9 @@ class SettingsViewModel @Inject constructor(
     private val droneRepository: DroneRepository,
     private val sketchRepository: SketchRepository,
     private val firestore: FirebaseFirestore,
-    private val fusedLocationClient: FusedLocationProviderClient,
+    private val deviceLocationReader: DeviceLocationReader,
+    private val locationConsentRepository: LocationConsentRepository,
+    private val mapCenterStore: MapCenterStore,
     private val realtimeSyncManager: RealtimeSyncManager,
     private val kpIndexRepository: KpIndexRepository,
     val subscriptionManager: com.ScienceFiction.DronePassAndroid.subscription.SubscriptionManager,
@@ -267,33 +269,27 @@ class SettingsViewModel @Inject constructor(
     }
 
     /**
-     * 사용자의 현재 위치를 가져온다.
-     * 위치를 가져올 수 없으면 iOS처럼 일출/일몰 알림 예약을 건너뛰도록 null을 반환한다.
+     * 일출·일몰 알림의 기준 위치.
+     * 위치 동의가 있으면 기기 위치를 읽고(읽을 수 없으면 iOS처럼 예약을 건너뛰도록 null),
+     * 없으면 기기 위치를 읽지 않고 마지막으로 본 지도 중심을 쓴다.
      */
-    @SuppressLint("MissingPermission")
-    private suspend fun getUserLocationOrNull(): Pair<Double, Double>? {
-        val resolved = try {
-            val location = fusedLocationClient.getCurrentLocation(
-                Priority.PRIORITY_BALANCED_POWER_ACCURACY,
-                CancellationTokenSource().token
-            ).await()
-            if (location != null) {
-                Pair(location.latitude, location.longitude)
-            } else {
-                val lastLocation = fusedLocationClient.lastLocation.await()
-                if (lastLocation != null) {
-                    Pair(lastLocation.latitude, lastLocation.longitude)
-                } else {
-                    null
-                }
+    private suspend fun getSunAlarmLocationOrNull(): Pair<Double, Double>? {
+        val result = deviceLocationReader.read(LocationUsagePurpose.SUNRISE_ALERT)
+        val resolved = when (result) {
+            is DeviceLocationResult.Available -> result.location.latitude to result.location.longitude
+            DeviceLocationResult.NotAllowed -> {
+                val center = mapCenterStore.weatherBasisCenter()
+                return center.latitude to center.longitude
             }
-        } catch (e: Exception) {
-            Log.w(TAG, "위치 조회 실패, 일출/일몰 알림 예약 건너뜀: ${e.message}")
-            null
+            DeviceLocationResult.PermissionDenied,
+            DeviceLocationResult.Unavailable -> {
+                Log.w(TAG, "위치 조회 실패, 일출/일몰 알림 예약 건너뜀: $result")
+                null
+            }
         }
 
-        // 위치 캐시 갱신 (BootCompletedReceiver 가 재부팅 후 사용).
-        if (resolved != null) {
+        // 위치 캐시 갱신 (BootCompletedReceiver 가 재부팅 후 사용). 읽는 도중 철회됐다면 남기지 않는다.
+        if (resolved != null && locationConsentRepository.isAllowed()) {
             runCatching {
                 dataStore.edit { prefs ->
                     prefs[UserLocationKeys.KEY_LAST_LATITUDE] = resolved.first
@@ -317,7 +313,7 @@ class SettingsViewModel @Inject constructor(
         )
         if (!targets.hasAnyEnabled) return
 
-        val location = getUserLocationOrNull() ?: return
+        val location = getSunAlarmLocationOrNull() ?: return
         val (lat, lon) = location
         val weatherData = try {
             weatherRepository.fetchWeather(lat, lon).getOrNull()
