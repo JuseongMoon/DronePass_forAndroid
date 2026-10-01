@@ -896,7 +896,7 @@
     <string name="business_info_representative_label">Representative</string>
     <string name="business_info_representative">Juseong Moon</string>
     <string name="business_info_address_label">Address</string>
-    <string name="business_info_address">708-A65, 100 Crystal-ro, Seohae-gu, Incheon, Republic of Korea</string>
+    <string name="business_info_address">708-A65, 100 Crystal-ro, Seo-gu, Incheon, Republic of Korea (Cheongna-dong)</string>
     <string name="business_info_phone_label">Phone</string>
     <string name="business_info_phone">+82 10-4269-7274</string>
     <string name="business_info_email_label">Email</string>
@@ -907,7 +907,7 @@
     <string name="business_info_lbs">No. 1628 (Korea Media and Communications Commission)</string>
     <string name="business_info_verify">Verify Business Information (KFTC)</string>
     <string name="subscription_minor_notice">If a minor purchases without the consent of a legal guardian, the minor or the guardian may cancel the contract.</string>
-    <string name="subscription_seller">Seller: Science Fiction Inc. · CEO Juseong Moon · 708-A65, 100 Crystal-ro, Seohae-gu, Incheon, Republic of Korea (Cheongna-dong) · +82 10-4269-7274 · support@sciencefiction.co.kr · E-commerce Registration No. 2026-Incheon Seogu-2619 (Seohae-gu Office, Incheon)</string>
+    <string name="subscription_seller">Seller: Science Fiction Inc. · CEO Juseong Moon · 708-A65, 100 Crystal-ro, Seo-gu, Incheon, Republic of Korea (Cheongna-dong) · +82 10-4269-7274 · support@sciencefiction.co.kr · E-commerce Registration No. 2026-Incheon Seogu-2619 (Seohae-gu Office, Incheon)</string>
     <string name="subscription_lifetime_condition">“Lifetime” benefits apply for as long as DronePass is offered.</string>
     <string name="terms_notice_title">Updates to Terms of Service and Privacy Policy</string>
     <string name="terms_notice_effective">Updated Terms of Service apply from %1$s, and the Privacy Policy has also been updated.</string>
