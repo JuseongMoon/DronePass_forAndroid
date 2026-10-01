@@ -125,7 +125,9 @@ class SubscriptionContractTest {
         root.cases("appAccountTokenCases").forEach { row ->
             assertEquals(row.string("uid"), row.string("expected"), appAccountToken(row.string("uid")))
         }
-        root.cases("countBucketCases").forEach { row ->
+        val countBucketCases = root.cases("countBucketCases")
+        assertEquals(15, countBucketCases.size)
+        countBucketCases.forEach { row ->
             assertEquals(row.int("count").toString(), row.string("expected"), countBucket(row.int("count")))
         }
     }

@@ -100,7 +100,10 @@ fun appAccountToken(uid: String): String {
 
 fun countBucket(count: Int): String = when {
     count < 10 -> "0-9"
-    count < 50 -> "10-49"
+    // 도형 한도 30에 다가가는 사용자와 한도에 걸린 사용자를 나눠 본다.
+    count < 20 -> "10-19"
+    count < 30 -> "20-29"
+    count < 50 -> "30-49"
     count < 90 -> "50-89"
     count < 100 -> "90-99"
     count < 200 -> "100-199"
