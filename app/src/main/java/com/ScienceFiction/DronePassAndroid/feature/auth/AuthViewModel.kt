@@ -10,22 +10,18 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ScienceFiction.DronePassAndroid.core.account.AccountSession
+import com.ScienceFiction.DronePassAndroid.core.account.AccountSessionEvent
+import com.ScienceFiction.DronePassAndroid.core.account.AccountSessionFlows
+import com.ScienceFiction.DronePassAndroid.core.account.StaleSyncTicketException
+import com.ScienceFiction.DronePassAndroid.core.account.SyncTicket
 import com.ScienceFiction.DronePassAndroid.core.util.AnalyticsLogger
-import com.ScienceFiction.DronePassAndroid.core.data.repository.DroneRepository
 import com.ScienceFiction.DronePassAndroid.core.data.repository.ShapeRepository
-import com.ScienceFiction.DronePassAndroid.core.data.repository.SketchRepository
-import com.ScienceFiction.DronePassAndroid.core.data.sync.AccountSwitchLocalChangeState
 import com.ScienceFiction.DronePassAndroid.core.data.sync.RealtimeSyncManager
 import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncPreferenceKeys
 import com.ScienceFiction.DronePassAndroid.core.data.sync.buildAccountSwitchShapeBaseline
-import com.ScienceFiction.DronePassAndroid.core.data.sync.buildAccountSwitchLocalChangeState
-import com.ScienceFiction.DronePassAndroid.core.data.sync.decodeAccountSwitchShapeBaseline
 import com.ScienceFiction.DronePassAndroid.core.data.sync.encodeAccountSwitchShapeBaseline
 import com.ScienceFiction.DronePassAndroid.core.data.sync.recordShapeRealtimeSyncSuccess
-import com.ScienceFiction.DronePassAndroid.core.data.sync.recordSketchRealtimeSyncSuccess
-import com.ScienceFiction.DronePassAndroid.feature.drone.DroneSelectionState
-import com.ScienceFiction.DronePassAndroid.feature.profile.ProfilePreferenceKeys
-import com.ScienceFiction.DronePassAndroid.feature.profile.storedCloudBackupEnabled
 import com.ScienceFiction.DronePassAndroid.service.FcmService
 import com.ScienceFiction.DronePassAndroid.R
 import com.google.firebase.auth.FirebaseAuthWebException
@@ -61,11 +57,6 @@ internal enum class AuthProviderSignInAction {
     IGNORE,
 }
 
-internal enum class ProviderLoginPreparationStep {
-    RESET_LOCAL_DATA,
-    FINALIZE_SIGN_IN,
-}
-
 internal enum class AuthSignOutStep {
     DEACTIVATE_FCM_TOKEN,
     STOP_REALTIME_SYNC,
@@ -76,16 +67,6 @@ internal fun authSignOutSteps(): List<AuthSignOutStep> = listOf(
     AuthSignOutStep.DEACTIVATE_FCM_TOKEN,
     AuthSignOutStep.STOP_REALTIME_SYNC,
     AuthSignOutStep.SIGN_OUT,
-)
-
-data class AccountSwitchConfirmationRequest(
-    val localDataCount: Int,
-)
-
-private data class PendingAccountSwitchLogin(
-    val result: AuthSignInResult,
-    val providerName: String,
-    val selectAllDronesAfterSync: Boolean,
 )
 
 private sealed interface FullSyncResult {
@@ -119,37 +100,15 @@ internal fun shouldSuppressAppleSignInFailure(exception: Throwable): Boolean {
     return isAppleSignInCancellationErrorCode(exception.errorCode)
 }
 
-internal fun shouldResetLocalDataForAccountChange(action: AuthAccountChangeAction): Boolean {
-    return action == AuthAccountChangeAction.RESET_LOCAL_DATA
-}
-
-internal fun shouldRequestAccountSwitchConfirmation(hasUnsyncedLocalChanges: Boolean): Boolean {
-    return hasUnsyncedLocalChanges
-}
-
-internal fun shouldPrepareAccountSwitchBeforeNavigation(action: AuthAccountChangeAction): Boolean {
-    return shouldResetLocalDataForAccountChange(action)
-}
-
-internal fun resolveProviderLoginPreparationSteps(
-    prepareAccountSwitchBeforeNavigation: Boolean,
-): List<ProviderLoginPreparationStep> {
-    return if (prepareAccountSwitchBeforeNavigation) {
-        listOf(
-            ProviderLoginPreparationStep.RESET_LOCAL_DATA,
-            ProviderLoginPreparationStep.FINALIZE_SIGN_IN,
-        )
-    } else {
-        listOf(ProviderLoginPreparationStep.FINALIZE_SIGN_IN)
-    }
-}
-
+/**
+ * 앱 복귀 시 리스너가 꺼져 있으면 변경 확인을 묻는다. 동기화 관문이 닫혀 있으면(비로그인·가져오기 확인 대기·
+ * 로그아웃 중 등) 이 대체 경로도 열리지 않는다.
+ */
 internal fun resolveForegroundCloudSyncAction(
-    isLoggedIn: Boolean,
-    cloudBackupEnabled: Boolean,
+    syncGateOpen: Boolean,
     realtimeSyncEnabled: Boolean,
 ): ForegroundCloudSyncAction {
-    return if (isLoggedIn && cloudBackupEnabled && !realtimeSyncEnabled) {
+    return if (syncGateOpen && !realtimeSyncEnabled) {
         ForegroundCloudSyncAction.REQUEST_USER_CONFIRMATION
     } else {
         ForegroundCloudSyncAction.NO_OP
@@ -180,16 +139,15 @@ internal fun shouldCheckForegroundRemoteChanges(
  *  - Google Sign-In (Credential Manager)
  *  - Apple Sign-In (Firebase OAuthProvider — iOS Apple Sign-In 사용자 데이터 자동 호환)
  *
- * 로그인 성공 시 Firebase 양방향 동기화 자동 실행 및 실시간 동기화 리스너 시작.
+ * 로그인 뒤 계정 데이터 동기화는 [AccountSessionFlows] 가 로그인 상태 변화를 보고 판단한다(기기 데이터 주인 관문).
  */
 @HiltViewModel
 class AuthViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val shapeRepository: ShapeRepository,
-    private val droneRepository: DroneRepository,
-    private val sketchRepository: SketchRepository,
     private val realtimeSyncManager: RealtimeSyncManager,
-    private val droneSelectionState: DroneSelectionState,
+    private val accountSession: AccountSession,
+    private val accountSessionFlows: AccountSessionFlows,
     private val dataStore: DataStore<Preferences>,
     @ApplicationContext private val appContext: Context,
     private val analyticsLogger: AnalyticsLogger
@@ -232,27 +190,25 @@ class AuthViewModel @Inject constructor(
     private var lastForegroundRemoteChangeCheckTimeMillis: Long? = null
     private var isForegroundSyncing = false
 
-    private val _accountSwitchConfirmation = MutableStateFlow<AccountSwitchConfirmationRequest?>(null)
-    val accountSwitchConfirmation: StateFlow<AccountSwitchConfirmationRequest?> =
-        _accountSwitchConfirmation.asStateFlow()
-
-    private var pendingAccountSwitchLogin: PendingAccountSwitchLogin? = null
-
     init {
-        // 1. 로그인 상태를 _authState 에 동기 반영 (Loading → LoggedIn/LoggedOut)
+        // 로그인 상태를 _authState 에 동기 반영 (Loading → LoggedIn/LoggedOut).
+        // 계정 데이터 동기화는 AccountSessionFlows 가 앱 시작 시 판단한다.
         val currentUser = authRepository.currentUser
         _authState.value = if (currentUser != null) {
             AuthState.LoggedIn(currentUser)
         } else {
             AuthState.LoggedOut
         }
-
-        // 2. 이미 로그인 상태이면 Firebase 양방향 동기화 + 실시간 리스너 시작.
-        //    LoginScreen 의 LaunchedEffect 가 LoggedIn 전이를 받기 전에 동기화가
-        //    시작되어 화면이 잠시 깜빡이는 일이 없도록 1번을 먼저 수행한다.
         if (currentUser != null) {
-            activateCloudSyncAfterLogin(selectAllDronesAfterSync = false)
             requestFcmToken()
+        }
+        viewModelScope.launch {
+            accountSessionFlows.events.collect { event ->
+                when (event) {
+                    AccountSessionEvent.SyncFailed ->
+                        _syncMessage.tryEmit(appContext.getString(R.string.login_sync_failed))
+                }
+            }
         }
     }
 
@@ -273,12 +229,9 @@ class AuthViewModel @Inject constructor(
      * 앱 복귀 시 실시간 동기화 리스너가 꺼져 있으면 변경사항 확인/동기화 경로를 복구한다.
      */
     fun ensureCloudSyncActiveOnForeground() {
-        authRepository.currentUser ?: return
         viewModelScope.launch {
-            val cloudBackupEnabled = storedCloudBackupEnabled(dataStore.data.first())
             val action = resolveForegroundCloudSyncAction(
-                isLoggedIn = true,
-                cloudBackupEnabled = cloudBackupEnabled,
+                syncGateOpen = accountSession.syncTicket() != null,
                 realtimeSyncEnabled = realtimeSyncManager.isRealtimeSyncEnabled.value,
             )
             if (action == ForegroundCloudSyncAction.REQUEST_USER_CONFIRMATION) {
@@ -314,22 +267,20 @@ class AuthViewModel @Inject constructor(
     }
 
     fun confirmForegroundCloudSync() {
-        val user = authRepository.currentUser ?: return
         viewModelScope.launch {
-            val cloudBackupEnabled = storedCloudBackupEnabled(dataStore.data.first())
+            val ticket = accountSession.syncTicket() ?: return@launch
             val action = resolveForegroundCloudSyncAction(
-                isLoggedIn = true,
-                cloudBackupEnabled = cloudBackupEnabled,
+                syncGateOpen = true,
                 realtimeSyncEnabled = realtimeSyncManager.isRealtimeSyncEnabled.value,
             )
             if (action == ForegroundCloudSyncAction.REQUEST_USER_CONFIRMATION) {
                 if (isForegroundSyncing) return@launch
-                Log.d(TAG, "포그라운드 복귀: 사용자 확인 후 실시간 동기화 리스너 복구 userId=${user.uid}")
+                Log.d(TAG, "포그라운드 복귀: 사용자 확인 후 실시간 동기화 리스너 복구")
                 isForegroundSyncing = true
                 try {
-                    realtimeSyncManager.startListening(user.uid)
+                    realtimeSyncManager.startListening(ticket)
                     _foregroundSyncDialogState.tryEmit(ForegroundSyncDialogState.Loading)
-                    when (val result = performForegroundCloudSync()) {
+                    when (val result = performForegroundCloudSync(ticket)) {
                         FullSyncResult.Success ->
                             _foregroundSyncDialogState.tryEmit(ForegroundSyncDialogState.Complete)
                         is FullSyncResult.Failure ->
@@ -359,13 +310,7 @@ class AuthViewModel @Inject constructor(
 
         viewModelScope.launch {
             authRepository.signInWithGoogle(context).fold(
-                onSuccess = { result ->
-                    handleSuccessfulProviderLogin(
-                        result = result,
-                        providerName = "google",
-                        selectAllDronesAfterSync = true,
-                    )
-                },
+                onSuccess = { result -> completeSuccessfulProviderLogin(result, providerName = "google") },
                 onFailure = { exception ->
                     _authState.value = if (shouldSuppressGoogleSignInFailure(exception)) {
                         AuthState.LoggedOut
@@ -395,13 +340,7 @@ class AuthViewModel @Inject constructor(
 
         viewModelScope.launch {
             authRepository.signInWithApple(activity).fold(
-                onSuccess = { result ->
-                    handleSuccessfulProviderLogin(
-                        result = result,
-                        providerName = "apple",
-                        selectAllDronesAfterSync = true,
-                    )
-                },
+                onSuccess = { result -> completeSuccessfulProviderLogin(result, providerName = "apple") },
                 onFailure = { exception ->
                     _authState.value = if (shouldSuppressAppleSignInFailure(exception)) {
                         AuthState.LoggedOut
@@ -416,191 +355,25 @@ class AuthViewModel @Inject constructor(
     }
 
     /**
-     * 로그아웃
-     * FCM 토큰 비활성화 -> 실시간 동기화 리스너 중단 -> Firebase Auth 로그아웃
+     * 로그인 후처리. 사용자 문서·활동 시각(계정 메타데이터, 관문 밖)과 푸시 토큰만 다룬다.
+     * 기기 데이터를 계정으로 올릴지·내려받을지는 [AccountSessionFlows] 가 로그인 상태 변화를 보고 판단한다.
      */
-    fun signOut() {
-        viewModelScope.launch {
-            authSignOutSteps().forEach { step ->
-                when (step) {
-                    AuthSignOutStep.DEACTIVATE_FCM_TOKEN -> {
-                        runCatching { FcmService.deactivateTokenAndWait(appContext) }
-                            .onFailure { Log.w(TAG, "FCM 토큰 비활성화 실패", it) }
-                    }
-                    AuthSignOutStep.STOP_REALTIME_SYNC -> {
-                        realtimeSyncManager.stopListening()
-                        Log.d(TAG, "실시간 동기화 리스너 중단")
-                    }
-                    AuthSignOutStep.SIGN_OUT -> {
-                        authRepository.signOut()
-                        analyticsLogger.logLogout()
-                        _authState.value = AuthState.LoggedOut
-                    }
-                }
-            }
-        }
-    }
-
-    fun confirmAccountSwitch() {
-        val pending = pendingAccountSwitchLogin ?: return
-        pendingAccountSwitchLogin = null
-        _accountSwitchConfirmation.value = null
-        _authState.value = AuthState.Loading
-
-        viewModelScope.launch {
-            completeSuccessfulProviderLogin(
-                result = pending.result,
-                providerName = pending.providerName,
-                selectAllDronesAfterSync = pending.selectAllDronesAfterSync,
-                prepareAccountSwitchBeforeNavigation = true,
-            )
-        }
-    }
-
-    fun cancelAccountSwitch() {
-        pendingAccountSwitchLogin = null
-        _accountSwitchConfirmation.value = null
-        authRepository.signOut()
-        _authState.value = AuthState.LoggedOut
-    }
-
-    /**
-     * iOS 로그인 성공 흐름 정합:
-     * 클라우드 백업 설정을 켠 뒤 실시간 리스너와 Firebase 양방향 동기화를 시작한다.
-     */
-    private fun activateCloudSyncAfterLogin(
-        selectAllDronesAfterSync: Boolean,
-        accountChangeAction: AuthAccountChangeAction = AuthAccountChangeAction.KEEP_LOCAL_DATA,
-    ) {
-        viewModelScope.launch {
-            prepareCloudSyncAfterLogin(accountChangeAction)
-            performFullSync(selectAllDronesAfterSync)
-        }
-    }
-
-    private suspend fun handleSuccessfulProviderLogin(
-        result: AuthSignInResult,
-        providerName: String,
-        selectAllDronesAfterSync: Boolean,
-    ) {
-        if (shouldResetLocalDataForAccountChange(result.accountChangeAction)) {
-            val localChangeState = buildLocalChangeStateForAccountSwitch()
-            if (shouldRequestAccountSwitchConfirmation(localChangeState.hasUnsyncedLocalChanges)) {
-                pendingAccountSwitchLogin = PendingAccountSwitchLogin(
-                    result = result,
-                    providerName = providerName,
-                    selectAllDronesAfterSync = selectAllDronesAfterSync,
-                )
-                _accountSwitchConfirmation.value = AccountSwitchConfirmationRequest(
-                    localDataCount = localChangeState.atRiskCount,
-                )
-                return
-            }
-        }
-
-        completeSuccessfulProviderLogin(
-            result = result,
-            providerName = providerName,
-            selectAllDronesAfterSync = selectAllDronesAfterSync,
-            prepareAccountSwitchBeforeNavigation = shouldPrepareAccountSwitchBeforeNavigation(
-                result.accountChangeAction,
-            ),
-        )
-    }
-
-    private suspend fun completeSuccessfulProviderLogin(
-        result: AuthSignInResult,
-        providerName: String,
-        selectAllDronesAfterSync: Boolean,
-        prepareAccountSwitchBeforeNavigation: Boolean,
-    ) {
-        resolveProviderLoginPreparationSteps(prepareAccountSwitchBeforeNavigation).forEach { step ->
-            when (step) {
-                ProviderLoginPreparationStep.RESET_LOCAL_DATA -> resetLocalDataForAccountSwitch()
-                ProviderLoginPreparationStep.FINALIZE_SIGN_IN -> {
-                    authRepository.finalizeSuccessfulSignIn(result)
-                }
-            }
-        }
-        if (prepareAccountSwitchBeforeNavigation) {
-            enableCloudBackupForLogin()
-            startRealtimeSync()
-            _authState.value = AuthState.LoggedIn(result.user)
-            viewModelScope.launch {
-                performFullSync(selectAllDronesAfterSync)
-            }
-        } else {
-            _authState.value = AuthState.LoggedIn(result.user)
-            activateCloudSyncAfterLogin(
-                selectAllDronesAfterSync = selectAllDronesAfterSync,
-                accountChangeAction = result.accountChangeAction,
-            )
-        }
+    private suspend fun completeSuccessfulProviderLogin(result: AuthSignInResult, providerName: String) {
+        authRepository.finalizeSuccessfulSignIn(result)
+        _authState.value = AuthState.LoggedIn(result.user)
         analyticsLogger.logLogin(providerName)
         requestFcmToken()
     }
 
-    private suspend fun prepareCloudSyncAfterLogin(accountChangeAction: AuthAccountChangeAction) {
-        enableCloudBackupForLogin()
-        if (shouldResetLocalDataForAccountChange(accountChangeAction)) {
-            resetLocalDataForAccountSwitch()
-        }
-        startRealtimeSync()
-    }
-
-    private suspend fun enableCloudBackupForLogin() {
-        runCatching {
-            dataStore.edit { preferences ->
-                preferences[ProfilePreferenceKeys.CLOUD_BACKUP_ENABLED] = true
-                preferences.remove(ProfilePreferenceKeys.LEGACY_CLOUD_BACKUP_ENABLED)
-            }
-        }.onFailure { error ->
-            Log.e(TAG, "클라우드 백업 설정 저장 실패", error)
-        }
-    }
-
-    private suspend fun resetLocalDataForAccountSwitch() {
-        Log.d(TAG, "계정 전환 감지: 로컬 데이터 초기화 시작")
-        realtimeSyncManager.stopListening()
-        realtimeSyncManager.resetSyncTrackingForAccountSwitch()
-        shapeRepository.deleteAllShapes()
-        droneRepository.deleteAllDrones()
-        sketchRepository.deleteAllSketchesLocally()
-        droneSelectionState.resetForAccountSwitch()
-        dataStore.edit { preferences ->
-            preferences.remove(ProfilePreferenceKeys.LAST_BACKUP_TIME)
-            preferences.remove(ProfilePreferenceKeys.LEGACY_LAST_BACKUP_TIME)
-            preferences.remove(SyncPreferenceKeys.LAST_SYNC_TIME)
-            preferences.remove(SyncPreferenceKeys.LAST_LOCAL_MODIFICATION_TIME)
-            preferences.remove(SyncPreferenceKeys.LAST_LOCAL_DRONE_MODIFICATION_TIME)
-            preferences.remove(SyncPreferenceKeys.SYNCED_SHAPE_BASELINE)
-            preferences.remove(SyncPreferenceKeys.LAST_SKETCH_SYNC_TIME)
-            preferences.remove(SyncPreferenceKeys.LAST_LOCAL_SKETCH_MODIFICATION_TIME)
-        }
-        Log.d(TAG, "계정 전환 감지: 로컬 데이터 초기화 완료")
-    }
-
-    private suspend fun buildLocalChangeStateForAccountSwitch(): AccountSwitchLocalChangeState {
-        val preferences = dataStore.data.first()
-        val currentShapeUpdatedAtById = shapeRepository.getAllShapes()
-            .first()
-            .filter { !it.isDeleted }
-            .associate { shape -> shape.id to shape.updatedAt }
-        return buildAccountSwitchLocalChangeState(
-            currentShapeUpdatedAtById = currentShapeUpdatedAtById,
-            syncedShapeBaseline = decodeAccountSwitchShapeBaseline(
-                preferences[SyncPreferenceKeys.SYNCED_SHAPE_BASELINE],
-            ),
-        )
-    }
-
-    private suspend fun saveSyncedShapeBaseline() {
+    private suspend fun saveSyncedShapeBaseline(ticket: SyncTicket) {
         val activeShapeUpdatedAtById = buildAccountSwitchShapeBaseline(
             shapeRepository.getAllShapes().first(),
         )
-        dataStore.edit { preferences ->
-            preferences[SyncPreferenceKeys.SYNCED_SHAPE_BASELINE] =
-                encodeAccountSwitchShapeBaseline(activeShapeUpdatedAtById)
+        accountSession.commit(ticket) {
+            dataStore.edit { preferences ->
+                preferences[SyncPreferenceKeys.SYNCED_SHAPE_BASELINE] =
+                    encodeAccountSwitchShapeBaseline(activeShapeUpdatedAtById)
+            }
         }
     }
 
@@ -610,21 +383,25 @@ class AuthViewModel @Inject constructor(
      * 포그라운드 복귀 fallback 프롬프트는 Shape 변경 감지/도형 정보 최신화 문구를
      * 표시하므로, 확인 버튼도 Shape 동기화 결과만 완료/실패 다이얼로그에 반영한다.
      */
-    private suspend fun performForegroundCloudSync(): FullSyncResult {
+    private suspend fun performForegroundCloudSync(ticket: SyncTicket): FullSyncResult {
         return try {
             foregroundCloudSyncDomains().forEach { domain ->
                 when (domain) {
                     ForegroundCloudSyncDomain.Shape -> {
-                        shapeRepository.performFullSync()
-                        saveSyncedShapeBaseline()
+                        shapeRepository.performFullSync(ticket)
+                        saveSyncedShapeBaseline(ticket)
                         val shapeSyncTime = System.currentTimeMillis()
-                        dataStore.edit { preferences ->
-                            preferences.recordShapeRealtimeSyncSuccess(shapeSyncTime)
+                        accountSession.commit(ticket) {
+                            dataStore.edit { preferences ->
+                                preferences.recordShapeRealtimeSyncSuccess(shapeSyncTime)
+                            }
                         }
                     }
                 }
             }
             FullSyncResult.Success
+        } catch (e: StaleSyncTicketException) {
+            FullSyncResult.Failure(appContext.getString(R.string.login_sync_failed))
         } catch (e: Exception) {
             Log.e(TAG, "포그라운드 Shape 동기화 실패", e)
             _syncMessage.tryEmit(appContext.getString(R.string.login_sync_failed))
@@ -632,61 +409,6 @@ class AuthViewModel @Inject constructor(
                 e.localizedMessage ?: appContext.getString(R.string.common_unknown_error),
             )
         }
-    }
-
-    /**
-     * 모든 Repository에 대해 Firebase 양방향 동기화 실행
-     * 로그인 성공 시 및 앱 시작 시(이미 로그인 상태) 호출
-     */
-    private suspend fun performFullSync(selectAllDronesAfterSync: Boolean): FullSyncResult {
-        try {
-            Log.d(TAG, "Firebase 양방향 동기화 시작")
-            // 도형이 드론 id 를 가리키므로 드론을 먼저 올린다(iOS 로그인 동기화와 같은 순서).
-            droneRepository.performFullSync()
-            shapeRepository.performFullSync()
-            droneRepository.ensureDefaultDroneIfNeeded()
-            saveSyncedShapeBaseline()
-            val shapeSyncTime = System.currentTimeMillis()
-            dataStore.edit { preferences ->
-                preferences.recordShapeRealtimeSyncSuccess(shapeSyncTime)
-            }
-            if (selectAllDronesAfterSync) {
-                selectAllActiveDrones()
-            }
-            sketchRepository.performFullSync()
-            val sketchSyncTime = System.currentTimeMillis()
-            dataStore.edit { preferences ->
-                preferences.recordSketchRealtimeSyncSuccess(sketchSyncTime)
-            }
-            Log.d(TAG, "Firebase 양방향 동기화 완료")
-            return FullSyncResult.Success
-        } catch (e: Exception) {
-            Log.e(TAG, "Firebase 동기화 실패", e)
-            _syncMessage.tryEmit(appContext.getString(R.string.login_sync_failed))
-            return FullSyncResult.Failure(
-                e.localizedMessage ?: appContext.getString(R.string.common_unknown_error),
-            )
-        }
-    }
-
-    private suspend fun selectAllActiveDrones() {
-        val activeDrones = droneRepository.getActiveDrones().first()
-        droneSelectionState.selectAllDrones(activeDrones)
-        Log.d(TAG, "로그인 후 활성 드론 전체 선택: count=${activeDrones.size}")
-    }
-
-    /**
-     * 실시간 동기화 리스너 시작
-     * 로그인된 사용자의 userId로 Firestore SnapshotListener를 등록
-     */
-    private fun startRealtimeSync() {
-        val userId = authRepository.currentUser?.uid ?: run {
-            Log.d(TAG, "실시간 동기화 시작 실패: userId를 가져올 수 없습니다.")
-            return
-        }
-
-        Log.d(TAG, "실시간 동기화 리스너 시작: userId=$userId")
-        realtimeSyncManager.startListening(userId)
     }
 
     private fun requestFcmToken() {

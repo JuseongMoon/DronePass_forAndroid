@@ -127,6 +127,18 @@ class EncryptedPrefsHelper @Inject constructor(
     }
 
     /**
+     * 계정 식별자(마지막 로그인 uid·Apple/Google user id)만 지운다. 기기 데이터 주인 이전(3.5.x → 3.6.0)과
+     * 로그아웃·탈퇴 삭제가 쓴다. 같은 파일의 기기 식별자(DeviceUUID)는 남긴다.
+     */
+    fun clearAccountKeys() {
+        sharedPreferences.edit {
+            remove(KEY_FIREBASE_UID)
+            remove(KEY_APPLE_USER_ID)
+            remove(KEY_GOOGLE_USER_ID)
+        }
+    }
+
+    /**
      * 모든 암호화된 데이터 삭제
      * 계정 삭제 시 호출. 로그아웃 시에는 계정 복구용 UID/provider User ID를 유지한다.
      */

@@ -43,7 +43,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -130,7 +129,6 @@ fun LoginScreen(
         true
     }
     val authState by viewModel.authState.collectAsStateWithLifecycle()
-    val accountSwitchConfirmation by viewModel.accountSwitchConfirmation.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val windowSize = currentWindowSizeDp()
     val isTablet = windowSize.width >= LoginTabletBreakpointDp.dp
@@ -339,37 +337,6 @@ fun LoginScreen(
             confirmButton = {
                 TextButton(onClick = { loginErrorMessage = null }) {
                     Text(text = stringResource(R.string.common_confirm))
-                }
-            },
-        )
-    }
-
-    accountSwitchConfirmation?.let { request ->
-        AlertDialog(
-            onDismissRequest = { viewModel.cancelAccountSwitch() },
-            title = {
-                Text(text = stringResource(R.string.login_account_switch_title))
-            },
-            text = {
-                Text(
-                    text = pluralStringResource(
-                        R.plurals.login_account_switch_message,
-                        request.localDataCount,
-                        request.localDataCount,
-                    )
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = { viewModel.confirmAccountSwitch() }) {
-                    Text(
-                        text = stringResource(R.string.login_account_switch_confirm),
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { viewModel.cancelAccountSwitch() }) {
-                    Text(text = stringResource(R.string.common_cancel))
                 }
             },
         )

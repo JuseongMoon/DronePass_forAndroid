@@ -4,22 +4,21 @@ import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import com.ScienceFiction.DronePassAndroid.core.account.AccountSession
+import com.ScienceFiction.DronePassAndroid.core.account.SyncTicket
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.dao.SketchDao
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.mapper.toDomain
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.mapper.toEntity
 import com.ScienceFiction.DronePassAndroid.core.data.remote.firebase.SketchFirebaseStore
 import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncPreferenceKeys
 import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncMergeResult
-import com.ScienceFiction.DronePassAndroid.core.data.sync.filterServerNewer
-import com.ScienceFiction.DronePassAndroid.core.data.sync.isCloudSyncEnabled
 import com.ScienceFiction.DronePassAndroid.core.data.sync.shouldUpdateServerMetadataAfterFullSync
-import com.ScienceFiction.DronePassAndroid.core.data.sync.shouldRunImmediateCloudSync
 import com.ScienceFiction.DronePassAndroid.domain.model.SketchModel
 import com.ScienceFiction.DronePassAndroid.domain.model.validateForFirebasePersistence
-import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -114,7 +113,7 @@ internal fun mergeSketchesForFullSync(
 class SketchRepository @Inject constructor(
     private val sketchDao: SketchDao,
     private val sketchFirebaseStore: SketchFirebaseStore,
-    private val auth: FirebaseAuth,
+    private val session: AccountSession,
     private val dataStore: DataStore<Preferences>,
 ) {
 
@@ -264,13 +263,23 @@ class SketchRepository @Inject constructor(
     }
 
     /**
-     * 계정 전환 시 이전 계정의 로컬 스케치가 새 계정으로 업로드되지 않도록
-     * Firebase 푸시 없이 로컬 Room 데이터와 대기 중인 디바운스 작업만 비운다.
+     * 기기 계정 데이터 삭제(로그아웃·탈퇴·계정 전환)용. Firebase 푸시 없이 로컬 Room 데이터와
+     * 대기 중인 디바운스 작업, 스케치 모드 편집 계획을 모두 비운다.
      */
     suspend fun deleteAllSketchesLocally() {
-        val sketchIds = sketchDao.getAllSketchesOnce().map { it.id }.toSet()
-        cancelPendingSyncs(sketchIds)
+        cancelAllPendingSyncsAndWait()
         sketchDao.deleteAllSketches()
+    }
+
+    /** 대기 중인 디바운스 푸시와 스케치 모드 편집 계획을 버리고, 이미 시작된 푸시가 끝날 때까지 기다린다. */
+    suspend fun cancelAllPendingSyncsAndWait() {
+        editSyncPlan = null
+        val jobs = pendingSyncsMutex.withLock {
+            val pending = pendingSyncs.values.map { it.job }
+            pendingSyncs.clear()
+            pending
+        }
+        jobs.forEach { it.cancelAndJoin() }
     }
 
     /**
@@ -283,7 +292,9 @@ class SketchRepository @Inject constructor(
      */
     private suspend fun syncSketchToFirebase(sketch: SketchModel) {
         if (!sketch.isValidForFirebaseWrite("syncSketchToFirebase")) return
-        if (currentImmediateCloudSyncUserId("syncSketchToFirebase") == null) {
+        // 변경이 일어난 시점의 계정으로 고정한다. 디바운스가 끝날 때 계정이 바뀌었으면 티켓이 무효라 올리지 않는다.
+        val ticket = immediateSyncTicket("syncSketchToFirebase")
+        if (ticket == null) {
             pendingSyncsMutex.withLock {
                 pendingSyncs.remove(sketch.id)?.job?.cancel()
             }
@@ -295,10 +306,9 @@ class SketchRepository @Inject constructor(
             lateinit var syncJob: Job
             syncJob = debounceScope.launch {
                 delay(SYNC_DEBOUNCE_MS)
-                val userId = currentImmediateCloudSyncUserId("syncSketchToFirebase") ?: return@launch
                 try {
-                    sketchFirebaseStore.saveSketch(userId, sketch)
-                    sketchFirebaseStore.updateServerMetadata(userId)
+                    sketchFirebaseStore.saveSketch(ticket, sketch)
+                    sketchFirebaseStore.updateServerMetadata(ticket)
                 } catch (e: Exception) {
                     Log.w(TAG, "Firebase 디바운스 푸시 실패: sketchId=${sketch.id}", e)
                 } finally {
@@ -314,13 +324,13 @@ class SketchRepository @Inject constructor(
     }
 
     private suspend fun syncSketchesToFirebase(sketches: List<SketchModel>) {
-        val userId = currentImmediateCloudSyncUserId("syncSketchesToFirebase") ?: return
+        val ticket = immediateSyncTicket("syncSketchesToFirebase") ?: return
         val validSketches = sketches.filterValidForFirebaseWrite("syncSketchesToFirebase")
         if (validSketches.isEmpty()) return
 
         try {
-            sketchFirebaseStore.saveSketches(userId, validSketches)
-            sketchFirebaseStore.updateServerMetadata(userId)
+            sketchFirebaseStore.saveSketches(ticket, validSketches)
+            sketchFirebaseStore.updateServerMetadata(ticket)
         } catch (e: Exception) {
             Log.w(TAG, "Firebase 배치 푸시 실패: count=${validSketches.size}", e)
         }
@@ -380,7 +390,7 @@ class SketchRepository @Inject constructor(
     }
 
     private suspend fun syncSketchEditSessionToFirebase(plan: SketchEditSyncPlan) {
-        val userId = currentImmediateCloudSyncUserId("syncSketchEditSessionToFirebase") ?: return
+        val ticket = immediateSyncTicket("syncSketchEditSessionToFirebase") ?: return
         val validUpserts = plan.pendingUpserts.values
             .toList()
             .filterValidForFirebaseWrite("syncSketchEditSessionToFirebase/upsert")
@@ -388,12 +398,12 @@ class SketchRepository @Inject constructor(
 
         try {
             plan.pendingDeleteIds.forEach { sketchId ->
-                sketchFirebaseStore.softDeleteSketch(userId, sketchId)
+                sketchFirebaseStore.softDeleteSketch(ticket, sketchId)
             }
             if (validUpserts.isNotEmpty()) {
-                sketchFirebaseStore.saveSketches(userId, validUpserts)
+                sketchFirebaseStore.saveSketches(ticket, validUpserts)
             }
-            sketchFirebaseStore.updateServerMetadata(userId)
+            sketchFirebaseStore.updateServerMetadata(ticket)
         } catch (e: Exception) {
             Log.w(
                 TAG,
@@ -403,84 +413,12 @@ class SketchRepository @Inject constructor(
         }
     }
 
-    private suspend fun currentImmediateCloudSyncUserId(operation: String): String? {
-        val userId = auth.currentUser?.uid
-        val shouldSync = shouldRunImmediateCloudSync(
-            isLoggedIn = userId != null,
-            cloudSyncEnabled = dataStore.isCloudSyncEnabled(),
-        )
-        if (!shouldSync) {
-            Log.d(TAG, "$operation: 클라우드 백업 비활성화 또는 로그아웃 상태로 즉시 푸시 생략")
+    private fun immediateSyncTicket(operation: String): SyncTicket? {
+        val ticket = session.syncTicket()
+        if (ticket == null) {
+            Log.d(TAG, "$operation: 동기화 관문이 닫혀 있어 즉시 푸시 생략")
         }
-        return userId?.takeIf { shouldSync }
-    }
-
-    /**
-     * Room 로컬 데이터를 Firebase에 업로드
-     */
-    suspend fun syncToFirebase() {
-        val userId = auth.currentUser?.uid ?: run {
-            Log.d(TAG, "syncToFirebase: 로그인 상태가 아닙니다.")
-            return
-        }
-
-        try {
-            val localSketches = sketchDao.getAllSketchesOnce()
-                .map { it.toDomain() }
-                .filterValidForFirebaseWrite("syncToFirebase")
-            if (localSketches.isNotEmpty()) {
-                sketchFirebaseStore.saveSketches(userId, localSketches)
-                sketchFirebaseStore.updateServerMetadata(userId)
-                Log.d(TAG, "syncToFirebase: ${localSketches.size}개 스케치 업로드 완료")
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "syncToFirebase 실패", e)
-            throw e
-        }
-    }
-
-    /**
-     * Firebase 데이터를 Room 로컬 DB로 다운로드 (LWW 적용).
-     */
-    suspend fun syncFromFirebase() {
-        val userId = auth.currentUser?.uid ?: run {
-            Log.d(TAG, "syncFromFirebase: 로그인 상태가 아닙니다.")
-            return
-        }
-
-        try {
-            val serverSketches = sketchFirebaseStore.loadAllSketchesIncludingDeleted(userId)
-                .getOrThrow()
-                .filterValidForFirebaseWrite("syncFromFirebase/server")
-            val localSketches = sketchDao.getAllSketchesOnce().map { it.toDomain() }
-            val lastSyncTime = dataStore.data.first()[SyncPreferenceKeys.LAST_SKETCH_SYNC_TIME]
-            val serverIds = serverSketches.mapTo(mutableSetOf()) { it.id }
-            val staleLocalIds = localSketches
-                .filter { it.id !in serverIds }
-                .filterNot {
-                    shouldKeepLocalSketchMissingOnServer(
-                        localSketchUpdatedAt = it.updatedAt,
-                        lastSyncTime = lastSyncTime,
-                    )
-                }
-                .map { it.id }
-            val toApply = filterServerNewer(
-                local = localSketches,
-                server = serverSketches,
-                idOf = { it.id },
-                updatedAtOf = { it.updatedAt },
-            )
-            if (staleLocalIds.isNotEmpty()) {
-                sketchDao.deleteSketchesByIds(staleLocalIds)
-            }
-            if (toApply.isNotEmpty()) {
-                sketchDao.insertSketches(toApply.map { it.toEntity() })
-            }
-            Log.d(TAG, "syncFromFirebase: 서버=${serverSketches.size}, LWW 통과=${toApply.size}")
-        } catch (e: Exception) {
-            Log.e(TAG, "syncFromFirebase 실패", e)
-            throw e
-        }
+        return ticket
     }
 
     /**
@@ -488,19 +426,14 @@ class SketchRepository @Inject constructor(
      *
      * 서버에 없는 로컬 스케치는 상대 플랫폼/계정 정리/레거시 hard delete 등으로
      * 문서가 실제 삭제된 경우일 수 있다. 마지막 Sketch 동기화 시각 이전 항목이면
-     * 원격 삭제로 보고 재업로드하지 않는다.
+     * 원격 삭제로 보고 재업로드하지 않는다. 기기 저장소 반영은 [ticket] 을 다시 확인한 뒤에 한다.
      */
-    suspend fun performFullSync() {
-        val userId = auth.currentUser?.uid ?: run {
-            Log.d(TAG, "performFullSync: 로그인 상태가 아닙니다.")
-            return
-        }
-
+    suspend fun performFullSync(ticket: SyncTicket) {
         try {
             val localSketches = sketchDao.getAllSketchesOnce()
                 .map { it.toDomain() }
                 .filterValidForFirebaseWrite("performFullSync/local")
-            val serverSketches = sketchFirebaseStore.loadAllSketchesIncludingDeleted(userId)
+            val serverSketches = sketchFirebaseStore.loadAllSketchesIncludingDeleted(ticket)
                 .getOrThrow()
                 .filterValidForFirebaseWrite("performFullSync/server")
             val lastSyncTime = dataStore.data.first()[SyncPreferenceKeys.LAST_SKETCH_SYNC_TIME]
@@ -515,20 +448,22 @@ class SketchRepository @Inject constructor(
             val staleLocalIds = localSketches
                 .map { it.id }
                 .filter { it !in mergedIds }
-            if (staleLocalIds.isNotEmpty()) {
-                sketchDao.deleteSketchesByIds(staleLocalIds)
-            }
-            if (result.merged.isNotEmpty()) {
-                sketchDao.insertSketches(result.merged.map { it.toEntity() })
+            session.commit(ticket) {
+                if (staleLocalIds.isNotEmpty()) {
+                    sketchDao.deleteSketchesByIds(staleLocalIds)
+                }
+                if (result.merged.isNotEmpty()) {
+                    sketchDao.insertSketches(result.merged.map { it.toEntity() })
+                }
             }
 
             val toUpload = result.toUpload.filterValidForFirebaseWrite("performFullSync/upload")
             if (toUpload.isNotEmpty()) {
-                sketchFirebaseStore.saveSketches(userId, toUpload)
+                sketchFirebaseStore.saveSketches(ticket, toUpload)
             }
 
             if (shouldUpdateServerMetadataAfterFullSync(toUpload.size)) {
-                sketchFirebaseStore.updateServerMetadata(userId)
+                sketchFirebaseStore.updateServerMetadata(ticket)
             }
 
             Log.d(TAG, "performFullSync 완료: 로컬=${localSketches.size}, 서버=${serverSketches.size}, 머지=${result.merged.size}, 업로드=${result.toUpload.size}")

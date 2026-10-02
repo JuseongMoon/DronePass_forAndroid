@@ -4,6 +4,9 @@ import androidx.datastore.preferences.core.mutablePreferencesOf
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import com.ScienceFiction.DronePassAndroid.core.account.StaleSyncTicketException
+import com.ScienceFiction.DronePassAndroid.core.account.isPermissionDeniedCode
 import org.junit.Test
 
 class RealtimeSyncManagerTest {
@@ -254,36 +257,21 @@ class RealtimeSyncManagerTest {
     }
 
     @Test
-    fun `realtime sync restart keeps active listener user first`() {
-        assertEquals(
-            "listening-user",
-            resolveRealtimeSyncRestartUserId(
-                currentListeningUserId = "listening-user",
-                currentAuthUserId = "auth-user",
-            ),
-        )
-    }
-
-    @Test
-    fun `realtime sync restart starts from auth user when listener is currently stopped`() {
-        assertEquals(
-            "auth-user",
-            resolveRealtimeSyncRestartUserId(
-                currentListeningUserId = null,
-                currentAuthUserId = "auth-user",
-            ),
-        )
-    }
-
-    @Test
-    fun `realtime sync restart is skipped when no user is available`() {
-        assertEquals(
-            null,
-            resolveRealtimeSyncRestartUserId(
-                currentListeningUserId = null,
-                currentAuthUserId = null,
-            ),
-        )
+    fun `stale tickets and permission denied writes are not retried`() {
+        // 계정이 바뀌었거나(관문 변경) 탈퇴 잠금 등으로 쓰기가 거부되면 같은 실패를 되풀이하지 않는다.
+        assertEquals(false, shouldRetryRealtimeSyncFailure(StaleSyncTicketException()))
+        assertEquals(true, shouldRetryRealtimeSyncFailure(IllegalStateException("network")))
+        assertEquals(true, isPermissionDeniedCode("PERMISSION_DENIED"))
+        assertEquals(false, isPermissionDeniedCode("UNAVAILABLE"))
+        assertEquals(false, isPermissionDeniedCode(null))
+        // 재시도 판단은 PERMISSION_DENIED 를 걸러 낸다(FirebaseFirestoreException 은 JVM 테스트에서 만들 수 없어 소스로 확인).
+        val source = listOf("src/main/java", "app/src/main/java")
+            .map { java.io.File(java.io.File(requireNotNull(System.getProperty("user.dir"))), it) }
+            .first { it.isDirectory }
+            .resolve("com/ScienceFiction/DronePassAndroid/core/data/sync/RealtimeSyncManager.kt").readText()
+        assertTrue(source.contains("return error !is StaleSyncTicketException && !error.isPermissionDenied()"))
+        assertTrue(source.contains("if (shouldRetryRealtimeSyncFailure(e)) scheduleShapeRetrySync(ticket)"))
+        assertTrue(source.contains("if (shouldRetryRealtimeSyncFailure(e)) scheduleSketchRetrySync(ticket)"))
     }
 
     @Test

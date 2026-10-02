@@ -10,6 +10,7 @@ import androidx.datastore.preferences.core.Preferences.Key
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ScienceFiction.DronePassAndroid.R
+import com.ScienceFiction.DronePassAndroid.core.account.AccountSession
 import com.ScienceFiction.DronePassAndroid.core.data.repository.DroneRepository
 import com.ScienceFiction.DronePassAndroid.core.data.repository.ShapeRepository
 import com.ScienceFiction.DronePassAndroid.core.data.repository.SketchRepository
@@ -154,6 +155,7 @@ class ProfileViewModel @Inject constructor(
     private val accountDeletionService: AccountDeletionService,
     val subscriptionManager: com.ScienceFiction.DronePassAndroid.subscription.SubscriptionManager,
     private val realtimeSyncManager: RealtimeSyncManager,
+    private val accountSession: AccountSession,
     @ApplicationContext private val appContext: Context,
 ) : ViewModel() {
 
@@ -435,8 +437,8 @@ class ProfileViewModel @Inject constructor(
                             isStillLoggedIn = firebaseAuth.currentUser != null,
                         )
                     ) {
-                        userId?.let { restartUserId ->
-                            runCatching { realtimeSyncManager.startListening(restartUserId) }
+                        accountSession.syncTicket()?.let { ticket ->
+                            runCatching { realtimeSyncManager.startListening(ticket) }
                                 .onFailure { Log.w(TAG, "탈퇴 실패 후 리스너 복구 실패", it) }
                         }
                     }

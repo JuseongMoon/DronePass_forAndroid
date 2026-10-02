@@ -5,9 +5,6 @@ import androidx.credentials.exceptions.NoCredentialException
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncPreferenceKeys
-import com.ScienceFiction.DronePassAndroid.core.data.sync.buildAccountSwitchLocalChangeState
-import com.ScienceFiction.DronePassAndroid.core.data.sync.countAccountSwitchShapeBaselineChanges
-import com.ScienceFiction.DronePassAndroid.core.data.sync.decodeAccountSwitchShapeBaseline
 import com.ScienceFiction.DronePassAndroid.core.data.sync.encodeAccountSwitchShapeBaseline
 import java.io.File
 import org.junit.Assert.assertEquals
@@ -18,12 +15,11 @@ import org.junit.Test
 class AuthViewModelForegroundSyncTest {
 
     @Test
-    fun `foreground resume requests confirmation only when logged in cloud backup is enabled and realtime listener is off`() {
+    fun `foreground resume requests confirmation only when the sync gate is open and realtime listener is off`() {
         assertEquals(
             ForegroundCloudSyncAction.REQUEST_USER_CONFIRMATION,
             resolveForegroundCloudSyncAction(
-                isLoggedIn = true,
-                cloudBackupEnabled = true,
+                syncGateOpen = true,
                 realtimeSyncEnabled = false,
             ),
         )
@@ -34,28 +30,19 @@ class AuthViewModelForegroundSyncTest {
         assertEquals(
             ForegroundCloudSyncAction.NO_OP,
             resolveForegroundCloudSyncAction(
-                isLoggedIn = true,
-                cloudBackupEnabled = true,
+                syncGateOpen = true,
                 realtimeSyncEnabled = true,
             ),
         )
     }
 
     @Test
-    fun `foreground resume does nothing when login or cloud backup condition is missing`() {
+    fun `foreground resume does nothing while the sync gate is closed`() {
+        // 비로그인·가져오기 확인 대기·로그아웃 중에는 대체 동기화 경로도 열리지 않는다.
         assertEquals(
             ForegroundCloudSyncAction.NO_OP,
             resolveForegroundCloudSyncAction(
-                isLoggedIn = false,
-                cloudBackupEnabled = true,
-                realtimeSyncEnabled = false,
-            ),
-        )
-        assertEquals(
-            ForegroundCloudSyncAction.NO_OP,
-            resolveForegroundCloudSyncAction(
-                isLoggedIn = true,
-                cloudBackupEnabled = false,
+                syncGateOpen = false,
                 realtimeSyncEnabled = false,
             ),
         )
@@ -83,9 +70,9 @@ class AuthViewModelForegroundSyncTest {
             tokens = listOf(
                 "if (isForegroundSyncing) return@launch",
                 "isForegroundSyncing = true",
-                "realtimeSyncManager.startListening(user.uid)",
+                "realtimeSyncManager.startListening(ticket)",
                 "ForegroundSyncDialogState.Loading",
-                "performForegroundCloudSync()",
+                "performForegroundCloudSync(ticket)",
                 "FullSyncResult.Success",
                 "ForegroundSyncDialogState.Complete",
                 "is FullSyncResult.Failure",
@@ -164,9 +151,8 @@ class AuthViewModelForegroundSyncTest {
         assertAppearsInOrder(
             source = functionBody,
             tokens = listOf(
-                "authRepository.currentUser ?: return",
-                "storedCloudBackupEnabled(dataStore.data.first())",
                 "resolveForegroundCloudSyncAction",
+                "syncGateOpen = accountSession.syncTicket() != null",
                 "realtimeSyncManager.isRealtimeSyncEnabled.value",
                 "ForegroundCloudSyncAction.REQUEST_USER_CONFIRMATION",
                 "shouldCheckForegroundRemoteChanges",
@@ -221,10 +207,10 @@ class AuthViewModelForegroundSyncTest {
     }
 
     @Test
-    fun `Auth 로그아웃은 Firestore FCM 비활성화 쓰기를 기다린다`() {
+    fun `로그아웃은 Firestore FCM 비활성화 쓰기를 기다린다`() {
         val source = resolveProjectFile(
-            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/auth/AuthViewModel.kt",
-            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/auth/AuthViewModel.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/profile/ProfileViewModel.kt",
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/profile/ProfileViewModel.kt",
         ).readText()
 
         assertTrue(source.contains("authSignOutSteps().forEach"))
@@ -274,7 +260,7 @@ class AuthViewModelForegroundSyncTest {
             "src/main/java/com/ScienceFiction/DronePassAndroid/feature/auth/AuthViewModel.kt",
         ).readText()
         val functionBody = source.substringAfter("internal fun shouldSuppressAppleSignInFailure")
-            .substringBefore("internal fun shouldResetLocalDataForAccountChange")
+            .substringBefore("internal fun resolveForegroundCloudSyncAction")
 
         assertTrue(functionBody.contains("exception !is FirebaseAuthWebException"))
         assertTrue(functionBody.contains("isAppleSignInCancellationErrorCode(exception.errorCode)"))
@@ -287,30 +273,6 @@ class AuthViewModelForegroundSyncTest {
         assertEquals("", loginErrorDialogText(""))
         assertEquals("   ", loginErrorDialogText("   "))
         assertEquals("Firebase 인증 실패", loginErrorDialogText("Firebase 인증 실패"))
-    }
-
-    @Test
-    fun `account switch resets local data before iOS style login sync`() {
-        assertEquals(
-            true,
-            shouldResetLocalDataForAccountChange(AuthAccountChangeAction.RESET_LOCAL_DATA),
-        )
-        assertEquals(
-            false,
-            shouldResetLocalDataForAccountChange(AuthAccountChangeAction.KEEP_LOCAL_DATA),
-        )
-    }
-
-    @Test
-    fun `account switch asks confirmation only when local changes are unsynced like iOS`() {
-        assertEquals(
-            true,
-            shouldRequestAccountSwitchConfirmation(hasUnsyncedLocalChanges = true),
-        )
-        assertEquals(
-            false,
-            shouldRequestAccountSwitchConfirmation(hasUnsyncedLocalChanges = false),
-        )
     }
 
     private fun resolveProjectFile(vararg candidates: String): File {
@@ -333,74 +295,6 @@ class AuthViewModelForegroundSyncTest {
     }
 
     @Test
-    fun `clean account switch still resets local data before navigation like iOS`() {
-        assertEquals(
-            true,
-            shouldPrepareAccountSwitchBeforeNavigation(AuthAccountChangeAction.RESET_LOCAL_DATA),
-        )
-        assertEquals(
-            false,
-            shouldPrepareAccountSwitchBeforeNavigation(AuthAccountChangeAction.KEEP_LOCAL_DATA),
-        )
-    }
-
-    @Test
-    fun `account switch resets local data before finalizing provider recovery keys like iOS`() {
-        assertEquals(
-            listOf(
-                ProviderLoginPreparationStep.RESET_LOCAL_DATA,
-                ProviderLoginPreparationStep.FINALIZE_SIGN_IN,
-            ),
-            resolveProviderLoginPreparationSteps(prepareAccountSwitchBeforeNavigation = true),
-        )
-        assertEquals(
-            listOf(ProviderLoginPreparationStep.FINALIZE_SIGN_IN),
-            resolveProviderLoginPreparationSteps(prepareAccountSwitchBeforeNavigation = false),
-        )
-    }
-
-    @Test
-    fun `account switch warning counts only shape changes since iOS baseline`() {
-        val state = buildAccountSwitchLocalChangeState(
-            currentShapeUpdatedAtById = mapOf(
-                "same" to 100,
-                "modified" to 2_500,
-                "added" to 300,
-            ),
-            syncedShapeBaseline = mapOf(
-                "same" to 100,
-                "modified" to 1_000,
-                "removed" to 700,
-            ),
-        )
-
-        assertEquals(true, state.hasUnsyncedLocalChanges)
-        assertEquals(3, state.atRiskCount)
-    }
-
-    @Test
-    fun `account switch warning ignores dirty sketches like iOS shape-only warning`() {
-        val state = buildAccountSwitchLocalChangeState(
-            currentShapeUpdatedAtById = mapOf("same" to 100),
-            syncedShapeBaseline = mapOf("same" to 100),
-        )
-
-        assertEquals(false, state.hasUnsyncedLocalChanges)
-        assertEquals(0, state.atRiskCount)
-    }
-
-    @Test
-    fun `account switch warning ignores dirty drones like iOS shape-only warning`() {
-        val state = buildAccountSwitchLocalChangeState(
-            currentShapeUpdatedAtById = mapOf("same" to 100),
-            syncedShapeBaseline = mapOf("same" to 100),
-        )
-
-        assertEquals(false, state.hasUnsyncedLocalChanges)
-        assertEquals(0, state.atRiskCount)
-    }
-
-    @Test
     fun `sync preference keys use iOS UserDefaults names`() {
         assertEquals("lastSyncTime", SyncPreferenceKeys.LAST_SYNC_TIME.name)
         assertEquals("lastLocalModificationTime", SyncPreferenceKeys.LAST_LOCAL_MODIFICATION_TIME.name)
@@ -414,91 +308,15 @@ class AuthViewModelForegroundSyncTest {
     }
 
     @Test
-    fun `clean local data does not ask account switch confirmation even when items exist`() {
-        val state = buildAccountSwitchLocalChangeState(
-            currentShapeUpdatedAtById = mapOf(
-                "shape-a" to 100,
-                "shape-b" to 200,
-            ),
-            syncedShapeBaseline = mapOf(
-                "shape-a" to 100,
-                "shape-b" to 200,
-            ),
-        )
-
-        assertEquals(false, state.hasUnsyncedLocalChanges)
-        assertEquals(0, state.atRiskCount)
-        assertEquals(
-            false,
-            shouldRequestAccountSwitchConfirmation(state.hasUnsyncedLocalChanges),
-        )
-    }
-
-    @Test
-    fun `account switch shape baseline missing falls back to current active shape count`() {
-        assertEquals(
-            2,
-            countAccountSwitchShapeBaselineChanges(
-                currentShapeUpdatedAtById = mapOf(
-                    "shape-a" to 100,
-                    "shape-b" to 200,
-                ),
-                syncedShapeBaseline = null,
-            ),
-        )
-    }
-
-    @Test
-    fun `account switch malformed shape baseline falls back to current active shape count`() {
-        val decodedBaseline = decodeAccountSwitchShapeBaseline("{\"shape-a\":not-a-timestamp}")
-        val state = buildAccountSwitchLocalChangeState(
-            currentShapeUpdatedAtById = mapOf(
-                "shape-a" to 100,
-                "shape-b" to 200,
-            ),
-            syncedShapeBaseline = decodedBaseline,
-        )
-
-        assertEquals(null, decodedBaseline)
-        assertEquals(true, state.hasUnsyncedLocalChanges)
-        assertEquals(2, state.atRiskCount)
-    }
-
-    @Test
-    fun `account switch shape baseline ignores timestamp differences within iOS one second tolerance`() {
-        assertEquals(
-            0,
-            countAccountSwitchShapeBaselineChanges(
-                currentShapeUpdatedAtById = mapOf("shape-a" to 1_900),
-                syncedShapeBaseline = mapOf("shape-a" to 1_000),
-            ),
-        )
-        assertEquals(
-            1,
-            countAccountSwitchShapeBaselineChanges(
-                currentShapeUpdatedAtById = mapOf("shape-a" to 2_001),
-                syncedShapeBaseline = mapOf("shape-a" to 1_000),
-            ),
-        )
-    }
-
-    @Test
-    fun `account switch shape baseline uses iOS UserDefaults json shape`() {
+    fun `synced shape baseline uses iOS UserDefaults json shape`() {
         val encoded = encodeAccountSwitchShapeBaseline(
             mapOf(
-                "shape-a" to 100,
                 "shape-b" to 200,
+                "shape-a" to 100,
             ),
         )
 
-        assertEquals(
-            mapOf(
-                "shape-a" to 100L,
-                "shape-b" to 200L,
-            ),
-            decodeAccountSwitchShapeBaseline(encoded),
-        )
-        assertEquals(null, decodeAccountSwitchShapeBaseline(""))
+        assertEquals("{\"shape-a\":100, \"shape-b\":200}", encoded)
     }
 
     @Test

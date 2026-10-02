@@ -19,7 +19,6 @@ import com.google.firebase.auth.OAuthProvider
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.Timestamp
-import com.google.firebase.firestore.DocumentSnapshot
 import kotlinx.coroutines.tasks.await
 import java.util.Date
 import javax.inject.Inject
@@ -28,16 +27,8 @@ import javax.inject.Singleton
 private const val APPLE_USER_ID_FIELD = "appleUserID"
 private const val GOOGLE_USER_ID_FIELD = "googleUserID"
 
-internal val AUTH_PROVIDER_RECOVERY_COLLECTIONS = listOf("shapes", "drones", "sketches", "metadata")
-
-internal enum class AuthAccountChangeAction {
-    KEEP_LOCAL_DATA,
-    RESET_LOCAL_DATA,
-}
-
 internal data class AuthSignInResult(
     val user: FirebaseUser,
-    val accountChangeAction: AuthAccountChangeAction = AuthAccountChangeAction.KEEP_LOCAL_DATA,
     val provider: AuthLoginProvider,
     val providerUserId: String?,
 )
@@ -45,12 +36,6 @@ internal data class AuthSignInResult(
 internal enum class AuthLoginProvider {
     APPLE,
     GOOGLE,
-}
-
-internal enum class ProviderAccountResolution {
-    KEEP_LOCAL_DATA,
-    MIGRATE_ACCOUNT,
-    SWITCH_ACCOUNT,
 }
 
 internal fun buildNewUserDocumentData(
@@ -78,101 +63,6 @@ internal fun buildExistingUserDocumentPatch(
     if (googleUserId != null) put(GOOGLE_USER_ID_FIELD, googleUserId)
 }
 
-internal fun shouldAttemptProviderAccountRecovery(
-    savedFirebaseUid: String?,
-    currentFirebaseUid: String,
-): Boolean {
-    return savedFirebaseUid != null && savedFirebaseUid != currentFirebaseUid
-}
-
-internal fun shouldAttemptAppleAccountRecovery(
-    savedFirebaseUid: String?,
-    currentFirebaseUid: String,
-): Boolean {
-    return shouldAttemptProviderAccountRecovery(savedFirebaseUid, currentFirebaseUid)
-}
-
-internal fun isSameRecoveredProviderAccount(
-    oldProviderUserId: String?,
-    currentProviderUserId: String,
-): Boolean {
-    return oldProviderUserId == currentProviderUserId
-}
-
-@Suppress("UNUSED_PARAMETER")
-internal fun isSameRecoveredAppleAccount(
-    oldAppleUserId: String?,
-    savedAppleUserId: String?,
-    currentAppleUserId: String,
-): Boolean {
-    return isSameRecoveredProviderAccount(
-        oldProviderUserId = oldAppleUserId,
-        currentProviderUserId = currentAppleUserId,
-    )
-}
-
-internal fun resolveProviderAccountResolution(
-    savedFirebaseUid: String?,
-    currentFirebaseUid: String,
-    oldAccountExists: Boolean,
-    oldProviderUserId: String?,
-    currentProviderUserId: String?,
-): ProviderAccountResolution {
-    if (!shouldAttemptProviderAccountRecovery(savedFirebaseUid, currentFirebaseUid)) {
-        return ProviderAccountResolution.KEEP_LOCAL_DATA
-    }
-    if (!oldAccountExists) {
-        return ProviderAccountResolution.SWITCH_ACCOUNT
-    }
-    if (currentProviderUserId == null || oldProviderUserId == null) {
-        return ProviderAccountResolution.SWITCH_ACCOUNT
-    }
-    return if (isSameRecoveredProviderAccount(oldProviderUserId, currentProviderUserId)) {
-        ProviderAccountResolution.MIGRATE_ACCOUNT
-    } else {
-        ProviderAccountResolution.SWITCH_ACCOUNT
-    }
-}
-
-internal fun buildMigratedProviderUserDocumentData(
-    oldUserData: Map<String, Any>,
-    toUserId: String,
-    fromUserId: String,
-    providerUserFieldName: String,
-    providerUserId: String,
-    nowMillis: Long,
-): Map<String, Any> = oldUserData.toMutableMap().apply {
-    put("id", toUserId)
-    put(providerUserFieldName, providerUserId)
-    put("lastLogin", Timestamp(Date(nowMillis)))
-    put("migratedFrom", fromUserId)
-    put("migratedAt", Timestamp(Date(nowMillis)))
-}
-
-internal fun buildMigratedUserDocumentData(
-    oldUserData: Map<String, Any>,
-    toUserId: String,
-    fromUserId: String,
-    appleUserId: String,
-    nowMillis: Long,
-): Map<String, Any> = buildMigratedProviderUserDocumentData(
-    oldUserData = oldUserData,
-    toUserId = toUserId,
-    fromUserId = fromUserId,
-    providerUserFieldName = APPLE_USER_ID_FIELD,
-    providerUserId = appleUserId,
-    nowMillis = nowMillis,
-)
-
-internal fun buildMigratedOldUserPatch(
-    toUserId: String,
-    nowMillis: Long,
-): Map<String, Any> = mapOf(
-    "migrated" to true,
-    "migratedTo" to toUserId,
-    "migratedAt" to Timestamp(Date(nowMillis)),
-)
-
 internal fun isGoogleWebClientIdConfigured(webClientId: String): Boolean {
     val trimmed = webClientId.trim()
     return trimmed.isNotEmpty() &&
@@ -188,9 +78,8 @@ internal fun isGoogleWebClientIdConfigured(webClientId: String): Boolean {
  *  - Google Sign-In: Credential Manager API + GoogleAuthProvider
  *  - Apple Sign-In: Firebase OAuthProvider("apple.com") (Chrome Custom Tabs 자동, 별도 SDK 불필요)
  *
- * iOS DronePass 사용자가 동일 provider 계정으로 로그인했는데 Firebase UID 가 달라지는
- * 복구 케이스는 iOS AuthManager처럼 이전 UID와 provider User ID를 비교해 Firestore
- * 데이터를 새 UID로 옮긴다.
+ * 다른 uid 로의 데이터 복사(uid 마이그레이션)는 하지 않는다. 기기 데이터를 계정으로 올릴지는
+ * AccountSessionFlows 가 로그인 뒤에 판단한다(기기 데이터 주인, 3.6.0).
  */
 @Singleton
 class AuthRepository @Inject constructor(
@@ -211,7 +100,6 @@ class AuthRepository @Inject constructor(
         /** Firebase OAuthProvider 의 Apple 식별자 */
         private const val APPLE_PROVIDER_ID = "apple.com"
         private const val USERS_COLLECTION = "users"
-        private const val FIRESTORE_BATCH_LIMIT = 450
     }
 
     /** 현재 로그인된 Firebase 사용자 */
@@ -264,17 +152,10 @@ class AuthRepository @Inject constructor(
             val user = authResult.user
                 ?: return Result.failure(Exception())
             val googleUserId = user.googleProviderUserId()
-            val accountChangeAction = recoverProviderAccountIfNeeded(
-                currentFirebaseUid = user.uid,
-                currentProviderUserId = googleUserId,
-                providerUserFieldName = GOOGLE_USER_ID_FIELD,
-                providerDisplayName = "Google",
-            )
 
             Result.success(
                 AuthSignInResult(
                     user = user,
-                    accountChangeAction = accountChangeAction,
                     provider = AuthLoginProvider.GOOGLE,
                     providerUserId = googleUserId,
                 )
@@ -327,17 +208,10 @@ class AuthRepository @Inject constructor(
                 ?: return Result.failure(Exception())
 
             val appleUserId = user.appleProviderUserId()
-            val accountChangeAction = recoverProviderAccountIfNeeded(
-                currentFirebaseUid = user.uid,
-                currentProviderUserId = appleUserId,
-                providerUserFieldName = APPLE_USER_ID_FIELD,
-                providerDisplayName = "Apple",
-            )
 
             Result.success(
                 AuthSignInResult(
                     user = user,
-                    accountChangeAction = accountChangeAction,
                     provider = AuthLoginProvider.APPLE,
                     providerUserId = appleUserId,
                 )
@@ -349,32 +223,21 @@ class AuthRepository @Inject constructor(
     }
 
     /**
-     * 로그아웃
-     * Firebase Auth에서 로그아웃한다. 로컬 복구 키는 iOS Keychain 동작처럼 유지한다.
+     * 로그아웃. Firebase Auth 에서만 로그아웃한다.
      */
     fun signOut() {
         firebaseAuth.signOut()
-        // iOS AuthManager.signout 과 동일하게 복구용 UID/Apple User ID 는 유지한다.
     }
 
     /**
-     * 로그인 후처리 확정 단계.
-     *
-     * 계정 전환 시에는 UI 확인 전까지 복구용 UID/provider ID 를 덮어쓰면 안 된다.
-     * iOS AuthManager 도 계정 전환 확인 이후 Keychain 을 갱신하므로 Android 도
-     * ViewModel 이 확인 절차를 마친 뒤 이 메서드로 저장소와 사용자 문서를 갱신한다.
+     * 로그인 후처리: 사용자 루트 문서와 활동 시각(계정 메타데이터, 동기화 관문 밖)을 기록한다.
      */
     internal suspend fun finalizeSuccessfulSignIn(result: AuthSignInResult) {
-        encryptedPrefsHelper.saveFirebaseUid(result.user.uid)
         when (result.provider) {
-            AuthLoginProvider.APPLE -> {
-                result.providerUserId?.let { encryptedPrefsHelper.saveAppleUserId(it) }
+            AuthLoginProvider.APPLE ->
                 ensureUserDocumentSafely(user = result.user, appleUserId = result.providerUserId)
-            }
-            AuthLoginProvider.GOOGLE -> {
-                result.providerUserId?.let { encryptedPrefsHelper.saveGoogleUserId(it) }
+            AuthLoginProvider.GOOGLE ->
                 ensureUserDocumentSafely(user = result.user, googleUserId = result.providerUserId)
-            }
         }
         userActivityTracker.recordIfNeeded()
     }
@@ -447,118 +310,5 @@ class AuthRepository @Inject constructor(
 
     private fun FirebaseUser.googleProviderUserId(): String? {
         return providerData.firstOrNull { info -> info.providerId == GoogleAuthProvider.PROVIDER_ID }?.uid
-    }
-
-    private suspend fun recoverProviderAccountIfNeeded(
-        currentFirebaseUid: String,
-        currentProviderUserId: String?,
-        providerUserFieldName: String,
-        providerDisplayName: String,
-    ): AuthAccountChangeAction {
-        val savedFirebaseUid = encryptedPrefsHelper.loadFirebaseUid()
-        if (!shouldAttemptProviderAccountRecovery(savedFirebaseUid, currentFirebaseUid)) {
-            return AuthAccountChangeAction.KEEP_LOCAL_DATA
-        }
-
-        val oldUserId = savedFirebaseUid ?: return AuthAccountChangeAction.KEEP_LOCAL_DATA
-        val oldUserRef = firestore.collection(USERS_COLLECTION).document(oldUserId)
-        val oldUserSnapshot = runCatching { oldUserRef.get().await() }
-            .getOrElse { error ->
-                Log.w(TAG, "이전 $providerDisplayName 계정 조회 실패: userId=$oldUserId", error)
-                return AuthAccountChangeAction.RESET_LOCAL_DATA
-            }
-
-        val oldProviderUserId = oldUserSnapshot.getString(providerUserFieldName)
-        val resolution = resolveProviderAccountResolution(
-            savedFirebaseUid = savedFirebaseUid,
-            currentFirebaseUid = currentFirebaseUid,
-            oldAccountExists = oldUserSnapshot.exists(),
-            oldProviderUserId = oldProviderUserId,
-            currentProviderUserId = currentProviderUserId,
-        )
-
-        if (resolution == ProviderAccountResolution.SWITCH_ACCOUNT) {
-            Log.w(TAG, "$providerDisplayName 계정 전환 감지: 이전 provider User ID 와 현재 로그인 정보가 다릅니다.")
-            return AuthAccountChangeAction.RESET_LOCAL_DATA
-        }
-        if (resolution == ProviderAccountResolution.KEEP_LOCAL_DATA) {
-            return AuthAccountChangeAction.KEEP_LOCAL_DATA
-        }
-        val providerUserId = currentProviderUserId ?: return AuthAccountChangeAction.RESET_LOCAL_DATA
-
-        migrateProviderUserData(
-            oldUserSnapshot = oldUserSnapshot,
-            fromUserId = oldUserId,
-            toUserId = currentFirebaseUid,
-            providerUserFieldName = providerUserFieldName,
-            providerUserId = providerUserId,
-            providerDisplayName = providerDisplayName,
-        )
-        return AuthAccountChangeAction.KEEP_LOCAL_DATA
-    }
-
-    private suspend fun migrateProviderUserData(
-        oldUserSnapshot: DocumentSnapshot,
-        fromUserId: String,
-        toUserId: String,
-        providerUserFieldName: String,
-        providerUserId: String,
-        providerDisplayName: String,
-    ) {
-        val oldUserData = oldUserSnapshot.data ?: return
-        val now = System.currentTimeMillis()
-        val users = firestore.collection(USERS_COLLECTION)
-        val newUserRef = users.document(toUserId)
-
-        runCatching {
-            newUserRef.set(
-                buildMigratedProviderUserDocumentData(
-                    oldUserData = oldUserData,
-                    toUserId = toUserId,
-                    fromUserId = fromUserId,
-                    providerUserFieldName = providerUserFieldName,
-                    providerUserId = providerUserId,
-                    nowMillis = now,
-                )
-            ).await()
-
-            AUTH_PROVIDER_RECOVERY_COLLECTIONS.forEach { collectionName ->
-                migrateUserSubcollection(
-                    fromUserId = fromUserId,
-                    toUserId = toUserId,
-                    collectionName = collectionName,
-                )
-            }
-
-            users.document(fromUserId)
-                .set(buildMigratedOldUserPatch(toUserId = toUserId, nowMillis = now), SetOptions.merge())
-                .await()
-        }.onSuccess {
-            Log.d(TAG, "$providerDisplayName 계정 데이터 복구 완료: $fromUserId -> $toUserId")
-        }.onFailure { error ->
-            Log.w(TAG, "$providerDisplayName 계정 데이터 복구 실패: $fromUserId -> $toUserId", error)
-        }
-    }
-
-    private suspend fun migrateUserSubcollection(
-        fromUserId: String,
-        toUserId: String,
-        collectionName: String,
-    ) {
-        val users = firestore.collection(USERS_COLLECTION)
-        val snapshot = users.document(fromUserId)
-            .collection(collectionName)
-            .get()
-            .await()
-        if (snapshot.isEmpty) return
-
-        val targetCollection = users.document(toUserId).collection(collectionName)
-        snapshot.documents.chunked(FIRESTORE_BATCH_LIMIT).forEach { documents ->
-            val batch = firestore.batch()
-            documents.forEach { document ->
-                batch.set(targetCollection.document(document.id), document.data.orEmpty())
-            }
-            batch.commit().await()
-        }
     }
 }

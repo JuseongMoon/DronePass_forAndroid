@@ -1,19 +1,23 @@
 package com.ScienceFiction.DronePassAndroid.core.data.sync
 
 import android.util.Log
+import com.ScienceFiction.DronePassAndroid.core.account.AccountSession
+import com.ScienceFiction.DronePassAndroid.core.account.StaleSyncTicketException
+import com.ScienceFiction.DronePassAndroid.core.account.SyncTicket
+import com.ScienceFiction.DronePassAndroid.core.account.isPermissionDenied
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import com.ScienceFiction.DronePassAndroid.core.data.repository.DroneRepository
 import com.ScienceFiction.DronePassAndroid.core.data.repository.ShapeRepository
 import com.ScienceFiction.DronePassAndroid.core.data.repository.SketchRepository
-import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -41,11 +45,12 @@ internal fun shouldRethrowRealtimeSyncFailure(manualRequest: Boolean): Boolean {
     return manualRequest
 }
 
-internal fun resolveRealtimeSyncRestartUserId(
-    currentListeningUserId: String?,
-    currentAuthUserId: String?,
-): String? {
-    return currentListeningUserId ?: currentAuthUserId
+/**
+ * 실패한 동기화를 다시 시도할지. 계정이 바뀌어 티켓이 무효가 됐거나, 쓰기가 PERMISSION_DENIED 로 거부된
+ * 계정(다른 기기에서 탈퇴 진행 중·완료)은 다시 시도하지 않는다. 같은 오류를 되풀이하지 않기 위해서다.
+ */
+internal fun shouldRetryRealtimeSyncFailure(error: Throwable): Boolean {
+    return error !is StaleSyncTicketException && !error.isPermissionDenied()
 }
 
 internal fun shouldScheduleRealtimeSync(
@@ -106,7 +111,7 @@ internal const val RealtimeSyncRestartDelayMs = 500L
 @Singleton
 class RealtimeSyncManager @Inject constructor(
     private val firestore: FirebaseFirestore,
-    private val auth: FirebaseAuth,
+    private val session: AccountSession,
     private val shapeRepository: ShapeRepository,
     private val droneRepository: DroneRepository,
     private val sketchRepository: SketchRepository,
@@ -160,9 +165,9 @@ class RealtimeSyncManager @Inject constructor(
     private var debounceJob: Job? = null
     private var sketchDebounceJob: Job? = null
 
-    /** 현재 리스닝 중인 userId (중복 리스너 방지) */
+    /** 리스너를 시작한 티켓. 리스너·디바운스·재시도는 모두 이 티켓의 계정으로만 동기화한다. */
     @Volatile
-    private var currentListeningUserId: String? = null
+    private var listeningTicket: SyncTicket? = null
 
     /** 동기화 진행 중 여부 (중복 동기화 방지). 멀티스레드 race 방지를 위해 AtomicBoolean. */
     private val shapeSyncInProgress = AtomicBoolean(false)
@@ -184,34 +189,39 @@ class RealtimeSyncManager @Inject constructor(
      * 2. users/{userId}/drones - iOS DroneFirebaseStore 변경 감시
      * 3. users/{userId}/metadata/sketchServer - Sketch 변경 감시
      *
-     * @param userId 감시할 사용자 ID
+     * @param ticket 동기화 관문이 준 티켓. 관문이 바뀌면 리스너 콜백과 재시도가 모두 멈춘다.
      */
-    fun startListening(userId: String) {
-        // 중복 리스너 방지: 이미 동일 userId로 리스닝 중이면 무시
+    fun startListening(ticket: SyncTicket) {
+        if (!session.isValid(ticket)) {
+            Log.d(TAG, "무효한 티켓이라 리스너를 시작하지 않습니다.")
+            return
+        }
+        val current = listeningTicket
+        // 중복 리스너 방지: 이미 같은 관문(같은 계정·세대)으로 리스닝 중이면 무시
         if (
-            currentListeningUserId == userId &&
+            current != null && current.uid == ticket.uid && session.isValid(current) &&
             metadataListener != null &&
             droneCollectionListener != null &&
             sketchMetadataListener != null
         ) {
-            Log.d(TAG, "이미 userId=$userId 에 대해 리스닝 중입니다.")
+            Log.d(TAG, "이미 같은 계정으로 리스닝 중입니다.")
             return
         }
 
         // 기존 리스너가 있으면 먼저 정리
         stopListening()
 
-        currentListeningUserId = userId
-        Log.d(TAG, "SnapshotListener 시작: userId=$userId")
+        listeningTicket = ticket
+        Log.d(TAG, "SnapshotListener 시작")
 
         // 1. Shape/Drone 메타데이터 리스너 설정
-        setupShapeMetadataListener(userId)
+        setupShapeMetadataListener(ticket)
 
         // 2. iOS 드론 변경 감지를 위한 컬렉션 리스너 설정
-        setupDroneCollectionListener(userId)
+        setupDroneCollectionListener(ticket)
 
         // 3. Sketch 메타데이터 리스너 설정
-        setupSketchMetadataListener(userId)
+        setupSketchMetadataListener(ticket)
 
         _isRealtimeSyncEnabled.value = true
         Log.d(TAG, "SnapshotListener 설정 완료 (Shape metadata + Drone collection + Sketch)")
@@ -221,19 +231,21 @@ class RealtimeSyncManager @Inject constructor(
      * Shape/Drone용 메타데이터 리스너 설정
      * users/{userId}/metadata/server 문서의 lastModified 변경을 감시
      */
-    private fun setupShapeMetadataListener(userId: String) {
+    private fun setupShapeMetadataListener(ticket: SyncTicket) {
         val docRef = firestore
             .collection("users")
-            .document(userId)
+            .document(ticket.uid)
             .collection("metadata")
             .document("server")
 
         metadataListener = docRef.addSnapshotListener { snapshot, error ->
             if (error != null) {
                 Log.e(TAG, "Shape 메타데이터 SnapshotListener 오류", error)
+                if (error.isPermissionDenied()) session.reportPermissionDenied(ticket)
                 _syncState.value = SyncState.Error(error.message ?: "알 수 없는 오류")
                 return@addSnapshotListener
             }
+            if (!session.isValid(ticket)) return@addSnapshotListener
 
             if (snapshot != null && snapshot.exists()) {
                 // lastModified는 FieldValue.serverTimestamp()로 기록되므로 Timestamp 타입.
@@ -255,7 +267,7 @@ class RealtimeSyncManager @Inject constructor(
                         return@launch
                     }
 
-                    scheduleShapeAndDroneSyncDebounced()
+                    scheduleShapeAndDroneSyncDebounced(ticket)
                 }
             }
         }
@@ -265,18 +277,20 @@ class RealtimeSyncManager @Inject constructor(
      * iOS DroneFirebaseStore.save/delete 는 metadata/server 를 갱신하지 않고 drones 컬렉션만 바꾼다.
      * Android metadata 리스너만으로는 iOS 드론-only 변경을 실시간으로 받을 수 없으므로 컬렉션을 직접 감시한다.
      */
-    private fun setupDroneCollectionListener(userId: String) {
+    private fun setupDroneCollectionListener(ticket: SyncTicket) {
         val collectionRef = firestore
             .collection("users")
-            .document(userId)
+            .document(ticket.uid)
             .collection("drones")
 
         droneCollectionListener = collectionRef.addSnapshotListener { snapshot, error ->
             if (error != null) {
                 Log.e(TAG, "Drone 컬렉션 SnapshotListener 오류", error)
+                if (error.isPermissionDenied()) session.reportPermissionDenied(ticket)
                 _syncState.value = SyncState.Error(error.message ?: "알 수 없는 오류")
                 return@addSnapshotListener
             }
+            if (!session.isValid(ticket)) return@addSnapshotListener
 
             if (snapshot == null) return@addSnapshotListener
             if (!shouldScheduleDroneCollectionSync(snapshot.metadata.hasPendingWrites())) {
@@ -284,7 +298,7 @@ class RealtimeSyncManager @Inject constructor(
                 return@addSnapshotListener
             }
 
-            scheduleShapeAndDroneSyncDebounced()
+            scheduleShapeAndDroneSyncDebounced(ticket)
         }
     }
 
@@ -292,18 +306,20 @@ class RealtimeSyncManager @Inject constructor(
      * Sketch용 메타데이터 리스너 설정
      * users/{userId}/metadata/sketchServer 문서의 lastModified 변경을 감시
      */
-    private fun setupSketchMetadataListener(userId: String) {
+    private fun setupSketchMetadataListener(ticket: SyncTicket) {
         val docRef = firestore
             .collection("users")
-            .document(userId)
+            .document(ticket.uid)
             .collection("metadata")
             .document("sketchServer")
 
         sketchMetadataListener = docRef.addSnapshotListener { snapshot, error ->
             if (error != null) {
                 Log.e(TAG, "Sketch 메타데이터 SnapshotListener 오류", error)
+                if (error.isPermissionDenied()) session.reportPermissionDenied(ticket)
                 return@addSnapshotListener
             }
+            if (!session.isValid(ticket)) return@addSnapshotListener
 
             if (snapshot != null && snapshot.exists()) {
                 // lastModified는 FieldValue.serverTimestamp()로 기록되므로 Timestamp 타입.
@@ -329,18 +345,18 @@ class RealtimeSyncManager @Inject constructor(
                     sketchDebounceJob?.cancel()
                     sketchDebounceJob = scope.launch {
                         delay(DEBOUNCE_DELAY_MS)
-                        performSketchSync()
+                        performSketchSync(ticket)
                     }
                 }
             }
         }
     }
 
-    private fun scheduleShapeAndDroneSyncDebounced() {
+    private fun scheduleShapeAndDroneSyncDebounced(ticket: SyncTicket) {
         debounceJob?.cancel()
         debounceJob = scope.launch {
             delay(DEBOUNCE_DELAY_MS)
-            performShapeAndDroneSync()
+            performShapeAndDroneSync(ticket)
         }
     }
 
@@ -350,7 +366,11 @@ class RealtimeSyncManager @Inject constructor(
      * ShapeRepository.performFullSync()와 DroneRepository.performFullSync()를 호출하여
      * LWW 기반 양방향 동기화를 실행합니다.
      */
-    private suspend fun performShapeAndDroneSync(manualRequest: Boolean = false) {
+    private suspend fun performShapeAndDroneSync(ticket: SyncTicket, manualRequest: Boolean = false) {
+        if (!session.isValid(ticket)) {
+            Log.d(TAG, "관문이 바뀌어 Shape/Drone 동기화를 건너뜁니다.")
+            return
+        }
         // compareAndSet 으로 race 없이 단일 진입 보장
         if (!shapeSyncInProgress.compareAndSet(false, true)) {
             Log.d(TAG, "Shape/Drone 동기화가 이미 진행 중입니다.")
@@ -363,22 +383,25 @@ class RealtimeSyncManager @Inject constructor(
 
             // Shape/Drone 동기화 (Room Flow 가 UI 까지 자동 전파되므로 별도 콜백 불필요)
             // 도형이 드론 id 를 가리키므로 드론을 먼저 올린다.
-            droneRepository.performFullSync()
+            droneRepository.performFullSync(ticket)
             Log.d(TAG, "Drone 동기화 완료")
 
-            shapeRepository.performFullSync()
+            shapeRepository.performFullSync(ticket)
             Log.d(TAG, "Shape 동기화 완료")
 
             // 동기화 시각 업데이트
-            lastShapeSyncTime = System.currentTimeMillis()
-            val syncedShapeBaseline = encodeAccountSwitchShapeBaseline(
-                buildAccountSwitchShapeBaseline(shapeRepository.getAllShapes().first()),
-            )
-            dataStore.edit { preferences ->
-                preferences.recordShapeRealtimeSyncSuccess(
-                    syncTimeMillis = lastShapeSyncTime,
-                    syncedShapeBaseline = syncedShapeBaseline,
+            val syncTime = System.currentTimeMillis()
+            session.commit(ticket) {
+                lastShapeSyncTime = syncTime
+                val syncedShapeBaseline = encodeAccountSwitchShapeBaseline(
+                    buildAccountSwitchShapeBaseline(shapeRepository.getAllShapes().first()),
                 )
+                dataStore.edit { preferences ->
+                    preferences.recordShapeRealtimeSyncSuccess(
+                        syncTimeMillis = syncTime,
+                        syncedShapeBaseline = syncedShapeBaseline,
+                    )
+                }
             }
             _lastSyncTime.value = lastShapeSyncTime
 
@@ -388,11 +411,16 @@ class RealtimeSyncManager @Inject constructor(
             _syncState.value = SyncState.Success(lastShapeSyncTime)
             Log.d(TAG, "Shape/Drone 실시간 동기화 완료")
         } catch (e: Exception) {
+            if (e is StaleSyncTicketException) {
+                Log.d(TAG, "관문이 바뀌어 Shape/Drone 동기화 결과를 버립니다.")
+                _syncState.value = SyncState.Idle
+                return
+            }
             Log.e(TAG, "Shape/Drone 실시간 동기화 실패", e)
             _syncState.value = SyncState.Error(e.message ?: "Shape/Drone 동기화 중 오류 발생")
 
             // 재시도 스케줄링
-            scheduleShapeRetrySync()
+            if (shouldRetryRealtimeSyncFailure(e)) scheduleShapeRetrySync(ticket)
             if (shouldRethrowRealtimeSyncFailure(manualRequest)) {
                 throw e
             }
@@ -407,7 +435,11 @@ class RealtimeSyncManager @Inject constructor(
      * SketchRepository.performFullSync()를 호출하여
      * LWW 기반 양방향 동기화를 실행합니다.
      */
-    private suspend fun performSketchSync(manualRequest: Boolean = false) {
+    private suspend fun performSketchSync(ticket: SyncTicket, manualRequest: Boolean = false) {
+        if (!session.isValid(ticket)) {
+            Log.d(TAG, "관문이 바뀌어 Sketch 동기화를 건너뜁니다.")
+            return
+        }
         if (!sketchSyncInProgress.compareAndSet(false, true)) {
             Log.d(TAG, "Sketch 동기화가 이미 진행 중입니다.")
             return
@@ -416,19 +448,26 @@ class RealtimeSyncManager @Inject constructor(
         try {
             Log.d(TAG, "Sketch 실시간 동기화 시작")
 
-            sketchRepository.performFullSync()
+            sketchRepository.performFullSync(ticket)
             Log.d(TAG, "Sketch 동기화 완료")
 
-            lastSketchSyncTime = System.currentTimeMillis()
-            dataStore.edit { preferences ->
-                preferences.recordSketchRealtimeSyncSuccess(lastSketchSyncTime)
+            val syncTime = System.currentTimeMillis()
+            session.commit(ticket) {
+                lastSketchSyncTime = syncTime
+                dataStore.edit { preferences ->
+                    preferences.recordSketchRealtimeSyncSuccess(syncTime)
+                }
             }
             sketchRetryCount = 0
 
             Log.d(TAG, "Sketch 실시간 동기화 완료")
         } catch (e: Exception) {
+            if (e is StaleSyncTicketException) {
+                Log.d(TAG, "관문이 바뀌어 Sketch 동기화 결과를 버립니다.")
+                return
+            }
             Log.e(TAG, "Sketch 실시간 동기화 실패", e)
-            scheduleSketchRetrySync()
+            if (shouldRetryRealtimeSyncFailure(e)) scheduleSketchRetrySync(ticket)
             if (shouldRethrowRealtimeSyncFailure(manualRequest)) {
                 throw e
             }
@@ -441,7 +480,7 @@ class RealtimeSyncManager @Inject constructor(
      * Shape/Drone 동기화 실패 시 재시도 스케줄링
      * 최대 3회, 5초/10초/15초 간격으로 재시도
      */
-    private fun scheduleShapeRetrySync() {
+    private fun scheduleShapeRetrySync(ticket: SyncTicket) {
         if (shapeRetryCount < MAX_RETRY_COUNT) {
             shapeRetryCount++
             val retryDelay = shapeRetryCount * BASE_RETRY_DELAY_MS
@@ -450,13 +489,12 @@ class RealtimeSyncManager @Inject constructor(
             debounceJob?.cancel()
             debounceJob = scope.launch {
                 delay(retryDelay)
-                // 로그아웃 후 재시도 차단: stopListening() 직후 잔여 재시도 코루틴이
-                // performFullSync 를 호출하지 않도록 한다.
-                if (currentListeningUserId == null) {
-                    Log.d(TAG, "리스닝 중단 상태이므로 Shape/Drone 재시도를 건너뜁니다.")
+                // 시작할 때의 티켓으로만 재시도한다. 계정이 바뀌었거나 리스너가 멈췄으면 건너뛴다.
+                if (!session.isValid(ticket)) {
+                    Log.d(TAG, "관문이 바뀌어 Shape/Drone 재시도를 건너뜁니다.")
                     return@launch
                 }
-                performShapeAndDroneSync()
+                performShapeAndDroneSync(ticket)
             }
         } else {
             Log.e(TAG, "Shape/Drone 최대 재시도 횟수 초과. 실시간 동기화를 일시 중지합니다.")
@@ -468,7 +506,7 @@ class RealtimeSyncManager @Inject constructor(
      * Sketch 동기화 실패 시 재시도 스케줄링
      * 최대 3회, 5초/10초/15초 간격으로 재시도
      */
-    private fun scheduleSketchRetrySync() {
+    private fun scheduleSketchRetrySync(ticket: SyncTicket) {
         if (sketchRetryCount < MAX_RETRY_COUNT) {
             sketchRetryCount++
             val retryDelay = sketchRetryCount * BASE_RETRY_DELAY_MS
@@ -477,11 +515,11 @@ class RealtimeSyncManager @Inject constructor(
             sketchDebounceJob?.cancel()
             sketchDebounceJob = scope.launch {
                 delay(retryDelay)
-                if (currentListeningUserId == null) {
-                    Log.d(TAG, "리스닝 중단 상태이므로 Sketch 재시도를 건너뜁니다.")
+                if (!session.isValid(ticket)) {
+                    Log.d(TAG, "관문이 바뀌어 Sketch 재시도를 건너뜁니다.")
                     return@launch
                 }
-                performSketchSync()
+                performSketchSync(ticket)
             }
         } else {
             Log.e(TAG, "Sketch 최대 재시도 횟수 초과. 실시간 동기화를 일시 중지합니다.")
@@ -509,7 +547,7 @@ class RealtimeSyncManager @Inject constructor(
         sketchDebounceJob = null
 
         // 상태 초기화
-        currentListeningUserId = null
+        listeningTicket = null
         shapeSyncInProgress.set(false)
         sketchSyncInProgress.set(false)
         shapeRetryCount = 0
@@ -518,6 +556,16 @@ class RealtimeSyncManager @Inject constructor(
         _isRealtimeSyncEnabled.value = false
 
         Log.d(TAG, "SnapshotListener 중단 (Shape/Drone + Sketch)")
+    }
+
+    /**
+     * 리스너를 멈추고, 진행 중인 디바운스·재시도·동기화 작업이 끝날 때까지 기다린다(로그아웃 ④).
+     * 관문을 먼저 닫은 뒤 부르므로 기다리는 동안 끝나는 작업도 기기 저장소에는 반영하지 못한다.
+     */
+    suspend fun stopListeningAndWait() {
+        val jobs = listOfNotNull(debounceJob, sketchDebounceJob)
+        stopListening()
+        jobs.forEach { it.cancelAndJoin() }
     }
 
     fun resetSyncTrackingForAccountSwitch() {
@@ -533,34 +581,31 @@ class RealtimeSyncManager @Inject constructor(
      * 외부 호출은 rate-limit (UI 디바운스) 으로 보호할 것 — Repository 자체는 가드 안 함.
      */
     suspend fun forceSyncNow() {
+        val ticket = session.syncTicket() ?: throw StaleSyncTicketException()
         realtimeForceSyncDomains().forEach { domain ->
             when (domain) {
-                RealtimeForceSyncDomain.ShapeDrone -> performShapeAndDroneSync(manualRequest = true)
-                RealtimeForceSyncDomain.Sketch -> performSketchSync(manualRequest = true)
+                RealtimeForceSyncDomain.ShapeDrone -> performShapeAndDroneSync(ticket, manualRequest = true)
+                RealtimeForceSyncDomain.Sketch -> performSketchSync(ticket, manualRequest = true)
             }
         }
     }
 
     /**
-     * iOS `resetAndRestartRealtimeSync()` 정합 — 현재 리스닝 중인 userId 또는
-     * 로그인 userId 로 stopListening → 500ms 후 startListening 재시작.
-     * 동기화 토글 ON 시 fresh listener 보장.
+     * iOS `resetAndRestartRealtimeSync()` 정합 — 동기화 관문의 현재 티켓으로
+     * stopListening → 500ms 후 startListening 재시작. 관문이 닫혀 있으면 아무것도 하지 않는다.
      */
     suspend fun resetAndRestartRealtimeSync() {
-        val userId = resolveRealtimeSyncRestartUserId(
-            currentListeningUserId = currentListeningUserId,
-            currentAuthUserId = auth.currentUser?.uid,
-        ) ?: return
+        session.syncTicket() ?: return
         stopListening()
         delay(RealtimeSyncRestartDelayMs)
-        startListening(userId)
+        startListening(session.syncTicket() ?: return)
     }
 
     suspend fun hasForegroundShapeRemoteChanges(): Boolean {
-        val userId = auth.currentUser?.uid ?: return false
+        val ticket = session.syncTicket() ?: return false
         val preferences = dataStore.data.first()
         val shapeServerLastModified = fetchMetadataLastModified(
-            userId = userId,
+            ticket = ticket,
             documentId = "server",
         )
         return hasForegroundShapeMetadataChange(
@@ -570,14 +615,16 @@ class RealtimeSyncManager @Inject constructor(
         )
     }
 
-    private suspend fun fetchMetadataLastModified(userId: String, documentId: String): Long? {
-        val snapshot = firestore
-            .collection("users")
-            .document(userId)
-            .collection("metadata")
-            .document(documentId)
-            .get()
-            .await()
+    private suspend fun fetchMetadataLastModified(ticket: SyncTicket, documentId: String): Long? {
+        val snapshot = session.remote(ticket) { uid ->
+            firestore
+                .collection("users")
+                .document(uid)
+                .collection("metadata")
+                .document(documentId)
+                .get()
+                .await()
+        }
         if (!snapshot.exists()) return null
         return snapshot.getTimestamp("lastModified")?.toDate()?.time
             ?: snapshot.getLong("lastModified")

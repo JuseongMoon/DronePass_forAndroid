@@ -11,19 +11,6 @@ import java.util.Date
 class AuthRepositoryUserDocumentTest {
 
     @Test
-    fun `provider 계정 복구는 도형 드론 스케치와 동기화 메타데이터를 함께 이전한다`() {
-        assertEquals(
-            listOf("shapes", "drones", "sketches", "metadata"),
-            AUTH_PROVIDER_RECOVERY_COLLECTIONS,
-        )
-    }
-
-    @Test
-    fun `provider 계정 복구는 기기별 FCM devices 컬렉션을 이전하지 않는다`() {
-        assertFalse(AUTH_PROVIDER_RECOVERY_COLLECTIONS.contains("devices"))
-    }
-
-    @Test
     fun `새 사용자 문서는 iOS AuthManager 와 같은 루트 필드를 만든다`() {
         val data = buildNewUserDocumentData(
             userId = "uid-1",
@@ -97,245 +84,6 @@ class AuthRepositoryUserDocumentTest {
     }
 
     @Test
-    fun `Apple 계정 복구는 저장된 UID 와 현재 UID 가 다를 때만 시도한다`() {
-        assertFalse(
-            shouldAttemptAppleAccountRecovery(
-                savedFirebaseUid = null,
-                currentFirebaseUid = "current",
-            )
-        )
-        assertFalse(
-            shouldAttemptAppleAccountRecovery(
-                savedFirebaseUid = "current",
-                currentFirebaseUid = "current",
-            )
-        )
-        assertTrue(
-            shouldAttemptAppleAccountRecovery(
-                savedFirebaseUid = "old",
-                currentFirebaseUid = "current",
-            )
-        )
-    }
-
-    @Test
-    fun `provider 계정 복구도 저장된 UID 와 현재 UID 가 다를 때만 시도한다`() {
-        assertFalse(
-            shouldAttemptProviderAccountRecovery(
-                savedFirebaseUid = null,
-                currentFirebaseUid = "current",
-            )
-        )
-        assertFalse(
-            shouldAttemptProviderAccountRecovery(
-                savedFirebaseUid = "current",
-                currentFirebaseUid = "current",
-            )
-        )
-        assertTrue(
-            shouldAttemptProviderAccountRecovery(
-                savedFirebaseUid = "old",
-                currentFirebaseUid = "current",
-            )
-        )
-    }
-
-    @Test
-    fun `Apple 계정 복구는 현재 로그인한 Apple User ID 가 Firestore 값과 직접 같아야 한다`() {
-        assertTrue(
-            isSameRecoveredAppleAccount(
-                oldAppleUserId = "apple-1",
-                savedAppleUserId = null,
-                currentAppleUserId = "apple-1",
-            )
-        )
-        assertFalse(
-            isSameRecoveredAppleAccount(
-                oldAppleUserId = "apple-1",
-                savedAppleUserId = "apple-1",
-                currentAppleUserId = "apple-2",
-            )
-        )
-        assertFalse(
-            isSameRecoveredAppleAccount(
-                oldAppleUserId = "apple-1",
-                savedAppleUserId = "apple-2",
-                currentAppleUserId = "apple-2",
-            )
-        )
-    }
-
-    @Test
-    fun `Apple 계정 복구는 iOS처럼 Firestore provider User ID 만 신뢰한다`() {
-        assertFalse(
-            isSameRecoveredAppleAccount(
-                oldAppleUserId = null,
-                savedAppleUserId = "apple-1",
-                currentAppleUserId = "apple-2",
-            )
-        )
-        assertFalse(
-            isSameRecoveredAppleAccount(
-                oldAppleUserId = null,
-                savedAppleUserId = null,
-                currentAppleUserId = "apple-1",
-            )
-        )
-    }
-
-    @Test
-    fun `provider 계정 복구는 iOS처럼 Firestore provider User ID 만 신뢰한다`() {
-        assertTrue(
-            isSameRecoveredProviderAccount(
-                oldProviderUserId = "google-1",
-                currentProviderUserId = "google-1",
-            )
-        )
-        assertFalse(
-            isSameRecoveredProviderAccount(
-                oldProviderUserId = "google-1",
-                currentProviderUserId = "google-2",
-            )
-        )
-        assertFalse(
-            isSameRecoveredProviderAccount(
-                oldProviderUserId = null,
-                currentProviderUserId = "google-1",
-            )
-        )
-    }
-
-    @Test
-    fun `provider 계정 판별은 UID가 같거나 처음 로그인인 경우 로컬 데이터를 유지한다`() {
-        assertEquals(
-            ProviderAccountResolution.KEEP_LOCAL_DATA,
-            resolveProviderAccountResolution(
-                savedFirebaseUid = null,
-                currentFirebaseUid = "current",
-                oldAccountExists = false,
-                oldProviderUserId = null,
-                currentProviderUserId = "google-1",
-            ),
-        )
-        assertEquals(
-            ProviderAccountResolution.KEEP_LOCAL_DATA,
-            resolveProviderAccountResolution(
-                savedFirebaseUid = "current",
-                currentFirebaseUid = "current",
-                oldAccountExists = true,
-                oldProviderUserId = "google-1",
-                currentProviderUserId = "google-1",
-            ),
-        )
-    }
-
-    @Test
-    fun `provider 계정 판별은 저장 UID 계정의 Firestore 식별자가 같을 때만 마이그레이션한다`() {
-        assertEquals(
-            ProviderAccountResolution.MIGRATE_ACCOUNT,
-            resolveProviderAccountResolution(
-                savedFirebaseUid = "old",
-                currentFirebaseUid = "current",
-                oldAccountExists = true,
-                oldProviderUserId = "google-1",
-                currentProviderUserId = "google-1",
-            ),
-        )
-    }
-
-    @Test
-    fun `provider 계정 판별은 이전 계정이 없거나 식별자가 다르면 계정 전환으로 처리한다`() {
-        assertEquals(
-            ProviderAccountResolution.SWITCH_ACCOUNT,
-            resolveProviderAccountResolution(
-                savedFirebaseUid = "old",
-                currentFirebaseUid = "current",
-                oldAccountExists = false,
-                oldProviderUserId = null,
-                currentProviderUserId = "google-1",
-            ),
-        )
-        assertEquals(
-            ProviderAccountResolution.SWITCH_ACCOUNT,
-            resolveProviderAccountResolution(
-                savedFirebaseUid = "old",
-                currentFirebaseUid = "current",
-                oldAccountExists = true,
-                oldProviderUserId = "google-1",
-                currentProviderUserId = "google-2",
-            ),
-        )
-        assertEquals(
-            ProviderAccountResolution.SWITCH_ACCOUNT,
-            resolveProviderAccountResolution(
-                savedFirebaseUid = "old",
-                currentFirebaseUid = "current",
-                oldAccountExists = true,
-                oldProviderUserId = null,
-                currentProviderUserId = "google-1",
-            ),
-        )
-    }
-
-    @Test
-    fun `마이그레이션된 사용자 문서는 iOS처럼 최신 UID 와 이전 UID 메타데이터를 남긴다`() {
-        val data = buildMigratedUserDocumentData(
-            oldUserData = mapOf(
-                "id" to "old-uid",
-                "email" to "old@example.com",
-                "createdAt" to Timestamp(Date(1_600_000_000_000L)),
-            ),
-            toUserId = "new-uid",
-            fromUserId = "old-uid",
-            appleUserId = "apple-1",
-            nowMillis = 1_700_000_000_000L,
-        )
-
-        assertEquals("new-uid", data["id"])
-        assertEquals("old@example.com", data["email"])
-        assertEquals("apple-1", data["appleUserID"])
-        assertEquals("old-uid", data["migratedFrom"])
-        assertEquals(1_700_000_000_000L, (data["lastLogin"] as Timestamp).toDate().time)
-        assertEquals(1_700_000_000_000L, (data["migratedAt"] as Timestamp).toDate().time)
-    }
-
-    @Test
-    fun `마이그레이션된 Google 사용자 문서는 googleUserID 와 이전 UID 메타데이터를 남긴다`() {
-        val data = buildMigratedProviderUserDocumentData(
-            oldUserData = mapOf(
-                "id" to "old-uid",
-                "email" to "old@example.com",
-                "createdAt" to Timestamp(Date(1_600_000_000_000L)),
-            ),
-            toUserId = "new-uid",
-            fromUserId = "old-uid",
-            providerUserFieldName = "googleUserID",
-            providerUserId = "google-1",
-            nowMillis = 1_700_000_000_000L,
-        )
-
-        assertEquals("new-uid", data["id"])
-        assertEquals("old@example.com", data["email"])
-        assertEquals("google-1", data["googleUserID"])
-        assertFalse(data.containsKey("appleUserID"))
-        assertEquals("old-uid", data["migratedFrom"])
-        assertEquals(1_700_000_000_000L, (data["lastLogin"] as Timestamp).toDate().time)
-        assertEquals(1_700_000_000_000L, (data["migratedAt"] as Timestamp).toDate().time)
-    }
-
-    @Test
-    fun `이전 사용자 문서는 iOS처럼 마이그레이션 완료 플래그를 남긴다`() {
-        val patch = buildMigratedOldUserPatch(
-            toUserId = "new-uid",
-            nowMillis = 1_700_000_000_000L,
-        )
-
-        assertEquals(true, patch["migrated"])
-        assertEquals("new-uid", patch["migratedTo"])
-        assertEquals(1_700_000_000_000L, (patch["migratedAt"] as Timestamp).toDate().time)
-    }
-
-    @Test
     fun `Google 로그인은 WEB_CLIENT_ID 가 설정된 경우에만 시작한다`() {
         assertFalse(isGoogleWebClientIdConfigured(""))
         assertFalse(isGoogleWebClientIdConfigured("   "))
@@ -364,7 +112,6 @@ class AuthRepositoryUserDocumentTest {
                 "GoogleAuthProvider.getCredential(idToken, null)",
                 "firebaseAuth.signInWithCredential(firebaseCredential).await()",
                 "val googleUserId = user.googleProviderUserId()",
-                "providerUserFieldName = GOOGLE_USER_ID_FIELD",
                 "provider = AuthLoginProvider.GOOGLE",
                 "providerUserId = googleUserId",
             ),
@@ -387,7 +134,6 @@ class AuthRepositoryUserDocumentTest {
                 "val pending = firebaseAuth.pendingAuthResult",
                 "firebaseAuth.startActivityForSignInWithProvider(activity, provider).await()",
                 "val appleUserId = user.appleProviderUserId()",
-                "providerUserFieldName = APPLE_USER_ID_FIELD",
                 "provider = AuthLoginProvider.APPLE",
                 "providerUserId = appleUserId",
             ),
@@ -395,7 +141,7 @@ class AuthRepositoryUserDocumentTest {
     }
 
     @Test
-    fun `로그인 성공 확정은 iOS AuthManager처럼 provider 별 복구 키와 사용자 문서를 갱신한다`() {
+    fun `로그인 성공 확정은 provider 별 사용자 문서만 갱신하고 마지막 로그인 uid 를 저장하지 않는다`() {
         val source = resolveProjectFile(
             "src/main/java/com/ScienceFiction/DronePassAndroid/feature/auth/AuthRepository.kt",
             "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/auth/AuthRepository.kt",
@@ -405,15 +151,15 @@ class AuthRepositoryUserDocumentTest {
             source = source,
             tokens = listOf(
                 "internal suspend fun finalizeSuccessfulSignIn",
-                "encryptedPrefsHelper.saveFirebaseUid(result.user.uid)",
                 "AuthLoginProvider.APPLE ->",
-                "encryptedPrefsHelper.saveAppleUserId(it)",
                 "ensureUserDocumentSafely(user = result.user, appleUserId = result.providerUserId)",
                 "AuthLoginProvider.GOOGLE ->",
-                "encryptedPrefsHelper.saveGoogleUserId(it)",
                 "ensureUserDocumentSafely(user = result.user, googleUserId = result.providerUserId)",
             ),
         )
+        // 기기 데이터 주인(3.6.0): 계정 판단에 "마지막 로그인 uid"를 쓰지 않고, 다른 uid 로 데이터를 복사하지 않는다.
+        listOf("saveFirebaseUid", "saveAppleUserId", "saveGoogleUserId", "loadFirebaseUid", "migratedFrom", ".batch()")
+            .forEach { token -> assertFalse(token, source.contains(token)) }
     }
 
     private fun assertAppearsInOrder(source: String, tokens: List<String>) {

@@ -4,6 +4,8 @@ import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import com.ScienceFiction.DronePassAndroid.core.account.AccountSession
+import com.ScienceFiction.DronePassAndroid.core.account.SyncTicket
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.dao.ShapeDao
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.entity.ShapeEntity
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.mapper.toDomain
@@ -11,17 +13,13 @@ import com.ScienceFiction.DronePassAndroid.core.data.local.room.mapper.toEntity
 import com.ScienceFiction.DronePassAndroid.core.data.remote.firebase.ShapeFirebaseStore
 import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncPreferenceKeys
 import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncMergeResult
-import com.ScienceFiction.DronePassAndroid.core.data.sync.filterServerNewer
-import com.ScienceFiction.DronePassAndroid.core.data.sync.isCloudSyncEnabled
 import com.ScienceFiction.DronePassAndroid.core.data.sync.shouldUpdateServerMetadataAfterFullSync
-import com.ScienceFiction.DronePassAndroid.core.data.sync.shouldRunImmediateCloudSync
 import com.ScienceFiction.DronePassAndroid.core.data.storedEndDateAlarmEnabled
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 import com.ScienceFiction.DronePassAndroid.domain.model.validateForFirebasePersistence
 import com.ScienceFiction.DronePassAndroid.domain.model.validateForLocalPersistence
 import com.ScienceFiction.DronePassAndroid.service.NotificationScheduler
 import com.ScienceFiction.DronePassAndroid.service.buildEndDateAlarmReconcilePlan
-import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -109,7 +107,7 @@ internal fun mergeShapesForFullSync(
 class ShapeRepository @Inject constructor(
     private val shapeDao: ShapeDao,
     private val shapeFirebaseStore: ShapeFirebaseStore,
-    private val auth: FirebaseAuth,
+    private val session: AccountSession,
     private val dataStore: DataStore<Preferences>,
     private val notificationScheduler: NotificationScheduler,
 ) {
@@ -292,16 +290,16 @@ class ShapeRepository @Inject constructor(
 
     /**
      * 단일 도형을 Firestore에 즉시 푸시한다.
-     * 로그인 + 클라우드 백업 ON 상태가 아니면 NO-OP. 실패 시 로컬은 유지되며
-     * 다음 performFullSync 또는 재로그인 시 LWW 머지로 보강된다.
+     * 동기화 관문이 닫혀 있으면(비로그인·가져오기 확인 대기 등) NO-OP. 실패 시 로컬은 유지되며
+     * 다음 performFullSync 에서 LWW 머지로 보강된다.
      */
     private suspend fun syncShapeToFirebase(shape: ShapeModel) {
-        val userId = currentImmediateCloudSyncUserId("syncShapeToFirebase") ?: return
+        val ticket = immediateSyncTicket("syncShapeToFirebase") ?: return
         if (!shape.isValidForFirebaseWrite("syncShapeToFirebase")) return
 
         try {
-            shapeFirebaseStore.saveShape(userId, shape)
-            shapeFirebaseStore.updateServerMetadata(userId)
+            shapeFirebaseStore.saveShape(ticket, shape)
+            shapeFirebaseStore.updateServerMetadata(ticket)
         } catch (e: Exception) {
             Log.w(TAG, "Firebase 즉시 푸시 실패: shapeId=${shape.id}", e)
         }
@@ -312,107 +310,27 @@ class ShapeRepository @Inject constructor(
      */
     private suspend fun syncShapesToFirebase(shapes: List<ShapeModel>) {
         if (shapes.isEmpty()) return
-        val userId = currentImmediateCloudSyncUserId("syncShapesToFirebase") ?: return
+        val ticket = immediateSyncTicket("syncShapesToFirebase") ?: return
         val validShapes = shapes.filterValidForFirebaseWrite("syncShapesToFirebase")
         if (validShapes.isEmpty()) return
 
         try {
-            shapeFirebaseStore.saveShapes(userId, validShapes)
-            shapeFirebaseStore.updateServerMetadata(userId)
+            shapeFirebaseStore.saveShapes(ticket, validShapes)
+            shapeFirebaseStore.updateServerMetadata(ticket)
         } catch (e: Exception) {
             Log.w(TAG, "Firebase batch 즉시 푸시 실패: count=${validShapes.size}", e)
         }
     }
 
-    private suspend fun currentImmediateCloudSyncUserId(operation: String): String? {
-        val userId = auth.currentUser?.uid
-        val shouldSync = shouldRunImmediateCloudSync(
-            isLoggedIn = userId != null,
-            cloudSyncEnabled = dataStore.isCloudSyncEnabled(),
-        )
-        if (!shouldSync) {
-            Log.d(TAG, "$operation: 클라우드 백업 비활성화 또는 로그아웃 상태로 즉시 푸시 생략")
+    private fun immediateSyncTicket(operation: String): SyncTicket? {
+        val ticket = session.syncTicket()
+        if (ticket == null) {
+            Log.d(TAG, "$operation: 동기화 관문이 닫혀 있어 즉시 푸시 생략")
         }
-        return userId?.takeIf { shouldSync }
+        return ticket
     }
 
     // ===== Firebase 동기화 메서드 =====
-
-    /**
-     * Room 로컬 데이터를 Firebase에 업로드
-     * 로그인 상태일 때만 동작
-     */
-    suspend fun syncToFirebase() {
-        val userId = auth.currentUser?.uid ?: run {
-            Log.d(TAG, "syncToFirebase: 로그인 상태가 아닙니다.")
-            return
-        }
-
-        try {
-            val localShapes = shapeDao.getAllShapesOnce()
-                .map { it.toDomain() }
-                .filterValidForFirebaseWrite("syncToFirebase")
-            if (localShapes.isNotEmpty()) {
-                shapeFirebaseStore.saveShapes(userId, localShapes)
-                shapeFirebaseStore.updateServerMetadata(userId)
-                Log.d(TAG, "syncToFirebase: ${localShapes.size}개 도형 업로드 완료")
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "syncToFirebase 실패", e)
-            throw e
-        }
-    }
-
-    /**
-     * Firebase 데이터를 Room 로컬 DB로 다운로드 (LWW 적용).
-     * 서버 값이 로컬 이상으로 새로운 것만 [filterServerNewer] 로 추려 배치 insert.
-     */
-    suspend fun syncFromFirebase() {
-        val userId = auth.currentUser?.uid ?: run {
-            Log.d(TAG, "syncFromFirebase: 로그인 상태가 아닙니다.")
-            return
-        }
-
-        try {
-            val serverShapes = shapeFirebaseStore.loadAllShapesIncludingDeleted(userId)
-                .getOrThrow()
-                .filterValidForFirebaseWrite("syncFromFirebase/server")
-            val localShapes = shapeDao.getAllShapesOnce().map { it.toDomain() }
-            val lastSyncTime = dataStore.data.first()[SyncPreferenceKeys.LAST_SYNC_TIME]
-            val serverIds = serverShapes.mapTo(mutableSetOf()) { it.id }
-            val staleLocalIds = localShapes
-                .filter { it.id !in serverIds }
-                .filterNot {
-                    shouldKeepLocalShapeMissingOnServer(
-                        localShapeUpdatedAt = it.updatedAt,
-                        lastSyncTime = lastSyncTime,
-                    )
-                }
-                .map { it.id }
-            val toApply = filterServerNewer(
-                local = localShapes,
-                server = serverShapes,
-                idOf = { it.id },
-                updatedAtOf = { it.updatedAt },
-            )
-            var shouldReconcileAlarms = false
-            if (staleLocalIds.isNotEmpty()) {
-                shapeDao.deleteShapesByIds(staleLocalIds)
-                shouldReconcileAlarms = true
-            }
-            if (toApply.isNotEmpty()) {
-                shapeDao.insertShapes(toApply.map { it.toEntity() })
-                shouldReconcileAlarms = true
-            }
-            if (shouldReconcileAlarms) {
-                reconcileEndDateAlarmsWithLocalShapes(additionalCancelShapeIds = staleLocalIds)
-            }
-            Log.d(TAG, "syncFromFirebase: 서버=${serverShapes.size}, LWW 통과=${toApply.size}")
-        } catch (e: Exception) {
-            Log.e(TAG, "syncFromFirebase 실패", e)
-            throw e
-        }
-    }
 
     /**
      * 양방향 동기화 (LWW 충돌 해결).
@@ -420,18 +338,16 @@ class ShapeRepository @Inject constructor(
      * 서버에 없는 로컬 도형은 상대 플랫폼/계정 정리/레거시 hard delete 등으로
      * 문서가 실제 삭제된 경우일 수 있다. 마지막 Shape/Drone 동기화 시각 이전
      * 항목이면 원격 삭제로 보고 재업로드하지 않는다.
+     *
+     * [ticket] 은 작업을 시작할 때 한 번 받은 것을 끝까지 쓴다. 서버를 읽은 뒤 기기 저장소에 반영하기 직전에
+     * 티켓을 다시 확인하므로, 그 사이 계정이 바뀌었으면 아무것도 반영하지 않는다([StaleSyncTicketException]).
      */
-    suspend fun performFullSync() {
-        val userId = auth.currentUser?.uid ?: run {
-            Log.d(TAG, "performFullSync: 로그인 상태가 아닙니다.")
-            return
-        }
-
+    suspend fun performFullSync(ticket: SyncTicket) {
         try {
             val localShapes = shapeDao.getAllShapesOnce()
                 .map { it.toDomain() }
                 .filterValidForFirebaseWrite("performFullSync/local")
-            val serverShapes = shapeFirebaseStore.loadAllShapesIncludingDeleted(userId)
+            val serverShapes = shapeFirebaseStore.loadAllShapesIncludingDeleted(ticket)
                 .getOrThrow()
                 .filterValidForFirebaseWrite("performFullSync/server")
             val lastSyncTime = dataStore.data.first()[SyncPreferenceKeys.LAST_SYNC_TIME]
@@ -446,27 +362,29 @@ class ShapeRepository @Inject constructor(
             val staleLocalIds = localShapes
                 .map { it.id }
                 .filter { it !in mergedIds }
-            var shouldReconcileAlarms = false
-            if (staleLocalIds.isNotEmpty()) {
-                shapeDao.deleteShapesByIds(staleLocalIds)
-                shouldReconcileAlarms = true
-            }
-            if (result.merged.isNotEmpty()) {
-                shapeDao.insertShapes(result.merged.map { it.toEntity() })
-                shouldReconcileAlarms = true
-            }
-            if (shouldReconcileAlarms) {
-                reconcileEndDateAlarmsWithLocalShapes(additionalCancelShapeIds = staleLocalIds)
+            session.commit(ticket) {
+                var shouldReconcileAlarms = false
+                if (staleLocalIds.isNotEmpty()) {
+                    shapeDao.deleteShapesByIds(staleLocalIds)
+                    shouldReconcileAlarms = true
+                }
+                if (result.merged.isNotEmpty()) {
+                    shapeDao.insertShapes(result.merged.map { it.toEntity() })
+                    shouldReconcileAlarms = true
+                }
+                if (shouldReconcileAlarms) {
+                    reconcileEndDateAlarmsWithLocalShapes(additionalCancelShapeIds = staleLocalIds)
+                }
             }
 
             // Firebase: 로컬이 LWW 에서 이긴 항목 업로드
             val toUpload = result.toUpload.filterValidForFirebaseWrite("performFullSync/upload")
             if (toUpload.isNotEmpty()) {
-                shapeFirebaseStore.saveShapes(userId, toUpload)
+                shapeFirebaseStore.saveShapes(ticket, toUpload)
             }
 
             if (shouldUpdateServerMetadataAfterFullSync(toUpload.size)) {
-                shapeFirebaseStore.updateServerMetadata(userId)
+                shapeFirebaseStore.updateServerMetadata(ticket)
             }
 
             Log.d(TAG, "performFullSync 완료: 로컬=${localShapes.size}, 서버=${serverShapes.size}, 머지=${result.merged.size}, 업로드=${result.toUpload.size}")

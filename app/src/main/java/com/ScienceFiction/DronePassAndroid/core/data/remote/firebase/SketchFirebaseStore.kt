@@ -1,6 +1,8 @@
 package com.ScienceFiction.DronePassAndroid.core.data.remote.firebase
 
 import android.util.Log
+import com.ScienceFiction.DronePassAndroid.core.account.AccountSession
+import com.ScienceFiction.DronePassAndroid.core.account.SyncTicket
 import com.ScienceFiction.DronePassAndroid.domain.model.Coordinate
 import com.ScienceFiction.DronePassAndroid.domain.model.SketchModel
 import com.ScienceFiction.DronePassAndroid.domain.model.isValidShapeCoordinate
@@ -12,6 +14,7 @@ import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
+import com.google.firebase.firestore.Source
 import kotlinx.coroutines.tasks.await
 import java.util.Date
 import java.util.UUID
@@ -127,11 +130,12 @@ internal fun sketchFromFirestoreDocument(documentId: String, data: Map<String, A
 
 /**
  * Firestore의 sketches 컬렉션과 통신하는 Store 클래스.
- * 경로: users/{userId}/sketches/{sketchId}
+ * 경로: users/{uid}/sketches/{sketchId}. 모든 요청은 [SyncTicket] 을 거친다(기기 데이터 주인 관문).
  */
 @Singleton
 class SketchFirebaseStore @Inject constructor(
-    private val firestore: FirebaseFirestore
+    private val firestore: FirebaseFirestore,
+    private val session: AccountSession,
 ) {
     companion object {
         private const val TAG = "SketchFirebaseStore"
@@ -153,36 +157,22 @@ class SketchFirebaseStore @Inject constructor(
     // region 읽기
 
     /**
-     * 활성(deletedAt == null) 스케치만 로드.
-     * 네트워크/권한 오류와 "서버에 데이터 없음" 을 구분하기 위해 Result 반환.
+     * 삭제 표시를 포함한 전체 로드. 네트워크/권한 오류와 "서버에 데이터 없음" 을 구분하기 위해 Result 반환.
+     * 가져오기·로그아웃 비교는 캐시로 오판하지 않도록 [Source.SERVER] 로 읽는다.
      */
-    suspend fun loadSketches(userId: String): Result<List<SketchModel>> {
+    suspend fun loadAllSketchesIncludingDeleted(
+        ticket: SyncTicket,
+        source: Source = Source.DEFAULT,
+    ): Result<List<SketchModel>> {
         return try {
-            val snapshot = sketchesCollection(userId).get().await()
-            val sketches = snapshot.documents.mapNotNull { doc ->
-                val data = doc.data ?: return@mapNotNull null
-                firestoreDocumentToSketch(doc.id, data)
-            }.filter { it.deletedAt == null }
-            Result.success(sketches)
-        } catch (e: Exception) {
-            Log.e(TAG, "스케치 로드 실패: userId=$userId", e)
-            Result.failure(e)
-        }
-    }
-
-    /**
-     * 삭제된 스케치를 포함한 전체 스케치 로드.
-     */
-    suspend fun loadAllSketchesIncludingDeleted(userId: String): Result<List<SketchModel>> {
-        return try {
-            val snapshot = sketchesCollection(userId).get().await()
-            val sketches = snapshot.documents.mapNotNull { doc ->
+            val snapshot = session.remote(ticket) { uid -> sketchesCollection(uid).get(source).await() }
+            val items = snapshot.documents.mapNotNull { doc ->
                 val data = doc.data ?: return@mapNotNull null
                 firestoreDocumentToSketch(doc.id, data)
             }
-            Result.success(sketches)
+            Result.success(items)
         } catch (e: Exception) {
-            Log.e(TAG, "전체 스케치 로드 실패: userId=$userId", e)
+            Log.e(TAG, "전체 스케치 로드 실패", e)
             Result.failure(e)
         }
     }
@@ -192,22 +182,24 @@ class SketchFirebaseStore @Inject constructor(
     // region 쓰기
 
     /**
-     * 단일 스케치 저장 (merge 모드)
+     * 단일 저장 (merge 모드)
      */
-    suspend fun saveSketch(userId: String, sketch: SketchModel) {
+    suspend fun saveSketch(ticket: SyncTicket, item: SketchModel) {
         try {
-            val validation = sketch.validateForFirebasePersistence()
+            val validation = item.validateForFirebasePersistence()
             if (!validation.isValid) {
                 throw SketchFirebaseInvalidDataException(validation.reason)
             }
 
-            val data = sketchToFirestoreData(sketch)
-            sketchesCollection(userId)
-                .document(sketch.id)
-                .set(data, SetOptions.merge())
-                .await()
+            val data = sketchToFirestoreData(item)
+            session.remote(ticket) { uid ->
+                sketchesCollection(uid)
+                    .document(item.id)
+                    .set(data, SetOptions.merge())
+                    .await()
+            }
         } catch (e: Exception) {
-            Log.e(TAG, "스케치 저장 실패: userId=$userId, sketchId=${sketch.id}", e)
+            Log.e(TAG, "스케치 저장 실패: id=${item.id}", e)
             throw e
         }
     }
@@ -216,24 +208,25 @@ class SketchFirebaseStore @Inject constructor(
      * 배치 저장 (500개 단위로 분할)
      * Firestore WriteBatch는 최대 500개 연산 제한이 있으므로 chunked 처리
      */
-    suspend fun saveSketches(userId: String, sketches: List<SketchModel>) {
+    suspend fun saveSketches(ticket: SyncTicket, items: List<SketchModel>) {
         try {
-            val validation = validateFirebaseSketchBatch(sketches)
+            val validation = validateFirebaseSketchBatch(items)
             if (!validation.isValid) {
                 throw SketchFirebaseInvalidDataException(validation.reason)
             }
 
-            firestoreWriteChunks(sketches).forEach { chunk ->
-                val batch = firestore.batch()
-                chunk.forEach { sketch ->
-                    val data = sketchToFirestoreData(sketch)
-                    val docRef = sketchesCollection(userId).document(sketch.id)
-                    batch.set(docRef, data, SetOptions.merge())
+            firestoreWriteChunks(items).forEach { chunk ->
+                session.remote(ticket) { uid ->
+                    val batch = firestore.batch()
+                    chunk.forEach { item ->
+                        val docRef = sketchesCollection(uid).document(item.id)
+                        batch.set(docRef, sketchToFirestoreData(item), SetOptions.merge())
+                    }
+                    batch.commit().await()
                 }
-                batch.commit().await()
             }
         } catch (e: Exception) {
-            Log.e(TAG, "스케치 배치 저장 실패: userId=$userId, count=${sketches.size}", e)
+            Log.e(TAG, "스케치 배치 저장 실패: count=${items.size}", e)
             throw e
         }
     }
@@ -241,32 +234,36 @@ class SketchFirebaseStore @Inject constructor(
     /**
      * 스케치 소프트 삭제 (deletedAt, updatedAt만 업데이트)
      */
-    suspend fun softDeleteSketch(userId: String, sketchId: String) {
+    suspend fun softDeleteSketch(ticket: SyncTicket, sketchId: String) {
         try {
-            sketchesCollection(userId).document(sketchId).update(
-                sketchSoftDeleteFirestoreUpdateData(System.currentTimeMillis())
-            ).await()
+            session.remote(ticket) { uid ->
+                sketchesCollection(uid).document(sketchId).update(
+                    sketchSoftDeleteFirestoreUpdateData(System.currentTimeMillis())
+                ).await()
+            }
         } catch (e: Exception) {
             if (isMissingFirestoreDocument(e)) {
-                Log.d(TAG, "스케치 소프트 삭제 스킵: 서버 문서가 이미 없음 userId=$userId, sketchId=$sketchId")
+                Log.d(TAG, "스케치 소프트 삭제 스킵: 서버 문서가 이미 없음 sketchId=$sketchId")
                 return
             }
-            Log.e(TAG, "스케치 소프트 삭제 실패: userId=$userId, sketchId=$sketchId", e)
+            Log.e(TAG, "스케치 소프트 삭제 실패: sketchId=$sketchId", e)
             throw e
         }
     }
 
     /**
-     * 서버 메타데이터 업데이트 (metadata/server 문서에 lastModified 타임스탬프 기록)
+     * 서버 메타데이터 업데이트 (metadata/sketchServer 문서에 lastModified 타임스탬프 기록)
      */
-    suspend fun updateServerMetadata(userId: String) {
+    suspend fun updateServerMetadata(ticket: SyncTicket) {
         try {
-            metadataDocument(userId).set(
-                mapOf("lastModified" to FieldValue.serverTimestamp()),
-                SetOptions.merge()
-            ).await()
+            session.remote(ticket) { uid ->
+                metadataDocument(uid).set(
+                    mapOf("lastModified" to FieldValue.serverTimestamp()),
+                    SetOptions.merge()
+                ).await()
+            }
         } catch (e: Exception) {
-            Log.e(TAG, "서버 메타데이터 업데이트 실패: userId=$userId", e)
+            Log.e(TAG, "서버 메타데이터 업데이트 실패", e)
             throw e
         }
     }

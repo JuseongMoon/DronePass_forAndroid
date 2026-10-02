@@ -1,6 +1,8 @@
 package com.ScienceFiction.DronePassAndroid.core.data.remote.firebase
 
 import android.util.Log
+import com.ScienceFiction.DronePassAndroid.core.account.AccountSession
+import com.ScienceFiction.DronePassAndroid.core.account.SyncTicket
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.isValidForFirebaseRead
 import com.ScienceFiction.DronePassAndroid.domain.model.isValidForFirebasePersistence
@@ -12,6 +14,7 @@ import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
+import com.google.firebase.firestore.Source
 import kotlinx.coroutines.tasks.await
 import java.util.Date
 import java.util.UUID
@@ -105,11 +108,12 @@ internal fun droneFromFirestoreDocument(documentId: String, data: Map<String, An
 
 /**
  * Firestore의 drones 컬렉션과 통신하는 Store 클래스.
- * 경로: users/{userId}/drones/{droneId}
+ * 경로: users/{uid}/drones/{droneId}. 모든 요청은 [SyncTicket] 을 거친다(기기 데이터 주인 관문).
  */
 @Singleton
 class DroneFirebaseStore @Inject constructor(
-    private val firestore: FirebaseFirestore
+    private val firestore: FirebaseFirestore,
+    private val session: AccountSession,
 ) {
     companion object {
         private const val TAG = "DroneFirebaseStore"
@@ -129,36 +133,22 @@ class DroneFirebaseStore @Inject constructor(
     // region 읽기
 
     /**
-     * 활성(deletedAt == null) 드론만 로드.
-     * 네트워크/권한 오류와 "서버에 데이터 없음" 을 구분하기 위해 Result 반환.
+     * 삭제 표시를 포함한 전체 로드. 네트워크/권한 오류와 "서버에 데이터 없음" 을 구분하기 위해 Result 반환.
+     * 가져오기·로그아웃 비교는 캐시로 오판하지 않도록 [Source.SERVER] 로 읽는다.
      */
-    suspend fun loadDrones(userId: String): Result<List<DroneModel>> {
+    suspend fun loadAllDronesIncludingDeleted(
+        ticket: SyncTicket,
+        source: Source = Source.DEFAULT,
+    ): Result<List<DroneModel>> {
         return try {
-            val snapshot = dronesCollection(userId).get().await()
-            val drones = snapshot.documents.mapNotNull { doc ->
-                val data = doc.data ?: return@mapNotNull null
-                firestoreDocumentToDrone(doc.id, data)
-            }.filter { it.deletedAt == null }
-            Result.success(drones)
-        } catch (e: Exception) {
-            Log.e(TAG, "드론 로드 실패: userId=$userId", e)
-            Result.failure(e)
-        }
-    }
-
-    /**
-     * 삭제된 드론을 포함한 전체 드론 로드.
-     */
-    suspend fun loadAllDronesIncludingDeleted(userId: String): Result<List<DroneModel>> {
-        return try {
-            val snapshot = dronesCollection(userId).get().await()
-            val drones = snapshot.documents.mapNotNull { doc ->
+            val snapshot = session.remote(ticket) { uid -> dronesCollection(uid).get(source).await() }
+            val items = snapshot.documents.mapNotNull { doc ->
                 val data = doc.data ?: return@mapNotNull null
                 firestoreDocumentToDrone(doc.id, data)
             }
-            Result.success(drones)
+            Result.success(items)
         } catch (e: Exception) {
-            Log.e(TAG, "전체 드론 로드 실패: userId=$userId", e)
+            Log.e(TAG, "전체 드론 로드 실패", e)
             Result.failure(e)
         }
     }
@@ -168,22 +158,24 @@ class DroneFirebaseStore @Inject constructor(
     // region 쓰기
 
     /**
-     * 단일 드론 저장 (merge 모드)
+     * 단일 저장 (merge 모드)
      */
-    suspend fun saveDrone(userId: String, drone: DroneModel) {
+    suspend fun saveDrone(ticket: SyncTicket, item: DroneModel) {
         try {
-            val validation = drone.validateForFirebasePersistence()
+            val validation = item.validateForFirebasePersistence()
             if (!validation.isValid) {
                 throw DroneFirebaseInvalidDataException(validation.reason)
             }
 
-            val data = droneToFirestoreData(drone)
-            dronesCollection(userId)
-                .document(drone.id)
-                .set(data, SetOptions.merge())
-                .await()
+            val data = droneToFirestoreData(item)
+            session.remote(ticket) { uid ->
+                dronesCollection(uid)
+                    .document(item.id)
+                    .set(data, SetOptions.merge())
+                    .await()
+            }
         } catch (e: Exception) {
-            Log.e(TAG, "드론 저장 실패: userId=$userId, droneId=${drone.id}", e)
+            Log.e(TAG, "드론 저장 실패: id=${item.id}", e)
             throw e
         }
     }
@@ -192,42 +184,25 @@ class DroneFirebaseStore @Inject constructor(
      * 배치 저장 (500개 단위로 분할)
      * Firestore WriteBatch는 최대 500개 연산 제한이 있으므로 chunked 처리
      */
-    suspend fun saveDrones(userId: String, drones: List<DroneModel>) {
+    suspend fun saveDrones(ticket: SyncTicket, items: List<DroneModel>) {
         try {
-            val validation = validateFirebaseDroneBatch(drones)
+            val validation = validateFirebaseDroneBatch(items)
             if (!validation.isValid) {
                 throw DroneFirebaseInvalidDataException(validation.reason)
             }
 
-            firestoreWriteChunks(drones).forEach { chunk ->
-                val batch = firestore.batch()
-                chunk.forEach { drone ->
-                    val data = droneToFirestoreData(drone)
-                    val docRef = dronesCollection(userId).document(drone.id)
-                    batch.set(docRef, data, SetOptions.merge())
+            firestoreWriteChunks(items).forEach { chunk ->
+                session.remote(ticket) { uid ->
+                    val batch = firestore.batch()
+                    chunk.forEach { item ->
+                        val docRef = dronesCollection(uid).document(item.id)
+                        batch.set(docRef, droneToFirestoreData(item), SetOptions.merge())
+                    }
+                    batch.commit().await()
                 }
-                batch.commit().await()
             }
         } catch (e: Exception) {
-            Log.e(TAG, "드론 배치 저장 실패: userId=$userId, count=${drones.size}", e)
-            throw e
-        }
-    }
-
-    /**
-     * 드론 소프트 삭제 (deletedAt, updatedAt만 업데이트)
-     */
-    suspend fun deleteDrone(userId: String, droneId: String) {
-        try {
-            dronesCollection(userId).document(droneId).update(
-                droneSoftDeleteFirestoreUpdateData(System.currentTimeMillis())
-            ).await()
-        } catch (e: Exception) {
-            if (isMissingFirestoreDocument(e)) {
-                Log.d(TAG, "드론 소프트 삭제 스킵: 서버 문서가 이미 없음 userId=$userId, droneId=$droneId")
-                return
-            }
-            Log.e(TAG, "드론 소프트 삭제 실패: userId=$userId, droneId=$droneId", e)
+            Log.e(TAG, "드론 배치 저장 실패: count=${items.size}", e)
             throw e
         }
     }
@@ -235,14 +210,16 @@ class DroneFirebaseStore @Inject constructor(
     /**
      * 서버 메타데이터 업데이트 (metadata/server 문서에 lastModified 타임스탬프 기록)
      */
-    suspend fun updateServerMetadata(userId: String) {
+    suspend fun updateServerMetadata(ticket: SyncTicket) {
         try {
-            metadataDocument(userId).set(
-                mapOf("lastModified" to FieldValue.serverTimestamp()),
-                SetOptions.merge()
-            ).await()
+            session.remote(ticket) { uid ->
+                metadataDocument(uid).set(
+                    mapOf("lastModified" to FieldValue.serverTimestamp()),
+                    SetOptions.merge()
+                ).await()
+            }
         } catch (e: Exception) {
-            Log.e(TAG, "서버 메타데이터 업데이트 실패: userId=$userId", e)
+            Log.e(TAG, "서버 메타데이터 업데이트 실패", e)
             throw e
         }
     }

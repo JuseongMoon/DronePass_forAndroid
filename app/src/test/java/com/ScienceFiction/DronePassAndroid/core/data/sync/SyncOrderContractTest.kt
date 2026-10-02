@@ -12,10 +12,10 @@ class SyncOrderContractTest {
 
     @Test
     fun `login full sync uploads drones before shapes`() {
-        // 포그라운드 복귀용 도형 전용 동기화(performForegroundCloudSync)는 드론을 다루지 않으므로 제외한다.
+        // 로그인 뒤 첫 전체 동기화는 기기 데이터 주인 판단(AccountSessionFlows)이 관문을 연 뒤에 한다.
         assertDroneSyncBeforeShapeSync(
-            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/auth/AuthViewModel.kt",
-            fromToken = "private suspend fun performFullSync(",
+            "src/main/java/com/ScienceFiction/DronePassAndroid/core/account/AccountSessionFlows.kt",
+            fromToken = "private suspend fun runInitialSync(",
         )
     }
 
@@ -29,8 +29,8 @@ class SyncOrderContractTest {
     private fun assertDroneSyncBeforeShapeSync(path: String, fromToken: String? = null) {
         val fullSource = resolveProjectFile(path, "app/$path").readText()
         val source = fromToken?.let { fullSource.substring(fullSource.indexOf(it)) } ?: fullSource
-        val droneIndex = source.indexOf("droneRepository.performFullSync()")
-        val shapeIndex = source.indexOf("shapeRepository.performFullSync()")
+        val droneIndex = source.indexOf("droneRepository.performFullSync(ticket)")
+        val shapeIndex = source.indexOf("shapeRepository.performFullSync(ticket)")
         assertTrue("drone sync missing in $path", droneIndex >= 0)
         assertTrue("shape sync missing in $path", shapeIndex >= 0)
         assertTrue("drone sync must run before shape sync in $path", droneIndex < shapeIndex)

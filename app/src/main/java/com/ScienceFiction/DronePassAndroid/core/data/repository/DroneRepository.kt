@@ -6,20 +6,20 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import com.ScienceFiction.DronePassAndroid.R
+import com.ScienceFiction.DronePassAndroid.core.account.AccountSession
+import com.ScienceFiction.DronePassAndroid.core.account.SyncTicket
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.dao.DroneDao
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.dao.ShapeDao
+import com.ScienceFiction.DronePassAndroid.core.data.local.room.entity.ShapeEntity
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.mapper.toDomain
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.mapper.toEntity
 import com.ScienceFiction.DronePassAndroid.core.data.remote.firebase.DroneFirebaseStore
 import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncPreferenceKeys
-import com.ScienceFiction.DronePassAndroid.core.data.sync.isCloudSyncEnabled
 import com.ScienceFiction.DronePassAndroid.core.data.sync.shouldUpdateServerMetadataAfterFullSync
-import com.ScienceFiction.DronePassAndroid.core.data.sync.shouldRunImmediateCloudSync
 import com.ScienceFiction.DronePassAndroid.core.util.compareIosLocalizedStandardStrings
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.validateForFirebasePersistence
 import com.ScienceFiction.DronePassAndroid.feature.drone.DroneSelectionState
-import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.util.Locale
 import kotlinx.coroutines.flow.Flow
@@ -69,8 +69,8 @@ internal data class DroneSyncMergeResult(
  * 드론 전체 동기화 병합. iOS `DroneRepository.merge` 와 같은 규칙이다.
  * - id 기준으로 합치고, 양쪽에 있으면 updatedAt 이 늦은 쪽(같으면 서버)을 쓴다.
  * - 서버의 삭제 표시(deletedAt)도 병합에 넣어 다른 기기에서 지운 드론이 되살아나지 않게 한다.
- * - 서버에 없는 로컬 드론은 지우지 않고 올린다. 계정을 탈퇴한 뒤 다른 계정에 로그인해도
- *   로컬 도형과 원래 드론(id·이름)이 함께 따라가야 하기 때문이다. 삭제 기록은 올리지 않는다.
+ * - 서버에 없는 로컬 드론은 지우지 않고 올린다. 로그인 전 데이터를 가져올 때 로컬 도형과 원래 드론(id·이름)이
+ *   함께 계정으로 올라가야 하기 때문이다. 삭제 기록은 올리지 않는다.
  * - 이름이 같아도 id 가 다르면 별개 드론으로 둔다.
  *
  * 예외: 로그아웃 상태에서 기기가 자동으로 만든 손대지 않은 기본 드론(L, 서버에 id 없음)은 로그인할 때
@@ -173,7 +173,7 @@ class DroneRepository @Inject constructor(
     private val droneFirebaseStore: DroneFirebaseStore,
     private val shapeDao: ShapeDao,
     private val droneSelectionState: DroneSelectionState,
-    private val auth: FirebaseAuth,
+    private val session: AccountSession,
     private val dataStore: DataStore<Preferences>,
     @ApplicationContext private val context: Context,
 ) {
@@ -215,15 +215,15 @@ class DroneRepository @Inject constructor(
      * iOS DroneManager.setupInitialDroneIfNeeded 정합.
      * 활성 드론이 하나도 없으면 기본 드론을 생성하고 즉시 저장한다.
      *
-     * 지도 화면 초기화 중 로그인 사용자의 로컬 DB가 비어 있더라도, Firebase full sync 전에는
-     * 기본 드론을 만들지 않는다. iOS DroneManager 도 앱 시작 즉시 만드는 기본 드론은 임시
-     * 메모리 상태이며, 실제 loadDrones() 이후에도 드론이 없을 때만 저장한다.
+     * 지도 화면 초기화 중 계정 동기화 관문이 열려 있어 로컬 DB가 비어 있더라도, Firebase full sync 전에는
+     * 기본 드론을 만들지 않는다(계정 기본 드론과 겹치지 않게). iOS DroneManager 도 앱 시작 즉시 만드는
+     * 기본 드론은 임시 메모리 상태이며, 실제 loadDrones() 이후에도 드론이 없을 때만 저장한다.
      */
     suspend fun ensureDefaultDroneIfNeeded(deferWhenLoggedIn: Boolean = false): DroneModel? {
         val activeDroneCount = droneDao.getActiveDroneCount()
         if (!shouldCreateDefaultDrone(
                 activeDroneCount = activeDroneCount,
-                isLoggedIn = auth.currentUser != null,
+                isLoggedIn = session.openUid.value != null,
                 deferWhenLoggedIn = deferWhenLoggedIn,
             )
         ) {
@@ -301,26 +301,17 @@ class DroneRepository @Inject constructor(
      * 로그인 + 클라우드 백업 ON 상태가 아니면 NO-OP.
      */
     private suspend fun syncDroneToFirebase(drone: DroneModel) {
-        val userId = currentImmediateCloudSyncUserId("syncDroneToFirebase") ?: return
+        val ticket = session.syncTicket() ?: run {
+            Log.d(TAG, "syncDroneToFirebase: 동기화 관문이 닫혀 있어 즉시 푸시 생략")
+            return
+        }
         if (!drone.isValidForFirebaseWrite("syncDroneToFirebase")) return
         try {
-            droneFirebaseStore.saveDrone(userId, drone)
-            droneFirebaseStore.updateServerMetadata(userId)
+            droneFirebaseStore.saveDrone(ticket, drone)
+            droneFirebaseStore.updateServerMetadata(ticket)
         } catch (e: Exception) {
             Log.w(TAG, "Firebase 즉시 푸시 실패: droneId=${drone.id}", e)
         }
-    }
-
-    private suspend fun currentImmediateCloudSyncUserId(operation: String): String? {
-        val userId = auth.currentUser?.uid
-        val shouldSync = shouldRunImmediateCloudSync(
-            isLoggedIn = userId != null,
-            cloudSyncEnabled = dataStore.isCloudSyncEnabled(),
-        )
-        if (!shouldSync) {
-            Log.d(TAG, "$operation: 클라우드 백업 비활성화 또는 로그아웃 상태로 즉시 푸시 생략")
-        }
-        return userId?.takeIf { shouldSync }
     }
 
     // ===== Firebase 동기화 메서드 =====
@@ -328,15 +319,10 @@ class DroneRepository @Inject constructor(
     /**
      * 양방향 동기화 (LWW 충돌 해결). 병합 규칙은 [mergeDronesForFullSync] 참고.
      */
-    suspend fun performFullSync() {
-        val userId = auth.currentUser?.uid ?: run {
-            Log.d(TAG, "performFullSync: 로그인 상태가 아닙니다.")
-            return
-        }
-
+    suspend fun performFullSync(ticket: SyncTicket) {
         try {
             val localDrones = droneDao.getAllDronesOnce().map { it.toDomain() }
-            val serverDrones = droneFirebaseStore.loadAllDronesIncludingDeleted(userId).getOrThrow()
+            val serverDrones = droneFirebaseStore.loadAllDronesIncludingDeleted(ticket).getOrThrow()
             val localShapes = shapeDao.getAllShapesOnce()
             val result = mergeDronesForFullSync(
                 localDrones = localDrones,
@@ -344,38 +330,47 @@ class DroneRepository @Inject constructor(
                 localShapeDroneIds = localShapes.map { it.droneId },
             )
 
-            if (result.merged.isNotEmpty()) droneDao.insertDrones(result.merged.map { it.toEntity() })
-
-            // 로그인 전에 기기가 만든 손대지 않은 기본 드론: 도형은 계정의 기본 드론으로 옮기고(바로 이어지는
-            // 도형 전체 동기화가 더 늦은 updatedAt 으로 올린다), 드론은 지운다. 삭제 기록은 올리지 않는다.
-            if (result.reassignedShapeDroneIds.isNotEmpty()) {
-                val now = System.currentTimeMillis()
-                val moved = localShapes.mapNotNull { shape ->
-                    val target = shape.droneId?.let(result.reassignedShapeDroneIds::get) ?: return@mapNotNull null
-                    shape.copy(droneId = target, updatedAt = now)
-                }
-                shapeDao.insertShapes(moved)
-                Log.d(TAG, "기기 기본 드론의 도형 ${moved.size}개를 계정 기본 드론으로 옮김")
-            }
-            if (result.discardedLocalDroneIds.isNotEmpty()) {
-                droneDao.deleteDronesByIds(result.discardedLocalDroneIds.toList())
-                droneSelectionState.replaceDrones(result.selectionReplacements)
-                Log.d(TAG, "손대지 않은 기기 기본 드론 ${result.discardedLocalDroneIds.size}대를 정리함")
-            }
+            session.commit(ticket) { applyDroneMergeLocally(result, localShapes) }
 
             val toUpload = result.toUpload.filterValidForFirebaseWrite("performFullSync/upload")
             if (toUpload.isNotEmpty()) {
-                droneFirebaseStore.saveDrones(userId, toUpload)
+                droneFirebaseStore.saveDrones(ticket, toUpload)
             }
 
             if (shouldUpdateServerMetadataAfterFullSync(toUpload.size)) {
-                droneFirebaseStore.updateServerMetadata(userId)
+                droneFirebaseStore.updateServerMetadata(ticket)
             }
 
             Log.d(TAG, "performFullSync 완료: 로컬=${localDrones.size}, 서버=${serverDrones.size}, 머지=${result.merged.size}, 업로드=${toUpload.size}")
         } catch (e: Exception) {
             Log.e(TAG, "performFullSync 실패", e)
             throw e
+        }
+    }
+
+    /**
+     * 병합 결과를 기기 저장소에 반영한다. 로그인 전에 기기가 만든 손대지 않은 기본 드론의 도형은 계정의 기본
+     * 드론으로 옮기고(updatedAt 을 지금으로 올려 다음 도형 동기화가 서버에 다시 올린다), 그 드론은 지운다.
+     * 삭제 기록은 올리지 않는다. 가져오기도 같은 반영을 쓴다.
+     */
+    internal suspend fun applyDroneMergeLocally(
+        result: DroneSyncMergeResult,
+        localShapes: List<ShapeEntity>,
+    ) {
+        if (result.merged.isNotEmpty()) droneDao.insertDrones(result.merged.map { it.toEntity() })
+        if (result.reassignedShapeDroneIds.isNotEmpty()) {
+            val now = System.currentTimeMillis()
+            val moved = localShapes.mapNotNull { shape ->
+                val target = shape.droneId?.let(result.reassignedShapeDroneIds::get) ?: return@mapNotNull null
+                shape.copy(droneId = target, updatedAt = now)
+            }
+            shapeDao.insertShapes(moved)
+            Log.d(TAG, "기기 기본 드론의 도형 ${moved.size}개를 계정 기본 드론으로 옮김")
+        }
+        if (result.discardedLocalDroneIds.isNotEmpty()) {
+            droneDao.deleteDronesByIds(result.discardedLocalDroneIds.toList())
+            droneSelectionState.replaceDrones(result.selectionReplacements)
+            Log.d(TAG, "손대지 않은 기기 기본 드론 ${result.discardedLocalDroneIds.size}대를 정리함")
         }
     }
 

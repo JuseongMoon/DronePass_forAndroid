@@ -5,7 +5,6 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
-import kotlin.math.abs
 
 internal object SyncPreferenceKeys {
     val LAST_SYNC_TIME = longPreferencesKey("lastSyncTime")
@@ -45,48 +44,6 @@ internal fun MutablePreferences.recordSketchRealtimeSyncSuccess(syncTimeMillis: 
     }
 }
 
-internal data class AccountSwitchLocalChangeState(
-    val hasUnsyncedLocalChanges: Boolean,
-    val atRiskCount: Int,
-)
-
-internal fun buildAccountSwitchLocalChangeState(
-    currentShapeUpdatedAtById: Map<String, Long>,
-    syncedShapeBaseline: Map<String, Long>?,
-): AccountSwitchLocalChangeState {
-    val unsyncedShapeCount = countAccountSwitchShapeBaselineChanges(
-        currentShapeUpdatedAtById = currentShapeUpdatedAtById,
-        syncedShapeBaseline = syncedShapeBaseline,
-    )
-
-    return AccountSwitchLocalChangeState(
-        hasUnsyncedLocalChanges = unsyncedShapeCount > 0,
-        atRiskCount = unsyncedShapeCount,
-    )
-}
-
-internal fun countAccountSwitchShapeBaselineChanges(
-    currentShapeUpdatedAtById: Map<String, Long>,
-    syncedShapeBaseline: Map<String, Long>?,
-    toleranceMillis: Long = 1_000L,
-): Int {
-    if (syncedShapeBaseline == null) return currentShapeUpdatedAtById.size
-
-    val baselineIds = syncedShapeBaseline.keys
-    val currentIds = currentShapeUpdatedAtById.keys
-    val added = currentIds.subtract(baselineIds).size
-    val removed = baselineIds.subtract(currentIds).size
-    val modified = currentIds.intersect(baselineIds).count { id ->
-        val baselineUpdatedAt = syncedShapeBaseline[id]
-        val currentUpdatedAt = currentShapeUpdatedAtById[id]
-        baselineUpdatedAt != null &&
-            currentUpdatedAt != null &&
-            abs(currentUpdatedAt - baselineUpdatedAt) > toleranceMillis
-    }
-
-    return added + removed + modified
-}
-
 internal fun encodeAccountSwitchShapeBaseline(shapeUpdatedAtById: Map<String, Long>): String {
     return shapeUpdatedAtById.entries
         .sortedBy { it.key }
@@ -101,33 +58,6 @@ internal fun buildAccountSwitchShapeBaseline(shapes: List<ShapeModel>): Map<Stri
         .associate { shape -> shape.id to shape.updatedAt }
 }
 
-internal fun decodeAccountSwitchShapeBaseline(encoded: String?): Map<String, Long>? {
-    if (encoded.isNullOrBlank()) return null
-
-    return runCatching {
-        val trimmed = encoded.trim()
-        if (trimmed == "{}") return@runCatching emptyMap()
-        if (!trimmed.startsWith("{") || !trimmed.endsWith("}")) error("invalid baseline")
-
-        val body = trimmed.drop(1).dropLast(1)
-        if (body.isBlank()) return@runCatching emptyMap()
-
-        body.split(",").associate { entry ->
-            val separatorIndex = entry.indexOf(':')
-            if (separatorIndex <= 0) error("invalid baseline entry")
-            val key = entry
-                .substring(0, separatorIndex)
-                .trim()
-                .removeSurrounding("\"")
-                .unescapeBaselineJsonKey()
-            val value = entry.substring(separatorIndex + 1).trim().toLong()
-            key to value
-        }
-    }.getOrNull()
-}
-
 private fun String.escapeBaselineJsonKey(): String =
     replace("\\", "\\\\").replace("\"", "\\\"")
 
-private fun String.unescapeBaselineJsonKey(): String =
-    replace("\\\"", "\"").replace("\\\\", "\\")

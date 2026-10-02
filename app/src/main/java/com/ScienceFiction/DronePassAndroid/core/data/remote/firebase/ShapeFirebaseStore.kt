@@ -1,6 +1,8 @@
 package com.ScienceFiction.DronePassAndroid.core.data.remote.firebase
 
 import android.util.Log
+import com.ScienceFiction.DronePassAndroid.core.account.AccountSession
+import com.ScienceFiction.DronePassAndroid.core.account.SyncTicket
 import com.ScienceFiction.DronePassAndroid.domain.model.Coordinate
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeType
@@ -9,12 +11,12 @@ import com.ScienceFiction.DronePassAndroid.domain.model.isValidForFirebasePersis
 import com.ScienceFiction.DronePassAndroid.domain.model.normalizeFirebaseHexColorForRead
 import com.ScienceFiction.DronePassAndroid.domain.model.normalizeFirebaseHexColorForWrite
 import com.ScienceFiction.DronePassAndroid.domain.model.validateFirebaseShapeBatch
-import com.ScienceFiction.DronePassAndroid.domain.model.validateFirebaseShapeReadBatch
 import com.ScienceFiction.DronePassAndroid.domain.model.validateForFirebasePersistence
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
+import com.google.firebase.firestore.Source
 import kotlinx.coroutines.tasks.await
 import java.util.Date
 import java.util.UUID
@@ -203,11 +205,12 @@ internal fun shapeFromFirestoreDocument(documentId: String, data: Map<String, An
 
 /**
  * Firestore의 shapes 컬렉션과 통신하는 Store 클래스.
- * 경로: users/{userId}/shapes/{shapeId}
+ * 경로: users/{uid}/shapes/{shapeId}. 모든 요청은 [SyncTicket] 을 거친다(기기 데이터 주인 관문).
  */
 @Singleton
 class ShapeFirebaseStore @Inject constructor(
-    private val firestore: FirebaseFirestore
+    private val firestore: FirebaseFirestore,
+    private val session: AccountSession,
 ) {
     companion object {
         private const val TAG = "ShapeFirebaseStore"
@@ -227,46 +230,24 @@ class ShapeFirebaseStore @Inject constructor(
     // region 읽기
 
     /**
-     * 활성(deletedAt == null) 도형만 로드.
+     * 삭제된 도형을 포함한 전체 도형 로드.
      *
      * 네트워크/권한 오류와 "서버에 데이터 없음" 을 구분하기 위해 [Result] 를 반환한다.
-     * 호출자는 실패 시 동기화를 중단하고 재시도 큐로 위임해야 한다.
-     * 이전: 실패 시 emptyList() 반환 → 호출자가 "서버에 데이터 없음" 으로 오인하여
-     * 잘못된 머지/덮어쓰기를 수행할 위험이 있었음.
+     * 가져오기·로그아웃 비교는 캐시로 오판하지 않도록 [Source.SERVER] 로 읽는다.
      */
-    suspend fun loadShapes(userId: String): Result<List<ShapeModel>> {
+    suspend fun loadAllShapesIncludingDeleted(
+        ticket: SyncTicket,
+        source: Source = Source.DEFAULT,
+    ): Result<List<ShapeModel>> {
         return try {
-            val snapshot = shapesCollection(userId).get().await()
-            val shapes = snapshot.documents.mapNotNull { doc ->
-                val data = doc.data ?: return@mapNotNull null
-                firestoreDocumentToShape(doc.id, data)
-            }.filter { it.deletedAt == null }
-
-            val validation = validateFirebaseShapeReadBatch(shapes)
-            if (!validation.isValid) {
-                return Result.failure(ShapeFirebaseInvalidDataException(validation.reason))
-            }
-
-            Result.success(shapes)
-        } catch (e: Exception) {
-            Log.e(TAG, "도형 로드 실패: userId=$userId", e)
-            Result.failure(e)
-        }
-    }
-
-    /**
-     * 삭제된 도형을 포함한 전체 도형 로드.
-     */
-    suspend fun loadAllShapesIncludingDeleted(userId: String): Result<List<ShapeModel>> {
-        return try {
-            val snapshot = shapesCollection(userId).get().await()
+            val snapshot = session.remote(ticket) { uid -> shapesCollection(uid).get(source).await() }
             val shapes = snapshot.documents.mapNotNull { doc ->
                 val data = doc.data ?: return@mapNotNull null
                 firestoreDocumentToShape(doc.id, data)
             }
             Result.success(shapes)
         } catch (e: Exception) {
-            Log.e(TAG, "전체 도형 로드 실패: userId=$userId", e)
+            Log.e(TAG, "전체 도형 로드 실패", e)
             Result.failure(e)
         }
     }
@@ -278,7 +259,7 @@ class ShapeFirebaseStore @Inject constructor(
     /**
      * 단일 도형 저장 (merge 모드)
      */
-    suspend fun saveShape(userId: String, shape: ShapeModel) {
+    suspend fun saveShape(ticket: SyncTicket, shape: ShapeModel) {
         try {
             val validation = shape.validateForFirebasePersistence()
             if (!validation.isValid) {
@@ -286,12 +267,14 @@ class ShapeFirebaseStore @Inject constructor(
             }
 
             val data = shapeToFirestoreData(shape)
-            shapesCollection(userId)
-                .document(shape.id)
-                .set(data, SetOptions.merge())
-                .await()
+            session.remote(ticket) { uid ->
+                shapesCollection(uid)
+                    .document(shape.id)
+                    .set(data, SetOptions.merge())
+                    .await()
+            }
         } catch (e: Exception) {
-            Log.e(TAG, "도형 저장 실패: userId=$userId, shapeId=${shape.id}", e)
+            Log.e(TAG, "도형 저장 실패: shapeId=${shape.id}", e)
             throw e
         }
     }
@@ -300,7 +283,7 @@ class ShapeFirebaseStore @Inject constructor(
      * 배치 저장 (500개 단위로 분할)
      * Firestore WriteBatch는 최대 500개 연산 제한이 있으므로 chunked 처리
      */
-    suspend fun saveShapes(userId: String, shapes: List<ShapeModel>) {
+    suspend fun saveShapes(ticket: SyncTicket, shapes: List<ShapeModel>) {
         try {
             val validation = validateFirebaseShapeBatch(shapes)
             if (!validation.isValid) {
@@ -308,34 +291,18 @@ class ShapeFirebaseStore @Inject constructor(
             }
 
             firestoreWriteChunks(shapes).forEach { chunk ->
-                val batch = firestore.batch()
-                chunk.forEach { shape ->
-                    val data = shapeToFirestoreData(shape)
-                    val docRef = shapesCollection(userId).document(shape.id)
-                    batch.set(docRef, data, SetOptions.merge())
+                session.remote(ticket) { uid ->
+                    val batch = firestore.batch()
+                    chunk.forEach { shape ->
+                        val data = shapeToFirestoreData(shape)
+                        val docRef = shapesCollection(uid).document(shape.id)
+                        batch.set(docRef, data, SetOptions.merge())
+                    }
+                    batch.commit().await()
                 }
-                batch.commit().await()
             }
         } catch (e: Exception) {
-            Log.e(TAG, "도형 배치 저장 실패: userId=$userId, count=${shapes.size}", e)
-            throw e
-        }
-    }
-
-    /**
-     * 도형 소프트 삭제 (deletedAt, updatedAt만 업데이트)
-     */
-    suspend fun softDeleteShape(userId: String, shapeId: String) {
-        try {
-            shapesCollection(userId).document(shapeId).update(
-                shapeSoftDeleteFirestoreUpdateData(System.currentTimeMillis())
-            ).await()
-        } catch (e: Exception) {
-            if (isMissingFirestoreDocument(e)) {
-                Log.d(TAG, "도형 소프트 삭제 스킵: 서버 문서가 이미 없음 userId=$userId, shapeId=$shapeId")
-                return
-            }
-            Log.e(TAG, "도형 소프트 삭제 실패: userId=$userId, shapeId=$shapeId", e)
+            Log.e(TAG, "도형 배치 저장 실패: count=${shapes.size}", e)
             throw e
         }
     }
@@ -343,14 +310,16 @@ class ShapeFirebaseStore @Inject constructor(
     /**
      * 서버 메타데이터 업데이트 (metadata/server 문서에 lastModified 타임스탬프 기록)
      */
-    suspend fun updateServerMetadata(userId: String) {
+    suspend fun updateServerMetadata(ticket: SyncTicket) {
         try {
-            metadataDocument(userId).set(
-                mapOf("lastModified" to FieldValue.serverTimestamp()),
-                SetOptions.merge()
-            ).await()
+            session.remote(ticket) { uid ->
+                metadataDocument(uid).set(
+                    mapOf("lastModified" to FieldValue.serverTimestamp()),
+                    SetOptions.merge()
+                ).await()
+            }
         } catch (e: Exception) {
-            Log.e(TAG, "서버 메타데이터 업데이트 실패: userId=$userId", e)
+            Log.e(TAG, "서버 메타데이터 업데이트 실패", e)
             throw e
         }
     }
