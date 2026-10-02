@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import com.ScienceFiction.DronePassAndroid.BuildConfig
+import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.core.data.repository.DroneRepository
 import com.ScienceFiction.DronePassAndroid.core.data.repository.ShapeRepository
 import com.ScienceFiction.DronePassAndroid.core.data.repository.SketchRepository
@@ -111,6 +112,11 @@ class SubscriptionManager @Inject constructor(
     val paywallRequests = _paywallRequests.asSharedFlow()
     private val _messages = MutableSharedFlow<String>(extraBufferCapacity = 4)
     val messages = _messages.asSharedFlow()
+    private val acknowledger = PurchaseAcknowledger(
+        send = ::sendAcknowledge,
+        check = ::checkAcknowledged,
+        onFailure = { message(R.string.subscription_message_acknowledge_failed) },
+    )
     private val _signedIn = MutableStateFlow(auth.currentUser != null)
     /** 구매는 로그인한 상태에서만 한다(사양 v2 C-1). */
     val signedIn: StateFlow<Boolean> = _signedIn.asStateFlow()
@@ -280,16 +286,34 @@ class SubscriptionManager @Inject constructor(
             }
         } else if (fromPurchaseFlow && relevant.any { it.purchaseState == Purchase.PurchaseState.PENDING }) {
             analytics.logPurchaseFail(latestPurchaseSource, "pending")
-            _messages.tryEmit("결제가 대기 중입니다. 승인 후 자동으로 적용됩니다.")
+            message(R.string.subscription_message_purchase_pending)
         }
     }
 
     private fun acknowledge(purchase: Purchase) {
         if (purchase.isAcknowledged) return
-        val params = AcknowledgePurchaseParams.newBuilder().setPurchaseToken(purchase.purchaseToken).build()
-        billing.acknowledgePurchase(params) { result ->
-            if (result.responseCode != BillingClient.BillingResponseCode.OK) _messages.tryEmit("구매 확인에 실패했습니다. 다시 시도해 주세요.")
+        acknowledger.acknowledge(purchase.purchaseToken)
+    }
+
+    private fun sendAcknowledge(token: String, onResult: (Boolean) -> Unit) {
+        val params = AcknowledgePurchaseParams.newBuilder().setPurchaseToken(token).build()
+        billing.acknowledgePurchase(params) { result -> onResult(result.responseCode == BillingClient.BillingResponseCode.OK) }
+    }
+
+    private fun checkAcknowledged(token: String, onResult: (AcknowledgeCheck) -> Unit) {
+        val params = QueryPurchasesParams.newBuilder().setProductType(BillingClient.ProductType.SUBS).build()
+        billing.queryPurchasesAsync(params) { result, purchases ->
+            if (result.responseCode != BillingClient.BillingResponseCode.OK) {
+                onResult(AcknowledgeCheck.UNKNOWN)
+                return@queryPurchasesAsync
+            }
+            val purchase = purchases.firstOrNull { it.purchaseToken == token }
+            onResult(if (purchase == null || purchase.isAcknowledged) AcknowledgeCheck.DONE else AcknowledgeCheck.NOT_DONE)
         }
+    }
+
+    private fun message(resId: Int) {
+        _messages.tryEmit(context.getString(resId))
     }
 
     /** 페이월 "다시 시도": 상품 정보를 다시 불러온다. */
@@ -325,13 +349,13 @@ class SubscriptionManager @Inject constructor(
         if (!billing.isReady) {
             connectBilling()
             analytics.logPurchaseFail(source, "error")
-            _messages.tryEmit("Google Play에 연결하는 중입니다. 다시 시도해 주세요.")
+            message(R.string.subscription_message_billing_connecting)
             return
         }
         queryProduct { product ->
             if (product == null) {
                 analytics.logPurchaseFail(source, "error")
-                _messages.tryEmit("상품 정보를 불러올 수 없습니다.")
+                message(R.string.subscription_message_product_unavailable)
                 return@queryProduct
             }
             launchBillingFlow(activity, source, product)
@@ -340,7 +364,7 @@ class SubscriptionManager @Inject constructor(
 
     private fun launchBillingFlow(activity: Activity, source: String, product: ProductDetails) {
         val offer = product.subscriptionOfferDetails?.firstOrNull { it.basePlanId == BASE_PLAN_ID && it.offerId == null }
-            ?: run { _messages.tryEmit("연간 구독 상품을 찾을 수 없습니다."); return }
+            ?: run { message(R.string.subscription_message_yearly_plan_missing); return }
         val item = BillingFlowParams.ProductDetailsParams.newBuilder().setProductDetails(product).setOfferToken(offer.offerToken).build()
         val builder = BillingFlowParams.newBuilder().setProductDetailsParamsList(listOf(item))
         auth.currentUser?.uid?.let { builder.setObfuscatedAccountId(appAccountToken(it)) }

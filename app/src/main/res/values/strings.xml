@@ -840,6 +840,11 @@
     <string name="subscription_learn_more">DronePass Pro 알아보기</string>
     <string name="subscription_usage_value">%1$d / %2$d</string>
     <string name="subscription_paywall_subtitle">도형·스케치·드론을 제한 없이 사용하세요</string>
+    <string name="subscription_message_billing_connecting">Google Play에 연결하는 중입니다. 다시 시도해 주세요.</string>
+    <string name="subscription_message_product_unavailable">구독 상품 정보를 불러올 수 없습니다. 네트워크 연결을 확인해 주세요.</string>
+    <string name="subscription_message_yearly_plan_missing">연간 구독 상품을 찾을 수 없습니다.</string>
+    <string name="subscription_message_acknowledge_failed">구매 확인에 실패했습니다. 다시 시도해 주세요.</string>
+    <string name="subscription_message_purchase_pending">결제가 대기 중입니다. 승인 후 자동으로 적용됩니다.</string>
     <string name="subscription_benefit_shapes">도형 무제한 (무료: %1$d개)</string>
     <string name="subscription_benefit_sketches">스케치 선 무제한 (무료: %1$d개)</string>
     <string name="subscription_benefit_drones">드론 무제한 등록 (무료: %1$d대)</string>

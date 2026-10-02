@@ -830,6 +830,11 @@
     <string name="subscription_learn_more">Explore DronePass Pro</string>
     <string name="subscription_usage_value">%1$d / %2$d</string>
     <string name="subscription_paywall_subtitle">Use unlimited shapes, sketches, and drones</string>
+    <string name="subscription_message_billing_connecting">Connecting to Google Play. Please try again.</string>
+    <string name="subscription_message_product_unavailable">Couldn\'t load subscription details. Please check your network connection.</string>
+    <string name="subscription_message_yearly_plan_missing">Couldn\'t find the yearly subscription.</string>
+    <string name="subscription_message_acknowledge_failed">Couldn\'t confirm your purchase. Please try again.</string>
+    <string name="subscription_message_purchase_pending">Your payment is pending. Pro will be applied automatically once it is approved.</string>
     <string name="subscription_benefit_shapes">Unlimited shapes (Free: %1$d)</string>
     <string name="subscription_benefit_sketches">Unlimited sketch lines (Free: %1$d)</string>
     <string name="subscription_benefit_drones">Unlimited drones (Free: %1$d)</string>
