@@ -263,7 +263,9 @@ fun ShapeDetailSheet(
                     },
                     onDuplicate = {
                         showMoreMenu = false
-                        hideAndThen(onDuplicate)
+                        // 숨기지 않고 바로 넘긴다. 무료 한도에 막히면 VM 이 상세를 그대로 두므로, 먼저 숨기면
+                        // 보이지 않는 시트 창이 남아 페이월을 닫은 뒤에도 입력을 막는다. 허용되면 VM 이 상세를 닫는다.
+                        onDuplicate()
                     },
                     onDelete = {
                         showMoreMenu = false
