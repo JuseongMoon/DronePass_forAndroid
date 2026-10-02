@@ -190,6 +190,15 @@ class AuthViewModel @Inject constructor(
         if (currentUser != null) {
             requestFcmToken()
         }
+        // 기기 데이터 흐름이 로그아웃하거나(다른 기기 탈퇴 정리 등) SDK 가 세션을 잃으면 LoggedOut 으로 따라간다.
+        // 이 화면에서 로그인하는 중(Loading)이면 로그인 후처리가 상태를 정한다.
+        viewModelScope.launch {
+            authRepository.signedInUser.collect { user ->
+                if (shouldFollowAuthChange(_authState.value, keepWhileSigningIn = true)) {
+                    _authState.value = authStateFor(user)
+                }
+            }
+        }
         viewModelScope.launch {
             accountSessionFlows.events.collect { event ->
                 when (event) {

@@ -30,6 +30,7 @@ import com.ScienceFiction.DronePassAndroid.core.location.LocationUsagePurpose
 import com.ScienceFiction.DronePassAndroid.core.location.MapCenterStore
 import com.ScienceFiction.DronePassAndroid.feature.auth.AuthRepository
 import com.ScienceFiction.DronePassAndroid.feature.auth.AuthState
+import com.ScienceFiction.DronePassAndroid.feature.auth.authStateFor
 import com.ScienceFiction.DronePassAndroid.service.FcmService
 import com.ScienceFiction.DronePassAndroid.service.NotificationScheduler
 import com.ScienceFiction.DronePassAndroid.service.buildEndDateAlarmReconcilePlan
@@ -148,6 +149,10 @@ class SettingsViewModel @Inject constructor(
     init {
         initializeKoreaFeaturesSetting()
         checkAuthState()
+        // 다른 곳에서 로그아웃돼도(다른 기기 탈퇴 정리, 세션 만료 등) 설정 첫 줄이 "로그인 / 회원가입"으로 바뀌게 따라간다.
+        viewModelScope.launch {
+            authRepository.signedInUser.collect { user -> _authState.value = authStateFor(user) }
+        }
         // iOS settings.kp.current 정합 — 화면 진입 시 강제 갱신된 Kp 값 표시.
         // KpViewModel 가 떠있지 않은 경우(설정만 단독 진입) 에도 currentKpFlow 가 채워지도록 1회 호출.
         viewModelScope.launch {

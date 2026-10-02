@@ -18,6 +18,9 @@ import com.google.firebase.auth.OAuthProvider
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.Timestamp
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.tasks.await
 import java.util.Date
 import javax.inject.Inject
@@ -103,6 +106,18 @@ class AuthRepository @Inject constructor(
     /** 현재 로그인된 Firebase 사용자 */
     val currentUser: FirebaseUser?
         get() = firebaseAuth.currentUser
+
+    private val _signedInUser = MutableStateFlow(firebaseAuth.currentUser)
+
+    /**
+     * 로그인 사용자 변화(앱 범위). 로그인·로그아웃 화면뿐 아니라 기기 데이터 흐름의 signOut(다른 기기 탈퇴 정리 등)과
+     * SDK 의 세션 만료도 여기로 들어오므로, 로그인 상태를 보여 주는 화면은 이 값을 따라간다.
+     */
+    val signedInUser: StateFlow<FirebaseUser?> = _signedInUser.asStateFlow()
+
+    init {
+        firebaseAuth.addAuthStateListener { auth -> _signedInUser.value = auth.currentUser }
+    }
 
     /** 로그인 여부 확인 */
     val isLoggedIn: Boolean

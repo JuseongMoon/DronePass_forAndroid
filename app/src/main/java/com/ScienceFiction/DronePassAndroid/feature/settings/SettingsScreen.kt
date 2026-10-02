@@ -29,6 +29,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -189,6 +190,10 @@ private fun SettingsMainContent(
 
     var showDeleteExpiredDialog by remember { mutableStateOf(false) }
     var showProfileSheet by remember { mutableStateOf(false) }
+    // 다른 곳에서 로그아웃되면(다른 기기 탈퇴 정리, 세션 만료 등) 열려 있던 프로필 시트를 닫는다.
+    LaunchedEffect(isLoggedIn) {
+        if (!isLoggedIn) showProfileSheet = false
+    }
     var showLoginSheet by remember { mutableStateOf(false) }
     var showKpForecastSheet by remember { mutableStateOf(false) }
     var showWeatherSheet by remember { mutableStateOf(false) }
