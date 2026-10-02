@@ -107,6 +107,12 @@
             </intent-filter>
         </activity>
 
+        <!-- 관리자 푸시는 channel_id 없이 오므로, 앱이 꺼져 있을 때 시스템이 FCM 대체 채널("Miscellaneous") 대신
+             앱 기본 채널로 표시하게 한다. 채널은 DronePassApplication.onCreate 에서 항상 만든다. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="dronepass_notifications" />
+
         <!-- FCM 서비스 -->
         <service
             android:name=".service.FcmService"

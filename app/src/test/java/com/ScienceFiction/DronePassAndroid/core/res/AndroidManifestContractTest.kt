@@ -33,6 +33,18 @@ class AndroidManifestContractTest {
     }
 
     @Test
+    fun `channel_id 없이 오는 푸시는 FCM 대체 채널이 아니라 앱 기본 알림 채널로 표시된다`() {
+        val manifest = parseManifest()
+        val channel = manifest.findApplication()
+            .findMetaData("com.google.firebase.messaging.default_notification_channel_id")
+
+        assertEquals(
+            com.ScienceFiction.DronePassAndroid.service.FcmService.CHANNEL_ID,
+            channel.getAttribute("android:value"),
+        )
+    }
+
+    @Test
     fun `MainActivity 는 iOS LaunchScreen 처럼 전용 launch theme 로 시작한다`() {
         val manifest = parseManifest()
         val activity = manifest.findActivity(".MainActivity")
