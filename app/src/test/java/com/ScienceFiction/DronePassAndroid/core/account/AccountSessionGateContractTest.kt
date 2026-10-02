@@ -30,6 +30,7 @@ class AccountSessionGateContractTest {
 
     @Test
     fun `flow tickets are issued only by the logout flush and import flows`() {
+        // 관문이 닫힌 채 서버를 읽고 쓰는 곳: 로그아웃 ① 업로드, 가져오기(후보를 세는 서버 읽기와 후보 업로드).
         val callers = allSources()
             .filterKeys { it != "core/account/AccountSession.kt" }
             .filterValues { it.contains("issueFlowTicket(") }
@@ -39,7 +40,7 @@ class AccountSessionGateContractTest {
             Regex("""(?:private |internal )?suspend fun (\w+)\(""")
                 .findAll(flows.substring(0, match.range.first)).last().groupValues[1]
         }.toSet()
-        assertTrue(issuingFunctions.toString(), issuingFunctions.all { it in setOf("flushBeforeLogout", "uploadImportCandidates") })
+        assertTrue(issuingFunctions.toString(), issuingFunctions.all { it in setOf("flushBeforeLogout", "readImportCandidates", "uploadImportCandidates") })
     }
 
     @Test

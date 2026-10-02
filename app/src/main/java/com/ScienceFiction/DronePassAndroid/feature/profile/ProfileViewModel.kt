@@ -6,24 +6,17 @@ import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.Preferences.Key
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ScienceFiction.DronePassAndroid.R
-import com.ScienceFiction.DronePassAndroid.core.account.AccountSession
+import com.ScienceFiction.DronePassAndroid.core.account.AccountSessionFlows
+import com.ScienceFiction.DronePassAndroid.core.account.LogoutResult
 import com.ScienceFiction.DronePassAndroid.core.data.repository.DroneRepository
 import com.ScienceFiction.DronePassAndroid.core.data.repository.ShapeRepository
 import com.ScienceFiction.DronePassAndroid.core.data.repository.SketchRepository
 import com.ScienceFiction.DronePassAndroid.core.data.sync.RealtimeSyncManager
-import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncPreferenceKeys
 import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncState
-import com.ScienceFiction.DronePassAndroid.core.data.sync.buildAccountSwitchShapeBaseline
-import com.ScienceFiction.DronePassAndroid.core.data.sync.encodeAccountSwitchShapeBaseline
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
-import com.ScienceFiction.DronePassAndroid.feature.auth.AuthRepository
-import com.ScienceFiction.DronePassAndroid.feature.auth.AuthSignOutStep
-import com.ScienceFiction.DronePassAndroid.feature.auth.authSignOutSteps
-import com.ScienceFiction.DronePassAndroid.service.FcmService
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -38,29 +31,8 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-
-internal val ACCOUNT_DELETION_SYNC_PREFERENCE_KEYS_TO_CLEAR: List<Key<*>> = listOf(
-    SyncPreferenceKeys.LAST_SYNC_TIME,
-    SyncPreferenceKeys.LAST_LOCAL_MODIFICATION_TIME,
-    SyncPreferenceKeys.LAST_LOCAL_DRONE_MODIFICATION_TIME,
-    SyncPreferenceKeys.SYNCED_SHAPE_BASELINE,
-    SyncPreferenceKeys.LAST_SKETCH_SYNC_TIME,
-    SyncPreferenceKeys.LAST_LOCAL_SKETCH_MODIFICATION_TIME,
-)
-
-internal fun shouldNotifyProfileSyncResultForCloudToggle(
-    enabled: Boolean,
-    isLoggedIn: Boolean,
-): Boolean {
-    return enabled && isLoggedIn
-}
-
-internal fun shouldAcceptProfileCloudBackupToggle(isSyncing: Boolean): Boolean = !isSyncing
-
-internal const val ProfileCloudBackupRestartScheduleDelayMs = 100L
 
 internal fun profileErrorDescription(localizedMessage: String?, fallback: String): String {
     return localizedMessage ?: fallback
@@ -72,14 +44,6 @@ internal fun accountDeletionRequiresProviderAuthentication(exception: Throwable)
         reason == AccountDeletionFailureReason.APPLE_REAUTHENTICATION_FAILED ||
         reason == AccountDeletionFailureReason.APPLE_ACCESS_TOKEN_MISSING ||
         reason == AccountDeletionFailureReason.APPLE_TOKEN_REVOCATION_FAILED
-}
-
-internal fun shouldRestoreRealtimeSyncAfterAccountDeletionFailure(
-    wasCloudBackupEnabled: Boolean,
-    previousUserId: String?,
-    isStillLoggedIn: Boolean,
-): Boolean {
-    return wasCloudBackupEnabled && previousUserId != null && isStillLoggedIn
 }
 
 internal fun normalizeProfileJoinDateMillis(timestamp: Long?): Long? =
@@ -129,15 +93,21 @@ internal fun isProfileSyncInProgress(
     return manualSyncing || realtimeSyncState is SyncState.Syncing
 }
 
-internal fun shouldRestartProfileRealtimeSyncAfterToggle(
-    enabled: Boolean,
-    isLoggedIn: Boolean,
-): Boolean {
-    return enabled && isLoggedIn
-}
-
-internal fun buildProfileSyncedShapeBaseline(shapes: List<ShapeModel>): Map<String, Long> {
-    return buildAccountSwitchShapeBaseline(shapes)
+/**
+ * 동기화 상태 라벨(iOS `realtimeCloudSyncStatusText` 정합). 클라우드 동기화 토글은 없다: 로그인하면 동기화 관문이 열려
+ * 있는 동안 항상 동기화한다. 가져오기 확인을 기다리는 중이면 "가져오기 확인 필요".
+ */
+internal fun resolveProfileSyncStatus(
+    syncing: Boolean,
+    loggedIn: Boolean,
+    importPending: Boolean,
+    realtimeEnabled: Boolean,
+): ProfileSyncStatus = when {
+    syncing -> ProfileSyncStatus.Syncing
+    !loggedIn -> ProfileSyncStatus.LoginRequired
+    importPending -> ProfileSyncStatus.ImportPending
+    realtimeEnabled -> ProfileSyncStatus.Active
+    else -> ProfileSyncStatus.Waiting
 }
 
 /**
@@ -147,15 +117,13 @@ internal fun buildProfileSyncedShapeBaseline(shapes: List<ShapeModel>): Map<Stri
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
     private val dataStore: DataStore<Preferences>,
-    private val authRepository: AuthRepository,
     private val firebaseAuth: FirebaseAuth,
     private val shapeRepository: ShapeRepository,
     private val sketchRepository: SketchRepository,
     private val droneRepository: DroneRepository,
-    private val accountDeletionService: AccountDeletionService,
     val subscriptionManager: com.ScienceFiction.DronePassAndroid.subscription.SubscriptionManager,
     private val realtimeSyncManager: RealtimeSyncManager,
-    private val accountSession: AccountSession,
+    private val accountSessionFlows: AccountSessionFlows,
     @ApplicationContext private val appContext: Context,
 ) : ViewModel() {
 
@@ -163,9 +131,8 @@ class ProfileViewModel @Inject constructor(
         private const val TAG = "ProfileViewModel"
     }
 
-    /** 실시간 클라우드 동기화 활성화 (iOS `isCloudBackupEnabled` 정합). */
-    val isCloudBackupEnabled: StateFlow<Boolean> = dataStore.data
-        .map(::storedCloudBackupEnabled)
+    /** 가져오기 확인을 기다리는 중인지(기기 데이터 주인, 3.6.0). */
+    val isImportPending: StateFlow<Boolean> = accountSessionFlows.importPending
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     /** 마지막 백업/동기화 시각 (UI 표시용 — DataStore 영속). */
@@ -232,6 +199,14 @@ class ProfileViewModel @Inject constructor(
     private val _syncResultMessage = MutableSharedFlow<SyncResult>()
     val syncResultMessage: SharedFlow<SyncResult> = _syncResultMessage.asSharedFlow()
 
+    /** 로그아웃 ① 업로드가 서버에 닿지 못했다: "인터넷 연결 없음" 경고를 띄운다. */
+    private val _logoutOfflineConfirmation = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val logoutOfflineConfirmation: SharedFlow<Unit> = _logoutOfflineConfirmation.asSharedFlow()
+
+    /** 로그아웃 실패(로그인 상태 유지). */
+    private val _logoutFailed = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val logoutFailed: SharedFlow<Unit> = _logoutFailed.asSharedFlow()
+
     private val authStateListener = FirebaseAuth.AuthStateListener { auth ->
         val user = auth.currentUser
         _isLoggedIn.value = user != null
@@ -242,28 +217,15 @@ class ProfileViewModel @Inject constructor(
         _joinDateMillis.value = normalizeProfileJoinDateMillis(user?.metadata?.creationTimestamp)
     }
 
-    /**
-     * 5종 동기화 상태 (iOS `realtimeCloudSyncStatusText` 정합).
-     * isSyncing → Syncing
-     * !isLoggedIn → LoginRequired
-     * !cloudBackupEnabled → Disabled
-     * isRealtimeSyncEnabled → Active
-     * else → Waiting
-     */
+    /** 동기화 상태 라벨. 규칙은 [resolveProfileSyncStatus]. */
     val syncStatus: StateFlow<ProfileSyncStatus> = combine(
         isSyncing,
         isLoggedIn,
-        isCloudBackupEnabled,
+        isImportPending,
         realtimeSyncManager.isRealtimeSyncEnabled,
-    ) { syncing, loggedIn, cloudEnabled, realtimeEnabled ->
-        when {
-            syncing -> ProfileSyncStatus.Syncing
-            !loggedIn -> ProfileSyncStatus.LoginRequired
-            !cloudEnabled -> ProfileSyncStatus.Disabled
-            realtimeEnabled -> ProfileSyncStatus.Active
-            else -> ProfileSyncStatus.Waiting
-        }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ProfileSyncStatus.Disabled)
+    ) { syncing, loggedIn, importPending, realtimeEnabled ->
+        resolveProfileSyncStatus(syncing, loggedIn, importPending, realtimeEnabled)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ProfileSyncStatus.Waiting)
 
     init {
         firebaseAuth.addAuthStateListener(authStateListener)
@@ -272,46 +234,6 @@ class ProfileViewModel @Inject constructor(
     override fun onCleared() {
         firebaseAuth.removeAuthStateListener(authStateListener)
         super.onCleared()
-    }
-
-    /**
-     * 실시간 클라우드 동기화 토글 (iOS `isCloudBackupEnabled` onChange 정합).
-     * ON 전이 시 즉시 백업 + 실시간 리스너 재시작.
-     */
-    fun setCloudBackupEnabled(enabled: Boolean) {
-        viewModelScope.launch {
-            val syncInProgress = isProfileSyncInProgress(
-                manualSyncing = _isSyncing.value,
-                realtimeSyncState = realtimeSyncManager.syncState.value,
-            )
-            if (!shouldAcceptProfileCloudBackupToggle(syncInProgress)) return@launch
-
-            dataStore.edit {
-                it[ProfilePreferenceKeys.CLOUD_BACKUP_ENABLED] = enabled
-                it.remove(ProfilePreferenceKeys.LEGACY_CLOUD_BACKUP_ENABLED)
-            }
-            if (enabled && firebaseAuth.currentUser != null) {
-                viewModelScope.launch {
-                    syncToCloudInternal(
-                        notifyResult = shouldNotifyProfileSyncResultForCloudToggle(
-                            enabled = enabled,
-                            isLoggedIn = true,
-                        ),
-                    )
-                }
-                delay(ProfileCloudBackupRestartScheduleDelayMs)
-                if (
-                    shouldRestartProfileRealtimeSyncAfterToggle(
-                        enabled = storedCloudBackupEnabled(dataStore.data.first()),
-                        isLoggedIn = firebaseAuth.currentUser != null,
-                    )
-                ) {
-                    realtimeSyncManager.resetAndRestartRealtimeSync()
-                }
-            } else if (!enabled) {
-                runCatching { realtimeSyncManager.stopListening() }
-            }
-        }
     }
 
     /**
@@ -356,92 +278,39 @@ class ProfileViewModel @Inject constructor(
     }
 
     /**
-     * 로그아웃 (iOS `ProfileView.logout()` 정합).
+     * 로그아웃(기기 데이터 주인, 3.6.0): 계정에 없는 변경만 올린 뒤 로그아웃하고 이 기기의 계정 데이터를 지운다.
+     * 앱 범위에서 끝까지 진행하므로 화면을 닫아도 중간에 끊기지 않는다. 서버에 닿지 못하면 경고를 띄우고 멈춘다.
+     *
+     * @param proceedWithoutUpload 경고에서 [로그아웃]을 고른 경우 true.
      */
-    fun signOut(onComplete: () -> Unit = {}) {
+    fun signOut(proceedWithoutUpload: Boolean = false, onComplete: () -> Unit = {}) {
         if (_isAccountActionInProgress.value) return
         _isAccountActionInProgress.value = true
         viewModelScope.launch {
-            // 1) 로그아웃 직전 로컬 데이터를 Firebase 로 동기화 (iOS ProfileView.logout 정합).
-            if (firebaseAuth.currentUser != null) {
-                runCatching {
-                    realtimeSyncManager.forceSyncNow()
-                    saveProfileSyncedShapeBaseline()
-                }
-                    .onFailure { Log.w(TAG, "로그아웃 전 동기화 실패", it) }
-            }
-            authSignOutSteps().forEach { step ->
-                when (step) {
-                    AuthSignOutStep.DEACTIVATE_FCM_TOKEN -> {
-                        runCatching { FcmService.deactivateTokenAndWait(appContext) }
-                            .onFailure { Log.w(TAG, "FCM 토큰 비활성화 실패", it) }
-                    }
-                    AuthSignOutStep.STOP_REALTIME_SYNC -> {
-                        runCatching { realtimeSyncManager.stopListening() }
-                            .onFailure { Log.w(TAG, "리스너 중단 실패", it) }
-                    }
-                    AuthSignOutStep.SIGN_OUT -> {
-                        authRepository.signOut()
-                    }
-                }
-            }
+            val result = accountSessionFlows.logout(proceedWithoutUpload)
             _isAccountActionInProgress.value = false
-            onComplete()
-        }
-    }
-
-    private suspend fun saveProfileSyncedShapeBaseline() {
-        val baseline = buildProfileSyncedShapeBaseline(shapeRepository.getAllShapes().first())
-        dataStore.edit { preferences ->
-            preferences[SyncPreferenceKeys.SYNCED_SHAPE_BASELINE] =
-                encodeAccountSwitchShapeBaseline(baseline)
+            when (result) {
+                LogoutResult.DONE -> onComplete()
+                LogoutResult.NEEDS_OFFLINE_CONFIRMATION -> _logoutOfflineConfirmation.tryEmit(Unit)
+                LogoutResult.FAILED -> _logoutFailed.tryEmit(Unit)
+            }
         }
     }
 
     /**
-     * 계정 삭제 (iOS `ProfileView.deleteAccount()` 정합 — 2단계 확인 후 호출).
+     * 계정 삭제 (iOS `ProfileView.deleteAccount()` 정합 — 2단계 확인 후 호출). 서버 처리가 끝나면 이 기기의 계정 데이터도 지운다.
      */
     fun deleteAccount(activity: Activity, onResult: (Boolean, String) -> Unit) {
         if (_isAccountActionInProgress.value) return
         _isAccountActionInProgress.value = true
         viewModelScope.launch {
-            val userId = firebaseAuth.currentUser?.uid
-            val wasCloudBackupEnabled = storedCloudBackupEnabled(dataStore.data.first())
-            runCatching { realtimeSyncManager.stopListening() }
-                .onFailure { Log.w(TAG, "탈퇴 전 리스너 중단 실패", it) }
-
-            accountDeletionService.deleteCurrentAccount(activity).fold(
+            accountSessionFlows.deleteAccount(activity).fold(
                 onSuccess = {
-                    runCatching {
-                        dataStore.edit {
-                            it[ProfilePreferenceKeys.CLOUD_BACKUP_ENABLED] = false
-                            it.remove(ProfilePreferenceKeys.LAST_BACKUP_TIME)
-                            it.remove(ProfilePreferenceKeys.LEGACY_CLOUD_BACKUP_ENABLED)
-                            it.remove(ProfilePreferenceKeys.LEGACY_LAST_BACKUP_TIME)
-                            ACCOUNT_DELETION_SYNC_PREFERENCE_KEYS_TO_CLEAR.forEach { key ->
-                                it.remove(key)
-                            }
-                        }
-                    }.onFailure { Log.w(TAG, "탈퇴 후 동기화 설정 정리 실패", it) }
-                    runCatching { authRepository.completeAccountDeletionLocally() }
-                        .onFailure { Log.w(TAG, "탈퇴 후 로컬 인증 정리 실패", it) }
                     _isAccountActionInProgress.value = false
                     onResult(true, appContext.getString(R.string.profile_delete_account_success))
                 },
                 onFailure = { exception ->
                     Log.e(TAG, "서버측 회원 탈퇴 실패", exception)
-                    if (
-                        shouldRestoreRealtimeSyncAfterAccountDeletionFailure(
-                            wasCloudBackupEnabled = wasCloudBackupEnabled,
-                            previousUserId = userId,
-                            isStillLoggedIn = firebaseAuth.currentUser != null,
-                        )
-                    ) {
-                        accountSession.syncTicket()?.let { ticket ->
-                            runCatching { realtimeSyncManager.startListening(ticket) }
-                                .onFailure { Log.w(TAG, "탈퇴 실패 후 리스너 복구 실패", it) }
-                        }
-                    }
                     _isAccountActionInProgress.value = false
                     onResult(
                         false,

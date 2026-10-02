@@ -292,8 +292,8 @@
     <string name="settings_keep_screen_awake_subtitle">앱 사용 중 화면이 자동으로 꺼지지 않습니다.</string>
     <string name="settings_section_app_info">앱</string>
     <string name="settings_delete_account" tools:ignore="UnusedResources">회원 탈퇴</string>
-    <string name="settings_delete_account_subtitle" tools:ignore="UnusedResources">계정과 클라우드 데이터가 삭제되며, 로컬 데이터는 기기에 유지됩니다.</string>
-    <string name="settings_delete_account_confirm" tools:ignore="UnusedResources">계정이 삭제되고\n클라우드 동기화가 중단됩니다.\n\n기기에 저장된 도형, 드론, 스케치는\n계속 사용할 수 있습니다.\n\n이후 다른 계정에서 클라우드 동기화를 켜면\n해당 계정으로 동기화될 수 있습니다.\n\n정말 탈퇴하시겠습니까?</string>
+    <string name="settings_delete_account_subtitle" tools:ignore="UnusedResources">계정과 계정 데이터가 삭제되며, 이 기기에서도 지워집니다.</string>
+    <string name="settings_delete_account_confirm" tools:ignore="UnusedResources">계정과 계정 데이터가 삭제되고\n이 기기에 저장된 도형, 드론, 스케치도\n함께 지워집니다.\n\n정말 탈퇴하시겠습니까?</string>
     <string name="settings_delete_account_button" tools:ignore="UnusedResources">탈퇴하기</string>
     <string name="settings_section_flight_environment">비행 환경</string>
     <string name="settings_section_notifications">알림</string>
@@ -763,13 +763,12 @@
     <string name="profile_sync_cloud">실시간 클라우드 동기화</string>
     <string name="profile_sync_in_progress" tools:ignore="TypographyEllipsis">동기화 중...</string>
     <string name="profile_sync_login_required">로그인이 필요합니다</string>
-    <string name="profile_sync_disabled">비활성화됨</string>
     <string name="profile_sync_active">활성화 - 실시간 동기화중</string>
     <string name="profile_sync_waiting">활성화 - 실시간 동기화 대기중</string>
     <string name="profile_sync_last_sync">마지막 동기화: %1$s</string>
     <string name="profile_sync_no_history">동기화 기록이 없습니다.</string>
     <string name="profile_sync_footer_login_required">실시간 클라우드 동기화를 사용하려면 먼저 로그인해주세요.</string>
-    <string name="profile_sync_footer_enable_info">활성화하면 같은 계정으로 로그인한 모든 기기에서 도형 데이터가 실시간으로 동기화 및 백업됩니다.</string>
+    <string name="profile_sync_footer_enable_info">같은 계정으로 로그인한 모든 기기에서 도형 데이터가 실시간으로 동기화 및 백업됩니다.</string>
     <string name="profile_backup_manual">수동 백업하기</string>
     <string name="profile_backup_last_backup">마지막 백업: %1$s</string>
     <string name="profile_sync_alert_title">실시간 클라우드 동기화</string>
@@ -789,10 +788,34 @@
 
     <string name="profile_account_logout">로그아웃</string>
     <string name="profile_account_delete">회원 탈퇴</string>
-    <string name="profile_account_delete_desc">탈퇴 시 계정만 삭제되며, 로컬 데이터는 계속 사용할 수 있습니다.</string>
-    <string name="profile_logout_message">로그아웃하시겠습니까?</string>
+    <string name="profile_account_delete_desc">탈퇴하면 계정과 계정 데이터가 삭제되고, 이 기기에서도 지워집니다.</string>
+    <string name="profile_logout_message">로그아웃하시겠습니까?\n이 기기에서는 지워지고 계정에는 남아 있습니다. 다시 로그인하면 불러옵니다.</string>
+    <string name="profile_sync_import_pending">가져오기 확인 필요</string>
+    <string name="account_import_title">로그인 전 데이터 가져오기</string>
+    <string name="account_import_message">로그인하기 전에 이 기기에서 만든 데이터가 있습니다(도형 %1$d개, 스케치 선 %2$d개, 드론 %3$d대).\n\n이 계정으로 가져올까요? 취소하면 로그아웃되고 이 기기의 데이터는 그대로 남습니다.</string>
+    <string name="account_import_message_legacy_other">이 기기의 데이터는 다른 계정의 데이터일 수 있습니다(도형 %1$d개, 스케치 선 %2$d개, 드론 %3$d대).\n\n본인 데이터가 아니면 삭제하세요. 취소하면 로그아웃되고 이 기기의 데이터는 그대로 남습니다.</string>
+    <string name="account_import_action">가져오기</string>
+    <string name="account_import_delete">삭제</string>
+    <string name="account_import_delete_confirm_title">이 기기 데이터 삭제</string>
+    <string name="account_import_delete_confirm_message">이 기기의 데이터 %1$d개를 삭제하고 계정 데이터를 불러옵니다. 삭제한 데이터는 복구할 수 없습니다.</string>
+    <string name="account_import_check_failed_title">가져오기 확인 필요</string>
+    <string name="account_import_check_failed_message">인터넷에 연결되지 않아 가져올 데이터를 확인하지 못했습니다. 확인하기 전에는 이 계정과 동기화하지 않습니다.\n\n연결한 뒤 다시 시도해 주세요. 취소하면 로그아웃되고 이 기기의 데이터는 그대로 남습니다.</string>
+    <string name="account_retry">다시 시도</string>
+    <string name="account_replace_title">다른 계정의 데이터가 있습니다</string>
+    <string name="account_replace_message">이 기기에는 다른 계정의 데이터가 있습니다. 계속하면 이 기기에서 지우고 지금 계정의 데이터를 불러옵니다.\n\n그 계정에 저장되지 않은 변경은 사라질 수 있습니다. 취소하면 로그아웃됩니다.</string>
+    <string name="account_replace_confirm">지우고 계속</string>
+    <string name="account_session_lost_title">로그인이 해제되었습니다</string>
+    <string name="account_session_lost_message">이 기기의 데이터는 그대로 남아 있습니다. 같은 계정으로 다시 로그인하면 이어서 동기화합니다.</string>
+    <string name="account_session_lost_relogin">다시 로그인</string>
+    <string name="account_session_lost_delete">이 기기 데이터 삭제</string>
+    <string name="account_session_lost_delete_confirm_message">이 기기에 남은 계정 데이터를 삭제합니다. 계정에 저장되지 않은 변경은 복구할 수 없습니다.</string>
+    <string name="account_deleted_elsewhere_title">계정이 탈퇴되었습니다</string>
+    <string name="account_deleted_elsewhere_message">계정이 탈퇴되어 이 기기의 데이터를 지웠습니다.</string>
+    <string name="logout_offline_title">인터넷 연결 없음</string>
+    <string name="logout_offline_message">인터넷 연결이 없어 일부 변경이 계정에 저장되지 않았을 수 있습니다. 지금 로그아웃하면 이 기기에서 사라집니다.</string>
+    <string name="logout_failed">로그아웃하지 못했습니다. 다시 시도해 주세요.</string>
     <string name="profile_delete_account_button">탈퇴하기</string>
-    <string name="profile_delete_account_message">계정이 삭제되고\n클라우드 동기화가 중단됩니다.\n\n기기에 저장된 도형, 드론, 스케치는\n계속 사용할 수 있습니다.\n\n이후 다른 계정에서 클라우드 동기화를 켜면\n해당 계정으로 동기화될 수 있습니다.\n\n정말 탈퇴하시겠습니까?</string>
+    <string name="profile_delete_account_message">계정과 계정 데이터가 삭제되고\n이 기기에 저장된 도형, 드론, 스케치도\n함께 지워집니다.\n\n정말 탈퇴하시겠습니까?</string>
     <string name="profile_delete_account_final_title">최종 확인</string>
     <string name="profile_delete_account_final_message">이 작업은 되돌릴 수 없습니다.</string>
     <string name="profile_delete_account_final_button">영구 탈퇴</string>

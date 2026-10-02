@@ -90,40 +90,11 @@ class EncryptedPrefsHelper @Inject constructor(
     }
 
     /**
-     * Firebase UID를 암호화하여 저장
-     */
-    fun saveFirebaseUid(uid: String) {
-        sharedPreferences.edit {
-            putString(KEY_FIREBASE_UID, uid)
-        }
-    }
-
-    fun saveAppleUserId(appleUserId: String) {
-        sharedPreferences.edit {
-            putString(KEY_APPLE_USER_ID, appleUserId)
-        }
-    }
-
-    fun saveGoogleUserId(googleUserId: String) {
-        sharedPreferences.edit {
-            putString(KEY_GOOGLE_USER_ID, googleUserId)
-        }
-    }
-
-    /**
-     * 저장된 Firebase UID를 불러오기
-     * @return 저장된 UID 또는 null
+     * 3.5.x(또는 106 이하)가 저장한 "마지막 로그인 uid". 기기 데이터 주인 이전에서 한 번만 읽고 [clearAccountKeys] 로 지운다.
+     * 계정 판단에는 더 이상 쓰지 않는다.
      */
     fun loadFirebaseUid(): String? {
         return sharedPreferences.getString(KEY_FIREBASE_UID, null)
-    }
-
-    fun loadAppleUserId(): String? {
-        return sharedPreferences.getString(KEY_APPLE_USER_ID, null)
-    }
-
-    fun loadGoogleUserId(): String? {
-        return sharedPreferences.getString(KEY_GOOGLE_USER_ID, null)
     }
 
     /**
@@ -135,16 +106,6 @@ class EncryptedPrefsHelper @Inject constructor(
             remove(KEY_FIREBASE_UID)
             remove(KEY_APPLE_USER_ID)
             remove(KEY_GOOGLE_USER_ID)
-        }
-    }
-
-    /**
-     * 모든 암호화된 데이터 삭제
-     * 계정 삭제 시 호출. 로그아웃 시에는 계정 복구용 UID/provider User ID를 유지한다.
-     */
-    fun clearAll() {
-        sharedPreferences.edit {
-            clear()
         }
     }
 }

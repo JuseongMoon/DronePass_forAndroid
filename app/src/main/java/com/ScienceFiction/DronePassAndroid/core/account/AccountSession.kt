@@ -100,10 +100,14 @@ internal fun Throwable.isPermissionDenied(): Boolean =
  *   관문을 바꾸는 쪽도 같은 잠금을 잡으므로, 확인과 반영 사이에 기기 데이터가 지워지는 일은 없다.
  */
 @Singleton
-class AccountSession @Inject constructor(
+class AccountSession internal constructor(
     private val dataStore: DataStore<Preferences>,
-    private val auth: FirebaseAuth,
+    /** 지금 로그인한 계정 uid. 앱에서는 FirebaseAuth, 테스트에서는 고정값. */
+    private val currentUid: () -> String?,
 ) {
+    @Inject
+    constructor(dataStore: DataStore<Preferences>, auth: FirebaseAuth) : this(dataStore, { auth.currentUser?.uid })
+
     private val generation = AtomicLong(0L)
     private val commitMutex = Mutex()
 
@@ -122,13 +126,13 @@ class AccountSession @Inject constructor(
     /** 일반 동기화 티켓. 관문이 닫혀 있으면 null 이다. */
     fun syncTicket(): SyncTicket? {
         val uid = _openUid.value ?: return null
-        if (auth.currentUser?.uid != uid || deniedUid == uid) return null
+        if (currentUid() != uid || deniedUid == uid) return null
         return SyncTicket(uid, generation.get(), SyncTicketPurpose.SYNC)
     }
 
     fun isValid(ticket: SyncTicket): Boolean {
         if (ticket.generation != generation.get()) return false
-        if (auth.currentUser?.uid != ticket.uid || deniedUid == ticket.uid) return false
+        if (currentUid() != ticket.uid || deniedUid == ticket.uid) return false
         return ticket.purpose != SyncTicketPurpose.SYNC || _openUid.value == ticket.uid
     }
 

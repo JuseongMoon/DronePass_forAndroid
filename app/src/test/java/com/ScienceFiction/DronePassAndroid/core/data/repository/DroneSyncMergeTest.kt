@@ -24,7 +24,7 @@ class DroneSyncMergeTest {
 
     @Test
     fun `서버에 없는 로컬 드론은 동기화 이력과 관계없이 유지하고 업로드한다`() {
-        // 계정을 탈퇴한 뒤 다른 계정에 로그인해도 원래 드론(id·이름)이 도형과 함께 따라가야 한다.
+        // 로그인 전 데이터를 가져올 때 원래 드론(id·이름)이 도형과 함께 계정으로 올라가야 한다.
         val local = drone(id = "from-previous-account", updatedAt = 20L)
 
         val result = mergeDronesForFullSync(

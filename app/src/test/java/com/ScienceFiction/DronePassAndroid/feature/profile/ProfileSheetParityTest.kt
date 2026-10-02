@@ -45,7 +45,7 @@ class ProfileSheetParityTest {
         ).readText()
         val infoSectionSource = source.substring(
             source.indexOf("private fun ProfileInfoSection("),
-            source.indexOf("@Composable\nprivate fun ProfileCloudSyncToggleItem"),
+            source.indexOf("@Composable\nprivate fun ProfileCloudSyncStatusItem"),
         )
 
         assertSourceOrder(
@@ -140,7 +140,7 @@ class ProfileSheetParityTest {
     }
 
     @Test
-    fun `프로필 동기화 토글 행은 iOS처럼 headline caption progress switch 구조를 유지한다`() {
+    fun `프로필 동기화 상태 행은 iOS처럼 headline caption progress 구조이고 토글이 없다`() {
         val source = resolveProjectFile(
             "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/profile/ProfileScreen.kt",
             "src/main/java/com/ScienceFiction/DronePassAndroid/feature/profile/ProfileScreen.kt",
@@ -149,27 +149,29 @@ class ProfileSheetParityTest {
         assertSourceOrder(
             source,
             listOf(
-                "ProfileCloudSyncToggleItem(",
+                "ProfileCloudSyncStatusItem(",
                 "title = stringResource(R.string.profile_sync_cloud)",
                 "subtitle = stringResource(syncStatus.labelRes)",
                 "subtitleColor = syncStatus.color",
                 "showProgress = shouldShowProfileSyncProgress(isSyncing)",
-                "onCheckedChange = { viewModel.setCloudBackupEnabled(it) }",
             ),
         )
 
-        val toggleItemSource = source.substring(source.indexOf("private fun ProfileCloudSyncToggleItem"))
+        val statusItemSource = source.substring(source.indexOf("private fun ProfileCloudSyncStatusItem"))
+            .substringBefore("internal fun shouldShowProfileSyncProgress")
         assertSourceOrder(
-            toggleItemSource,
+            statusItemSource,
             listOf(
                 "style = MaterialTheme.typography.bodyLarge",
                 "style = MaterialTheme.typography.bodySmall",
                 "color = subtitleColor",
                 "if (showProgress)",
                 "CircularProgressIndicator",
-                "DronePassSwitch(",
             ),
         )
+        // 기기 데이터 주인(3.6.0): 로그인 중에는 항상 동기화하므로 토글이 없다.
+        assertFalse(statusItemSource.contains("DronePassSwitch("))
+        assertFalse(source.contains("setCloudBackupEnabled"))
     }
 
     @Test
@@ -194,23 +196,13 @@ class ProfileSheetParityTest {
 
     @Test
     fun `프로필 수동 백업과 동기화 footer 조건은 iOS ProfileView 를 따른다`() {
-        assertTrue(shouldShowProfileManualBackup(isLoggedIn = true, isCloudBackupEnabled = true))
-        assertFalse(shouldShowProfileManualBackup(isLoggedIn = false, isCloudBackupEnabled = true))
-        assertFalse(shouldShowProfileManualBackup(isLoggedIn = true, isCloudBackupEnabled = false))
+        assertTrue(shouldShowProfileManualBackup(isLoggedIn = true, isImportPending = false))
+        assertFalse(shouldShowProfileManualBackup(isLoggedIn = false, isImportPending = false))
+        // 가져오기 확인 대기 중에는 관문이 닫혀 있으므로 수동 백업을 숨긴다.
+        assertFalse(shouldShowProfileManualBackup(isLoggedIn = true, isImportPending = true))
 
-        assertEquals(
-            R.string.profile_sync_footer_login_required,
-            profileSyncFooterTextRes(isLoggedIn = false, isCloudBackupEnabled = true),
-        )
-        assertEquals(
-            R.string.profile_sync_footer_login_required,
-            profileSyncFooterTextRes(isLoggedIn = false, isCloudBackupEnabled = false),
-        )
-        assertEquals(
-            R.string.profile_sync_footer_enable_info,
-            profileSyncFooterTextRes(isLoggedIn = true, isCloudBackupEnabled = false),
-        )
-        assertEquals(null, profileSyncFooterTextRes(isLoggedIn = true, isCloudBackupEnabled = true))
+        assertEquals(R.string.profile_sync_footer_login_required, profileSyncFooterTextRes(isLoggedIn = false))
+        assertEquals(R.string.profile_sync_footer_enable_info, profileSyncFooterTextRes(isLoggedIn = true))
     }
 
     @Test
@@ -229,21 +221,21 @@ class ProfileSheetParityTest {
             syncSectionSource,
             listOf(
                 // footer 는 섹션 카드 아래에 그려지지만, 섹션 선언 인자로 먼저 넘긴다.
-                "val syncFooterTextRes = profileSyncFooterTextRes(isLoggedIn, isCloudBackupEnabled)",
-                "footer = syncFooterTextRes",
-                "ProfileCloudSyncToggleItem(",
+                "val syncFooterTextRes = profileSyncFooterTextRes(isLoggedIn)",
+                "footer = stringResource(syncFooterTextRes)",
+                "ProfileCloudSyncStatusItem(",
                 "val lastSyncDisplay = when",
                 "Text(",
                 "text = lastSyncDisplay",
-                "if (shouldShowProfileManualBackup(isLoggedIn, isCloudBackupEnabled))",
+                "if (shouldShowProfileManualBackup(isLoggedIn, isImportPending))",
                 "R.string.profile_backup_manual",
             ),
         )
         assertSourceOrder(
             footerHelperSource,
             listOf(
-                "R.string.profile_sync_footer_login_required",
-                "R.string.profile_sync_footer_enable_info",
+                "if (isLoggedIn) R.string.profile_sync_footer_enable_info",
+                "else R.string.profile_sync_footer_login_required",
             ),
         )
     }

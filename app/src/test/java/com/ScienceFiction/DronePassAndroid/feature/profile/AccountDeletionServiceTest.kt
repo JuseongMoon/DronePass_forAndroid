@@ -154,7 +154,7 @@ class AccountDeletionServiceTest {
     }
 
     @Test
-    fun `프로필 탈퇴 흐름은 서버 성공 후에만 로컬 인증 상태를 정리하고 fallback 삭제를 하지 않는다`() {
+    fun `프로필 탈퇴 흐름은 기기 데이터 흐름에 맡기고 fallback 삭제를 하지 않는다`() {
         val source = resolveProjectFile(
             "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/profile/ProfileViewModel.kt",
             "src/main/java/com/ScienceFiction/DronePassAndroid/feature/profile/ProfileViewModel.kt",
@@ -164,9 +164,8 @@ class AccountDeletionServiceTest {
         assertSourceOrder(
             deletionSource,
             listOf(
-                "accountDeletionService.deleteCurrentAccount(activity).fold(",
+                "accountSessionFlows.deleteAccount(activity).fold(",
                 "onSuccess = {",
-                "authRepository.completeAccountDeletionLocally()",
                 "onResult(true",
                 "onFailure = { exception ->",
                 "onResult(",

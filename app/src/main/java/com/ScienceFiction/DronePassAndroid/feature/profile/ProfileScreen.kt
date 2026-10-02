@@ -8,7 +8,6 @@ import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
 import androidx.annotation.StringRes
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -46,7 +45,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.ScienceFiction.DronePassAndroid.R
 import androidx.compose.foundation.background
 import androidx.compose.ui.text.style.TextOverflow
-import com.ScienceFiction.DronePassAndroid.ui.component.DronePassSwitch
 import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedDivider
 import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedRow
 import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedSection
@@ -88,7 +86,7 @@ fun ProfileScreen(
     val activity = context.findActivity()
     val resources = LocalResources.current
     val isLoggedIn by viewModel.isLoggedIn.collectAsStateWithLifecycle()
-    val isCloudBackupEnabled by viewModel.isCloudBackupEnabled.collectAsStateWithLifecycle()
+    val isImportPending by viewModel.isImportPending.collectAsStateWithLifecycle()
     val isSyncing by viewModel.isSyncing.collectAsStateWithLifecycle()
     val isAccountActionInProgress by viewModel.isAccountActionInProgress.collectAsStateWithLifecycle()
     val syncStatus by viewModel.syncStatus.collectAsStateWithLifecycle()
@@ -107,6 +105,20 @@ fun ProfileScreen(
     var showDeleteFinalDialog by remember { mutableStateOf(false) }
     var webDocTarget by remember { mutableStateOf<WebDocTarget?>(null) }
     var resultDialog by remember { mutableStateOf<ProfileResultDialog?>(null) }
+    var showLogoutOfflineDialog by remember { mutableStateOf(false) }
+
+    // 로그아웃 ① 업로드가 서버에 닿지 못했다: 진행하면 이 기기에서 사라진다고 알리고 다시 묻는다.
+    LaunchedEffect(viewModel) {
+        viewModel.logoutOfflineConfirmation.collect { showLogoutOfflineDialog = true }
+    }
+    LaunchedEffect(viewModel, resources) {
+        viewModel.logoutFailed.collect {
+            resultDialog = ProfileResultDialog(
+                titleRes = R.string.profile_account_logout,
+                message = resources.getString(R.string.logout_failed),
+            )
+        }
+    }
 
     // 동기화 결과 알림 — iOS ProfileView showSyncResult alert 정합.
     LaunchedEffect(viewModel, resources) {
@@ -169,19 +181,17 @@ fun ProfileScreen(
             }
 
             // ===== 2. 동기화 섹션 =====
-            val syncFooterTextRes = profileSyncFooterTextRes(isLoggedIn, isCloudBackupEnabled)
+            val syncFooterTextRes = profileSyncFooterTextRes(isLoggedIn)
             InsetGroupedSection(
                 header = stringResource(R.string.profile_section_sync),
-                footer = syncFooterTextRes?.let { stringResource(it) },
+                footer = stringResource(syncFooterTextRes),
             ) {
-                ProfileCloudSyncToggleItem(
+                // 클라우드 동기화 토글은 없다: 로그인 중에는 항상 동기화한다(기기 데이터 주인, 3.6.0).
+                ProfileCloudSyncStatusItem(
                     title = stringResource(R.string.profile_sync_cloud),
                     subtitle = stringResource(syncStatus.labelRes),
                     subtitleColor = syncStatus.color,
-                    checked = isCloudBackupEnabled,
-                    enabled = !isSyncing,
                     showProgress = shouldShowProfileSyncProgress(isSyncing),
-                    onCheckedChange = { viewModel.setCloudBackupEnabled(it) },
                 )
 
                 // 마지막 동기화 시간 — iOS lastSyncTimeText 라벨 분기 정합.
@@ -205,8 +215,8 @@ fun ProfileScreen(
                         .padding(horizontal = 16.dp, vertical = 12.dp),
                 )
 
-                // 수동 백업 (로그인 + 토글 ON 시만 표시)
-                if (shouldShowProfileManualBackup(isLoggedIn, isCloudBackupEnabled)) {
+                // 수동 백업 (로그인했고 가져오기 확인을 기다리지 않을 때만 표시)
+                if (shouldShowProfileManualBackup(isLoggedIn, isImportPending)) {
                     InsetGroupedDivider()
                     InsetGroupedRow(
                         title = stringResource(R.string.profile_backup_manual),
@@ -378,6 +388,33 @@ fun ProfileScreen(
         )
     }
 
+    if (showLogoutOfflineDialog) {
+        AlertDialog(
+            onDismissRequest = { showLogoutOfflineDialog = false },
+            title = { Text(stringResource(R.string.logout_offline_title)) },
+            text = { Text(stringResource(R.string.logout_offline_message)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showLogoutOfflineDialog = false
+                    viewModel.signOut(proceedWithoutUpload = true) {
+                        onAccountSessionEnded()
+                        onDismiss()
+                    }
+                }) {
+                    Text(
+                        stringResource(R.string.profile_account_logout),
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLogoutOfflineDialog = false }) {
+                    Text(stringResource(R.string.common_cancel))
+                }
+            },
+        )
+    }
+
     resultDialog?.let { dialog ->
         AlertDialog(
             onDismissRequest = { resultDialog = null },
@@ -517,22 +554,15 @@ private fun ProfileInfoRow(
 }
 
 @Composable
-private fun ProfileCloudSyncToggleItem(
+private fun ProfileCloudSyncStatusItem(
     title: String,
     subtitle: String,
     subtitleColor: androidx.compose.ui.graphics.Color,
-    checked: Boolean,
-    enabled: Boolean,
     showProgress: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .then(
-                if (enabled) Modifier.clickable { onCheckedChange(!checked) }
-                else Modifier
-            )
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -558,13 +588,7 @@ private fun ProfileCloudSyncToggleItem(
                 modifier = Modifier.size(20.dp),
                 strokeWidth = 2.dp,
             )
-            Spacer(modifier = Modifier.width(8.dp))
         }
-        DronePassSwitch(
-            checked = checked,
-            onCheckedChange = onCheckedChange,
-            enabled = enabled,
-        )
     }
 }
 
@@ -572,19 +596,14 @@ internal fun shouldShowProfileSyncProgress(isSyncing: Boolean): Boolean = isSync
 
 internal fun shouldEnableProfileManualBackup(isSyncing: Boolean): Boolean = !isSyncing
 
+/** 수동 백업은 로그인했고 가져오기 확인을 기다리지 않을 때만 보인다(대기 중에는 관문이 닫혀 있다). */
 internal fun shouldShowProfileManualBackup(
     isLoggedIn: Boolean,
-    isCloudBackupEnabled: Boolean,
-): Boolean = isLoggedIn && isCloudBackupEnabled
+    isImportPending: Boolean,
+): Boolean = isLoggedIn && !isImportPending
 
-internal fun profileSyncFooterTextRes(
-    isLoggedIn: Boolean,
-    isCloudBackupEnabled: Boolean,
-): Int? = when {
-    !isLoggedIn -> R.string.profile_sync_footer_login_required
-    !isCloudBackupEnabled -> R.string.profile_sync_footer_enable_info
-    else -> null
-}
+internal fun profileSyncFooterTextRes(isLoggedIn: Boolean): Int =
+    if (isLoggedIn) R.string.profile_sync_footer_enable_info else R.string.profile_sync_footer_login_required
 
 internal fun shouldEnableProfileAccountAction(isAccountActionInProgress: Boolean): Boolean =
     !isAccountActionInProgress

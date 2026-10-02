@@ -57,18 +57,6 @@ internal enum class AuthProviderSignInAction {
     IGNORE,
 }
 
-internal enum class AuthSignOutStep {
-    DEACTIVATE_FCM_TOKEN,
-    STOP_REALTIME_SYNC,
-    SIGN_OUT,
-}
-
-internal fun authSignOutSteps(): List<AuthSignOutStep> = listOf(
-    AuthSignOutStep.DEACTIVATE_FCM_TOKEN,
-    AuthSignOutStep.STOP_REALTIME_SYNC,
-    AuthSignOutStep.SIGN_OUT,
-)
-
 private sealed interface FullSyncResult {
     data object Success : FullSyncResult
     data class Failure(val message: String) : FullSyncResult

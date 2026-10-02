@@ -40,7 +40,7 @@ internal fun isUserNotFoundErrorCode(errorCode: String?): Boolean {
     return errorCode == USER_NOT_FOUND_ERROR_CODE
 }
 
-private suspend fun reloadAccountStatus(user: FirebaseUser): AccountReloadStatus {
+internal suspend fun reloadAccountStatus(user: FirebaseUser): AccountReloadStatus {
     return try {
         user.reload().await()
         AccountReloadStatus.EXISTS

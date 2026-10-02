@@ -595,14 +595,16 @@ class MainScreenStartDestinationTest {
             "app/src/main/java/com/ScienceFiction/DronePassAndroid/ui/navigation/MainScreen.kt",
         ).readText()
         val lifecycleSource = source
-            .substringAfter("DisposableEffect(lifecycleOwner, authViewModel)")
+            .substringAfter("DisposableEffect(lifecycleOwner, authViewModel, accountSessionViewModel)")
             .substringBefore("// iOS MainTabView 와 동일하게 ZStack")
 
         assertAppearsInOrder(
             source = lifecycleSource,
             tokens = listOf(
                 "LifecycleEventObserver",
-                "Lifecycle.Event.ON_RESUME -> authViewModel.ensureCloudSyncActiveOnForeground()",
+                "Lifecycle.Event.ON_RESUME -> {",
+                "accountSessionViewModel.onForeground()",
+                "authViewModel.ensureCloudSyncActiveOnForeground()",
                 "Lifecycle.Event.ON_STOP -> authViewModel.resetForegroundSyncCheckStatus()",
                 "lifecycleOwner.lifecycle.addObserver(observer)",
                 "onDispose",

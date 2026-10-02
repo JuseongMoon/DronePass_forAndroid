@@ -77,6 +77,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.ScienceFiction.DronePassAndroid.feature.account.AccountSessionDialogs
+import com.ScienceFiction.DronePassAndroid.feature.account.AccountSessionViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -529,6 +531,7 @@ internal fun resolveSettingsOverlayPhoneDragEnd(
 @Composable
 internal fun MainScreen(
     authViewModel: AuthViewModel = hiltViewModel(),
+    accountSessionViewModel: AccountSessionViewModel = hiltViewModel(),
     sketchViewModel: SketchViewModel = hiltViewModel(),
     mapViewModel: MapViewModel = hiltViewModel(),
     initialFocusShapeId: String? = null,
@@ -684,10 +687,14 @@ internal fun MainScreen(
         }
     }
 
-    DisposableEffect(lifecycleOwner, authViewModel) {
+    DisposableEffect(lifecycleOwner, authViewModel, accountSessionViewModel) {
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
-                Lifecycle.Event.ON_RESUME -> authViewModel.ensureCloudSyncActiveOnForeground()
+                Lifecycle.Event.ON_RESUME -> {
+                    // 가져오기 확인을 기다리는 중이면 다시 묻는다(관문이 닫혀 있으면 아래 복구 경로도 열리지 않는다).
+                    accountSessionViewModel.onForeground()
+                    authViewModel.ensureCloudSyncActiveOnForeground()
+                }
                 Lifecycle.Event.ON_STOP -> authViewModel.resetForegroundSyncCheckStatus()
                 else -> Unit
             }
@@ -844,6 +851,12 @@ internal fun MainScreen(
                 )
             }
         }
+
+        // 기기 데이터 주인 확인창(가져오기·다른 계정·세션 끊김·다른 기기 탈퇴)은 로그인 시트가 아니라 앱 최상위에 띄운다.
+        AccountSessionDialogs(
+            onSignInAgain = { showSettingsOverlay = true },
+            viewModel = accountSessionViewModel,
+        )
 
         if (showForegroundSyncConfirmation) {
             AlertDialog(

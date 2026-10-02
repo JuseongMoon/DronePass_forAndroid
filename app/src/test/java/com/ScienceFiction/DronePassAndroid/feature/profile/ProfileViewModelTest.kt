@@ -32,78 +32,6 @@ class ProfileViewModelTest {
     }
 
     @Test
-    fun `탈퇴 실패 시 로그인과 클라우드 백업이 유지된 경우에만 실시간 동기화를 복구한다`() {
-        assertTrue(
-            shouldRestoreRealtimeSyncAfterAccountDeletionFailure(
-                wasCloudBackupEnabled = true,
-                previousUserId = "user-1",
-                isStillLoggedIn = true,
-            ),
-        )
-        assertTrue(
-            !shouldRestoreRealtimeSyncAfterAccountDeletionFailure(
-                wasCloudBackupEnabled = false,
-                previousUserId = "user-1",
-                isStillLoggedIn = true,
-            ),
-        )
-        assertTrue(
-            !shouldRestoreRealtimeSyncAfterAccountDeletionFailure(
-                wasCloudBackupEnabled = true,
-                previousUserId = null,
-                isStillLoggedIn = true,
-            ),
-        )
-        assertTrue(
-            !shouldRestoreRealtimeSyncAfterAccountDeletionFailure(
-                wasCloudBackupEnabled = true,
-                previousUserId = "user-1",
-                isStillLoggedIn = false,
-            ),
-        )
-    }
-
-    @Test
-    fun `탈퇴 시 iOS처럼 클라우드 동기화 추적 키를 정리한다`() {
-        assertEquals(
-            listOf(
-                SyncPreferenceKeys.LAST_SYNC_TIME,
-                SyncPreferenceKeys.LAST_LOCAL_MODIFICATION_TIME,
-                SyncPreferenceKeys.LAST_LOCAL_DRONE_MODIFICATION_TIME,
-                SyncPreferenceKeys.SYNCED_SHAPE_BASELINE,
-                SyncPreferenceKeys.LAST_SKETCH_SYNC_TIME,
-                SyncPreferenceKeys.LAST_LOCAL_SKETCH_MODIFICATION_TIME,
-            ),
-            ACCOUNT_DELETION_SYNC_PREFERENCE_KEYS_TO_CLEAR,
-        )
-    }
-
-    @Test
-    fun `클라우드 백업 설정은 iOS 키를 우선하고 Android 레거시 키를 fallback으로 읽는다`() {
-        assertEquals("cloudBackupEnabled", ProfilePreferenceKeys.CLOUD_BACKUP_ENABLED.name)
-        assertEquals("cloud_backup_enabled", ProfilePreferenceKeys.LEGACY_CLOUD_BACKUP_ENABLED.name)
-        assertTrue(
-            storedCloudBackupEnabled(
-                preferencesOf(ProfilePreferenceKeys.CLOUD_BACKUP_ENABLED to true),
-            ),
-        )
-        assertTrue(
-            storedCloudBackupEnabled(
-                preferencesOf(ProfilePreferenceKeys.LEGACY_CLOUD_BACKUP_ENABLED to true),
-            ),
-        )
-        assertTrue(
-            !storedCloudBackupEnabled(
-                preferencesOf(
-                    ProfilePreferenceKeys.CLOUD_BACKUP_ENABLED to false,
-                    ProfilePreferenceKeys.LEGACY_CLOUD_BACKUP_ENABLED to true,
-                ),
-            ),
-        )
-        assertTrue(!storedCloudBackupEnabled(preferencesOf()))
-    }
-
-    @Test
     fun `마지막 백업 시간은 iOS 키를 우선하고 Android 레거시 키를 fallback으로 읽는다`() {
         assertEquals("lastBackupTime", ProfilePreferenceKeys.LAST_BACKUP_TIME.name)
         assertEquals("last_backup_time", ProfilePreferenceKeys.LEGACY_LAST_BACKUP_TIME.name)
@@ -167,8 +95,8 @@ class ProfileViewModelTest {
         assertEquals(R.string.profile_sync_login_required, ProfileSyncStatus.LoginRequired.labelRes)
         assertEquals(Color(0xFFFF9500), ProfileSyncStatus.LoginRequired.color)
 
-        assertEquals(R.string.profile_sync_disabled, ProfileSyncStatus.Disabled.labelRes)
-        assertEquals(Color(0xFF8E8E93), ProfileSyncStatus.Disabled.color)
+        assertEquals(R.string.profile_sync_import_pending, ProfileSyncStatus.ImportPending.labelRes)
+        assertEquals(Color(0xFFFF9500), ProfileSyncStatus.ImportPending.color)
 
         assertEquals(R.string.profile_sync_active, ProfileSyncStatus.Active.labelRes)
         assertEquals(Color(0xFF34C759), ProfileSyncStatus.Active.color)
@@ -215,92 +143,6 @@ class ProfileViewModelTest {
     fun `프로필 계정 작업은 iOS처럼 진행 중에 비활성화된다`() {
         assertTrue(!shouldEnableProfileAccountAction(isAccountActionInProgress = true))
         assertTrue(shouldEnableProfileAccountAction(isAccountActionInProgress = false))
-    }
-
-    @Test
-    fun `프로필 로그아웃과 탈퇴는 FCM 비활성화 쓰기를 기다린다`() {
-        val source = resolveProjectFile(
-            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/profile/ProfileViewModel.kt",
-            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/profile/ProfileViewModel.kt",
-        ).readText()
-
-        assertTrue(source.contains("authSignOutSteps().forEach"))
-        assertTrue(source.contains("FcmService.deactivateTokenAndWait(appContext)"))
-        assertTrue(!source.contains("FcmService.deactivateToken(appContext)"))
-    }
-
-    @Test
-    fun `클라우드 동기화 토글 ON은 iOS처럼 로그인 상태에서 백업 결과 알림을 표시한다`() {
-        assertTrue(
-            shouldNotifyProfileSyncResultForCloudToggle(
-                enabled = true,
-                isLoggedIn = true,
-            )
-        )
-        assertTrue(
-            !shouldNotifyProfileSyncResultForCloudToggle(
-                enabled = true,
-                isLoggedIn = false,
-            )
-        )
-        assertTrue(
-            !shouldNotifyProfileSyncResultForCloudToggle(
-                enabled = false,
-                isLoggedIn = true,
-            )
-        )
-    }
-
-    @Test
-    fun `클라우드 동기화 토글 ON은 iOS처럼 백업 시작 후 100ms 뒤 실시간 동기화를 재시작 예약한다`() {
-        assertEquals(100L, ProfileCloudBackupRestartScheduleDelayMs)
-        assertTrue(
-            shouldRestartProfileRealtimeSyncAfterToggle(
-                enabled = true,
-                isLoggedIn = true,
-            )
-        )
-        assertTrue(
-            !shouldRestartProfileRealtimeSyncAfterToggle(
-                enabled = true,
-                isLoggedIn = false,
-            )
-        )
-        assertTrue(
-            !shouldRestartProfileRealtimeSyncAfterToggle(
-                enabled = false,
-                isLoggedIn = true,
-            )
-        )
-    }
-
-    @Test
-    fun `클라우드 동기화 토글 ON 순서는 iOS ProfileView onChange 흐름을 따른다`() {
-        val source = resolveProjectFile(
-            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/profile/ProfileViewModel.kt",
-            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/profile/ProfileViewModel.kt",
-        ).readText()
-        val functionBody = source.substringAfter("fun setCloudBackupEnabled(enabled: Boolean)")
-            .substringBefore("/**\n     * 수동 백업")
-
-        assertSourceOrder(
-            source = functionBody,
-            tokens = listOf(
-                "dataStore.edit",
-                "if (enabled && firebaseAuth.currentUser != null)",
-                "viewModelScope.launch",
-                "syncToCloudInternal(",
-                "delay(ProfileCloudBackupRestartScheduleDelayMs)",
-                "shouldRestartProfileRealtimeSyncAfterToggle",
-                "realtimeSyncManager.resetAndRestartRealtimeSync()",
-            ),
-        )
-    }
-
-    @Test
-    fun `프로필 클라우드 백업 토글은 iOS처럼 동기화 중에는 무시된다`() {
-        assertTrue(shouldAcceptProfileCloudBackupToggle(isSyncing = false))
-        assertTrue(!shouldAcceptProfileCloudBackupToggle(isSyncing = true))
     }
 
     @Test
@@ -373,15 +215,27 @@ class ProfileViewModelTest {
         assertEquals(2, profileSyncSuccessCount(activeLocalShapesBeforeSync))
     }
 
-    @Test
-    fun `로그아웃 baseline은 iOS처럼 활성 도형 updatedAt만 저장한다`() {
-        val baseline = buildProfileSyncedShapeBaseline(
-            listOf(
-                ShapeModel(id = "active", updatedAt = 100L, deletedAt = null),
-                ShapeModel(id = "deleted", updatedAt = 200L, deletedAt = 300L),
-            ),
-        )
 
-        assertEquals(mapOf("active" to 100L), baseline)
+    @Test
+    fun `동기화 상태는 토글 없이 로그인과 가져오기 대기와 리스너로 정한다`() {
+        assertEquals(ProfileSyncStatus.Syncing, resolveProfileSyncStatus(true, true, false, true))
+        assertEquals(ProfileSyncStatus.LoginRequired, resolveProfileSyncStatus(false, false, false, false))
+        assertEquals(ProfileSyncStatus.ImportPending, resolveProfileSyncStatus(false, true, true, false))
+        assertEquals(ProfileSyncStatus.Active, resolveProfileSyncStatus(false, true, false, true))
+        assertEquals(ProfileSyncStatus.Waiting, resolveProfileSyncStatus(false, true, false, false))
+    }
+
+    @Test
+    fun `프로필 로그아웃과 탈퇴는 화면에 묶이지 않는 기기 데이터 흐름에 맡긴다`() {
+        val source = resolveProjectFile(
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/profile/ProfileViewModel.kt",
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/profile/ProfileViewModel.kt",
+        ).readText()
+
+        assertTrue(source.contains("accountSessionFlows.logout(proceedWithoutUpload)"))
+        assertTrue(source.contains("accountSessionFlows.deleteAccount(activity)"))
+        // 화면 범위에서 직접 로그아웃·삭제하지 않는다(화면을 닫으면 중간에 끊긴다).
+        assertTrue(!source.contains("firebaseAuth.signOut()"))
+        assertTrue(!source.contains("realtimeSyncManager.forceSyncNow()\n                    saveProfileSyncedShapeBaseline"))
     }
 }

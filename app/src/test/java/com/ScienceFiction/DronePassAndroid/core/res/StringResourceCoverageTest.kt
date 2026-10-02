@@ -478,25 +478,25 @@ class StringResourceCoverageTest {
     }
 
     @Test
-    fun `settings account deletion strings do not imply local data deletion`() {
+    fun `settings account deletion strings say device data is deleted too`() {
         assertEquals("회원 탈퇴", stringResourceValue("values/strings.xml", "settings_delete_account"))
         assertEquals(
-            "계정과 클라우드 데이터가 삭제되며, 로컬 데이터는 기기에 유지됩니다.",
+            "계정과 계정 데이터가 삭제되며, 이 기기에서도 지워집니다.",
             stringResourceValue("values/strings.xml", "settings_delete_account_subtitle"),
         )
         assertEquals(
-            "계정이 삭제되고\\n클라우드 동기화가 중단됩니다.\\n\\n기기에 저장된 도형, 드론, 스케치는\\n계속 사용할 수 있습니다.\\n\\n이후 다른 계정에서 클라우드 동기화를 켜면\\n해당 계정으로 동기화될 수 있습니다.\\n\\n정말 탈퇴하시겠습니까?",
+            "계정과 계정 데이터가 삭제되고\\n이 기기에 저장된 도형, 드론, 스케치도\\n함께 지워집니다.\\n\\n정말 탈퇴하시겠습니까?",
             stringResourceValue("values/strings.xml", "settings_delete_account_confirm"),
         )
         assertEquals("탈퇴하기", stringResourceValue("values/strings.xml", "settings_delete_account_button"))
 
         assertEquals("Delete Account", stringResourceValue("values-en/strings.xml", "settings_delete_account"))
         assertEquals(
-            "Your account and cloud data will be deleted. Local data will remain on this device.",
+            "Your account and its data will be deleted, and removed from this device too.",
             stringResourceValue("values-en/strings.xml", "settings_delete_account_subtitle"),
         )
         assertEquals(
-            "Your account will be deleted and cloud sync will stop.\\n\\nShapes, drones, and sketches saved on this device will remain available.\\n\\nIf you later enable cloud sync with another account, they may sync to that account.\\n\\nAre you sure you want to delete your account?",
+            "Your account and its data will be deleted.\\n\\nShapes, drones, and sketches saved on this device will be removed too.\\n\\nAre you sure you want to delete your account?",
             stringResourceValue("values-en/strings.xml", "settings_delete_account_confirm"),
         )
         assertEquals("Delete", stringResourceValue("values-en/strings.xml", "settings_delete_account_button"))
@@ -890,7 +890,7 @@ class StringResourceCoverageTest {
         assertEquals("실시간 클라우드 동기화", stringResourceValue("values/strings.xml", "profile_sync_cloud"))
         assertEquals("동기화 중...", stringResourceValue("values/strings.xml", "profile_sync_in_progress"))
         assertEquals("로그인이 필요합니다", stringResourceValue("values/strings.xml", "profile_sync_login_required"))
-        assertEquals("비활성화됨", stringResourceValue("values/strings.xml", "profile_sync_disabled"))
+        assertEquals("가져오기 확인 필요", stringResourceValue("values/strings.xml", "profile_sync_import_pending"))
         assertEquals("활성화 - 실시간 동기화중", stringResourceValue("values/strings.xml", "profile_sync_active"))
         assertEquals("활성화 - 실시간 동기화 대기중", stringResourceValue("values/strings.xml", "profile_sync_waiting"))
         assertEquals("동기화 기록이 없습니다.", stringResourceValue("values/strings.xml", "profile_sync_no_history"))
@@ -905,7 +905,7 @@ class StringResourceCoverageTest {
             stringResourceValue("values/strings.xml", "profile_sync_footer_login_required"),
         )
         assertEquals(
-            "활성화하면 같은 계정으로 로그인한 모든 기기에서 도형 데이터가 실시간으로 동기화 및 백업됩니다.",
+            "같은 계정으로 로그인한 모든 기기에서 도형 데이터가 실시간으로 동기화 및 백업됩니다.",
             stringResourceValue("values/strings.xml", "profile_sync_footer_enable_info"),
         )
         assertEquals("이용약관", stringResourceValue("values/strings.xml", "profile_terms_service"))
@@ -913,12 +913,12 @@ class StringResourceCoverageTest {
         assertEquals("로그아웃", stringResourceValue("values/strings.xml", "profile_account_logout"))
         assertEquals("회원 탈퇴", stringResourceValue("values/strings.xml", "profile_account_delete"))
         assertEquals(
-            "탈퇴 시 계정만 삭제되며, 로컬 데이터는 계속 사용할 수 있습니다.",
+            "탈퇴하면 계정과 계정 데이터가 삭제되고, 이 기기에서도 지워집니다.",
             stringResourceValue("values/strings.xml", "profile_account_delete_desc"),
         )
         assertEquals("탈퇴하기", stringResourceValue("values/strings.xml", "profile_delete_account_button"))
         assertEquals(
-            "계정이 삭제되고\\n클라우드 동기화가 중단됩니다.\\n\\n기기에 저장된 도형, 드론, 스케치는\\n계속 사용할 수 있습니다.\\n\\n이후 다른 계정에서 클라우드 동기화를 켜면\\n해당 계정으로 동기화될 수 있습니다.\\n\\n정말 탈퇴하시겠습니까?",
+            "계정과 계정 데이터가 삭제되고\\n이 기기에 저장된 도형, 드론, 스케치도\\n함께 지워집니다.\\n\\n정말 탈퇴하시겠습니까?",
             stringResourceValue("values/strings.xml", "profile_delete_account_message"),
         )
         assertEquals("최종 확인", stringResourceValue("values/strings.xml", "profile_delete_account_final_title"))
@@ -934,7 +934,10 @@ class StringResourceCoverageTest {
             "보안을 위해 다시 로그인한 후 탈퇴해주세요.",
             stringResourceValue("values/strings.xml", "profile_delete_account_requires_recent_login"),
         )
-        assertEquals("로그아웃하시겠습니까?", stringResourceValue("values/strings.xml", "profile_logout_message"))
+        assertEquals(
+            "로그아웃하시겠습니까?\\n이 기기에서는 지워지고 계정에는 남아 있습니다. 다시 로그인하면 불러옵니다.",
+            stringResourceValue("values/strings.xml", "profile_logout_message"),
+        )
 
         assertEquals("My Info", stringResourceValue("values-en/strings.xml", "profile_section_my_info"))
         assertEquals("Synchronization", stringResourceValue("values-en/strings.xml", "profile_section_sync"))
@@ -953,7 +956,7 @@ class StringResourceCoverageTest {
         assertEquals("Real-time cloud sync", stringResourceValue("values-en/strings.xml", "profile_sync_cloud"))
         assertEquals("Syncing...", stringResourceValue("values-en/strings.xml", "profile_sync_in_progress"))
         assertEquals("Login required", stringResourceValue("values-en/strings.xml", "profile_sync_login_required"))
-        assertEquals("Disabled", stringResourceValue("values-en/strings.xml", "profile_sync_disabled"))
+        assertEquals("Import confirmation needed", stringResourceValue("values-en/strings.xml", "profile_sync_import_pending"))
         assertEquals("Active - Real-time syncing", stringResourceValue("values-en/strings.xml", "profile_sync_active"))
         assertEquals("Active - Waiting for sync", stringResourceValue("values-en/strings.xml", "profile_sync_waiting"))
         assertEquals("No sync history", stringResourceValue("values-en/strings.xml", "profile_sync_no_history"))
@@ -965,7 +968,7 @@ class StringResourceCoverageTest {
             stringResourceValue("values-en/strings.xml", "profile_sync_footer_login_required"),
         )
         assertEquals(
-            "When enabled, shape data will be synced and backed up in real-time across all devices with the same account.",
+            "Shape data is synced and backed up in real time across all devices signed in to the same account.",
             stringResourceValue("values-en/strings.xml", "profile_sync_footer_enable_info"),
         )
         assertEquals("Terms of Service", stringResourceValue("values-en/strings.xml", "profile_terms_service"))
@@ -973,13 +976,16 @@ class StringResourceCoverageTest {
         assertEquals("Sign Out", stringResourceValue("values-en/strings.xml", "profile_account_logout"))
         assertEquals("Delete Account", stringResourceValue("values-en/strings.xml", "profile_account_delete"))
         assertEquals(
-            "Only the account will be deleted. Local data will remain available.",
+            "Deleting your account removes your account and its data, and removes it from this device too.",
             stringResourceValue("values-en/strings.xml", "profile_account_delete_desc"),
         )
-        assertEquals("Are you sure you want to sign out?", stringResourceValue("values-en/strings.xml", "profile_logout_message"))
+        assertEquals(
+            "Are you sure you want to sign out?\\nYour data will be removed from this device but stays in your account. Sign in again to load it.",
+            stringResourceValue("values-en/strings.xml", "profile_logout_message"),
+        )
         assertEquals("Delete", stringResourceValue("values-en/strings.xml", "profile_delete_account_button"))
         assertEquals(
-            "Your account will be deleted and cloud sync will stop.\\n\\nShapes, drones, and sketches saved on this device will remain available.\\n\\nIf you later enable cloud sync with another account, they may sync to that account.\\n\\nAre you sure you want to delete your account?",
+            "Your account and its data will be deleted.\\n\\nShapes, drones, and sketches saved on this device will be removed too.\\n\\nAre you sure you want to delete your account?",
             stringResourceValue("values-en/strings.xml", "profile_delete_account_message"),
         )
         assertEquals("Final Confirmation", stringResourceValue("values-en/strings.xml", "profile_delete_account_final_title"))

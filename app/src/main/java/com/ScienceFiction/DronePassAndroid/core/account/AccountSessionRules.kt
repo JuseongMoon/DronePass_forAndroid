@@ -84,7 +84,7 @@ internal enum class AccountSessionAction {
 }
 
 /** 가져오기 확인창의 종류. */
-internal enum class ImportPromptKind {
+enum class ImportPromptKind {
     /** 로그인 전에 이 기기에서 만든 데이터. 기본 선택 없음. */
     GUEST,
 

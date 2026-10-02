@@ -291,8 +291,8 @@
     <string name="settings_keep_screen_awake_subtitle">Screen won\'t turn off automatically while using the app.</string>
     <string name="settings_section_app_info">App</string>
     <string name="settings_delete_account" tools:ignore="UnusedResources">Delete Account</string>
-    <string name="settings_delete_account_subtitle" tools:ignore="UnusedResources">Your account and cloud data will be deleted. Local data will remain on this device.</string>
-    <string name="settings_delete_account_confirm" tools:ignore="UnusedResources">Your account will be deleted and cloud sync will stop.\n\nShapes, drones, and sketches saved on this device will remain available.\n\nIf you later enable cloud sync with another account, they may sync to that account.\n\nAre you sure you want to delete your account?</string>
+    <string name="settings_delete_account_subtitle" tools:ignore="UnusedResources">Your account and its data will be deleted, and removed from this device too.</string>
+    <string name="settings_delete_account_confirm" tools:ignore="UnusedResources">Your account and its data will be deleted.\n\nShapes, drones, and sketches saved on this device will be removed too.\n\nAre you sure you want to delete your account?</string>
     <string name="settings_delete_account_button" tools:ignore="UnusedResources">Delete</string>
     <string name="settings_section_notifications">Notifications</string>
     <string name="settings_sunrise_alarm">Sunrise notifications</string>
@@ -409,13 +409,12 @@
     <string name="profile_sync_cloud">Real-time cloud sync</string>
     <string name="profile_sync_in_progress" tools:ignore="TypographyEllipsis">Syncing...</string>
     <string name="profile_sync_login_required">Login required</string>
-    <string name="profile_sync_disabled">Disabled</string>
     <string name="profile_sync_active">Active - Real-time syncing</string>
     <string name="profile_sync_waiting">Active - Waiting for sync</string>
     <string name="profile_sync_last_sync">Last sync: %1$s</string>
     <string name="profile_sync_no_history">No sync history</string>
     <string name="profile_sync_footer_login_required">Please log in to use real-time cloud sync.</string>
-    <string name="profile_sync_footer_enable_info">When enabled, shape data will be synced and backed up in real-time across all devices with the same account.</string>
+    <string name="profile_sync_footer_enable_info">Shape data is synced and backed up in real time across all devices signed in to the same account.</string>
     <string name="profile_backup_manual">Manual backup</string>
     <string name="profile_backup_last_backup">Last backup: %1$s</string>
     <string name="profile_sync_alert_title">Real-time Cloud Sync</string>
@@ -435,10 +434,34 @@
 
     <string name="profile_account_logout">Sign Out</string>
     <string name="profile_account_delete">Delete Account</string>
-    <string name="profile_account_delete_desc">Only the account will be deleted. Local data will remain available.</string>
-    <string name="profile_logout_message">Are you sure you want to sign out?</string>
+    <string name="profile_account_delete_desc">Deleting your account removes your account and its data, and removes it from this device too.</string>
+    <string name="profile_logout_message">Are you sure you want to sign out?\nYour data will be removed from this device but stays in your account. Sign in again to load it.</string>
+    <string name="profile_sync_import_pending">Import confirmation needed</string>
+    <string name="account_import_title">Import data from before sign-in</string>
+    <string name="account_import_message">This device has data created before you signed in (%1$d shapes, %2$d sketch lines, %3$d drones).\n\nImport it into this account? If you cancel, you will be signed out and the data stays on this device.</string>
+    <string name="account_import_message_legacy_other">The data on this device may belong to another account (%1$d shapes, %2$d sketch lines, %3$d drones).\n\nDelete it unless it is yours. If you cancel, you will be signed out and the data stays on this device.</string>
+    <string name="account_import_action">Import</string>
+    <string name="account_import_delete">Delete</string>
+    <string name="account_import_delete_confirm_title">Delete data on this device</string>
+    <string name="account_import_delete_confirm_message">Delete %1$d items on this device and load your account data? Deleted data can\'t be recovered.</string>
+    <string name="account_import_check_failed_title">Import confirmation needed</string>
+    <string name="account_import_check_failed_message">Couldn\'t check what to import because there is no internet connection. Nothing syncs with this account until it is checked.\n\nConnect and try again. If you cancel, you will be signed out and the data stays on this device.</string>
+    <string name="account_retry">Try Again</string>
+    <string name="account_replace_title">Another account\'s data is on this device</string>
+    <string name="account_replace_message">This device has data from another account. If you continue, it will be removed from this device and your current account\'s data will be loaded.\n\nChanges not saved to that account may be lost. If you cancel, you will be signed out.</string>
+    <string name="account_replace_confirm">Delete and Continue</string>
+    <string name="account_session_lost_title">You\'ve been signed out</string>
+    <string name="account_session_lost_message">The data on this device has been kept. Sign in again with the same account to continue syncing.</string>
+    <string name="account_session_lost_relogin">Sign In Again</string>
+    <string name="account_session_lost_delete">Delete Data on This Device</string>
+    <string name="account_session_lost_delete_confirm_message">Delete the account data left on this device? Changes not saved to the account can\'t be recovered.</string>
+    <string name="account_deleted_elsewhere_title">Account deleted</string>
+    <string name="account_deleted_elsewhere_message">Your account was deleted, so the data on this device was removed.</string>
+    <string name="logout_offline_title">No internet connection</string>
+    <string name="logout_offline_message">Some changes may not have been saved to your account because there is no internet connection. If you sign out now, they will be removed from this device.</string>
+    <string name="logout_failed">Couldn\'t sign out. Please try again.</string>
     <string name="profile_delete_account_button">Delete</string>
-    <string name="profile_delete_account_message">Your account will be deleted and cloud sync will stop.\n\nShapes, drones, and sketches saved on this device will remain available.\n\nIf you later enable cloud sync with another account, they may sync to that account.\n\nAre you sure you want to delete your account?</string>
+    <string name="profile_delete_account_message">Your account and its data will be deleted.\n\nShapes, drones, and sketches saved on this device will be removed too.\n\nAre you sure you want to delete your account?</string>
     <string name="profile_delete_account_final_title">Final Confirmation</string>
     <string name="profile_delete_account_final_message">This action cannot be undone.</string>
     <string name="profile_delete_account_final_button">Permanently Delete</string>

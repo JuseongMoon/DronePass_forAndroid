@@ -2,6 +2,7 @@ package com.ScienceFiction.DronePassAndroid.app
 
 import android.app.Application
 import com.ScienceFiction.DronePassAndroid.core.account.AccountSessionFlows
+import com.ScienceFiction.DronePassAndroid.core.account.clearFirestorePersistenceIfNeeded
 import com.ScienceFiction.DronePassAndroid.feature.settings.initializeAppLanguage
 import com.ScienceFiction.DronePassAndroid.feature.settings.storedAppLanguageTag
 import com.ScienceFiction.DronePassAndroid.service.FcmService
@@ -29,6 +30,8 @@ class DronePassApplication : Application() {
         super.onCreate()
         // WeatherKit 중계 함수 호출에 App Check 토큰이 필요하다. Firebase 호출보다 먼저 설치한다.
         FirebaseAppCheck.getInstance().installAppCheckProviderFactory(appCheckProviderFactory())
+        // 로그아웃·탈퇴 뒤 첫 실행: Firestore 를 처음 쓰기 전에 이전 계정의 오프라인 캐시와 대기 쓰기를 지운다.
+        clearFirestorePersistenceIfNeeded(this)
         // 기기 데이터 주인 판단. 리포지토리를 쓰는 다른 작업보다 먼저 시작하고, 판단이 끝나기 전까지 동기화 관문은 닫혀 있다.
         accountSessionFlows.start()
         // 앱 언어 키는 이전 버전이 실행할 때마다 썼다. 이번 실행이 쓰기 전에 읽어 기존 설치를 가린다.

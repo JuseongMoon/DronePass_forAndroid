@@ -195,29 +195,6 @@ class AuthViewModelForegroundSyncTest {
     }
 
     @Test
-    fun `로그아웃은 FCM 비활성화 완료 후 리스너 중단과 Firebase 로그아웃을 수행한다`() {
-        assertEquals(
-            listOf(
-                AuthSignOutStep.DEACTIVATE_FCM_TOKEN,
-                AuthSignOutStep.STOP_REALTIME_SYNC,
-                AuthSignOutStep.SIGN_OUT,
-            ),
-            authSignOutSteps(),
-        )
-    }
-
-    @Test
-    fun `로그아웃은 Firestore FCM 비활성화 쓰기를 기다린다`() {
-        val source = resolveProjectFile(
-            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/profile/ProfileViewModel.kt",
-            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/profile/ProfileViewModel.kt",
-        ).readText()
-
-        assertTrue(source.contains("authSignOutSteps().forEach"))
-        assertTrue(source.contains("FcmService.deactivateTokenAndWait(appContext)"))
-    }
-
-    @Test
     fun `Google login cancellation is ignored like iOS user cancelled flow`() {
         assertEquals(
             true,
