@@ -5,6 +5,7 @@ import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 import com.ScienceFiction.DronePassAndroid.domain.model.SketchModel
 import com.squareup.moshi.Moshi
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
 import org.junit.Test
 import java.io.File
@@ -91,13 +92,15 @@ class AccountSessionContractTest {
         "legacyOtherAccount" to ImportPromptKind.LEGACY_OTHER_ACCOUNT,
     )
 
-    @Test fun `fixture has 56 cases and every action and prompt kind is known`() {
+    @Test fun `fixture has 65 cases and every action and prompt kind is known`() {
         val root = fixture()
         assertEquals(1.0, (root.required("schemaVersion") as Number).toDouble(), 0.0)
-        val counts = listOf("sessionCases", "migrationCases", "deviceHasDataCases", "importCandidateCases", "deletionCheckCases")
-            .map { root.list(it).size }
-        assertEquals(listOf(26, 5, 5, 11, 9), counts)
-        assertEquals(56, counts.sum())
+        val counts = listOf(
+            "sessionCases", "migrationCases", "deviceHasDataCases", "importCandidateCases", "deletionCheckCases",
+            "reloadClassificationCases",
+        ).map { root.list(it).size }
+        assertEquals(listOf(26, 5, 5, 11, 9, 9), counts)
+        assertEquals(65, counts.sum())
         assertEquals(DELETION_CHECK_GRACE_MINUTES.toDouble(), (root.required("deletionCheckGraceMinutes") as Number).toDouble(), 0.0)
         assertEquals(actionNames.keys, root.map("actions").keys)
         assertEquals(promptNames.keys, root.map("promptKinds").keys)
@@ -145,6 +148,41 @@ class AccountSessionContractTest {
             )
             assertEquals(row.string("name"), actions.getValue(row.map("expected").string("action")), action)
         }
+    }
+
+    /**
+     * 계정 확인 분류(reloadClassificationCases): "사용자 없음"만 탈퇴다. Android 는 분류를 reloadAccountStatus 와 두 호출부가
+     * 나눠 맡으므로(순수 함수로 떼어 내지 않았다) 각 사례가 어느 코드로 처리되는지 소스로 고정한다.
+     */
+    @Test fun `reload classification cases are handled the same way by the Android call sites`() {
+        val cases = fixture().maps("reloadClassificationCases")
+        assertEquals(9, cases.size)
+        val deleted = cases.filter { it["expected"] == "deleted" }
+        assertEquals(1, deleted.size)
+        assertEquals("userNotFound", (deleted.single().map("input")["error"] as Map<*, *>).string("code"))
+
+        val service = source("feature/profile/AccountDeletionService.kt")
+        val flows = source("core/account/AccountSessionFlows.kt")
+        // 사용자 없음 → DELETED. 그 밖의 FirebaseAuthInvalidUserException(토큰 만료·무효, 비활성화)은 다시 던진다.
+        assertTrue(service.contains("private const val USER_NOT_FOUND_ERROR_CODE = \"ERROR_USER_NOT_FOUND\""))
+        assertTrue(service.contains("if (isUserNotFoundErrorCode(error.errorCode)) AccountReloadStatus.DELETED else throw error"))
+        // 다시 던진 오류·네트워크 오류·Auth 밖 오류는 두 호출부에서 모두 unknown(데이터 유지)이다.
+        assertEquals(2, Regex("""runCatching \{ reloadAccountStatus\(user\) \}\.getOrNull\(\)""").findAll(flows).count())
+        assertTrue(flows.contains("null -> DeletionReloadResult.UNKNOWN"))
+        assertTrue(flows.contains("null -> Log.w(TAG, \"계정 확인 실패. 다음 실행까지 동기화를 멈춥니다.\")"))
+        // 쓰기 거부 뒤 확인: 현재 사용자가 없거나 다른 계정이면 확인하지 않는다(unknown, 데이터 유지).
+        assertTrue(flows.contains("val user = auth.currentUser?.takeIf { it.uid == uid } ?: return"))
+        // accountDeletedUid 는 DELETED 일 때만 세운다.
+        val denied = flows.substringAfter("private suspend fun onPermissionDenied(")
+        assertEquals(1, Regex("""accountDeletedUid = uid""").findAll(denied).count())
+        assertTrue(denied.indexOf("AccountReloadStatus.DELETED ->") < denied.indexOf("accountDeletedUid = uid"))
+    }
+
+    private fun source(path: String): String {
+        val root = listOf("src/main/java", "app/src/main/java")
+            .map { File(File(requireNotNull(System.getProperty("user.dir"))), it) }
+            .first { it.isDirectory }
+        return File(root, "com/ScienceFiction/DronePassAndroid/$path").readText()
     }
 
     @Test fun `migration owners match the shared fixture`() {
