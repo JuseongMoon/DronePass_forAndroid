@@ -50,12 +50,13 @@ internal sealed interface AccountJournal {
     val uid: String
 
     data class Logout(override val uid: String, val step: LogoutStep) : AccountJournal
-    data class Deleting(override val uid: String) : AccountJournal
+    /** [startedAtMillis]: 서버 탈퇴 호출 직전 시각. 이전 빌드가 남긴 journal 이나 호출 전에 멈춘 경우에는 없다. */
+    data class Deleting(override val uid: String, val startedAtMillis: Long? = null) : AccountJournal
 }
 
 internal fun AccountJournal.encode(): String = when (this) {
     is AccountJournal.Logout -> "logout|${step.wireValue}|$uid"
-    is AccountJournal.Deleting -> "deleting|$uid"
+    is AccountJournal.Deleting -> if (startedAtMillis == null) "deleting|$uid" else "deleting|$uid|$startedAtMillis"
 }
 
 internal fun decodeAccountJournal(value: String?): AccountJournal? {
@@ -64,6 +65,8 @@ internal fun decodeAccountJournal(value: String?): AccountJournal? {
         parts.size == 3 && parts[0] == "logout" && parts[2].isNotEmpty() ->
             LogoutStep.parse(parts[1])?.let { AccountJournal.Logout(parts[2], it) }
         parts.size == 2 && parts[0] == "deleting" && parts[1].isNotEmpty() -> AccountJournal.Deleting(parts[1])
+        parts.size == 3 && parts[0] == "deleting" && parts[1].isNotEmpty() ->
+            parts[2].toLongOrNull()?.let { AccountJournal.Deleting(parts[1], it) }
         else -> null
     }
 }
@@ -178,6 +181,41 @@ internal fun decideAccountSession(input: AccountSessionInput): AccountSessionDec
         is LocalDataOwner.Account -> AccountSessionDecision(AccountSessionAction.CONFIRM_REPLACE_OTHER_ACCOUNT_DATA)
     }
 }
+
+/** 탈퇴 journal 이 남은 채 세션이 있을 때 user.reload 결과. 오프라인 등으로 확인하지 못하면 [UNKNOWN]. */
+internal enum class DeletionReloadResult { DELETED, EXISTS, UNKNOWN }
+
+internal enum class DeletionCheckAction {
+    FINISH_DELETION_WIPE,
+
+    /** journal 유지·관문 닫힘. 앱 복귀나 다음 실행 때 다시 확인한다. */
+    KEEP_JOURNAL_RETRY_LATER,
+
+    /** 탈퇴가 일어나지 않은 것으로 보고 journal 을 지운 뒤 다시 판단한다. */
+    CLEAR_JOURNAL_THEN_REEVALUATE,
+}
+
+/** 서버가 아직 지우는 중일 수 있는 시간(Scheduler 5분 주기 + 함수 제한 540초 + 여유). */
+internal const val DELETION_CHECK_GRACE_MINUTES = 15L
+
+/**
+ * 탈퇴 journal 확인(계약 deletionCheckRules). 지워졌으면 정리하고, 확인하지 못하면 journal 을 지킨다.
+ * 계정이 남아 있어도 서버 호출 뒤 [DELETION_CHECK_GRACE_MINUTES] 안이면 아직 지우는 중일 수 있으므로 journal 을 지킨다.
+ */
+internal fun decideDeletionCheck(result: DeletionReloadResult, minutesSinceStart: Long?): DeletionCheckAction = when (result) {
+    DeletionReloadResult.DELETED -> DeletionCheckAction.FINISH_DELETION_WIPE
+    DeletionReloadResult.UNKNOWN -> DeletionCheckAction.KEEP_JOURNAL_RETRY_LATER
+    DeletionReloadResult.EXISTS ->
+        if (minutesSinceStart != null && minutesSinceStart < DELETION_CHECK_GRACE_MINUTES) {
+            DeletionCheckAction.KEEP_JOURNAL_RETRY_LATER
+        } else {
+            DeletionCheckAction.CLEAR_JOURNAL_THEN_REEVALUATE
+        }
+}
+
+/** 탈퇴 시작 뒤 지난 분(내림). 시계가 뒤로 갔으면 0으로 본다. */
+internal fun minutesSinceDeletionStart(startedAtMillis: Long?, nowMillis: Long): Long? =
+    startedAtMillis?.let { ((nowMillis - it).coerceAtLeast(0L)) / 60_000L }
 
 /**
  * 3.5.x(또는 106 이하)에서 처음 올라왔을 때 한 번만 주인을 정한다. [savedUid] 는 예전 EncryptedPrefs 의

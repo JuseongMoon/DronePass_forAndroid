@@ -91,13 +91,14 @@ class AccountSessionContractTest {
         "legacyOtherAccount" to ImportPromptKind.LEGACY_OTHER_ACCOUNT,
     )
 
-    @Test fun `fixture has 47 cases and every action and prompt kind is known`() {
+    @Test fun `fixture has 56 cases and every action and prompt kind is known`() {
         val root = fixture()
         assertEquals(1.0, (root.required("schemaVersion") as Number).toDouble(), 0.0)
-        val counts = listOf("sessionCases", "migrationCases", "deviceHasDataCases", "importCandidateCases")
+        val counts = listOf("sessionCases", "migrationCases", "deviceHasDataCases", "importCandidateCases", "deletionCheckCases")
             .map { root.list(it).size }
-        assertEquals(listOf(26, 5, 5, 11), counts)
-        assertEquals(47, counts.sum())
+        assertEquals(listOf(26, 5, 5, 11, 9), counts)
+        assertEquals(56, counts.sum())
+        assertEquals(DELETION_CHECK_GRACE_MINUTES.toDouble(), (root.required("deletionCheckGraceMinutes") as Number).toDouble(), 0.0)
         assertEquals(actionNames.keys, root.map("actions").keys)
         assertEquals(promptNames.keys, root.map("promptKinds").keys)
     }
@@ -122,6 +123,27 @@ class AccountSessionContractTest {
             assertEquals(name, expected.required("gateOpen") as Boolean, decision.gateOpen)
             assertEquals(name, (expected["promptKind"] as? String)?.let(promptNames::getValue), decision.promptKind)
             assertEquals(name, expected["thenReevaluate"] as? Boolean ?: false, decision.thenReevaluate)
+        }
+    }
+
+    @Test fun `deletion journal checks match the shared fixture`() {
+        val results = mapOf(
+            "deleted" to DeletionReloadResult.DELETED,
+            "exists" to DeletionReloadResult.EXISTS,
+            "unknown" to DeletionReloadResult.UNKNOWN,
+        )
+        val actions = mapOf(
+            "finishDeletionWipe" to DeletionCheckAction.FINISH_DELETION_WIPE,
+            "keepJournalRetryLater" to DeletionCheckAction.KEEP_JOURNAL_RETRY_LATER,
+            "clearJournalThenReevaluate" to DeletionCheckAction.CLEAR_JOURNAL_THEN_REEVALUATE,
+        )
+        fixture().maps("deletionCheckCases").forEach { row ->
+            val input = row.map("input")
+            val action = decideDeletionCheck(
+                result = results.getValue(input.string("reloadResult")),
+                minutesSinceStart = (input["minutesSinceStart"] as? Number)?.toLong(),
+            )
+            assertEquals(row.string("name"), actions.getValue(row.map("expected").string("action")), action)
         }
     }
 

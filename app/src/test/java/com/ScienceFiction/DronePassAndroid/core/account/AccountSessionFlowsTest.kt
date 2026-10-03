@@ -112,7 +112,11 @@ class AccountSessionFlowsTest {
             AccountJournal.Logout("A", LogoutStep.SIGNING_OUT),
             AccountJournal.Logout("A", LogoutStep.WIPING),
             AccountJournal.Deleting("A"),
+            AccountJournal.Deleting("A", startedAtMillis = 1_790_000_000_000L),
         ).forEach { assertEquals(it, decodeAccountJournal(it.encode())) }
+        // 108 이하가 남긴 시작 시각 없는 탈퇴 journal 도 읽는다.
+        assertEquals(AccountJournal.Deleting("A"), decodeAccountJournal("deleting|A"))
+        assertNull(decodeAccountJournal("deleting|A|soon"))
         assertNull(decodeAccountJournal("logout|nope|A"))
         assertNull(decodeAccountJournal(null))
     }
@@ -285,6 +289,34 @@ class AccountSessionFlowsTest {
         val prefs = source("core/data/local/EncryptedPrefsHelper.kt")
         assertFalse(prefs.contains("clear()"))
         assertTrue(prefs.contains("fun clearAccountKeys()"))
+    }
+
+    @Test
+    fun `deletion start time is recorded right before the server call and drives the 15 minute grace`() {
+        val delete = source("core/account/AccountSessionFlows.kt")
+            .substringAfter("private suspend fun deleteAccountLocked(").substringBefore("private suspend fun checkDeletedAccount(")
+        assertOrder(
+            delete,
+            listOf(
+                "writeAccountJournal(AccountJournal.Deleting(uid))",
+                "accountDeletionService.deleteCurrentAccount(activity) {",
+                "writeAccountJournal(AccountJournal.Deleting(uid, System.currentTimeMillis()))",
+            ),
+        )
+        val service = source("feature/profile/AccountDeletionService.kt")
+        assertOrder(service, listOf("revokeAppleAccessToken(activity)", "call = {", "beforeServerCall()", "getHttpsCallable(ACCOUNT_DELETION_FUNCTION_NAME)"))
+
+        assertEquals(0L, minutesSinceDeletionStart(1_000L, 59_999L))
+        assertEquals(15L, minutesSinceDeletionStart(0L, 15 * 60_000L))
+        assertEquals(0L, minutesSinceDeletionStart(100_000L, 0L))
+        assertNull(minutesSinceDeletionStart(null, 0L))
+    }
+
+    @Test
+    fun `returning to the app rechecks a pending deletion journal`() {
+        val foreground = source("core/account/AccountSessionFlows.kt").substringAfter("fun onForeground()").substringBefore("// region 판단")
+        assertTrue(foreground.contains("state.journal is AccountJournal.Deleting"))
+        assertTrue(foreground.contains("evaluateLocked()"))
     }
 
     @Test

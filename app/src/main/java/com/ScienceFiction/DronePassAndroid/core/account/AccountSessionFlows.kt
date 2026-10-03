@@ -225,10 +225,18 @@ class AccountSessionFlows @Inject constructor(
         scope.launch { evaluationMutex.withLock { evaluateLocked() } }
     }
 
-    /** 앱으로 돌아왔을 때: 가져오기 확인을 기다리는 중이면 다시 묻는다(서버 읽기 재시도 포함). */
+    /**
+     * 앱으로 돌아왔을 때: 가져오기 확인을 기다리는 중이면 다시 묻고(서버 읽기 재시도 포함), 탈퇴 journal 이 남아 있으면
+     * 계정이 지워졌는지 다시 확인한다(오프라인에서 확인에 실패한 뒤 동기화가 다음 실행까지 꺼진 채로 남지 않게).
+     */
     fun onForeground() {
         scope.launch {
-            if (session.state().pendingImportUid != null || _prompt.value is AccountPrompt.ImportCheckFailed) {
+            val state = session.state()
+            if (
+                state.pendingImportUid != null ||
+                state.journal is AccountJournal.Deleting ||
+                _prompt.value is AccountPrompt.ImportCheckFailed
+            ) {
                 evaluationMutex.withLock { evaluateLocked() }
             }
         }
@@ -305,7 +313,7 @@ class AccountSessionFlows @Inject constructor(
                 finishLogoutWipe()
                 true
             }
-            AccountSessionAction.CHECK_DELETED_ACCOUNT -> checkDeletedAccount()
+            AccountSessionAction.CHECK_DELETED_ACCOUNT -> checkDeletedAccount(state.journal as? AccountJournal.Deleting)
             AccountSessionAction.FINISH_DELETION_WIPE -> {
                 val deletedElsewhere = accountDeletedUid != null && state.journal == null
                 finishDeletionWipe()
@@ -731,7 +739,10 @@ class AccountSessionFlows @Inject constructor(
         session.updateState { writeAccountJournal(AccountJournal.Deleting(uid)) }
         session.closeGate()
         realtimeSyncManager.stopListeningAndWait()
-        val result = accountDeletionService.deleteCurrentAccount(activity)
+        val result = accountDeletionService.deleteCurrentAccount(activity) {
+            // 서버 호출 직전 시각. 앱이 멈춘 뒤 다시 확인할 때 유예 시간(15분)의 기준이 된다.
+            session.updateState { writeAccountJournal(AccountJournal.Deleting(uid, System.currentTimeMillis())) }
+        }
         if (result.isFailure) {
             session.updateState { writeAccountJournal(null) }
             evaluateLocked()
@@ -742,21 +753,30 @@ class AccountSessionFlows @Inject constructor(
         return result
     }
 
-    /** 탈퇴 journal 이 있고 세션이 있다: 계정이 남았는지 확인한다. 없으면 정리, 있으면 journal 만 지운다. */
-    private suspend fun checkDeletedAccount(): Boolean {
+    /**
+     * 탈퇴 journal 이 있고 세션이 있다: 계정이 남았는지 확인한다(규칙은 [decideDeletionCheck], 공유 fixture 로 고정).
+     * 지워졌으면 정리, 서버가 아직 지우는 중일 수 있거나(15분 안) 확인하지 못하면 journal 을 지키고 관문을 닫아 둔 채
+     * 앱 복귀나 다음 실행 때 다시 확인한다.
+     */
+    private suspend fun checkDeletedAccount(journal: AccountJournal.Deleting?): Boolean {
         closeGateAndStopSync()
         val user = auth.currentUser ?: return true
-        return when (runCatching { reloadAccountStatus(user) }.getOrNull()) {
-            AccountReloadStatus.DELETED -> {
+        val reload = when (runCatching { reloadAccountStatus(user) }.getOrNull()) {
+            AccountReloadStatus.DELETED -> DeletionReloadResult.DELETED
+            AccountReloadStatus.EXISTS -> DeletionReloadResult.EXISTS
+            null -> DeletionReloadResult.UNKNOWN
+        }
+        val minutes = minutesSinceDeletionStart(journal?.startedAtMillis, System.currentTimeMillis())
+        return when (decideDeletionCheck(reload, minutes)) {
+            DeletionCheckAction.FINISH_DELETION_WIPE -> {
                 finishDeletionWipe()
                 true
             }
-            AccountReloadStatus.EXISTS -> {
+            DeletionCheckAction.CLEAR_JOURNAL_THEN_REEVALUATE -> {
                 session.updateState { writeAccountJournal(null) }
                 true
             }
-            // 확인하지 못했다(오프라인 등): 관문을 닫은 채 다음 판단에서 다시 확인한다.
-            null -> false
+            DeletionCheckAction.KEEP_JOURNAL_RETRY_LATER -> false
         }
     }
 

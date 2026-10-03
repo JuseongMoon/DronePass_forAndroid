@@ -90,7 +90,8 @@ internal class AccountDeletionException(
 ) : Exception(cause)
 
 interface AccountDeletionService {
-    suspend fun deleteCurrentAccount(activity: Activity): Result<Unit>
+    /** [beforeServerCall] 은 재인증 뒤 서버 탈퇴 호출 직전에 불린다(탈퇴 journal 의 시작 시각 기록용). */
+    suspend fun deleteCurrentAccount(activity: Activity, beforeServerCall: suspend () -> Unit = {}): Result<Unit>
 }
 
 @Singleton
@@ -99,7 +100,7 @@ class FirebaseAccountDeletionService @Inject constructor(
     private val firebaseFunctions: FirebaseFunctions,
 ) : AccountDeletionService {
 
-    override suspend fun deleteCurrentAccount(activity: Activity): Result<Unit> {
+    override suspend fun deleteCurrentAccount(activity: Activity, beforeServerCall: suspend () -> Unit): Result<Unit> {
         return try {
             val user = firebaseAuth.currentUser
                 ?: throw AccountDeletionException(AccountDeletionFailureReason.NOT_AUTHENTICATED)
@@ -112,6 +113,7 @@ class FirebaseAccountDeletionService @Inject constructor(
                     }
                 },
                 call = {
+                    beforeServerCall()
                     try {
                         firebaseFunctions
                             .getHttpsCallable(ACCOUNT_DELETION_FUNCTION_NAME)
