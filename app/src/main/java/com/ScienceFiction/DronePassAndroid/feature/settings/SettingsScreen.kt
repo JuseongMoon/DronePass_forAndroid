@@ -29,6 +29,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
@@ -653,6 +654,8 @@ private fun SettingsMainContent(
     if (showKpForecastSheet) {
         val kpViewModel: KpViewModel = hiltViewModel()
         val kpIsLoading by kpViewModel.isLoading.collectAsStateWithLifecycle()
+        // 설정은 NavHost 밖이라 이 ViewModel 은 Activity 범위다. 시트를 닫아도 자동 갱신이 앱 종료까지 돌지 않게 멈춘다.
+        DisposableEffect(kpViewModel) { onDispose { kpViewModel.stopAutoRefresh() } }
         DronePassModalBottomSheet(
             onDismissRequest = { showKpForecastSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
@@ -693,6 +696,8 @@ private fun SettingsMainContent(
     if (showWeatherSheet) {
         val weatherViewModel: WeatherViewModel = hiltViewModel()
         val weatherIsLoading by weatherViewModel.isLoading.collectAsStateWithLifecycle()
+        // KP 시트와 같다. 멈추지 않으면 백그라운드에서도 3분마다 위치를 읽고 날씨를 조회한다.
+        DisposableEffect(weatherViewModel) { onDispose { weatherViewModel.stopAutoRefresh() } }
         DronePassModalBottomSheet(
             onDismissRequest = { showWeatherSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
