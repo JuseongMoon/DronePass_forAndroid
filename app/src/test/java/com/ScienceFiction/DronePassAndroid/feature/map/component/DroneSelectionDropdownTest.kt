@@ -130,4 +130,17 @@ class DroneSelectionDropdownTest {
         assertEquals(180, layout.placements.single().x + layout.lineWidths.single())
         assertEquals(32, layout.height)
     }
+
+    @Test
+    fun `drone dropdown menu is limited to the space below the trigger and scrolls`() {
+        // 드론이 많으면 목록이 화면 아래로 잘려 아래쪽 드론을 고를 수 없었다.
+        assertEquals(2400 - 300 - 60 - 50, droneDropdownMenuMaxHeightPx(2400, 300, 60, 50, 200))
+        assertEquals(200, droneDropdownMenuMaxHeightPx(0, 300, 60, 50, 200))
+        val root = listOf("src/main/java", "app/src/main/java")
+            .map { java.io.File(java.io.File(requireNotNull(System.getProperty("user.dir"))), it) }
+            .first { it.isDirectory }
+        val source = java.io.File(root, "com/ScienceFiction/DronePassAndroid/feature/map/component/DroneSelectionDropdown.kt").readText()
+        val menu = source.substringAfter(".heightIn(max = menuMaxHeight)")
+        org.junit.Assert.assertTrue(menu.trimStart().startsWith(".verticalScroll(rememberScrollState())"))
+    }
 }

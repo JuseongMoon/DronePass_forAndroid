@@ -27,7 +27,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -51,8 +56,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -83,6 +90,17 @@ internal val DroneDropdownTriggerSize = DroneDropdownTriggerDiameter
 internal val DroneDropdownControlVerticalAlignment: Alignment.Vertical = Alignment.Top
 internal val DroneDropdownTextSize = 14.sp
 internal val DroneDropdownMenuLineHeight = 17.sp
+internal val DroneDropdownMenuBottomMargin = 16.dp
+internal val DroneDropdownMenuMinHeight = 120.dp
+
+/** 드롭다운 목록이 쓸 수 있는 최대 높이(px). 트리거 아래부터 내비게이션 바 위까지. 창 크기를 모르면 [minimumPx] 이상. */
+internal fun droneDropdownMenuMaxHeightPx(
+    windowHeightPx: Int,
+    triggerBottomPx: Int,
+    navigationBarBottomPx: Int,
+    gapPx: Int,
+    minimumPx: Int,
+): Int = (windowHeightPx - triggerBottomPx - navigationBarBottomPx - gapPx).coerceAtLeast(minimumPx)
 internal const val DroneDropdownPopupFocusable = false
 internal const val DroneDropdownPopupDismissOnClickOutside = false
 internal const val DroneDropdownPopupDismissOnBackPress = false
@@ -101,13 +119,25 @@ fun DroneSelectionDropdown(
 ) {
     var showDropdown by remember { mutableStateOf(false) }
     var triggerHeight by remember { mutableIntStateOf(0) }
+    var triggerBottomInWindow by remember { mutableIntStateOf(0) }
     val density = LocalDensity.current
+    // 드론이 많으면 목록이 화면 아래로 잘려 아래쪽 드론을 고를 수 없었다. 남은 높이까지만 쓰고 스크롤한다.
+    val menuMaxHeight = with(density) {
+        droneDropdownMenuMaxHeightPx(
+            windowHeightPx = LocalWindowInfo.current.containerSize.height,
+            triggerBottomPx = triggerBottomInWindow,
+            navigationBarBottomPx = WindowInsets.navigationBars.getBottom(density),
+            gapPx = (4.dp + DroneDropdownMenuBottomMargin).roundToPx(),
+            minimumPx = DroneDropdownMenuMinHeight.roundToPx(),
+        ).toDp()
+    }
 
     val selectedDrones = selectedDronesForIosDropdown(activeDrones, selectedDroneIds)
 
     Box(
         modifier = modifier.onGloballyPositioned { coordinates ->
             triggerHeight = coordinates.size.height
+            triggerBottomInWindow = coordinates.boundsInWindow().bottom.toInt()
         }
     ) {
         if (selectedDrones.isEmpty()) {
@@ -211,7 +241,12 @@ fun DroneSelectionDropdown(
                         color = MaterialTheme.colorScheme.surface,
                         shadowElevation = DroneDropdownShadowElevation
                     ) {
-                        Column {
+                        // LazyColumn 은 IntrinsicSize 측정을 지원하지 않는다. heightIn 은 verticalScroll 앞에 둔다.
+                        Column(
+                            modifier = Modifier
+                                .heightIn(max = menuMaxHeight)
+                                .verticalScroll(rememberScrollState()),
+                        ) {
                             activeDrones.forEachIndexed { index, drone ->
                                 val isSelected = drone.id in selectedDroneIds
                                 Row(
