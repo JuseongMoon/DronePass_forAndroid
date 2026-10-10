@@ -197,7 +197,7 @@ class AccountSessionFlowsTest {
     @Test
     fun `logout and account deletion run in the app scope so closing the screen does not cut them off`() {
         val flows = source("core/account/AccountSessionFlows.kt")
-        assertTrue(flows.contains("scope.async { evaluationMutex.withLock { logoutLocked(proceedWithoutUpload) } }.await()"))
+        assertTrue(flows.contains("scope.async { evaluationMutex.withLock { logoutLocked(proceedWithoutUpload, discardUnsavable) } }.await()"))
         assertTrue(flows.contains("scope.async { evaluationMutex.withLock { deleteAccountLocked(activity) } }.await()"))
     }
 

@@ -203,6 +203,10 @@ class ProfileViewModel @Inject constructor(
     private val _logoutOfflineConfirmation = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     val logoutOfflineConfirmation: SharedFlow<Unit> = _logoutOfflineConfirmation.asSharedFlow()
 
+    /** 계정에 저장할 수 없는 항목 수. 로그아웃하면 이 기기에서 사라지므로 한 번 더 묻는다. */
+    private val _logoutUnsavableConfirmation = MutableSharedFlow<Int>(extraBufferCapacity = 1)
+    val logoutUnsavableConfirmation: SharedFlow<Int> = _logoutUnsavableConfirmation.asSharedFlow()
+
     /** 로그아웃 실패(로그인 상태 유지). */
     private val _logoutFailed = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     val logoutFailed: SharedFlow<Unit> = _logoutFailed.asSharedFlow()
@@ -283,15 +287,17 @@ class ProfileViewModel @Inject constructor(
      *
      * @param proceedWithoutUpload 경고에서 [로그아웃]을 고른 경우 true.
      */
-    fun signOut(proceedWithoutUpload: Boolean = false, onComplete: () -> Unit = {}) {
+    fun signOut(proceedWithoutUpload: Boolean = false, discardUnsavable: Boolean = false, onComplete: () -> Unit = {}) {
         if (_isAccountActionInProgress.value) return
         _isAccountActionInProgress.value = true
         viewModelScope.launch {
-            val result = accountSessionFlows.logout(proceedWithoutUpload)
+            val result = accountSessionFlows.logout(proceedWithoutUpload, discardUnsavable)
             _isAccountActionInProgress.value = false
             when (result) {
                 LogoutResult.DONE -> onComplete()
                 LogoutResult.NEEDS_OFFLINE_CONFIRMATION -> _logoutOfflineConfirmation.tryEmit(Unit)
+                LogoutResult.NEEDS_UNSAVABLE_CONFIRMATION ->
+                    _logoutUnsavableConfirmation.tryEmit(accountSessionFlows.logoutUnsavableCount)
                 LogoutResult.FAILED -> _logoutFailed.tryEmit(Unit)
             }
         }

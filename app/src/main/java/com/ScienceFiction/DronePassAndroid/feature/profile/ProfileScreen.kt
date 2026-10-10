@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.profile
 
+import androidx.compose.ui.res.pluralStringResource
 import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedRowMinHeight
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.heightIn
@@ -110,6 +111,10 @@ fun ProfileScreen(
     // 로그아웃 ① 업로드가 서버에 닿지 못했다: 진행하면 이 기기에서 사라진다고 알리고 다시 묻는다.
     LaunchedEffect(viewModel) {
         viewModel.logoutOfflineConfirmation.collect { showLogoutOfflineDialog = true }
+    }
+    var logoutUnsavableCount by remember { mutableStateOf<Int?>(null) }
+    LaunchedEffect(viewModel) {
+        viewModel.logoutUnsavableConfirmation.collect { logoutUnsavableCount = it }
     }
     LaunchedEffect(viewModel, resources) {
         viewModel.logoutFailed.collect {
@@ -388,6 +393,32 @@ fun ProfileScreen(
         )
     }
 
+    logoutUnsavableCount?.let { count ->
+        AlertDialog(
+            onDismissRequest = { logoutUnsavableCount = null },
+            title = { Text(stringResource(R.string.logout_unsavable_title)) },
+            text = { Text(pluralStringResource(R.plurals.logout_unsavable_message, count, count)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    logoutUnsavableCount = null
+                    viewModel.signOut(discardUnsavable = true) {
+                        onAccountSessionEnded()
+                        onDismiss()
+                    }
+                }) {
+                    Text(
+                        stringResource(R.string.profile_account_logout),
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { logoutUnsavableCount = null }) {
+                    Text(stringResource(R.string.common_cancel))
+                }
+            },
+        )
+    }
     if (showLogoutOfflineDialog) {
         AlertDialog(
             onDismissRequest = { showLogoutOfflineDialog = false },

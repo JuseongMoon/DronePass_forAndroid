@@ -116,6 +116,8 @@ sealed interface AccountPrompt {
         val sketchCount: Int,
         val droneCount: Int,
         val deviceItemCount: Int,
+        /** 가져올 항목 중 계정에 저장할 수 없는(서버 검증을 통과하지 못하는) 항목 수. 가져오면 기기에서 사라진다. */
+        val unsavableCount: Int = 0,
     ) : AccountPrompt
 
     /** 서버를 읽지 못해 후보를 세지 못했다. 대기 상태를 유지하고 다시 시도한다. */
@@ -136,6 +138,12 @@ enum class LogoutResult {
 
     /** 서버에 닿지 못해 일부 변경이 계정에 저장되지 않았을 수 있다. 사용자가 [로그아웃]을 고르면 다시 부른다. */
     NEEDS_OFFLINE_CONFIRMATION,
+
+    /**
+     * 계정에 저장할 수 없는 항목([AccountSessionFlows.logoutUnsavableCount]개)이 있어, 로그아웃하면 기기에서 사라진다.
+     * 나머지는 이미 올렸다. 사용자가 [로그아웃]을 고르면 discardUnsavable = true 로 다시 부른다.
+     */
+    NEEDS_UNSAVABLE_CONFIRMATION,
 
     /** signOut 실패. 로그인 상태를 유지한다. */
     FAILED,
@@ -479,6 +487,11 @@ class AccountSessionFlows @Inject constructor(
             sketchCount = evaluation.candidates.sketches.size,
             droneCount = evaluation.candidates.drones.size,
             deviceItemCount = evaluation.deviceItemCount,
+            unsavableCount = prepareUploadBatch(
+                evaluation.candidates.drones,
+                evaluation.candidates.shapes,
+                evaluation.candidates.sketches,
+            ).skippedCount,
         )
     }
 
@@ -646,10 +659,14 @@ class AccountSessionFlows @Inject constructor(
      *
      * @param proceedWithoutUpload 오프라인 경고에서 [로그아웃]을 고른 경우 true. ①이 실패해도 계속한다.
      */
-    suspend fun logout(proceedWithoutUpload: Boolean): LogoutResult =
-        scope.async { evaluationMutex.withLock { logoutLocked(proceedWithoutUpload) } }.await()
+    /** 마지막 [LogoutResult.NEEDS_UNSAVABLE_CONFIRMATION] 의 항목 수. */
+    @Volatile var logoutUnsavableCount: Int = 0
+        private set
 
-    private suspend fun logoutLocked(proceedWithoutUpload: Boolean): LogoutResult {
+    suspend fun logout(proceedWithoutUpload: Boolean, discardUnsavable: Boolean = false): LogoutResult =
+        scope.async { evaluationMutex.withLock { logoutLocked(proceedWithoutUpload, discardUnsavable) } }.await()
+
+    private suspend fun logoutLocked(proceedWithoutUpload: Boolean, discardUnsavable: Boolean): LogoutResult {
         val uid = auth.currentUser?.uid ?: return LogoutResult.DONE
         if (session.state().owner != LocalDataOwner.Account(uid)) {
             // 기기 데이터가 이 계정 것이 아니다(가져오기·다른 계정 확인 대기 중): [취소]와 같이 로그아웃만 하고 데이터는 남긴다.
@@ -665,13 +682,20 @@ class AccountSessionFlows @Inject constructor(
         sketchRepository.cancelAllPendingSyncsAndWait()
 
         // ① 서버에 닿지 못하면(10초) 사용자에게 묻는다. 취소하면 로그인 상태와 데이터를 그대로 둔다.
-        val flushed = runCatching { withTimeout(LOGOUT_FLUSH_TIMEOUT_MS) { flushBeforeLogout(uid) } }
+        val flush = runCatching { withTimeout(LOGOUT_FLUSH_TIMEOUT_MS) { flushBeforeLogout(uid) } }
             .onFailure { Log.w(TAG, "로그아웃 전 업로드 실패", it) }
-            .isSuccess
-        if (!flushed && !proceedWithoutUpload) {
+        if (flush.isFailure && !proceedWithoutUpload) {
             session.updateState { writeAccountJournal(null) }
             evaluateLocked()
             return LogoutResult.NEEDS_OFFLINE_CONFIRMATION
+        }
+        // 계정에 저장할 수 없는 항목은 로그아웃 뒤 정리에서 사라진다. 알리지 않고 지우지 않도록 먼저 묻는다.
+        val unsavable = flush.getOrNull() ?: 0
+        if (unsavable > 0 && !discardUnsavable) {
+            logoutUnsavableCount = unsavable
+            session.updateState { writeAccountJournal(null) }
+            evaluateLocked()
+            return LogoutResult.NEEDS_UNSAVABLE_CONFIRMATION
         }
 
         // ② 푸시 비활성화(로그인 상태여야 기기 문서를 쓸 수 있다).
@@ -695,7 +719,7 @@ class AccountSessionFlows @Inject constructor(
     }
 
     /** ① 서버를 [Source.SERVER] 로 읽어 기기에만 있거나 더 새로운 항목만 올리고, 대기 중인 쓰기가 서버에 닿을 때까지 기다린다. */
-    private suspend fun flushBeforeLogout(uid: String) {
+    private suspend fun flushBeforeLogout(uid: String): Int {
         val ticket = session.issueFlowTicket(uid, SyncTicketPurpose.LOGOUT_FLUSH)
         val serverDrones = droneStore.loadAllDronesIncludingDeleted(ticket, Source.SERVER).getOrThrow()
         val serverShapes = shapeStore.loadAllShapesIncludingDeleted(ticket, Source.SERVER).getOrThrow()
@@ -703,25 +727,36 @@ class AccountSessionFlows @Inject constructor(
         val drones = logoutFlushItems(droneDao.getAllDronesOnce().map { it.toDomain() }, serverDrones, DroneModel::id, DroneModel::updatedAt, DroneModel::deletedAt)
         val shapes = logoutFlushItems(shapeDao.getAllShapesOnce().map { it.toDomain() }, serverShapes, ShapeModel::id, ShapeModel::updatedAt, ShapeModel::deletedAt)
         val sketches = logoutFlushItems(sketchDao.getAllSketchesOnce().map { it.toDomain() }, serverSketches, SketchModel::id, SketchModel::updatedAt, SketchModel::deletedAt)
-        uploadAndMark(ticket, drones, shapes, sketches)
+        val unsavable = uploadAndMark(ticket, drones, shapes, sketches)
         firestore.waitForPendingWrites().await()
-        Log.d(TAG, "로그아웃 전 업로드 완료: 드론=${drones.size}, 도형=${shapes.size}, 스케치=${sketches.size}")
+        Log.d(TAG, "로그아웃 전 업로드 완료: 드론=${drones.size}, 도형=${shapes.size}, 스케치=${sketches.size}, 저장 불가=$unsavable")
+        return unsavable
     }
 
-    /** 드론 → 도형 → 스케치 순으로 올리고 다른 기기가 받도록 metadata 를 갱신한다. */
+    private fun prepareUploadBatch(
+        drones: List<DroneModel>,
+        shapes: List<ShapeModel>,
+        sketches: List<SketchModel>,
+    ): AccountUploadBatch = prepareAccountUpload(
+        drones = drones,
+        shapes = shapes,
+        sketches = sketches,
+        defaultShapeTitle = context.getString(R.string.shape_edit_default_title),
+        // 기본 드론 이름("내 드론"/"My Drone")은 "손대지 않은 기본 드론" 판정에 쓰여 쓰지 않는다.
+        blankDroneName = context.getString(R.string.drone_upload_blank_name),
+    )
+
+    /**
+     * 드론 → 도형 → 스케치 순으로 올리고 다른 기기가 받도록 metadata 를 갱신한다.
+     * 계정에 저장할 수 없어 올리지 않은 항목 수를 돌려준다.
+     */
     private suspend fun uploadAndMark(
         ticket: SyncTicket,
         drones: List<DroneModel>,
         shapes: List<ShapeModel>,
         sketches: List<SketchModel>,
-    ) {
-        val batch = prepareAccountUpload(
-            drones = drones,
-            shapes = shapes,
-            sketches = sketches,
-            defaultShapeTitle = context.getString(R.string.shape_edit_default_title),
-            defaultDroneName = context.getString(R.string.drone_edit_default_name_first),
-        )
+    ): Int {
+        val batch = prepareUploadBatch(drones, shapes, sketches)
         if (batch.skippedCount > 0) Log.w(TAG, "서버 검증을 통과하지 못한 항목 ${batch.skippedCount}개는 올리지 않습니다")
         if (batch.drones.isNotEmpty()) droneStore.saveDrones(ticket, batch.drones)
         if (batch.shapes.isNotEmpty()) shapeStore.saveShapes(ticket, batch.shapes)
@@ -730,6 +765,7 @@ class AccountSessionFlows @Inject constructor(
             sketchStore.saveSketches(ticket, batch.sketches)
             sketchStore.updateServerMetadata(ticket)
         }
+        return batch.skippedCount
     }
 
     // endregion

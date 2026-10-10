@@ -38,12 +38,14 @@ class AccountUploadPreparationTest {
             shapes = listOf(blank, ok, zeroRadius, ok),
             sketches = listOf(sketch, badSketch),
             defaultShapeTitle = "새 도형",
-            defaultDroneName = "내 드론",
+            blankDroneName = "드론",
         )
 
         assertEquals(listOf("새 도형", "비행 구역"), batch.shapes.map { it.title })
         assertEquals(1_000L, batch.shapes.first().updatedAt)
-        assertEquals("내 드론", batch.drones.single().name)
+        assertEquals("드론", batch.drones.single().name)
+        // 기본 드론 이름이면 다른 기기가 "손대지 않은 기본 드론"으로 판정해 병합·정리할 수 있다.
+        org.junit.Assert.assertFalse(batch.drones.single().name in com.ScienceFiction.DronePassAndroid.core.data.repository.DefaultDroneNames)
         assertEquals(listOf(sketch.id), batch.sketches.map { it.id })
         assertEquals(3, batch.skippedCount)
         assertTrue(validateFirebaseShapeBatch(batch.shapes).isValid)
@@ -56,9 +58,38 @@ class AccountUploadPreparationTest {
             .first { it.isDirectory }
         val upload = File(root, "com/ScienceFiction/DronePassAndroid/core/account/AccountSessionFlows.kt").readText()
             .substringAfter("private suspend fun uploadAndMark(")
-        val prepare = upload.indexOf("prepareAccountUpload(")
+        val prepare = upload.indexOf("prepareUploadBatch(drones, shapes, sketches)")
         assertTrue(prepare >= 0 && prepare < upload.indexOf("droneStore.saveDrones(ticket, batch.drones)"))
         assertTrue(upload.contains("shapeStore.saveShapes(ticket, batch.shapes)"))
         assertTrue(upload.contains("sketchStore.saveSketches(ticket, batch.sketches)"))
+    }
+
+    @Test
+    fun `blank drone names are not corrected to the default drone names`() {
+        val res = listOf("src/main/res", "app/src/main/res")
+            .map { File(File(requireNotNull(System.getProperty("user.dir"))), it) }
+            .first { it.isDirectory }
+        listOf("values", "values-en").forEach { dir ->
+            val name = Regex("""<string name="drone_upload_blank_name">([^<]+)</string>""")
+                .find(File(res, "$dir/strings.xml").readText())!!.groupValues[1]
+            org.junit.Assert.assertFalse(dir, name in com.ScienceFiction.DronePassAndroid.core.data.repository.DefaultDroneNames)
+        }
+    }
+
+    @Test
+    fun `logout and import ask before unsavable items are deleted`() {
+        val root = listOf("src/main/java", "app/src/main/java")
+            .map { File(File(requireNotNull(System.getProperty("user.dir"))), it) }
+            .first { it.isDirectory }
+        val flows = File(root, "com/ScienceFiction/DronePassAndroid/core/account/AccountSessionFlows.kt").readText()
+        val logout = flows.substringAfter("private suspend fun logoutLocked(").substringBefore("private suspend fun flushBeforeLogout(")
+        val ask = logout.indexOf("return LogoutResult.NEEDS_UNSAVABLE_CONFIRMATION")
+        assertTrue(ask > 0 && ask < logout.indexOf("auth.signOut()") && ask < logout.indexOf("finishLogoutWipe()"))
+        assertTrue(logout.contains("unsavable > 0 && !discardUnsavable"))
+        assertTrue(flows.contains("unsavableCount = prepareUploadBatch("))
+        val dialogs = File(root, "com/ScienceFiction/DronePassAndroid/feature/account/AccountSessionDialogs.kt").readText()
+        assertTrue(dialogs.contains("R.plurals.account_import_unsavable_note"))
+        val profile = File(root, "com/ScienceFiction/DronePassAndroid/feature/profile/ProfileScreen.kt").readText()
+        assertTrue(profile.contains("viewModel.signOut(discardUnsavable = true)"))
     }
 }

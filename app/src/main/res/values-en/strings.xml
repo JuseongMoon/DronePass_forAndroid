@@ -441,6 +441,16 @@
     <string name="profile_logout_message">Are you sure you want to sign out?\nYour data will be removed from this device but stays in your account. Sign in again to load it.</string>
     <string name="profile_sync_import_pending">Import confirmation needed</string>
     <string name="account_import_title">Import data from before sign-in</string>
+    <string name="drone_upload_blank_name">Drone</string>
+    <string name="logout_unsavable_title">Some items can\'t be saved to your account</string>
+    <plurals name="logout_unsavable_message">
+        <item quantity="one">%1$d item can\'t be saved to your account (for example, a shape with a radius over 50 km). If you sign out, it will be deleted from this device. Continue?</item>
+        <item quantity="other">%1$d items can\'t be saved to your account (for example, shapes with a radius over 50 km). If you sign out, they will be deleted from this device. Continue?</item>
+    </plurals>
+    <plurals name="account_import_unsavable_note">
+        <item quantity="one">%1$d of these can\'t be saved to your account (for example, a shape with a radius over 50 km) and will be deleted from this device if you import.</item>
+        <item quantity="other">%1$d of these can\'t be saved to your account (for example, shapes with a radius over 50 km) and will be deleted from this device if you import.</item>
+    </plurals>
     <string name="account_import_message">This device has data created before you signed in (%1$d shapes, %2$d sketch lines, %3$d drones).\n\nImport it into this account? If you cancel, you will be signed out and the data stays on this device.</string>
     <string name="account_import_message_legacy_other">The data on this device may belong to another account (%1$d shapes, %2$d sketch lines, %3$d drones).\n\nDelete it unless it is yours. If you cancel, you will be signed out and the data stays on this device.</string>
     <string name="account_import_action">Import</string>

@@ -232,7 +232,7 @@ class ProfileViewModelTest {
             "src/main/java/com/ScienceFiction/DronePassAndroid/feature/profile/ProfileViewModel.kt",
         ).readText()
 
-        assertTrue(source.contains("accountSessionFlows.logout(proceedWithoutUpload)"))
+        assertTrue(source.contains("accountSessionFlows.logout(proceedWithoutUpload, discardUnsavable)"))
         assertTrue(source.contains("accountSessionFlows.deleteAccount(activity)"))
         // 화면 범위에서 직접 로그아웃·삭제하지 않는다(화면을 닫으면 중간에 끊긴다).
         assertTrue(!source.contains("firebaseAuth.signOut()"))

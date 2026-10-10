@@ -1,5 +1,7 @@
 package com.ScienceFiction.DronePassAndroid.feature.account
 
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
@@ -77,10 +79,16 @@ fun AccountSessionDialogs(
                 onBack = { confirmingDeleteFor = null },
             )
         } else {
-            val message = if (current.kind == ImportPromptKind.LEGACY_OTHER_ACCOUNT) {
+            val baseMessage = if (current.kind == ImportPromptKind.LEGACY_OTHER_ACCOUNT) {
                 stringResource(R.string.account_import_message_legacy_other, current.shapeCount, current.sketchCount, current.droneCount)
             } else {
                 stringResource(R.string.account_import_message, current.shapeCount, current.sketchCount, current.droneCount)
+            }
+            // 계정에 저장할 수 없는 항목은 가져와도 올라가지 않고 기기 정리 때 사라진다. 미리 알린다.
+            val message = if (current.unsavableCount > 0) {
+                baseMessage + "\n\n" + pluralStringResource(R.plurals.account_import_unsavable_note, current.unsavableCount, current.unsavableCount)
+            } else {
+                baseMessage
             }
             AlertDialog(
                 onDismissRequest = { viewModel.cancelImport(current.uid) },
