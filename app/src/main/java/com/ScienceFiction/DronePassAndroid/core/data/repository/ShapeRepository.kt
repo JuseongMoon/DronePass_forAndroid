@@ -1,5 +1,8 @@
 package com.ScienceFiction.DronePassAndroid.core.data.repository
 
+import com.ScienceFiction.DronePassAndroid.core.data.sync.idsChangedLocallyDuringSync
+import com.ScienceFiction.DronePassAndroid.core.data.local.room.DronePassDatabase
+import androidx.room.withTransaction
 import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
@@ -110,6 +113,7 @@ class ShapeRepository @Inject constructor(
     private val session: AccountSession,
     private val dataStore: DataStore<Preferences>,
     private val notificationScheduler: NotificationScheduler,
+    private val database: DronePassDatabase,
 ) {
 
     companion object {
@@ -344,7 +348,9 @@ class ShapeRepository @Inject constructor(
      */
     suspend fun performFullSync(ticket: SyncTicket) {
         try {
-            val localShapes = shapeDao.getAllShapesOnce()
+            val localEntities = shapeDao.getAllShapesOnce()
+            val snapshotUpdatedAt = localEntities.associate { it.id to it.updatedAt }
+            val localShapes = localEntities
                 .map { it.toDomain() }
                 .filterValidForFirebaseWrite("performFullSync/local")
             val serverShapes = shapeFirebaseStore.loadAllShapesIncludingDeleted(ticket)
@@ -362,23 +368,34 @@ class ShapeRepository @Inject constructor(
             val staleLocalIds = localShapes
                 .map { it.id }
                 .filter { it !in mergedIds }
-            session.commit(ticket) {
-                var shouldReconcileAlarms = false
-                if (staleLocalIds.isNotEmpty()) {
-                    shapeDao.deleteShapesByIds(staleLocalIds)
-                    shouldReconcileAlarms = true
-                }
-                if (result.merged.isNotEmpty()) {
-                    shapeDao.insertShapes(result.merged.map { it.toEntity() })
-                    shouldReconcileAlarms = true
-                }
-                if (shouldReconcileAlarms) {
-                    reconcileEndDateAlarmsWithLocalShapes(additionalCancelShapeIds = staleLocalIds)
+            val changedIds = session.commit(ticket) {
+                // 반영하는 동안 사용자 쓰기가 끼어들지 않도록 다시 읽기와 쓰기를 한 트랜잭션으로 묶는다.
+                database.withTransaction {
+                    val changed = idsChangedLocallyDuringSync(
+                        snapshotUpdatedAt,
+                        shapeDao.getAllShapesOnce().associate { it.id to it.updatedAt },
+                    )
+                    val staleIds = staleLocalIds.filter { it !in changed }
+                    val toWrite = result.merged.filter { it.id !in changed }
+                    var shouldReconcileAlarms = false
+                    if (staleIds.isNotEmpty()) {
+                        shapeDao.deleteShapesByIds(staleIds)
+                        shouldReconcileAlarms = true
+                    }
+                    if (toWrite.isNotEmpty()) {
+                        shapeDao.insertShapes(toWrite.map { it.toEntity() })
+                        shouldReconcileAlarms = true
+                    }
+                    if (shouldReconcileAlarms) {
+                        reconcileEndDateAlarmsWithLocalShapes(additionalCancelShapeIds = staleIds)
+                    }
+                    changed
                 }
             }
+            if (changedIds.isNotEmpty()) Log.d(TAG, "동기화 중 기기에서 바뀐 도형 ${changedIds.size}개는 이번 반영에서 뺌")
 
             // Firebase: 로컬이 LWW 에서 이긴 항목 업로드
-            val toUpload = result.toUpload.filterValidForFirebaseWrite("performFullSync/upload")
+            val toUpload = result.toUpload.filter { it.id !in changedIds }.filterValidForFirebaseWrite("performFullSync/upload")
             if (toUpload.isNotEmpty()) {
                 shapeFirebaseStore.saveShapes(ticket, toUpload)
             }

@@ -1,5 +1,8 @@
 package com.ScienceFiction.DronePassAndroid.core.data.repository
 
+import com.ScienceFiction.DronePassAndroid.core.data.sync.idsChangedLocallyDuringSync
+import com.ScienceFiction.DronePassAndroid.core.data.local.room.DronePassDatabase
+import androidx.room.withTransaction
 import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
@@ -115,6 +118,7 @@ class SketchRepository @Inject constructor(
     private val sketchFirebaseStore: SketchFirebaseStore,
     private val session: AccountSession,
     private val dataStore: DataStore<Preferences>,
+    private val database: DronePassDatabase,
 ) {
 
     /**
@@ -430,7 +434,9 @@ class SketchRepository @Inject constructor(
      */
     suspend fun performFullSync(ticket: SyncTicket) {
         try {
-            val localSketches = sketchDao.getAllSketchesOnce()
+            val localEntities = sketchDao.getAllSketchesOnce()
+            val snapshotUpdatedAt = localEntities.associate { it.id to it.updatedAt }
+            val localSketches = localEntities
                 .map { it.toDomain() }
                 .filterValidForFirebaseWrite("performFullSync/local")
             val serverSketches = sketchFirebaseStore.loadAllSketchesIncludingDeleted(ticket)
@@ -448,16 +454,27 @@ class SketchRepository @Inject constructor(
             val staleLocalIds = localSketches
                 .map { it.id }
                 .filter { it !in mergedIds }
-            session.commit(ticket) {
-                if (staleLocalIds.isNotEmpty()) {
-                    sketchDao.deleteSketchesByIds(staleLocalIds)
-                }
-                if (result.merged.isNotEmpty()) {
-                    sketchDao.insertSketches(result.merged.map { it.toEntity() })
+            val changedIds = session.commit(ticket) {
+                // 스케치 편집 중에는 서버로 바로 올리지 않아, 동기화가 지운 선·고친 선을 되돌리기 쉬웠다.
+                database.withTransaction {
+                    val changed = idsChangedLocallyDuringSync(
+                        snapshotUpdatedAt,
+                        sketchDao.getAllSketchesOnce().associate { it.id to it.updatedAt },
+                    )
+                    val staleIds = staleLocalIds.filter { it !in changed }
+                    val toWrite = result.merged.filter { it.id !in changed }
+                    if (staleIds.isNotEmpty()) {
+                        sketchDao.deleteSketchesByIds(staleIds)
+                    }
+                    if (toWrite.isNotEmpty()) {
+                        sketchDao.insertSketches(toWrite.map { it.toEntity() })
+                    }
+                    changed
                 }
             }
+            if (changedIds.isNotEmpty()) Log.d(TAG, "동기화 중 기기에서 바뀐 스케치 ${changedIds.size}개는 이번 반영에서 뺌")
 
-            val toUpload = result.toUpload.filterValidForFirebaseWrite("performFullSync/upload")
+            val toUpload = result.toUpload.filter { it.id !in changedIds }.filterValidForFirebaseWrite("performFullSync/upload")
             if (toUpload.isNotEmpty()) {
                 sketchFirebaseStore.saveSketches(ticket, toUpload)
             }

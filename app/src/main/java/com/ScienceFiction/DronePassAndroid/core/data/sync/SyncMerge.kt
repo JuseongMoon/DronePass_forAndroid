@@ -23,6 +23,16 @@ fun shouldUpdateServerMetadataAfterFullSync(uploadedItemCount: Int): Boolean {
 }
 
 /**
+ * 전체 동기화가 서버를 읽는 동안 기기에서 새로 생기거나 updatedAt 이 바뀐 항목 id.
+ * 동기화는 시작할 때 읽은 기기 목록으로 병합하므로, 이 항목을 그대로 쓰면 그 사이 사용자가 고치거나 지운 내용이
+ * 이전 값으로 되돌아갔다. 이 항목은 이번 반영·삭제·업로드에서 빼고, 사용자 쓰기 경로와 다음 동기화에 맡긴다.
+ */
+fun idsChangedLocallyDuringSync(
+    snapshotUpdatedAt: Map<String, Long>,
+    currentUpdatedAt: Map<String, Long>,
+): Set<String> = currentUpdatedAt.filter { (id, updatedAt) -> snapshotUpdatedAt[id] != updatedAt }.keys
+
+/**
  * 로컬·서버 양쪽 데이터를 LWW 전략으로 머지한다.
  *
  * - 한쪽에만 있으면 그쪽 값 채택

@@ -1,5 +1,8 @@
 package com.ScienceFiction.DronePassAndroid.core.data.repository
 
+import com.ScienceFiction.DronePassAndroid.core.data.sync.idsChangedLocallyDuringSync
+import com.ScienceFiction.DronePassAndroid.core.data.local.room.DronePassDatabase
+import androidx.room.withTransaction
 import android.content.Context
 import android.util.Log
 import androidx.datastore.core.DataStore
@@ -176,6 +179,7 @@ class DroneRepository @Inject constructor(
     private val session: AccountSession,
     private val dataStore: DataStore<Preferences>,
     @ApplicationContext private val context: Context,
+    private val database: DronePassDatabase,
 ) {
 
     companion object {
@@ -321,7 +325,9 @@ class DroneRepository @Inject constructor(
      */
     suspend fun performFullSync(ticket: SyncTicket) {
         try {
-            val localDrones = droneDao.getAllDronesOnce().map { it.toDomain() }
+            val localDroneEntities = droneDao.getAllDronesOnce()
+            val snapshotUpdatedAt = localDroneEntities.associate { it.id to it.updatedAt }
+            val localDrones = localDroneEntities.map { it.toDomain() }
             val serverDrones = droneFirebaseStore.loadAllDronesIncludingDeleted(ticket).getOrThrow()
             val localShapes = shapeDao.getAllShapesOnce()
             val result = mergeDronesForFullSync(
@@ -330,9 +336,23 @@ class DroneRepository @Inject constructor(
                 localShapeDroneIds = localShapes.map { it.droneId },
             )
 
-            session.commit(ticket) { applyDroneMergeLocally(result, localShapes) }
+            val changedIds = session.commit(ticket) {
+                database.withTransaction {
+                    val changed = idsChangedLocallyDuringSync(
+                        snapshotUpdatedAt,
+                        droneDao.getAllDronesOnce().associate { it.id to it.updatedAt },
+                    )
+                    // 도형을 옮길 때도 지금의 도형을 쓴다. 시작할 때 읽은 도형을 쓰면 그 사이 고친 도형이 되돌아갔다.
+                    applyDroneMergeLocally(
+                        result.copy(merged = result.merged.filter { it.id !in changed }),
+                        shapeDao.getAllShapesOnce(),
+                    )
+                    changed
+                }
+            }
+            if (changedIds.isNotEmpty()) Log.d(TAG, "동기화 중 기기에서 바뀐 드론 ${changedIds.size}개는 이번 반영에서 뺌")
 
-            val toUpload = result.toUpload.filterValidForFirebaseWrite("performFullSync/upload")
+            val toUpload = result.toUpload.filter { it.id !in changedIds }.filterValidForFirebaseWrite("performFullSync/upload")
             if (toUpload.isNotEmpty()) {
                 droneFirebaseStore.saveDrones(ticket, toUpload)
             }

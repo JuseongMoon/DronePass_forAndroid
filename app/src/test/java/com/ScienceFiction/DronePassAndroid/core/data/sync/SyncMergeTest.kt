@@ -215,4 +215,30 @@ class SyncMergeTest {
         val value: String,
         val deleted: Boolean,
     )
+
+    @Test
+    fun `items created or changed on the device during a sync are left out of it`() {
+        // 동기화가 서버를 읽는 동안 사용자가 지운 도형(updatedAt 변경)과 새로 만든 도형은 이번 반영에서 뺀다.
+        val snapshot = mapOf("a" to 1L, "b" to 2L, "c" to 3L)
+        val current = mapOf("a" to 1L, "b" to 5L, "c" to 3L, "d" to 9L)
+        assertEquals(setOf("b", "d"), idsChangedLocallyDuringSync(snapshot, current))
+        assertEquals(emptySet<String>(), idsChangedLocallyDuringSync(snapshot, snapshot))
+    }
+
+    @Test
+    fun `full syncs recheck local rows in one transaction before writing`() {
+        val root = listOf("src/main/java", "app/src/main/java")
+            .map { java.io.File(java.io.File(requireNotNull(System.getProperty("user.dir"))), it) }
+            .first { it.isDirectory }
+        listOf("Shape", "Sketch", "Drone").forEach { kind ->
+            val sync = java.io.File(root, "com/ScienceFiction/DronePassAndroid/core/data/repository/${kind}Repository.kt").readText()
+                .substringAfter("suspend fun performFullSync(ticket: SyncTicket)")
+            val commit = sync.indexOf("session.commit(ticket)")
+            val transaction = sync.indexOf("database.withTransaction")
+            val recheck = sync.indexOf("idsChangedLocallyDuringSync(")
+            org.junit.Assert.assertTrue(kind, commit in 0 until transaction && transaction < recheck)
+            org.junit.Assert.assertTrue(kind, sync.contains("result.toUpload.filter { it.id !in changedIds }"))
+        }
+    }
 }
+
