@@ -1,5 +1,7 @@
 package com.ScienceFiction.DronePassAndroid.feature.saved
 
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material.icons.outlined.Inbox
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.background
@@ -77,6 +79,21 @@ fun SavedListScreen(
     val expiredShapes by viewModel.expiredShapes.collectAsStateWithLifecycle()
     val selectedShapeId by viewModel.selectedShapeId.collectAsStateWithLifecycle()
     val selectedShape by viewModel.selectedShape.collectAsStateWithLifecycle()
+    var showShapeEditTargetDeleted by remember { mutableStateOf(false) }
+    LaunchedEffect(viewModel) {
+        viewModel.shapeEditTargetDeleted.collect { showShapeEditTargetDeleted = true }
+    }
+    if (showShapeEditTargetDeleted) {
+        AlertDialog(
+            onDismissRequest = { showShapeEditTargetDeleted = false },
+            text = { Text(stringResource(R.string.shape_edit_target_deleted)) },
+            confirmButton = {
+                TextButton(onClick = { showShapeEditTargetDeleted = false }) {
+                    Text(stringResource(R.string.common_confirm))
+                }
+            },
+        )
+    }
     val showShapeDetail by viewModel.showShapeDetail.collectAsStateWithLifecycle()
     val activeShapeIds by viewModel.activeShapeIds.collectAsStateWithLifecycle()
     val activeDrones by viewModel.activeDrones.collectAsStateWithLifecycle()

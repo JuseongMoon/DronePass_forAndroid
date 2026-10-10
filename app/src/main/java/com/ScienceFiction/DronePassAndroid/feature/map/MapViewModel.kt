@@ -536,6 +536,31 @@ class MapViewModel @Inject constructor(
         resolveSelectedShapeSnapshot(shapeId, shapes)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
+    /** 편집 중인 도형이 다른 기기에서 삭제돼 편집 시트를 닫았다. 화면이 안내한다. */
+    private val _shapeEditTargetDeleted = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val shapeEditTargetDeleted: SharedFlow<Unit> = _shapeEditTargetDeleted.asSharedFlow()
+
+    init {
+        // 기존 도형 편집·복제 중 원본이 다른 기기에서 삭제되면 시트가 빈 "새 도형" 폼으로 바뀌고,
+        // 그대로 저장하면 새 도형이 생겼다. 시트를 닫고 알린다.
+        viewModelScope.launchCatchingStorageErrors {
+            combine(_showShapeEdit, _newShapeCoordinate, _selectedShapeId, activeShapes) { showEdit, newCoordinate, shapeId, shapes ->
+                shapeId.takeIf { showEdit && newCoordinate == null && it != null && shapes.none { shape -> shape.id == it } }
+            }.distinctUntilChanged().collect { missingId ->
+                if (missingId == null) return@collect
+                // 첫 DB 방출 전(빈 목록)에는 오탐이므로 저장소에서 다시 확인한다.
+                val stored = shapeRepository.getShapeById(missingId)
+                if (stored != null && stored.deletedAt == null) return@collect
+                if (!_showShapeEdit.value || _selectedShapeId.value != missingId) return@collect
+                returnToShapeDetailAfterEditDismiss = false
+                dismissShapeEdit()
+                _showShapeDetail.value = false
+                _selectedShapeId.value = null
+                _shapeEditTargetDeleted.tryEmit(Unit)
+            }
+        }
+    }
+
     /**
      * 도형 선택 (오버레이 터치 시 호출)
      */

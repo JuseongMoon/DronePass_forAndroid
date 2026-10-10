@@ -210,6 +210,13 @@ fun MapScreen(
         }
     }
 
+    val shapeEditTargetDeletedMessage = stringResource(R.string.shape_edit_target_deleted)
+    LaunchedEffect(Unit) {
+        viewModel.shapeEditTargetDeleted.collect {
+            snackbarHostState.showSnackbar(shapeEditTargetDeletedMessage)
+        }
+    }
+
     LaunchedEffect(Unit) {
         viewModel.savedShapeFocusEvent.collect { shapeId ->
             onShapeListFocusRequested(shapeId)

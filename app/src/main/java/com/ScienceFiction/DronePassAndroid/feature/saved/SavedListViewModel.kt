@@ -418,6 +418,31 @@ class SavedListViewModel @Inject constructor(
         resolveSelectedShapeSnapshot(shapeId, shapes)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
+    /** 편집 중인 도형이 다른 기기에서 삭제돼 편집 시트를 닫았다. 화면이 안내한다. */
+    private val _shapeEditTargetDeleted = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val shapeEditTargetDeleted: SharedFlow<Unit> = _shapeEditTargetDeleted.asSharedFlow()
+
+    init {
+        // 편집·복제 중 원본이 다른 기기에서 삭제되면 시트가 조용히 사라지고 편집·상세 플래그가 남아,
+        // 같은 id 가 다시 나타나면 시트가 갑자기 열렸다. 플래그를 정리하고 알린다.
+        viewModelScope.launchCatchingStorageErrors {
+            combine(_showShapeEdit, _selectedShapeId, activeShapes) { showEdit, shapeId, shapes ->
+                shapeId.takeIf { showEdit && it != null && shapes.none { shape -> shape.id == it } }
+            }.distinctUntilChanged().collect { missingId ->
+                if (missingId == null) return@collect
+                // 첫 DB 방출 전(빈 목록)에는 오탐이므로 저장소에서 다시 확인한다.
+                val stored = shapeRepository.getShapeById(missingId)
+                if (stored != null && stored.deletedAt == null) return@collect
+                if (!_showShapeEdit.value || _selectedShapeId.value != missingId) return@collect
+                _showShapeEdit.value = false
+                _isDuplicateMode.value = false
+                _showShapeDetail.value = false
+                _selectedShapeId.value = null
+                _shapeEditTargetDeleted.tryEmit(Unit)
+            }
+        }
+    }
+
     val primarySelectedDroneId: StateFlow<String?> = combine(
         activeDrones,
         droneSelectionState.selectedDroneId,
