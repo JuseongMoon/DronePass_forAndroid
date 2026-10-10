@@ -94,3 +94,12 @@ val Typography = Typography(
         letterSpacing = 0.sp,
     ),
 )
+
+/**
+ * 라벨이 붙은 Material 텍스트 필드(DatePicker 직접 입력 등)를 감쌀 때 쓰는 Typography.
+ * 라벨 애니메이션이 bodyLarge 와 bodySmall 을 보간하는데, bodyLarge 줄 높이(em)와 bodySmall 줄 높이(sp)는
+ * 단위가 달라 보간할 수 없어 IllegalArgumentException 으로 앱이 종료된다. 17sp 글자에서 같은 값인 22sp 로 바꾼다.
+ */
+fun Typography.withLabelSafeLineHeights(): Typography = copy(
+    bodyLarge = bodyLarge.copy(lineHeight = 22.sp),
+)

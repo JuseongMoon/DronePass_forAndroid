@@ -2,6 +2,7 @@ package com.ScienceFiction.DronePassAndroid.feature.shape
 
 import com.ScienceFiction.DronePassAndroid.ui.theme.IosPlaceholderText
 import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGray
+import com.ScienceFiction.DronePassAndroid.ui.theme.withLabelSafeLineHeights
 import com.ScienceFiction.DronePassAndroid.ui.component.IosNavBarButtonFontSize
 import com.ScienceFiction.DronePassAndroid.ui.component.SheetHeaderDivider
 import androidx.compose.foundation.text.TextAutoSize
@@ -1533,9 +1534,12 @@ private fun ShapeDateTimeSelectionSheet(
         onDismissRequest = { applyCurrentSelectionAndDismiss() },
         sheetState = sheetState,
     ) {
+        // 달력과 시계를 함께 띄우면 휴대폰 높이를 넘는다. 스크롤이 없으면 시계가 눌려 찌그러지고
+        // [선택 완료] 가 화면 밖으로 밀린다.
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
                 .navigationBarsPadding()
                 .padding(bottom = 16.dp),
         ) {
@@ -1564,7 +1568,10 @@ private fun ShapeDateTimeSelectionSheet(
                 thickness = 0.5.dp,
                 color = MaterialTheme.colorScheme.outlineVariant,
             )
-            DatePicker(state = datePickerState)
+            // 펜 아이콘으로 직접 입력 모드에 들어가면 라벨 있는 텍스트 필드가 나온다(withLabelSafeLineHeights 참고).
+            MaterialTheme(typography = MaterialTheme.typography.withLabelSafeLineHeights()) {
+                DatePicker(state = datePickerState)
+            }
             if (!isDateOnly) {
                 HorizontalDivider(
                     thickness = 0.5.dp,
