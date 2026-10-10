@@ -214,11 +214,12 @@ fun ShapeEditScreen(
         )
     }
     val initialMemo = remember(editKey) { shape?.memo ?: "" }
+    // 일단위 토글은 기본값에 바로 저장되므로 isDateOnly 를 키로 두면 토글할 때마다 고른 날짜가 기본값으로 돌아간다.
+    // 토글 자체가 현재 날짜를 맞추므로(resolveShapeEditFlightPeriodOnDateOnlyModeToggle) 키에서 뺀다.
     val initialFlightPeriod = remember(
         editKey,
         editDefaults.startDate,
         editDefaults.endDate,
-        editDefaults.isDateOnly,
     ) {
         resolveInitialShapeEditFlightPeriod(
             shape = shape,
