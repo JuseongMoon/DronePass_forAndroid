@@ -22,4 +22,17 @@ class ShapeDateTimeSelectionSheetLayoutTest {
         assertTrue(column, column.contains(".verticalScroll(rememberScrollState())"))
         assertTrue(sheet.indexOf("Column(") < sheet.indexOf("DatePicker(state = datePickerState)"))
     }
+
+    @Test
+    fun `cancel and outside dismiss discard the picked value`() {
+        // 취소 버튼까지 값을 적용해 바꾼 날짜를 되돌릴 방법이 없었다. "선택 완료"만 적용한다.
+        val root = listOf("src/main/java", "app/src/main/java")
+            .map { File(File(requireNotNull(System.getProperty("user.dir"))), it) }
+            .first { it.isDirectory }
+        val sheet = File(root, "com/ScienceFiction/DronePassAndroid/feature/shape/ShapeEditScreen.kt").readText()
+            .substringAfter("private fun ShapeDateTimeSelectionSheet(")
+        assertTrue(sheet.contains("onDismissRequest = onCancel,"))
+        assertTrue(sheet.contains("onClick = onCancel,"))
+        assertTrue(Regex("""applyCurrentSelectionAndDismiss\(\)""").findAll(sheet).count() == 2) // 정의 + 선택 완료 버튼
+    }
 }

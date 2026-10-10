@@ -861,6 +861,7 @@ fun ShapeEditScreen(
                 )
                 showStartDatePicker = false
             },
+            onCancel = { showStartDatePicker = false },
         )
     }
 
@@ -901,6 +902,8 @@ fun ShapeEditScreen(
                 keepsNoEndDate = false
                 showEndDatePicker = false
             },
+            // 취소는 "종료일 없음"도 그대로 둔다.
+            onCancel = { showEndDatePicker = false },
         )
     }
 
@@ -1479,6 +1482,7 @@ private fun ShapeDateTimeSelectionSheet(
     selectableDates: SelectableDates? = null,
     minimumDateMillis: Long? = null,
     onDateSelected: (Long) -> Unit,
+    onCancel: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(
         skipPartiallyExpanded = ShapeDateTimeSelectionSkipPartiallyExpanded,
@@ -1533,8 +1537,9 @@ private fun ShapeDateTimeSelectionSheet(
         onDateSelected(selectedLocalMillis)
     }
 
+    // "취소"·바깥 탭·아래로 쓸어 닫기는 바꾼 값을 버리고, "선택 완료"만 적용한다.
     DronePassModalBottomSheet(
-        onDismissRequest = { applyCurrentSelectionAndDismiss() },
+        onDismissRequest = onCancel,
         sheetState = sheetState,
     ) {
         // 달력과 시계를 함께 띄우면 휴대폰 높이를 넘는다. 스크롤이 없으면 시계가 눌려 찌그러지고
@@ -1553,7 +1558,7 @@ private fun ShapeDateTimeSelectionSheet(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 TextButton(
-                    onClick = { applyCurrentSelectionAndDismiss() },
+                    onClick = onCancel,
                     modifier = Modifier.width(64.dp),
                 ) {
                     Text(stringResource(R.string.common_cancel), fontSize = IosNavBarButtonFontSize, fontWeight = FontWeight.Normal)

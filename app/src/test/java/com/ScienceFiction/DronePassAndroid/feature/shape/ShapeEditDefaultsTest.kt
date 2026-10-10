@@ -1223,7 +1223,7 @@ class ShapeEditDefaultsTest {
     }
 
     @Test
-    fun `DateTimeSelectionSheet 닫기는 iOS Binding 처럼 현재 picker 값을 적용한다`() {
+    fun `DateTimeSelectionSheet 선택 완료는 현재 picker 값을 적용한다`() {
         val initialDate = localMillis(year = 2026, month = Calendar.JUNE, day = 3, hour = 9, minute = 15)
         val selectedDate = shapeEditDatePickerMillisFromLocalMillis(
             localMillis(year = 2026, month = Calendar.JUNE, day = 4, hour = 0, minute = 0),
