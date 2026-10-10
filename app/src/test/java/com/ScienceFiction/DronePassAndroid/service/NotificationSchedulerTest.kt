@@ -3,6 +3,7 @@ package com.ScienceFiction.DronePassAndroid.service
 import com.ScienceFiction.DronePassAndroid.R
 import java.time.Instant
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -127,19 +128,64 @@ class NotificationSchedulerTest {
     }
 
     @Test
-    fun `일출 일몰 예약 계획은 후보가 없어도 iOS처럼 기존 알림을 먼저 취소한다`() {
+    fun `일출 일몰 예약 계획은 시각이 없으면 기존 알림을 지우지 않는다`() {
+        // 오프라인·조회 실패로 시각을 받지 못했을 때 기존 알림을 지우면 다시 예약할 근거가 없어 알림이 끊겼다.
         val now = LocalDateTime.of(2026, 6, 3, 12, 0)
-
-        listOf(
-            null,
-            emptyList(),
-            listOf("2026-06-02T07:15", "2026-06-03T07:15"),
-        ).forEach { candidates ->
+        listOf(null, emptyList<String>()).forEach { candidates ->
             val plan = resolveSunAlarmSchedulePlan(candidates, now)
-
-            assertTrue(plan.shouldCancelExisting)
+            assertFalse(plan.shouldCancelExisting)
             assertNull(plan.nextEventTime)
         }
+    }
+
+    @Test
+    fun `일출 일몰 예약 계획은 지난 시각만 있으면 기존 알림을 지운다`() {
+        val now = LocalDateTime.of(2026, 6, 3, 12, 0)
+        val plan = resolveSunAlarmSchedulePlan(listOf("2026-06-02T07:15", "2026-06-03T07:15"), now)
+        assertTrue(plan.shouldCancelExisting)
+        assertNull(plan.nextEventTime)
+    }
+
+    @Test
+    fun `마지막 알림 시각이 지난 오늘 이벤트 대신 다음 이벤트를 고른다`() {
+        // 10분 전 알림이 울린 직후(07:05~07:15) 다시 예약하면 내일 일출을 골라야 이어진다.
+        listOf(LocalDateTime.of(2026, 6, 3, 7, 5), LocalDateTime.of(2026, 6, 3, 7, 10)).forEach { now ->
+            assertEquals(
+                LocalDateTime.of(2026, 6, 4, 7, 16),
+                selectNextSunEventTime(listOf("2026-06-03T07:15:30", "2026-06-04T07:16:10"), now),
+            )
+        }
+        // 마지막 알림이 아직 남았으면 오늘 이벤트
+        assertEquals(
+            LocalDateTime.of(2026, 6, 3, 7, 15),
+            selectNextSunEventTime(listOf("2026-06-03T07:15:30", "2026-06-04T07:16:10"), LocalDateTime.of(2026, 6, 3, 7, 4)),
+        )
+    }
+
+    @Test
+    fun `새 일출 일몰 시각이 없으면 저장된 시각을 쓴다`() {
+        val cached = listOf("2026-06-04T07:15")
+        assertEquals(cached, resolveSunEventTimes(null, cached))
+        assertEquals(cached, resolveSunEventTimes(emptyList(), cached))
+        assertEquals(listOf("2026-06-05T07:14"), resolveSunEventTimes(listOf("2026-06-05T07:14"), cached))
+        assertNull(resolveSunEventTimes(null, emptyList()))
+    }
+
+    @Test
+    fun `알림 리시버는 그날 마지막 일출 일몰 알림 뒤 다음 이벤트를 예약한다`() {
+        assertTrue(NotificationScheduler.isLastSunAlarmRequestCode(10002))
+        assertTrue(NotificationScheduler.isLastSunAlarmRequestCode(10004))
+        assertFalse(NotificationScheduler.isLastSunAlarmRequestCode(10001))
+        assertFalse(NotificationScheduler.isLastSunAlarmRequestCode(10003))
+
+        val root = listOf("src/main/java", "app/src/main/java")
+            .map { java.io.File(java.io.File(requireNotNull(System.getProperty("user.dir"))), it) }
+            .first { it.isDirectory }
+        val receiver = java.io.File(root, "com/ScienceFiction/DronePassAndroid/service/NotificationReceiver.kt").readText()
+        assertTrue(receiver.contains("@AndroidEntryPoint"))
+        val reschedule = receiver.substringAfter("private fun rescheduleSunAlarmsAfterLastDelivery(")
+        listOf("isLastSunAlarmRequestCode(", "goAsync()", "rescheduleSunAlarmsAfterDelivery(", "pendingResult.finish()")
+            .forEach { assertTrue(it, reschedule.contains(it)) }
     }
 
     @Test

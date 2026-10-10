@@ -64,6 +64,13 @@ internal fun parseNotificationSunTime(
     }
 }
 
+/** 일출·일몰 알림 중 가장 늦은 것(이벤트 10분 전). 이 알림이 울린 뒤 다음 이벤트를 예약한다. */
+internal const val SunAlarmLastLeadMinutes = 10L
+
+/**
+ * 마지막 알림(이벤트 10분 전)이 아직 남은 가장 가까운 이벤트. 이벤트 자체가 미래인지로 고르면
+ * 10분 전 알림이 울린 직후(또는 그 사이 앱이 다시 예약할 때) 오늘 이벤트를 다시 골라 아무것도 예약하지 못했다.
+ */
 internal fun selectNextSunEventTime(
     timeStrings: List<String>?,
     now: LocalDateTime = LocalDateTime.now(),
@@ -71,10 +78,16 @@ internal fun selectNextSunEventTime(
     return timeStrings
         .orEmpty()
         .mapNotNull { parseNotificationSunTime(it, fallbackDate = now.toLocalDate()) }
-        .filter { it.isAfter(now) }
+        .map(::truncateNotificationTriggerToMinute)
+        .filter { it.minusMinutes(SunAlarmLastLeadMinutes).isAfter(now) }
         .minOrNull()
-        ?.let(::truncateNotificationTriggerToMinute)
 }
+
+/** 새 시각이 없으면(오프라인·조회 실패) 마지막으로 받은 시각으로 예약한다. 날씨 응답은 3일치라 약 이틀 이어진다. */
+internal fun resolveSunEventTimes(
+    fresh: List<String>?,
+    cached: List<String>?,
+): List<String>? = fresh?.takeIf { it.isNotEmpty() } ?: cached?.takeIf { it.isNotEmpty() }
 
 internal data class SunAlarmSchedulePlan(
     val shouldCancelExisting: Boolean,
@@ -86,7 +99,8 @@ internal fun resolveSunAlarmSchedulePlan(
     now: LocalDateTime = LocalDateTime.now(),
 ): SunAlarmSchedulePlan {
     return SunAlarmSchedulePlan(
-        shouldCancelExisting = true,
+        // 시각이 없으면 기존 알림을 지우지 않는다. 지우고 나면 다시 예약할 근거가 없다.
+        shouldCancelExisting = !timeStrings.isNullOrEmpty(),
         nextEventTime = selectNextSunEventTime(timeStrings, now),
     )
 }
@@ -182,6 +196,14 @@ class NotificationScheduler @Inject constructor(
 
         private const val ALARM_REGISTRY_PREFS = "dronepass_notification_alarms"
         private const val KEY_SCHEDULED_END_DATE_SHAPE_IDS = "scheduled_end_date_shape_ids"
+        private const val KEY_SUNRISE_TIMES = "last_sunrise_times"
+        private const val KEY_SUNSET_TIMES = "last_sunset_times"
+        private const val KEY_SUN_UTC_OFFSET = "last_sun_utc_offset_seconds"
+        private const val SUN_TIMES_SEPARATOR = "|"
+
+        /** 그날 마지막 일출·일몰 알림(10분 전)인지. 이 알림을 받은 뒤 다음 이벤트를 예약한다. */
+        internal fun isLastSunAlarmRequestCode(requestCode: Int): Boolean =
+            requestCode == RC_SUNRISE_10 || requestCode == RC_SUNSET_10
 
         // Intent extras
         const val EXTRA_NOTIFICATION_TYPE = "notification_type"
@@ -214,15 +236,16 @@ class NotificationScheduler @Inject constructor(
      * iOS처럼 오늘 일출이 지났으면 전달된 후보 중 다음 미래 일출을 사용합니다.
      */
     fun scheduleSunriseAlarms(sunriseTimeStrings: List<String>?, utcOffsetSeconds: Int? = null) {
-        val zoneId = resolveNotificationSunZone(utcOffsetSeconds)
+        val (times, offsetSeconds) = resolveCachedSunTimes(KEY_SUNRISE_TIMES, sunriseTimeStrings, utcOffsetSeconds)
+        val zoneId = resolveNotificationSunZone(offsetSeconds)
         val now = LocalDateTime.now(zoneId)
-        val plan = resolveSunAlarmSchedulePlan(sunriseTimeStrings, now)
+        val plan = resolveSunAlarmSchedulePlan(times, now)
         if (plan.shouldCancelExisting) {
             cancelSunriseAlarms()
         }
 
         val sunriseTime = plan.nextEventTime ?: run {
-            if (sunriseTimeStrings.isNullOrEmpty()) {
+            if (times.isNullOrEmpty()) {
                 Log.w(TAG, "일출 시간이 null이므로 알림을 예약할 수 없습니다.")
             } else {
                 Log.w(TAG, "예약 가능한 미래 일출 시간이 없습니다.")
@@ -285,15 +308,16 @@ class NotificationScheduler @Inject constructor(
      * iOS처럼 오늘 일몰이 지났으면 전달된 후보 중 다음 미래 일몰을 사용합니다.
      */
     fun scheduleSunsetAlarms(sunsetTimeStrings: List<String>?, utcOffsetSeconds: Int? = null) {
-        val zoneId = resolveNotificationSunZone(utcOffsetSeconds)
+        val (times, offsetSeconds) = resolveCachedSunTimes(KEY_SUNSET_TIMES, sunsetTimeStrings, utcOffsetSeconds)
+        val zoneId = resolveNotificationSunZone(offsetSeconds)
         val now = LocalDateTime.now(zoneId)
-        val plan = resolveSunAlarmSchedulePlan(sunsetTimeStrings, now)
+        val plan = resolveSunAlarmSchedulePlan(times, now)
         if (plan.shouldCancelExisting) {
             cancelSunsetAlarms()
         }
 
         val sunsetTime = plan.nextEventTime ?: run {
-            if (sunsetTimeStrings.isNullOrEmpty()) {
+            if (times.isNullOrEmpty()) {
                 Log.w(TAG, "일몰 시간이 null이므로 알림을 예약할 수 없습니다.")
             } else {
                 Log.w(TAG, "예약 가능한 미래 일몰 시간이 없습니다.")
@@ -520,6 +544,32 @@ class NotificationScheduler @Inject constructor(
 
     private val alarmRegistryPrefs by lazy {
         context.getSharedPreferences(ALARM_REGISTRY_PREFS, Context.MODE_PRIVATE)
+    }
+
+    /** 새 시각을 받으면 저장하고, 없으면 저장해 둔 시각을 돌려준다. */
+    private fun resolveCachedSunTimes(
+        key: String,
+        fresh: List<String>?,
+        freshUtcOffsetSeconds: Int?,
+    ): Pair<List<String>?, Int?> {
+        if (!fresh.isNullOrEmpty()) {
+            alarmRegistryPrefs.edit().apply {
+                putString(key, fresh.joinToString(SUN_TIMES_SEPARATOR))
+                if (freshUtcOffsetSeconds != null) putInt(KEY_SUN_UTC_OFFSET, freshUtcOffsetSeconds)
+            }.apply()
+            return fresh to freshUtcOffsetSeconds
+        }
+        val cached = alarmRegistryPrefs.getString(key, null)
+            ?.split(SUN_TIMES_SEPARATOR)
+            ?.filter { it.isNotBlank() }
+        val times = resolveSunEventTimes(fresh, cached) ?: return null to freshUtcOffsetSeconds
+        Log.d(TAG, "새 일출·일몰 시각이 없어 저장된 시각으로 예약합니다.")
+        val offset = if (alarmRegistryPrefs.contains(KEY_SUN_UTC_OFFSET)) {
+            alarmRegistryPrefs.getInt(KEY_SUN_UTC_OFFSET, 0)
+        } else {
+            freshUtcOffsetSeconds
+        }
+        return times to offset
     }
 
     private fun registeredEndDateAlarmShapeIds(): Set<String> {

@@ -26,6 +26,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -44,6 +45,9 @@ class NotificationScheduleRestorer @Inject constructor(
 ) {
     companion object {
         private const val TAG = "NotificationScheduleRestorer"
+
+        /** 알람 브로드캐스트 안에서도 끝나도록(제한 약 60초) 날씨 조회를 끊는다. 끊기면 저장된 시각으로 예약한다. */
+        private const val SUN_WEATHER_FETCH_TIMEOUT_MS = 25_000L
     }
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
@@ -72,6 +76,20 @@ class NotificationScheduleRestorer @Inject constructor(
 
         if (endDateEnabled) {
             rescheduleEndDateAlarms()
+        }
+    }
+
+    /**
+     * 그날 마지막 일출·일몰 알림(10분 전)을 보여 준 뒤 다음 이벤트를 예약한다. 앱을 열지 않아도 매일 이어진다.
+     * 알림 리시버가 goAsync 안에서 부른다.
+     */
+    suspend fun rescheduleSunAlarmsAfterDelivery(reason: String) {
+        val preferences = dataStore.data.first()
+        val sunriseEnabled = storedSunriseAlarmEnabled(preferences)
+        val sunsetEnabled = storedSunsetAlarmEnabled(preferences)
+        Log.d(TAG, "알림 표시 후 일출·일몰 재예약: reason=$reason, sunrise=$sunriseEnabled, sunset=$sunsetEnabled")
+        if (sunriseEnabled || sunsetEnabled) {
+            rescheduleSunAlarms(preferences, sunriseEnabled, sunsetEnabled)
         }
     }
 
@@ -108,23 +126,25 @@ class NotificationScheduleRestorer @Inject constructor(
         // OS 위치 권한을 끈 것은 "일시 중지"라 캐시한 기기 위치도 쓰지 않고 지도 중심으로 대체한다.
         val useDeviceLocation = locationConsentRepository.isAllowed(LocationPurpose.WEATHER_AND_SUN) &&
             hasLocationPermission(appContext)
-        val (lat, lon) = if (useDeviceLocation) {
-            val location = storedSunAlarmLocation(preferences)
-            if (location == null) {
-                Log.w(TAG, "저장된 위치가 없어 일출/일몰 알림 복구를 건너뜀")
-                return
+        val basis = if (useDeviceLocation) {
+            storedSunAlarmLocation(preferences)?.also {
+                // 캐시한 위치로 날씨(일출·일몰 시각)를 받는다.
+                locationConsentRepository.recordUsage(
+                    LocationUsage(LocationUsagePurpose.SUNRISE_ALERT, LocationRecipient.WEATHERKIT_VIA_SERVER),
+                )
+            } ?: run {
+                Log.w(TAG, "저장된 위치가 없어 저장된 일출·일몰 시각으로 예약합니다")
+                null
             }
-            // 캐시한 위치로 날씨(일출·일몰 시각)를 받는다.
-            locationConsentRepository.recordUsage(
-                LocationUsage(LocationUsagePurpose.SUNRISE_ALERT, LocationRecipient.WEATHERKIT_VIA_SERVER),
-            )
-            location
         } else {
             val center = mapCenterStore.weatherBasisCenter()
             center.latitude to center.longitude
         }
 
-        val weatherData = weatherRepository.fetchWeather(lat, lon).getOrNull()
+        // 받지 못하면 null 로 넘긴다. 스케줄러가 기존 알림을 지우지 않고 저장된 시각으로 예약한다.
+        val weatherData = basis?.let { (lat, lon) ->
+            withTimeoutOrNull(SUN_WEATHER_FETCH_TIMEOUT_MS) { weatherRepository.fetchWeather(lat, lon).getOrNull() }
+        }
         if (sunriseEnabled) {
             notificationScheduler.scheduleSunriseAlarms(
                 sunriseTimeStrings = weatherData?.sunriseTimes,

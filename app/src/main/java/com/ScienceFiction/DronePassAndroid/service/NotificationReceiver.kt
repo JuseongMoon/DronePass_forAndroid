@@ -8,18 +8,56 @@ import android.content.Intent
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.ScienceFiction.DronePassAndroid.R
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 /**
  * 알림 브로드캐스트 리시버
  * AlarmManager에서 예약된 시간에 발동되어 실제 알림을 표시합니다.
  */
+@AndroidEntryPoint
 class NotificationReceiver : BroadcastReceiver() {
+
+    @Inject lateinit var notificationScheduleRestorer: NotificationScheduleRestorer
 
     companion object {
         private const val TAG = "NotificationReceiver"
     }
 
+    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+
     override fun onReceive(context: Context, intent: Intent) {
+        showNotification(context, intent)
+        rescheduleSunAlarmsAfterLastDelivery(intent)
+    }
+
+    /**
+     * 일출·일몰은 다음 이벤트 하나만 예약하므로, 그날 마지막 알림(10분 전)을 보여 준 뒤 다음 이벤트를 예약한다.
+     * 이게 없으면 앱을 열지 않는 날부터 알림이 끊겼다.
+     */
+    private fun rescheduleSunAlarmsAfterLastDelivery(intent: Intent) {
+        val type = intent.getStringExtra(NotificationScheduler.EXTRA_NOTIFICATION_TYPE)
+        if (type != NotificationScheduler.TYPE_SUNRISE && type != NotificationScheduler.TYPE_SUNSET) return
+        val requestCode = intent.getIntExtra(NotificationScheduler.EXTRA_NOTIFICATION_ID, 0)
+        if (!NotificationScheduler.isLastSunAlarmRequestCode(requestCode)) return
+
+        val pendingResult = goAsync()
+        scope.launch {
+            try {
+                notificationScheduleRestorer.rescheduleSunAlarmsAfterDelivery("alarm_$type")
+            } catch (e: Exception) {
+                Log.e(TAG, "일출·일몰 알림 재예약 실패", e)
+            } finally {
+                pendingResult.finish()
+            }
+        }
+    }
+
+    private fun showNotification(context: Context, intent: Intent) {
         val type = intent.getStringExtra(NotificationScheduler.EXTRA_NOTIFICATION_TYPE) ?: return
         val title = intent.getStringExtra(NotificationScheduler.EXTRA_NOTIFICATION_TITLE)
             ?: context.getString(R.string.app_name)
