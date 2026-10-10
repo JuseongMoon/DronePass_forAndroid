@@ -11,6 +11,7 @@ import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.resolveZoneCo
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.sortedByLoadingPriority
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.stringProp
 import com.squareup.moshi.Moshi
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -130,6 +131,9 @@ class VWorldRepository @Inject constructor(
         } catch (e: VWorldServiceException.Other) {
             Log.e(TAG, "${layer.displayName} - VWorld 서비스 오류: ${e.message}")
             Result.failure(e)
+        } catch (e: CancellationException) {
+            // 취소를 실패로 바꾸면 빈 결과가 콜백으로 나가 레이어가 잠깐 지워진다.
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "${layer.displayName} 로드 실패: ${e.message}", e)
             Result.failure(e)

@@ -54,6 +54,7 @@ import com.ScienceFiction.DronePassAndroid.subscription.QuotaAction
 import com.ScienceFiction.DronePassAndroid.subscription.SubscriptionManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
@@ -1299,6 +1300,9 @@ class MapViewModel @Inject constructor(
                 filterFlightZoneCacheForVisibleLayers(current, _visibleLayers.value)
             }
             Log.d(TAG, "비행구역 로드 완료: ${results.values.sumOf { it.size }}개 구역")
+        } catch (e: CancellationException) {
+            // 레이어·카메라가 바뀌어 다음 조회로 넘어간 것이다. 오류가 아니다.
+            throw e
         } catch (e: VWorldServiceException.InvalidKey) {
             // 사용자가 즉시 조치 가능한 에러. local.properties 의 VWORLD_API_KEY 점검 필요.
             Log.e(TAG, "비행구역 로드 실패 - VWorld 인증키 미등록 (${e.message})")
@@ -1309,8 +1313,9 @@ class MapViewModel @Inject constructor(
         } catch (e: Exception) {
             Log.e(TAG, "비행구역 로드 실패: ${e.message}", e)
             _flightZonesError.emit(appContext.getString(R.string.map_flight_zones_error_load_failed))
+        } finally {
+            // 취소돼도 끈다. 레이어를 모두 해제하면 다음 조회가 시작되지 않아 스피너가 남았다(3.6.1 에뮬레이터 재현).
+            _flightZonesLoading.value = false
         }
-
-        _flightZonesLoading.value = false
     }
 }
