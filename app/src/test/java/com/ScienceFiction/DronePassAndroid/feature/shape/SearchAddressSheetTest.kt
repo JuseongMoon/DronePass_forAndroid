@@ -164,7 +164,7 @@ class SearchAddressSheetTest {
     }
 
     @Test
-    fun `주소 검색 선택은 iOS처럼 빈 지번 주소를 도로명으로 대체하지 않는다`() {
+    fun `빈 지번 주소는 도로명 주소로 대체한다`() {
         val address = GeocodingAddress(
             roadAddress = "서울특별시 서초구 서초대로78길 24",
             jibunAddress = "",
@@ -174,11 +174,11 @@ class SearchAddressSheetTest {
             distance = null,
         )
 
-        assertEquals("", resolveSelectedAddressForShapeEdit(address))
+        assertEquals("서울특별시 서초구 서초대로78길 24", resolveSelectedAddressForShapeEdit(address))
     }
 
     @Test
-    fun `주소 검색 선택은 iOS처럼 공백 지번 주소도 값으로 저장한다`() {
+    fun `공백 지번 주소도 도로명 주소로 대체한다`() {
         val address = GeocodingAddress(
             roadAddress = "서울특별시 서초구 서초대로78길 24",
             jibunAddress = "   ",
@@ -188,7 +188,7 @@ class SearchAddressSheetTest {
             distance = null,
         )
 
-        assertEquals("   ", resolveSelectedAddressForShapeEdit(address))
+        assertEquals("서울특별시 서초구 서초대로78길 24", resolveSelectedAddressForShapeEdit(address))
     }
 
     @Test

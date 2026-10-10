@@ -111,7 +111,8 @@ internal val SearchAddressGuideExampleTitleTextSize = 12.sp
 internal val SearchAddressGuideExampleTextSize = 12.sp
 
 internal fun resolveSelectedAddressForShapeEdit(address: GeocodingAddress): String =
-    address.jibunAddress
+    // 지번이 비어 오면 도로명 주소를 쓴다(빈 지번을 고르면 주소가 비어 저장됐다).
+    address.jibunAddress?.takeIf { it.isNotBlank() }
         ?: address.roadAddress?.takeIf { it.isNotEmpty() }
         ?: ""
 
