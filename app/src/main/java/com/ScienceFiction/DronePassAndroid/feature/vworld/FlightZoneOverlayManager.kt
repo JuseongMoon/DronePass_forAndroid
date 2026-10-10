@@ -164,7 +164,17 @@ class FlightZoneOverlayManager {
      */
     fun setOutOfBoundsVisibility(bounds: LatLngBounds) {
         overlayMap.values.flatMap { it.values }.flatten().forEach { overlay ->
-            val isInBounds = overlay.coords.any { coord -> bounds.contains(coord) }
+            val zoneBounds = overlay.bounds
+            val isInBounds = flightZoneIntersectsViewport(
+                zoneSouth = zoneBounds.southLatitude,
+                zoneWest = zoneBounds.westLongitude,
+                zoneNorth = zoneBounds.northLatitude,
+                zoneEast = zoneBounds.eastLongitude,
+                viewSouth = bounds.southLatitude,
+                viewWest = bounds.westLongitude,
+                viewNorth = bounds.northLatitude,
+                viewEast = bounds.eastLongitude,
+            )
             if (!isInBounds) {
                 overlay.map = null
             } else if (overlay.map == null) {
@@ -260,3 +270,19 @@ internal fun deduplicateDisplayedFlightZones(
     val seen = mutableSetOf<Pair<FlightZoneLayer, String>>()
     return zones.filter { zone -> seen.add(zone.layer to zone.id) }
 }
+
+/**
+ * 비행구역 폴리곤의 경계 사각형이 화면 영역과 겹치는지. 꼭짓점이 화면 안에 있는지로 판단하면
+ * 비행금지구역처럼 큰 구역 안으로 확대했을 때 꼭짓점이 모두 화면 밖이라 구역이 지도에서 사라진다.
+ * 경계가 겹치면 실제로는 보이지 않는 구역도 남을 수 있지만, 구역을 놓치는 것보다 안전하다.
+ */
+internal fun flightZoneIntersectsViewport(
+    zoneSouth: Double,
+    zoneWest: Double,
+    zoneNorth: Double,
+    zoneEast: Double,
+    viewSouth: Double,
+    viewWest: Double,
+    viewNorth: Double,
+    viewEast: Double,
+): Boolean = zoneSouth <= viewNorth && zoneNorth >= viewSouth && zoneWest <= viewEast && zoneEast >= viewWest
