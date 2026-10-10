@@ -99,10 +99,11 @@ fun DroneEditSheet(
     )
     val droneNameMaxWidthPx = with(density) { DRONE_NAME_MAX_WIDTH_DP.dp.toPx() }
 
-    var name by remember(drone?.id, suggestedName) {
+    // 추천 이름·색은 시트를 열 때 값만 쓴다. 키로 두면 열려 있는 동안 드론 수가 바뀔 때(다른 기기 동기화) 입력이 초기화됐다.
+    var name by remember(drone?.id) {
         mutableStateOf(drone?.name ?: suggestedName)
     }
-    var selectedColor by remember(drone?.id, suggestedColor) {
+    var selectedColor by remember(drone?.id) {
         mutableStateOf(resolveInitialDroneEditColor(drone, suggestedColor))
     }
     var serialNumber by remember(drone?.id) { mutableStateOf(drone?.serialNumber ?: "") }
@@ -399,7 +400,9 @@ internal fun shouldAcceptDroneNameChange(
     maxWidthPx: Float,
     measureTextWidth: (String) -> Float,
 ): Boolean {
-    return measureTextWidth(newName) <= maxWidthPx
+    val newWidth = measureTextWidth(newName)
+    // 이미 제한을 넘은 이름(다른 기기에서 받은 긴 이름, 글꼴 크기 변경)도 줄이는 것은 허용한다. 막으면 지우지도 못했다.
+    return newWidth <= maxWidthPx || newWidth < measureTextWidth(oldName)
 }
 
 internal fun resolveInitialDroneEditColor(
