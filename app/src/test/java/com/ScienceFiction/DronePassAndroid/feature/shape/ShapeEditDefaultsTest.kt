@@ -1078,6 +1078,25 @@ class ShapeEditDefaultsTest {
     }
 
     @Test
+    fun `도형 저장 검증은 반경 0 과 50km 초과를 막는다`() {
+        // 0 은 기기에도 저장되지 않고, 50km 초과는 계정에 올라가지 않는다(3.6.1 에뮬레이터 재현).
+        listOf("0", "000", "50001", "99999999999999999999").forEach { radius ->
+            assertEquals(
+                radius,
+                ShapeEditSaveValidationError.RADIUS_OUT_OF_RANGE,
+                validateShapeEditSaveFields(coordinate = Coordinate(37.0, 127.0), address = "", radius = radius),
+            )
+        }
+        listOf("1", "50000").forEach { radius ->
+            assertNull(radius, validateShapeEditSaveFields(coordinate = Coordinate(37.0, 127.0), address = "", radius = radius))
+        }
+        // 반경이 없는 도형(사각형·다각형·선)은 범위를 보지 않는다.
+        assertNull(
+            validateShapeEditSaveFields(coordinate = Coordinate(37.0, 127.0), address = "", radius = "0", requiresRadius = false),
+        )
+    }
+
+    @Test
     fun `도형 저장 검증은 좌표와 반경이 있으면 저장 가능하다`() {
         assertNull(
             validateShapeEditSaveFields(

@@ -190,6 +190,7 @@ fun ShapeEditScreen(
     val errorNoAddress = stringResource(R.string.shape_edit_error_no_address)
     val errorNoCoordinate = stringResource(R.string.shape_edit_error_no_coordinate)
     val errorRadiusRequired = stringResource(R.string.shape_edit_error_radius_required)
+    val errorRadiusOutOfRange = stringResource(R.string.shape_edit_error_radius_out_of_range)
     val coordinateAddressFallback = stringResource(R.string.coordinate_alert_address_not_found_fallback)
     val nowForInitialValues = remember(editKey) { System.currentTimeMillis() }
     val originalShapeAtEditStart = remember(editKey) { shape }
@@ -347,6 +348,7 @@ fun ShapeEditScreen(
             errorMessage = when (validationError) {
                 ShapeEditSaveValidationError.COORDINATE_REQUIRED -> errorCoordinateRequired
                 ShapeEditSaveValidationError.RADIUS_REQUIRED -> errorRadiusRequired
+                ShapeEditSaveValidationError.RADIUS_OUT_OF_RANGE -> errorRadiusOutOfRange
                 ShapeEditSaveValidationError.NO_COORDINATE -> errorNoCoordinate
             }
             return@save

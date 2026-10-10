@@ -2,7 +2,8 @@ package com.ScienceFiction.DronePassAndroid.domain.model
 
 import java.util.UUID
 
-private const val MAX_FIREBASE_RADIUS_METERS = 50_000.0
+/** 원 반경 상한(m). iOS ShapeFirebaseStore 의 50km 제한과 같다. 편집 화면 저장 검증도 이 값을 쓴다. */
+internal const val MAX_FIREBASE_RADIUS_METERS = 50_000.0
 private const val MAX_FIREBASE_COORDINATE_COUNT = 1_000
 
 data class ShapeValidationResult(

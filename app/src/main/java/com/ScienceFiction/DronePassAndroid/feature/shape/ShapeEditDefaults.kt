@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.domain.model.Coordinate
+import com.ScienceFiction.DronePassAndroid.domain.model.MAX_FIREBASE_RADIUS_METERS
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.PaletteColor
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
@@ -602,6 +603,7 @@ internal fun resolveCoordinateAddressForSave(
 internal enum class ShapeEditSaveValidationError {
     COORDINATE_REQUIRED,
     RADIUS_REQUIRED,
+    RADIUS_OUT_OF_RANGE,
     NO_COORDINATE,
 }
 
@@ -616,6 +618,10 @@ internal fun validateShapeEditSaveFields(
     }
     if (requiresRadius && radius.isEmpty()) {
         return ShapeEditSaveValidationError.RADIUS_REQUIRED
+    }
+    // 0 은 기기에도 저장되지 않고(조용히 버려짐), 50km 를 넘으면 계정에 올라가지 않아 가져오기·로그아웃 업로드까지 막는다.
+    if (requiresRadius && radius.toDoubleOrNull().let { it == null || it <= 0.0 || it > MAX_FIREBASE_RADIUS_METERS }) {
+        return ShapeEditSaveValidationError.RADIUS_OUT_OF_RANGE
     }
     if (coordinate == null) {
         return ShapeEditSaveValidationError.NO_COORDINATE
