@@ -1,5 +1,7 @@
 package com.ScienceFiction.DronePassAndroid.feature.saved
 
+import kotlinx.coroutines.flow.distinctUntilChanged
+import com.ScienceFiction.DronePassAndroid.core.util.launchCatchingStorageErrors
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
@@ -304,7 +306,7 @@ class SavedListViewModel @Inject constructor(
     }
 
     init {
-        viewModelScope.launch {
+        viewModelScope.launchCatchingStorageErrors {
             activeDrones.collect { drones ->
                 droneSelectionState.syncActiveDrones(drones)
             }
@@ -429,7 +431,7 @@ class SavedListViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.Eagerly, ShapeEditDefaults())
 
     fun updateSortOption(option: SortOption) {
-        viewModelScope.launch {
+        viewModelScope.launchCatchingStorageErrors {
             dataStore.edit { preferences ->
                 preferences[KEY_SORT_OPTION] = option.rawValue
             }
@@ -442,7 +444,7 @@ class SavedListViewModel @Inject constructor(
         } else {
             SortDirection.ASCENDING
         }
-        viewModelScope.launch {
+        viewModelScope.launchCatchingStorageErrors {
             dataStore.edit { preferences ->
                 preferences[KEY_SORT_DIRECTION] = next.rawValue
             }
@@ -480,8 +482,8 @@ class SavedListViewModel @Inject constructor(
     }
 
     fun onDuplicateRequested(shape: ShapeModel) {
-        viewModelScope.launch {
-            if (!subscriptionManager.allow(QuotaAction.DUPLICATE_SHAPE, "shape_duplicate")) return@launch
+        viewModelScope.launchCatchingStorageErrors {
+            if (!subscriptionManager.allow(QuotaAction.DUPLICATE_SHAPE, "shape_duplicate")) return@launchCatchingStorageErrors
             _selectedShapeId.value = shape.id
             _isDuplicateMode.value = true
             _showShapeDetail.value = false
@@ -503,7 +505,7 @@ class SavedListViewModel @Inject constructor(
         originalShapeAtEditStart: ShapeModel? = null,
         onFailure: (String) -> Unit = {},
     ) {
-        viewModelScope.launch {
+        viewModelScope.launchCatchingStorageErrors {
             try {
                 val latestShape = if (!isDuplicate && originalShapeAtEditStart != null) {
                     shapeRepository.getShapeById(originalShapeAtEditStart.id)
@@ -519,7 +521,7 @@ class SavedListViewModel @Inject constructor(
                 if (isDuplicate || originalShapeAtEditStart == null) {
                     val action = if (isDuplicate) QuotaAction.DUPLICATE_SHAPE else QuotaAction.CREATE_SHAPE
                     val source = if (isDuplicate) "shape_duplicate" else "shape_create"
-                    if (!subscriptionManager.withCreationPermit(action, source) { shapeRepository.insertShape(updatedShape) }) return@launch
+                    if (!subscriptionManager.withCreationPermit(action, source) { shapeRepository.insertShape(updatedShape) }) return@launchCatchingStorageErrors
                 } else {
                     shapeRepository.insertShape(updatedShape)
                 }
@@ -555,7 +557,7 @@ class SavedListViewModel @Inject constructor(
     }
 
     fun saveShapeEditDefaults(defaults: ShapeEditDefaults) {
-        viewModelScope.launch {
+        viewModelScope.launchCatchingStorageErrors {
             dataStore.edit { preferences ->
                 preferences.writeShapeEditDefaults(defaults)
             }
@@ -563,7 +565,7 @@ class SavedListViewModel @Inject constructor(
     }
 
     fun setShapeEditDateOnlyMode(isDateOnly: Boolean) {
-        viewModelScope.launch {
+        viewModelScope.launchCatchingStorageErrors {
             dataStore.edit { preferences ->
                 preferences.writeShapeEditDateOnlyMode(isDateOnly)
             }
@@ -579,7 +581,7 @@ class SavedListViewModel @Inject constructor(
     }
 
     private fun deleteShape(shape: ShapeModel, source: SavedShapeDeleteSource) {
-        viewModelScope.launch {
+        viewModelScope.launchCatchingStorageErrors {
             shapeRepository.softDeleteShape(shape)
             analyticsLogger.logShapeDeleted()
             val presentationUpdate = resolveSavedShapeDeletePresentationUpdate(source)

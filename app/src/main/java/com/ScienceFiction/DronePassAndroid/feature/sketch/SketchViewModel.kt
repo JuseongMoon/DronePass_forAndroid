@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.sketch
 
+import com.ScienceFiction.DronePassAndroid.core.util.launchCatchingStorageErrors
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
@@ -125,13 +126,13 @@ class SketchViewModel @Inject constructor(
     }
 
     init {
-        viewModelScope.launch {
+        viewModelScope.launchCatchingStorageErrors {
             activeSketches.collect { sketches ->
                 pendingCreatedSketchIds.removeAll(sketches.map { it.id }.toSet())
                 if (sketches.size + pendingCreatedSketchIds.size < quotaLimits.value.freeSketches) _quotaBlockedCount.value = null
             }
         }
-        viewModelScope.launch {
+        viewModelScope.launchCatchingStorageErrors {
             val preferences = dataStore.data.first()
             _currentColor.value = normalizeSketchFirestoreColor(
                 preferences[SketchPreferenceKeys.CURRENT_COLOR] ?: DefaultSketchColor,
@@ -168,7 +169,7 @@ class SketchViewModel @Inject constructor(
         _isSketchMode.value = transition.isSketchModeActive
         _isEraserMode.value = transition.isEraserModeActive
         val previousJob = latestSketchMutationJob
-        latestSketchMutationJob = viewModelScope.launch {
+        latestSketchMutationJob = viewModelScope.launchCatchingStorageErrors {
             previousJob?.join()
             sketchRepository.beginSketchEditSession()
         }
@@ -410,7 +411,7 @@ class SketchViewModel @Inject constructor(
     fun setColor(hex: String) {
         val normalizedColor = normalizeSketchFirestoreColor(hex)
         _currentColor.value = normalizedColor
-        viewModelScope.launch {
+        viewModelScope.launchCatchingStorageErrors {
             dataStore.edit { preferences ->
                 preferences[SketchPreferenceKeys.CURRENT_COLOR] = normalizedColor
             }
@@ -421,7 +422,7 @@ class SketchViewModel @Inject constructor(
     fun setStrokeWidth(width: Double) {
         val clampedWidth = clampSketchStrokeWidth(width)
         _currentStrokeWidth.value = clampedWidth
-        viewModelScope.launch {
+        viewModelScope.launchCatchingStorageErrors {
             dataStore.edit { preferences ->
                 preferences[SketchPreferenceKeys.CURRENT_STROKE_WIDTH] = clampedWidth
             }
@@ -432,7 +433,7 @@ class SketchViewModel @Inject constructor(
     fun setOpacity(opacity: Double) {
         val clampedOpacity = clampSketchOpacity(opacity)
         _currentOpacity.value = clampedOpacity
-        viewModelScope.launch {
+        viewModelScope.launchCatchingStorageErrors {
             dataStore.edit { preferences ->
                 preferences[SketchPreferenceKeys.CURRENT_OPACITY] = clampedOpacity
             }
@@ -461,7 +462,7 @@ class SketchViewModel @Inject constructor(
 
     private fun launchSketchMutation(block: suspend () -> Unit): Job {
         val previousJob = latestSketchMutationJob
-        val job = viewModelScope.launch {
+        val job = viewModelScope.launchCatchingStorageErrors {
             previousJob?.join()
             block()
         }
@@ -471,7 +472,7 @@ class SketchViewModel @Inject constructor(
 
     private fun syncSketchesOnModeComplete() {
         val previousJob = latestSketchMutationJob
-        val job = viewModelScope.launch {
+        val job = viewModelScope.launchCatchingStorageErrors {
             previousJob?.join()
             sketchRepository.syncToFirebaseOnComplete()
         }

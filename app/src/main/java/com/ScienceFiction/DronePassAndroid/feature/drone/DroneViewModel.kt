@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.drone
 
+import com.ScienceFiction.DronePassAndroid.core.util.launchCatchingStorageErrors
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ScienceFiction.DronePassAndroid.core.data.repository.DroneRepository
@@ -71,7 +72,7 @@ class DroneViewModel @Inject constructor(
     val deleteError: StateFlow<DroneDeleteError?> = _deleteError.asStateFlow()
 
     init {
-        viewModelScope.launch {
+        viewModelScope.launchCatchingStorageErrors {
             droneRepository.getAllDrones().collect { drones ->
                 if (!_showDroneEdit.value) {
                     _selectedDrone.value = resolveDroneDetailSnapshot(
@@ -88,7 +89,7 @@ class DroneViewModel @Inject constructor(
      */
     fun addDrone(name: String, color: String, serialNumber: String? = null,
                  takeoffWeight: String? = null, size: String? = null, memo: String? = null) {
-        viewModelScope.launch {
+        viewModelScope.launchCatchingStorageErrors {
             val drone = DroneModel(
                 name = name,
                 color = color,
@@ -99,14 +100,14 @@ class DroneViewModel @Inject constructor(
             )
             if (!subscriptionManager.withCreationPermit(QuotaAction.ADD_DRONE, "drone_add") {
                 droneRepository.insertDrone(drone)
-            }) return@launch
+            }) return@launchCatchingStorageErrors
             droneSelectionState.addDroneToSelection(drone.id)
             analyticsLogger.logDroneCreated()
         }
     }
 
     fun requestAddDrone() {
-        viewModelScope.launch {
+        viewModelScope.launchCatchingStorageErrors {
             if (subscriptionManager.allow(QuotaAction.ADD_DRONE, "drone_add")) showEditSheet(null)
         }
     }
@@ -115,7 +116,7 @@ class DroneViewModel @Inject constructor(
      * 드론 업데이트
      */
     fun updateDrone(drone: DroneModel) {
-        viewModelScope.launch {
+        viewModelScope.launchCatchingStorageErrors {
             val updatedDrone = drone.copy(updatedAt = System.currentTimeMillis())
             droneRepository.updateDrone(updatedDrone)
         }
@@ -130,7 +131,7 @@ class DroneViewModel @Inject constructor(
      * 진정한 atomic update 가 필요해지면 Room @Transaction 으로 묶는 도메인 서비스가 필요.
      */
     fun deleteDrone(drone: DroneModel, shapeHandling: ShapeHandling) {
-        viewModelScope.launch {
+        viewModelScope.launchCatchingStorageErrors {
             try {
                 val currentDrones = activeDrones.value
                 val connectedShapeCount = shapeRepository.getActiveShapeCountByDroneId(drone.id)
@@ -142,7 +143,7 @@ class DroneViewModel @Inject constructor(
                 )
                 if (validationError != null) {
                     _deleteError.value = DroneDeleteError.Validation(validationError)
-                    return@launch
+                    return@launchCatchingStorageErrors
                 }
 
                 // 연결된 도형 처리
@@ -255,7 +256,7 @@ class DroneViewModel @Inject constructor(
         }
 
         _showDroneDetail.value = true
-        viewModelScope.launch {
+        viewModelScope.launchCatchingStorageErrors {
             _selectedDrone.value = droneRepository.getDroneById(currentDrone.id) ?: currentDrone
         }
     }

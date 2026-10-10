@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.weather
 
+import com.ScienceFiction.DronePassAndroid.core.util.launchCatchingStorageErrors
 import androidx.annotation.StringRes
 import com.ScienceFiction.DronePassAndroid.R
 import androidx.datastore.core.DataStore
@@ -135,7 +136,7 @@ class WeatherViewModel @Inject constructor(
         // 초기 1회 로드만 init 에서. 자동 갱신은 화면이 START 될 때만 시작.
         refreshWeather(showRefreshMessage = false)
         // 위치 동의·철회 즉시 기준 위치를 바꿔 다시 불러온다(철회하면 기기 위치 사용을 바로 멈춘다).
-        viewModelScope.launch {
+        viewModelScope.launchCatchingStorageErrors {
             locationConsentRepository.allowed(LocationPurpose.WEATHER_AND_SUN).drop(1).collect {
                 weatherRepository.invalidateCache()
                 fetchCurrentLocationAndWeather()
@@ -150,7 +151,7 @@ class WeatherViewModel @Inject constructor(
      * WeatherInfoView 의 설명용 선택 메뉴에서는 저장값만 바꾼다.
      */
     fun setCategory(category: DroneCategory, refreshWeather: Boolean = true) {
-        viewModelScope.launch {
+        viewModelScope.launchCatchingStorageErrors {
             dataStore.edit { preferences ->
                 preferences[WeatherDroneCategoryPreferenceKey] = category.iosRawValue
                 preferences.remove(LegacyWeatherDroneCategoryPreferenceKey)
@@ -173,7 +174,7 @@ class WeatherViewModel @Inject constructor(
      * "위치 권한이 필요합니다" 가 남는다.
      */
     fun refreshAfterLocationPermissionGranted() {
-        viewModelScope.launch { fetchCurrentLocationAndWeather() }
+        viewModelScope.launchCatchingStorageErrors { fetchCurrentLocationAndWeather() }
     }
 
     /**
@@ -181,7 +182,7 @@ class WeatherViewModel @Inject constructor(
      */
     fun refreshWeather(showRefreshMessage: Boolean = true) {
         analyticsLogger.logWeatherViewed()
-        viewModelScope.launch {
+        viewModelScope.launchCatchingStorageErrors {
             weatherRepository.invalidateCache()
             fetchCurrentLocationAndWeather()
             if (showRefreshMessage) {
@@ -199,7 +200,7 @@ class WeatherViewModel @Inject constructor(
      */
     fun startAutoRefresh() {
         if (autoRefreshJob?.isActive == true) return
-        autoRefreshJob = viewModelScope.launch {
+        autoRefreshJob = viewModelScope.launchCatchingStorageErrors {
             fetchCurrentLocationAndWeather()
             while (isActive) {
                 delay(WeatherAutoRefreshIntervalMs)

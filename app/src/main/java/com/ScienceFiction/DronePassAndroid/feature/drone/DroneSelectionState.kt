@@ -1,5 +1,7 @@
 package com.ScienceFiction.DronePassAndroid.feature.drone
 
+import com.ScienceFiction.DronePassAndroid.core.util.launchCatchingStorageErrors
+import com.ScienceFiction.DronePassAndroid.core.util.isRecoverableStorageError
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.Preferences
@@ -63,9 +65,13 @@ class DroneSelectionState private constructor(
     init {
         if (loadPersistedSelection) dataStore?.let { store ->
             scope.launch {
-                val savedSelection = store.data
-                    .map(::storedDroneSelection)
-                    .first()
+                // 읽지 못하면(저장소 오류) 저장값이 없는 것처럼 진행한다. 멈추면 드론 목록 반영이 영원히 보류돼 도형이 모두 숨었다.
+                val savedSelection = try {
+                    store.data.map(::storedDroneSelection).first()
+                } catch (e: Exception) {
+                    if (!isRecoverableStorageError(e)) throw e
+                    StoredDroneSelection(null, null)
+                }
                 onPersistedSelectionLoaded(savedSelection)
             }
         }
@@ -236,7 +242,7 @@ class DroneSelectionState private constructor(
 
     private fun saveSelectedDroneIds(ids: Set<String>) {
         val store = dataStore ?: return
-        scope.launch {
+        scope.launchCatchingStorageErrors {
             store.edit { preferences ->
                 preferences.writeDroneSelectedIds(ids)
             }
@@ -246,7 +252,7 @@ class DroneSelectionState private constructor(
     /** 계정 전환: 저장값을 지워 새 계정의 첫 로드가 전체 선택으로 시작하게 한다. */
     private fun clearSavedSelectedDroneIds() {
         val store = dataStore ?: return
-        scope.launch {
+        scope.launchCatchingStorageErrors {
             store.edit { preferences ->
                 preferences.remove(DroneSelectionPreferenceKeys.SELECTED_DRONE_IDS)
                 preferences.remove(DroneSelectionPreferenceKeys.LEGACY_SELECTED_DRONE_IDS)
@@ -256,7 +262,7 @@ class DroneSelectionState private constructor(
 
     private fun saveSelectedDroneId(id: String?) {
         val store = dataStore ?: return
-        scope.launch {
+        scope.launchCatchingStorageErrors {
             store.edit { preferences ->
                 preferences.writeDroneSelectedDroneId(id)
             }

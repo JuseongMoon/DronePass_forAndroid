@@ -1,5 +1,7 @@
 package com.ScienceFiction.DronePassAndroid
 
+import com.ScienceFiction.DronePassAndroid.core.util.launchCatchingStorageErrors
+import com.ScienceFiction.DronePassAndroid.core.util.StorageErrorBus
 import android.Manifest
 import android.content.Context
 import android.content.Intent
@@ -90,6 +92,10 @@ class MainActivity : ComponentActivity() {
             LaunchedEffect(subscriptionManager) {
                 subscriptionManager.messages.collect { subscriptionMessage = it }
             }
+            var showStorageError by remember { mutableStateOf(false) }
+            LaunchedEffect(Unit) {
+                StorageErrorBus.events.collect { showStorageError = true }
+            }
             // 구매 직후 계약 내용을 시트로 보여 준다(사양 v2 C-5).
             var showPurchaseContract by remember { mutableStateOf(false) }
             LaunchedEffect(subscriptionManager) {
@@ -129,6 +135,13 @@ class MainActivity : ComponentActivity() {
                     LocationConsentScreen(
                         onAgree = legalLaunchViewModel::agreeLocationConsent,
                         onDecline = legalLaunchViewModel::declineLocationConsent,
+                    )
+                }
+                if (showStorageError) {
+                    AlertDialog(
+                        onDismissRequest = { showStorageError = false },
+                        text = { Text(getString(R.string.storage_error_message)) },
+                        confirmButton = { TextButton(onClick = { showStorageError = false }) { Text(getString(R.string.common_confirm)) } },
                     )
                 }
                 subscriptionMessage?.let { message ->
@@ -172,7 +185,7 @@ class MainActivity : ComponentActivity() {
     private fun requestLaunchNotificationPermissionIfNeeded() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
 
-        lifecycleScope.launch {
+        lifecycleScope.launchCatchingStorageErrors {
             // 지도 화면의 위치 권한 요청이 끝난 뒤에 묻는다. 동시에 요청하면 이 요청이 버려진다.
             LaunchPermissionSequence.locationRequestSettled.first { it }
             val alreadyRequested = dataStore.data

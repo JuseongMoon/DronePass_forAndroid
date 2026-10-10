@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.settings
 
+import com.ScienceFiction.DronePassAndroid.core.util.launchCatchingStorageErrors
 import android.content.Context
 import android.util.Log
 import androidx.datastore.core.DataStore
@@ -150,12 +151,12 @@ class SettingsViewModel @Inject constructor(
         initializeKoreaFeaturesSetting()
         checkAuthState()
         // 다른 곳에서 로그아웃돼도(다른 기기 탈퇴 정리, 세션 만료 등) 설정 첫 줄이 "로그인 / 회원가입"으로 바뀌게 따라간다.
-        viewModelScope.launch {
+        viewModelScope.launchCatchingStorageErrors {
             authRepository.signedInUser.collect { user -> _authState.value = authStateFor(user) }
         }
         // iOS settings.kp.current 정합 — 화면 진입 시 강제 갱신된 Kp 값 표시.
         // KpViewModel 가 떠있지 않은 경우(설정만 단독 진입) 에도 currentKpFlow 가 채워지도록 1회 호출.
-        viewModelScope.launch {
+        viewModelScope.launchCatchingStorageErrors {
             runCatching { kpIndexRepository.getCurrentKp(forceRefresh = true) }
         }
     }
@@ -174,7 +175,7 @@ class SettingsViewModel @Inject constructor(
      * ON/OFF 전이 시 MapViewModel 이 visibleLayers 를 모두 해제한다.
      */
     fun toggleKoreaFeatures(value: Boolean) {
-        viewModelScope.launch {
+        viewModelScope.launchCatchingStorageErrors {
             dataStore.edit { preferences ->
                 preferences[SettingsPreferenceKeys.KOREA_FEATURES_ENABLED] = value
                 preferences.remove(SettingsPreferenceKeys.LEGACY_KOREA_FEATURES_ENABLED)
@@ -183,7 +184,7 @@ class SettingsViewModel @Inject constructor(
     }
 
     private fun initializeKoreaFeaturesSetting() {
-        viewModelScope.launch {
+        viewModelScope.launchCatchingStorageErrors {
             dataStore.edit { preferences ->
                 if (preferences[SettingsPreferenceKeys.KOREA_FEATURES_ENABLED] == null) {
                     val legacyValue = preferences[SettingsPreferenceKeys.LEGACY_KOREA_FEATURES_ENABLED]
@@ -211,7 +212,7 @@ class SettingsViewModel @Inject constructor(
      * 만료 도형 숨기기 토글
      */
     fun toggleHideExpiredShapes(value: Boolean) {
-        viewModelScope.launch {
+        viewModelScope.launchCatchingStorageErrors {
             dataStore.edit { preferences ->
                 preferences[SettingsPreferenceKeys.HIDE_EXPIRED_SHAPES] = value
                 preferences.remove(SettingsPreferenceKeys.LEGACY_HIDE_EXPIRED_SHAPES)
@@ -223,7 +224,7 @@ class SettingsViewModel @Inject constructor(
      * 시작 전 도형 숨기기 토글
      */
     fun toggleHideNotStartedShapes(value: Boolean) {
-        viewModelScope.launch {
+        viewModelScope.launchCatchingStorageErrors {
             dataStore.edit { preferences ->
                 preferences[SettingsPreferenceKeys.HIDE_NOT_STARTED_SHAPES] = value
                 preferences.remove(SettingsPreferenceKeys.LEGACY_HIDE_NOT_STARTED_SHAPES)
@@ -235,7 +236,7 @@ class SettingsViewModel @Inject constructor(
      * 화면 항상 켜기 토글
      */
     fun toggleKeepScreenAwake(value: Boolean) {
-        viewModelScope.launch {
+        viewModelScope.launchCatchingStorageErrors {
             dataStore.edit { preferences ->
                 preferences[SettingsPreferenceKeys.KEEP_SCREEN_AWAKE] = value
                 preferences.remove(SettingsPreferenceKeys.LEGACY_KEEP_SCREEN_AWAKE)
@@ -247,7 +248,7 @@ class SettingsViewModel @Inject constructor(
      * 일출 알림 토글
      */
     fun toggleSunriseAlarm(value: Boolean) {
-        viewModelScope.launch {
+        viewModelScope.launchCatchingStorageErrors {
             dataStore.edit { preferences ->
                 preferences[NotificationPreferenceKeys.SUNRISE_ALARM_ENABLED] = value
                 preferences.remove(NotificationPreferenceKeys.LEGACY_SUNRISE_ALARM_ENABLED)
@@ -264,7 +265,7 @@ class SettingsViewModel @Inject constructor(
      * 일몰 알림 토글
      */
     fun toggleSunsetAlarm(value: Boolean) {
-        viewModelScope.launch {
+        viewModelScope.launchCatchingStorageErrors {
             dataStore.edit { preferences ->
                 preferences[NotificationPreferenceKeys.SUNSET_ALARM_ENABLED] = value
                 preferences.remove(NotificationPreferenceKeys.LEGACY_SUNSET_ALARM_ENABLED)
@@ -352,7 +353,7 @@ class SettingsViewModel @Inject constructor(
      * 종료일 알림 토글
      */
     fun toggleEndDateAlarm(value: Boolean) {
-        viewModelScope.launch {
+        viewModelScope.launchCatchingStorageErrors {
             dataStore.edit { preferences ->
                 preferences[NotificationPreferenceKeys.END_DATE_ALARM_ENABLED] = value
                 preferences.remove(NotificationPreferenceKeys.LEGACY_END_DATE_ALARM_ENABLED)
@@ -369,7 +370,7 @@ class SettingsViewModel @Inject constructor(
      * 만료된 도형 전체 삭제
      */
     fun deleteAllExpiredShapes() {
-        viewModelScope.launch {
+        viewModelScope.launchCatchingStorageErrors {
             try {
                 shapeRepository.deleteExpiredShapes()
             } catch (e: Exception) {

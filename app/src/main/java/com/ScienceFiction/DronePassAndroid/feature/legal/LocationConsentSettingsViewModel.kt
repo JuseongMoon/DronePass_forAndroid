@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.legal
 
+import com.ScienceFiction.DronePassAndroid.core.util.launchCatchingStorageErrors
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ScienceFiction.DronePassAndroid.app.LocationConsentPrompt
@@ -42,7 +43,7 @@ class LocationConsentSettingsViewModel @Inject constructor(
 
     /** 토글 끄기(확인 후): 그 목적만 철회하고 그 목적의 기록(기기·서버)과 캐시 위치를 지운다. */
     fun withdraw(purpose: LocationPurpose) {
-        viewModelScope.launch {
+        viewModelScope.launchCatchingStorageErrors {
             consentRepository.withdraw(purpose)
             usageUploader.syncAsync()
         }
@@ -50,6 +51,6 @@ class LocationConsentSettingsViewModel @Inject constructor(
 
     /** 이용 기록 화면을 열 때 설치 ID 를 준비한다. */
     fun loadInstallId() {
-        viewModelScope.launch { _installId.value = consentRepository.installId() }
+        viewModelScope.launchCatchingStorageErrors { _installId.value = consentRepository.installId() }
     }
 }

@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.map
 
+import com.ScienceFiction.DronePassAndroid.core.util.launchCatchingStorageErrors
 import com.ScienceFiction.DronePassAndroid.core.location.LocationConsentRepository
 import com.ScienceFiction.DronePassAndroid.core.location.LocationPurpose
 import com.ScienceFiction.DronePassAndroid.core.location.LocationRecipient
@@ -327,8 +328,8 @@ class MapViewModel @Inject constructor(
     init {
         // 공공기관 연락처 사전로딩 (5일 캐시, 실패해도 무시 — 오프라인 fallback 내장).
         // 사전협의/국립공원 상세 시트에서 기관명으로 lookup 한다.
-        viewModelScope.launch { vWorldContactManager.ensureLoaded() }
-        viewModelScope.launch { ensureDefaultDroneIfNeeded() }
+        viewModelScope.launchCatchingStorageErrors { vWorldContactManager.ensureLoaded() }
+        viewModelScope.launchCatchingStorageErrors { ensureDefaultDroneIfNeeded() }
         // 한국 특화 기능 변경 시 레이어 해제는 koreaFeaturesEnabled 선언 후의
         // 두 번째 init 블록에서 처리한다 (참조 순서 NPE 방지).
     }
@@ -391,7 +392,7 @@ class MapViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     init {
-        viewModelScope.launch {
+        viewModelScope.launchCatchingStorageErrors {
             activeDrones.collect { drones ->
                 droneSelectionState.syncActiveDrones(drones)
                 migrateLegacyShapesIfNeeded(drones)
@@ -554,7 +555,7 @@ class MapViewModel @Inject constructor(
         _selectedShapeId.value = action.shapeId
         _showShapeDetail.value = action.showShapeDetail
         if (action.requestSavedListFocus) {
-            viewModelScope.launch {
+            viewModelScope.launchCatchingStorageErrors {
                 _savedShapeFocusEvent.emit(action.shapeId)
             }
         }
@@ -596,8 +597,8 @@ class MapViewModel @Inject constructor(
      * iOS plusButtonView 와 동일하게 지도 중심 좌표만 넘기고 주소는 비워둔다.
      */
     fun onCreateShapeRequested(coordinate: Coordinate) {
-        viewModelScope.launch {
-            if (!subscriptionManager.allow(QuotaAction.CREATE_SHAPE, "shape_create")) return@launch
+        viewModelScope.launchCatchingStorageErrors {
+            if (!subscriptionManager.allow(QuotaAction.CREATE_SHAPE, "shape_create")) return@launchCatchingStorageErrors
             openNewShapeAtCoordinate(coordinate)
         }
     }
@@ -616,8 +617,8 @@ class MapViewModel @Inject constructor(
      * iOS MainView.handleLongPress 처럼 역지오코딩 후 확인창을 거쳐 편집 시트를 연다.
      */
     fun onCreateShapeAtCoordinate(coordinate: Coordinate) {
-        viewModelScope.launch {
-            if (!subscriptionManager.allow(QuotaAction.CREATE_SHAPE, "shape_create")) return@launch
+        viewModelScope.launchCatchingStorageErrors {
+            if (!subscriptionManager.allow(QuotaAction.CREATE_SHAPE, "shape_create")) return@launchCatchingStorageErrors
             prepareNewShapeAtCoordinate(coordinate)
         }
     }
@@ -636,19 +637,19 @@ class MapViewModel @Inject constructor(
         coordinate: Coordinate,
         requestGeneration: Long,
     ) {
-        viewModelScope.launch {
+        viewModelScope.launchCatchingStorageErrors {
             val result = geocodingRepository.reverseGeocode(
                 latitude = coordinate.latitude,
                 longitude = coordinate.longitude
             )
             result.onSuccess { address ->
-                if (requestGeneration != pendingNewShapeRequestGeneration) return@launch
+                if (requestGeneration != pendingNewShapeRequestGeneration) return@launchCatchingStorageErrors
                 _pendingNewShapeRequest.value = pendingNewShapeRequestForReverseGeocodeResult(
                     coordinate = coordinate,
                     address = address,
                 )
             }.onFailure { error ->
-                if (requestGeneration != pendingNewShapeRequestGeneration) return@launch
+                if (requestGeneration != pendingNewShapeRequestGeneration) return@launchCatchingStorageErrors
                 Log.e(TAG, "역지오코딩 실패: ${error.message}", error)
                 _pendingNewShapeRequest.value = pendingNewShapeRequestForReverseGeocodeResult(
                     coordinate = coordinate,
@@ -710,8 +711,8 @@ class MapViewModel @Inject constructor(
         shape: ShapeModel,
         returnToDetailAfterDismiss: Boolean = false,
     ) {
-        viewModelScope.launch {
-            if (!subscriptionManager.allow(QuotaAction.DUPLICATE_SHAPE, "shape_duplicate")) return@launch
+        viewModelScope.launchCatchingStorageErrors {
+            if (!subscriptionManager.allow(QuotaAction.DUPLICATE_SHAPE, "shape_duplicate")) return@launchCatchingStorageErrors
             openDuplicateShape(shape, returnToDetailAfterDismiss)
         }
     }
@@ -736,7 +737,7 @@ class MapViewModel @Inject constructor(
         originalShapeAtEditStart: ShapeModel? = null,
         onFailure: (String) -> Unit = {},
     ) {
-        viewModelScope.launch {
+        viewModelScope.launchCatchingStorageErrors {
             try {
                 val latestShape = if (!isDuplicate && originalShapeAtEditStart != null) {
                     shapeRepository.getShapeById(originalShapeAtEditStart.id)
@@ -752,7 +753,7 @@ class MapViewModel @Inject constructor(
                 if (isDuplicate || originalShapeAtEditStart == null) {
                     val action = if (isDuplicate) QuotaAction.DUPLICATE_SHAPE else QuotaAction.CREATE_SHAPE
                     val source = if (isDuplicate) "shape_duplicate" else "shape_create"
-                    if (!subscriptionManager.withCreationPermit(action, source) { shapeRepository.insertShape(updatedShape) }) return@launch
+                    if (!subscriptionManager.withCreationPermit(action, source) { shapeRepository.insertShape(updatedShape) }) return@launchCatchingStorageErrors
                 } else {
                     shapeRepository.insertShape(updatedShape)
                 }
@@ -809,7 +810,7 @@ class MapViewModel @Inject constructor(
     }
 
     fun saveShapeEditDefaults(defaults: ShapeEditDefaults) {
-        viewModelScope.launch {
+        viewModelScope.launchCatchingStorageErrors {
             dataStore.edit { preferences ->
                 preferences.writeShapeEditDefaults(defaults)
             }
@@ -817,7 +818,7 @@ class MapViewModel @Inject constructor(
     }
 
     fun setShapeEditDateOnlyMode(isDateOnly: Boolean) {
-        viewModelScope.launch {
+        viewModelScope.launchCatchingStorageErrors {
             dataStore.edit { preferences ->
                 preferences.writeShapeEditDateOnlyMode(isDateOnly)
             }
@@ -829,7 +830,7 @@ class MapViewModel @Inject constructor(
      * 삭제 후 선택 상태와 시트를 모두 초기화
      */
     fun deleteShape(shape: ShapeModel) {
-        viewModelScope.launch {
+        viewModelScope.launchCatchingStorageErrors {
             shapeRepository.softDeleteShape(shape)
             analyticsLogger.logShapeDeleted()
             returnToShapeDetailAfterEditSave = false
@@ -857,7 +858,7 @@ class MapViewModel @Inject constructor(
             skipIfAlreadyFocused = skipIfAlreadyFocused,
         ) ?: return
 
-        viewModelScope.launch {
+        viewModelScope.launchCatchingStorageErrors {
             _cameraEvent.emit(event)
         }
     }
@@ -1060,8 +1061,8 @@ class MapViewModel @Inject constructor(
 
     // koreaFeaturesEnabled 와 FlightZone 상태 Flow 들이 모두 초기화된 뒤 시작한다.
     init {
-        viewModelScope.launch { loadVisibleLayersFromStorage() }
-        viewModelScope.launch {
+        viewModelScope.launchCatchingStorageErrors { loadVisibleLayersFromStorage() }
+        viewModelScope.launchCatchingStorageErrors {
             koreaFeaturesEnabled
                 .drop(1)
                 .distinctUntilChanged()
@@ -1070,7 +1071,7 @@ class MapViewModel @Inject constructor(
     }
 
     @OptIn(FlowPreview::class)
-    private val flightZoneLoadCollector: Job = viewModelScope.launch {
+    private val flightZoneLoadCollector: Job = viewModelScope.launchCatchingStorageErrors {
         combine(_visibleLayers, _currentMapBounds, koreaFeaturesEnabled) { layers, bounds, enabled ->
             Triple(layers, bounds, enabled)
         }
@@ -1141,7 +1142,7 @@ class MapViewModel @Inject constructor(
         )
         _visibleLayers.value = resolvedLayers
         _flightZones.update { current -> filterFlightZoneCacheForVisibleLayers(current, resolvedLayers) }
-        viewModelScope.launch { saveVisibleLayersToStorage(resolvedLayers) }
+        viewModelScope.launchCatchingStorageErrors { saveVisibleLayersToStorage(resolvedLayers) }
     }
 
     private suspend fun loadVisibleLayersFromStorage() {
@@ -1225,7 +1226,7 @@ class MapViewModel @Inject constructor(
 
     /** 지도에 현재 위치를 띄울 때 확인자료를 남긴다(같은 시간은 한 건). 위치를 누구에게도 보내지 않는다. */
     fun onDeviceLocationShown() {
-        viewModelScope.launch {
+        viewModelScope.launchCatchingStorageErrors {
             locationConsentRepository.recordUsage(
                 LocationUsage(LocationUsagePurpose.CURRENT_LOCATION_ON_MAP, LocationRecipient.NONE),
             )
@@ -1237,7 +1238,7 @@ class MapViewModel @Inject constructor(
      * [followsDeviceLocation] 이면(카메라가 기기 위치를 따라간 경우) 기록하지 않는다.
      */
     fun onMapCenterSettled(center: Coordinate, followsDeviceLocation: Boolean) {
-        viewModelScope.launch { mapCenterStore.onMapCenterChanged(center, followsDeviceLocation) }
+        viewModelScope.launchCatchingStorageErrors { mapCenterStore.onMapCenterChanged(center, followsDeviceLocation) }
     }
 
     /** 현재 위치 표시 동의가 없을 때 첫 지도 위치: 마지막으로 본 지도 위치, 없으면 서울시청. */

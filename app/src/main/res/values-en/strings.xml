@@ -4,6 +4,7 @@
     <!-- Common -->
     <string name="common_cancel">Cancel</string>
     <string name="common_confirm">OK</string>
+    <string name="storage_error_message">Couldn\'t save because device storage is full or unavailable. Free up some space and try again.</string>
     <string name="common_save">Save</string>
     <string name="common_delete">Delete</string>
     <string name="common_edit">Edit</string>
