@@ -102,7 +102,7 @@ fun SubscriptionPaywall(
     var document by remember { mutableStateOf<String?>(null) }
     var showLogin by remember { mutableStateOf(false) }
     var isRestoring by remember { mutableStateOf(false) }
-    var restoreNotFound by remember { mutableStateOf(false) }
+    var restoreMessageRes by remember { mutableStateOf<Int?>(null) }
     val context = LocalContext.current
     val isPro = status.entitlement == EntitlementState.PRO
 
@@ -275,10 +275,10 @@ fun SubscriptionPaywall(
                             enabled = !isRestoring,
                             onClick = {
                                 isRestoring = true
-                                manager.restore { restored ->
+                                manager.restore { result ->
                                     isRestoring = false
-                                    if (!restored) {
-                                        restoreNotFound = true
+                                    if (result != RestoreResult.RESTORED) {
+                                        restoreMessageRes = restoreResultMessageRes(result)
                                     } else if (request.limitKind != null) {
                                         // iOS: 한도 때문에 뜬 페이월은 복원 성공 시 닫는다.
                                         onDismiss()
@@ -341,13 +341,13 @@ fun SubscriptionPaywall(
             )
         }
     }
-    if (restoreNotFound) {
+    restoreMessageRes?.let { messageRes ->
         AlertDialog(
-            onDismissRequest = { restoreNotFound = false },
+            onDismissRequest = { restoreMessageRes = null },
             title = { Text(stringResource(R.string.subscription_pro)) },
-            text = { Text(stringResource(R.string.subscription_restore_not_found)) },
+            text = { Text(stringResource(messageRes)) },
             confirmButton = {
-                TextButton(onClick = { restoreNotFound = false }) { Text(stringResource(R.string.common_confirm)) }
+                TextButton(onClick = { restoreMessageRes = null }) { Text(stringResource(R.string.common_confirm)) }
             },
         )
     }

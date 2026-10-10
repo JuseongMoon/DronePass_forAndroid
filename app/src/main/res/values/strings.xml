@@ -889,6 +889,7 @@
     <string name="subscription_billing_retry_message">결제에 문제가 있어 구독이 일시 중지되었습니다. 결제 정보를 확인해 주세요.</string>
     <string name="subscription_restore_success">구독이 복원되었습니다.</string>
     <string name="subscription_restore_not_found">복원할 구독을 찾지 못했습니다.</string>
+    <string name="subscription_restore_failed">Google Play에 연결하지 못해 구독을 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.</string>
     <string name="sketch_quota_counter">선 %1$d / %2$d</string>
     <string name="sketch_quota_upgrade">Pro 보기</string>
     <string name="sketch_quota_blocked">무료 플랜은 선을 %1$d개까지 그릴 수 있습니다. 기존 선을 지우거나 Pro로 업그레이드하세요.</string>

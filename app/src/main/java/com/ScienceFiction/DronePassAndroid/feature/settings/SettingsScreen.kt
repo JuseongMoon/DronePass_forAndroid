@@ -1,4 +1,5 @@
 package com.ScienceFiction.DronePassAndroid.feature.settings
+import com.ScienceFiction.DronePassAndroid.subscription.restoreResultMessageRes
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.foundation.lazy.rememberLazyListState
 import com.ScienceFiction.DronePassAndroid.ui.component.IosMenuDivider
@@ -334,13 +335,9 @@ private fun SettingsMainContent(
                         enabled = !isRestoringPurchases,
                         onClick = {
                             isRestoringPurchases = true
-                            settingsViewModel.subscriptionManager.restore { restored ->
+                            settingsViewModel.subscriptionManager.restore { result ->
                                 isRestoringPurchases = false
-                                restoreResultRes = if (restored) {
-                                    R.string.subscription_restore_success
-                                } else {
-                                    R.string.subscription_restore_not_found
-                                }
+                                restoreResultRes = restoreResultMessageRes(result)
                             }
                         },
                         trailing = if (isRestoringPurchases) {

@@ -878,6 +878,7 @@
     <string name="subscription_billing_retry_message">Your subscription is paused due to a billing issue. Please check your payment information.</string>
     <string name="subscription_restore_success">Your subscription has been restored.</string>
     <string name="subscription_restore_not_found">No subscription to restore was found.</string>
+    <string name="subscription_restore_failed">Couldn\'t reach Google Play to check your subscription. Please try again in a moment.</string>
     <string name="sketch_quota_counter">Lines %1$d / %2$d</string>
     <string name="sketch_quota_upgrade">Go Pro</string>
     <string name="sketch_quota_blocked">The free plan includes up to %1$d lines. Erase lines or upgrade to Pro.</string>

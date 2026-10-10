@@ -96,6 +96,8 @@ class SubscriptionManager @Inject constructor(
     private var currentRemoteMinimum: String? = null
     private var usageLoaded = false
     private var connecting = false
+    /** 결제 연결 전에 누른 구매 복원. 연결이 끝나면 조회해 답하고, 실패하면 오류로 답한다. */
+    private val pendingRestoreCallbacks = mutableListOf<(RestoreResult) -> Unit>()
 
     private val _status = MutableStateFlow(PlanStatus())
     val status: StateFlow<PlanStatus> = _status.asStateFlow()
@@ -215,23 +217,30 @@ class SubscriptionManager @Inject constructor(
             override fun onBillingSetupFinished(result: BillingResult) {
                 connecting = false
                 if (result.responseCode == BillingClient.BillingResponseCode.OK) {
-                    refreshPurchases()
+                    val waiting = drainPendingRestoreCallbacks()
+                    refreshPurchases(waiting.takeIf { it.isNotEmpty() }?.let { callbacks -> { result -> callbacks.forEach { it(result) } } })
                     queryProduct()
                 } else {
                     _isLoadingProducts.value = false
+                    drainPendingRestoreCallbacks().forEach { it(RestoreResult.FAILED) }
                 }
             }
             override fun onBillingServiceDisconnected() {
                 connecting = false
                 _isLoadingProducts.value = false
+                drainPendingRestoreCallbacks().forEach { it(RestoreResult.FAILED) }
             }
         })
     }
 
-    fun refreshPurchases(onRestored: ((Boolean) -> Unit)? = null) {
+    private fun drainPendingRestoreCallbacks(): List<(RestoreResult) -> Unit> =
+        pendingRestoreCallbacks.toList().also { pendingRestoreCallbacks.clear() }
+
+    fun refreshPurchases(onRestored: ((RestoreResult) -> Unit)? = null) {
         if (!billing.isReady) {
+            // 연결 전에 "구독 없음"으로 답하면 구독이 있어도 없다고 안내했다. 연결을 기다린다.
+            onRestored?.let(pendingRestoreCallbacks::add)
             connectBilling()
-            onRestored?.invoke(false)
             return
         }
         val generation = queryGeneration.incrementAndGet()
@@ -241,12 +250,15 @@ class SubscriptionManager @Inject constructor(
             .includeSuspendedSubscriptions(true)
             .build()
         billing.queryPurchasesAsync(params) { result, purchases ->
-            if (generation != queryGeneration.get() || uid != currentUid) return@queryPurchasesAsync
+            // 다른 조회가 뒤에 시작됐으면 상태 반영은 그쪽에 맡기되, 복원 결과는 이 조회로 답한다.
+            // 답하지 않으면 복원 버튼의 진행 표시가 멈춘 채 남았다.
+            val isLatest = generation == queryGeneration.get() && uid == currentUid
             if (result.responseCode == BillingClient.BillingResponseCode.OK) {
-                applyPurchases(purchases, generation, fromPurchaseFlow = false)
-                onRestored?.invoke(purchases.any { PRODUCT_ID in it.products && it.purchaseState == Purchase.PurchaseState.PURCHASED && !it.isSuspended })
+                if (isLatest) applyPurchases(purchases, generation, fromPurchaseFlow = false)
+                val restored = purchases.any { PRODUCT_ID in it.products && it.purchaseState == Purchase.PurchaseState.PURCHASED && !it.isSuspended }
+                onRestored?.invoke(if (restored) RestoreResult.RESTORED else RestoreResult.NOT_FOUND)
             } else {
-                onRestored?.invoke(false)
+                onRestored?.invoke(RestoreResult.FAILED)
             }
         }
     }
@@ -372,12 +384,12 @@ class SubscriptionManager @Inject constructor(
         if (result.responseCode != BillingClient.BillingResponseCode.OK) analytics.logPurchaseFail(source, "error")
     }
 
-    /** [onResult] 는 복원된 구독이 있으면 true (iOS SettingView 의 복원 결과 알림용). */
-    fun restore(onResult: ((Boolean) -> Unit)? = null) {
+    /** [onResult] 는 복원 결과(iOS SettingView 의 복원 결과 알림용). 결제 연결·조회 실패는 [RestoreResult.FAILED]. */
+    fun restore(onResult: ((RestoreResult) -> Unit)? = null) {
         analytics.logRestoreTap()
-        refreshPurchases { restored ->
-            analytics.logRestoreResult(restored)
-            onResult?.invoke(restored)
+        refreshPurchases { result ->
+            analytics.logRestoreResult(result == RestoreResult.RESTORED)
+            onResult?.invoke(result)
         }
     }
 
@@ -477,4 +489,13 @@ class SubscriptionManager @Inject constructor(
             }
         }
     }
+}
+
+enum class RestoreResult { RESTORED, NOT_FOUND, FAILED }
+
+/** 복원 결과 안내 문구. 연결·조회 실패를 "구독 없음"으로 안내하지 않는다. */
+fun restoreResultMessageRes(result: RestoreResult): Int = when (result) {
+    RestoreResult.RESTORED -> com.ScienceFiction.DronePassAndroid.R.string.subscription_restore_success
+    RestoreResult.NOT_FOUND -> com.ScienceFiction.DronePassAndroid.R.string.subscription_restore_not_found
+    RestoreResult.FAILED -> com.ScienceFiction.DronePassAndroid.R.string.subscription_restore_failed
 }
