@@ -360,7 +360,8 @@ internal fun buildShapeEditSavedShape(
     )
     return baseShape.copy(
         id = if (isDuplicateMode) generatedId else (originalShape?.id ?: generatedId),
-        title = title.ifEmpty { defaultTitle },
+        // 공백뿐인 제목은 계정에 올라가지 않아(서버 검증) 빈 제목처럼 기본 제목을 쓴다.
+        title = title.ifBlank { defaultTitle },
         shapeType = geometry.shapeType,
         baseCoordinate = geometry.baseCoordinate,
         radius = geometry.radius,

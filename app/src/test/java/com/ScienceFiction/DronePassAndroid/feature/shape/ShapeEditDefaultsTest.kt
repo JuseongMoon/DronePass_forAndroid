@@ -852,7 +852,7 @@ class ShapeEditDefaultsTest {
     }
 
     @Test
-    fun `도형 저장은 iOS처럼 공백 제목 메모 주소를 값으로 보존한다`() {
+    fun `도형 저장은 공백 제목만 기본 제목으로 바꾸고 메모 주소는 값으로 보존한다`() {
         val saved = buildShapeEditSavedShape(
             originalShape = null,
             isDuplicateMode = false,
@@ -872,7 +872,8 @@ class ShapeEditDefaultsTest {
             now = 5_000L,
         )
 
-        assertEquals("   ", saved.title)
+        // 공백 제목은 계정에 올라가지 않아 기본 제목을 쓴다.
+        assertEquals("새 도형", saved.title)
         assertEquals("   ", saved.memo)
         assertEquals("   ", saved.address)
     }

@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.core.account
 
+import com.ScienceFiction.DronePassAndroid.R
 import android.app.Activity
 import android.content.Context
 import android.util.Log
@@ -714,11 +715,19 @@ class AccountSessionFlows @Inject constructor(
         shapes: List<ShapeModel>,
         sketches: List<SketchModel>,
     ) {
-        if (drones.isNotEmpty()) droneStore.saveDrones(ticket, drones)
-        if (shapes.isNotEmpty()) shapeStore.saveShapes(ticket, shapes)
-        if (drones.isNotEmpty() || shapes.isNotEmpty()) shapeStore.updateServerMetadata(ticket)
-        if (sketches.isNotEmpty()) {
-            sketchStore.saveSketches(ticket, sketches)
+        val batch = prepareAccountUpload(
+            drones = drones,
+            shapes = shapes,
+            sketches = sketches,
+            defaultShapeTitle = context.getString(R.string.shape_edit_default_title),
+            defaultDroneName = context.getString(R.string.drone_edit_default_name_first),
+        )
+        if (batch.skippedCount > 0) Log.w(TAG, "서버 검증을 통과하지 못한 항목 ${batch.skippedCount}개는 올리지 않습니다")
+        if (batch.drones.isNotEmpty()) droneStore.saveDrones(ticket, batch.drones)
+        if (batch.shapes.isNotEmpty()) shapeStore.saveShapes(ticket, batch.shapes)
+        if (batch.drones.isNotEmpty() || batch.shapes.isNotEmpty()) shapeStore.updateServerMetadata(ticket)
+        if (batch.sketches.isNotEmpty()) {
+            sketchStore.saveSketches(ticket, batch.sketches)
             sketchStore.updateServerMetadata(ticket)
         }
     }
