@@ -1,9 +1,11 @@
 package com.ScienceFiction.DronePassAndroid.app
 
 import android.app.Application
+import android.content.Context
 import com.ScienceFiction.DronePassAndroid.core.account.AccountSessionFlows
 import com.ScienceFiction.DronePassAndroid.core.account.clearFirestorePersistenceIfNeeded
 import com.ScienceFiction.DronePassAndroid.feature.settings.initializeAppLanguage
+import com.ScienceFiction.DronePassAndroid.feature.settings.localizedAppLanguageContext
 import com.ScienceFiction.DronePassAndroid.feature.settings.storedAppLanguageTag
 import com.ScienceFiction.DronePassAndroid.service.FcmService
 import com.ScienceFiction.DronePassAndroid.service.NotificationScheduleRestorer
@@ -25,6 +27,14 @@ class DronePassApplication : Application() {
 
     @Inject lateinit var notificationScheduleRestorer: NotificationScheduleRestorer
     @Inject lateinit var accountSessionFlows: AccountSessionFlows
+
+    /**
+     * 앱 언어를 Application 리소스에도 적용한다. Android 12 이하는 앱별 언어를 시스템이 처리하지 않고
+     * MainActivity 만 언어를 씌워, @ApplicationContext 로 만드는 알림·안내 문구가 시스템 언어로 나왔다.
+     */
+    override fun attachBaseContext(base: Context) {
+        super.attachBaseContext(localizedAppLanguageContext(base))
+    }
 
     override fun onCreate() {
         super.onCreate()

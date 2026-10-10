@@ -4,6 +4,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
+import com.ScienceFiction.DronePassAndroid.feature.settings.localizedAppLanguageContext
 import android.content.SharedPreferences
 import android.content.pm.PackageInfo
 import android.util.Log
@@ -78,6 +79,11 @@ internal fun fcmTokenDeactivatedLogMessage(deviceId: String): String =
  */
 @AndroidEntryPoint
 class FcmService : FirebaseMessagingService() {
+
+    /** 서비스는 Application 과 별도 컨텍스트라 앱 언어를 따로 씌운다(알림·채널 이름). */
+    override fun attachBaseContext(base: Context) {
+        super.attachBaseContext(localizedAppLanguageContext(base))
+    }
 
     @Inject lateinit var firebaseAuth: FirebaseAuth
     @Inject lateinit var firestore: FirebaseFirestore
