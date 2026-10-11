@@ -15,22 +15,11 @@ import java.io.File
 class MapScreenLayersTest {
 
     @Test
-    fun `드론 드롭다운 상단 패딩은 iOS처럼 iPad 에서 30dp 이다`() {
-        assertEquals(
-            30.dp,
-            resolveDroneDropdownTopPadding(
-                screenHeight = 1_024.dp,
-                isTablet = true,
-            ),
-        )
-    }
-
-    @Test
-    fun `드론 드롭다운 상단 패딩은 iOS처럼 폰 높이별 값을 사용한다`() {
-        assertEquals(60.dp, resolveDroneDropdownTopPadding(screenHeight = 901.dp, isTablet = false))
-        assertEquals(50.dp, resolveDroneDropdownTopPadding(screenHeight = 851.dp, isTablet = false))
-        assertEquals(40.dp, resolveDroneDropdownTopPadding(screenHeight = 850.dp, isTablet = false))
-        assertEquals(40.dp, resolveDroneDropdownTopPadding(screenHeight = 800.dp, isTablet = false))
+    fun `드론 드롭다운은 iOS처럼 상태 표시줄 바로 아래에 놓인다`() {
+        // 화면 높이와 무관하게 상태 표시줄 아래 같은 간격. 고정값(60dp)이면 큰 화면에서 칩 위가 크게 비었다.
+        assertEquals(32.dp, resolveDroneDropdownTopPadding(statusBarTop = 24.dp, isTablet = false))
+        assertEquals(46.dp, resolveDroneDropdownTopPadding(statusBarTop = 38.dp, isTablet = false))
+        assertEquals(30.dp, resolveDroneDropdownTopPadding(statusBarTop = 24.dp, isTablet = true))
     }
 
     @Test

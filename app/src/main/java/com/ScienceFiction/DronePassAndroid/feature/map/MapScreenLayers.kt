@@ -263,11 +263,11 @@ internal fun MapFloatingControls(
     val weatherData by weatherViewModel.weatherData.collectAsStateWithLifecycle()
     val windowSize = currentWindowSizeDp()
     val isTabletLayout = windowSize.width >= MapTabletBreakpointDp.dp
+    val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     val droneDropdownTopPadding = resolveDroneDropdownTopPadding(
-        screenHeight = windowSize.height,
+        statusBarTop = statusBarTop,
         isTablet = isTabletLayout,
     )
-    val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
 
     Box(modifier = modifier.fillMaxSize()) {
         // 드론 선택 드롭다운 (상단 우측)
@@ -285,7 +285,7 @@ internal fun MapFloatingControls(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(
-                        top = maxOf(droneDropdownTopPadding, statusBarTop),
+                        top = droneDropdownTopPadding,
                         end = 16.dp,
                     ),
             )
@@ -436,17 +436,17 @@ internal fun displayedFlightZoneOverlayCount(
 }
 
 internal fun resolveDroneDropdownTopPadding(
-    screenHeight: Dp,
+    statusBarTop: Dp,
     isTablet: Boolean,
-): Dp {
-    if (isTablet) return 30.dp
+): Dp = statusBarTop + if (isTablet) DroneDropdownGapBelowStatusBarTablet else DroneDropdownGapBelowStatusBarPhone
 
-    return when {
-        screenHeight > 900.dp -> 60.dp
-        screenHeight > 850.dp -> 50.dp
-        else -> 40.dp
-    }
-}
+/**
+ * iOS 는 칩을 화면 위에서 고정값(폰 40~60pt, iPad 30pt)에 둔다. 그 값이 iPhone·iPad 상태 표시줄 높이에 맞춰져 있어
+ * 결과적으로 상태 표시줄 바로 아래(폰 약 8pt, iPad 약 6pt 간격)에 놓인다. Android 는 상태 표시줄이 기기마다 달라
+ * 고정값을 그대로 쓰면 큰 화면(900dp 초과)에서 칩 위가 36dp 가량 비었다. 그래서 상태 표시줄 아래 같은 간격으로 둔다.
+ */
+private val DroneDropdownGapBelowStatusBarPhone = 8.dp
+private val DroneDropdownGapBelowStatusBarTablet = 6.dp
 
 internal fun resolveSketchToolbarBottomPadding(isTablet: Boolean): Dp {
     return if (isTablet) 20.dp else 15.dp
