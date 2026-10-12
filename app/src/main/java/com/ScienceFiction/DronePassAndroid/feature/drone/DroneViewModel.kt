@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlin.random.Random
@@ -119,6 +120,8 @@ class DroneViewModel @Inject constructor(
         viewModelScope.launchCatchingStorageErrors {
             val updatedDrone = drone.copy(updatedAt = System.currentTimeMillis())
             droneRepository.updateDrone(updatedDrone)
+            // 도형 색은 드론 색을 따른다. 색을 바꿨으면 연결된 도형 색도 바꿔 올린다(바뀐 것이 없으면 아무것도 쓰지 않는다).
+            shapeRepository.syncShapeColorsWithDrones(droneRepository.getActiveDrones().first())
         }
     }
 
@@ -151,7 +154,7 @@ class DroneViewModel @Inject constructor(
                     is ShapeHandling.Reassign -> {
                         val targetDrone = currentDrones.find { it.id == shapeHandling.targetDroneId }
                         if (targetDrone != null && connectedShapeCount > 0) {
-                            shapeRepository.reassignShapes(drone.id, targetDrone.id)
+                            shapeRepository.reassignShapes(drone.id, targetDrone)
                         }
                     }
                     is ShapeHandling.DeleteAll -> {

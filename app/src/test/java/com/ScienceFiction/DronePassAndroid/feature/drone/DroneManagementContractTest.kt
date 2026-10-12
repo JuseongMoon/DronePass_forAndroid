@@ -30,6 +30,24 @@ class DroneManagementContractTest {
     }
 
     @Test
+    fun `드론을 고치거나 지울 때 연결된 도형 색을 드론 색으로 맞춘다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/drone/DroneViewModel.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/drone/DroneViewModel.kt",
+        ).readText()
+        val update = source.substringAfter("fun updateDrone(").substringBefore("fun ")
+
+        assertAppearsInOrder(
+            source = update,
+            tokens = listOf(
+                "droneRepository.updateDrone(updatedDrone)",
+                "shapeRepository.syncShapeColorsWithDrones(droneRepository.getActiveDrones().first())",
+            ),
+        )
+        assertTrue(source.contains("shapeRepository.reassignShapes(drone.id, targetDrone)"))
+    }
+
+    @Test
     fun `드론 상세 행 순서는 iOS DroneDetailView 를 따른다`() {
         val source = resolveProjectFile(
             "src/main/java/com/ScienceFiction/DronePassAndroid/feature/drone/DroneDetailSheet.kt",

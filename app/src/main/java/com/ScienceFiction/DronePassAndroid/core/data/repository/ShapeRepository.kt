@@ -17,7 +17,9 @@ import com.ScienceFiction.DronePassAndroid.core.data.remote.firebase.ShapeFireba
 import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncPreferenceKeys
 import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncMergeResult
 import com.ScienceFiction.DronePassAndroid.core.data.sync.shouldUpdateServerMetadataAfterFullSync
+import com.ScienceFiction.DronePassAndroid.core.data.sync.isNewerUpdatedAt
 import com.ScienceFiction.DronePassAndroid.core.data.storedEndDateAlarmEnabled
+import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 import com.ScienceFiction.DronePassAndroid.domain.model.validateForFirebasePersistence
 import com.ScienceFiction.DronePassAndroid.domain.model.validateForLocalPersistence
@@ -29,13 +31,16 @@ import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/** 도형 색은 연결된 드론 색을 따른다(계약 "삭제·충돌"). 드론 색을 모르면 도형 색을 그대로 둔다. */
 internal fun reassignShapeEntityToDrone(
     shape: ShapeEntity,
     toDroneId: String,
+    toDroneColor: String?,
     updatedAt: Long,
 ): ShapeEntity {
     return shape.copy(
         droneId = toDroneId,
+        color = toDroneColor ?: shape.color,
         updatedAt = updatedAt,
     )
 }
@@ -43,12 +48,32 @@ internal fun reassignShapeEntityToDrone(
 internal fun connectLegacyShapeEntityToDrone(
     shape: ShapeEntity,
     firstDroneId: String,
+    firstDroneColor: String?,
     updatedAt: Long,
 ): ShapeEntity {
     return shape.copy(
         droneId = firstDroneId,
+        color = firstDroneColor ?: shape.color,
         updatedAt = updatedAt,
     )
+}
+
+/**
+ * 도형 색 = 연결된 드론 색(대표 결정 2026-10-12, iOS `ShapeColorRepair.enforceDroneColors`).
+ * 활성 도형 중 살아 있는 드론을 가리키면서 색이 다른 것(대소문자 무시)만 드론 색으로 바꾸고 updatedAt 을 [nowMillis] 로 올려 돌려준다.
+ * 드론이 없거나 삭제된 도형은 자기 색을 쓴다.
+ */
+internal fun shapesRecoloredToDrones(
+    shapes: List<ShapeModel>,
+    drones: List<DroneModel>,
+    nowMillis: Long,
+): List<ShapeModel> {
+    val droneColors = drones.filter { it.deletedAt == null }.associate { it.id to it.color }
+    return shapes.mapNotNull { shape ->
+        val droneColor = shape.droneId?.let(droneColors::get) ?: return@mapNotNull null
+        if (shape.deletedAt != null || shape.color.equals(droneColor, ignoreCase = true)) return@mapNotNull null
+        shape.copy(color = droneColor, updatedAt = nowMillis)
+    }
 }
 
 internal fun softDeleteExpiredShapeEntities(
@@ -87,7 +112,7 @@ internal fun mergeShapesForFullSync(
         val local = localById[id]
         val server = serverById[id]
         when {
-            local != null && server != null -> if (server.updatedAt >= local.updatedAt) server else local
+            local != null && server != null -> if (isNewerUpdatedAt(local.updatedAt, than = server.updatedAt)) local else server
             local != null -> local.takeIf {
                 shouldKeepLocalShapeMissingOnServer(
                     localShapeUpdatedAt = it.updatedAt,
@@ -100,7 +125,7 @@ internal fun mergeShapesForFullSync(
 
     val toUpload = merged.filter { shape ->
         val server = serverById[shape.id]
-        server == null || shape.updatedAt > server.updatedAt
+        server == null || isNewerUpdatedAt(shape.updatedAt, than = server.updatedAt)
     }
 
     return SyncMergeResult(merged, toUpload)
@@ -234,14 +259,14 @@ class ShapeRepository @Inject constructor(
     }
 
     /**
-     * 특정 드론에 연결된 활성 도형들을 다른 드론으로 재할당
+     * 특정 드론에 연결된 활성 도형들을 다른 드론으로 재할당하고 색도 그 드론 색으로 바꾼다.
      * 로그인 + 클라우드 백업 ON 상태이면 Firestore에도 즉시 batch 푸시한다.
      */
-    suspend fun reassignShapes(fromDroneId: String, toDroneId: String) {
+    suspend fun reassignShapes(fromDroneId: String, toDrone: DroneModel) {
         val shapes = shapeDao.getActiveShapesByDroneId(fromDroneId)
         val now = System.currentTimeMillis()
         val updatedShapes = shapes.map { shapeEntity ->
-            reassignShapeEntityToDrone(shapeEntity, toDroneId, now)
+            reassignShapeEntityToDrone(shapeEntity, toDrone.id, toDrone.color, now)
         }
         // REPLACE 충돌 정책으로 update == insert (단일 트랜잭션 1회).
         shapeDao.insertShapes(updatedShapes)
@@ -251,20 +276,38 @@ class ShapeRepository @Inject constructor(
 
     /**
      * iOS DroneManager.migrateLegacyShapes 정합.
-     * droneId 가 없는 활성 레거시 도형을 첫 번째 활성 드론에 실제로 연결한다.
+     * droneId 가 없는 활성 레거시 도형을 첫 번째 활성 드론에 실제로 연결하고 색도 그 드론 색으로 바꾼다.
      */
-    suspend fun migrateLegacyShapesToDrone(firstDroneId: String) {
+    suspend fun migrateLegacyShapesToDrone(firstDrone: DroneModel) {
         val shapes = shapeDao.getActiveLegacyShapesWithoutDrone()
         if (shapes.isEmpty()) return
 
         val now = System.currentTimeMillis()
         val updatedShapes = shapes.map { shapeEntity ->
-            connectLegacyShapeEntityToDrone(shapeEntity, firstDroneId, now)
+            connectLegacyShapeEntityToDrone(shapeEntity, firstDrone.id, firstDrone.color, now)
         }
         shapeDao.insertShapes(updatedShapes)
         markShapeLocalModification(now)
         syncShapesToFirebase(updatedShapes.map { it.toDomain() })
-        Log.d(TAG, "레거시 도형 드론 연결 완료: count=${updatedShapes.size}, droneId=$firstDroneId")
+        Log.d(TAG, "레거시 도형 드론 연결 완료: count=${updatedShapes.size}, droneId=${firstDrone.id}")
+    }
+
+    /**
+     * 도형 색을 연결된 드론 색으로 맞춘다([shapesRecoloredToDrones]). 바뀐 도형은 updatedAt 이 올라가고,
+     * 관문이 열려 있으면 바로 올린다. 닫혀 있으면 기기에만 반영되고 다음 업로드·동기화에서 올라간다.
+     * 드론 색을 바꿨을 때, 관문을 연 뒤 첫 동기화, 로그아웃 전 업로드 전에 부른다. 바꾼 도형 수를 돌려준다.
+     */
+    suspend fun syncShapeColorsWithDrones(drones: List<DroneModel>): Int {
+        val now = System.currentTimeMillis()
+        val recolored = database.withTransaction {
+            shapesRecoloredToDrones(shapeDao.getAllShapesOnce().map { it.toDomain() }, drones, now)
+                .also { changed -> if (changed.isNotEmpty()) shapeDao.insertShapes(changed.map { it.toEntity() }) }
+        }
+        if (recolored.isEmpty()) return 0
+        markShapeLocalModification(now)
+        syncShapesToFirebase(recolored)
+        Log.d(TAG, "도형 색을 드론 색으로 맞춤: count=${recolored.size}")
+        return recolored.size
     }
 
     /**

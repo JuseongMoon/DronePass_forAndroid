@@ -16,6 +16,7 @@ import com.ScienceFiction.DronePassAndroid.core.data.remote.firebase.SketchFireb
 import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncPreferenceKeys
 import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncMergeResult
 import com.ScienceFiction.DronePassAndroid.core.data.sync.shouldUpdateServerMetadataAfterFullSync
+import com.ScienceFiction.DronePassAndroid.core.data.sync.isNewerUpdatedAt
 import com.ScienceFiction.DronePassAndroid.domain.model.SketchModel
 import com.ScienceFiction.DronePassAndroid.domain.model.validateForFirebasePersistence
 import kotlinx.coroutines.CoroutineScope
@@ -93,7 +94,7 @@ internal fun mergeSketchesForFullSync(
         val local = localById[id]
         val server = serverById[id]
         when {
-            local != null && server != null -> if (server.updatedAt >= local.updatedAt) server else local
+            local != null && server != null -> if (isNewerUpdatedAt(local.updatedAt, than = server.updatedAt)) local else server
             local != null -> local.takeIf {
                 shouldKeepLocalSketchMissingOnServer(
                     localSketchUpdatedAt = it.updatedAt,
@@ -106,7 +107,7 @@ internal fun mergeSketchesForFullSync(
 
     val toUpload = merged.filter { sketch ->
         val server = serverById[sketch.id]
-        server == null || sketch.updatedAt > server.updatedAt
+        server == null || isNewerUpdatedAt(sketch.updatedAt, than = server.updatedAt)
     }
 
     return SyncMergeResult(merged, toUpload)

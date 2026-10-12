@@ -109,6 +109,54 @@ class SyncMergeTest {
     }
 
     @Test
+    fun `updatedAt within 1ms is the same time`() {
+        assertFalse(isNewerUpdatedAt(11L, than = 10L))
+        assertFalse(isNewerUpdatedAt(10L, than = 10L))
+        assertFalse(isNewerUpdatedAt(9L, than = 10L))
+        assertTrue(isNewerUpdatedAt(12L, than = 10L))
+    }
+
+    @Test
+    fun `local within 1ms of server keeps server value and is not uploaded`() {
+        val local = syncItem(id = "shared", updatedAt = 11L, value = "local")
+        val server = syncItem(id = "shared", updatedAt = 10L, value = "server")
+
+        val result = merge(listOf(local), listOf(server))
+
+        assertEquals(mapOf("shared" to "server"), result.merged.valuesById())
+        assertEquals(emptyList<SyncItem>(), result.toUpload)
+    }
+
+    @Test
+    fun `local more than 1ms newer wins and is uploaded`() {
+        val local = syncItem(id = "shared", updatedAt = 12L, value = "local")
+        val server = syncItem(id = "shared", updatedAt = 10L, value = "server")
+
+        val result = merge(listOf(local), listOf(server))
+
+        assertEquals(mapOf("shared" to "local"), result.merged.valuesById())
+        assertEquals(listOf(local), result.toUpload)
+    }
+
+    @Test
+    fun `filterServerNewer applies server when local is within 1ms`() {
+        val toApply = filterServerNewer(
+            local = listOf(
+                syncItem(id = "within", updatedAt = 11L, value = "local"),
+                syncItem(id = "beyond", updatedAt = 12L, value = "local"),
+            ),
+            server = listOf(
+                syncItem(id = "within", updatedAt = 10L, value = "server"),
+                syncItem(id = "beyond", updatedAt = 10L, value = "server"),
+            ),
+            idOf = { it.id },
+            updatedAtOf = { it.updatedAt },
+        )
+
+        assertEquals(mapOf("within" to "server"), toApply.valuesById())
+    }
+
+    @Test
     fun `filterServerNewer applies server only newer and tie items`() {
         val local = listOf(
             syncItem(id = "server-older", updatedAt = 20L, value = "local-new"),

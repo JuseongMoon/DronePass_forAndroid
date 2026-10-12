@@ -402,11 +402,11 @@ class MapViewModel @Inject constructor(
 
     private suspend fun migrateLegacyShapesIfNeeded(drones: List<DroneModel>) {
         if (hasCheckedLegacyShapeMigration) return
-        val firstDroneId = drones.firstOrNull()?.id ?: return
+        val firstDrone = drones.firstOrNull() ?: return
 
         hasCheckedLegacyShapeMigration = true
         try {
-            shapeRepository.migrateLegacyShapesToDrone(firstDroneId)
+            shapeRepository.migrateLegacyShapesToDrone(firstDrone)
         } catch (e: Exception) {
             Log.w(TAG, "레거시 도형 드론 연결 실패", e)
         }

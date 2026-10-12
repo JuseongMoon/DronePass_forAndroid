@@ -19,6 +19,7 @@ import com.ScienceFiction.DronePassAndroid.core.data.local.room.mapper.toEntity
 import com.ScienceFiction.DronePassAndroid.core.data.remote.firebase.DroneFirebaseStore
 import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncPreferenceKeys
 import com.ScienceFiction.DronePassAndroid.core.data.sync.shouldUpdateServerMetadataAfterFullSync
+import com.ScienceFiction.DronePassAndroid.core.data.sync.isNewerUpdatedAt
 import com.ScienceFiction.DronePassAndroid.core.util.compareIosLocalizedStandardStrings
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.validateForFirebasePersistence
@@ -97,7 +98,7 @@ internal fun mergeDronesForFullSync(
         val local = localById[id]
         val server = serverById[id]
         when {
-            local != null && server != null -> if (server.updatedAt >= local.updatedAt) server else local
+            local != null && server != null -> if (isNewerUpdatedAt(local.updatedAt, than = server.updatedAt)) local else server
             else -> local ?: server
         }
     }
@@ -105,7 +106,7 @@ internal fun mergeDronesForFullSync(
     // 서버에 없는 드론의 삭제 기록은 올리지 않는다(iOS DroneRepository.merge 와 같음).
     val toUploadAll = mergedAll.filter { drone ->
         val server = serverById[drone.id]
-        if (server == null) drone.deletedAt == null else drone.updatedAt > server.updatedAt
+        if (server == null) drone.deletedAt == null else isNewerUpdatedAt(drone.updatedAt, than = server.updatedAt)
     }
 
     val earliest = compareBy<DroneModel>({ it.createdAt }, { it.id })

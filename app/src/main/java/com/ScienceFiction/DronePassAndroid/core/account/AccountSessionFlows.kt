@@ -377,7 +377,7 @@ class AccountSessionFlows @Inject constructor(
         scope.launch { runInitialSync(ticket, selectAllDrones) }
     }
 
-    /** 드론 → 도형 → 기본 드론 → 스케치 순(도형이 드론 id 를 가리키므로 드론을 먼저). */
+    /** 드론 → 도형 → 기본 드론 → 도형 색 맞춤 → 스케치 순(도형이 드론 id 를 가리키므로 드론을 먼저). */
     private suspend fun runInitialSync(ticket: SyncTicket, selectAllDrones: Boolean) {
         try {
             droneRepository.performFullSync(ticket)
@@ -385,6 +385,8 @@ class AccountSessionFlows @Inject constructor(
             // 계정에 드론이 하나도 없을 때만 기본 드론을 만든다(관문이 열려 있으므로 계정에도 올라간다).
             session.requireValid(ticket)
             droneRepository.ensureDefaultDroneIfNeeded()
+            // 도형 색 = 연결된 드론 색(계약 "삭제·충돌"). 드론을 맞춘 뒤 다른 도형을 드론 색으로 바꿔 올린다.
+            shapeRepository.syncShapeColorsWithDrones(droneRepository.getActiveDrones().first())
             session.commit(ticket) {
                 val baseline = encodeAccountSwitchShapeBaseline(
                     buildAccountSwitchShapeBaseline(shapeRepository.getAllShapes().first()),
@@ -721,6 +723,8 @@ class AccountSessionFlows @Inject constructor(
     /** ① 서버를 [Source.SERVER] 로 읽어 기기에만 있거나 더 새로운 항목만 올리고, 대기 중인 쓰기가 서버에 닿을 때까지 기다린다. */
     private suspend fun flushBeforeLogout(uid: String): Int {
         val ticket = session.issueFlowTicket(uid, SyncTicketPurpose.LOGOUT_FLUSH)
+        // 도형 색을 드론 색으로 맞춘다. 관문이 닫혀 있어 기기에만 쓰이고, updatedAt 이 올라 아래 비교에서 업로드 대상이 된다.
+        shapeRepository.syncShapeColorsWithDrones(droneDao.getAllDronesOnce().map { it.toDomain() })
         val serverDrones = droneStore.loadAllDronesIncludingDeleted(ticket, Source.SERVER).getOrThrow()
         val serverShapes = shapeStore.loadAllShapesIncludingDeleted(ticket, Source.SERVER).getOrThrow()
         val serverSketches = sketchStore.loadAllSketchesIncludingDeleted(ticket, Source.SERVER).getOrThrow()

@@ -3,6 +3,7 @@ package com.ScienceFiction.DronePassAndroid.core.account
 import com.ScienceFiction.DronePassAndroid.core.data.repository.DroneSyncMergeResult
 import com.ScienceFiction.DronePassAndroid.core.data.repository.isUntouchedDefaultDrone
 import com.ScienceFiction.DronePassAndroid.core.data.repository.mergeDronesForFullSync
+import com.ScienceFiction.DronePassAndroid.core.data.sync.isNewerUpdatedAt
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 import com.ScienceFiction.DronePassAndroid.domain.model.SketchModel
@@ -237,7 +238,7 @@ internal fun deviceHasAccountData(
         sketches.any { it.deletedAt == null } ||
         drones.any { it.deletedAt == null && !isUntouchedDefaultDrone(it) }
 
-/** 도형·스케치 공통 후보 규칙: 기기 쪽이 삭제 표시가 아니고, 서버에 없거나(삭제 표시 포함) 서버보다 새롭다. */
+/** 도형·스케치 공통 후보 규칙: 기기 쪽이 삭제 표시가 아니고, 서버에 없거나(삭제 표시 포함) 서버보다 허용 오차를 넘게 새롭다. */
 internal fun isImportCandidate(
     localUpdatedAt: Long,
     localDeletedAt: Long?,
@@ -248,7 +249,7 @@ internal fun isImportCandidate(
     if (localDeletedAt != null) return false
     if (!serverExists) return true
     if (serverDeletedAt != null) return false
-    return localUpdatedAt > requireNotNull(serverUpdatedAt)
+    return isNewerUpdatedAt(localUpdatedAt, than = requireNotNull(serverUpdatedAt))
 }
 
 /**
@@ -319,7 +320,7 @@ internal fun computeImportCandidates(
 }
 
 /**
- * 로그아웃 ① 업로드 대상: 서버와 비교해 기기에만 있거나 기기 쪽이 더 새로운 항목(삭제 표시 포함).
+ * 로그아웃 ① 업로드 대상: 서버와 비교해 기기에만 있거나 기기 쪽이 허용 오차를 넘게 새로운 항목(삭제 표시 포함).
  * 기존의 "활성 항목 전부 업로드"와 달리 다른 기기에서 고친 더 새로운 서버 값을 덮어쓰지 않는다.
  * 서버에 없는 기기 삭제 표시는 올리지 않는다(올릴 것이 없다).
  */
@@ -333,6 +334,6 @@ internal fun <T> logoutFlushItems(
     val serverById = server.associateBy(idOf)
     return local.filter { item ->
         val remote = serverById[idOf(item)]
-        if (remote == null) deletedAtOf(item) == null else updatedAtOf(item) > updatedAtOf(remote)
+        if (remote == null) deletedAtOf(item) == null else isNewerUpdatedAt(updatedAtOf(item), than = updatedAtOf(remote))
     }
 }

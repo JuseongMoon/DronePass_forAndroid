@@ -153,13 +153,17 @@ class AccountSessionFlowsTest {
             Item("newer", 9),
             Item("newer-deleted", 9, deletedAt = 9),
             Item("same", 5),
+            Item("within-1ms", 6),
             Item("older", 3),
         )
-        val server = listOf(Item("newer", 5), Item("newer-deleted", 5), Item("same", 5), Item("older", 7))
+        val server = listOf(
+            Item("newer", 5), Item("newer-deleted", 5), Item("same", 5), Item("within-1ms", 5), Item("older", 7),
+        )
 
         val upload = logoutFlushItems(local, server, Item::id, Item::updatedAt, Item::deletedAt)
 
         // 다른 기기에서 고친 더 새로운 서버 값은 덮어쓰지 않는다(예전의 "활성 항목 전부 업로드"와 다르다).
+        // 1ms 이하 차이는 같은 쓰기로 보고 올리지 않는다(계약 "삭제·충돌").
         assertEquals(listOf("only-local", "newer", "newer-deleted"), upload.map { it.id })
     }
 
@@ -191,7 +195,31 @@ class AccountSessionFlowsTest {
         assertEquals(10_000L, LOGOUT_FLUSH_TIMEOUT_MS)
         val flush = source("core/account/AccountSessionFlows.kt")
             .substringAfter("private suspend fun flushBeforeLogout(").substringBefore("private suspend fun uploadAndMark(")
-        assertOrder(flush, listOf("Source.SERVER", "logoutFlushItems(", "uploadAndMark(", "firestore.waitForPendingWrites().await()"))
+        assertOrder(
+            flush,
+            listOf(
+                "shapeRepository.syncShapeColorsWithDrones(",
+                "Source.SERVER",
+                "logoutFlushItems(",
+                "uploadAndMark(",
+                "firestore.waitForPendingWrites().await()",
+            ),
+        )
+    }
+
+    @Test
+    fun `first account sync recolors shapes to their drones after drones are settled`() {
+        val initial = source("core/account/AccountSessionFlows.kt")
+            .substringAfter("private suspend fun runInitialSync(").substringBefore("sketchRepository.performFullSync(ticket)")
+        assertOrder(
+            initial,
+            listOf(
+                "droneRepository.performFullSync(ticket)",
+                "shapeRepository.performFullSync(ticket)",
+                "droneRepository.ensureDefaultDroneIfNeeded()",
+                "shapeRepository.syncShapeColorsWithDrones(droneRepository.getActiveDrones().first())",
+            ),
+        )
     }
 
     @Test

@@ -1,6 +1,7 @@
 package com.ScienceFiction.DronePassAndroid.core.data.repository
 
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.entity.ShapeEntity
+import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -11,7 +12,7 @@ import org.junit.Test
 class ShapeRepositoryTest {
 
     @Test
-    fun `드론 재할당은 iOS처럼 도형 색상을 보존하고 droneId만 변경한다`() {
+    fun `드론 재할당은 droneId와 함께 색을 옮겨 간 드론 색으로 바꾼다`() {
         val original = ShapeEntity(
             id = "shape-1",
             title = "Area",
@@ -38,16 +39,19 @@ class ShapeRepositoryTest {
         val reassigned = reassignShapeEntityToDrone(
             shape = original,
             toDroneId = "drone-b",
+            toDroneColor = "#34C759",
             updatedAt = 10L,
         )
 
         assertEquals("drone-b", reassigned.droneId)
-        assertEquals("#FF3B30", reassigned.color)
+        assertEquals("#34C759", reassigned.color)
         assertEquals(10L, reassigned.updatedAt)
+        // 드론 색을 모르면 도형 색을 그대로 둔다.
+        assertEquals("#FF3B30", reassignShapeEntityToDrone(original, "drone-b", null, 10L).color)
     }
 
     @Test
-    fun `레거시 도형 연결은 iOS처럼 첫 드론 ID를 채우고 색상은 보존한다`() {
+    fun `레거시 도형 연결은 첫 드론 ID를 채우고 색을 그 드론 색으로 바꾼다`() {
         val original = ShapeEntity(
             id = "shape-legacy",
             title = "Legacy Area",
@@ -74,13 +78,44 @@ class ShapeRepositoryTest {
         val connected = connectLegacyShapeEntityToDrone(
             shape = original,
             firstDroneId = "drone-first",
+            firstDroneColor = "#FF9500",
             updatedAt = 12L,
         )
 
         assertEquals("drone-first", connected.droneId)
-        assertEquals("#34C759", connected.color)
+        assertEquals("#FF9500", connected.color)
         assertNull(connected.deletedAt)
         assertEquals(12L, connected.updatedAt)
+    }
+
+    @Test
+    fun `도형 색 맞춤은 살아 있는 드론을 가리키는 활성 도형만 드론 색으로 바꾸고 updatedAt을 올린다`() {
+        val drones = listOf(
+            DroneModel(id = "red", name = "Red", color = "#FF3B30", createdAt = 1L, updatedAt = 1L),
+            DroneModel(id = "blue", name = "Blue", color = "#007AFF", createdAt = 1L, updatedAt = 1L),
+            DroneModel(id = "gone", name = "Gone", color = "#34C759", createdAt = 1L, updatedAt = 1L, deletedAt = 2L),
+        )
+        val shapes = listOf(
+            ShapeModel(id = "mismatch", color = "#007AFF", droneId = "red", updatedAt = 5L),
+            ShapeModel(id = "case-only", color = "#007aff", droneId = "blue", updatedAt = 5L),
+            ShapeModel(id = "deleted-shape", color = "#007AFF", droneId = "red", updatedAt = 5L, deletedAt = 6L),
+            ShapeModel(id = "deleted-drone", color = "#007AFF", droneId = "gone", updatedAt = 5L),
+            ShapeModel(id = "no-drone", color = "#FF9500", droneId = null, updatedAt = 5L),
+            ShapeModel(id = "unknown-drone", color = "#FF9500", droneId = "missing", updatedAt = 5L),
+        )
+
+        val recolored = shapesRecoloredToDrones(shapes, drones, nowMillis = 100L)
+
+        assertEquals(listOf("mismatch"), recolored.map { it.id })
+        assertEquals("#FF3B30", recolored.single().color)
+        assertEquals(100L, recolored.single().updatedAt)
+    }
+
+    @Test
+    fun `도형 색 맞춤은 드론이 없으면 아무것도 바꾸지 않는다`() {
+        val shapes = listOf(ShapeModel(id = "s", color = "#007AFF", droneId = "red", updatedAt = 5L))
+
+        assertTrue(shapesRecoloredToDrones(shapes, emptyList(), nowMillis = 100L).isEmpty())
     }
 
     @Test
