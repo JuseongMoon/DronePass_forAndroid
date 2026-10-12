@@ -48,6 +48,25 @@ class DroneManagementContractTest {
     }
 
     @Test
+    fun `앱 시작 때 드론을 읽은 뒤 도형 색을 드론 색으로 한 번 맞춘다`() {
+        val source = resolveProjectFile(
+            "src/main/java/com/ScienceFiction/DronePassAndroid/feature/map/MapViewModel.kt",
+            "app/src/main/java/com/ScienceFiction/DronePassAndroid/feature/map/MapViewModel.kt",
+        ).readText()
+        val startup = source.substringAfter("private suspend fun migrateLegacyShapesIfNeeded(").substringBefore("\n    }\n")
+
+        assertAppearsInOrder(
+            source = startup,
+            tokens = listOf(
+                "if (hasCheckedLegacyShapeMigration) return",
+                "hasCheckedLegacyShapeMigration = true",
+                "shapeRepository.migrateLegacyShapesToDrone(firstDrone)",
+                "shapeRepository.syncShapeColorsWithDrones(drones)",
+            ),
+        )
+    }
+
+    @Test
     fun `드론 상세 행 순서는 iOS DroneDetailView 를 따른다`() {
         val source = resolveProjectFile(
             "src/main/java/com/ScienceFiction/DronePassAndroid/feature/drone/DroneDetailSheet.kt",

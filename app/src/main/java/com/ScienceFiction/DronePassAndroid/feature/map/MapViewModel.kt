@@ -410,6 +410,13 @@ class MapViewModel @Inject constructor(
         } catch (e: Exception) {
             Log.w(TAG, "레거시 도형 드론 연결 실패", e)
         }
+        // 도형 색 = 연결된 드론 색(계약). 이전 버전에서 드론 색만 바뀌어 어긋난 도형을 앱 시작 때 한 번 맞춘다.
+        // 비로그인이면 기기에만 쓰고, 관문이 열려 있으면 바로 올린다.
+        try {
+            shapeRepository.syncShapeColorsWithDrones(drones)
+        } catch (e: Exception) {
+            Log.w(TAG, "도형 색 맞춤 실패", e)
+        }
     }
 
     /**
