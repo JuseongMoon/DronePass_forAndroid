@@ -9,6 +9,11 @@ data class RemoteSubscriptionConfig(
     val minSupportedVersion: String?,
     /** `features.locationAudit.uploadEnabled`. 값이 없으면 false(확인자료 서버 업로드를 끈다). */
     val locationAuditUploadEnabled: Boolean = false,
+    /**
+     * `features.proClaim.enabled`. 값이 없으면 false(서버 Pro 미러용 구매 증빙을 보내지 않는다, 계약 §9-2).
+     * `minSupportedVersion` 처럼 이번 실행에서 받은 설정에만 적용한다(저장본에는 남기지 않는다).
+     */
+    val proClaimEnabled: Boolean = false,
 ) {
     companion object {
         const val URL = "https://sciencefiction.co.kr/dronepass/config/limits.json"
@@ -36,7 +41,9 @@ data class RemoteSubscriptionConfig(
             val minimum = (root["minSupportedVersion"] as? Map<*, *>)?.get(platform) as? String
             val locationAudit = (root["features"] as? Map<*, *>)?.get("locationAudit") as? Map<*, *>
             val uploadEnabled = locationAudit?.get("uploadEnabled") as? Boolean ?: false
-            return RemoteSubscriptionConfig(limits, cutoff, minimum?.takeIf { it.isNotEmpty() }, uploadEnabled)
+            val proClaim = (root["features"] as? Map<*, *>)?.get("proClaim") as? Map<*, *>
+            val proClaimEnabled = proClaim?.get("enabled") as? Boolean ?: false
+            return RemoteSubscriptionConfig(limits, cutoff, minimum?.takeIf { it.isNotEmpty() }, uploadEnabled, proClaimEnabled)
         }
     }
 }

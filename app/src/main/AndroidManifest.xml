@@ -44,6 +44,12 @@
         android:name="android.permission.ACCESS_ADSERVICES_ATTRIBUTION"
         tools:node="remove" />
 
+    <!-- WorkManager(구독 acknowledge 백그라운드 재시도)는 포그라운드 작업을 쓰지 않는다. 라이브러리가 넣는
+         포그라운드 서비스와 권한을 빼서 Play 권한 목록을 3.6.1과 같게 둔다. -->
+    <uses-permission
+        android:name="android.permission.FOREGROUND_SERVICE"
+        tools:node="remove" />
+
     <!-- 위치 권한 -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
@@ -71,6 +77,10 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.DronePassAndroid"
         tools:targetApi="tiramisu">
+
+        <service
+            android:name="androidx.work.impl.foreground.SystemForegroundService"
+            tools:node="remove" />
 
         <!-- 네이버 지도 NCP 키 (local.properties에서 로드) -->
         <meta-data

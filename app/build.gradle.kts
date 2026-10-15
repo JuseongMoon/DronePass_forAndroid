@@ -358,6 +358,8 @@ dependencies {
     // Google Play Services - Location
     implementation(libs.play.services.location)
     implementation(libs.play.billing)
+    // 구독 acknowledge 백그라운드 재시도(3일 자동 환불 방지, 계약 §9-2 D-24)
+    implementation(libs.androidx.work.runtime.ktx)
 
     // Coroutines Play Services (await() for Task)
     implementation(libs.kotlinx.coroutines.play.services)

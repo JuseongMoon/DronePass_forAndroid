@@ -10,12 +10,13 @@ class PurchaseAcknowledgerTest {
     private class FakeBilling {
         val sends = mutableListOf<(Boolean) -> Unit>()
         val checks = mutableListOf<(AcknowledgeCheck) -> Unit>()
-        var failures = 0
+        val failedTokens = mutableListOf<String>()
+        val failures get() = failedTokens.size
 
         val acknowledger = PurchaseAcknowledger(
             send = { _, onResult -> sends += onResult },
             check = { _, onResult -> checks += onResult },
-            onFailure = { failures++ },
+            onFailure = { failedTokens += it },
         )
     }
 
@@ -67,7 +68,7 @@ class PurchaseAcknowledgerTest {
 
         assertEquals(2, billing.sends.size)
         assertEquals(1, billing.checks.size)
-        assertEquals(1, billing.failures)
+        assertEquals(listOf("token"), billing.failedTokens)
     }
 
     @Test

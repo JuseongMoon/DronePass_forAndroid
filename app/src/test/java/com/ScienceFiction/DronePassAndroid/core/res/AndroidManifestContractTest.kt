@@ -133,6 +133,18 @@ class AndroidManifestContractTest {
     }
 
     @Test
+    fun `WorkManager 의 포그라운드 서비스와 권한은 병합 manifest 에서 제거한다`() {
+        // 구독 acknowledge 재시도 작업은 포그라운드 작업을 쓰지 않는다. Play 권한 목록을 3.6.1과 같게 둔다.
+        val manifest = parseManifest()
+
+        assertEquals("remove", manifest.findPermission("android.permission.FOREGROUND_SERVICE").getAttribute("tools:node"))
+        assertEquals(
+            "remove",
+            manifest.findService("androidx.work.impl.foreground.SystemForegroundService").getAttribute("tools:node"),
+        )
+    }
+
+    @Test
     fun `FCM 과 로컬 알림 리시버는 외부에서 직접 실행되지 않는다`() {
         val manifest = parseManifest()
 

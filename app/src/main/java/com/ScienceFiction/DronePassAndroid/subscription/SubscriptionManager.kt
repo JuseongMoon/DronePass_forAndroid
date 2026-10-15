@@ -83,6 +83,7 @@ class SubscriptionManager @Inject constructor(
     private val sketchRepository: SketchRepository,
     private val droneRepository: DroneRepository,
     private val analytics: AnalyticsLogger,
+    private val claimSender: SubscriptionClaimSender,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private val preferences = context.getSharedPreferences("subscription", Context.MODE_PRIVATE)
@@ -96,6 +97,11 @@ class SubscriptionManager @Inject constructor(
     private var currentRemoteMinimum: String? = null
     private var usageLoaded = false
     private var connecting = false
+    /** `features.proClaim.enabled`. 이번 실행에서 받은 설정에서만 켠다(계약 §9-2, §6 저장본 규칙). */
+    @Volatile private var proClaimEnabled = false
+    /** 마지막 조회에서 찾은 활성 구독 구매 토큰. 복원 직후·설정을 받은 뒤 claim 에 쓴다. */
+    @Volatile private var activePurchaseTokens: List<String> = emptyList()
+    private val claimInFlight = java.util.concurrent.atomic.AtomicBoolean(false)
     /** 결제 연결 전에 누른 구매 복원. 연결이 끝나면 조회해 답하고, 실패하면 오류로 답한다. */
     private val pendingRestoreCallbacks = mutableListOf<(RestoreResult) -> Unit>()
 
@@ -117,7 +123,10 @@ class SubscriptionManager @Inject constructor(
     private val acknowledger = PurchaseAcknowledger(
         send = ::sendAcknowledge,
         check = ::checkAcknowledged,
-        onFailure = { message(R.string.subscription_message_acknowledge_failed) },
+        onFailure = { token ->
+            message(R.string.subscription_message_acknowledge_failed)
+            enqueuePurchaseAcknowledgeWork(context, token)
+        },
     )
     private val _signedIn = MutableStateFlow(auth.currentUser != null)
     /** 구매는 로그인한 상태에서만 한다(사양 v2 C-1). */
@@ -267,6 +276,9 @@ class SubscriptionManager @Inject constructor(
         if (generation != queryGeneration.get()) return
         val relevant = purchases.filter { PRODUCT_ID in it.products }
         val active = relevant.firstOrNull { it.purchaseState == Purchase.PurchaseState.PURCHASED && !it.isSuspended }
+        activePurchaseTokens = relevant
+            .filter { it.purchaseState == Purchase.PurchaseState.PURCHASED && !it.isSuspended }
+            .map { it.purchaseToken }
         val suspended = relevant.any { it.isSuspended }
         val legacy = legacyKind()
         val legacyUnknown = auth.currentUser?.metadata?.creationTimestamp?.let { it <= 0L } == true
@@ -292,6 +304,8 @@ class SubscriptionManager @Inject constructor(
         }
         if (active != null) {
             acknowledge(active)
+            // 서버 Pro 미러용 증빙: 구매 직후는 바로, 시작·포그라운드 조회는 계정마다 24시간에 한 번.
+            sendProClaimIfDue(force = fromPurchaseFlow)
             if (fromPurchaseFlow) {
                 analytics.logPurchaseSuccess(latestPurchaseSource)
                 _purchaseCompleted.tryEmit(Unit)
@@ -301,6 +315,30 @@ class SubscriptionManager @Inject constructor(
             message(R.string.subscription_message_purchase_pending)
         }
     }
+
+    /**
+     * 활성 구독의 구매 토큰을 `claimSubscription` 으로 보낸다(계약 §9-2). 원격 플래그가 꺼져 있거나 로그아웃 상태면 보내지 않는다.
+     * 결과는 화면·판정에 쓰지 않는다. 호출이 끝나면 이 계정의 보낸 시각을 남기고, 실패하면 다음 기회에 다시 보낸다.
+     */
+    private fun sendProClaimIfDue(force: Boolean) {
+        val uid = auth.currentUser?.uid
+        val tokens = activePurchaseTokens
+        val lastSentAt = uid?.let { preferences.getLong(proClaimSentAtKey(it), -1L).takeIf { at -> at >= 0L } }
+        val now = System.currentTimeMillis()
+        if (!shouldSendProClaim(proClaimEnabled, uid != null, tokens.isNotEmpty(), force, lastSentAt, now)) return
+        if (!claimInFlight.compareAndSet(false, true)) return
+        scope.launch {
+            try {
+                if (claimSender.send(PRODUCT_ID, tokens) && auth.currentUser?.uid == uid) {
+                    preferences.edit().putLong(proClaimSentAtKey(requireNotNull(uid)), System.currentTimeMillis()).apply()
+                }
+            } finally {
+                claimInFlight.set(false)
+            }
+        }
+    }
+
+    private fun proClaimSentAtKey(uid: String) = "proClaimSentAt.$uid"
 
     private fun acknowledge(purchase: Purchase) {
         if (purchase.isAcknowledged) return
@@ -389,6 +427,7 @@ class SubscriptionManager @Inject constructor(
         analytics.logRestoreTap()
         refreshPurchases { result ->
             analytics.logRestoreResult(result == RestoreResult.RESTORED)
+            if (result == RestoreResult.RESTORED) sendProClaimIfDue(force = true)
             onResult?.invoke(result)
         }
     }
@@ -478,6 +517,9 @@ class SubscriptionManager @Inject constructor(
             cutoff = cutoff.extended(config.legacyCutoff)
             currentRemoteMinimum = config.minSupportedVersion
             RemoteFeatureFlags.update(config)
+            proClaimEnabled = config.proClaimEnabled
+            // 설정이 구매 조회보다 늦게 오면 시작 때 보낼 기회를 놓친다. 받은 뒤 한 번 더 확인한다(24시간 간격은 그대로).
+            sendProClaimIfDue(force = false)
             val effective = _limits.value
             val cachedConfig = """{"schemaVersion":1,"free":{"shapes":${effective.freeShapes},"sketches":${effective.freeSketches},"drones":${effective.freeDrones}},"legacy":{"iosOriginalBuildBefore":${cutoff.iosOriginalBuildBefore},"accountCreatedBefore":"${cutoff.accountCreatedBefore}"},"features":{"locationAudit":{"uploadEnabled":${config.locationAuditUploadEnabled}}}}"""
             preferences.edit().putString("config", cachedConfig).apply()
