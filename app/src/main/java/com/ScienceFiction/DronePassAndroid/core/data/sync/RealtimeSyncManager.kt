@@ -364,17 +364,17 @@ class RealtimeSyncManager @Inject constructor(
      * Shape 및 Drone 동기화 수행 (디바운싱 후 호출)
      *
      * ShapeRepository.performFullSync()와 DroneRepository.performFullSync()를 호출하여
-     * LWW 기반 양방향 동기화를 실행합니다.
+     * LWW 기반 양방향 동기화를 실행합니다. 서버에 올린 드론·도형 수를 돌려준다(건너뛰거나 실패하면 0).
      */
-    private suspend fun performShapeAndDroneSync(ticket: SyncTicket, manualRequest: Boolean = false) {
+    private suspend fun performShapeAndDroneSync(ticket: SyncTicket, manualRequest: Boolean = false): Int {
         if (!session.isValid(ticket)) {
             Log.d(TAG, "관문이 바뀌어 Shape/Drone 동기화를 건너뜁니다.")
-            return
+            return 0
         }
         // compareAndSet 으로 race 없이 단일 진입 보장
         if (!shapeSyncInProgress.compareAndSet(false, true)) {
             Log.d(TAG, "Shape/Drone 동기화가 이미 진행 중입니다.")
-            return
+            return 0
         }
         _syncState.value = SyncState.Syncing
 
@@ -383,10 +383,10 @@ class RealtimeSyncManager @Inject constructor(
 
             // Shape/Drone 동기화 (Room Flow 가 UI 까지 자동 전파되므로 별도 콜백 불필요)
             // 도형이 드론 id 를 가리키므로 드론을 먼저 올린다.
-            droneRepository.performFullSync(ticket)
+            val uploadedDrones = droneRepository.performFullSync(ticket)
             Log.d(TAG, "Drone 동기화 완료")
 
-            shapeRepository.performFullSync(ticket)
+            val uploadedShapes = shapeRepository.performFullSync(ticket)
             Log.d(TAG, "Shape 동기화 완료")
 
             // 동기화 시각 업데이트
@@ -410,11 +410,12 @@ class RealtimeSyncManager @Inject constructor(
 
             _syncState.value = SyncState.Success(lastShapeSyncTime)
             Log.d(TAG, "Shape/Drone 실시간 동기화 완료")
+            return uploadedDrones + uploadedShapes
         } catch (e: Exception) {
             if (e is StaleSyncTicketException) {
                 Log.d(TAG, "관문이 바뀌어 Shape/Drone 동기화 결과를 버립니다.")
                 _syncState.value = SyncState.Idle
-                return
+                return 0
             }
             Log.e(TAG, "Shape/Drone 실시간 동기화 실패", e)
             _syncState.value = SyncState.Error(e.message ?: "Shape/Drone 동기화 중 오류 발생")
@@ -424,6 +425,7 @@ class RealtimeSyncManager @Inject constructor(
             if (shouldRethrowRealtimeSyncFailure(manualRequest)) {
                 throw e
             }
+            return 0
         } finally {
             shapeSyncInProgress.set(false)
         }
@@ -433,22 +435,22 @@ class RealtimeSyncManager @Inject constructor(
      * Sketch 동기화 수행 (디바운싱 후 호출)
      *
      * SketchRepository.performFullSync()를 호출하여
-     * LWW 기반 양방향 동기화를 실행합니다.
+     * LWW 기반 양방향 동기화를 실행합니다. 서버에 올린 스케치 수를 돌려준다(건너뛰거나 실패하면 0).
      */
-    private suspend fun performSketchSync(ticket: SyncTicket, manualRequest: Boolean = false) {
+    private suspend fun performSketchSync(ticket: SyncTicket, manualRequest: Boolean = false): Int {
         if (!session.isValid(ticket)) {
             Log.d(TAG, "관문이 바뀌어 Sketch 동기화를 건너뜁니다.")
-            return
+            return 0
         }
         if (!sketchSyncInProgress.compareAndSet(false, true)) {
             Log.d(TAG, "Sketch 동기화가 이미 진행 중입니다.")
-            return
+            return 0
         }
 
         try {
             Log.d(TAG, "Sketch 실시간 동기화 시작")
 
-            sketchRepository.performFullSync(ticket)
+            val uploadedSketches = sketchRepository.performFullSync(ticket)
             Log.d(TAG, "Sketch 동기화 완료")
 
             val syncTime = System.currentTimeMillis()
@@ -461,16 +463,18 @@ class RealtimeSyncManager @Inject constructor(
             sketchRetryCount = 0
 
             Log.d(TAG, "Sketch 실시간 동기화 완료")
+            return uploadedSketches
         } catch (e: Exception) {
             if (e is StaleSyncTicketException) {
                 Log.d(TAG, "관문이 바뀌어 Sketch 동기화 결과를 버립니다.")
-                return
+                return 0
             }
             Log.e(TAG, "Sketch 실시간 동기화 실패", e)
             if (shouldRetryRealtimeSyncFailure(e)) scheduleSketchRetrySync(ticket)
             if (shouldRethrowRealtimeSyncFailure(manualRequest)) {
                 throw e
             }
+            return 0
         } finally {
             sketchSyncInProgress.set(false)
         }
@@ -579,10 +583,11 @@ class RealtimeSyncManager @Inject constructor(
      * ProfileViewModel 의 수동 백업 / 토글 ON 시 동기화 chain 의 진입점.
      * Shape/Drone 과 Sketch 는 서로 다른 metadata 문서를 쓰지만 수동 백업은 전체 데이터를 대상으로 한다.
      * 외부 호출은 rate-limit (UI 디바운스) 으로 보호할 것 — Repository 자체는 가드 안 함.
+     * 서버에 올린 드론·도형·스케치 수의 합을 돌려준다(iOS 수동 백업 결과 "N개 항목을 동기화했습니다" 정합).
      */
-    suspend fun forceSyncNow() {
+    suspend fun forceSyncNow(): Int {
         val ticket = session.syncTicket() ?: throw StaleSyncTicketException()
-        realtimeForceSyncDomains().forEach { domain ->
+        return realtimeForceSyncDomains().sumOf { domain ->
             when (domain) {
                 RealtimeForceSyncDomain.ShapeDrone -> performShapeAndDroneSync(ticket, manualRequest = true)
                 RealtimeForceSyncDomain.Sketch -> performSketchSync(ticket, manualRequest = true)

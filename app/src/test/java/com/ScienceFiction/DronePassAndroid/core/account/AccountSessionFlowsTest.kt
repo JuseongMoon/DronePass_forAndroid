@@ -208,16 +208,23 @@ class AccountSessionFlowsTest {
     }
 
     @Test
-    fun `first account sync recolors shapes to their drones after drones are settled`() {
+    fun `every full shape sync recolors shapes to their drones after merging with the server`() {
+        // 관문을 연 첫 동기화(처음 로그인·가져오기 포함), 실시간 반영, 수동 백업이 모두 이 경로를 지난다.
+        // 기기 값이 아니라 병합 뒤 상태로 판단해야 서버에만 남은 옛 색도 고쳐진다(계약 "삭제·충돌").
         val initial = source("core/account/AccountSessionFlows.kt")
             .substringAfter("private suspend fun runInitialSync(").substringBefore("sketchRepository.performFullSync(ticket)")
+        assertOrder(initial, listOf("droneRepository.performFullSync(ticket)", "shapeRepository.performFullSync(ticket)"))
+        val fullSync = source("core/data/repository/ShapeRepository.kt")
+            .substringAfter("suspend fun performFullSync(ticket: SyncTicket)").substringBefore("performFullSync 완료")
         assertOrder(
-            initial,
+            fullSync,
             listOf(
-                "droneRepository.performFullSync(ticket)",
-                "shapeRepository.performFullSync(ticket)",
-                "droneRepository.ensureDefaultDroneIfNeeded()",
-                "shapeRepository.syncShapeColorsWithDrones(droneRepository.getActiveDrones().first())",
+                "mergeShapesForFullSync(",
+                "shapeDao.insertShapes(toWrite.map { it.toEntity() })",
+                "shapeFirebaseStore.saveShapes(ticket, toUpload)",
+                "recolorShapesToDronesLocally(database.droneDao().getAllDronesOnce()",
+                "shapeFirebaseStore.saveShapes(ticket, recolored)",
+                "shapeFirebaseStore.updateServerMetadata(ticket)",
             ),
         )
     }

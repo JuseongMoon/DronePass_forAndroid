@@ -206,13 +206,16 @@ class ProfileViewModelTest {
     }
 
     @Test
-    fun `프로필 동기화 성공 개수는 iOS처럼 동기화 전 로컬 활성 도형 snapshot 기준이다`() {
-        val activeLocalShapesBeforeSync = listOf(
-            ShapeModel(id = "shape-1"),
-            ShapeModel(id = "shape-2"),
-        )
-
-        assertEquals(2, profileSyncSuccessCount(activeLocalShapesBeforeSync))
+    fun `수동 백업 결과는 iOS처럼 올린 것이 없으면 최신 상태, 있으면 올린 항목 수를 알린다`() {
+        assertEquals(R.string.profile_sync_up_to_date, profileSyncSuccessMessageRes(uploadedCount = 0))
+        assertEquals(R.string.profile_sync_success, profileSyncSuccessMessageRes(uploadedCount = 3))
+        val viewModel = listOf("src/main/java", "app/src/main/java")
+            .map { java.io.File(java.io.File(requireNotNull(System.getProperty("user.dir"))), it) }
+            .first { it.isDirectory }
+            .resolve("com/ScienceFiction/DronePassAndroid/feature/profile/ProfileViewModel.kt")
+            .readText()
+        assertTrue(viewModel.contains("val uploadedCount = realtimeSyncManager.forceSyncNow()"))
+        assertTrue(viewModel.contains("SyncResult.Success(uploadedCount)"))
     }
 
 

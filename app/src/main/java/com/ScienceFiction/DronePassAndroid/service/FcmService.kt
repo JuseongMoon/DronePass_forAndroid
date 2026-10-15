@@ -28,17 +28,18 @@ import javax.inject.Inject
 internal const val FCM_DEVICE_ID_PREFERENCE_KEY = "DeviceUUID"
 internal const val LEGACY_FCM_DEVICE_ID_PREFERENCE_KEY = "fcm_device_id"
 
+/** [includeCreatedAt] 는 기기 문서를 처음 만들 때만 true. createdAt 은 처음 등록한 시각이라 다시 쓰지 않는다. */
 internal fun buildFcmDeviceData(
     token: String,
     appVersion: String,
+    includeCreatedAt: Boolean,
 ): HashMap<String, Any> = hashMapOf<String, Any>(
     "fcmToken" to token,
     "platform" to "android",
     "appVersion" to appVersion,
     "isActive" to true,
-    "createdAt" to FieldValue.serverTimestamp(),
     "updatedAt" to FieldValue.serverTimestamp(),
-)
+).apply { if (includeCreatedAt) put("createdAt", FieldValue.serverTimestamp()) }
 
 internal fun buildFcmDeactivateData(): HashMap<String, Any> = hashMapOf(
     "isActive" to false,
@@ -251,11 +252,12 @@ class FcmService : FirebaseMessagingService() {
                 .collection("devices")
                 .document(deviceId)
 
-            val deviceData = buildFcmDeviceData(
-                token = token,
-                appVersion = appVersion,
-            )
-            deviceRef.set(deviceData, SetOptions.merge())
+            // 문서가 없을 때만 createdAt 을 쓴다. 확인하지 못하면(오프라인 등) createdAt 없이 저장하고 다음 저장 때 다시 확인한다.
+            deviceRef.get()
+                .continueWithTask { existing ->
+                    val includeCreatedAt = existing.isSuccessful && existing.result?.exists() == false
+                    deviceRef.set(buildFcmDeviceData(token, appVersion, includeCreatedAt), SetOptions.merge())
+                }
                 .addOnSuccessListener {
                     Log.d(TAG, fcmTokenStoredLogMessage(deviceId))
                 }

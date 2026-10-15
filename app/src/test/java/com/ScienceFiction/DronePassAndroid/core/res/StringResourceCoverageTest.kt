@@ -896,16 +896,17 @@ class StringResourceCoverageTest {
         assertEquals("동기화 기록이 없습니다.", stringResourceValue("values/strings.xml", "profile_sync_no_history"))
         assertEquals("수동 백업하기", stringResourceValue("values/strings.xml", "profile_backup_manual"))
         assertEquals(
-            "%1\$d개 도형의 동기화가 완료되었습니다.",
+            "%1\$d개 항목을 동기화했습니다.",
             stringResourceValue("values/strings.xml", "profile_sync_success"),
         )
+        assertEquals("이미 최신 상태입니다.", stringResourceValue("values/strings.xml", "profile_sync_up_to_date"))
         assertEquals("실시간 클라우드 동기화에 실패했습니다: %1\$s", stringResourceValue("values/strings.xml", "profile_sync_failed"))
         assertEquals(
             "실시간 클라우드 동기화를 사용하려면 먼저 로그인해주세요.",
             stringResourceValue("values/strings.xml", "profile_sync_footer_login_required"),
         )
         assertEquals(
-            "같은 계정으로 로그인한 모든 기기에서 도형 데이터가 실시간으로 동기화 및 백업됩니다.",
+            "로그인하면 같은 계정으로 로그인한 모든 기기에서 도형·스케치·드론이 실시간으로 동기화됩니다.",
             stringResourceValue("values/strings.xml", "profile_sync_footer_enable_info"),
         )
         assertEquals("이용약관", stringResourceValue("values/strings.xml", "profile_terms_service"))
@@ -961,14 +962,15 @@ class StringResourceCoverageTest {
         assertEquals("Active - Waiting for sync", stringResourceValue("values-en/strings.xml", "profile_sync_waiting"))
         assertEquals("No sync history", stringResourceValue("values-en/strings.xml", "profile_sync_no_history"))
         assertEquals("Manual backup", stringResourceValue("values-en/strings.xml", "profile_backup_manual"))
-        assertEquals("Sync completed for %1\$d shapes.", stringResourceValue("values-en/strings.xml", "profile_sync_success"))
+        assertEquals("Synced %1\$d items.", stringResourceValue("values-en/strings.xml", "profile_sync_success"))
+        assertEquals("Already up to date.", stringResourceValue("values-en/strings.xml", "profile_sync_up_to_date"))
         assertEquals("Sync failed: %1\$s", stringResourceValue("values-en/strings.xml", "profile_sync_failed"))
         assertEquals(
             "Please log in to use real-time cloud sync.",
             stringResourceValue("values-en/strings.xml", "profile_sync_footer_login_required"),
         )
         assertEquals(
-            "Shape data is synced and backed up in real time across all devices signed in to the same account.",
+            "While signed in, shapes, sketches, and drones sync in real time across all devices with the same account.",
             stringResourceValue("values-en/strings.xml", "profile_sync_footer_enable_info"),
         )
         assertEquals("Terms of Service", stringResourceValue("values-en/strings.xml", "profile_terms_service"))

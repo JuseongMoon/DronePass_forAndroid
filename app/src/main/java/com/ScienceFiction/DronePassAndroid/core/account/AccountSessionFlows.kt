@@ -377,7 +377,7 @@ class AccountSessionFlows @Inject constructor(
         scope.launch { runInitialSync(ticket, selectAllDrones) }
     }
 
-    /** 드론 → 도형 → 기본 드론 → 도형 색 맞춤 → 스케치 순(도형이 드론 id 를 가리키므로 드론을 먼저). */
+    /** 드론 → 도형(병합 뒤 도형 색 맞춤 포함) → 기본 드론 → 스케치 순(도형이 드론 id 를 가리키므로 드론을 먼저). */
     private suspend fun runInitialSync(ticket: SyncTicket, selectAllDrones: Boolean) {
         try {
             droneRepository.performFullSync(ticket)
@@ -385,8 +385,6 @@ class AccountSessionFlows @Inject constructor(
             // 계정에 드론이 하나도 없을 때만 기본 드론을 만든다(관문이 열려 있으므로 계정에도 올라간다).
             session.requireValid(ticket)
             droneRepository.ensureDefaultDroneIfNeeded()
-            // 도형 색 = 연결된 드론 색(계약 "삭제·충돌"). 드론을 맞춘 뒤 다른 도형을 드론 색으로 바꿔 올린다.
-            shapeRepository.syncShapeColorsWithDrones(droneRepository.getActiveDrones().first())
             session.commit(ticket) {
                 val baseline = encodeAccountSwitchShapeBaseline(
                     buildAccountSwitchShapeBaseline(shapeRepository.getAllShapes().first()),

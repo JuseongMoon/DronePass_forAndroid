@@ -28,7 +28,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -70,10 +69,6 @@ internal fun countExpiredProfileShapes(
     return shapes.count { shape ->
         shape.flightEndDate?.let { endDate -> endDate <= now } == true
     }
-}
-
-internal fun profileSyncSuccessCount(activeLocalShapesBeforeSync: List<ShapeModel>): Int {
-    return activeLocalShapesBeforeSync.size
 }
 
 internal fun shouldStartProfileCloudSync(
@@ -253,16 +248,14 @@ class ProfileViewModel @Inject constructor(
         if (!shouldStartProfileCloudSync(_isSyncing.value, realtimeSyncManager.syncState.value)) return
         _isSyncing.value = true
         try {
-            val activeLocalShapesBeforeSync = shapeRepository.getActiveShapes().first()
-            val syncedShapeCount = profileSyncSuccessCount(activeLocalShapesBeforeSync)
-            realtimeSyncManager.forceSyncNow()
+            val uploadedCount = realtimeSyncManager.forceSyncNow()
             val now = System.currentTimeMillis()
             dataStore.edit {
                 it[ProfilePreferenceKeys.LAST_BACKUP_TIME] = now
                 it.remove(ProfilePreferenceKeys.LEGACY_LAST_BACKUP_TIME)
             }
             if (notifyResult) {
-                _syncResultMessage.emit(SyncResult.Success(syncedShapeCount))
+                _syncResultMessage.emit(SyncResult.Success(uploadedCount))
             }
         } catch (e: Exception) {
             Log.e(TAG, "수동 백업 실패", e)
@@ -333,7 +326,8 @@ class ProfileViewModel @Inject constructor(
 
     /** 동기화 결과 — Toast/SnackBar 용 1회성 메시지. */
     sealed class SyncResult {
-        data class Success(val shapeCount: Int) : SyncResult()
+        /** [uploadedCount] 는 서버에 올린 드론·도형·스케치 수의 합(iOS 수동 백업 결과와 같음). */
+        data class Success(val uploadedCount: Int) : SyncResult()
         data class Failure(val message: String) : SyncResult()
     }
 }

@@ -152,8 +152,18 @@ class ShapeDetailDroneResolutionTest {
     }
 
     @Test
-    fun `메모 영역 높이는 iOS ShapeDetailView의 180pt 고정 높이와 맞춘다`() {
-        assertEquals(180.dp, ShapeDetailMemoHeight)
+    fun `메모 영역은 고정 높이 없이 내용 높이만큼 늘어나고 텍스트를 바꾸지 않는다`() {
+        val root = listOf("src/main/java", "app/src/main/java")
+            .map { java.io.File(java.io.File(requireNotNull(System.getProperty("user.dir"))), it) }
+            .first { it.isDirectory }
+        val memoView = java.io.File(root, "com/ScienceFiction/DronePassAndroid/feature/shape/ShapeDetailSheet.kt").readText()
+            .substringAfter("private fun MemoLinkifyView(").substringBefore("factory =")
+        assertTrue(memoView, memoView.contains("modifier = Modifier.fillMaxWidth(),"))
+        assertFalse(memoView, memoView.contains(".height("))
+        // 신청번호 숫자 사이 U+200C(전화번호 오인식 방지)는 그대로 둔다.
+        val memo = "신청번호 2512\u200C26-08\u200C36\n연락처 051-894-7907"
+        assertEquals(memo, formatShapeDetailMemo(memo))
+        assertEquals("-", formatShapeDetailMemo(null))
     }
 
     @Test

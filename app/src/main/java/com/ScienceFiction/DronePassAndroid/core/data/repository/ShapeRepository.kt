@@ -299,16 +299,20 @@ class ShapeRepository @Inject constructor(
      */
     suspend fun syncShapeColorsWithDrones(drones: List<DroneModel>): Int {
         val now = System.currentTimeMillis()
-        val recolored = database.withTransaction {
-            shapesRecoloredToDrones(shapeDao.getAllShapesOnce().map { it.toDomain() }, drones, now)
-                .also { changed -> if (changed.isNotEmpty()) shapeDao.insertShapes(changed.map { it.toEntity() }) }
-        }
+        val recolored = recolorShapesToDronesLocally(drones, now)
         if (recolored.isEmpty()) return 0
         markShapeLocalModification(now)
         syncShapesToFirebase(recolored)
         Log.d(TAG, "도형 색을 드론 색으로 맞춤: count=${recolored.size}")
         return recolored.size
     }
+
+    /** 기기 도형을 드론 색으로 맞춰 저장하고 바뀐 도형을 돌려준다. 읽기와 쓰기를 한 트랜잭션으로 묶는다. */
+    private suspend fun recolorShapesToDronesLocally(drones: List<DroneModel>, now: Long): List<ShapeModel> =
+        database.withTransaction {
+            shapesRecoloredToDrones(shapeDao.getAllShapesOnce().map { it.toDomain() }, drones, now)
+                .also { changed -> if (changed.isNotEmpty()) shapeDao.insertShapes(changed.map { it.toEntity() }) }
+        }
 
     /**
      * 특정 드론에 연결된 활성 도형들을 모두 소프트 삭제
@@ -389,7 +393,8 @@ class ShapeRepository @Inject constructor(
      * [ticket] 은 작업을 시작할 때 한 번 받은 것을 끝까지 쓴다. 서버를 읽은 뒤 기기 저장소에 반영하기 직전에
      * 티켓을 다시 확인하므로, 그 사이 계정이 바뀌었으면 아무것도 반영하지 않는다([StaleSyncTicketException]).
      */
-    suspend fun performFullSync(ticket: SyncTicket) {
+    /** 서버에 올린 도형 수(병합 업로드 + 색 맞춤 업로드)를 돌려준다(수동 백업 결과 표시용). */
+    suspend fun performFullSync(ticket: SyncTicket): Int {
         try {
             val localEntities = shapeDao.getAllShapesOnce()
             val snapshotUpdatedAt = localEntities.associate { it.id to it.updatedAt }
@@ -447,7 +452,22 @@ class ShapeRepository @Inject constructor(
                 shapeFirebaseStore.updateServerMetadata(ticket)
             }
 
+            // 도형 색 = 연결된 드론 색(계약). 기기 값이 아니라 서버 병합 뒤 상태로 판단한다: 구버전에서 드론 색만 바뀐 도형이
+            // 내려왔거나, 서버 값이 기기와 같은 시각인데 색만 다르면(서버 값을 받았으므로) 여기서 맞춰 올린다.
+            // 맞춘 도형은 다음 동기화에서 서버와 같아지므로 다시 올리지 않는다.
+            val recolorTime = System.currentTimeMillis()
+            val recolored = session.commit(ticket) {
+                recolorShapesToDronesLocally(database.droneDao().getAllDronesOnce().map { it.toDomain() }, recolorTime)
+            }.filterValidForFirebaseWrite("performFullSync/recolor")
+            if (recolored.isNotEmpty()) {
+                markShapeLocalModification(recolorTime)
+                shapeFirebaseStore.saveShapes(ticket, recolored)
+                shapeFirebaseStore.updateServerMetadata(ticket)
+                Log.d(TAG, "병합 뒤 도형 색을 드론 색으로 맞춤: count=${recolored.size}")
+            }
+
             Log.d(TAG, "performFullSync 완료: 로컬=${localShapes.size}, 서버=${serverShapes.size}, 머지=${result.merged.size}, 업로드=${result.toUpload.size}")
+            return toUpload.size + recolored.size
         } catch (e: Exception) {
             Log.e(TAG, "performFullSync 실패", e)
             throw e

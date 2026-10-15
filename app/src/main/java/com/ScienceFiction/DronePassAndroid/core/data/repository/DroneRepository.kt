@@ -324,7 +324,8 @@ class DroneRepository @Inject constructor(
     /**
      * 양방향 동기화 (LWW 충돌 해결). 병합 규칙은 [mergeDronesForFullSync] 참고.
      */
-    suspend fun performFullSync(ticket: SyncTicket) {
+    /** 서버에 올린 드론 수를 돌려준다(수동 백업 결과 표시용). */
+    suspend fun performFullSync(ticket: SyncTicket): Int {
         try {
             val localDroneEntities = droneDao.getAllDronesOnce()
             val snapshotUpdatedAt = localDroneEntities.associate { it.id to it.updatedAt }
@@ -363,6 +364,7 @@ class DroneRepository @Inject constructor(
             }
 
             Log.d(TAG, "performFullSync 완료: 로컬=${localDrones.size}, 서버=${serverDrones.size}, 머지=${result.merged.size}, 업로드=${toUpload.size}")
+            return toUpload.size
         } catch (e: Exception) {
             Log.e(TAG, "performFullSync 실패", e)
             throw e

@@ -15,6 +15,7 @@ class FcmServiceTest {
         val data = buildFcmDeviceData(
             token = "token-1",
             appVersion = "1.0",
+            includeCreatedAt = true,
         )
 
         assertEquals("token-1", data["fcmToken"])
@@ -27,14 +28,18 @@ class FcmServiceTest {
     }
 
     @Test
-    fun `FCM device data 는 iOS 처럼 매 저장마다 createdAt 과 updatedAt 을 함께 쓴다`() {
-        val data = buildFcmDeviceData(
-            token = "token-1",
-            appVersion = "1.0",
-        )
+    fun `FCM device data 는 기기 문서를 처음 만들 때만 createdAt 을 쓴다`() {
+        val existing = buildFcmDeviceData(token = "token-1", appVersion = "1.0", includeCreatedAt = false)
 
-        assertTrue(data["createdAt"] is FieldValue)
-        assertTrue(data["updatedAt"] is FieldValue)
+        assertFalse(existing.containsKey("createdAt"))
+        assertTrue(existing["updatedAt"] is FieldValue)
+
+        val source = listOf("src/main/java", "app/src/main/java")
+            .map { File(File(requireNotNull(System.getProperty("user.dir"))), it) }
+            .first { it.isDirectory }
+            .resolve("com/ScienceFiction/DronePassAndroid/service/FcmService.kt")
+            .readText()
+        assertTrue(source.contains("existing.isSuccessful && existing.result?.exists() == false"))
     }
 
     @Test

@@ -433,7 +433,8 @@ class SketchRepository @Inject constructor(
      * 문서가 실제 삭제된 경우일 수 있다. 마지막 Sketch 동기화 시각 이전 항목이면
      * 원격 삭제로 보고 재업로드하지 않는다. 기기 저장소 반영은 [ticket] 을 다시 확인한 뒤에 한다.
      */
-    suspend fun performFullSync(ticket: SyncTicket) {
+    /** 서버에 올린 스케치 수를 돌려준다(수동 백업 결과 표시용). */
+    suspend fun performFullSync(ticket: SyncTicket): Int {
         try {
             val localEntities = sketchDao.getAllSketchesOnce()
             val snapshotUpdatedAt = localEntities.associate { it.id to it.updatedAt }
@@ -485,6 +486,7 @@ class SketchRepository @Inject constructor(
             }
 
             Log.d(TAG, "performFullSync 완료: 로컬=${localSketches.size}, 서버=${serverSketches.size}, 머지=${result.merged.size}, 업로드=${result.toUpload.size}")
+            return toUpload.size
         } catch (e: Exception) {
             Log.e(TAG, "performFullSync 실패", e)
             throw e

@@ -129,11 +129,7 @@ fun ProfileScreen(
     LaunchedEffect(viewModel, resources) {
         viewModel.syncResultMessage.collect { result ->
             val message = when (result) {
-                is ProfileViewModel.SyncResult.Success ->
-                    resources.getString(
-                        R.string.profile_sync_success,
-                        result.shapeCount,
-                    )
+                is ProfileViewModel.SyncResult.Success -> profileSyncSuccessMessage(resources, result.uploadedCount)
                 is ProfileViewModel.SyncResult.Failure ->
                     resources.getString(R.string.profile_sync_failed, result.message)
             }
@@ -624,6 +620,13 @@ private fun ProfileCloudSyncStatusItem(
 }
 
 internal fun shouldShowProfileSyncProgress(isSyncing: Boolean): Boolean = isSyncing
+
+/** 수동 백업 결과. iOS ProfileView 와 같이 올린 것이 없으면 "이미 최신 상태입니다.", 있으면 올린 항목 수를 알린다. */
+internal fun profileSyncSuccessMessageRes(uploadedCount: Int): Int =
+    if (uploadedCount == 0) R.string.profile_sync_up_to_date else R.string.profile_sync_success
+
+private fun profileSyncSuccessMessage(resources: android.content.res.Resources, uploadedCount: Int): String =
+    resources.getString(profileSyncSuccessMessageRes(uploadedCount), uploadedCount)
 
 internal fun shouldEnableProfileManualBackup(isSyncing: Boolean): Boolean = !isSyncing
 

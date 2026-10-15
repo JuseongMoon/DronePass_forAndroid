@@ -771,7 +771,7 @@
     <string name="profile_sync_last_sync">마지막 동기화: %1$s</string>
     <string name="profile_sync_no_history">동기화 기록이 없습니다.</string>
     <string name="profile_sync_footer_login_required">실시간 클라우드 동기화를 사용하려면 먼저 로그인해주세요.</string>
-    <string name="profile_sync_footer_enable_info">같은 계정으로 로그인한 모든 기기에서 도형 데이터가 실시간으로 동기화 및 백업됩니다.</string>
+    <string name="profile_sync_footer_enable_info">로그인하면 같은 계정으로 로그인한 모든 기기에서 도형·스케치·드론이 실시간으로 동기화됩니다.</string>
     <string name="profile_backup_manual">수동 백업하기</string>
     <string name="profile_backup_last_backup">마지막 백업: %1$s</string>
     <string name="profile_sync_alert_title">실시간 클라우드 동기화</string>
@@ -783,7 +783,8 @@
     <string name="sync_complete_message">도형 정보가 최신화되었습니다.</string>
     <string name="sync_error_title">동기화 실패</string>
     <string name="sync_error_message">변경사항을 가져오는 중 오류가 발생했습니다.\n%1$s</string>
-    <string name="profile_sync_success" tools:ignore="PluralsCandidate">%1$d개 도형의 동기화가 완료되었습니다.</string>
+    <string name="profile_sync_success" tools:ignore="PluralsCandidate">%1$d개 항목을 동기화했습니다.</string>
+    <string name="profile_sync_up_to_date">이미 최신 상태입니다.</string>
     <string name="profile_sync_failed">실시간 클라우드 동기화에 실패했습니다: %1$s</string>
 
     <string name="profile_terms_service">이용약관</string>

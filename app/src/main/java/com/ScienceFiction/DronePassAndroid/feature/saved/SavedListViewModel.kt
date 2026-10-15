@@ -26,7 +26,6 @@ import com.ScienceFiction.DronePassAndroid.feature.settings.storedHideNotStarted
 import com.ScienceFiction.DronePassAndroid.feature.settings.storedKoreaFeaturesEnabled
 import com.ScienceFiction.DronePassAndroid.feature.shape.ShapeEditDefaults
 import com.ScienceFiction.DronePassAndroid.feature.shape.resolveSelectedShapeSnapshot
-import com.ScienceFiction.DronePassAndroid.feature.shape.resolveShapeEditDefaultColor
 import com.ScienceFiction.DronePassAndroid.feature.shape.resolveShapeEditConflict
 import com.ScienceFiction.DronePassAndroid.feature.shape.shapeEditSaveFailureMessage
 import com.ScienceFiction.DronePassAndroid.feature.shape.storedShapeEditDefaults
@@ -289,10 +288,6 @@ class SavedListViewModel @Inject constructor(
     val activeShapeIds: StateFlow<Set<String>> = activeShapes
         .map { shapes -> shapes.mapTo(mutableSetOf()) { it.id } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
-
-    val defaultShapeColor: StateFlow<String> = activeShapes
-        .map(::resolveShapeEditDefaultColor)
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), resolveShapeEditDefaultColor(emptyList()))
 
     /** 활성 드론 목록 */
     val activeDrones: StateFlow<List<DroneModel>> = droneRepository.getActiveDrones()

@@ -776,25 +776,15 @@ class ShapeEditDefaultsTest {
     }
 
     @Test
-    fun `기본 도형 색상은 iOS ColorManager처럼 첫 활성 도형 팔레트 색상을 사용한다`() {
-        val shapes = listOf(
-            ShapeModel(id = "shape-green", color = "#34c759"),
-            ShapeModel(id = "shape-red", color = PaletteColor.RED.hex),
-        )
-
-        assertEquals(PaletteColor.GREEN.hex, resolveShapeEditDefaultColor(shapes))
-    }
-
-    @Test
-    fun `첫 활성 도형 색상이 팔레트 밖이면 기본 도형 색상은 iOS처럼 파랑이다`() {
-        val shapes = listOf(ShapeModel(id = "shape-custom", color = "#123456"))
-
-        assertEquals(PaletteColor.BLUE.hex, resolveShapeEditDefaultColor(shapes))
-    }
-
-    @Test
-    fun `활성 도형이 없으면 기본 도형 색상은 iOS 기본값인 파랑이다`() {
-        assertEquals(PaletteColor.BLUE.hex, resolveShapeEditDefaultColor(emptyList()))
+    fun `드론 없이 만드는 도형은 다른 도형 색과 무관하게 기본 드론 색인 파랑이다`() {
+        // 예전에는 첫 활성 도형 색을 따랐다(단일 색 시절 잔재). 도형 색은 드론 색을 따르므로 드론이 없으면 기본 드론 색이다.
+        assertEquals(PaletteColor.BLUE.hex, resolveShapeEditSelectedColor(null))
+        val editScreen = listOf("src/main/java", "app/src/main/java")
+            .map { java.io.File(java.io.File(requireNotNull(System.getProperty("user.dir"))), it) }
+            .first { it.isDirectory }
+            .resolve("com/ScienceFiction/DronePassAndroid/feature/shape/ShapeEditScreen.kt")
+            .readText()
+        assertTrue(editScreen.contains("defaultShapeColor: String = PaletteColor.BLUE.hex,"))
     }
 
     @Test

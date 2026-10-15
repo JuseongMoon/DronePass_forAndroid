@@ -399,7 +399,7 @@ fun ShapeDetailSheet(
 
                 }
 
-                // iOS Section 2 — 메모. 값이 없어도 "-" 로 180dp 섹션을 항상 표시한다.
+                // iOS Section 2 — 메모. 내용 높이만큼 늘어나고 상세 화면 전체 스크롤로 읽는다(값이 없으면 "-" 한 줄).
                 // AndroidView(TextView) + Linkify 로 URL/전화번호를 자동 감지.
                 // 웹 링크는 iOS SafariView처럼 앱 내부 시트로 열고, 전화번호는 시스템 앱으로 전달한다.
                 InsetGroupedSection(header = stringResource(R.string.common_memo)) {
@@ -732,7 +732,6 @@ internal val ShapeDetailCopyHapticFeedbackType = HapticFeedbackType.Confirm
 internal val ShapeDetailRowMinHeight = 44.dp
 internal val ShapeDetailFirstSectionTopPadding = 20.dp
 internal val ShapeDetailRowDividerThickness = 0.5.dp
-internal val ShapeDetailMemoHeight = 180.dp
 internal const val ShapeDetailExternalMapSkipPartiallyExpanded = true
 internal const val ShapeDetailMemoWebSheetSkipPartiallyExpanded = true
 internal const val ShapeDetailMemoWebSheetHeightFraction = 0.92f
@@ -800,7 +799,9 @@ internal fun resolveShapeDetailDrone(
  *
  * AndroidView 로 TextView 호스팅 + autoLinkMask 로 URL/전화번호를 자동 감지한다.
  * 웹 링크는 앱 내부 웹 시트로, 전화번호 등은 시스템 앱으로 전달한다.
- * 180dp 고정 높이 (iOS minHeight: 180 / maxHeight: 180 정합) + 내부 스크롤.
+ * 높이는 내용에 맞춘다. 칸 안 스크롤 없이 상세 화면 전체 스크롤로 끝까지 읽는다(iOS ShapeDetailView 정합).
+ * 드론원스탑 확장이 넣는 700~1,000자 메모도 고정 높이 칸 안에서 스크롤이 시트와 겹쳐 끝까지 읽히지 않았다.
+ * 텍스트는 그대로 쓴다. 신청번호 숫자 사이의 U+200C 는 전화번호 자동 링크를 막으려고 넣은 것이라 지우지 않는다.
  */
 @Composable
 private fun MemoLinkifyView(
@@ -809,9 +810,7 @@ private fun MemoLinkifyView(
     onUrlClick: (String) -> Unit,
 ) {
     AndroidView(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(ShapeDetailMemoHeight),
+        modifier = Modifier.fillMaxWidth(),
         factory = { ctx ->
             TextView(ctx).apply {
                 textSize = 16f

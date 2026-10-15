@@ -67,7 +67,6 @@ import com.ScienceFiction.DronePassAndroid.feature.settings.KpInfoGuideSheet
 import com.ScienceFiction.DronePassAndroid.feature.settings.WeatherInfoGuideSheet
 import com.ScienceFiction.DronePassAndroid.feature.shape.ShapeDetailSheet
 import com.ScienceFiction.DronePassAndroid.feature.shape.ShapeEditScreen
-import com.ScienceFiction.DronePassAndroid.feature.shape.resolveShapeEditDefaultColor
 import com.ScienceFiction.DronePassAndroid.feature.sketch.SketchOverlayManager
 import com.ScienceFiction.DronePassAndroid.feature.sketch.SketchToolbar
 import com.ScienceFiction.DronePassAndroid.feature.sketch.SketchViewModel
@@ -771,7 +770,6 @@ internal fun MapBottomSheets(
             drones = activeDrones,
             editDefaults = shapeEditDefaults,
             fallbackSelectedDroneId = primarySelectedDroneId,
-            defaultShapeColor = resolveShapeEditDefaultColor(activeShapes),
             reverseGeocodedAddress = reverseGeocodedAddress,
             geocodingApi = viewModel.naverGeocodingApi,
             isDuplicateMode = isDuplicateMode,
