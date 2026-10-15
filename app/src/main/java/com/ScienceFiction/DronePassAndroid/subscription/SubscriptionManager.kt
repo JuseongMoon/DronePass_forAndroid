@@ -149,7 +149,10 @@ class SubscriptionManager @Inject constructor(
                     if (purchases != null) applyPurchases(purchases, queryGeneration.incrementAndGet(), fromPurchaseFlow = true)
                 }
                 BillingClient.BillingResponseCode.USER_CANCELED -> analytics.logPurchaseFail(latestPurchaseSource, "cancelled")
-                else -> analytics.logPurchaseFail(latestPurchaseSource, "error")
+                else -> {
+                    analytics.logPurchaseFail(latestPurchaseSource, "error")
+                    handlePurchaseFailure(result.responseCode)
+                }
             }
         }
         .enablePendingPurchases(PendingPurchasesParams.newBuilder().enableOneTimeProducts().build())
@@ -419,7 +422,20 @@ class SubscriptionManager @Inject constructor(
         val builder = BillingFlowParams.newBuilder().setProductDetailsParamsList(listOf(item))
         auth.currentUser?.uid?.let { builder.setObfuscatedAccountId(appAccountToken(it)) }
         val result = billing.launchBillingFlow(activity, builder.build())
-        if (result.responseCode != BillingClient.BillingResponseCode.OK) analytics.logPurchaseFail(source, "error")
+        analytics.logBillingFlowLaunch(source, result.responseCode)
+        if (result.responseCode != BillingClient.BillingResponseCode.OK) {
+            analytics.logPurchaseFail(source, "error")
+            handlePurchaseFailure(result.responseCode)
+        }
+    }
+
+    /**
+     * 취소가 아닌 결제 실패. 이미 구독 중이면(ITEM_ALREADY_OWNED) 안내 대신 구매를 다시 조회해 바로 반영한다.
+     * 그 밖에는 결제 결과를 알 수 없으니 구매 복원으로 확인하라고 안내한다.
+     */
+    private fun handlePurchaseFailure(responseCode: Int) {
+        if (purchaseFailureRefreshesPurchases(responseCode)) refreshPurchases()
+        else message(R.string.subscription_message_purchase_unconfirmed)
     }
 
     /** [onResult] 는 복원 결과(iOS SettingView 의 복원 결과 알림용). 결제 연결·조회 실패는 [RestoreResult.FAILED]. */
@@ -534,6 +550,10 @@ class SubscriptionManager @Inject constructor(
 }
 
 enum class RestoreResult { RESTORED, NOT_FOUND, FAILED }
+
+/** 이미 가진 구독을 다시 사려 한 실패는 안내 대신 구매 재조회로 처리한다. */
+internal fun purchaseFailureRefreshesPurchases(responseCode: Int): Boolean =
+    responseCode == BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED
 
 /** 복원 결과 안내 문구. 연결·조회 실패를 "구독 없음"으로 안내하지 않는다. */
 fun restoreResultMessageRes(result: RestoreResult): Int = when (result) {

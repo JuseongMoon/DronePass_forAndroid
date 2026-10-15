@@ -82,6 +82,25 @@
             android:name="androidx.work.impl.foreground.SystemForegroundService"
             tools:node="remove" />
 
+        <!-- BillingClient starts this component explicitly. Route it through a guard because
+             billing 9.1.0 can pass a null BUY_INTENT to ProxyBillingActivity. -->
+        <activity
+            android:name="com.android.billingclient.api.ProxyBillingActivity"
+            tools:node="remove" />
+        <activity
+            android:name=".subscription.SafeBillingProxyActivity"
+            android:configChanges="keyboard|keyboardHidden|screenLayout|screenSize|orientation"
+            android:exported="false"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+        <activity
+            android:name=".subscription.BillingLaunchFailureActivity"
+            android:exported="false"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+        <activity-alias
+            android:name="com.android.billingclient.api.ProxyBillingActivity"
+            android:exported="false"
+            android:targetActivity=".subscription.SafeBillingProxyActivity" />
+
         <!-- 네이버 지도 NCP 키 (local.properties에서 로드) -->
         <meta-data
             android:name="com.naver.maps.map.NCP_KEY_ID"

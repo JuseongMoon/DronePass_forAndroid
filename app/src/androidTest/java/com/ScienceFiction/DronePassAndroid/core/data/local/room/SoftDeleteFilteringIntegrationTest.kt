@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.room.Room
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ScienceFiction.DronePassAndroid.R
+import com.ScienceFiction.DronePassAndroid.core.account.AccountSession
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.entity.DroneEntity
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.entity.ShapeEntity
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.entity.SketchEntity
@@ -275,14 +276,16 @@ class SoftDeleteFilteringIntegrationTest {
             scope = dataStoreScope,
             produceFile = { dataStoreFile },
         )
+        val session = AccountSession(dataStore, FirebaseAuth.getInstance())
         val repository = DroneRepository(
             droneDao = database.droneDao(),
-            droneFirebaseStore = DroneFirebaseStore(FirebaseFirestore.getInstance()),
+            droneFirebaseStore = DroneFirebaseStore(FirebaseFirestore.getInstance(), session),
             shapeDao = database.shapeDao(),
             droneSelectionState = DroneSelectionState(),
-            auth = FirebaseAuth.getInstance(),
+            session = session,
             dataStore = dataStore,
             context = context,
+            database = database,
         )
 
         try {

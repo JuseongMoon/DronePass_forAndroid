@@ -866,6 +866,7 @@
     <string name="subscription_message_yearly_plan_missing">Couldn\'t find the yearly subscription.</string>
     <string name="subscription_message_acknowledge_failed">Couldn\'t confirm your purchase. Please try again.</string>
     <string name="subscription_message_purchase_pending">Your payment is pending. Pro will be applied automatically once it is approved.</string>
+    <string name="subscription_message_purchase_unconfirmed">Couldn\'t confirm the payment result. Check Restore Purchases before trying again.</string>
     <string name="subscription_benefit_shapes">Unlimited shapes (Free: %1$d)</string>
     <string name="subscription_benefit_sketches">Unlimited sketch lines (Free: %1$d)</string>
     <string name="subscription_benefit_drones">Unlimited drones (Free: %1$d)</string>

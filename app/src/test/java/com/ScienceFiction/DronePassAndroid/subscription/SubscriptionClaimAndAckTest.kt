@@ -113,6 +113,13 @@ class SubscriptionClaimAndAckTest {
         assertTrue(worker.contains("ExistingWorkPolicy.KEEP"))
     }
 
+    @Test
+    fun `이미 가진 구독을 다시 사려 한 실패는 안내 대신 구매를 다시 조회한다`() {
+        assertTrue(purchaseFailureRefreshesPurchases(com.android.billingclient.api.BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED))
+        assertFalse(purchaseFailureRefreshesPurchases(com.android.billingclient.api.BillingClient.BillingResponseCode.ERROR))
+        assertFalse(purchaseFailureRefreshesPurchases(com.android.billingclient.api.BillingClient.BillingResponseCode.BILLING_UNAVAILABLE))
+    }
+
     private fun source(path: String): String {
         val root = listOf("src/main/java", "app/src/main/java")
             .map { File(File(requireNotNull(System.getProperty("user.dir"))), it) }

@@ -55,6 +55,10 @@ class AnalyticsLogger @Inject constructor() {
     }
 
     fun logPurchaseStart(source: String) = analytics.logEvent("purchase_start") { param("source", source) }
+    fun logBillingFlowLaunch(source: String, responseCode: Int) = analytics.logEvent("billing_flow_launch") {
+        param("source", source)
+        param("response_code", responseCode.toLong())
+    }
     fun logPurchaseSuccess(source: String) = analytics.logEvent("purchase_success") { param("source", source) }
     fun logPurchaseFail(source: String, reason: String) = analytics.logEvent("purchase_fail") {
         param("source", source)
