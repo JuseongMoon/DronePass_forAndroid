@@ -120,6 +120,38 @@ class SubscriptionClaimAndAckTest {
         assertFalse(purchaseFailureRefreshesPurchases(com.android.billingclient.api.BillingClient.BillingResponseCode.BILLING_UNAVAILABLE))
     }
 
+    @Test
+    fun `claim 은 원격 플래그가 켜졌거나 디버그 강제값이 켜졌을 때만 켠다`() {
+        assertFalse(effectiveProClaimEnabled(remoteEnabled = false, debugForced = false))
+        assertTrue(effectiveProClaimEnabled(remoteEnabled = true, debugForced = false))
+        assertTrue(effectiveProClaimEnabled(remoteEnabled = false, debugForced = true))
+    }
+
+    @Test
+    fun `릴리스 빌드는 빌드 속성과 관계없이 claim 강제값이 꺼져 있다`() {
+        // testReleaseUnitTest 에서는 릴리스 BuildConfig 로 돈다(D-40: 운영은 원격 플래그로만 켠다).
+        if (!com.ScienceFiction.DronePassAndroid.BuildConfig.DEBUG) {
+            assertFalse(com.ScienceFiction.DronePassAndroid.BuildConfig.PRO_CLAIM_FORCE_ENABLED)
+        }
+        val gradle = listOf("build.gradle.kts", "app/build.gradle.kts")
+            .map { File(File(requireNotNull(System.getProperty("user.dir"))), it) }
+            .first { it.isFile && it.readText().contains("buildTypes") }
+            .readText()
+        val release = gradle.substringAfter("        release {").substringBefore("        }")
+        assertTrue(release, release.contains("""buildConfigField("boolean", "PRO_CLAIM_FORCE_ENABLED", "false")"""))
+        val debug = gradle.substringAfter("        debug {").substringBefore("        release {")
+        assertTrue(debug, debug.contains("""providers.gradleProperty("proClaimDebug").orNull == "true""""))
+        val manager = source("subscription/SubscriptionManager.kt")
+        assertTrue(manager.contains("effectiveProClaimEnabled(proClaimEnabled, BuildConfig.PRO_CLAIM_FORCE_ENABLED)"))
+    }
+
+    @Test
+    fun `claim 응답에서 결과 종류만 꺼낸다`() {
+        assertEquals("recorded", claimResultLabel(mapOf("ok" to true, "result" to "recorded")))
+        assertEquals("unknown", claimResultLabel(mapOf("ok" to true)))
+        assertEquals("unknown", claimResultLabel(null))
+    }
+
     private fun source(path: String): String {
         val root = listOf("src/main/java", "app/src/main/java")
             .map { File(File(requireNotNull(System.getProperty("user.dir"))), it) }

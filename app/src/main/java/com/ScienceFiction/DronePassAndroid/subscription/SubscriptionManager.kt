@@ -328,7 +328,8 @@ class SubscriptionManager @Inject constructor(
         val tokens = activePurchaseTokens
         val lastSentAt = uid?.let { preferences.getLong(proClaimSentAtKey(it), -1L).takeIf { at -> at >= 0L } }
         val now = System.currentTimeMillis()
-        if (!shouldSendProClaim(proClaimEnabled, uid != null, tokens.isNotEmpty(), force, lastSentAt, now)) return
+        val enabled = effectiveProClaimEnabled(proClaimEnabled, BuildConfig.PRO_CLAIM_FORCE_ENABLED)
+        if (!shouldSendProClaim(enabled, uid != null, tokens.isNotEmpty(), force, lastSentAt, now)) return
         if (!claimInFlight.compareAndSet(false, true)) return
         scope.launch {
             try {

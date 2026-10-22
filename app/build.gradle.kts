@@ -217,11 +217,20 @@ android {
             versionNameSuffix = "-debug"
             isMinifyEnabled = false
             isDebuggable = true
+            // 서버 Pro 미러 claim 끝단 시험(D-40): `-PproClaimDebug=true` 로 빌드한 디버그 앱에서만
+            // limits.json 의 features.proClaim.enabled 와 관계없이 claim 을 보낸다. 기본은 꺼짐.
+            buildConfigField(
+                "boolean",
+                "PRO_CLAIM_FORCE_ENABLED",
+                (providers.gradleProperty("proClaimDebug").orNull == "true").toString(),
+            )
         }
         release {
             isMinifyEnabled = true
             isShrinkResources = true
             isDebuggable = false
+            // 릴리스는 원격 플래그(features.proClaim.enabled)로만 claim 을 켠다. 빌드 속성으로 켤 수 없다.
+            buildConfigField("boolean", "PRO_CLAIM_FORCE_ENABLED", "false")
             ndk {
                 debugSymbolLevel = "SYMBOL_TABLE"
             }
