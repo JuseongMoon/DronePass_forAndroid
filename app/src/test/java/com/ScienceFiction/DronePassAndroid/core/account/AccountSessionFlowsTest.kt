@@ -7,7 +7,11 @@ import com.ScienceFiction.DronePassAndroid.feature.account.importPromptButtons
 import com.ScienceFiction.DronePassAndroid.feature.drone.DroneSelectionPreferenceKeys
 import com.ScienceFiction.DronePassAndroid.feature.profile.ProfilePreferenceKeys
 import com.ScienceFiction.DronePassAndroid.feature.shape.ShapeEditPreferenceKeys
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.yield
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -74,6 +78,141 @@ class AccountSessionFlowsTest {
         session.clearPermissionDenied()
         session.openGate("A")
         assertNotNull(session.syncTicket())
+    }
+
+    @Test
+    fun `a denial from the current ticket closes the gate and is reported with the new generation`() = runBlocking {
+        val session = newSession()
+        session.openGate("A")
+        val ticket = requireNotNull(session.syncTicket())
+
+        val denials = denialsDuring(session) { session.reportPermissionDenied(ticket) }
+
+        assertEquals(1, denials.size)
+        assertEquals("A", denials.single().uid)
+        assertTrue(session.isCurrent(denials.single()))
+        assertNull(session.openUid.value)
+        assertFalse(session.isValid(ticket))
+    }
+
+    @Test
+    fun `a late denial from before the gate reopened for the same account is ignored`() = runBlocking {
+        val session = newSession()
+        session.openGate("A")
+        val old = requireNotNull(session.syncTicket())
+        // SESSION_LOST 로 닫고, 같은 계정 재로그인의 startAccountSync 순서(막힘 풀기 → 열기)로 다시 연다.
+        session.closeGate()
+        session.clearPermissionDenied()
+        session.openGate("A")
+
+        val denials = denialsDuring(session) { session.reportPermissionDenied(old) }
+
+        assertTrue(denials.isEmpty())
+        assertEquals("A", session.openUid.value)
+        assertNotNull(session.syncTicket())
+    }
+
+    @Test
+    fun `a denial that arrives after the signed in account changed is ignored`() = runBlocking {
+        val session = newSession()
+        session.openGate("A")
+        val ticket = requireNotNull(session.syncTicket())
+
+        signedInUid = "B"
+        val toOtherAccount = denialsDuring(session) { session.reportPermissionDenied(ticket) }
+        signedInUid = null
+        val whileSignedOut = denialsDuring(session) { session.reportPermissionDenied(ticket) }
+
+        assertTrue(toOtherAccount.isEmpty())
+        assertTrue(whileSignedOut.isEmpty())
+        // 관문은 판단(SESSION_LOST·GUEST_IDLE)이 닫는다. 거절이 막힘을 남기지 않았으므로 같은 계정으로 돌아오면 그대로 쓸 수 있다.
+        signedInUid = "A"
+        assertTrue(session.isValid(ticket))
+    }
+
+    @Test
+    fun `the same denial reported twice is accepted once`() = runBlocking {
+        val session = newSession()
+        session.openGate("A")
+        val ticket = requireNotNull(session.syncTicket())
+
+        val denials = denialsDuring(session) {
+            session.reportPermissionDenied(ticket)
+            yield()
+            session.reportPermissionDenied(ticket)
+        }
+
+        assertEquals(1, denials.size)
+    }
+
+    @Test
+    fun `denials during logout upload and import are still reported so a deletion lock is detected`() = runBlocking {
+        val session = newSession()
+        session.openGate("A")
+        // 로그아웃 ①: 관문을 닫은 뒤 흐름 티켓을 받는다.
+        session.closeGate()
+        val flush = session.issueFlowTicket("A", SyncTicketPurpose.LOGOUT_FLUSH)
+        val flushDenials = denialsDuring(session) { session.reportPermissionDenied(flush) }
+
+        assertEquals(listOf("A"), flushDenials.map { it.uid })
+        assertTrue(session.isCurrent(flushDenials.single()))
+        assertFalse(session.isValid(flush))
+
+        // 가져오기: 이 계정이 막히지 않은 상태에서, 관문이 닫힌 채 흐름 티켓을 받는다.
+        session.clearPermissionDenied()
+        val import = session.issueFlowTicket("A", SyncTicketPurpose.IMPORT)
+        val importDenials = denialsDuring(session) { session.reportPermissionDenied(import) }
+
+        assertEquals(listOf("A"), importDenials.map { it.uid })
+        assertTrue(session.isCurrent(importDenials.single()))
+        assertFalse(session.isValid(import))
+    }
+
+    @Test
+    fun `token revocation then re-login to the same account keeps syncing despite late denials`() = runBlocking {
+        val session = newSession()
+        // 로그인 → startAccountSync. 리스너와 첫 동기화가 이 티켓을 쓴다.
+        session.clearPermissionDenied()
+        session.openGate("A")
+        val beforeRevocation = requireNotNull(session.syncTicket())
+
+        // 서버가 토큰을 철회해 Auth 가 nil → SESSION_LOST. 그 사이 옛 요청의 거절이 돌아온다(iOS L-10 순서).
+        signedInUid = null
+        session.closeGate()
+        val whileSignedOut = denialsDuring(session) { session.reportPermissionDenied(beforeRevocation) }
+
+        // 같은 계정으로 다시 로그인 → OPEN_GATE → startAccountSync. 그 뒤에 옛 요청의 거절이 또 돌아온다.
+        signedInUid = "A"
+        session.clearPermissionDenied()
+        session.openGate("A")
+        val afterRelogin = denialsDuring(session) { session.reportPermissionDenied(beforeRevocation) }
+
+        assertTrue(whileSignedOut.isEmpty())
+        assertTrue(afterRelogin.isEmpty())
+        assertEquals("A", session.openUid.value)
+        val current = requireNotNull(session.syncTicket())
+        assertTrue(session.isValid(current))
+
+        // 지금 세션의 거절은 받아들이지만, 처리하기 전에 관문이 다시 열리면 새 세션의 리스너를 끄지 않는다(isCurrent false).
+        val denial = denialsDuring(session) { session.reportPermissionDenied(current) }.single()
+        session.clearPermissionDenied()
+        session.openGate("A")
+        assertFalse(session.isCurrent(denial))
+        assertNotNull(session.syncTicket())
+    }
+
+    @Test
+    fun `a stale denial never stops the new session's listeners but the deletion check still runs`() {
+        val flows = source("core/account/AccountSessionFlows.kt")
+        val denied = flows.substringAfter("private suspend fun onPermissionDenied(").substringBefore("// endregion")
+        assertOrder(denied, listOf("if (session.isCurrent(denial)) realtimeSyncManager.stopListening()", "runCatching { reloadAccountStatus(user) }"))
+        assertEquals(1, Regex("""stopListening\(\)""").findAll(denied).count())
+        // 재로그인 때 막힘을 먼저 풀고 관문을 연다(재로그인 전에 받아들인 거절이 새 세션을 막지 않는다).
+        val start = flows.substringAfter("private suspend fun startAccountSync(").substringBefore("private suspend fun runInitialSync(")
+        assertOrder(start, listOf("session.clearPermissionDenied()", "session.openGate(uid)", "session.syncTicket()"))
+        val session = source("core/account/AccountSession.kt").substringAfter("internal fun reportPermissionDenied(")
+            .substringBefore("internal fun isCurrent(")
+        assertOrder(session, listOf("currentUid() != ticket.uid", "generation.compareAndSet(ticket.generation, ticket.generation + 1)", "_openUid.value = null", "tryEmit"))
     }
 
     @Test
@@ -393,6 +532,16 @@ class AccountSessionFlowsTest {
             .map { File(File(requireNotNull(System.getProperty("user.dir"))), it) }
             .first { it.isDirectory }
         return File(root, "com/ScienceFiction/DronePassAndroid/$path").readText()
+    }
+
+    /** [block] 동안 관문이 받아들여 내보낸 거절을 모은다. */
+    private suspend fun CoroutineScope.denialsDuring(session: AccountSession, block: suspend () -> Unit): List<PermissionDenial> {
+        val denials = mutableListOf<PermissionDenial>()
+        val collector = launch(start = CoroutineStart.UNDISPATCHED) { session.permissionDenied.collect { denials += it } }
+        block()
+        yield()
+        collector.cancel()
+        return denials
     }
 
     private fun assertOrder(text: String, tokens: List<String>) {

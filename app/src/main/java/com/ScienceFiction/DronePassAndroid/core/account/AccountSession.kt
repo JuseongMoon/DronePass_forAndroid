@@ -81,6 +81,9 @@ class SyncTicket internal constructor(
     internal val purpose: SyncTicketPurpose,
 )
 
+/** 받아들인 PERMISSION_DENIED 하나. [generation] 은 이 거절로 관문을 닫은 뒤의 세대다. */
+internal data class PermissionDenial(val uid: String, val generation: Long)
+
 /** 관문이 바뀌어 더 이상 쓸 수 없는 티켓. 재시도하지 않고 작업을 끝낸다. */
 class StaleSyncTicketException : IllegalStateException("Sync ticket is no longer valid")
 
@@ -120,8 +123,8 @@ class AccountSession internal constructor(
     @Volatile
     private var deniedUid: String? = null
 
-    private val _permissionDenied = MutableSharedFlow<String>(extraBufferCapacity = 1)
-    internal val permissionDenied: SharedFlow<String> = _permissionDenied.asSharedFlow()
+    private val _permissionDenied = MutableSharedFlow<PermissionDenial>(extraBufferCapacity = 1)
+    internal val permissionDenied: SharedFlow<PermissionDenial> = _permissionDenied.asSharedFlow()
 
     /** 일반 동기화 티켓. 관문이 닫혀 있으면 null 이다. */
     fun syncTicket(): SyncTicket? {
@@ -160,13 +163,22 @@ class AccountSession internal constructor(
         }
     }
 
+    /**
+     * 지금 세대의 티켓이 받은 거절만 받아들인다(L-10). 관문이 닫혔다가 같은 계정으로 다시 열린 뒤에 도착한 옛 요청의
+     * 거절은 새 세션을 막지 않는다. 로그아웃 ① 업로드·가져오기의 흐름 티켓도 발급 뒤 관문이 바뀌지 않았으면 그대로
+     * 받아들인다(탈퇴 잠금 감지).
+     */
     internal fun reportPermissionDenied(ticket: SyncTicket) {
-        if (deniedUid == ticket.uid) return
+        if (deniedUid == ticket.uid || currentUid() != ticket.uid) return
+        // 리스너 콜백에서도 불려 commitMutex 를 잡지 못한다. 세대 확인과 올리기를 한 번에 해 같은 거절도 한 번만 받는다.
+        if (!generation.compareAndSet(ticket.generation, ticket.generation + 1)) return
         deniedUid = ticket.uid
-        generation.incrementAndGet()
         _openUid.value = null
-        _permissionDenied.tryEmit(ticket.uid)
+        _permissionDenied.tryEmit(PermissionDenial(ticket.uid, ticket.generation + 1))
     }
+
+    /** 이 거절로 닫은 관문이 아직 그대로인지. 그사이 다시 열렸으면 false. */
+    internal fun isCurrent(denial: PermissionDenial): Boolean = denial.generation == generation.get()
 
     internal fun clearPermissionDenied() {
         deniedUid = null

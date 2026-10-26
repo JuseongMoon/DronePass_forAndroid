@@ -225,7 +225,7 @@ class AccountSessionFlows @Inject constructor(
     fun start() {
         if (started) return
         started = true
-        scope.launch { session.permissionDenied.collect { uid -> onPermissionDenied(uid) } }
+        scope.launch { session.permissionDenied.collect { denial -> onPermissionDenied(denial) } }
         // 등록하면 바로 한 번 불리므로 첫 판단도 이 리스너가 한다.
         auth.addAuthStateListener(authStateListener)
     }
@@ -839,8 +839,10 @@ class AccountSessionFlows @Inject constructor(
      * 계정이 지워졌는지 확인해, 지워졌으면 이 기기 데이터도 지우고 알린다. 남아 있거나(탈퇴 진행 중 등) 확인하지 못하면
      * 데이터를 지우지 않고, 이 프로세스에서는 관문을 다시 열지 않는다(같은 오류 반복 방지).
      */
-    private suspend fun onPermissionDenied(uid: String) {
-        realtimeSyncManager.stopListening()
+    private suspend fun onPermissionDenied(denial: PermissionDenial) {
+        val uid = denial.uid
+        // 받기 전에 같은 계정으로 관문이 다시 열렸으면 새 세션의 리스너는 그대로 둔다(L-10). 탈퇴 확인은 그대로 한다.
+        if (session.isCurrent(denial)) realtimeSyncManager.stopListening()
         val user = auth.currentUser?.takeIf { it.uid == uid } ?: return
         when (runCatching { reloadAccountStatus(user) }.getOrNull()) {
             AccountReloadStatus.DELETED -> {
