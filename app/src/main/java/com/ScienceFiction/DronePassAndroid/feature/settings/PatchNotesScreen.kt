@@ -16,7 +16,8 @@ import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGroupedBackground
  * 패치노트 풀스크린 (Settings 서브 화면).
  *
  * iOS `PatchNotesView` 정합 — large title + 닫기 액션 + 카드 리스트 (`PatchNotesContent`).
- * 데이터는 자체 서버(`https://sciencefiction.co.kr/dronepass/version-patches.txt`) 에서 fetch.
+ * 데이터는 자체 서버(`https://sciencefiction.co.kr/dronepass/version-patches-android.txt`) 에서 fetch.
+ * 그 파일이 없으면(404) 공용 `version-patches.txt` 를 읽는다.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

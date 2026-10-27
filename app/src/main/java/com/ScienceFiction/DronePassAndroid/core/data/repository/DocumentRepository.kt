@@ -11,6 +11,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import java.util.Locale
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import retrofit2.HttpException
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -38,7 +39,12 @@ class DocumentRepository @Inject constructor(
         private const val PATH_TERMS = "dronepass/terms/termsofservice"
         private const val PATH_PRIVACY = "dronepass/terms/privacypolicy"
         private const val PATH_LOCATION_TERMS = "dronepass/terms/locationterms"
-        private const val PATH_PATCH_NOTES = "dronepass/version-patches"
+
+        /** Android 전용 패치노트(3.6.3부터, L-1). */
+        internal const val PATH_PATCH_NOTES = "dronepass/version-patches-android"
+
+        /** 3.6.2 이하 두 앱이 함께 읽는 공용 패치노트. Android 파일이 없을 때(HTTP 404)만 읽는다. */
+        internal const val PATH_PATCH_NOTES_SHARED = "dronepass/version-patches"
     }
 
     @Volatile private var cachedTerms: CacheEntry<ParsedDocument>? = null
@@ -78,15 +84,16 @@ class DocumentRepository @Inject constructor(
 
     /**
      * 패치노트는 캐시 우회 — iOS `.reloadIgnoringLocalCacheData` 정합.
-     * 항상 최신 버전 fetch.
+     * 항상 최신 버전 fetch. Android 파일이 서버에 없으면(404) 같은 언어의 공용 파일을 읽는다.
      */
     suspend fun fetchPatchNotes(): Result<List<PatchNote>> {
         return try {
-            val body = documentApi.getDocument(
+            val content = fetchWithSharedFallback(
                 path = localizedPath(PATH_PATCH_NOTES),
-                cacheControl = "no-cache",
+                sharedPath = localizedPath(PATH_PATCH_NOTES_SHARED),
+                fetch = { path -> documentApi.getDocument(path = path, cacheControl = "no-cache").string() },
+                onSharedFallback = { Log.i(TAG, "PatchNotes: Android 파일이 없어(404) 공용 파일을 읽습니다") },
             )
-            val content = body.string()
             val notes = MarkdownParser.parsePatchNotes(content)
             Result.success(notes)
         } catch (e: Exception) {
@@ -154,6 +161,25 @@ internal fun localizedDocumentPath(base: String, languageTag: String?): String {
         ?.lowercase(Locale.ROOT)
         ?: "ko"
     return if (primaryLanguage == "ko") "$base.txt" else "${base}_en.txt"
+}
+
+/**
+ * [path] 를 읽고, 서버에 그 파일이 없을 때(HTTP 404)만 [sharedPath] 를 읽는다(L-1).
+ * 네트워크 오류·타임아웃·5xx 같은 다른 실패는 대체하지 않고 그대로 던진다.
+ */
+internal suspend fun fetchWithSharedFallback(
+    path: String,
+    sharedPath: String,
+    fetch: suspend (path: String) -> String,
+    onSharedFallback: () -> Unit = {},
+): String {
+    return try {
+        fetch(path)
+    } catch (e: HttpException) {
+        if (e.code() != 404) throw e
+        onSharedFallback()
+        fetch(sharedPath)
+    }
 }
 
 internal fun parsedDocumentHasDisplayableElements(document: ParsedDocument): Boolean {

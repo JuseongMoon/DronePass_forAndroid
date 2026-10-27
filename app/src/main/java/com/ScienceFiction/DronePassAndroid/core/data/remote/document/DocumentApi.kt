@@ -15,7 +15,7 @@ import retrofit2.http.Path
  *  - `dronepass/terms/termsofservice.txt`
  *  - `dronepass/terms/privacypolicy.txt`
  *  - `dronepass/terms/locationterms.txt`
- *  - `dronepass/version-patches.txt`
+ *  - `dronepass/version-patches-android.txt` (없으면 공용 `dronepass/version-patches.txt`)
  */
 interface DocumentApi {
     /**
