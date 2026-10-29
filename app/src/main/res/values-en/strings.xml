@@ -362,6 +362,17 @@
     <string name="shape_detail_title_label">Title</string>
     <string name="shape_detail_navigation_title">Details</string>
     <string name="shape_detail_more_menu">More</string>
+    <string name="shape_share_button">Share</string>
+    <string name="shape_share_preview_title">Share Card</string>
+    <string name="shape_share_hint">Drag or pinch the map to adjust the view</string>
+    <string name="shape_share_map_type_basic">Standard</string>
+    <string name="shape_share_map_type_satellite">Satellite</string>
+    <string name="shape_share_map_type_hybrid">Hybrid</string>
+    <string name="shape_share_action">Share</string>
+    <string name="shape_share_loading">Loading map…</string>
+    <string name="shape_share_error">Couldn\'t create the card image. Please try again.</string>
+    <string name="shape_share_card_radius">Radius %1$s</string>
+    <string name="shape_share_card_height">Altitude %1$s</string>
     <string name="shape_detail_drone_deleted">Deleted drone</string>
     <string name="shape_detail_drone_unassigned">No drone assigned</string>
     <string name="shape_detail_navigation_message">Start navigation with the app below.</string>

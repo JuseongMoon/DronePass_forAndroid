@@ -101,6 +101,17 @@
             android:exported="false"
             android:targetActivity=".subscription.SafeBillingProxyActivity" />
 
+        <!-- 도형 공유 카드 이미지를 공유 시트로 넘긴다 (res/xml/share_file_paths.xml) -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/share_file_paths" />
+        </provider>
+
         <!-- 네이버 지도 NCP 키 (local.properties에서 로드) -->
         <meta-data
             android:name="com.naver.maps.map.NCP_KEY_ID"

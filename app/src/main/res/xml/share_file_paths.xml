@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 공유 카드 이미지(PNG)를 다른 앱에 넘기는 FileProvider 경로. 앱 캐시의 공유 전용 폴더만 연다. -->
+<paths>
+    <cache-path
+        name="shared_cards"
+        path="shared_cards/" />
+</paths>

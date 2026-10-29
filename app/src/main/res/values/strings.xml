@@ -435,6 +435,17 @@
     <string name="shape_detail_title_label">제목</string>
     <string name="shape_detail_navigation_title">상세 정보</string>
     <string name="shape_detail_more_menu">더보기</string>
+    <string name="shape_share_button">공유하기</string>
+    <string name="shape_share_preview_title">공유 카드</string>
+    <string name="shape_share_hint">지도를 움직이거나 확대해 구도를 맞출 수 있어요</string>
+    <string name="shape_share_map_type_basic">기본</string>
+    <string name="shape_share_map_type_satellite">위성</string>
+    <string name="shape_share_map_type_hybrid">지도+위성</string>
+    <string name="shape_share_action">공유하기</string>
+    <string name="shape_share_loading">지도를 불러오는 중…</string>
+    <string name="shape_share_error">카드 이미지를 만들지 못했습니다. 다시 시도해 주세요.</string>
+    <string name="shape_share_card_radius">반경 %1$s</string>
+    <string name="shape_share_card_height">고도 %1$s</string>
     <string name="shape_detail_drone_deleted">삭제된 드론</string>
     <string name="shape_detail_drone_unassigned">드론 미지정</string>
     <string name="shape_detail_navigation_message">아래 앱으로 길찾기를 시작합니다.</string>

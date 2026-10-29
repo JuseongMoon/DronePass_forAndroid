@@ -56,6 +56,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.IosShare
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenuItem
@@ -176,6 +177,7 @@ internal val ShapeDetailNavigationHeaderSideWidth = 44.dp
 internal val ShapeDetailMoreCircleSize = 24.dp
 internal val ShapeDetailMoreCircleStrokeWidth = 1.5.dp
 internal val ShapeDetailMoreDotsSize = 18.dp
+internal val ShapeDetailShareIconSize = 24.dp
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -205,9 +207,14 @@ fun ShapeDetailSheet(
     var copyToastMessage by remember { mutableStateOf("") }
     var copyToastGeneration by remember { mutableIntStateOf(0) }
     var memoWebUrl by remember { mutableStateOf<String?>(null) }
+    var showSharePreview by remember { mutableStateOf(false) }
     val copiedMessage = stringResource(R.string.shape_detail_copied)
 
-    val dateFormat = remember { localizedShapeDateTimeFormat() }
+    // 일 단위로 입력한 도형은 시간 없이 날짜만 보여 준다 (iOS flightDateFormatter 정합)
+    val isDateOnlyFlight = shape.isDateOnlyFlight()
+    val dateFormat = remember(isDateOnlyFlight) {
+        if (isDateOnlyFlight) shapeEditDateOnlyFormat() else localizedShapeDateTimeFormat()
+    }
     val detailDrone = resolveShapeDetailDrone(
         shapeDroneId = shape.droneId,
         matchedDrone = drone,
@@ -257,6 +264,7 @@ fun ShapeDetailSheet(
                 ShapeDetailNavigationHeader(
                     menuExpanded = showMoreMenu,
                     onMenuExpandedChange = { showMoreMenu = it },
+                    onShare = { showSharePreview = true },
                     onEdit = {
                         showMoreMenu = false
                         hideAndThen(onEdit)
@@ -472,6 +480,14 @@ fun ShapeDetailSheet(
         )
     }
 
+    if (showSharePreview) {
+        ShapeSharePreviewSheet(
+            shape = shape,
+            drone = detailDrone,
+            onDismiss = { showSharePreview = false },
+        )
+    }
+
     memoWebUrl?.let { url ->
         ShapeDetailMemoWebSheet(
             url = url,
@@ -481,12 +497,14 @@ fun ShapeDetailSheet(
 }
 
 /**
- * iOS ShapeDetailView NavigationView inline title + trailing ellipsis.circle 정합.
+ * iOS ShapeDetailView NavigationView inline title + trailing 공유·ellipsis.circle 정합.
+ * 공유 버튼은 "..." 왼쪽에 둔다. 제목이 가운데에 오도록 왼쪽 빈 칸도 오른쪽 버튼 두 개 폭과 같게 둔다.
  */
 @Composable
 private fun ShapeDetailNavigationHeader(
     menuExpanded: Boolean,
     onMenuExpandedChange: (Boolean) -> Unit,
+    onShare: () -> Unit,
     onEdit: () -> Unit,
     onDuplicate: () -> Unit,
     onDelete: () -> Unit,
@@ -498,7 +516,7 @@ private fun ShapeDetailNavigationHeader(
             .padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Spacer(modifier = Modifier.width(ShapeDetailNavigationHeaderSideWidth))
+        Spacer(modifier = Modifier.width(ShapeDetailNavigationHeaderSideWidth * 2))
         Text(
             text = stringResource(R.string.shape_detail_navigation_title),
             style = MaterialTheme.typography.titleMedium,
@@ -506,6 +524,17 @@ private fun ShapeDetailNavigationHeader(
             textAlign = TextAlign.Center,
             modifier = Modifier.weight(1f),
         )
+        IconButton(
+            onClick = onShare,
+            modifier = Modifier.size(ShapeDetailNavigationHeaderSideWidth),
+        ) {
+            Icon(
+                imageVector = Icons.Filled.IosShare,
+                contentDescription = stringResource(R.string.shape_share_button),
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(ShapeDetailShareIconSize),
+            )
+        }
         Box(
             modifier = Modifier.width(ShapeDetailNavigationHeaderSideWidth),
             contentAlignment = Alignment.Center,
