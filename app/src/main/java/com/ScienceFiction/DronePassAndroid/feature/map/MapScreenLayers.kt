@@ -254,6 +254,7 @@ internal fun MapFloatingControls(
     val isSketchMode by sketchViewModel.isSketchMode.collectAsStateWithLifecycle()
     val activeDrones by viewModel.activeDrones.collectAsStateWithLifecycle()
     val selectedDroneIds by viewModel.selectedDroneIds.collectAsStateWithLifecycle()
+    val tagFilterState by viewModel.tagFilterState.collectAsStateWithLifecycle()
     val highlightedDroneIds by viewModel.highlightedDroneIds.collectAsStateWithLifecycle()
     val visibleLayerCount by viewModel.visibleLayerCount.collectAsStateWithLifecycle()
     val koreaFeaturesEnabled by viewModel.koreaFeaturesEnabled.collectAsStateWithLifecycle()
@@ -281,6 +282,8 @@ internal fun MapFloatingControls(
                 highlightedDroneIds = highlightedDroneIds,
                 onToggleSelection = { viewModel.toggleDroneSelection(it) },
                 onToggleHighlight = { viewModel.toggleDroneHighlight(it) },
+                tagFilter = tagFilterState,
+                onToggleTagFilterKey = { viewModel.toggleTagFilterKey(it) },
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(
@@ -716,6 +719,7 @@ internal fun MapBottomSheets(
     val isDuplicateMode by viewModel.isDuplicateMode.collectAsStateWithLifecycle()
     val newShapeCoordinate by viewModel.newShapeCoordinate.collectAsStateWithLifecycle()
     val activeDrones by viewModel.activeDrones.collectAsStateWithLifecycle()
+    val allTags by viewModel.allTags.collectAsStateWithLifecycle()
     val primarySelectedDroneId by viewModel.primarySelectedDroneId.collectAsStateWithLifecycle()
     val shapeEditDefaults by viewModel.shapeEditDefaults.collectAsStateWithLifecycle()
     val reverseGeocodedAddress by viewModel.reverseGeocodedAddress.collectAsStateWithLifecycle()
@@ -735,6 +739,7 @@ internal fun MapBottomSheets(
         selectedShape?.let { shape ->
             ShapeDetailSheet(
                 shape = shape,
+                tags = allTags,
                 onEdit = {
                     viewModel.onEditShapeRequested(
                         shape = shape,

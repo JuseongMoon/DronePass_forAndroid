@@ -24,5 +24,6 @@ data class ShapeEntity(
     val deletedAt: Long?,
     val flightStartDate: Long,
     val flightEndDate: Long?,
-    val updatedAt: Long
+    val updatedAt: Long,
+    val tagId: String? = null,
 )

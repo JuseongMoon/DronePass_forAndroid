@@ -58,6 +58,7 @@ import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.feature.auth.AuthState
 import com.ScienceFiction.DronePassAndroid.feature.auth.LoginScreen
 import com.ScienceFiction.DronePassAndroid.feature.drone.DroneListScreen
+import com.ScienceFiction.DronePassAndroid.feature.tag.TagListScreen
 import com.ScienceFiction.DronePassAndroid.feature.kp.KpForecastContent
 import com.ScienceFiction.DronePassAndroid.feature.profile.ProfileScreen
 import com.ScienceFiction.DronePassAndroid.feature.kp.KpSheetHeader
@@ -114,12 +115,14 @@ fun SettingsScreen(
     onAccountSessionEnded: () -> Unit = {},
 ) {
     var showDroneListSheet by remember { mutableStateOf(false) }
+    var showTagListSheet by remember { mutableStateOf(false) }
     var showAppInfoSheet by remember { mutableStateOf(false) }
     var showPatchNotesSheet by remember { mutableStateOf(false) }
 
     SettingsMainContent(
         settingsViewModel = settingsViewModel,
         onNavigateToDroneList = { showDroneListSheet = true },
+        onNavigateToTagList = { showTagListSheet = true },
         onNavigateToAppInfo = { showAppInfoSheet = true },
         onNavigateToPatchNotes = { showPatchNotesSheet = true },
         onAccountSessionEnded = onAccountSessionEnded,
@@ -134,6 +137,18 @@ fun SettingsScreen(
             dragHandle = null,
         ) {
             DroneListScreen()
+        }
+    }
+
+    if (showTagListSheet) {
+        DronePassModalBottomSheet(
+            onDismissRequest = { showTagListSheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            containerColor = IosSystemGroupedBackground,
+            // iOS NavigationView large 제목 시트에는 그래버가 없다. 헤더가 내비게이션 바 높이를 비운다.
+            dragHandle = null,
+        ) {
+            TagListScreen()
         }
     }
 
@@ -167,6 +182,7 @@ fun SettingsScreen(
 private fun SettingsMainContent(
     settingsViewModel: SettingsViewModel,
     onNavigateToDroneList: () -> Unit,
+    onNavigateToTagList: () -> Unit,
     onNavigateToAppInfo: () -> Unit,
     onNavigateToPatchNotes: () -> Unit,
     onAccountSessionEnded: () -> Unit,
@@ -240,6 +256,11 @@ private fun SettingsMainContent(
                     title = stringResource(R.string.settings_drone_manage),
                     onClick = onNavigateToDroneList,
                 )
+                InsetGroupedDivider()
+                InsetGroupedRow(
+                    title = stringResource(R.string.settings_tag_manage),
+                    onClick = onNavigateToTagList,
+                )
             }
 
             // ===== 2. 구독 (iOS SettingView.subscriptionSection) =====
@@ -284,6 +305,11 @@ private fun SettingsMainContent(
                     title = stringResource(R.string.subscription_settings_drones),
                     used = quotaUsage.drones,
                     limit = quotaLimits.freeDrones.takeIf { isConfirmedFree },
+                )
+                SubscriptionUsageRow(
+                    title = stringResource(R.string.subscription_settings_tags),
+                    used = quotaUsage.tags,
+                    limit = quotaLimits.freeTags.takeIf { isConfirmedFree },
                 )
                 // iOS: 무료 플랜의 결제 재시도(billing retry) 상태에서만 안내한다.
                 if (plan.paymentIssue && isConfirmedFree) {

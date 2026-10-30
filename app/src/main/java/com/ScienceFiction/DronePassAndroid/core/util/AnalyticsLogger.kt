@@ -68,7 +68,7 @@ class AnalyticsLogger @Inject constructor() {
     fun logRestoreResult(restored: Boolean) = analytics.logEvent("restore_result") { param("restored", restored.toString()) }
 
     @Synchronized
-    fun logQuotaUsage(shapes: Int, sketches: Int, drones: Int, plan: String) {
+    fun logQuotaUsage(shapes: Int, sketches: Int, drones: Int, tags: Int, plan: String) {
         val now = System.currentTimeMillis()
         if (now - lastUsageAt < 24L * 60L * 60L * 1000L) return
         lastUsageAt = now
@@ -76,6 +76,7 @@ class AnalyticsLogger @Inject constructor() {
             param("shapes", com.ScienceFiction.DronePassAndroid.subscription.countBucket(shapes))
             param("sketches", com.ScienceFiction.DronePassAndroid.subscription.countBucket(sketches))
             param("drones", drones.toLong())
+            param("tags", tags.toLong())
             param("plan", plan)
         }
     }

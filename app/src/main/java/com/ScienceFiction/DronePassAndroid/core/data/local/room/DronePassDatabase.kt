@@ -7,9 +7,11 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.dao.DroneDao
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.dao.ShapeDao
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.dao.SketchDao
+import com.ScienceFiction.DronePassAndroid.core.data.local.room.dao.TagDao
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.entity.DroneEntity
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.entity.ShapeEntity
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.entity.SketchEntity
+import com.ScienceFiction.DronePassAndroid.core.data.local.room.entity.TagEntity
 
 /**
  * DronePass Room 데이터베이스
@@ -18,6 +20,7 @@ import com.ScienceFiction.DronePassAndroid.core.data.local.room.entity.SketchEnt
  * - v1: 초기 버전 (shapes 테이블)
  * - v2: drones, sketches 테이블 추가
  * - v3: iOS ShapeModel geometry 필드 보존용 컬럼 복원
+ * - v4: 도형 태그(shapes.tagId, tags 테이블)
  *
  * 마이그레이션 정책:
  * - 각 버전 업그레이드에 대해 Migration 객체를 정의한다.
@@ -25,14 +28,15 @@ import com.ScienceFiction.DronePassAndroid.core.data.local.room.entity.SketchEnt
  *   프로덕션에서는 반드시 명시적 마이그레이션을 사용한다.
  */
 @Database(
-    entities = [ShapeEntity::class, DroneEntity::class, SketchEntity::class],
-    version = 3,
+    entities = [ShapeEntity::class, DroneEntity::class, SketchEntity::class, TagEntity::class],
+    version = 4,
     exportSchema = true
 )
 abstract class DronePassDatabase : RoomDatabase() {
     abstract fun shapeDao(): ShapeDao
     abstract fun droneDao(): DroneDao
     abstract fun sketchDao(): SketchDao
+    abstract fun tagDao(): TagDao
 
     companion object {
         /**
@@ -144,6 +148,23 @@ abstract class DronePassDatabase : RoomDatabase() {
             override fun migrate(db: SupportSQLiteDatabase) = Unit
         }
 
-        val allMigrations = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_1_3)
+        /** v3 -> v4: 도형 태그. 기존 도형은 태그 없음(null)으로 시작한다. */
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `shapes` ADD COLUMN `tagId` TEXT")
+                db.execSQL(
+                    """CREATE TABLE IF NOT EXISTS `tags` (
+                        `id` TEXT NOT NULL,
+                        `name` TEXT NOT NULL,
+                        `createdAt` INTEGER NOT NULL,
+                        `updatedAt` INTEGER NOT NULL,
+                        `deletedAt` INTEGER,
+                        PRIMARY KEY(`id`)
+                    )""".trimIndent()
+                )
+            }
+        }
+
+        val allMigrations = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_1_3, MIGRATION_3_4)
     }
 }

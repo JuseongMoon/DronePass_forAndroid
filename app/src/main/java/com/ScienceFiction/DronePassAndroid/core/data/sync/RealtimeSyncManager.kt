@@ -11,6 +11,8 @@ import androidx.datastore.preferences.core.edit
 import com.ScienceFiction.DronePassAndroid.core.data.repository.DroneRepository
 import com.ScienceFiction.DronePassAndroid.core.data.repository.ShapeRepository
 import com.ScienceFiction.DronePassAndroid.core.data.repository.SketchRepository
+import com.ScienceFiction.DronePassAndroid.core.data.repository.TagRepository
+import com.ScienceFiction.DronePassAndroid.core.data.remote.firebase.tagFromFirestoreDocument
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import kotlinx.coroutines.CoroutineScope
@@ -115,6 +117,7 @@ class RealtimeSyncManager @Inject constructor(
     private val shapeRepository: ShapeRepository,
     private val droneRepository: DroneRepository,
     private val sketchRepository: SketchRepository,
+    private val tagRepository: TagRepository,
     private val dataStore: DataStore<Preferences>,
 ) {
 
@@ -133,6 +136,9 @@ class RealtimeSyncManager @Inject constructor(
 
     /** iOS DroneFirebaseStore 는 metadata/server 를 갱신하지 않으므로 drones 컬렉션도 직접 감시한다. */
     private var droneCollectionListener: ListenerRegistration? = null
+
+    /** 태그는 메타데이터 문서 없이 tags 컬렉션을 직접 감시한다. 거절돼도 관문을 닫지 않는다(규칙 배포 전) */
+    private var tagCollectionListener: ListenerRegistration? = null
 
     /** Firestore 스냅샷 리스너 등록 참조 (Sketch용 metadata/sketchServer) */
     private var sketchMetadataListener: ListenerRegistration? = null
@@ -223,8 +229,39 @@ class RealtimeSyncManager @Inject constructor(
         // 3. Sketch 메타데이터 리스너 설정
         setupSketchMetadataListener(ticket)
 
+        // 4. 태그 컬렉션 리스너 설정
+        setupTagCollectionListener(ticket)
+
         _isRealtimeSyncEnabled.value = true
         Log.d(TAG, "SnapshotListener 설정 완료 (Shape metadata + Drone collection + Sketch)")
+    }
+
+    /**
+     * 태그 컬렉션 리스너. 받은 태그를 기기 태그와 병합해 반영한다(iOS TagRepository.handleFirebaseChanges 정합).
+     * 오류(보안 규칙 배포 전 거절 포함)는 기록만 하고 관문·동기화 상태에 반영하지 않는다.
+     */
+    private fun setupTagCollectionListener(ticket: SyncTicket) {
+        tagCollectionListener = firestore
+            .collection("users")
+            .document(ticket.uid)
+            .collection("tags")
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    Log.w(TAG, "Tag 컬렉션 SnapshotListener 오류(태그 동기화만 건너뜀)", error)
+                    return@addSnapshotListener
+                }
+                if (snapshot == null || !session.isValid(ticket)) return@addSnapshotListener
+                val server = snapshot.documents.mapNotNull { doc -> doc.data?.let { tagFromFirestoreDocument(doc.id, it) } }
+                scope.launch {
+                    try {
+                        tagRepository.applyServerTags(ticket, server)
+                    } catch (e: StaleSyncTicketException) {
+                        Log.d(TAG, "관문이 바뀌어 태그 반영을 건너뜁니다.")
+                    } catch (e: Exception) {
+                        Log.w(TAG, "태그 반영 실패", e)
+                    }
+                }
+            }
     }
 
     /**
@@ -389,6 +426,8 @@ class RealtimeSyncManager @Inject constructor(
             val uploadedShapes = shapeRepository.performFullSync(ticket)
             Log.d(TAG, "Shape 동기화 완료")
 
+            val uploadedTags = syncTagsIgnoringFailure(ticket)
+
             // 동기화 시각 업데이트
             val syncTime = System.currentTimeMillis()
             session.commit(ticket) {
@@ -410,7 +449,7 @@ class RealtimeSyncManager @Inject constructor(
 
             _syncState.value = SyncState.Success(lastShapeSyncTime)
             Log.d(TAG, "Shape/Drone 실시간 동기화 완료")
-            return uploadedDrones + uploadedShapes
+            return uploadedDrones + uploadedShapes + uploadedTags
         } catch (e: Exception) {
             if (e is StaleSyncTicketException) {
                 Log.d(TAG, "관문이 바뀌어 Shape/Drone 동기화 결과를 버립니다.")
@@ -481,6 +520,18 @@ class RealtimeSyncManager @Inject constructor(
     }
 
     /**
+     * 태그 전체 동기화. 실패해도(보안 규칙 배포 전 거절 포함) 도형·드론 동기화를 실패로 만들지 않는다. 올린 태그 수를 돌려준다.
+     */
+    private suspend fun syncTagsIgnoringFailure(ticket: SyncTicket): Int = try {
+        tagRepository.performFullSync(ticket)
+    } catch (e: StaleSyncTicketException) {
+        throw e
+    } catch (e: Exception) {
+        Log.w(TAG, "태그 동기화 실패(기기 태그 유지)", e)
+        0
+    }
+
+    /**
      * Shape/Drone 동기화 실패 시 재시도 스케줄링
      * 최대 3회, 5초/10초/15초 간격으로 재시도
      */
@@ -543,6 +594,9 @@ class RealtimeSyncManager @Inject constructor(
 
         droneCollectionListener?.remove()
         droneCollectionListener = null
+
+        tagCollectionListener?.remove()
+        tagCollectionListener = null
 
         // Sketch 리스너 제거
         sketchMetadataListener?.remove()

@@ -3,6 +3,7 @@ package com.ScienceFiction.DronePassAndroid.feature.shape
 import com.ScienceFiction.DronePassAndroid.domain.model.Coordinate
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
+import com.ScienceFiction.DronePassAndroid.domain.model.TagModel
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -95,7 +96,7 @@ class ShapeShareCardContentTest {
     fun `종료일이 없으면 시작만 표시한다`() {
         val content = content(makeShape(end = null))
         assertEquals(dateTimeFormat.format(sampleStart), content.period)
-        assertFalse(content.period.contains("~"))
+        assertFalse(content.period.orEmpty().contains("~"))
     }
 
     @Test
@@ -141,5 +142,87 @@ class ShapeShareCardContentTest {
         assertFalse(makeShape(start = seoul(0, 0), end = seoul(18, 0)).isDateOnlyFlight(seoul))
         assertFalse(makeShape(start = seoul(9, 0), end = seoul(23, 59)).isDateOnlyFlight(seoul))
         assertFalse(makeShape(start = seoul(0, 0, 30), end = seoul(23, 59)).isDateOnlyFlight(seoul))
+    }
+
+    // ===== 항목 켜기/끄기 (iOS ShapeShareCardContentTests 대응) =====
+
+    private fun content(options: ShapeShareCardOptions, tag: TagModel? = TagModel(name = "촬영")) =
+        buildShapeShareCardContent(
+            shape = makeShape(),
+            drone = DroneModel(id = "drone-1", name = "Mini 4 Pro", color = "#007AFF"),
+            tag = tag,
+            options = options,
+            dateTimeFormat = dateTimeFormat,
+            dateFormat = dateFormat,
+            timeZone = seoul,
+            locale = Locale.US,
+        )
+
+    @Test
+    fun `기본 옵션은 태그만 빼고 모두 보인다`() {
+        val content = content(ShapeShareCardOptions())
+        assertEquals("서울특별시 중구 세종대로 110", content.address)
+        assertTrue(content.period != null)
+        assertTrue(content.coordinate != null)
+        assertEquals("Mini 4 Pro", content.droneName)
+        assertNull("태그는 기본으로 끈다", content.tagName)
+    }
+
+    @Test
+    fun `끈 항목은 null 이고 항상 들어가는 항목은 남는다`() {
+        val content = content(
+            ShapeShareCardOptions(
+                showAddress = false,
+                showPeriod = false,
+                showCoordinate = false,
+                showDrone = false,
+                showTag = true,
+            ),
+        )
+        assertNull(content.address)
+        assertNull(content.period)
+        assertNull(content.coordinate)
+        assertNull(content.droneName)
+        assertNull(content.droneColorHex)
+        assertEquals("촬영", content.tagName)
+        assertEquals("한강 공원", content.title)
+        assertEquals("500 m", content.radius)
+        assertEquals("120 m", content.height)
+    }
+
+    @Test
+    fun `태그를 켜도 태그가 없으면 보이지 않는다`() {
+        assertNull(content(ShapeShareCardOptions(showTag = true), tag = null).tagName)
+    }
+
+    @Test
+    fun `주소 간략히`() {
+        assertEquals("서울특별시 중구", content(ShapeShareCardOptions(simplifyAddress = true)).address)
+        assertNull(
+            "주소를 끄면 간략히와 무관하게 뺀다",
+            content(ShapeShareCardOptions(showAddress = false, simplifyAddress = true)).address,
+        )
+    }
+
+    @Test
+    fun `지역 요약 규칙`() {
+        assertEquals("경기도 양평군", koreanAddressRegionSummary("경기도 양평군 양서면 양수리 123"))
+        assertEquals("경기도 성남시 분당구", koreanAddressRegionSummary("경기도 성남시 분당구 정자동 1"))
+        assertEquals("경기도 수원시 팔달구", koreanAddressRegionSummary("경기도 수원시 팔달구 매산로 1"))
+        assertEquals("경기도 김포시", koreanAddressRegionSummary("경기도 김포시 고촌읍"))
+        assertEquals("서울특별시 강남구", koreanAddressRegionSummary("서울특별시 강남구 역삼동 737"))
+        assertEquals("세종특별자치시", koreanAddressRegionSummary("세종특별자치시 한솔동 1"))
+        assertEquals("제주특별자치도 제주시", koreanAddressRegionSummary("제주특별자치도 제주시 연동 1"))
+        assertEquals("강원특별자치도 평창군", koreanAddressRegionSummary("강원특별자치도 평창군 대관령면"))
+        assertEquals("1600 Amphitheatre", koreanAddressRegionSummary("1600 Amphitheatre Pkwy, Mountain View"))
+    }
+
+    @Test
+    fun `옵션 저장값은 왕복되고 빠진 키는 기본값으로 채운다`() {
+        assertEquals(ShapeShareCardOptions(), ShapeShareCardOptions.fromJson(null))
+        val options = ShapeShareCardOptions(showCoordinate = false, showTag = true)
+        assertEquals(options, ShapeShareCardOptions.fromJson(options.toJson()))
+        assertEquals(ShapeShareCardOptions(showAddress = false), ShapeShareCardOptions.fromJson("""{"showAddress":false}"""))
+        assertEquals(ShapeShareCardOptions(), ShapeShareCardOptions.fromJson("not json"))
     }
 }

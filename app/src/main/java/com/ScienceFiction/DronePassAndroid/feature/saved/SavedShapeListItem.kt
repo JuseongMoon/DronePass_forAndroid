@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
@@ -48,6 +49,8 @@ fun SavedShapeListItem(
     onClick: () -> Unit,
     onDetailClick: () -> Unit,
     modifier: Modifier = Modifier,
+    /** 오른쪽 위에 보일 태그 이름 (활성 태그가 없으면 null) */
+    tagName: String? = null,
 ) {
     val currentLocale = Locale.getDefault()
     val dateFormat = remember(currentLocale) { savedShapeListDateFormat(currentLocale) }
@@ -111,14 +114,22 @@ fun SavedShapeListItem(
                 Alignment.CenterVertically,
             )
         ) {
-            Text(
-                text = savedShapeListTitleText(shape.title),
-                fontSize = SavedShapeTitleFontSize,
-                lineHeight = SavedShapeTitleLineHeight,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = savedShapeListTitleText(shape.title),
+                    fontSize = SavedShapeTitleFontSize,
+                    lineHeight = SavedShapeTitleLineHeight,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
+                )
+                // 오른쪽 위: 태그 (색 없음, iOS TagBadge)
+                if (tagName != null) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    SavedShapeTagBadge(name = tagName)
+                }
+            }
 
             if (shouldShowSavedShapeAddress(shape.address)) {
                 Text(
@@ -214,3 +225,24 @@ internal fun isSavedShapeListItemExpired(
 ): Boolean {
     return flightEndDateMillis?.let { it <= now } ?: false
 }
+
+/** 저장 목록 오른쪽 위 태그 표시. 색을 쓰지 않는다 (iOS TagBadge: caption2, secondarySystemFill 캡슐) */
+@Composable
+internal fun SavedShapeTagBadge(name: String, modifier: Modifier = Modifier) {
+    Text(
+        text = name,
+        fontSize = 11.sp,
+        lineHeight = 13.sp,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        modifier = modifier
+            .widthIn(max = SavedShapeTagBadgeMaxWidth)
+            .clip(RoundedCornerShape(percent = 50))
+            .background(SavedShapeTagBadgeFill)
+            .padding(horizontal = 6.dp, vertical = 2.dp),
+    )
+}
+
+private val SavedShapeTagBadgeFill = Color(0x29787880)
+private val SavedShapeTagBadgeMaxWidth = 120.dp

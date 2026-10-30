@@ -75,6 +75,7 @@ private val SHAPE_OPTIONAL_FIRESTORE_FIELDS = listOf(
     "polylineCoordinates",
     "height",
     "droneId",
+    "tagId",
     "flightEndDate",
     "deletedAt",
 )
@@ -107,6 +108,8 @@ internal fun shapeToFirestoreDocumentData(shape: ShapeModel): Map<String, Any> {
         ?.let { data["polylineCoordinates"] = coordinatesToFirestoreList(it) }
     shape.height?.let { data["height"] = it }
     shape.droneId?.let { data["droneId"] = it }
+    // 빈 문자열도 "태그 없음"이라 쓰지 않는다. merge 쓰기에서는 아래 목록이 필드를 지운다
+    shape.tagId?.takeIf { it.isNotEmpty() }?.let { data["tagId"] = it }
     shape.flightEndDate?.let { data["flightEndDate"] = Timestamp(Date(it)) }
     shape.deletedAt?.let { data["deletedAt"] = Timestamp(Date(it)) }
 
@@ -190,6 +193,7 @@ internal fun shapeFromFirestoreData(data: Map<String, Any?>): ShapeModel? {
         memo = data["memo"] as? String,
         color = color,
         droneId = data["droneId"] as? String,
+        tagId = (data["tagId"] as? String)?.takeIf { it.isNotEmpty() },
         createdAt = createdAt,
         updatedAt = updatedAt,
         flightStartDate = flightStartDate,

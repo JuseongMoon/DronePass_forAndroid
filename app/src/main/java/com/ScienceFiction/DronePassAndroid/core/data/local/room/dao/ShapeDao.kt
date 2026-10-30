@@ -48,6 +48,9 @@ interface ShapeDao {
     @Query("SELECT * FROM shapes WHERE droneId = :droneId AND deletedAt IS NULL")
     suspend fun getActiveShapesByDroneId(droneId: String): List<ShapeEntity>
 
+    @Query("SELECT * FROM shapes WHERE tagId = :tagId AND deletedAt IS NULL")
+    suspend fun getActiveShapesByTagId(tagId: String): List<ShapeEntity>
+
     @Query("SELECT * FROM shapes WHERE deletedAt IS NULL AND flightEndDate IS NOT NULL AND flightEndDate < :now")
     suspend fun getActiveExpiredShapes(now: Long): List<ShapeEntity>
 

@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.core.account
 
+import com.ScienceFiction.DronePassAndroid.core.data.repository.TagPreferenceKeys
 import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncPreferenceKeys
 import com.ScienceFiction.DronePassAndroid.core.location.testPreferencesDataStore
 import com.ScienceFiction.DronePassAndroid.feature.account.ImportPromptButton
@@ -431,6 +432,7 @@ class AccountSessionFlowsTest {
                 DroneSelectionPreferenceKeys.LEGACY_SELECTED_DRONE_IDS,
                 ShapeEditPreferenceKeys.LAST_SELECTED_DRONE_ID,
                 ShapeEditPreferenceKeys.LEGACY_LAST_SELECTED_DRONE_ID,
+                TagPreferenceKeys.HIDDEN_FILTER_KEYS,
             ),
             DEVICE_ACCOUNT_DATA_PREFERENCE_KEYS.toSet(),
         )

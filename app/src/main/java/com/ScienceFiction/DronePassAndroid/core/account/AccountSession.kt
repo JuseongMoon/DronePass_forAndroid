@@ -164,6 +164,15 @@ class AccountSession internal constructor(
     }
 
     /**
+     * [remote] 와 같지만 PERMISSION_DENIED 로 관문을 닫지 않는다. 태그 저장소 전용이다: 운영 보안 규칙(tags)이
+     * 앱보다 늦게 배포돼도 도형 동기화까지 멈추지 않게 태그 동기화만 실패한다 (iOS TagFirebaseStore 정합).
+     */
+    suspend fun <T> remoteIgnoringDenial(ticket: SyncTicket, request: suspend (uid: String) -> T): T {
+        requireValid(ticket)
+        return request(ticket.uid)
+    }
+
+    /**
      * 지금 세대의 티켓이 받은 거절만 받아들인다(L-10). 관문이 닫혔다가 같은 계정으로 다시 열린 뒤에 도착한 옛 요청의
      * 거절은 새 세션을 막지 않는다. 로그아웃 ① 업로드·가져오기의 흐름 티켓도 발급 뒤 관문이 바뀌지 않았으면 그대로
      * 받아들인다(탈퇴 잠금 감지).

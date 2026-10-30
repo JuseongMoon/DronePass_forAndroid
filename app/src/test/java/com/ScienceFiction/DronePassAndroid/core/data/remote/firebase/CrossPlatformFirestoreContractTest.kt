@@ -8,6 +8,7 @@ import com.ScienceFiction.DronePassAndroid.domain.model.SketchModel
 import com.ScienceFiction.DronePassAndroid.domain.model.isValidForFirebasePersistence
 import com.ScienceFiction.DronePassAndroid.domain.model.isValidForFirebaseRead
 import com.google.firebase.Timestamp
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.GeoPoint
 import com.squareup.moshi.JsonReader
 import okio.Buffer
@@ -23,7 +24,7 @@ import java.util.Date
 class CrossPlatformFirestoreContractTest {
 
     @Test
-    fun `all seven shared iOS shape fixture files parse on Android`() {
+    fun `all eight shared iOS shape fixture files parse on Android`() {
         val expectedTypes = mapOf(
             "shape-circle.json" to ShapeType.CIRCLE,
             "shape-rectangle.json" to ShapeType.RECTANGLE,
@@ -32,6 +33,7 @@ class CrossPlatformFirestoreContractTest {
             "shape-soft-deleted.json" to ShapeType.CIRCLE,
             "shape-android-active.json" to ShapeType.CIRCLE,
             "shape-legacy.json" to ShapeType.CIRCLE,
+            "shape-tagged.json" to ShapeType.CIRCLE,
         )
 
         assertEquals(SHARED_SHAPE_FIXTURE_FILES.toSet(), expectedTypes.keys)
@@ -171,6 +173,48 @@ class CrossPlatformFirestoreContractTest {
         assertEquals(0.75, sketch.opacity, 0.0)
         assertEquals(1_700_000_000_000L, sketch.createdAt)
         assertEquals(1_700_000_060_000L, sketch.updatedAt)
+    }
+
+    @Test
+    fun `shared tagged shape fixture keeps tagId on read and write`() {
+        val shape = parsedSharedShapeFixture("shape-tagged.json")
+        assertEquals("8F14E45F-CEA1-4C2B-9B1A-5D2E7A3C9B10", shape.tagId)
+
+        assertEquals(shape.tagId, shapeToFirestoreDocumentData(shape)["tagId"])
+        val untagged = shape.copy(tagId = null)
+        assertFalse(shapeToFirestoreDocumentData(untagged).containsKey("tagId"))
+        // merge 쓰기에서 태그를 빼면 서버의 옛 값이 남지 않게 필드를 지운다
+        assertEquals(FieldValue.delete(), shapeToFirestoreMergeData(untagged)["tagId"])
+        assertEquals(FieldValue.delete(), shapeToFirestoreMergeData(shape.copy(tagId = ""))["tagId"])
+    }
+
+    @Test
+    fun `shapes without tagId or with an empty tagId read as untagged`() {
+        val fixture = loadSharedShapeFixture("shape-tagged.json")
+        val empty = shapeFromFirestoreDocument(fixture.documentId, fixture.fields + ("tagId" to ""))
+        val missing = shapeFromFirestoreDocument(fixture.documentId, fixture.fields - "tagId")
+        assertNull(requireNotNull(empty).tagId)
+        assertNull(requireNotNull(missing).tagId)
+    }
+
+    @Test
+    fun `shared tag fixtures parse and round trip on Android`() {
+        val active = loadSharedShapeFixture("tag-active.json")
+        val activeTag = requireNotNull(tagFromFirestoreDocument(active.documentId, active.fields))
+        assertEquals("촬영", activeTag.name)
+        assertEquals(1_793_000_000_000L, activeTag.createdAt)
+        assertEquals(1_793_003_600_250L, activeTag.updatedAt)
+        assertNull(activeTag.deletedAt)
+        assertEquals(active.fields, tagToFirestoreDocumentData(activeTag))
+
+        val deleted = loadSharedShapeFixture("tag-soft-deleted.json")
+        val deletedTag = requireNotNull(tagFromFirestoreDocument(deleted.documentId, deleted.fields))
+        assertEquals("답사", deletedTag.name)
+        assertEquals(1_793_086_400_000L, deletedTag.deletedAt)
+        assertEquals(deleted.fields, tagToFirestoreDocumentData(deletedTag))
+
+        assertNull(tagFromFirestoreDocument("00000000-0000-0000-0000-000000000999", active.fields))
+        assertNull(tagFromFirestoreDocument(active.documentId, active.fields + ("name" to "")))
     }
 
     @Test
@@ -818,6 +862,7 @@ class CrossPlatformFirestoreContractTest {
             "shape-soft-deleted.json",
             "shape-android-active.json",
             "shape-legacy.json",
+            "shape-tagged.json",
         )
     }
 }

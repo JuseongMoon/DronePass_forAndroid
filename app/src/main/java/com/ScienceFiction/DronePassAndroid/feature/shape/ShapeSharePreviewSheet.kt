@@ -72,7 +72,11 @@ import androidx.core.content.FileProvider
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
+import com.ScienceFiction.DronePassAndroid.domain.model.TagModel
 import com.ScienceFiction.DronePassAndroid.ui.component.DronePassModalBottomSheet
+import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedDivider
+import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedSection
+import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedToggleRow
 import com.ScienceFiction.DronePassAndroid.ui.component.IosNavBarButtonFontSize
 import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGroupedBackground
 import java.io.File
@@ -80,6 +84,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+/** 공유 카드 항목 선택을 기억하는 기기 설정(계정 전환 때 지우지 않는다) */
+private const val ShapeSharePreferencesName = "shape_share"
 private val ShapeSharePreviewHeaderHeight = 44.dp
 private val ShapeSharePreviewHeaderSideWidth = 72.dp
 private val ShapeSharePreviewCardShape = RoundedCornerShape(20.dp)
@@ -95,11 +101,17 @@ private const val ShapeShareCacheDirectory = "shared_cards"
 internal fun ShapeSharePreviewSheet(
     shape: ShapeModel,
     drone: DroneModel?,
+    tag: TagModel?,
     onDismiss: () -> Unit,
 ) {
     val context = LocalContext.current
     val density = LocalDensity.current
-    val content = remember(shape, drone) { buildShapeShareCardContent(shape, drone) }
+    val preferences = remember { context.getSharedPreferences(ShapeSharePreferencesName, Context.MODE_PRIVATE) }
+    var options by remember {
+        mutableStateOf(ShapeShareCardOptions.fromJson(preferences.getString(ShapeShareCardOptions.STORAGE_KEY, null)))
+    }
+    var showOptions by remember { mutableStateOf(false) }
+    val content = remember(shape, drone, tag, options) { buildShapeShareCardContent(shape, drone, tag, options) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val coroutineScope = rememberCoroutineScope()
     val mapController = remember { ShapeShareMapController() }
@@ -157,6 +169,7 @@ internal fun ShapeSharePreviewSheet(
         ) {
             Column(modifier = Modifier.fillMaxWidth()) {
                 ShapeSharePreviewHeader(
+                    onOptions = { showOptions = true },
                     onClose = {
                         coroutineScope.launch {
                             runCatching { sheetState.hide() }
@@ -227,6 +240,19 @@ internal fun ShapeSharePreviewSheet(
         }
     }
 
+    if (showOptions) {
+        ShapeShareOptionsSheet(
+            options = options,
+            hasDrone = drone != null,
+            hasTag = tag != null,
+            onChange = { updated ->
+                options = updated
+                preferences.edit().putString(ShapeShareCardOptions.STORAGE_KEY, updated.toJson()).apply()
+            },
+            onDismiss = { showOptions = false },
+        )
+    }
+
     if (showError) {
         AlertDialog(
             onDismissRequest = { showError = false },
@@ -241,7 +267,7 @@ internal fun ShapeSharePreviewSheet(
 }
 
 @Composable
-private fun ShapeSharePreviewHeader(onClose: () -> Unit) {
+private fun ShapeSharePreviewHeader(onOptions: () -> Unit, onClose: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -265,7 +291,123 @@ private fun ShapeSharePreviewHeader(onClose: () -> Unit) {
             textAlign = TextAlign.Center,
             modifier = Modifier.weight(1f),
         )
-        Spacer(modifier = Modifier.width(ShapeSharePreviewHeaderSideWidth))
+        Box(modifier = Modifier.width(ShapeSharePreviewHeaderSideWidth), contentAlignment = Alignment.CenterEnd) {
+            TextButton(onClick = onOptions) {
+                Text(
+                    text = stringResource(R.string.shape_share_options_button),
+                    fontSize = IosNavBarButtonFontSize,
+                    fontWeight = FontWeight.Normal,
+                )
+            }
+        }
+    }
+}
+
+/** 카드에 넣을 항목 켜기/끄기 (항상 들어가는 항목은 안내만 한다). iOS ShapeShareOptionsView 정합 */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ShapeShareOptionsSheet(
+    options: ShapeShareCardOptions,
+    hasDrone: Boolean,
+    hasTag: Boolean,
+    onChange: (ShapeShareCardOptions) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val coroutineScope = rememberCoroutineScope()
+    DronePassModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = IosSystemGroupedBackground,
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(ShapeSharePreviewHeaderHeight)
+                .padding(horizontal = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Spacer(modifier = Modifier.width(ShapeSharePreviewHeaderSideWidth))
+            Text(
+                text = stringResource(R.string.shape_share_options_title),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.weight(1f),
+            )
+            Box(modifier = Modifier.width(ShapeSharePreviewHeaderSideWidth), contentAlignment = Alignment.CenterEnd) {
+                TextButton(
+                    onClick = {
+                        coroutineScope.launch {
+                            runCatching { sheetState.hide() }
+                            onDismiss()
+                        }
+                    },
+                ) {
+                    Text(
+                        text = stringResource(R.string.common_done),
+                        fontSize = IosNavBarButtonFontSize,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                }
+            }
+        }
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .navigationBarsPadding()
+                .padding(vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp),
+        ) {
+            InsetGroupedSection(
+                header = stringResource(R.string.shape_share_options_section_location),
+                footer = stringResource(R.string.shape_share_options_section_location_footer),
+            ) {
+                InsetGroupedToggleRow(
+                    title = stringResource(R.string.shape_share_options_address),
+                    checked = options.showAddress,
+                    onCheckedChange = { onChange(options.copy(showAddress = it)) },
+                )
+                InsetGroupedDivider()
+                InsetGroupedToggleRow(
+                    title = stringResource(R.string.shape_share_options_simplify_address),
+                    checked = options.simplifyAddress,
+                    onCheckedChange = { onChange(options.copy(simplifyAddress = it)) },
+                    enabled = options.showAddress,
+                )
+                InsetGroupedDivider()
+                InsetGroupedToggleRow(
+                    title = stringResource(R.string.shape_share_options_coordinate),
+                    checked = options.showCoordinate,
+                    onCheckedChange = { onChange(options.copy(showCoordinate = it)) },
+                )
+            }
+            InsetGroupedSection(
+                header = stringResource(R.string.shape_share_options_section_details),
+                footer = stringResource(R.string.shape_share_options_footer),
+            ) {
+                InsetGroupedToggleRow(
+                    title = stringResource(R.string.shape_share_options_period),
+                    checked = options.showPeriod,
+                    onCheckedChange = { onChange(options.copy(showPeriod = it)) },
+                )
+                InsetGroupedDivider()
+                InsetGroupedToggleRow(
+                    title = stringResource(R.string.shape_share_options_drone),
+                    checked = options.showDrone,
+                    onCheckedChange = { onChange(options.copy(showDrone = it)) },
+                    enabled = hasDrone,
+                )
+                InsetGroupedDivider()
+                InsetGroupedToggleRow(
+                    title = stringResource(R.string.shape_share_options_tag),
+                    checked = options.showTag,
+                    onCheckedChange = { onChange(options.copy(showTag = it)) },
+                    enabled = hasTag,
+                )
+            }
+        }
     }
 }
 

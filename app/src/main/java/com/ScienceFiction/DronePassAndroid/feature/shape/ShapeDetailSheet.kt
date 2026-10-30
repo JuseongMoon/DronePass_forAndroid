@@ -107,6 +107,8 @@ import com.ScienceFiction.DronePassAndroid.core.ui.currentWindowSizeDp
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.PaletteColor
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
+import com.ScienceFiction.DronePassAndroid.domain.model.TagModel
+import com.ScienceFiction.DronePassAndroid.domain.model.activeTag
 import java.util.Date
 import com.ScienceFiction.DronePassAndroid.ui.component.DronePassModalBottomSheet
 import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedDivider
@@ -189,6 +191,8 @@ fun ShapeDetailSheet(
     onDuplicate: () -> Unit = {},
     drone: DroneModel? = null,
     activeDrones: List<DroneModel> = emptyList(),
+    /** 삭제 표시 포함 태그. 도형이 가리키는 활성 태그가 없으면 "태그 없음" */
+    tags: List<TagModel> = emptyList(),
     koreaFeaturesEnabled: Boolean = true,
     onExternalMapOpened: (String) -> Unit = {},
 ) {
@@ -215,6 +219,7 @@ fun ShapeDetailSheet(
     val dateFormat = remember(isDateOnlyFlight) {
         if (isDateOnlyFlight) shapeEditDateOnlyFormat() else localizedShapeDateTimeFormat()
     }
+    val detailTag = tags.activeTag(shape.tagId)
     val detailDrone = resolveShapeDetailDrone(
         shapeDroneId = shape.droneId,
         matchedDrone = drone,
@@ -295,6 +300,26 @@ fun ShapeDetailSheet(
                 // 드론 — iOS connectedDrone 상태 분기 (정상/삭제됨/레거시 fallback/미할당)
                 ShapeDetailRow(label = stringResource(R.string.shape_detail_drone_connected)) {
                     DroneStatusValue(drone = detailDrone, droneId = shape.droneId)
+                }
+                ShapeDetailRowDivider()
+
+                // 태그 (가리키는 태그가 없으면 태그 없음)
+                ShapeDetailRow(label = stringResource(R.string.shape_detail_tag)) {
+                    if (detailTag != null) {
+                        Text(
+                            text = detailTag.name,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.End,
+                        )
+                    } else {
+                        Text(
+                            text = stringResource(R.string.tag_none),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = IosSystemGray,
+                            fontStyle = FontStyle.Italic,
+                        )
+                    }
                 }
                 ShapeDetailRowDivider()
 
@@ -484,6 +509,7 @@ fun ShapeDetailSheet(
         ShapeSharePreviewSheet(
             shape = shape,
             drone = detailDrone,
+            tag = detailTag,
             onDismiss = { showSharePreview = false },
         )
     }

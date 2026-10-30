@@ -84,6 +84,7 @@ class AccountSessionGateContractTest {
                 "core/data/remote/firebase/ShapeFirebaseStore.kt",
                 "core/data/remote/firebase/SketchFirebaseStore.kt",
                 "core/data/remote/firebase/DroneFirebaseStore.kt",
+                "core/data/remote/firebase/TagFirebaseStore.kt",
                 "core/data/sync/RealtimeSyncManager.kt",
                 // 계정 메타데이터(관문 밖): users/{uid} 문서, devices, 활동 시각
                 "feature/auth/AuthRepository.kt",
@@ -100,6 +101,7 @@ class AccountSessionGateContractTest {
             "core/data/repository/ShapeRepository.kt",
             "core/data/repository/SketchRepository.kt",
             "core/data/repository/DroneRepository.kt",
+            "core/data/repository/TagRepository.kt",
         ).forEach { path ->
             val fullSync = source(path).substringAfter("suspend fun performFullSync(ticket: SyncTicket)")
             assertTrue(path, fullSync.indexOf("IncludingDeleted(ticket)") < fullSync.indexOf("session.commit(ticket)"))

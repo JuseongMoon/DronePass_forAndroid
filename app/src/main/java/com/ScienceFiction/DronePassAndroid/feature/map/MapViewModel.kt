@@ -23,6 +23,9 @@ import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.DroneZoneFeat
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.FlightZoneLayer
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.VWorldServiceException
 import com.ScienceFiction.DronePassAndroid.core.data.repository.DroneRepository
+import com.ScienceFiction.DronePassAndroid.core.data.repository.TagFilterState
+import com.ScienceFiction.DronePassAndroid.core.data.repository.TagRepository
+import com.ScienceFiction.DronePassAndroid.domain.model.TagModel
 import com.ScienceFiction.DronePassAndroid.core.data.repository.GeocodingRepository
 import com.ScienceFiction.DronePassAndroid.core.data.repository.ShapeRepository
 import com.ScienceFiction.DronePassAndroid.core.data.repository.VWorldRepository
@@ -310,6 +313,7 @@ class MapViewModel @Inject constructor(
     private val vWorldRepository: VWorldRepository,
     private val vWorldContactManager: VWorldContactManager,
     private val droneRepository: DroneRepository,
+    private val tagRepository: TagRepository,
     private val geocodingRepository: GeocodingRepository,
     val naverGeocodingApi: NaverGeocodingApi,
     private val dataStore: DataStore<Preferences>,
@@ -461,6 +465,18 @@ class MapViewModel @Inject constructor(
      * 지도에서 선택된 드론 ID Set (드론 선택 드롭다운용)
      */
     val selectedDroneIds: StateFlow<Set<String>> = droneSelectionState.selectedDroneIds
+
+    /** 태그 필터(저장 목록과 공용)와 활성 태그. 드론 드롭다운 아래 태그 구역에 쓴다 */
+    val tagFilterState: StateFlow<TagFilterState> = tagRepository.filterState
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), TagFilterState())
+
+    /** 삭제 표시 포함 태그 (상세 화면의 태그 행) */
+    val allTags: StateFlow<List<TagModel>> = tagRepository.getAllTags()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun toggleTagFilterKey(key: String) {
+        viewModelScope.launchCatchingStorageErrors { tagRepository.toggleFilterKey(key) }
+    }
 
     /**
      * 강조 표시된 드론 ID Set (선택된 드론 칩 탭 시)
@@ -1018,14 +1034,15 @@ class MapViewModel @Inject constructor(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     /**
-     * iOS 와 동일하게 만료/시작전 필터 후, 선택된 드론의 도형만 지도에 표시한다.
+     * iOS 와 동일하게 만료/시작전 필터 후, 선택된 드론의 도형 중 태그 필터를 통과한 것만 지도에 표시한다(드론과 AND).
      */
     val filteredShapes: StateFlow<List<ShapeModel>> = combine(
         timeFilteredShapes,
         activeDrones,
-        selectedDroneIds
-    ) { shapes, drones, selectedIds ->
-        filterShapesForSelectedDrones(shapes, drones, selectedIds)
+        selectedDroneIds,
+        tagFilterState,
+    ) { shapes, drones, selectedIds, tagFilter ->
+        filterShapesForSelectedDrones(shapes, drones, selectedIds).filter { tagFilter.isVisible(it.tagId) }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     // ===== 비행구역 레이어 관리 =====

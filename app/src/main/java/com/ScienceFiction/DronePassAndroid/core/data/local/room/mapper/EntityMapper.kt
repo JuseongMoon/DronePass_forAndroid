@@ -3,11 +3,13 @@ package com.ScienceFiction.DronePassAndroid.core.data.local.room.mapper
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.entity.DroneEntity
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.entity.ShapeEntity
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.entity.SketchEntity
+import com.ScienceFiction.DronePassAndroid.core.data.local.room.entity.TagEntity
 import com.ScienceFiction.DronePassAndroid.domain.model.Coordinate
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeType
 import com.ScienceFiction.DronePassAndroid.domain.model.SketchModel
+import com.ScienceFiction.DronePassAndroid.domain.model.TagModel
 
 // ===== Shape 매퍼 =====
 
@@ -31,6 +33,7 @@ fun ShapeEntity.toDomain(): ShapeModel = ShapeModel(
     memo = memo,
     color = color,
     droneId = droneId,
+    tagId = tagId,
     createdAt = createdAt,
     deletedAt = deletedAt,
     flightStartDate = flightStartDate,
@@ -58,7 +61,8 @@ fun ShapeModel.toEntity(): ShapeEntity = ShapeEntity(
     deletedAt = deletedAt,
     flightStartDate = flightStartDate,
     flightEndDate = flightEndDate,
-    updatedAt = updatedAt
+    updatedAt = updatedAt,
+    tagId = tagId,
 )
 
 // ===== Drone 매퍼 =====
@@ -111,4 +115,22 @@ fun SketchModel.toEntity(): SketchEntity = SketchEntity(
     createdAt = createdAt,
     updatedAt = updatedAt,
     deletedAt = deletedAt
+)
+
+// ===== Tag 매퍼 =====
+
+fun TagEntity.toDomain(): TagModel = TagModel(
+    id = id,
+    name = name,
+    createdAt = createdAt,
+    updatedAt = updatedAt,
+    deletedAt = deletedAt,
+)
+
+fun TagModel.toEntity(): TagEntity = TagEntity(
+    id = id,
+    name = name,
+    createdAt = createdAt,
+    updatedAt = updatedAt,
+    deletedAt = deletedAt,
 )

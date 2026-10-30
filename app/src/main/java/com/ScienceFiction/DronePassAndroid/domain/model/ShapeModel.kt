@@ -17,6 +17,8 @@ data class ShapeModel(
     val memo: String? = null,
     val color: String = "#007AFF",
     val droneId: String? = null,
+    /** 도형 태그(선택). 비었거나 활성 태그를 가리키지 않으면 "태그 없음"이다 (DATA_CONTRACT 태그) */
+    val tagId: String? = null,
     val createdAt: Long = System.currentTimeMillis(),
     val deletedAt: Long? = null,
     val flightStartDate: Long = System.currentTimeMillis(),

@@ -1,5 +1,12 @@
 package com.ScienceFiction.DronePassAndroid.feature.shape
 
+import com.ScienceFiction.DronePassAndroid.feature.tag.TagViewModel
+import com.ScienceFiction.DronePassAndroid.feature.tag.TagEditSheet
+import com.ScienceFiction.DronePassAndroid.domain.model.activeTag
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.outlined.Sell
 import com.ScienceFiction.DronePassAndroid.ui.theme.IosPlaceholderText
 import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGray
 import com.ScienceFiction.DronePassAndroid.ui.theme.withLabelSafeLineHeights
@@ -266,6 +273,9 @@ fun ShapeEditScreen(
     var selectedDroneId by remember(editKey, initialDroneId) {
         mutableStateOf(initialDroneId)
     }
+    // 태그: 새 도형은 항상 없음(마지막 저장값을 쓰지 않는다). 편집·복제는 원본 태그 (iOS ShapeEditViewModel 정합)
+    val initialTagId = remember(editKey) { shape?.tagId }
+    var selectedTagId by remember(editKey) { mutableStateOf(initialTagId) }
     val selectedDrone = selectedDroneId?.let { id -> drones.find { it.id == id } }
     var showDroneDropdown by remember { mutableStateOf(false) }
 
@@ -315,6 +325,8 @@ fun ShapeEditScreen(
         initialCoordinate = initialCoord,
         selectedDroneId = selectedDroneId,
         initialDroneId = initialDroneId,
+        selectedTagId = selectedTagId,
+        initialTagId = initialTagId,
     )
 
     SideEffect {
@@ -392,6 +404,7 @@ fun ShapeEditScreen(
             flightStartDate = flightStartDate,
             flightEndDate = flightEndDateToSave(flightEndDate, keepsNoEndDate),
             now = now,
+            selectedTagId = selectedTagId,
         )
         onSave(
             resultShape,
@@ -511,6 +524,12 @@ fun ShapeEditScreen(
                     }
                 }
                 }
+
+                // ===== 태그 (iOS TagSelectionSection 정합, 도형당 하나·색 없음) =====
+                ShapeEditTagSection(
+                    selectedTagId = selectedTagId,
+                    onSelect = { selectedTagId = it },
+                )
 
                 // ===== Section 2: 기본 정보 (iOS BasicInfoSection 정합) =====
                 InsetGroupedSection {
@@ -1605,4 +1624,123 @@ private fun ShapeDateTimeSelectionSheet(
             }
         }
     }
+}
+
+/**
+ * 태그 선택 (도형당 하나, 색 없음). 메뉴: 태그 없음 → 활성 태그 → 새 태그 만들기. iOS TagSelectionSection 정합.
+ * 새 태그는 이름 입력 전에 무료 한도를 미리 안내하고(최종 판정은 저장 시), 만든 태그를 바로 고른다.
+ */
+@Composable
+private fun ShapeEditTagSection(
+    selectedTagId: String?,
+    onSelect: (String?) -> Unit,
+    tagViewModel: TagViewModel = hiltViewModel(),
+) {
+    val activeTags by tagViewModel.activeTags.collectAsStateWithLifecycle()
+    val selectedTag = activeTags.activeTag(selectedTagId)
+    var showMenu by remember { mutableStateOf(false) }
+    var showNewTag by remember { mutableStateOf(false) }
+
+    InsetGroupedSection {
+        EditFormRow(label = stringResource(R.string.shape_edit_tag)) {
+            Box {
+                Row(
+                    modifier = Modifier.clickable { showMenu = true },
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Sell,
+                        contentDescription = null,
+                        modifier = Modifier.size(14.dp),
+                        tint = IosSystemGray,
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = selectedTag?.name ?: stringResource(R.string.tag_none),
+                        color = if (selectedTag != null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.widthIn(max = 180.dp),
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Icon(
+                        imageVector = Icons.Default.KeyboardArrowDown,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                IosDropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+                    ShapeEditTagMenuItem(
+                        name = stringResource(R.string.tag_none),
+                        isSelected = selectedTag == null,
+                        onClick = {
+                            onSelect(null)
+                            showMenu = false
+                        },
+                    )
+                    activeTags.forEach { tag ->
+                        IosMenuDivider()
+                        ShapeEditTagMenuItem(
+                            name = tag.name,
+                            isSelected = tag.id == selectedTag?.id,
+                            onClick = {
+                                onSelect(tag.id)
+                                showMenu = false
+                            },
+                        )
+                    }
+                    IosMenuDivider()
+                    DropdownMenuItem(
+                        text = {
+                            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                Text(stringResource(R.string.shape_edit_tag_new))
+                                Spacer(modifier = Modifier.weight(1f))
+                                Icon(
+                                    imageVector = Icons.Default.Add,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp),
+                                    tint = MaterialTheme.colorScheme.onSurface,
+                                )
+                            }
+                        },
+                        onClick = {
+                            showMenu = false
+                            tagViewModel.requestAdd { showNewTag = true }
+                        },
+                    )
+                }
+            }
+        }
+    }
+
+    if (showNewTag) {
+        TagEditSheet(
+            tag = null,
+            viewModel = tagViewModel,
+            onDismiss = { showNewTag = false },
+            onSaved = { created -> onSelect(created.id) },
+        )
+    }
+}
+
+@Composable
+private fun ShapeEditTagMenuItem(name: String, isSelected: Boolean, onClick: () -> Unit) {
+    DropdownMenuItem(
+        text = {
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(name, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+                if (isSelected) {
+                    Spacer(modifier = Modifier.weight(1f))
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp),
+                        tint = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
+            }
+        },
+        onClick = onClick,
+    )
 }

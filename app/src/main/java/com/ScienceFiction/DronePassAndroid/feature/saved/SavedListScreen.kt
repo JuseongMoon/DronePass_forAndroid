@@ -3,6 +3,7 @@ package com.ScienceFiction.DronePassAndroid.feature.saved
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material.icons.outlined.Inbox
+import androidx.compose.material.icons.outlined.Sell
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -47,6 +48,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ScienceFiction.DronePassAndroid.R
+import com.ScienceFiction.DronePassAndroid.domain.model.activeTag
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
@@ -100,6 +102,8 @@ fun SavedListScreen(
     val totalCount by viewModel.totalCount.collectAsStateWithLifecycle()
     val allShapeCount by viewModel.allShapeCount.collectAsStateWithLifecycle()
     val selectedDroneCount by viewModel.selectedDroneCount.collectAsStateWithLifecycle()
+    val tagFilterState by viewModel.tagFilterState.collectAsStateWithLifecycle()
+    val allTags by viewModel.allTags.collectAsStateWithLifecycle()
     val koreaFeaturesEnabled by viewModel.koreaFeaturesEnabled.collectAsStateWithLifecycle()
     val showShapeEdit by viewModel.showShapeEdit.collectAsStateWithLifecycle()
     val isDuplicateMode by viewModel.isDuplicateMode.collectAsStateWithLifecycle()
@@ -183,7 +187,8 @@ fun SavedListScreen(
         if (totalCount == 0) {
             EmptyState(
                 hasShapes = allShapeCount > 0,
-                selectedDroneCount = selectedDroneCount
+                selectedDroneCount = selectedDroneCount,
+                isTagFiltering = tagFilterState.isFiltering,
             )
         } else {
             LazyColumn(
@@ -221,6 +226,7 @@ fun SavedListScreen(
                                         onNavigateToMapWithShape(shape.id)
                                     },
                                     onDetailClick = { viewModel.onShapeSelected(shape.id) },
+                                    tagName = tagFilterState.activeTags.activeTag(shape.tagId)?.name,
                                 )
                             }
                         }
@@ -250,6 +256,7 @@ fun SavedListScreen(
                                         onNavigateToMapWithShape(shape.id)
                                     },
                                     onDetailClick = { viewModel.onShapeSelected(shape.id) },
+                                    tagName = tagFilterState.activeTags.activeTag(shape.tagId)?.name,
                                 )
                             }
                         }
@@ -279,6 +286,7 @@ fun SavedListScreen(
                                         onNavigateToMapWithShape(shape.id)
                                     },
                                     onDetailClick = { viewModel.onShapeSelected(shape.id) },
+                                    tagName = tagFilterState.activeTags.activeTag(shape.tagId)?.name,
                                 )
                             }
                         }
@@ -293,6 +301,7 @@ fun SavedListScreen(
         selectedShape?.let { shape ->
             ShapeDetailSheet(
                 shape = shape,
+                tags = allTags,
                 onEdit = {
                     viewModel.onEditShapeRequested(shape)
                 },
@@ -538,12 +547,14 @@ internal const val SavedListFocusScrollDelayMs = 100L
 internal enum class SavedListEmptyState {
     NO_SHAPES,
     NO_DRONE_SELECTED,
+    NO_TAG_MATCH,
     NO_MATCHING_SHAPES,
 }
 
 internal enum class SavedListEmptyIconStyle {
     INBOX,
     DRONE,
+    TAG,
     SEARCH,
 }
 
@@ -557,10 +568,12 @@ internal val SavedListEmptyDroneIconRes = R.drawable.ic_drone
 internal fun resolveSavedListEmptyState(
     hasShapes: Boolean,
     selectedDroneCount: Int,
+    isTagFiltering: Boolean = false,
 ): SavedListEmptyState {
     return when {
         !hasShapes -> SavedListEmptyState.NO_SHAPES
         selectedDroneCount == 0 -> SavedListEmptyState.NO_DRONE_SELECTED
+        isTagFiltering -> SavedListEmptyState.NO_TAG_MATCH
         else -> SavedListEmptyState.NO_MATCHING_SHAPES
     }
 }
@@ -569,6 +582,7 @@ internal fun resolveSavedListEmptyIconStyle(state: SavedListEmptyState): SavedLi
     return when (state) {
         SavedListEmptyState.NO_SHAPES -> SavedListEmptyIconStyle.INBOX
         SavedListEmptyState.NO_DRONE_SELECTED -> SavedListEmptyIconStyle.DRONE
+        SavedListEmptyState.NO_TAG_MATCH -> SavedListEmptyIconStyle.TAG
         SavedListEmptyState.NO_MATCHING_SHAPES -> SavedListEmptyIconStyle.SEARCH
     }
 }
@@ -576,20 +590,24 @@ internal fun resolveSavedListEmptyIconStyle(state: SavedListEmptyState): SavedLi
 @Composable
 private fun EmptyState(
     hasShapes: Boolean,
-    selectedDroneCount: Int
+    selectedDroneCount: Int,
+    isTagFiltering: Boolean,
 ) {
     val state = resolveSavedListEmptyState(
         hasShapes = hasShapes,
         selectedDroneCount = selectedDroneCount,
+        isTagFiltering = isTagFiltering,
     )
     val title = when (state) {
         SavedListEmptyState.NO_SHAPES -> stringResource(R.string.saved_empty_no_search)
         SavedListEmptyState.NO_DRONE_SELECTED -> stringResource(R.string.saved_empty_no_drone_selected)
+        SavedListEmptyState.NO_TAG_MATCH -> stringResource(R.string.saved_empty_no_tag_match_title)
         SavedListEmptyState.NO_MATCHING_SHAPES -> stringResource(R.string.saved_empty_no_matching_shapes)
     }
     val description = when (state) {
         SavedListEmptyState.NO_SHAPES -> stringResource(R.string.saved_empty_hint)
         SavedListEmptyState.NO_DRONE_SELECTED -> stringResource(R.string.saved_empty_no_drone_selected_hint)
+        SavedListEmptyState.NO_TAG_MATCH -> stringResource(R.string.saved_empty_no_tag_match_description)
         SavedListEmptyState.NO_MATCHING_SHAPES -> stringResource(R.string.saved_empty_no_matching_shapes_hint)
     }
     val iconStyle = resolveSavedListEmptyIconStyle(state)
@@ -611,6 +629,12 @@ private fun EmptyState(
                 )
                 SavedListEmptyIconStyle.DRONE -> Icon(
                     painter = painterResource(SavedListEmptyDroneIconRes),
+                    contentDescription = null,
+                    modifier = Modifier.size(SavedListEmptyIconSize),
+                    tint = SavedListEmptySecondaryColor,
+                )
+                SavedListEmptyIconStyle.TAG -> Icon(
+                    imageVector = Icons.Outlined.Sell, // iOS tag
                     contentDescription = null,
                     modifier = Modifier.size(SavedListEmptyIconSize),
                     tint = SavedListEmptySecondaryColor,

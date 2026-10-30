@@ -31,8 +31,10 @@ data class RemoteSubscriptionConfig(
             val shapes = validInt(free?.get("shapes"))
             val sketches = validInt(free?.get("sketches"))
             val drones = validInt(free?.get("drones"))
+            // tags 는 3.7 에서 추가한 선택 값이다. 없거나 0 이하면 0(태그 한도만 올리지 않음), 나머지 세 값은 그대로 적용한다.
+            val tags = validInt(free?.get("tags"))?.takeIf { it > 0 } ?: 0
             val limits = if (shapes != null && sketches != null && drones != null && shapes > 0 && sketches > 0 && drones > 0) {
-                QuotaLimits(shapes, sketches, drones)
+                QuotaLimits(shapes, sketches, drones, tags)
             } else null
             val legacy = root["legacy"] as? Map<*, *>
             val build = validInt(legacy?.get("iosOriginalBuildBefore"))

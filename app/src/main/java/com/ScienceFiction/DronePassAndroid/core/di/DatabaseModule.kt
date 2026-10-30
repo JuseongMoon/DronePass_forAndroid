@@ -6,6 +6,7 @@ import com.ScienceFiction.DronePassAndroid.core.data.local.room.DronePassDatabas
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.dao.DroneDao
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.dao.ShapeDao
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.dao.SketchDao
+import com.ScienceFiction.DronePassAndroid.core.data.local.room.dao.TagDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -38,4 +39,7 @@ object DatabaseModule {
 
     @Provides
     fun provideSketchDao(database: DronePassDatabase): SketchDao = database.sketchDao()
+
+    @Provides
+    fun provideTagDao(database: DronePassDatabase): TagDao = database.tagDao()
 }

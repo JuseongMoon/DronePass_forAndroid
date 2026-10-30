@@ -7,6 +7,7 @@ import android.net.Uri
 import com.ScienceFiction.DronePassAndroid.BuildConfig
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.core.data.repository.DroneRepository
+import com.ScienceFiction.DronePassAndroid.core.data.repository.TagRepository
 import com.ScienceFiction.DronePassAndroid.core.data.repository.ShapeRepository
 import com.ScienceFiction.DronePassAndroid.core.data.repository.SketchRepository
 import com.ScienceFiction.DronePassAndroid.core.util.AnalyticsLogger
@@ -73,7 +74,7 @@ data class PaywallRequest(
     val updateRequired: Boolean = false,
     val limitKind: QuotaLimitKind? = null,
 )
-data class QuotaUsage(val shapes: Int = 0, val sketches: Int = 0, val drones: Int = 0)
+data class QuotaUsage(val shapes: Int = 0, val sketches: Int = 0, val drones: Int = 0, val tags: Int = 0)
 
 @Singleton
 class SubscriptionManager @Inject constructor(
@@ -82,6 +83,7 @@ class SubscriptionManager @Inject constructor(
     private val shapeRepository: ShapeRepository,
     private val sketchRepository: SketchRepository,
     private val droneRepository: DroneRepository,
+    private val tagRepository: TagRepository,
     private val analytics: AnalyticsLogger,
     private val claimSender: SubscriptionClaimSender,
 ) {
@@ -169,8 +171,13 @@ class SubscriptionManager @Inject constructor(
         connectBilling()
         refreshConfig(force = true)
         scope.launch {
-            combine(shapeRepository.getAllShapes(), sketchRepository.getActiveSketches(), droneRepository.getActiveDrones()) { shapes, sketches, drones ->
-                QuotaUsage(QuotaPolicy.shapeCount(shapes.map { it.deletedAt }), sketches.size, drones.size)
+            combine(
+                shapeRepository.getAllShapes(),
+                sketchRepository.getActiveSketches(),
+                droneRepository.getActiveDrones(),
+                tagRepository.getActiveTags(),
+            ) { shapes, sketches, drones, tags ->
+                QuotaUsage(QuotaPolicy.shapeCount(shapes.map { it.deletedAt }), sketches.size, drones.size, tags.size)
             }.collect { current ->
                 _usage.value = current
                 usageLoaded = true
@@ -470,6 +477,7 @@ class SubscriptionManager @Inject constructor(
             QuotaLimitKind.SHAPES -> QuotaPolicy.shapeCount(shapeRepository.getAllShapes().first().map { it.deletedAt })
             QuotaLimitKind.SKETCHES -> sketchRepository.getActiveSketches().first().size
             QuotaLimitKind.DRONES -> droneRepository.getActiveDrones().first().size
+            QuotaLimitKind.TAGS -> tagRepository.activeTagCount()
         }
         if (QuotaPolicy.evaluate(action, { count }, _status.value.entitlement, _limits.value) == QuotaDecision.Allowed) return true
         analytics.logQuotaBlock(action.limitKind.name.lowercase())
@@ -512,7 +520,7 @@ class SubscriptionManager @Inject constructor(
             else -> "free"
         }
         val current = _usage.value
-        analytics.logQuotaUsage(current.shapes, current.sketches, current.drones, plan)
+        analytics.logQuotaUsage(current.shapes, current.sketches, current.drones, current.tags, plan)
         preferences.edit().putLong("usageLoggedAt", now).apply()
     }
 
@@ -538,7 +546,7 @@ class SubscriptionManager @Inject constructor(
             // 설정이 구매 조회보다 늦게 오면 시작 때 보낼 기회를 놓친다. 받은 뒤 한 번 더 확인한다(24시간 간격은 그대로).
             sendProClaimIfDue(force = false)
             val effective = _limits.value
-            val cachedConfig = """{"schemaVersion":1,"free":{"shapes":${effective.freeShapes},"sketches":${effective.freeSketches},"drones":${effective.freeDrones}},"legacy":{"iosOriginalBuildBefore":${cutoff.iosOriginalBuildBefore},"accountCreatedBefore":"${cutoff.accountCreatedBefore}"},"features":{"locationAudit":{"uploadEnabled":${config.locationAuditUploadEnabled}}}}"""
+            val cachedConfig = """{"schemaVersion":1,"free":{"shapes":${effective.freeShapes},"sketches":${effective.freeSketches},"drones":${effective.freeDrones},"tags":${effective.freeTags}},"legacy":{"iosOriginalBuildBefore":${cutoff.iosOriginalBuildBefore},"accountCreatedBefore":"${cutoff.accountCreatedBefore}"},"features":{"locationAudit":{"uploadEnabled":${config.locationAuditUploadEnabled}}}}"""
             preferences.edit().putString("config", cachedConfig).apply()
             val newLegacy = legacyKind()
             val old = _status.value

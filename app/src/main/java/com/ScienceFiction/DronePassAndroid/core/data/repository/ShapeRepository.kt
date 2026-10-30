@@ -21,6 +21,7 @@ import com.ScienceFiction.DronePassAndroid.core.data.sync.isNewerUpdatedAt
 import com.ScienceFiction.DronePassAndroid.core.data.storedEndDateAlarmEnabled
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
+import com.ScienceFiction.DronePassAndroid.domain.model.clearingTagIds
 import com.ScienceFiction.DronePassAndroid.domain.model.validateForFirebasePersistence
 import com.ScienceFiction.DronePassAndroid.domain.model.validateForLocalPersistence
 import com.ScienceFiction.DronePassAndroid.service.NotificationScheduler
@@ -331,6 +332,36 @@ class ShapeRepository @Inject constructor(
         markShapeLocalModification(now)
         deletedShapes.forEach { shape -> notificationScheduler.cancelEndDateAlarm(shape.id) }
         syncShapesToFirebase(deletedShapes.map { it.toDomain() })
+    }
+
+    /**
+     * 태그를 지운 뒤: 그 태그를 단 활성 도형의 태그를 비우고 updatedAt 을 올려 저장한다(도형은 지우지 않는다).
+     * 관문이 열려 있으면 바로 올린다. 바꾼 도형 수를 돌려준다. iOS TagManager.deleteTag 정합.
+     */
+    suspend fun clearTagFromShapes(tagId: String): Int {
+        val now = System.currentTimeMillis()
+        val cleared = database.withTransaction {
+            shapeDao.getActiveShapesByTagId(tagId)
+                .map { it.copy(tagId = null, updatedAt = now) }
+                .also { if (it.isNotEmpty()) shapeDao.insertShapes(it) }
+        }
+        if (cleared.isEmpty()) return 0
+        markShapeLocalModification(now)
+        syncShapesToFirebase(cleared.map { it.toDomain() })
+        return cleared.size
+    }
+
+    /** 기기 도형 중 계정 태그에 없는 tagId 를 비운다(가져오기 전, [clearingTagIds]). 바꾼 도형 수를 돌려준다. */
+    internal suspend fun clearTagIdsNotIn(accountTagIds: Set<String>): Int {
+        val now = System.currentTimeMillis()
+        val changed = database.withTransaction {
+            val shapes = shapeDao.getAllShapesOnce().map { it.toDomain() }
+            clearingTagIds(shapes, accountTagIds, now)
+                .filterIndexed { index, shape -> shape !== shapes[index] }
+                .also { if (it.isNotEmpty()) shapeDao.insertShapes(it.map { shape -> shape.toEntity() }) }
+        }
+        if (changed.isNotEmpty()) markShapeLocalModification(now)
+        return changed.size
     }
 
     private suspend fun markShapeLocalModification(now: Long = System.currentTimeMillis()) {

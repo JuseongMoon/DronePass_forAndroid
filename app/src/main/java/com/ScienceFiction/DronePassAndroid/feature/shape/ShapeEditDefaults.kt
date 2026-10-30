@@ -346,6 +346,7 @@ internal fun buildShapeEditSavedShape(
     flightStartDate: Long,
     flightEndDate: Long?,
     now: Long,
+    selectedTagId: String? = originalShape?.tagId,
 ): ShapeModel {
     val baseShape = originalShape ?: ShapeModel()
     val geometry = resolveShapeEditSavedGeometry(
@@ -371,6 +372,7 @@ internal fun buildShapeEditSavedShape(
         flightEndDate = flightEndDate,
         color = selectedColor,
         droneId = selectedDroneId,
+        tagId = selectedTagId,
         updatedAt = now,
     )
 }
@@ -687,6 +689,11 @@ internal fun resolveShapeEditConflict(
         polygonCoordinates = geometrySource.polygonCoordinates,
         polylineCoordinates = geometrySource.polylineCoordinates,
         droneId = resolvedDroneId,
+        tagId = resolveShapeEditField(
+            editedValue = editedShape.tagId,
+            latestValue = latestShape.tagId,
+            originalValue = originalShape.tagId,
+        ),
         color = resolveShapeEditColor(
             editedShape = editedShape,
             latestShape = latestShape,
@@ -743,8 +750,11 @@ internal fun hasShapeEditContentChanges(
     initialCoordinate: Coordinate?,
     selectedDroneId: String?,
     initialDroneId: String?,
+    selectedTagId: String? = null,
+    initialTagId: String? = null,
 ): Boolean {
-    return title != initialTitle ||
+    return selectedTagId != initialTagId ||
+        title != initialTitle ||
         address != initialAddress ||
         radius != initialRadius ||
         height != initialHeight ||

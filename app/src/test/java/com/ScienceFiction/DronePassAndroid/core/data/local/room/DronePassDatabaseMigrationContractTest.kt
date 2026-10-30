@@ -27,13 +27,25 @@ class DronePassDatabaseMigrationContractTest {
     }
 
     @Test
+    fun `v4 adds shape tag column and tags table`() {
+        val v3 = readSchema(version = 3)
+        val v4 = readSchema(version = 4)
+
+        assertFalse(v3.hasTable("tags"))
+        (ExpectedTables + "tags").forEach { table -> assertTrue(v4.hasTable(table)) }
+        assertFalse(v3.hasColumn("tagId"))
+        assertTrue(v4.hasColumn("tagId"))
+        GeometryColumns.forEach { column -> assertTrue(v4.hasColumn(column)) }
+    }
+
+    @Test
     fun `database registers both sequential and direct migration paths`() {
         val migrationPaths = DronePassDatabase.allMigrations
             .map { it.startVersion to it.endVersion }
             .toSet()
 
         assertEquals(
-            setOf(1 to 2, 2 to 3, 1 to 3),
+            setOf(1 to 2, 2 to 3, 1 to 3, 3 to 4),
             migrationPaths,
         )
     }

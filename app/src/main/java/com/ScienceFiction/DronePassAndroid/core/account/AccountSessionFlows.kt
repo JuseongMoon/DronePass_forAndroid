@@ -19,6 +19,9 @@ import com.ScienceFiction.DronePassAndroid.core.data.remote.firebase.SketchFireb
 import com.ScienceFiction.DronePassAndroid.core.data.repository.DroneRepository
 import com.ScienceFiction.DronePassAndroid.core.data.repository.ShapeRepository
 import com.ScienceFiction.DronePassAndroid.core.data.repository.SketchRepository
+import com.ScienceFiction.DronePassAndroid.core.data.repository.TagPreferenceKeys
+import com.ScienceFiction.DronePassAndroid.core.data.repository.TagRepository
+import com.ScienceFiction.DronePassAndroid.core.data.remote.firebase.TagFirebaseStore
 import com.ScienceFiction.DronePassAndroid.core.data.sync.RealtimeSyncManager
 import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncPreferenceKeys
 import com.ScienceFiction.DronePassAndroid.core.data.sync.buildAccountSwitchShapeBaseline
@@ -29,6 +32,8 @@ import com.ScienceFiction.DronePassAndroid.core.util.AnalyticsLogger
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 import com.ScienceFiction.DronePassAndroid.domain.model.SketchModel
+import com.ScienceFiction.DronePassAndroid.domain.model.clearingTagIds
+import com.ScienceFiction.DronePassAndroid.domain.model.mergeTags
 import com.ScienceFiction.DronePassAndroid.feature.drone.DroneSelectionPreferenceKeys
 import com.ScienceFiction.DronePassAndroid.feature.drone.DroneSelectionState
 import com.ScienceFiction.DronePassAndroid.feature.profile.AccountDeletionService
@@ -79,6 +84,7 @@ internal val DEVICE_ACCOUNT_DATA_PREFERENCE_KEYS: List<Preferences.Key<*>> = lis
     DroneSelectionPreferenceKeys.LEGACY_SELECTED_DRONE_IDS,
     ShapeEditPreferenceKeys.LAST_SELECTED_DRONE_ID,
     ShapeEditPreferenceKeys.LEGACY_LAST_SELECTED_DRONE_ID,
+    TagPreferenceKeys.HIDDEN_FILTER_KEYS,
 )
 
 /** 로그아웃 ① 업로드·대기 쓰기 확인의 제한 시간. 넘기면 오프라인으로 보고 사용자에게 묻는다. */
@@ -177,6 +183,8 @@ class AccountSessionFlows @Inject constructor(
     private val shapeRepository: ShapeRepository,
     private val sketchRepository: SketchRepository,
     private val droneRepository: DroneRepository,
+    private val tagRepository: TagRepository,
+    private val tagStore: TagFirebaseStore,
     private val realtimeSyncManager: RealtimeSyncManager,
     private val droneSelectionState: DroneSelectionState,
     private val accountDeletionService: AccountDeletionService,
@@ -377,10 +385,20 @@ class AccountSessionFlows @Inject constructor(
         scope.launch { runInitialSync(ticket, selectAllDrones) }
     }
 
-    /** 드론 → 도형(병합 뒤 도형 색 맞춤 포함) → 기본 드론 → 스케치 순(도형이 드론 id 를 가리키므로 드론을 먼저). */
+    /**
+     * 드론 → 태그 → 도형(병합 뒤 도형 색 맞춤 포함) → 기본 드론 → 스케치 순(도형이 드론·태그 id 를 가리키므로 먼저).
+     * 태그 동기화는 실패해도(보안 규칙 배포 전 거절 포함) 도형 동기화를 이어 간다.
+     */
     private suspend fun runInitialSync(ticket: SyncTicket, selectAllDrones: Boolean) {
         try {
             droneRepository.performFullSync(ticket)
+            try {
+                tagRepository.performFullSync(ticket)
+            } catch (e: StaleSyncTicketException) {
+                throw e
+            } catch (e: Exception) {
+                Log.w(TAG, "계정 첫 태그 동기화 실패(도형 동기화는 계속)", e)
+            }
             shapeRepository.performFullSync(ticket)
             // 계정에 드론이 하나도 없을 때만 기본 드론을 만든다(관문이 열려 있으므로 계정에도 올라간다).
             session.requireValid(ticket)
@@ -424,6 +442,7 @@ class AccountSessionFlows @Inject constructor(
         sketchRepository.cancelAllPendingSyncsAndWait()
         shapeRepository.deleteAllShapes()
         droneRepository.deleteAllDrones()
+        tagRepository.deleteAllTagsLocally()
         sketchRepository.deleteAllSketchesLocally()
         droneSelectionState.resetForAccountSwitch()
         realtimeSyncManager.resetSyncTrackingForAccountSwitch()
@@ -544,7 +563,7 @@ class AccountSessionFlows @Inject constructor(
     private suspend fun uploadImportCandidates(uid: String) {
         val ticket = session.issueFlowTicket(uid, SyncTicketPurpose.IMPORT)
         val candidates = computeCandidatesFromServer(ticket).candidates
-        uploadAndMark(ticket, candidates.drones, candidates.shapes, candidates.sketches)
+        uploadAndMark(ticket, candidates.drones, candidates.shapes, candidates.sketches, clearUnknownTags = true)
         Log.d(TAG, "가져오기 업로드 완료: 드론=${candidates.drones.size}, 도형=${candidates.shapes.size}, 스케치=${candidates.sketches.size}")
     }
 
@@ -757,17 +776,39 @@ class AccountSessionFlows @Inject constructor(
         drones: List<DroneModel>,
         shapes: List<ShapeModel>,
         sketches: List<SketchModel>,
+        clearUnknownTags: Boolean = false,
     ): Int {
         val batch = prepareUploadBatch(drones, shapes, sketches)
         if (batch.skippedCount > 0) Log.w(TAG, "서버 검증을 통과하지 못한 항목 ${batch.skippedCount}개는 올리지 않습니다")
         if (batch.drones.isNotEmpty()) droneStore.saveDrones(ticket, batch.drones)
-        if (batch.shapes.isNotEmpty()) shapeStore.saveShapes(ticket, batch.shapes)
-        if (batch.drones.isNotEmpty() || batch.shapes.isNotEmpty()) shapeStore.updateServerMetadata(ticket)
+        val accountTagIds = uploadLocalTags(ticket)
+        // 가져오기: 계정에 없을 태그를 가리키는 도형은 태그를 빼고 올린다(태그를 올리지 못했으면 그대로 올린다)
+        val uploadShapes = if (clearUnknownTags && accountTagIds != null) {
+            clearingTagIds(batch.shapes, accountTagIds, System.currentTimeMillis())
+        } else {
+            batch.shapes
+        }
+        if (uploadShapes.isNotEmpty()) shapeStore.saveShapes(ticket, uploadShapes)
+        if (batch.drones.isNotEmpty() || uploadShapes.isNotEmpty()) shapeStore.updateServerMetadata(ticket)
         if (batch.sketches.isNotEmpty()) {
             sketchStore.saveSketches(ticket, batch.sketches)
             sketchStore.updateServerMetadata(ticket)
         }
         return batch.skippedCount
+    }
+
+    /**
+     * 기기 태그 중 서버에 없거나 더 새로운 것을 올린다(가져오기·로그아웃 전). 태그는 개수 확인·실패 판정에 넣지 않는다:
+     * 보안 규칙이 늦게 배포돼 태그만 거절돼도 도형 업로드는 이어 간다. 올린 뒤 계정의 활성 태그 id, 실패하면 null.
+     */
+    private suspend fun uploadLocalTags(ticket: SyncTicket): Set<String>? = try {
+        val server = tagStore.loadAllTagsIncludingDeleted(ticket, Source.SERVER)
+        val result = mergeTags(tagRepository.getAllTags().first(), server)
+        if (result.toUpload.isNotEmpty()) tagStore.saveTags(ticket, result.toUpload)
+        result.merged.filter { !it.isDeleted }.mapTo(HashSet()) { it.id }
+    } catch (e: Exception) {
+        Log.w(TAG, "태그 업로드 실패(도형은 계속 올림)", e)
+        null
     }
 
     // endregion

@@ -5,26 +5,36 @@ import java.time.Instant
 import java.util.UUID
 
 enum class EntitlementState { UNKNOWN, FREE, PRO }
-enum class QuotaLimitKind { SHAPES, SKETCHES, DRONES }
+enum class QuotaLimitKind { SHAPES, SKETCHES, DRONES, TAGS }
 enum class QuotaAction(val limitKind: QuotaLimitKind) {
     CREATE_SHAPE(QuotaLimitKind.SHAPES),
     DUPLICATE_SHAPE(QuotaLimitKind.SHAPES),
     START_SKETCH_STROKE(QuotaLimitKind.SKETCHES),
     ADD_DRONE(QuotaLimitKind.DRONES),
+    ADD_TAG(QuotaLimitKind.TAGS),
 }
 
-data class QuotaLimits(val freeShapes: Int, val freeSketches: Int, val freeDrones: Int) {
+/**
+ * [freeTags] 는 원격 설정에 없으면 0(= 올리지 않음, [raised] 가 기본값을 지킨다). iOS QuotaLimits 와 같다.
+ */
+data class QuotaLimits(val freeShapes: Int, val freeSketches: Int, val freeDrones: Int, val freeTags: Int = 0) {
     fun limit(forKind: QuotaLimitKind): Int = when (forKind) {
         QuotaLimitKind.SHAPES -> freeShapes
         QuotaLimitKind.SKETCHES -> freeSketches
         QuotaLimitKind.DRONES -> freeDrones
+        QuotaLimitKind.TAGS -> freeTags
     }
 
     fun raised(by: QuotaLimits?): QuotaLimits = by?.let {
-        QuotaLimits(maxOf(freeShapes, it.freeShapes), maxOf(freeSketches, it.freeSketches), maxOf(freeDrones, it.freeDrones))
+        QuotaLimits(
+            maxOf(freeShapes, it.freeShapes),
+            maxOf(freeSketches, it.freeSketches),
+            maxOf(freeDrones, it.freeDrones),
+            maxOf(freeTags, it.freeTags),
+        )
     } ?: this
 
-    companion object { val fallback = QuotaLimits(30, 100, 3) }
+    companion object { val fallback = QuotaLimits(30, 100, 3, 3) }
 }
 
 sealed interface QuotaDecision {

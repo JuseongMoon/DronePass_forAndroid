@@ -1,5 +1,11 @@
 package com.ScienceFiction.DronePassAndroid.feature.map.component
 
+import com.ScienceFiction.DronePassAndroid.domain.model.TagFilter
+import com.ScienceFiction.DronePassAndroid.core.data.repository.TagFilterState
+import androidx.compose.foundation.layout.height
+import androidx.compose.material.icons.outlined.LabelOff
+import androidx.compose.material.icons.outlined.Sell
+import androidx.compose.material.icons.filled.Sell
 import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGray
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -115,7 +121,9 @@ fun DroneSelectionDropdown(
     highlightedDroneIds: Set<String>,
     onToggleSelection: (String) -> Unit,
     onToggleHighlight: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    tagFilter: TagFilterState = TagFilterState(),
+    onToggleTagFilterKey: (String) -> Unit = {},
 ) {
     var showDropdown by remember { mutableStateOf(false) }
     var triggerHeight by remember { mutableIntStateOf(0) }
@@ -185,6 +193,9 @@ fun DroneSelectionDropdown(
                 drones = selectedDrones,
                 highlightedDroneIds = highlightedDroneIds,
                 onToggleHighlight = onToggleHighlight,
+                // 태그로 거르는 중이면 알린다 (누르면 필터 목록을 연다)
+                showTagFilterChip = tagFilter.isFiltering,
+                onTagFilterChipClick = { showDropdown = true },
                 modifier = Modifier
                     .fillMaxWidth()
                     .align(Alignment.TopEnd),
@@ -242,6 +253,7 @@ fun DroneSelectionDropdown(
                         shadowElevation = DroneDropdownShadowElevation
                     ) {
                         // LazyColumn 은 IntrinsicSize 측정을 지원하지 않는다. heightIn 은 verticalScroll 앞에 둔다.
+                        // 태그 구역은 iOS 처럼 드론 목록 아래에 두며, 남은 높이를 넘으면 함께 스크롤한다.
                         Column(
                             modifier = Modifier
                                 .heightIn(max = menuMaxHeight)
@@ -300,6 +312,11 @@ fun DroneSelectionDropdown(
                                     )
                                 }
                             }
+
+                            // 태그 필터 (태그가 하나 이상일 때만)
+                            if (tagFilter.hasFilterableTags) {
+                                TagFilterSection(tagFilter = tagFilter, onToggle = onToggleTagFilterKey)
+                            }
                         }
                     }
                 }
@@ -346,6 +363,8 @@ private fun DroneChipFlowLayout(
     highlightedDroneIds: Set<String>,
     onToggleHighlight: (String) -> Unit,
     modifier: Modifier = Modifier,
+    showTagFilterChip: Boolean = false,
+    onTagFilterChipClick: () -> Unit = {},
 ) {
     val density = LocalDensity.current
     val firstLineReservedWidth = with(density) { DroneDropdownChevronReservedWidth.roundToPx() }
@@ -362,6 +381,7 @@ private fun DroneChipFlowLayout(
                     onClick = { onToggleHighlight(drone.id) },
                 )
             }
+            if (showTagFilterChip) TagFilterActiveChip(onClick = onTagFilterChipClick)
         },
     ) { measurables, constraints ->
         val looseConstraints = constraints.copy(minWidth = 0, minHeight = 0)
@@ -540,4 +560,121 @@ internal fun computeDroneDropdownChipFlowLayout(
         placements = placements,
         lineWidths = lineWidths,
     )
+}
+
+/** 태그로 거르는 중임을 알리는 칩 (iOS tag.fill + "태그 필터"). 드론 칩과 같은 외형 */
+@Composable
+private fun TagFilterActiveChip(onClick: () -> Unit) {
+    Surface(
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.surface,
+        shadowElevation = DroneDropdownShadowElevation,
+        modifier = Modifier.requiredHeight(DroneDropdownSelectionButtonHeight),
+    ) {
+        Row(
+            modifier = Modifier
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onClick,
+                )
+                .fillMaxHeight()
+                .padding(horizontal = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Sell,
+                contentDescription = null,
+                modifier = Modifier.size(DroneDropdownEmptyIconSize),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = stringResource(R.string.tag_filter_active),
+                fontSize = DroneDropdownTextSize,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+        }
+    }
+}
+
+/** 드롭다운 아래 태그 필터 구역: 태그 없음 + 활성 태그. 체크박스 방식이라 눌러도 드롭다운을 닫지 않는다 */
+@Composable
+private fun TagFilterSection(tagFilter: TagFilterState, onToggle: (String) -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(4.dp)
+            .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
+    )
+    Text(
+        text = stringResource(R.string.tag_filter_section),
+        fontSize = 12.sp,
+        fontWeight = FontWeight.SemiBold,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 2.dp),
+    )
+    TagFilterRow(
+        key = TagFilter.UNTAGGED_KEY,
+        name = stringResource(R.string.tag_none),
+        isVisible = tagFilter.isKeyVisible(TagFilter.UNTAGGED_KEY),
+        isLast = false,
+        onToggle = onToggle,
+    )
+    tagFilter.activeTags.forEachIndexed { index, tag ->
+        TagFilterRow(
+            key = tag.id,
+            name = tag.name,
+            isVisible = tagFilter.isKeyVisible(tag.id),
+            isLast = index == tagFilter.activeTags.lastIndex,
+            onToggle = onToggle,
+        )
+    }
+}
+
+@Composable
+private fun TagFilterRow(
+    key: String,
+    name: String,
+    isVisible: Boolean,
+    isLast: Boolean,
+    onToggle: (String) -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onToggle(key) }
+            .padding(
+                horizontal = DroneDropdownMenuItemHorizontalPadding,
+                vertical = DroneDropdownMenuItemVerticalPadding,
+            ),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Icon(
+            imageVector = if (isVisible) Icons.Default.CheckCircle else Icons.Outlined.Circle,
+            contentDescription = null,
+            modifier = Modifier.size(19.dp),
+            tint = if (isVisible) MaterialTheme.colorScheme.primary else IosSystemGray,
+        )
+        Icon(
+            imageVector = if (key == TagFilter.UNTAGGED_KEY) Icons.Outlined.LabelOff else Icons.Outlined.Sell,
+            contentDescription = null,
+            modifier = Modifier.size(14.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            text = name,
+            fontSize = DroneDropdownTextSize,
+            lineHeight = DroneDropdownMenuLineHeight,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+    }
+    if (!isLast) {
+        HorizontalDivider(
+            modifier = Modifier.padding(horizontal = 8.dp),
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+        )
+    }
 }

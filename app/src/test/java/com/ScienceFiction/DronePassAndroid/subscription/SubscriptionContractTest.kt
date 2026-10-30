@@ -34,7 +34,9 @@ class SubscriptionContractTest {
         check(containsKey(key)) { "Missing $key" }
         return this[key]?.let { it as? Map<*, *> ?: error("Invalid $key") }
     }
-    private fun Map<*, *>.limits(): QuotaLimits = QuotaLimits(int("freeShapes"), int("freeSketches"), int("freeDrones"))
+    // freeTags 는 3.7 에서 추가: 없으면 0(원격 설정에 태그 한도 없음)
+    private fun Map<*, *>.limits(): QuotaLimits =
+        QuotaLimits(int("freeShapes"), int("freeSketches"), int("freeDrones"), (this["freeTags"] as? Number)?.toInt() ?: 0)
     private fun Map<*, *>.cutoff(): LegacyCutoff = LegacyCutoff(int("iosOriginalBuildBefore"), Instant.parse(string("accountCreatedBefore")))
 
     @Test fun `compiled defaults match shared fixture`() {
@@ -44,12 +46,15 @@ class SubscriptionContractTest {
     }
 
     @Test fun `all decision cases match shared fixture`() {
-        fixture().cases("decisionCases").forEach { row ->
+        val decisionCases = fixture().cases("decisionCases")
+        assertEquals(29, decisionCases.size)
+        decisionCases.forEach { row ->
             val action = when (row.string("action")) {
                 "createShape" -> QuotaAction.CREATE_SHAPE
                 "duplicateShape" -> QuotaAction.DUPLICATE_SHAPE
                 "startSketchStroke" -> QuotaAction.START_SKETCH_STROKE
                 "addDrone" -> QuotaAction.ADD_DRONE
+                "addTag" -> QuotaAction.ADD_TAG
                 else -> error("Unknown action: ${row.string("action")}")
             }
             val entitlement = when (row.string("entitlement")) {
@@ -66,6 +71,7 @@ class SubscriptionContractTest {
                 QuotaLimitKind.SHAPES -> QuotaPolicy.shapeCount(deletedAts)
                 QuotaLimitKind.SKETCHES -> row.int("sketchCount")
                 QuotaLimitKind.DRONES -> row.int("droneCount")
+                QuotaLimitKind.TAGS -> (row["tagCount"] as? Number)?.toInt() ?: 0
             }
             val result = QuotaPolicy.evaluate(action, { count }, entitlement, QuotaLimits.fallback)
             val actual = when (result) {
@@ -94,7 +100,9 @@ class SubscriptionContractTest {
             val expected = row.optionalString("expectedKind")
             assertEquals(row.string("name"), expected, kind?.let { if (it == LegacyKind.EARLY_ACCESS) "earlyAccess" else "originalDownload" })
         }
-        root.cases("limitsMergeCases").forEach { row ->
+        val limitsMergeCases = root.cases("limitsMergeCases")
+        assertEquals(4, limitsMergeCases.size)
+        limitsMergeCases.forEach { row ->
             assertEquals(row.string("name"), row.map("expected").limits(), QuotaLimits.fallback.raised(row.optionalMap("remote")?.limits()))
         }
         root.cases("legacyCutoffMergeCases").forEach { row ->
@@ -104,7 +112,9 @@ class SubscriptionContractTest {
 
     @Test fun `all remote config and version cases match shared fixture`() {
         val root = fixture()
-        root.cases("remoteConfigCases").forEach { row ->
+        val remoteConfigCases = root.cases("remoteConfigCases")
+        assertEquals(13, remoteConfigCases.size)
+        remoteConfigCases.forEach { row ->
             val config = RemoteSubscriptionConfig.parse(row.string("json"), row.string("platform"))
             if (row["invalid"] == true) {
                 assertNull(row.string("name"), config)

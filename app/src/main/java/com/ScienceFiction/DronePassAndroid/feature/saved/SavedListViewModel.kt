@@ -11,6 +11,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ScienceFiction.DronePassAndroid.core.data.remote.NaverGeocodingApi
 import com.ScienceFiction.DronePassAndroid.core.data.repository.DroneRepository
+import com.ScienceFiction.DronePassAndroid.core.data.repository.TagFilterState
+import com.ScienceFiction.DronePassAndroid.core.data.repository.TagRepository
+import com.ScienceFiction.DronePassAndroid.domain.model.TagModel
 import com.ScienceFiction.DronePassAndroid.core.data.repository.ShapeRepository
 import com.ScienceFiction.DronePassAndroid.core.util.AnalyticsLogger
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
@@ -113,8 +116,11 @@ internal fun buildSavedShapeSections(
     sortDirection: SortDirection,
     visibilitySettings: SavedShapeVisibilitySettings,
     now: Long = System.currentTimeMillis(),
+    tagFilter: TagFilterState = TagFilterState(),
 ): SavedShapeSections {
+    // 드론 필터 다음 태그 필터(지도와 같은 판정, iOS SavedTableListView 1-1단계)
     val droneFilteredShapes = filterShapesForSelectedDrones(shapes, activeDrones, selectedDroneIds)
+        .filter { tagFilter.isVisible(it.tagId) }
 
     val sections = if (sortOption == SortOption.FLIGHT_END) {
         buildSavedShapeSectionsFromGloballySortedShapes(
@@ -257,6 +263,7 @@ internal fun sortSavedShapes(
 class SavedListViewModel @Inject constructor(
     private val shapeRepository: ShapeRepository,
     private val droneRepository: DroneRepository,
+    private val tagRepository: TagRepository,
     private val droneSelectionState: DroneSelectionState,
     private val dataStore: DataStore<Preferences>,
     val naverGeocodingApi: NaverGeocodingApi,
@@ -294,6 +301,14 @@ class SavedListViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val selectedDroneIds: StateFlow<Set<String>> = droneSelectionState.selectedDroneIds
+
+    /** 태그 필터(지도와 공용)와 활성 태그 */
+    val tagFilterState: StateFlow<TagFilterState> = tagRepository.filterState
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), TagFilterState())
+
+    /** 삭제 표시 포함 태그 (상세 화면의 태그 행) */
+    val allTags: StateFlow<List<TagModel>> = tagRepository.getAllTags()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     companion object {
         private val KEY_SORT_OPTION = stringPreferencesKey("ShapeSortingManager.selectedSortOption")
@@ -371,17 +386,18 @@ class SavedListViewModel @Inject constructor(
     val sections: StateFlow<SavedShapeSections> = combine(
         activeShapes,
         activeDrones,
-        selectedDroneIds,
+        combine(selectedDroneIds, tagFilterState, ::Pair),
         sortSettings,
         visibilitySettings,
-    ) { shapes, drones, selectedIds, sort, visibility ->
+    ) { shapes, drones, filters, sort, visibility ->
         buildSavedShapeSections(
             shapes = shapes,
             activeDrones = drones,
-            selectedDroneIds = selectedIds,
+            selectedDroneIds = filters.first,
             sortOption = sort.first,
             sortDirection = sort.second,
             visibilitySettings = visibility,
+            tagFilter = filters.second,
         )
     }
         .flowOn(Dispatchers.Default)

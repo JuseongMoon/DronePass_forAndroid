@@ -19,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.NearMe
 import androidx.compose.material.icons.outlined.Place
+import androidx.compose.material.icons.outlined.Sell
 import androidx.compose.material.icons.filled.VerticalAlignTop
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
@@ -109,43 +110,47 @@ private fun ShapeShareCardInfo(content: ShapeShareCardContent) {
             )
         }
 
-        ShapeShareCardInfoRow(
-            icon = rememberVectorPainter(Icons.Outlined.CalendarToday),
-            text = content.period,
-            maxLines = 1,
-        )
+        content.period?.let { period ->
+            ShapeShareCardInfoRow(
+                icon = rememberVectorPainter(Icons.Outlined.CalendarToday),
+                text = period,
+                maxLines = 1,
+            )
+        }
 
         ShapeShareCardSpecRow(content)
 
         Spacer(modifier = Modifier.weight(1f))
 
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(modifier = Modifier.width(16.dp), contentAlignment = Alignment.Center) {
-                Icon(
-                    painter = rememberVectorPainter(Icons.Outlined.NearMe),
-                    contentDescription = null,
-                    tint = CardSecondaryText,
-                    modifier = Modifier.size(11.dp),
+            content.coordinate?.let { coordinate ->
+                Box(modifier = Modifier.width(16.dp), contentAlignment = Alignment.Center) {
+                    Icon(
+                        painter = rememberVectorPainter(Icons.Outlined.NearMe),
+                        contentDescription = null,
+                        tint = CardSecondaryText,
+                        modifier = Modifier.size(11.dp),
+                    )
+                }
+                Spacer(modifier = Modifier.width(6.dp))
+                // iOS monospacedDigit: 숫자만 고정폭(tnum)이고 기호·공백은 기본 글꼴 폭이다
+                ShapeShareCardText(
+                    text = coordinate,
+                    fontSize = 11.sp,
+                    fontFeatureSettings = "tnum",
+                    modifier = Modifier.weight(1f),
                 )
-            }
-            Spacer(modifier = Modifier.width(6.dp))
-            // iOS monospacedDigit: 숫자만 고정폭(tnum)이고 기호·공백은 기본 글꼴 폭이다
-            ShapeShareCardText(
-                text = content.coordinate,
-                fontSize = 11.sp,
-                fontFeatureSettings = "tnum",
-                modifier = Modifier.weight(1f),
-            )
-            Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+            } ?: Spacer(modifier = Modifier.weight(1f))
             ShapeShareCardBrandMark()
         }
     }
 }
 
-/** 반경 · 고도 · 드론을 한 줄에 둔다. 값이 없는 항목은 뺀다 */
+/** 반경 · 고도 · 드론 · 태그를 한 줄에 둔다. 값이 없는 항목은 뺀다 */
 @Composable
 private fun ShapeShareCardSpecRow(content: ShapeShareCardContent) {
-    if (content.radius == null && content.height == null && content.droneName == null) return
+    if (content.radius == null && content.height == null && content.droneName == null && content.tagName == null) return
     Row(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -181,12 +186,20 @@ private fun ShapeShareCardSpecRow(content: ShapeShareCardContent) {
                 ShapeShareCardText(text = droneName, fontSize = 13.sp)
             }
         }
+        content.tagName?.let { tagName ->
+            ShapeShareCardSpecItem(
+                icon = rememberVectorPainter(Icons.Outlined.Sell),
+                text = tagName,
+                modifier = Modifier.weight(1f, fill = false),
+            )
+        }
     }
 }
 
 @Composable
-private fun ShapeShareCardSpecItem(icon: Painter, text: String) {
+private fun ShapeShareCardSpecItem(icon: Painter, text: String, modifier: Modifier = Modifier) {
     Row(
+        modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

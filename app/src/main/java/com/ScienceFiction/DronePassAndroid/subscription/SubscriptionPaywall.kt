@@ -36,6 +36,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Flight
 import androidx.compose.material.icons.filled.Gesture
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.Sell
 import androidx.compose.material.icons.outlined.VerifiedUser
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -150,6 +151,7 @@ fun SubscriptionPaywall(
                             QuotaLimitKind.SHAPES -> stringResource(R.string.subscription_limit_shapes, limits.freeShapes)
                             QuotaLimitKind.SKETCHES -> stringResource(R.string.subscription_limit_sketches, limits.freeSketches)
                             QuotaLimitKind.DRONES -> stringResource(R.string.subscription_limit_drones, limits.freeDrones)
+                            QuotaLimitKind.TAGS -> stringResource(R.string.subscription_limit_tags, limits.freeTags)
                         },
                     )
                     Spacer(Modifier.height(24.dp))
@@ -425,6 +427,7 @@ private fun BenefitsCard(limits: QuotaLimits) {
         BenefitRow(ImageVector.vectorResource(R.drawable.ic_circle_dashed_ios_like), stringResource(R.string.subscription_benefit_shapes, limits.freeShapes))
         BenefitRow(Icons.Default.Gesture, stringResource(R.string.subscription_benefit_sketches, limits.freeSketches))
         BenefitRow(Icons.Default.Flight, stringResource(R.string.subscription_benefit_drones, limits.freeDrones), iconRotation = 90f)
+        BenefitRow(Icons.Outlined.Sell, stringResource(R.string.subscription_benefit_tags, limits.freeTags))
         BenefitRow(Icons.Outlined.VerifiedUser, stringResource(R.string.subscription_benefit_keep_data))
     }
 }
