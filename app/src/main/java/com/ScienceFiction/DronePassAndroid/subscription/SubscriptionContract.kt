@@ -1,9 +1,11 @@
 package com.ScienceFiction.DronePassAndroid.subscription
 
+import com.ScienceFiction.DronePassAndroid.core.legal.formatLegalDate
 import java.time.Instant
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
+import java.util.Locale
 
 /** 지금 유효한 Google Play 구독의 주문 정보. */
 data class SubscriptionPurchaseInfo(
@@ -13,9 +15,21 @@ data class SubscriptionPurchaseInfo(
     val autoRenewing: Boolean,
 )
 
-/** 구매를 시작할 수 있는지: 로그인했고 플랜 확인이 끝났다(사양 v2 C-1·C-2). */
-internal fun canStartPurchase(signedIn: Boolean, entitlement: EntitlementState): Boolean =
-    signedIn && entitlement != EntitlementState.UNKNOWN
+/**
+ * 구매를 시작할 수 있는지: 플랜 확인이 끝났다(사양 v2 C-2). 로그인은 선택이다(D-52, App Review 5.1.1(v)).
+ * 플랜 확인 중에는 평생 무료 대상자의 실수 결제를 막는다.
+ */
+internal fun canStartPurchase(entitlement: EntitlementState): Boolean =
+    entitlement != EntitlementState.UNKNOWN
+
+/**
+ * 결제 화면에 보여 줄 평생 무료 기준일(이 시각 전에 가입한 계정). 원격 설정값을 한국 날짜로 바꾼다.
+ * 2026-11-05T15:00:00Z → "2026년 11월 6일"(한국어) / "November 6, 2026"(영어).
+ */
+internal fun legacyCutoffDisplayDate(accountCreatedBefore: Instant, locale: Locale): String =
+    formatLegalDate(accountCreatedBefore.atZone(LegalTimeZone).toLocalDate().toString(), locale)
+
+private val LegalTimeZone: ZoneId = ZoneId.of("Asia/Seoul")
 
 /** 연 구독의 마지막 결제(최초 구매 또는 가장 최근 갱신) 시각. */
 internal fun lastYearlyPaymentMillis(purchaseTimeMillis: Long, nowMillis: Long, zone: ZoneId): Long {

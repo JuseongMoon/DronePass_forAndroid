@@ -48,6 +48,7 @@ private const val BASE_PLAN_ID = "yearly"
 private const val CONFIG_REFRESH_INTERVAL = 60L * 60L * 1000L
 private const val PRO_CACHE_TTL = 24L * 60L * 60L * 1000L
 private const val USAGE_EVENT_INTERVAL = 24L * 60L * 60L * 1000L
+private const val KEY_SIGNED_IN_ON_DEVICE = "signedInOnDevice"
 
 enum class ProSource { SUBSCRIPTION, LEGACY }
 
@@ -129,8 +130,14 @@ class SubscriptionManager @Inject constructor(
         },
     )
     private val _signedIn = MutableStateFlow(auth.currentUser != null)
-    /** 구매는 로그인한 상태에서만 한다(사양 v2 C-1). */
+    /** 로그인 여부. 구매에는 필요 없다(D-52). 로그아웃 결제 화면이 로그인 안내를 보여 줄 때 쓴다. */
     val signedIn: StateFlow<Boolean> = _signedIn.asStateFlow()
+    private val _hasSignedInOnDevice = MutableStateFlow(preferences.getBoolean(KEY_SIGNED_IN_ON_DEVICE, false))
+    /**
+     * 이 기기에서 로그인한 적이 있다. 로그아웃해도 지우지 않는다. 로그아웃 결제 화면이 평생 무료 안내를
+     * 강조할 때만 쓴다(D-52). 평생 무료 계정이 로그아웃한 채 결제하지 않게 한다.
+     */
+    val hasSignedInOnDevice: StateFlow<Boolean> = _hasSignedInOnDevice.asStateFlow()
     private val _activePurchase = MutableStateFlow<SubscriptionPurchaseInfo?>(null)
     /** 지금 유효한 Google Play 구독의 주문 정보. 계약 내용·해지·환불 요청 화면이 쓴다. */
     val activePurchase: StateFlow<SubscriptionPurchaseInfo?> = _activePurchase.asStateFlow()
@@ -141,7 +148,14 @@ class SubscriptionManager @Inject constructor(
     /** 해지·환불 요청 메일에 미리 채울 계정 이메일. */
     val accountEmail: String? get() = auth.currentUser?.email
 
+    private val _legacyAccountCreatedBefore = MutableStateFlow(LegacyCutoff.fallback.accountCreatedBefore)
+    /** 평생 무료 기준(이 시각 전에 가입한 계정). 원격 설정으로만 늦춰진다. 로그아웃 결제 화면 안내가 쓴다. */
+    val legacyAccountCreatedBefore: StateFlow<Instant> = _legacyAccountCreatedBefore.asStateFlow()
     private var cutoff = LegacyCutoff.fallback
+        set(value) {
+            field = value
+            _legacyAccountCreatedBefore.value = value.accountCreatedBefore
+        }
     private val billing = BillingClient.newBuilder(context)
         .setListener { result, purchases ->
             when (result.responseCode) {
@@ -164,6 +178,8 @@ class SubscriptionManager @Inject constructor(
     fun start() {
         if (started) return
         started = true
+        // 3.6.3 이하에서 로그인했던 기기: 그때 Pro 판정과 함께 남긴 계정 uid 로 한 번 채운다.
+        if (preferences.getString("uid", null) != null) rememberSignedInOnDevice()
         restoreConfig()
         auth.addAuthStateListener(authListener)
         connectBilling()
@@ -193,6 +209,7 @@ class SubscriptionManager @Inject constructor(
 
     private fun onAccountChanged() {
         _signedIn.value = auth.currentUser != null
+        if (auth.currentUser != null) rememberSignedInOnDevice()
         val uid = auth.currentUser?.uid
         if (uid == currentUid && _status.value.entitlement != EntitlementState.UNKNOWN) return
         currentUid = uid
@@ -214,6 +231,12 @@ class SubscriptionManager @Inject constructor(
         }
         logUsageIfDue()
         if (billing.isReady) refreshPurchases()
+    }
+
+    private fun rememberSignedInOnDevice() {
+        if (_hasSignedInOnDevice.value) return
+        _hasSignedInOnDevice.value = true
+        preferences.edit().putBoolean(KEY_SIGNED_IN_ON_DEVICE, true).apply()
     }
 
     private fun legacyKind(): LegacyKind? {
@@ -396,8 +419,8 @@ class SubscriptionManager @Inject constructor(
     }
 
     fun purchase(activity: Activity, source: String) {
-        // 로그인 필수(계정 토큰을 붙여 구매한다), 플랜 확인 중에는 평생 무료 대상자의 실수 결제를 막는다(사양 v2 C-1·C-2).
-        if (!canStartPurchase(signedIn = auth.currentUser != null, entitlement = _status.value.entitlement)) return
+        // 플랜 확인 중에는 평생 무료 대상자의 실수 결제를 막는다(사양 v2 C-2). 로그인은 선택이다(D-52).
+        if (!canStartPurchase(entitlement = _status.value.entitlement)) return
         latestPurchaseSource = source
         analytics.logPurchaseStart(source)
         if (!billing.isReady) {
@@ -421,6 +444,7 @@ class SubscriptionManager @Inject constructor(
             ?: run { message(R.string.subscription_message_yearly_plan_missing); return }
         val item = BillingFlowParams.ProductDetailsParams.newBuilder().setProductDetails(product).setOfferToken(offer.offerToken).build()
         val builder = BillingFlowParams.newBuilder().setProductDetailsParamsList(listOf(item))
+        // 계정 연결 토큰은 로그인 상태의 구매에만 붙인다(계약 §8). 비로그인 구매는 서버·확장에 연결하지 않는다.
         auth.currentUser?.uid?.let { builder.setObfuscatedAccountId(appAccountToken(it)) }
         val result = billing.launchBillingFlow(activity, builder.build())
         analytics.logBillingFlowLaunch(source, result.responseCode)

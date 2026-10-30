@@ -9,6 +9,7 @@ import androidx.compose.material.icons.filled.AllInclusive
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material.icons.filled.CardGiftcard
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import com.ScienceFiction.DronePassAndroid.ui.component.IosNavBarButtonFontSize
 import androidx.compose.ui.res.vectorResource
@@ -84,7 +85,7 @@ private val PaywallLimitBannerColor = Color(0xFFFF9500).copy(alpha = 0.12f)
 private val PaywallCalloutSize = 16.sp
 
 /**
- * iOS PaywallView 구성: 닫기 → 히어로 → (한도 안내) → 혜택 카드 → 가격 → 구독 버튼 → 구매 복원 → 법적 고지.
+ * iOS PaywallView 구성: 닫기 → 히어로 → (한도 안내) → 혜택 카드 → 가격 → 구독 버튼 → (로그아웃이면 로그인 안내) → 구매 복원 → 법적 고지.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -99,6 +100,9 @@ fun SubscriptionPaywall(
     val isLoadingProducts by manager.isLoadingProducts.collectAsStateWithLifecycle()
     val limits by manager.limits.collectAsStateWithLifecycle()
     val signedIn by manager.signedIn.collectAsStateWithLifecycle()
+    val hasSignedInOnDevice by manager.hasSignedInOnDevice.collectAsStateWithLifecycle()
+    val legacyAccountCreatedBefore by manager.legacyAccountCreatedBefore.collectAsStateWithLifecycle()
+    val locale = LocalConfiguration.current.locales[0]
     var document by remember { mutableStateOf<String?>(null) }
     var showLogin by remember { mutableStateOf(false) }
     var isRestoring by remember { mutableStateOf(false) }
@@ -241,18 +245,25 @@ fun SubscriptionPaywall(
                             Spacer(Modifier.height(8.dp))
                             PurchaseTermsText(stringResource(R.string.subscription_refund_notice))
                             Spacer(Modifier.height(12.dp))
-                            when {
-                                // 로그인 필수: 로그인한 뒤 이 결제 화면으로 돌아온다(사양 v2 C-1).
-                                !signedIn -> PaywallPrimaryButton(
-                                    text = stringResource(R.string.subscription_sign_in_to_subscribe),
-                                    onClick = { showLogin = true },
-                                )
-                                // 플랜 확인 중에는 구매를 막는다. 평생 무료 대상자의 실수 결제를 막는다(사양 v2 C-2).
-                                status.entitlement == EntitlementState.UNKNOWN -> PaywallCheckingButton()
-                                else -> PaywallPrimaryButton(
+                            // 로그인은 선택이다(D-52, App Review 5.1.1(v)).
+                            // 플랜 확인 중에는 구매를 막는다. 평생 무료 대상자의 실수 결제를 막는다(사양 v2 C-2).
+                            if (canStartPurchase(status.entitlement)) {
+                                PaywallPrimaryButton(
                                     text = stringResource(R.string.subscription_subscribe),
                                     onClick = { manager.purchase(activity, request.source) },
                                     enabled = !isRestoring,
+                                )
+                            } else {
+                                PaywallCheckingButton()
+                            }
+                            // 로그아웃 상태: 구매 버튼 아래에 로그인 안내와 보조 로그인 버튼(계약 §8).
+                            // 구매 버튼보다 앞에 두거나 확인창을 띄우지 않는다.
+                            if (!signedIn) {
+                                Spacer(Modifier.height(12.dp))
+                                GuestPurchaseNotice(
+                                    legacyCutoffDate = legacyCutoffDisplayDate(legacyAccountCreatedBefore, locale),
+                                    emphasizeLegacy = hasSignedInOnDevice,
+                                    onSignIn = { showLogin = true },
                                 )
                             }
                         } else if (isLoadingProducts) {
@@ -559,6 +570,36 @@ private fun PaywallCheckingButton() {
         CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
         Spacer(Modifier.width(10.dp))
         Text(text = stringResource(R.string.subscription_plan_checking), fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+    }
+}
+
+/**
+ * 로그아웃 결제 화면의 로그인 안내(D-52, 계약 §8): 로그인은 선택이고 이점은 동기화, 평생 무료 기준일,
+ * 비로그인 구매는 웹·확장에 적용되지 않음. 보조 로그인 버튼은 텍스트 버튼으로 둔다.
+ * [emphasizeLegacy] 는 이 기기에서 로그인한 적이 있을 때다. 평생 무료 안내만 강조하고 버튼은 그대로 둔다.
+ * Android 는 계정 가입일이 유일한 평생 무료 경로다.
+ */
+@Composable
+private fun GuestPurchaseNotice(legacyCutoffDate: String, emphasizeLegacy: Boolean, onSignIn: () -> Unit) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        FinePrint(stringResource(R.string.subscription_guest_sign_in_optional))
+        Text(
+            text = stringResource(R.string.subscription_guest_legacy_notice, legacyCutoffDate),
+            fontSize = if (emphasizeLegacy) 13.sp else 12.sp,
+            lineHeight = if (emphasizeLegacy) 19.sp else 17.sp,
+            fontWeight = if (emphasizeLegacy) FontWeight.SemiBold else FontWeight.Normal,
+            color = if (emphasizeLegacy) IosSystemOrange else IosSecondaryLabel,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+        )
+        FinePrint(stringResource(R.string.subscription_guest_store_only))
+        TextButton(onClick = onSignIn) {
+            Text(stringResource(R.string.subscription_guest_sign_in), fontSize = 17.sp, fontWeight = FontWeight.Normal)
+        }
     }
 }
 
