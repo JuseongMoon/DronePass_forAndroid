@@ -60,9 +60,9 @@ class AccountUploadPreparationTest {
             .substringAfter("private suspend fun uploadAndMark(")
         val prepare = upload.indexOf("prepareUploadBatch(drones, shapes, sketches)")
         assertTrue(prepare >= 0 && prepare < upload.indexOf("droneStore.saveDrones(ticket, batch.drones)"))
-        // 가져오기는 계정에 없을 태그만 비운 batch.shapes 를 올린다
-        assertTrue(upload.contains("clearingTagIds(batch.shapes, accountTagIds"))
-        assertTrue(upload.contains("shapeStore.saveShapes(ticket, uploadShapes)"))
+        // 태그 정리는 후보 계산(computeImportCandidates)이 하고, 여기서는 준비한 batch.shapes 를 그대로 올린다
+        assertTrue(upload.contains("tagStore.saveTags(ticket, tags)"))
+        assertTrue(upload.contains("shapeStore.saveShapes(ticket, batch.shapes)"))
         assertTrue(upload.contains("sketchStore.saveSketches(ticket, batch.sketches)"))
     }
 

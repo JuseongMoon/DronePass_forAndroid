@@ -98,13 +98,3 @@ internal fun mergeTags(
         toUpload = toUpload.values.sortedWith(comparator),
     )
 }
-
-/**
- * 가져오기: 계정에 없을 태그(서버·업로드 모두 활성이 아님)를 가리키는 도형은 태그를 빼고 `updatedAt` 을 올린다.
- * iOS `TagRepository.clearingTagIds(_:notIn:now:)` 정합.
- */
-internal fun clearingTagIds(shapes: List<ShapeModel>, accountTagIds: Set<String>, now: Long): List<ShapeModel> =
-    shapes.map { shape ->
-        val tagId = shape.tagId
-        if (tagId == null || tagId in accountTagIds) shape else shape.copy(tagId = null, updatedAt = now)
-    }

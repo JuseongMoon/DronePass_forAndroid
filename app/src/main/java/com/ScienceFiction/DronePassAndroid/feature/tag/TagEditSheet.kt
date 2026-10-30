@@ -82,7 +82,8 @@ internal fun TagEditSheet(
 
     fun save() {
         if (trimmedName.isEmpty() || isSaving) return
-        if (viewModel.isDuplicateName(trimmedName, tag?.id)) {
+        // 이름을 그대로 두면 검사하지 않는다(가져오기로 같은 이름이 둘 생겨도 저장이 막히지 않게)
+        if (trimmedName != tag?.name && viewModel.isDuplicateName(trimmedName, tag?.id)) {
             alertMessage = duplicateMessage
             return
         }

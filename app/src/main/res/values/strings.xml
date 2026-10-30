@@ -816,8 +816,8 @@
     <plurals name="account_import_unsavable_note">
         <item quantity="other">이 중 %1$d개는 계정에 저장할 수 없어(예: 반경이 50km를 넘는 도형) 가져오면 이 기기에서 삭제됩니다.</item>
     </plurals>
-    <string name="account_import_message">로그인하기 전에 이 기기에서 만든 데이터가 있습니다(도형 %1$d개, 스케치 선 %2$d개, 드론 %3$d대).\n\n이 계정으로 가져올까요? 취소하면 로그아웃되고 이 기기의 데이터는 그대로 남습니다.</string>
-    <string name="account_import_message_legacy_other">이 기기의 데이터는 다른 계정의 데이터일 수 있습니다(도형 %1$d개, 스케치 선 %2$d개, 드론 %3$d대).\n\n본인 데이터가 아니면 삭제하세요. 취소하면 로그아웃되고 이 기기의 데이터는 그대로 남습니다.</string>
+    <string name="account_import_message">로그인하기 전에 이 기기에서 만든 데이터가 있습니다(도형 %1$d개, 스케치 선 %2$d개, 드론 %3$d대, 태그 %4$d개).\n\n이 계정으로 가져올까요? 취소하면 로그아웃되고 이 기기의 데이터는 그대로 남습니다.</string>
+    <string name="account_import_message_legacy_other">이 기기의 데이터는 다른 계정의 데이터일 수 있습니다(도형 %1$d개, 스케치 선 %2$d개, 드론 %3$d대, 태그 %4$d개).\n\n본인 데이터가 아니면 삭제하세요. 취소하면 로그아웃되고 이 기기의 데이터는 그대로 남습니다.</string>
     <string name="account_import_action">가져오기</string>
     <string name="account_import_delete">삭제</string>
     <string name="account_import_delete_confirm_title">이 기기 데이터 삭제</string>

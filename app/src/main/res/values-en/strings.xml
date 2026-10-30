@@ -464,8 +464,8 @@
         <item quantity="one">%1$d of these can\'t be saved to your account (for example, a shape with a radius over 50 km) and will be deleted from this device if you import.</item>
         <item quantity="other">%1$d of these can\'t be saved to your account (for example, shapes with a radius over 50 km) and will be deleted from this device if you import.</item>
     </plurals>
-    <string name="account_import_message">This device has data created before you signed in (%1$d shapes, %2$d sketch lines, %3$d drones).\n\nImport it into this account? If you cancel, you will be signed out and the data stays on this device.</string>
-    <string name="account_import_message_legacy_other">The data on this device may belong to another account (%1$d shapes, %2$d sketch lines, %3$d drones).\n\nDelete it unless it is yours. If you cancel, you will be signed out and the data stays on this device.</string>
+    <string name="account_import_message">This device has data created before you signed in (%1$d shapes, %2$d sketch lines, %3$d drones, %4$d tags).\n\nImport it into this account? If you cancel, you will be signed out and the data stays on this device.</string>
+    <string name="account_import_message_legacy_other">The data on this device may belong to another account (%1$d shapes, %2$d sketch lines, %3$d drones, %4$d tags).\n\nDelete it unless it is yours. If you cancel, you will be signed out and the data stays on this device.</string>
     <string name="account_import_action">Import</string>
     <string name="account_import_delete">Delete</string>
     <string name="account_import_delete_confirm_title">Delete data on this device</string>

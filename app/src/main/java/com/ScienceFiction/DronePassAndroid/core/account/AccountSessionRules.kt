@@ -7,6 +7,8 @@ import com.ScienceFiction.DronePassAndroid.core.data.sync.isNewerUpdatedAt
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 import com.ScienceFiction.DronePassAndroid.domain.model.SketchModel
+import com.ScienceFiction.DronePassAndroid.domain.model.TagModel
+import com.ScienceFiction.DronePassAndroid.domain.model.mergeTags
 
 /*
  * 기기 데이터 주인 판단(3.6.0). 계약: iOS team/DATA_CONTRACT.md §기기 데이터 주인,
@@ -228,15 +230,17 @@ internal fun decideMigrationOwner(authUid: String?, savedUid: String?): LocalDat
     else -> LocalDataOwner.Guest
 }
 
-/** 기기에 계정으로 옮길 만한 데이터가 있는지. 삭제 표시와 손대지 않은 기본 드론은 데이터로 치지 않는다. */
+/** 기기에 계정으로 옮길 만한 데이터가 있는지. 삭제 표시와 손대지 않은 기본 드론은 데이터로 치지 않는다(태그는 기본값이 없다). */
 internal fun deviceHasAccountData(
     shapes: List<ShapeModel>,
     sketches: List<SketchModel>,
     drones: List<DroneModel>,
+    tags: List<TagModel>,
 ): Boolean =
     shapes.any { it.deletedAt == null } ||
         sketches.any { it.deletedAt == null } ||
-        drones.any { it.deletedAt == null && !isUntouchedDefaultDrone(it) }
+        drones.any { it.deletedAt == null && !isUntouchedDefaultDrone(it) } ||
+        tags.any { !it.isDeleted }
 
 /** 도형·스케치 공통 후보 규칙: 기기 쪽이 삭제 표시가 아니고, 서버에 없거나(삭제 표시 포함) 서버보다 허용 오차를 넘게 새롭다. */
 internal fun isImportCandidate(
@@ -253,26 +257,35 @@ internal fun isImportCandidate(
 }
 
 /**
- * 가져오기 후보. [shapes] 는 드론 재지정과 droneId 정리를 반영한 업로드용 값이다.
- * [shapeDroneIdRewrites] 는 후보 도형 중 droneId 가 바뀐 것(없앤 경우 null)이다.
+ * 가져오기 후보. [shapes] 는 드론 재지정과 droneId·tagId 정리를 반영한 업로드용 값이다.
+ * [shapeDroneIdRewrites] 는 후보 도형 중 droneId 가 바뀐 것(없앤 경우 null), [shapeTagIdRewrites] 는 tagId 를 없앤 것(값은 항상 null)이다.
  */
 internal data class ImportCandidates(
     val shapes: List<ShapeModel>,
     val sketches: List<SketchModel>,
     val drones: List<DroneModel>,
+    val tags: List<TagModel>,
     val shapeDroneIdRewrites: Map<String, String?>,
+    val shapeTagIdRewrites: Map<String, String?>,
     val droneMerge: DroneSyncMergeResult,
 ) {
-    val count: Int get() = shapes.size + sketches.size + drones.size
+    val count: Int get() = shapes.size + sketches.size + drones.size + tags.size
 }
 
+/**
+ * 태그도 드론과 같은 기준이다: 후보는 태그 병합의 toUpload(이름이 같아도 id 가 다르면 따로 둔다),
+ * 계정에 없을 태그를 가리키는 후보 도형은 tagId 를 null 로 바꾼다.
+ * [serverTags] 가 null 이면 서버 태그를 읽지 못한 것(보안 규칙 배포 전 거절)이다. 태그는 후보에서 빼고 tagId 도 그대로 둔다.
+ */
 internal fun computeImportCandidates(
     localShapes: List<ShapeModel>,
     localSketches: List<SketchModel>,
     localDrones: List<DroneModel>,
+    localTags: List<TagModel>,
     serverShapes: List<ShapeModel>,
     serverSketches: List<SketchModel>,
     serverDrones: List<DroneModel>,
+    serverTags: List<TagModel>?,
     nowMillis: Long,
 ): ImportCandidates {
     val droneMerge = mergeDronesForFullSync(
@@ -283,6 +296,10 @@ internal fun computeImportCandidates(
     val droneCandidates = droneMerge.toUpload
     val accountDroneIds = serverDrones.filter { it.deletedAt == null }.map { it.id }.toSet() +
         droneCandidates.filter { it.deletedAt == null }.map { it.id }
+    val tagCandidates = serverTags?.let { mergeTags(localTags, it).toUpload }.orEmpty()
+    val accountTagIds = serverTags?.let { server ->
+        server.filter { !it.isDeleted }.map { it.id }.toSet() + tagCandidates.filter { !it.isDeleted }.map { it.id }
+    }
 
     val reassigned = localShapes.map { shape ->
         val target = shape.droneId?.let(droneMerge.reassignedShapeDroneIds::get)
@@ -299,9 +316,20 @@ internal fun computeImportCandidates(
             val droneId = shape.droneId
             if (droneId != null && droneId !in accountDroneIds) shape.copy(droneId = null, updatedAt = nowMillis) else shape
         }
+        .map { shape ->
+            val tagId = shape.tagId
+            if (tagId != null && accountTagIds != null && tagId !in accountTagIds) {
+                shape.copy(tagId = null, updatedAt = nowMillis)
+            } else {
+                shape
+            }
+        }
     val originalDroneIds = localShapes.associate { it.id to it.droneId }
+    val originalTagIds = localShapes.associate { it.id to it.tagId }
+    val tagRewrites = linkedMapOf<String, String?>()
     shapeCandidates.forEach { shape ->
         if (shape.droneId != originalDroneIds[shape.id]) rewrites[shape.id] = shape.droneId
+        if (shape.tagId != originalTagIds[shape.id]) tagRewrites[shape.id] = shape.tagId
     }
 
     val serverSketchesById = serverSketches.associateBy { it.id }
@@ -314,7 +342,9 @@ internal fun computeImportCandidates(
         shapes = shapeCandidates,
         sketches = sketchCandidates,
         drones = droneCandidates,
+        tags = tagCandidates,
         shapeDroneIdRewrites = rewrites,
+        shapeTagIdRewrites = tagRewrites,
         droneMerge = droneMerge,
     )
 }

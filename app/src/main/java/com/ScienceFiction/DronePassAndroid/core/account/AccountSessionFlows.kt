@@ -32,7 +32,7 @@ import com.ScienceFiction.DronePassAndroid.core.util.AnalyticsLogger
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 import com.ScienceFiction.DronePassAndroid.domain.model.SketchModel
-import com.ScienceFiction.DronePassAndroid.domain.model.clearingTagIds
+import com.ScienceFiction.DronePassAndroid.domain.model.TagModel
 import com.ScienceFiction.DronePassAndroid.domain.model.mergeTags
 import com.ScienceFiction.DronePassAndroid.feature.drone.DroneSelectionPreferenceKeys
 import com.ScienceFiction.DronePassAndroid.feature.drone.DroneSelectionState
@@ -121,6 +121,7 @@ sealed interface AccountPrompt {
         val shapeCount: Int,
         val sketchCount: Int,
         val droneCount: Int,
+        val tagCount: Int,
         val deviceItemCount: Int,
         /** 가져올 항목 중 계정에 저장할 수 없는(서버 검증을 통과하지 못하는) 항목 수. 가져오면 기기에서 사라진다. */
         val unsavableCount: Int = 0,
@@ -348,6 +349,7 @@ class AccountSessionFlows @Inject constructor(
         shapes = shapeDao.getAllShapesOnce().map { it.toDomain() },
         sketches = sketchDao.getAllSketchesOnce().map { it.toDomain() },
         drones = droneDao.getAllDronesOnce().map { it.toDomain() },
+        tags = tagRepository.getAllTags().first(),
     )
 
     /** 3.5.x(또는 106 이하)에서 업데이트된 기기: 예전 "마지막 로그인 uid"로 주인을 한 번 정하고 그 키를 지운다. */
@@ -505,6 +507,7 @@ class AccountSessionFlows @Inject constructor(
             shapeCount = evaluation.candidates.shapes.size,
             sketchCount = evaluation.candidates.sketches.size,
             droneCount = evaluation.candidates.drones.size,
+            tagCount = evaluation.candidates.tags.size,
             deviceItemCount = evaluation.deviceItemCount,
             unsavableCount = prepareUploadBatch(
                 evaluation.candidates.drones,
@@ -524,21 +527,26 @@ class AccountSessionFlows @Inject constructor(
         val serverDrones = droneStore.loadAllDronesIncludingDeleted(ticket, Source.SERVER).getOrThrow()
         val serverShapes = shapeStore.loadAllShapesIncludingDeleted(ticket, Source.SERVER).getOrThrow()
         val serverSketches = sketchStore.loadAllSketchesIncludingDeleted(ticket, Source.SERVER).getOrThrow()
+        val serverTags = readServerTags(ticket)
         val localShapes = shapeDao.getAllShapesOnce().map { it.toDomain() }
         val localSketches = sketchDao.getAllSketchesOnce().map { it.toDomain() }
         val localDrones = droneDao.getAllDronesOnce().map { it.toDomain() }
+        val localTags = tagRepository.getAllTags().first()
         val candidates = computeImportCandidates(
             localShapes = localShapes,
             localSketches = localSketches,
             localDrones = localDrones,
+            localTags = localTags,
             serverShapes = serverShapes,
             serverSketches = serverSketches,
             serverDrones = serverDrones,
+            serverTags = serverTags,
             nowMillis = System.currentTimeMillis(),
         )
         val deviceItemCount = localShapes.count { it.deletedAt == null } +
             localSketches.count { it.deletedAt == null } +
-            localDrones.count { it.deletedAt == null }
+            localDrones.count { it.deletedAt == null } +
+            localTags.count { !it.isDeleted }
         return ImportEvaluation(candidates, deviceItemCount)
     }
 
@@ -563,8 +571,8 @@ class AccountSessionFlows @Inject constructor(
     private suspend fun uploadImportCandidates(uid: String) {
         val ticket = session.issueFlowTicket(uid, SyncTicketPurpose.IMPORT)
         val candidates = computeCandidatesFromServer(ticket).candidates
-        uploadAndMark(ticket, candidates.drones, candidates.shapes, candidates.sketches, clearUnknownTags = true)
-        Log.d(TAG, "가져오기 업로드 완료: 드론=${candidates.drones.size}, 도형=${candidates.shapes.size}, 스케치=${candidates.sketches.size}")
+        uploadAndMark(ticket, candidates.drones, candidates.tags, candidates.shapes, candidates.sketches)
+        Log.d(TAG, "가져오기 업로드 완료: 드론=${candidates.drones.size}, 태그=${candidates.tags.size}, 도형=${candidates.shapes.size}, 스케치=${candidates.sketches.size}")
     }
 
     /** [삭제](2차 확인 뒤): 기기 데이터를 지우고 계정 데이터를 내려받는다. */
@@ -748,9 +756,13 @@ class AccountSessionFlows @Inject constructor(
         val drones = logoutFlushItems(droneDao.getAllDronesOnce().map { it.toDomain() }, serverDrones, DroneModel::id, DroneModel::updatedAt, DroneModel::deletedAt)
         val shapes = logoutFlushItems(shapeDao.getAllShapesOnce().map { it.toDomain() }, serverShapes, ShapeModel::id, ShapeModel::updatedAt, ShapeModel::deletedAt)
         val sketches = logoutFlushItems(sketchDao.getAllSketchesOnce().map { it.toDomain() }, serverSketches, SketchModel::id, SketchModel::updatedAt, SketchModel::deletedAt)
-        val unsavable = uploadAndMark(ticket, drones, shapes, sketches)
+        // 태그는 드론과 같은 LWW 기준. 보안 규칙이 태그만 거절하면(배포 전) 태그만 건너뛰고 도형은 올린다
+        val serverTags = readServerTags(ticket)
+        val tags = serverTags?.let { mergeTags(tagRepository.getAllTags().first(), it).toUpload }.orEmpty()
+        val unsavable = uploadAndMark(ticket, drones, tags, shapes, sketches)
         firestore.waitForPendingWrites().await()
-        Log.d(TAG, "로그아웃 전 업로드 완료: 드론=${drones.size}, 도형=${shapes.size}, 스케치=${sketches.size}, 저장 불가=$unsavable")
+        if (serverTags == null) Log.w(TAG, "로그아웃 전 태그 업로드 건너뜀(서버 거절)")
+        Log.d(TAG, "로그아웃 전 업로드 완료: 드론=${drones.size}, 태그=${tags.size}, 도형=${shapes.size}, 스케치=${sketches.size}, 저장 불가=$unsavable")
         return unsavable
     }
 
@@ -768,28 +780,22 @@ class AccountSessionFlows @Inject constructor(
     )
 
     /**
-     * 드론 → 도형 → 스케치 순으로 올리고 다른 기기가 받도록 metadata 를 갱신한다.
-     * 계정에 저장할 수 없어 올리지 않은 항목 수를 돌려준다.
+     * 드론 → 태그 → 도형 → 스케치 순으로 올리고 다른 기기가 받도록 metadata 를 갱신한다(태그는 컬렉션 리스너로 받는다).
+     * 태그 업로드 실패는 드론처럼 업로드 실패로 본다. 계정에 저장할 수 없어 올리지 않은 항목 수를 돌려준다.
      */
     private suspend fun uploadAndMark(
         ticket: SyncTicket,
         drones: List<DroneModel>,
+        tags: List<TagModel>,
         shapes: List<ShapeModel>,
         sketches: List<SketchModel>,
-        clearUnknownTags: Boolean = false,
     ): Int {
         val batch = prepareUploadBatch(drones, shapes, sketches)
         if (batch.skippedCount > 0) Log.w(TAG, "서버 검증을 통과하지 못한 항목 ${batch.skippedCount}개는 올리지 않습니다")
         if (batch.drones.isNotEmpty()) droneStore.saveDrones(ticket, batch.drones)
-        val accountTagIds = uploadLocalTags(ticket)
-        // 가져오기: 계정에 없을 태그를 가리키는 도형은 태그를 빼고 올린다(태그를 올리지 못했으면 그대로 올린다)
-        val uploadShapes = if (clearUnknownTags && accountTagIds != null) {
-            clearingTagIds(batch.shapes, accountTagIds, System.currentTimeMillis())
-        } else {
-            batch.shapes
-        }
-        if (uploadShapes.isNotEmpty()) shapeStore.saveShapes(ticket, uploadShapes)
-        if (batch.drones.isNotEmpty() || uploadShapes.isNotEmpty()) shapeStore.updateServerMetadata(ticket)
+        if (tags.isNotEmpty()) tagStore.saveTags(ticket, tags)
+        if (batch.shapes.isNotEmpty()) shapeStore.saveShapes(ticket, batch.shapes)
+        if (batch.drones.isNotEmpty() || batch.shapes.isNotEmpty()) shapeStore.updateServerMetadata(ticket)
         if (batch.sketches.isNotEmpty()) {
             sketchStore.saveSketches(ticket, batch.sketches)
             sketchStore.updateServerMetadata(ticket)
@@ -798,16 +804,14 @@ class AccountSessionFlows @Inject constructor(
     }
 
     /**
-     * 기기 태그 중 서버에 없거나 더 새로운 것을 올린다(가져오기·로그아웃 전). 태그는 개수 확인·실패 판정에 넣지 않는다:
-     * 보안 규칙이 늦게 배포돼 태그만 거절돼도 도형 업로드는 이어 간다. 올린 뒤 계정의 활성 태그 id, 실패하면 null.
+     * 서버 태그를 [Source.SERVER] 로 읽는다(삭제 표시 포함). 거절(PERMISSION_DENIED, 보안 규칙 배포 전)만 null 로 넘겨
+     * 태그를 후보·업로드에서 빼고, 다른 실패는 도형·드론과 같이 던진다.
      */
-    private suspend fun uploadLocalTags(ticket: SyncTicket): Set<String>? = try {
-        val server = tagStore.loadAllTagsIncludingDeleted(ticket, Source.SERVER)
-        val result = mergeTags(tagRepository.getAllTags().first(), server)
-        if (result.toUpload.isNotEmpty()) tagStore.saveTags(ticket, result.toUpload)
-        result.merged.filter { !it.isDeleted }.mapTo(HashSet()) { it.id }
+    private suspend fun readServerTags(ticket: SyncTicket): List<TagModel>? = try {
+        tagStore.loadAllTagsIncludingDeleted(ticket, Source.SERVER)
     } catch (e: Exception) {
-        Log.w(TAG, "태그 업로드 실패(도형은 계속 올림)", e)
+        if (!e.isPermissionDenied()) throw e
+        Log.w(TAG, "서버 태그 읽기 거절 — 태그는 가져오기·로그아웃 업로드에서 뺌")
         null
     }
 

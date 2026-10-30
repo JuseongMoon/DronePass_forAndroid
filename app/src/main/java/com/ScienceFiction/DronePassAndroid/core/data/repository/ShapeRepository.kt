@@ -21,7 +21,6 @@ import com.ScienceFiction.DronePassAndroid.core.data.sync.isNewerUpdatedAt
 import com.ScienceFiction.DronePassAndroid.core.data.storedEndDateAlarmEnabled
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
-import com.ScienceFiction.DronePassAndroid.domain.model.clearingTagIds
 import com.ScienceFiction.DronePassAndroid.domain.model.validateForFirebasePersistence
 import com.ScienceFiction.DronePassAndroid.domain.model.validateForLocalPersistence
 import com.ScienceFiction.DronePassAndroid.service.NotificationScheduler
@@ -349,19 +348,6 @@ class ShapeRepository @Inject constructor(
         markShapeLocalModification(now)
         syncShapesToFirebase(cleared.map { it.toDomain() })
         return cleared.size
-    }
-
-    /** 기기 도형 중 계정 태그에 없는 tagId 를 비운다(가져오기 전, [clearingTagIds]). 바꾼 도형 수를 돌려준다. */
-    internal suspend fun clearTagIdsNotIn(accountTagIds: Set<String>): Int {
-        val now = System.currentTimeMillis()
-        val changed = database.withTransaction {
-            val shapes = shapeDao.getAllShapesOnce().map { it.toDomain() }
-            clearingTagIds(shapes, accountTagIds, now)
-                .filterIndexed { index, shape -> shape !== shapes[index] }
-                .also { if (it.isNotEmpty()) shapeDao.insertShapes(it.map { shape -> shape.toEntity() }) }
-        }
-        if (changed.isNotEmpty()) markShapeLocalModification(now)
-        return changed.size
     }
 
     private suspend fun markShapeLocalModification(now: Long = System.currentTimeMillis()) {

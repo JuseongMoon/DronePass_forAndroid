@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.domain.model
 
+import com.ScienceFiction.DronePassAndroid.core.account.computeImportCandidates
 import com.squareup.moshi.Moshi
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
@@ -86,11 +87,26 @@ class TagContractTest {
         assertEquals(3, cases.size)
         val before = 1_000L
         val now = 2_000L
+        // 가져오기 후보 계산(computeImportCandidates)이 계정에 없을 태그를 가리키는 도형의 tagId 를 비우는지.
+        // accountTagIds 는 서버의 활성 태그로 넣는다(기기 태그 없음)
         cases.forEach { row ->
             val name = row.string("name")
-            val shape = ShapeModel(tagId = row["tagId"] as String?, updatedAt = before)
-            val rewritten = clearingTagIds(listOf(shape), row.stringList("accountTagIds").toSet(), now).single()
+            val shape = ShapeModel(id = "S1", tagId = row["tagId"] as String?, createdAt = before, updatedAt = before)
+            val serverTags = row.stringList("accountTagIds").map { TagModel(id = it, name = it, createdAt = before, updatedAt = before) }
+            val candidates = computeImportCandidates(
+                localShapes = listOf(shape),
+                localSketches = emptyList(),
+                localDrones = emptyList(),
+                localTags = emptyList(),
+                serverShapes = emptyList(),
+                serverSketches = emptyList(),
+                serverDrones = emptyList(),
+                serverTags = serverTags,
+                nowMillis = now,
+            )
+            val rewritten = candidates.shapes.single()
             assertEquals(name, row["expectedTagId"] as String?, rewritten.tagId)
+            assertEquals(name, row["expectUpdatedAtBump"] as Boolean, "S1" in candidates.shapeTagIdRewrites)
             if (row["expectUpdatedAtBump"] as Boolean) {
                 assertEquals(name, now, rewritten.updatedAt)
             } else {

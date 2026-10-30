@@ -127,7 +127,8 @@ fun DroneEditSheet(
             trimmedName.isEmpty() -> {
                 saveErrorMessage = nameRequiredMessage
             }
-            isDuplicateName(trimmedName, drone?.id) -> {
+            // 이름을 그대로 두면 검사하지 않는다(가져오기로 같은 이름이 둘 생겨도 나머지 정보는 고칠 수 있게)
+            trimmedName != drone?.name && isDuplicateName(trimmedName, drone?.id) -> {
                 saveErrorMessage = duplicateNameMessage
             }
             else -> {

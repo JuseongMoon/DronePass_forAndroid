@@ -3,6 +3,7 @@ package com.ScienceFiction.DronePassAndroid.core.account
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 import com.ScienceFiction.DronePassAndroid.domain.model.SketchModel
+import com.ScienceFiction.DronePassAndroid.domain.model.TagModel
 import com.squareup.moshi.Moshi
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -32,11 +33,14 @@ class AccountSessionContractTest {
     private fun Map<*, *>.list(key: String): List<*> = required(key) as? List<*> ?: error("Invalid $key")
     private fun Map<*, *>.map(key: String): Map<*, *> = required(key) as? Map<*, *> ?: error("Invalid $key")
     private fun Map<*, *>.maps(key: String): List<Map<*, *>> = list(key).map { it as Map<*, *> }
+    // 태그 키는 선택이다(없으면 빈 값)
+    private fun Map<*, *>.optionalMaps(key: String): List<Map<*, *>> = (this[key] as? List<*>).orEmpty().map { it as Map<*, *> }
     private fun Map<*, *>.millis(key: String): Long? = (this[key] as? String)?.let { Instant.parse(it).toEpochMilli() }
 
     private fun Map<*, *>.shape() = ShapeModel(
         id = string("id"),
         droneId = this["droneId"] as? String,
+        tagId = this["tagId"] as? String,
         createdAt = requireNotNull(millis("updatedAt")),
         updatedAt = requireNotNull(millis("updatedAt")),
         deletedAt = millis("deletedAt"),
@@ -57,6 +61,14 @@ class AccountSessionContractTest {
         takeoffWeight = this["takeoffWeight"] as? String,
         size = this["size"] as? String,
         memo = this["memo"] as? String,
+        createdAt = requireNotNull(millis("createdAt")),
+        updatedAt = requireNotNull(millis("updatedAt")),
+        deletedAt = millis("deletedAt"),
+    )
+
+    private fun Map<*, *>.tag() = TagModel(
+        id = string("id"),
+        name = string("name"),
         createdAt = requireNotNull(millis("createdAt")),
         updatedAt = requireNotNull(millis("updatedAt")),
         deletedAt = millis("deletedAt"),
@@ -92,15 +104,15 @@ class AccountSessionContractTest {
         "legacyOtherAccount" to ImportPromptKind.LEGACY_OTHER_ACCOUNT,
     )
 
-    @Test fun `fixture has 65 cases and every action and prompt kind is known`() {
+    @Test fun `fixture has 71 cases and every action and prompt kind is known`() {
         val root = fixture()
         assertEquals(1.0, (root.required("schemaVersion") as Number).toDouble(), 0.0)
         val counts = listOf(
             "sessionCases", "migrationCases", "deviceHasDataCases", "importCandidateCases", "deletionCheckCases",
             "reloadClassificationCases",
         ).map { root.list(it).size }
-        assertEquals(listOf(26, 5, 5, 11, 9, 9), counts)
-        assertEquals(65, counts.sum())
+        assertEquals(listOf(26, 5, 7, 15, 9, 9), counts)
+        assertEquals(71, counts.sum())
         assertEquals(DELETION_CHECK_GRACE_MINUTES.toDouble(), (root.required("deletionCheckGraceMinutes") as Number).toDouble(), 0.0)
         assertEquals(actionNames.keys, root.map("actions").keys)
         assertEquals(promptNames.keys, root.map("promptKinds").keys)
@@ -200,6 +212,7 @@ class AccountSessionContractTest {
                 shapes = local.maps("shapes").map { it.shape() },
                 sketches = local.maps("sketches").map { it.sketch() },
                 drones = local.maps("drones").map { it.drone() },
+                tags = local.optionalMaps("tags").map { it.tag() },
             )
             assertEquals(row.string("name"), row.required("expected") as Boolean, hasData)
         }
@@ -216,9 +229,11 @@ class AccountSessionContractTest {
                 localShapes = local.maps("shapes").map { it.shape() },
                 localSketches = local.maps("sketches").map { it.sketch() },
                 localDrones = local.maps("drones").map { it.drone() },
+                localTags = local.optionalMaps("tags").map { it.tag() },
                 serverShapes = server.maps("shapes").map { it.shape() },
                 serverSketches = server.maps("sketches").map { it.sketch() },
                 serverDrones = server.maps("drones").map { it.drone() },
+                serverTags = server.optionalMaps("tags").map { it.tag() },
                 nowMillis = now,
             )
             assertEquals(name, expected.list("shapeIds").toSet(), candidates.shapes.map { it.id }.toSet())
@@ -229,6 +244,38 @@ class AccountSessionContractTest {
                 expected.map("shapeDroneIdRewrites").entries.associate { (k, v) -> k as String to v as String? },
                 candidates.shapeDroneIdRewrites,
             )
+            assertEquals(name, (expected["tagIds"] as? List<*>).orEmpty().toSet(), candidates.tags.map { it.id }.toSet())
+            assertEquals(
+                name,
+                (expected["shapeTagIdRewrites"] as? Map<*, *>).orEmpty().entries.associate { (k, v) -> k as String to v as String? },
+                candidates.shapeTagIdRewrites,
+            )
+            // 비운 tagId 는 올릴 때 updatedAt 이 now 로 오른다
+            candidates.shapeTagIdRewrites.keys.forEach { id ->
+                assertEquals(name, now, candidates.shapes.single { it.id == id }.updatedAt)
+            }
         }
+    }
+
+    @Test fun `import keeps tag ids when server tags are unreadable`() {
+        // 보안 규칙이 태그를 거절하면(serverTags null) 태그는 후보로 세지 않고 도형의 tagId 도 그대로 둔다
+        val date = Instant.parse("2026-10-01T00:00:00Z").toEpochMilli()
+        val candidates = computeImportCandidates(
+            localShapes = listOf(ShapeModel(id = "S1", tagId = "T", createdAt = date, updatedAt = date)),
+            localSketches = emptyList(),
+            localDrones = emptyList(),
+            localTags = listOf(TagModel(id = "T", name = "촬영", createdAt = date, updatedAt = date)),
+            serverShapes = emptyList(),
+            serverSketches = emptyList(),
+            serverDrones = emptyList(),
+            serverTags = null,
+            nowMillis = date + 1_000,
+        )
+        assertEquals(listOf("S1"), candidates.shapes.map { it.id })
+        assertEquals("T", candidates.shapes.single().tagId)
+        assertEquals(date, candidates.shapes.single().updatedAt)
+        assertTrue(candidates.tags.isEmpty())
+        assertTrue(candidates.shapeTagIdRewrites.isEmpty())
+        assertEquals(1, candidates.count)
     }
 }

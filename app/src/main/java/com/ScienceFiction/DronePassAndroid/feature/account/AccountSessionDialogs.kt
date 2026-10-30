@@ -80,9 +80,9 @@ fun AccountSessionDialogs(
             )
         } else {
             val baseMessage = if (current.kind == ImportPromptKind.LEGACY_OTHER_ACCOUNT) {
-                stringResource(R.string.account_import_message_legacy_other, current.shapeCount, current.sketchCount, current.droneCount)
+                stringResource(R.string.account_import_message_legacy_other, current.shapeCount, current.sketchCount, current.droneCount, current.tagCount)
             } else {
-                stringResource(R.string.account_import_message, current.shapeCount, current.sketchCount, current.droneCount)
+                stringResource(R.string.account_import_message, current.shapeCount, current.sketchCount, current.droneCount, current.tagCount)
             }
             // 계정에 저장할 수 없는 항목은 가져와도 올라가지 않고 기기 정리 때 사라진다. 미리 알린다.
             val message = if (current.unsavableCount > 0) {
