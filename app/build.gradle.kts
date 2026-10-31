@@ -177,8 +177,8 @@ android {
         applicationId = dronepassApplicationId
         minSdk = 28
         targetSdk = 36
-        versionCode = 112
-        versionName = "3.6.3"
+        versionCode = 113
+        versionName = "3.6.4"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
