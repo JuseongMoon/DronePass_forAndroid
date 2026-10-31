@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.core.data.repository
 
+import com.ScienceFiction.DronePassAndroid.core.account.logoutShapesToUpload
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.entity.ShapeEntity
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
@@ -117,6 +118,91 @@ class ShapeRepositoryTest {
 
         assertTrue(shapesRecoloredToDrones(shapes, emptyList(), nowMillis = 100L).isEmpty())
     }
+
+    // region D-50 레드팀: 색 맞춤은 서버 값과 병합한 뒤 (iOS TagRedTeamFixTests 정합)
+
+    private val colorDrones = listOf(DroneModel(id = "D1", name = "Drone", color = "#007AFF", createdAt = 1L, updatedAt = 1L))
+
+    private fun colorShape(id: String, title: String, color: String, tagId: String?, updatedAt: Long, deletedAt: Long? = null) =
+        ShapeModel(id = id, title = title, color = color, droneId = "D1", tagId = tagId, createdAt = 1L, updatedAt = updatedAt, deletedAt = deletedAt)
+
+    @Test
+    fun `관문을 열 때 색 맞춤은 서버의 태그와 제목을 남기고 색만 고친다`() {
+        val staleLocal = colorShape("S1", "옛 제목", "#FF3B30", tagId = null, updatedAt = 1_000L)
+        val server = colorShape("S1", "새 제목", "#FF3B30", tagId = "T1", updatedAt = 2_000L)
+
+        assertEquals(listOf("S1"), shapeIdsWithDroneColorMismatch(listOf(staleLocal), colorDrones))
+        val result = reconcileShapeColorsWithServer(listOf(staleLocal), listOf(server), colorDrones, nowMillis = 9_000L)
+        val upload = result.toUpload.single()
+        assertEquals("T1", upload.tagId)
+        assertEquals("새 제목", upload.title)
+        assertEquals("#007AFF", upload.color)
+        assertEquals(9_000L, upload.updatedAt)
+        assertEquals("기기 사본도 서버 값으로 바뀐다", listOf(upload), result.localWrites)
+    }
+
+    @Test
+    fun `서버 색이 이미 맞으면 서버 값만 기기에 반영하고 올리지 않는다`() {
+        val staleLocal = colorShape("S1", "옛 제목", "#FF3B30", tagId = null, updatedAt = 1_000L)
+        val server = colorShape("S1", "새 제목", "#007AFF", tagId = "T1", updatedAt = 2_000L)
+        val result = reconcileShapeColorsWithServer(listOf(staleLocal), listOf(server), colorDrones, nowMillis = 9_000L)
+        assertTrue(result.toUpload.isEmpty())
+        assertEquals(listOf(server), result.localWrites)
+    }
+
+    @Test
+    fun `기기에서 더 새로 고친 도형은 기기 값에 색을 맞춘다`() {
+        val newerLocal = colorShape("S1", "기기에서 고침", "#FF3B30", tagId = "T2", updatedAt = 3_000L)
+        val server = colorShape("S1", "서버", "#FF3B30", tagId = "T1", updatedAt = 2_000L)
+        val upload = reconcileShapeColorsWithServer(listOf(newerLocal), listOf(server), colorDrones, nowMillis = 9_000L).toUpload.single()
+        assertEquals("기기에서 고침", upload.title)
+        assertEquals("T2", upload.tagId)
+        assertEquals("#007AFF", upload.color)
+    }
+
+    @Test
+    fun `서버를 읽지 못하면 색만 바꾸고 updatedAt 은 그대로 둔다`() {
+        val staleLocal = colorShape("S1", "옛 제목", "#FF3B30", tagId = null, updatedAt = 1_000L)
+        val recolored = shapesRecoloredLocallyOnly(listOf(staleLocal), colorDrones).single()
+        assertEquals("#007AFF", recolored.color)
+        assertEquals(1_000L, recolored.updatedAt)
+    }
+
+    @Test
+    fun `로그아웃 전 업로드는 기기의 옛 사본을 색이 달라도 올리지 않는다`() {
+        val staleLocal = colorShape("S1", "옛 제목", "#FF3B30", tagId = null, updatedAt = 1_000L)
+        val server = colorShape("S1", "새 제목", "#007AFF", tagId = "T1", updatedAt = 2_000L)
+        assertTrue(logoutShapesToUpload(listOf(staleLocal), listOf(server), colorDrones, nowMillis = 9_000L).isEmpty())
+    }
+
+    @Test
+    fun `로그아웃 전 업로드는 서버 색이 다르면 서버 값에 색을 고쳐 올린다`() {
+        val staleLocal = colorShape("S1", "옛 제목", "#FF3B30", tagId = null, updatedAt = 1_000L)
+        val server = colorShape("S1", "새 제목", "#FF3B30", tagId = "T1", updatedAt = 2_000L)
+        val upload = logoutShapesToUpload(listOf(staleLocal), listOf(server), colorDrones, nowMillis = 9_000L).single()
+        assertEquals("T1", upload.tagId)
+        assertEquals("새 제목", upload.title)
+        assertEquals("#007AFF", upload.color)
+        assertEquals(9_000L, upload.updatedAt)
+    }
+
+    @Test
+    fun `로그아웃 전 업로드는 더 새로운 도형과 기기에만 있는 도형을 올리고 서버에 없는 삭제 표시는 올리지 않는다`() {
+        val newerLocal = colorShape("N", "기기에서 고침", "#FF3B30", tagId = "T2", updatedAt = 3_000L)
+        val server = colorShape("N", "서버", "#FF3B30", tagId = "T1", updatedAt = 2_000L)
+        val localOnly = colorShape("L", "기기에만", "#007AFF", tagId = null, updatedAt = 1_000L)
+        val deletedOnly = colorShape("X", "지움", "#007AFF", tagId = null, updatedAt = 1_000L, deletedAt = 1_000L)
+
+        val upload = logoutShapesToUpload(listOf(newerLocal, localOnly, deletedOnly), listOf(server), colorDrones, nowMillis = 9_000L)
+            .associateBy { it.id }
+        assertEquals(setOf("N", "L"), upload.keys)
+        assertEquals("기기에서 고침", upload.getValue("N").title)
+        assertEquals("T2", upload.getValue("N").tagId)
+        assertEquals("#007AFF", upload.getValue("N").color)
+        assertEquals("기기에만", upload.getValue("L").title)
+    }
+
+    // endregion
 
     @Test
     fun `만료 도형 삭제는 종료일이 현재 이하인 활성 항목을 같은 시각으로 소프트 삭제한다`() {

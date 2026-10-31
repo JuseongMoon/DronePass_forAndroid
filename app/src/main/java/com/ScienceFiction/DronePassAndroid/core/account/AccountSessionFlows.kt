@@ -33,7 +33,6 @@ import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 import com.ScienceFiction.DronePassAndroid.domain.model.SketchModel
 import com.ScienceFiction.DronePassAndroid.domain.model.TagModel
-import com.ScienceFiction.DronePassAndroid.domain.model.mergeTags
 import com.ScienceFiction.DronePassAndroid.feature.drone.DroneSelectionPreferenceKeys
 import com.ScienceFiction.DronePassAndroid.feature.drone.DroneSelectionState
 import com.ScienceFiction.DronePassAndroid.feature.profile.AccountDeletionService
@@ -532,6 +531,7 @@ class AccountSessionFlows @Inject constructor(
         val localSketches = sketchDao.getAllSketchesOnce().map { it.toDomain() }
         val localDrones = droneDao.getAllDronesOnce().map { it.toDomain() }
         val localTags = tagRepository.getAllTags().first()
+        if (importBlockedByUnreadableTags(localTags, serverTags)) throw ServerTagsUnreadableException()
         val candidates = computeImportCandidates(
             localShapes = localShapes,
             localSketches = localSketches,
@@ -748,21 +748,21 @@ class AccountSessionFlows @Inject constructor(
     /** ① 서버를 [Source.SERVER] 로 읽어 기기에만 있거나 더 새로운 항목만 올리고, 대기 중인 쓰기가 서버에 닿을 때까지 기다린다. */
     private suspend fun flushBeforeLogout(uid: String): Int {
         val ticket = session.issueFlowTicket(uid, SyncTicketPurpose.LOGOUT_FLUSH)
-        // 도형 색을 드론 색으로 맞춘다. 관문이 닫혀 있어 기기에만 쓰이고, updatedAt 이 올라 아래 비교에서 업로드 대상이 된다.
-        shapeRepository.syncShapeColorsWithDrones(droneDao.getAllDronesOnce().map { it.toDomain() })
         val serverDrones = droneStore.loadAllDronesIncludingDeleted(ticket, Source.SERVER).getOrThrow()
         val serverShapes = shapeStore.loadAllShapesIncludingDeleted(ticket, Source.SERVER).getOrThrow()
         val serverSketches = sketchStore.loadAllSketchesIncludingDeleted(ticket, Source.SERVER).getOrThrow()
-        val drones = logoutFlushItems(droneDao.getAllDronesOnce().map { it.toDomain() }, serverDrones, DroneModel::id, DroneModel::updatedAt, DroneModel::deletedAt)
-        val shapes = logoutFlushItems(shapeDao.getAllShapesOnce().map { it.toDomain() }, serverShapes, ShapeModel::id, ShapeModel::updatedAt, ShapeModel::deletedAt)
+        val localDrones = droneDao.getAllDronesOnce().map { it.toDomain() }
+        val drones = logoutFlushItems(localDrones, serverDrones, DroneModel::id, DroneModel::updatedAt, DroneModel::deletedAt)
+        // 도형 색 = 드론 색. 서버 값과 병합한 뒤 맞춘다(기기의 옛 사본에 색을 맞춰 올리면 서버의 tagId·새 제목을 덮는다)
+        val shapes = logoutShapesToUpload(shapeDao.getAllShapesOnce().map { it.toDomain() }, serverShapes, localDrones, System.currentTimeMillis())
         val sketches = logoutFlushItems(sketchDao.getAllSketchesOnce().map { it.toDomain() }, serverSketches, SketchModel::id, SketchModel::updatedAt, SketchModel::deletedAt)
-        // 태그는 드론과 같은 LWW 기준. 보안 규칙이 태그만 거절하면(배포 전) 태그만 건너뛰고 도형은 올린다
+        // 태그는 드론과 같은 LWW 기준. 보안 규칙이 태그만 거절하면(배포 전) 태그는 올리지 않고 기기 활성 태그를 저장 불가로 센다
         val serverTags = readServerTags(ticket)
-        val tags = serverTags?.let { mergeTags(tagRepository.getAllTags().first(), it).toUpload }.orEmpty()
-        val unsavable = uploadAndMark(ticket, drones, tags, shapes, sketches)
+        val tagFlush = logoutTagFlush(tagRepository.getAllTags().first(), serverTags)
+        val unsavable = uploadAndMark(ticket, drones, tagFlush.toUpload, shapes, sketches) + tagFlush.unsavableCount
         firestore.waitForPendingWrites().await()
-        if (serverTags == null) Log.w(TAG, "로그아웃 전 태그 업로드 건너뜀(서버 거절)")
-        Log.d(TAG, "로그아웃 전 업로드 완료: 드론=${drones.size}, 태그=${tags.size}, 도형=${shapes.size}, 스케치=${sketches.size}, 저장 불가=$unsavable")
+        if (serverTags == null) Log.w(TAG, "로그아웃 전 태그 업로드 건너뜀(서버 거절), 저장 불가 태그=${tagFlush.unsavableCount}")
+        Log.d(TAG, "로그아웃 전 업로드 완료: 드론=${drones.size}, 태그=${tagFlush.toUpload.size}, 도형=${shapes.size}, 스케치=${sketches.size}, 저장 불가=$unsavable")
         return unsavable
     }
 

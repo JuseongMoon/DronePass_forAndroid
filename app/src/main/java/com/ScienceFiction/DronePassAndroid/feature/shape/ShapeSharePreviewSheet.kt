@@ -91,6 +91,8 @@ private val ShapeSharePreviewHeaderSideWidth = 72.dp
 private val ShapeSharePreviewCardShape = RoundedCornerShape(20.dp)
 private val ShapeShareSegmentTrack = Color(0x1F767680)
 private const val ShapeShareCacheDirectory = "shared_cards"
+/** 공유한 PNG 를 남겨 두는 시간 (1시간) */
+private const val ShapeShareFileRetentionMs = 60 * 60 * 1000L
 
 /**
  * 공유 카드 미리보기 (iOS ShapeSharePreviewView 정합).
@@ -526,7 +528,11 @@ private fun ShapeShareCardRenderer(
     }
 }
 
-/** 모서리 투명을 지키려고 PNG 로 저장한다. 앱 캐시의 공유 전용 폴더에 한 장만 남긴다 */
+/**
+ * 모서리 투명을 지키려고 PNG 로 저장한다. 앱 캐시의 공유 전용 폴더에 둔다.
+ * 받는 앱이 공유 시트가 닫힌 뒤에 파일을 읽을 수 있으므로(업로드 지연 등) 이전 파일은 바로 지우지 않고
+ * [ShapeShareFileRetentionMs] 가 지난 것만 지운다.
+ */
 private fun writeShapeShareCardPng(context: Context, image: Bitmap): Uri {
     val softwareImage = if (image.config == Bitmap.Config.HARDWARE) {
         image.copy(Bitmap.Config.ARGB_8888, false)
@@ -535,7 +541,8 @@ private fun writeShapeShareCardPng(context: Context, image: Bitmap): Uri {
     }
     val directory = File(context.cacheDir, ShapeShareCacheDirectory).apply {
         mkdirs()
-        listFiles()?.forEach { it.delete() }
+        val expiredBefore = System.currentTimeMillis() - ShapeShareFileRetentionMs
+        listFiles()?.filter { it.lastModified() < expiredBefore }?.forEach { it.delete() }
     }
     val file = File(directory, "DronePass-${System.currentTimeMillis()}.png")
     file.outputStream().use { output ->

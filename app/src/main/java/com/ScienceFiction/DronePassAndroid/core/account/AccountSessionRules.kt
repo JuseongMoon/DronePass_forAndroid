@@ -3,6 +3,7 @@ package com.ScienceFiction.DronePassAndroid.core.account
 import com.ScienceFiction.DronePassAndroid.core.data.repository.DroneSyncMergeResult
 import com.ScienceFiction.DronePassAndroid.core.data.repository.isUntouchedDefaultDrone
 import com.ScienceFiction.DronePassAndroid.core.data.repository.mergeDronesForFullSync
+import com.ScienceFiction.DronePassAndroid.core.data.repository.reconcileShapeColorsWithServer
 import com.ScienceFiction.DronePassAndroid.core.data.sync.isNewerUpdatedAt
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
@@ -347,6 +348,47 @@ internal fun computeImportCandidates(
         shapeTagIdRewrites = tagRewrites,
         droneMerge = droneMerge,
     )
+}
+
+/** 서버 태그를 읽지 못해 가져오기 후보를 셀 수 없다([importBlockedByUnreadableTags]). 후보 확인 실패로 처리한다. */
+internal class ServerTagsUnreadableException : IllegalStateException("Server tags are unreadable while device tags exist")
+
+/**
+ * 서버 태그를 읽지 못했는데(보안 규칙 배포 전 거절, [serverTags] null) 기기에 활성 태그가 있으면 가져오기를 진행하지 않는다.
+ * 태그를 빼고 가져오면 기기 정리 때 태그가 사라지므로, 후보 확인 실패로 다시 시도하게 한다.
+ */
+internal fun importBlockedByUnreadableTags(localTags: List<TagModel>, serverTags: List<TagModel>?): Boolean =
+    serverTags == null && localTags.any { !it.isDeleted }
+
+/**
+ * 로그아웃 ① 태그 업로드 대상. 서버 태그를 읽었으면 병합의 toUpload 이고, 읽지 못했으면(거절) 올리지 않는 대신
+ * 기기의 활성 태그 수를 "저장할 수 없는 항목"으로 센다(로그아웃 뒤 정리에서 사라지므로 먼저 묻는다).
+ */
+internal data class LogoutTagFlush(val toUpload: List<TagModel>, val unsavableCount: Int)
+
+internal fun logoutTagFlush(localTags: List<TagModel>, serverTags: List<TagModel>?): LogoutTagFlush =
+    if (serverTags == null) {
+        LogoutTagFlush(toUpload = emptyList(), unsavableCount = localTags.count { !it.isDeleted })
+    } else {
+        LogoutTagFlush(toUpload = mergeTags(localTags, serverTags).toUpload, unsavableCount = 0)
+    }
+
+/**
+ * 로그아웃 ① 도형 업로드 대상(D-50 레드팀, iOS `ShapeColorRepair.shapesToUpload`): 서버보다 새롭거나 서버에 없는 기기 도형,
+ * 그리고 서버 값과 병합한 뒤 드론 색과 다른 도형(색을 고치고 updatedAt 을 올린 병합 사본).
+ * 기기의 옛 사본은 색이 달라도 올리지 않는다(서버 값을 고쳐 올린다). 예전처럼 병합 전 기기 사본에 색을 맞추면
+ * updatedAt 만 올라 아직 받지 못한 서버의 새 제목·메모·tagId 를 덮는다.
+ */
+internal fun logoutShapesToUpload(
+    local: List<ShapeModel>,
+    server: List<ShapeModel>,
+    drones: List<DroneModel>,
+    nowMillis: Long,
+): List<ShapeModel> {
+    val base = logoutFlushItems(local, server, ShapeModel::id, ShapeModel::updatedAt, ShapeModel::deletedAt)
+    val fixed = reconcileShapeColorsWithServer(local, server, drones, nowMillis).toUpload.associateBy { it.id }
+    val baseIds = base.mapTo(HashSet()) { it.id }
+    return base.map { fixed[it.id] ?: it } + fixed.values.filter { it.id !in baseIds }
 }
 
 /**

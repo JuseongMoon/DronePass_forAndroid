@@ -64,7 +64,7 @@ class ShapeShareCardContentTest {
         val content = content(makeShape(), drone)
 
         assertEquals("한강 공원", content.title)
-        assertEquals("서울특별시 중구 세종대로 110", content.address)
+        assertEquals("기본 옵션은 주소 간략히", "서울특별시 중구", content.address)
         assertEquals("500 m", content.radius)
         assertEquals("120 m", content.height)
         assertEquals("Mavic 3", content.droneName)
@@ -159,9 +159,9 @@ class ShapeShareCardContentTest {
         )
 
     @Test
-    fun `기본 옵션은 태그만 빼고 모두 보인다`() {
+    fun `기본 옵션은 태그만 빼고 모두 보이고 주소는 간략히다`() {
         val content = content(ShapeShareCardOptions())
-        assertEquals("서울특별시 중구 세종대로 110", content.address)
+        assertEquals("서울특별시 중구", content.address)
         assertTrue(content.period != null)
         assertTrue(content.coordinate != null)
         assertEquals("Mini 4 Pro", content.droneName)
@@ -198,6 +198,7 @@ class ShapeShareCardContentTest {
     @Test
     fun `주소 간략히`() {
         assertEquals("서울특별시 중구", content(ShapeShareCardOptions(simplifyAddress = true)).address)
+        assertEquals("서울특별시 중구 세종대로 110", content(ShapeShareCardOptions(simplifyAddress = false)).address)
         assertNull(
             "주소를 끄면 간략히와 무관하게 뺀다",
             content(ShapeShareCardOptions(showAddress = false, simplifyAddress = true)).address,
@@ -224,5 +225,9 @@ class ShapeShareCardContentTest {
         assertEquals(options, ShapeShareCardOptions.fromJson(options.toJson()))
         assertEquals(ShapeShareCardOptions(showAddress = false), ShapeShareCardOptions.fromJson("""{"showAddress":false}"""))
         assertEquals(ShapeShareCardOptions(), ShapeShareCardOptions.fromJson("not json"))
+        // 처음 기본값만 간략히로 바꿨다. 전체 주소를 골라 저장한 사용자는 그 값을 쓴다
+        assertTrue(ShapeShareCardOptions.fromJson(null).simplifyAddress)
+        val remembered = ShapeShareCardOptions(simplifyAddress = false).toJson()
+        assertFalse(ShapeShareCardOptions.fromJson(remembered).simplifyAddress)
     }
 }

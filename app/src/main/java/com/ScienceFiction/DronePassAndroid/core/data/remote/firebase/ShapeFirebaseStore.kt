@@ -13,6 +13,7 @@ import com.ScienceFiction.DronePassAndroid.domain.model.normalizeFirebaseHexColo
 import com.ScienceFiction.DronePassAndroid.domain.model.validateFirebaseShapeBatch
 import com.ScienceFiction.DronePassAndroid.domain.model.validateForFirebasePersistence
 import com.google.firebase.Timestamp
+import com.google.firebase.firestore.FieldPath
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
@@ -253,6 +254,23 @@ class ShapeFirebaseStore @Inject constructor(
         } catch (e: Exception) {
             Log.e(TAG, "전체 도형 로드 실패", e)
             Result.failure(e)
+        }
+    }
+
+    /**
+     * 지정한 도형만 읽는다(삭제 표시 포함, 서버에 없는 id 는 빠진다). 색 맞춤처럼 일부 도형만 서버 값과 병합할 때 쓴다.
+     * 문서 id `in` 조건은 한 번에 30개까지라 나눠 읽는다. 실패하면 던진다.
+     */
+    suspend fun loadShapes(ticket: SyncTicket, ids: Collection<String>, source: Source = Source.SERVER): List<ShapeModel> {
+        if (ids.isEmpty()) return emptyList()
+        return ids.distinct().chunked(30).flatMap { chunk ->
+            val snapshot = session.remote(ticket) { uid ->
+                shapesCollection(uid).whereIn(FieldPath.documentId(), chunk).get(source).await()
+            }
+            snapshot.documents.mapNotNull { doc ->
+                val data = doc.data ?: return@mapNotNull null
+                firestoreDocumentToShape(doc.id, data)
+            }
         }
     }
 

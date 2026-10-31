@@ -95,8 +95,11 @@ private fun isSameDay(first: Long, second: Long, timeZone: TimeZone): Boolean {
  */
 internal data class ShapeShareCardOptions(
     val showAddress: Boolean = true,
-    /** 주소를 시·군·구까지만 (주소가 켜져 있을 때만 의미가 있다) */
-    val simplifyAddress: Boolean = false,
+    /**
+     * 주소를 시·군·구까지만 (주소가 켜져 있을 때만 의미가 있다). 처음 기본값은 간략히다(D-50, 2026-10-30).
+     * 저장값에는 이 키가 항상 들어가므로 이미 고른 사용자는 그 값을 그대로 쓴다.
+     */
+    val simplifyAddress: Boolean = true,
     val showCoordinate: Boolean = true,
     val showPeriod: Boolean = true,
     val showDrone: Boolean = true,

@@ -137,8 +137,12 @@ class RealtimeSyncManager @Inject constructor(
     /** iOS DroneFirebaseStore 는 metadata/server 를 갱신하지 않으므로 drones 컬렉션도 직접 감시한다. */
     private var droneCollectionListener: ListenerRegistration? = null
 
-    /** 태그는 메타데이터 문서 없이 tags 컬렉션을 직접 감시한다. 거절돼도 관문을 닫지 않는다(규칙 배포 전) */
-    private var tagCollectionListener: ListenerRegistration? = null
+    /**
+     * 태그는 메타데이터 문서 없이 tags 컬렉션을 직접 감시한다. 거절돼도 관문을 닫지 않는다(규칙 배포 전).
+     * 오류로 끝난 리스너는 null 로 두고, 다음 태그 전체 동기화가 성공하면 다시 붙인다([reattachTagListenerIfNeeded]).
+     */
+    @Volatile private var tagCollectionListener: ListenerRegistration? = null
+    private val tagListenerLock = Any()
 
     /** Firestore 스냅샷 리스너 등록 참조 (Sketch용 metadata/sketchServer) */
     private var sketchMetadataListener: ListenerRegistration? = null
@@ -241,13 +245,21 @@ class RealtimeSyncManager @Inject constructor(
      * 오류(보안 규칙 배포 전 거절 포함)는 기록만 하고 관문·동기화 상태에 반영하지 않는다.
      */
     private fun setupTagCollectionListener(ticket: SyncTicket) {
-        tagCollectionListener = firestore
+        var registration: ListenerRegistration? = null
+        registration = firestore
             .collection("users")
             .document(ticket.uid)
             .collection("tags")
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
+                    // 오류가 난 리스너는 더 받지 않는다. 다음 태그 동기화가 성공하면 다시 붙인다
                     Log.w(TAG, "Tag 컬렉션 SnapshotListener 오류(태그 동기화만 건너뜀)", error)
+                    synchronized(tagListenerLock) {
+                        if (tagCollectionListener === registration) {
+                            registration?.remove()
+                            tagCollectionListener = null
+                        }
+                    }
                     return@addSnapshotListener
                 }
                 if (snapshot == null || !session.isValid(ticket)) return@addSnapshotListener
@@ -262,6 +274,17 @@ class RealtimeSyncManager @Inject constructor(
                     }
                 }
             }
+        synchronized(tagListenerLock) { tagCollectionListener = registration }
+    }
+
+    /** 오류로 끝난 태그 리스너를 같은 계정·세대로 리스닝 중일 때만 다시 붙인다(규칙 배포 뒤 앱을 다시 켜지 않아도 받게) */
+    private fun reattachTagListenerIfNeeded(ticket: SyncTicket) {
+        synchronized(tagListenerLock) {
+            val listening = listeningTicket ?: return
+            if (tagCollectionListener != null || listening.uid != ticket.uid || !session.isValid(listening)) return
+            Log.d(TAG, "태그 리스너 다시 붙임")
+            setupTagCollectionListener(listening)
+        }
     }
 
     /**
@@ -523,7 +546,7 @@ class RealtimeSyncManager @Inject constructor(
      * 태그 전체 동기화. 실패해도(보안 규칙 배포 전 거절 포함) 도형·드론 동기화를 실패로 만들지 않는다. 올린 태그 수를 돌려준다.
      */
     private suspend fun syncTagsIgnoringFailure(ticket: SyncTicket): Int = try {
-        tagRepository.performFullSync(ticket)
+        tagRepository.performFullSync(ticket).also { reattachTagListenerIfNeeded(ticket) }
     } catch (e: StaleSyncTicketException) {
         throw e
     } catch (e: Exception) {
@@ -595,8 +618,12 @@ class RealtimeSyncManager @Inject constructor(
         droneCollectionListener?.remove()
         droneCollectionListener = null
 
-        tagCollectionListener?.remove()
-        tagCollectionListener = null
+        // 다시 붙이기와 겹쳐 리스너가 남지 않게 리스닝 티켓도 같은 잠금 안에서 비운다
+        synchronized(tagListenerLock) {
+            tagCollectionListener?.remove()
+            tagCollectionListener = null
+            listeningTicket = null
+        }
 
         // Sketch 리스너 제거
         sketchMetadataListener?.remove()

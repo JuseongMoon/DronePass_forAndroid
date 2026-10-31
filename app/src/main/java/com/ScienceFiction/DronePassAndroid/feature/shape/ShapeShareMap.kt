@@ -39,6 +39,7 @@ import kotlin.coroutines.resume
 import kotlin.math.log2
 import kotlin.math.roundToInt
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withTimeoutOrNull
 
 internal enum class ShapeShareMapStyle(
     val mapType: NaverMap.MapType,
@@ -66,6 +67,7 @@ private val ShapeShareMapOutlineWidth = 2.dp
 /** 메인 지도 원 오버레이 일반 상태와 같은 채우기 불투명도(0.3) */
 private const val ShapeShareMapFillAlpha = 0x4D
 private const val ShapeShareMapMarkerZoom = 15.0
+private const val ShapeShareSnapshotTimeoutMs = 5_000L
 
 /** 미리보기 지도의 로딩 상태와 스냅샷을 담당 */
 @Stable
@@ -75,11 +77,16 @@ internal class ShapeShareMapController {
         internal set
     internal var naverMap: NaverMap? = null
 
-    /** 컨트롤은 빼고 지도만 찍는다 (네이버 로고는 지도에 포함된다). 지도 뷰 크기(배율 포함) 그대로의 비트맵 */
+    /**
+     * 컨트롤은 빼고 지도만 찍는다 (네이버 로고는 지도에 포함된다). 지도 뷰 크기(배율 포함) 그대로의 비트맵.
+     * SDK 가 콜백을 주지 않으면 공유 버튼이 계속 막히므로 [ShapeShareSnapshotTimeoutMs] 뒤에 null(오류 안내)로 끝낸다.
+     */
     suspend fun snapshot(): Bitmap? {
         val map = naverMap ?: return null
-        return suspendCancellableCoroutine { continuation ->
-            map.takeSnapshot(false) { bitmap -> continuation.resume(bitmap) }
+        return withTimeoutOrNull(ShapeShareSnapshotTimeoutMs) {
+            suspendCancellableCoroutine { continuation ->
+                map.takeSnapshot(false) { bitmap -> if (continuation.isActive) continuation.resume(bitmap) }
+            }
         }
     }
 }

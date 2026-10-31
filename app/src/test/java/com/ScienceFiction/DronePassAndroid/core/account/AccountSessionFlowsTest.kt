@@ -3,6 +3,7 @@ package com.ScienceFiction.DronePassAndroid.core.account
 import com.ScienceFiction.DronePassAndroid.core.data.repository.TagPreferenceKeys
 import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncPreferenceKeys
 import com.ScienceFiction.DronePassAndroid.core.location.testPreferencesDataStore
+import com.ScienceFiction.DronePassAndroid.domain.model.TagModel
 import com.ScienceFiction.DronePassAndroid.feature.account.ImportPromptButton
 import com.ScienceFiction.DronePassAndroid.feature.account.importPromptButtons
 import com.ScienceFiction.DronePassAndroid.feature.drone.DroneSelectionPreferenceKeys
@@ -338,13 +339,70 @@ class AccountSessionFlowsTest {
         assertOrder(
             flush,
             listOf(
-                "shapeRepository.syncShapeColorsWithDrones(",
                 "Source.SERVER",
                 "logoutFlushItems(",
-                "uploadAndMark(",
+                // 색 맞춤은 서버를 읽은 뒤 병합한 상태로 한다(기기 사본에 먼저 맞추면 서버의 tagId·새 제목을 덮는다)
+                "logoutShapesToUpload(",
+                "readServerTags(ticket)",
+                "logoutTagFlush(",
+                "uploadAndMark(ticket, drones, tagFlush.toUpload, shapes, sketches) + tagFlush.unsavableCount",
                 "firestore.waitForPendingWrites().await()",
             ),
         )
+        assertFalse(flush.contains("syncShapeColorsWithDrones("))
+    }
+
+    @Test
+    fun `logout flush counts device tags as unsavable only when server tags are denied`() {
+        val tag = TagModel(id = "T1", name = "촬영", createdAt = 1_000L, updatedAt = 2_000L)
+        val deleted = TagModel(id = "T2", name = "현장", createdAt = 1_000L, updatedAt = 2_000L, deletedAt = 2_000L)
+
+        // 거절(null): 태그는 올리지 않고 기기 활성 태그 수만 저장 불가로 센다(삭제 표시는 세지 않음)
+        val denied = logoutTagFlush(listOf(tag, deleted), serverTags = null)
+        assertTrue(denied.toUpload.isEmpty())
+        assertEquals(1, denied.unsavableCount)
+
+        // 읽기 성공: 병합의 toUpload 를 올리고 저장 불가는 없다
+        val read = logoutTagFlush(listOf(tag, deleted), serverTags = emptyList())
+        assertEquals(setOf("T1"), read.toUpload.map { it.id }.toSet())
+        assertEquals(0, read.unsavableCount)
+
+        // 서버가 더 새로우면 올릴 것이 없다
+        val newer = logoutTagFlush(listOf(tag), serverTags = listOf(tag.copy(name = "항공", updatedAt = 3_000L)))
+        assertTrue(newer.toUpload.isEmpty())
+        assertEquals(0, newer.unsavableCount)
+
+        // 거절이어도 기기에 활성 태그가 없으면 경고할 것이 없다
+        assertEquals(0, logoutTagFlush(listOf(deleted), serverTags = null).unsavableCount)
+    }
+
+    @Test
+    fun `import waits for retry when server tags are denied and device has active tags`() {
+        val tag = TagModel(id = "T1", name = "촬영", createdAt = 1_000L, updatedAt = 2_000L)
+        assertTrue(importBlockedByUnreadableTags(listOf(tag), serverTags = null))
+        assertFalse(importBlockedByUnreadableTags(listOf(tag.copy(deletedAt = 2_000L)), serverTags = null))
+        assertFalse(importBlockedByUnreadableTags(emptyList(), serverTags = null))
+        assertFalse(importBlockedByUnreadableTags(listOf(tag), serverTags = emptyList()))
+
+        // 후보 계산 전에 막고, 예외는 evaluateImport·chooseImport 가 ImportCheckFailed 로 바꾼다
+        val flows = source("core/account/AccountSessionFlows.kt")
+        val compute = flows.substringAfter("private suspend fun computeCandidatesFromServer(")
+            .substringBefore("fun chooseImport(")
+        assertOrder(
+            compute,
+            listOf(
+                "readServerTags(ticket)",
+                "if (importBlockedByUnreadableTags(localTags, serverTags)) throw ServerTagsUnreadableException()",
+                "computeImportCandidates(",
+            ),
+        )
+        assertOrder(
+            flows.substringAfter("private suspend fun evaluateImport(").substringBefore("private suspend fun readImportCandidates("),
+            listOf("readImportCandidates(authUid)", "catch (e: Exception)", "AccountPrompt.ImportCheckFailed(authUid)"),
+        )
+        // 거절만 null 로 넘기고 다른 실패는 던진다
+        val read = flows.substringAfter("private suspend fun readServerTags(").substringBefore("// endregion")
+        assertOrder(read, listOf("tagStore.loadAllTagsIncludingDeleted(ticket, Source.SERVER)", "if (!e.isPermissionDenied()) throw e", "null"))
     }
 
     @Test

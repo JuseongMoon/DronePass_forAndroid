@@ -8,6 +8,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import com.ScienceFiction.DronePassAndroid.core.account.AccountSession
+import com.ScienceFiction.DronePassAndroid.core.account.StaleSyncTicketException
 import com.ScienceFiction.DronePassAndroid.core.account.SyncTicket
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.dao.ShapeDao
 import com.ScienceFiction.DronePassAndroid.core.data.local.room.entity.ShapeEntity
@@ -74,6 +75,51 @@ internal fun shapesRecoloredToDrones(
         if (shape.deletedAt != null || shape.color.equals(droneColor, ignoreCase = true)) return@mapNotNull null
         shape.copy(color = droneColor, updatedAt = nowMillis)
     }
+}
+
+/** 드론 색과 다른 활성 도형의 id ([shapesRecoloredToDrones] 의 대상) */
+internal fun shapeIdsWithDroneColorMismatch(shapes: List<ShapeModel>, drones: List<DroneModel>): List<String> =
+    shapesRecoloredToDrones(shapes, drones, nowMillis = 0L).map { it.id }
+
+/**
+ * 색만 드론 색으로 바꾸고 updatedAt 은 그대로 둔다. 서버를 읽지 못했을 때 쓴다: 기기 사본이 서버보다 새로워지지 않으므로
+ * 다음 병합 뒤 맞춤([reconcileShapeColorsWithServer]·전체 동기화)이 서버 값을 고쳐 올린다. iOS `repairLocalColorsOnly` 정합.
+ */
+internal fun shapesRecoloredLocallyOnly(shapes: List<ShapeModel>, drones: List<DroneModel>): List<ShapeModel> {
+    val updatedAtById = shapes.associate { it.id to it.updatedAt }
+    return shapesRecoloredToDrones(shapes, drones, nowMillis = 0L).map { it.copy(updatedAt = updatedAtById.getValue(it.id)) }
+}
+
+/**
+ * [localWrites] 는 기기에 쓸 도형(서버 값으로 바뀐 것과 색을 맞춘 것), [toUpload] 는 색을 맞춰 updatedAt 을 올린 병합 사본이다.
+ */
+internal data class ShapeColorReconcileResult(
+    val localWrites: List<ShapeModel>,
+    val toUpload: List<ShapeModel>,
+)
+
+/**
+ * 서버 도형(일부여도 된다)을 기기 도형과 LWW 로 병합한 뒤 드론 색으로 맞춘다(D-50 레드팀, iOS `ShapeColorRepair.reconciled`).
+ * 기기 사본만 보고 맞추면 updatedAt 만 올라, 아직 받지 못한 서버의 새 제목·메모·tagId 를 기기의 옛 사본이 덮는다.
+ * `{color, updatedAt}` 만 merge 로 쓰지 않는다: 기기에서 오프라인으로 고친 더 새로운 도형이 서버 updatedAt 에 밀려 사라진다.
+ * 서버에 없는 기기 도형은 그대로 두고, 같은 시각(허용 오차 안)이면 서버 값을 쓴다.
+ */
+internal fun reconcileShapeColorsWithServer(
+    local: List<ShapeModel>,
+    server: List<ShapeModel>,
+    drones: List<DroneModel>,
+    nowMillis: Long,
+): ShapeColorReconcileResult {
+    val serverById = server.associateBy { it.id }
+    val localById = local.associateBy { it.id }
+    val merged = local.map { shape ->
+        val remote = serverById[shape.id] ?: return@map shape
+        if (isNewerUpdatedAt(shape.updatedAt, than = remote.updatedAt)) shape else remote
+    } + server.filter { it.id !in localById }
+    val recolored = shapesRecoloredToDrones(merged, drones, nowMillis)
+    val recoloredById = recolored.associateBy { it.id }
+    val localWrites = merged.map { recoloredById[it.id] ?: it }.filter { it != localById[it.id] }
+    return ShapeColorReconcileResult(localWrites = localWrites, toUpload = recolored)
 }
 
 internal fun softDeleteExpiredShapeEntities(
@@ -293,19 +339,64 @@ class ShapeRepository @Inject constructor(
     }
 
     /**
-     * 도형 색을 연결된 드론 색으로 맞춘다([shapesRecoloredToDrones]). 바뀐 도형은 updatedAt 이 올라가고,
-     * 관문이 열려 있으면 바로 올린다. 닫혀 있으면 기기에만 반영되고 다음 업로드·동기화에서 올라간다.
-     * 드론 색을 바꿨을 때, 관문을 연 뒤 첫 동기화, 로그아웃 전 업로드 전에 부른다. 바꾼 도형 수를 돌려준다.
+     * 도형 색을 연결된 드론 색으로 맞춘다. 드론 색을 바꿨을 때와 앱 시작(관문을 연 뒤)에 부른다. 바꾼 도형 수를 돌려준다.
+     * - 관문이 닫혀 있으면(비로그인) 기기에서 맞추고 updatedAt 을 올린다(가져오기 후보·다음 업로드에서 올라간다).
+     * - 관문이 열려 있으면 색이 다른 도형만 서버에서 읽어 병합한 뒤 맞춰 올린다([reconcileShapeColorsWithServer], D-50 레드팀).
+     *   서버를 읽지 못하면 기기에서 색만 바꾸고 updatedAt 은 둔다(다음 병합 뒤 맞춤이 서버 값을 고쳐 올린다).
      */
     suspend fun syncShapeColorsWithDrones(drones: List<DroneModel>): Int {
+        val ticket = session.syncTicket()
+        if (ticket == null) {
+            val now = System.currentTimeMillis()
+            val recolored = recolorShapesToDronesLocally(drones, now)
+            if (recolored.isEmpty()) return 0
+            markShapeLocalModification(now)
+            Log.d(TAG, "도형 색을 드론 색으로 맞춤(기기): count=${recolored.size}")
+            return recolored.size
+        }
+        val mismatched = shapeIdsWithDroneColorMismatch(shapeDao.getAllShapesOnce().map { it.toDomain() }, drones)
+        if (mismatched.isEmpty()) return 0
         val now = System.currentTimeMillis()
-        val recolored = recolorShapesToDronesLocally(drones, now)
-        if (recolored.isEmpty()) return 0
+        val result = try {
+            val server = shapeFirebaseStore.loadShapes(ticket, mismatched)
+            session.commit(ticket) {
+                // 서버를 읽는 동안 바뀐 기기 값으로 다시 병합한다(읽기와 쓰기를 한 트랜잭션으로)
+                database.withTransaction {
+                    val local = shapeDao.getAllShapesOnce().map { it.toDomain() }
+                    reconcileShapeColorsWithServer(local, server, drones, now)
+                        .also { if (it.localWrites.isNotEmpty()) shapeDao.insertShapes(it.localWrites.map { shape -> shape.toEntity() }) }
+                }
+            }
+        } catch (e: StaleSyncTicketException) {
+            Log.d(TAG, "관문이 바뀌어 도형 색 맞춤을 건너뜁니다.")
+            return 0
+        } catch (e: Exception) {
+            Log.w(TAG, "서버 도형을 읽지 못해 색만 기기에서 맞춥니다(updatedAt 그대로)", e)
+            return recolorShapesLocallyOnly(drones)
+        }
+        if (result.localWrites.isNotEmpty()) reconcileEndDateAlarmsWithLocalShapes()
+        if (result.toUpload.isEmpty()) return 0
         markShapeLocalModification(now)
-        syncShapesToFirebase(recolored)
-        Log.d(TAG, "도형 색을 드론 색으로 맞춤: count=${recolored.size}")
-        return recolored.size
+        val valid = result.toUpload.filterValidForFirebaseWrite("syncShapeColorsWithDrones")
+        try {
+            if (valid.isNotEmpty()) {
+                shapeFirebaseStore.saveShapes(ticket, valid)
+                shapeFirebaseStore.updateServerMetadata(ticket)
+            }
+        } catch (e: Exception) {
+            // 기기 사본이 서버보다 새로우므로(병합 뒤 updatedAt=now) 다음 전체 동기화가 다시 올린다
+            Log.w(TAG, "색 맞춘 도형 업로드 실패(다음 동기화에서 다시 올림)", e)
+        }
+        Log.d(TAG, "서버 값과 병합한 뒤 도형 색을 드론 색으로 맞춤: count=${result.toUpload.size}")
+        return result.toUpload.size
     }
+
+    /** 색만 기기에서 맞춘다(updatedAt 그대로). 바꾼 도형 수를 돌려준다. */
+    private suspend fun recolorShapesLocallyOnly(drones: List<DroneModel>): Int =
+        database.withTransaction {
+            shapesRecoloredLocallyOnly(shapeDao.getAllShapesOnce().map { it.toDomain() }, drones)
+                .also { changed -> if (changed.isNotEmpty()) shapeDao.insertShapes(changed.map { it.toEntity() }) }
+        }.size
 
     /** 기기 도형을 드론 색으로 맞춰 저장하고 바뀐 도형을 돌려준다. 읽기와 쓰기를 한 트랜잭션으로 묶는다. */
     private suspend fun recolorShapesToDronesLocally(drones: List<DroneModel>, now: Long): List<ShapeModel> =

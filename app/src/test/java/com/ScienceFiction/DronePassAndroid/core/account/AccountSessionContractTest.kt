@@ -104,15 +104,15 @@ class AccountSessionContractTest {
         "legacyOtherAccount" to ImportPromptKind.LEGACY_OTHER_ACCOUNT,
     )
 
-    @Test fun `fixture has 71 cases and every action and prompt kind is known`() {
+    @Test fun `fixture has 73 cases and every action and prompt kind is known`() {
         val root = fixture()
         assertEquals(1.0, (root.required("schemaVersion") as Number).toDouble(), 0.0)
         val counts = listOf(
             "sessionCases", "migrationCases", "deviceHasDataCases", "importCandidateCases", "deletionCheckCases",
             "reloadClassificationCases",
         ).map { root.list(it).size }
-        assertEquals(listOf(26, 5, 7, 15, 9, 9), counts)
-        assertEquals(71, counts.sum())
+        assertEquals(listOf(26, 5, 7, 17, 9, 9), counts)
+        assertEquals(73, counts.sum())
         assertEquals(DELETION_CHECK_GRACE_MINUTES.toDouble(), (root.required("deletionCheckGraceMinutes") as Number).toDouble(), 0.0)
         assertEquals(actionNames.keys, root.map("actions").keys)
         assertEquals(promptNames.keys, root.map("promptKinds").keys)
@@ -225,15 +225,27 @@ class AccountSessionContractTest {
             val local = row.map("local")
             val server = row.map("server")
             val expected = row.map("expected")
+            val localTags = local.optionalMaps("tags").map { it.tag() }
+            // server.tags = null 은 서버 태그 읽기 거절(보안 규칙 배포 전). 키가 없으면 빈 목록이다
+            val serverTags = if (server.containsKey("tags") && server["tags"] == null) {
+                null
+            } else {
+                server.optionalMaps("tags").map { it.tag() }
+            }
+            assertEquals(
+                name,
+                expected["blockedByTagRead"] as? Boolean ?: false,
+                importBlockedByUnreadableTags(localTags, serverTags),
+            )
             val candidates = computeImportCandidates(
                 localShapes = local.maps("shapes").map { it.shape() },
                 localSketches = local.maps("sketches").map { it.sketch() },
                 localDrones = local.maps("drones").map { it.drone() },
-                localTags = local.optionalMaps("tags").map { it.tag() },
+                localTags = localTags,
                 serverShapes = server.maps("shapes").map { it.shape() },
                 serverSketches = server.maps("sketches").map { it.sketch() },
                 serverDrones = server.maps("drones").map { it.drone() },
-                serverTags = server.optionalMaps("tags").map { it.tag() },
+                serverTags = serverTags,
                 nowMillis = now,
             )
             assertEquals(name, expected.list("shapeIds").toSet(), candidates.shapes.map { it.id }.toSet())

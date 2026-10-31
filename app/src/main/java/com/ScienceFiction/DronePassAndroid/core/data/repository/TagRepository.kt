@@ -18,9 +18,14 @@ import com.ScienceFiction.DronePassAndroid.domain.model.TagFilter
 import com.ScienceFiction.DronePassAndroid.domain.model.TagModel
 import com.ScienceFiction.DronePassAndroid.domain.model.activeTags
 import com.ScienceFiction.DronePassAndroid.domain.model.mergeTags
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -66,6 +71,13 @@ class TagRepository @Inject constructor(
         private const val TAG = "TagRepository"
     }
 
+    /**
+     * 즉시 업로드용 앱 범위. Firestore `set().await()` 는 오프라인이면 서버 확인까지 끝나지 않으므로 호출부(시트·생성 허가)가
+     * 기다리지 않게 여기서 올린다. 한 줄로 실행해 같은 태그의 쓰기 순서를 지킨다.
+     */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val uploadScope = CoroutineScope(SupervisorJob() + Dispatchers.IO.limitedParallelism(1))
+
     /** 삭제 표시 포함 */
     fun getAllTags(): Flow<List<TagModel>> = tagDao.getAllTags().map { entities -> entities.map { it.toDomain() } }
 
@@ -103,26 +115,34 @@ class TagRepository @Inject constructor(
         saveTag(tag.rename(name))
     }
 
-    /** 태그를 지우고 이 태그를 단 활성 도형에서 태그를 뺀다(도형은 그대로). 필터에서 숨긴 키도 지운다 */
+    /**
+     * 태그를 지우고 이 태그를 단 활성 도형에서 태그를 뺀다(도형은 그대로). 필터에서 숨긴 키도 지운다.
+     * 기기 쪽 정리(필터 키 → 도형 tagId)를 먼저 끝낸다. 도형 즉시 업로드는 [ShapeRepository.clearTagFromShapes] 가 맡는다.
+     */
     suspend fun deleteTag(id: String) {
         val tag = tagDao.getTagById(id)?.toDomain() ?: return
         saveTag(tag.softDelete())
-        val cleared = shapeRepository.clearTagFromShapes(id)
         dataStore.edit { preferences ->
             val hidden = preferences[TagPreferenceKeys.HIDDEN_FILTER_KEYS].orEmpty()
             if (id in hidden) preferences[TagPreferenceKeys.HIDDEN_FILTER_KEYS] = hidden - id
         }
+        val cleared = shapeRepository.clearTagFromShapes(id)
         Log.d(TAG, "태그 삭제: id=$id, 도형 ${cleared}개에서 태그 뺌")
     }
 
-    /** 기기에 먼저 쓰고, 관문이 열려 있으면 서버에도 쓴다. 서버 실패는 다음 동기화가 다시 올린다 */
+    /**
+     * 기기에 먼저 쓰고, 관문이 열려 있으면 서버 쓰기를 [uploadScope] 에 맡기고 기다리지 않는다.
+     * 서버 실패는 다음 동기화가 다시 올린다(기기 태그가 더 새로우면 병합의 toUpload).
+     */
     private suspend fun saveTag(tag: TagModel) {
         tagDao.insertTag(tag.toEntity())
         val ticket = session.syncTicket() ?: return
-        try {
-            tagFirebaseStore.saveTag(ticket, tag)
-        } catch (e: Exception) {
-            Log.w(TAG, "태그 Firebase 저장 실패: id=${tag.id}", e)
+        uploadScope.launch {
+            try {
+                tagFirebaseStore.saveTag(ticket, tag)
+            } catch (e: Exception) {
+                Log.w(TAG, "태그 Firebase 저장 실패: id=${tag.id}", e)
+            }
         }
     }
 
