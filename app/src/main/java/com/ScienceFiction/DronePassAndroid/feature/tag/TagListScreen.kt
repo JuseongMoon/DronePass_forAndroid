@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircle
-import androidx.compose.material.icons.outlined.Sell
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -91,7 +90,7 @@ fun TagListScreen(viewModel: TagViewModel = hiltViewModel()) {
                                 )
                             }
                         }
-                        if (index != tags.lastIndex) InsetGroupedDivider(startIndent = 46.dp)
+                        if (index != tags.lastIndex) InsetGroupedDivider()
                     }
                 }
             }
@@ -181,12 +180,6 @@ private fun TagListItem(tag: TagModel, shapeCount: Int, onClick: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Icon(
-            imageVector = Icons.Outlined.Sell,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(20.dp),
-        )
         Text(
             text = tag.name,
             style = MaterialTheme.typography.bodyLarge,

@@ -3,8 +3,6 @@ package com.ScienceFiction.DronePassAndroid.feature.map.component
 import com.ScienceFiction.DronePassAndroid.domain.model.TagFilter
 import com.ScienceFiction.DronePassAndroid.core.data.repository.TagFilterState
 import androidx.compose.foundation.layout.height
-import androidx.compose.material.icons.outlined.LabelOff
-import androidx.compose.material.icons.outlined.Sell
 import androidx.compose.material.icons.filled.Sell
 import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGray
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -657,12 +655,6 @@ private fun TagFilterRow(
             contentDescription = null,
             modifier = Modifier.size(19.dp),
             tint = if (isVisible) MaterialTheme.colorScheme.primary else IosSystemGray,
-        )
-        Icon(
-            imageVector = if (key == TagFilter.UNTAGGED_KEY) Icons.Outlined.LabelOff else Icons.Outlined.Sell,
-            contentDescription = null,
-            modifier = Modifier.size(14.dp),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(
             text = name,
