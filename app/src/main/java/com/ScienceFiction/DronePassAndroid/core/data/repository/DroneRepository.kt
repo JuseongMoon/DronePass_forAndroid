@@ -20,12 +20,11 @@ import com.ScienceFiction.DronePassAndroid.core.data.remote.firebase.DroneFireba
 import com.ScienceFiction.DronePassAndroid.core.data.sync.SyncPreferenceKeys
 import com.ScienceFiction.DronePassAndroid.core.data.sync.shouldUpdateServerMetadataAfterFullSync
 import com.ScienceFiction.DronePassAndroid.core.data.sync.isNewerUpdatedAt
-import com.ScienceFiction.DronePassAndroid.core.util.compareIosLocalizedStandardStrings
+import com.ScienceFiction.DronePassAndroid.core.util.nameThenIdComparator
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.validateForFirebasePersistence
 import com.ScienceFiction.DronePassAndroid.feature.drone.DroneSelectionState
 import dagger.hilt.android.qualifiers.ApplicationContext
-import java.util.Locale
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -162,14 +161,11 @@ internal fun shouldCreateDefaultDrone(
     return !(deferWhenLoggedIn && isLoggedIn)
 }
 
-internal fun sortActiveDronesForIosList(
-    drones: List<DroneModel>,
-    locale: Locale = Locale.getDefault(),
-): List<DroneModel> {
-    return drones.sortedWith { first, second ->
-        compareIosLocalizedStandardStrings(first.name, second.name, locale)
-    }
-}
+/** 드론·태그 공용 이름순, 같으면 id */
+internal val droneNameComparator: Comparator<DroneModel> = nameThenIdComparator(DroneModel::name, DroneModel::id)
+
+internal fun sortActiveDronesForIosList(drones: List<DroneModel>): List<DroneModel> =
+    drones.sortedWith(droneNameComparator)
 
 @Singleton
 class DroneRepository @Inject constructor(
@@ -190,15 +186,8 @@ class DroneRepository @Inject constructor(
     /**
      * 활성(삭제되지 않은) 드론 목록을 Flow로 반환
      */
-    fun getActiveDrones(): Flow<List<DroneModel>> {
-        val locale = Locale.getDefault()
-        return droneDao.getActiveDrones().map { entities ->
-            sortActiveDronesForIosList(
-                drones = entities.map { it.toDomain() },
-                locale = locale,
-            )
-        }
-    }
+    fun getActiveDrones(): Flow<List<DroneModel>> =
+        droneDao.getActiveDrones().map { entities -> sortActiveDronesForIosList(entities.map { it.toDomain() }) }
 
     /**
      * 삭제된 드론을 포함한 모든 드론 목록을 Flow로 반환

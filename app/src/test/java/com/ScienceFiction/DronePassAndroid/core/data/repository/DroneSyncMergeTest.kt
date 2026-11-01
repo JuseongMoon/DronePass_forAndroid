@@ -5,7 +5,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.util.Locale
 
 class DroneSyncMergeTest {
 
@@ -177,7 +176,7 @@ class DroneSyncMergeTest {
             drone(id = "created-middle", updatedAt = 20L, name = "드론 2"),
         )
 
-        val sorted = sortActiveDronesForIosList(drones, locale = Locale.KOREAN)
+        val sorted = sortActiveDronesForIosList(drones)
 
         assertEquals(
             listOf("드론 1", "드론 2", "드론 10"),

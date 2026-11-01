@@ -8,7 +8,7 @@ import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.util.Locale
+import com.ScienceFiction.DronePassAndroid.core.util.compareDisplayNames
 
 class DroneSelectionStateTest {
 
@@ -463,12 +463,11 @@ class DroneSelectionStateTest {
     }
 
     @Test
-    fun `드론 이름 비교는 iOS처럼 숫자 run 을 숫자로 비교한다`() {
+    fun `드론 이름 비교는 숫자 run 을 숫자로 비교한다`() {
         assertTrue(
-            compareIosLocalizedStandardNames(
+            compareDisplayNames(
                 first = "Drone 2",
                 second = "Drone 10",
-                locale = Locale.ENGLISH,
             ) < 0,
         )
     }

@@ -1,8 +1,7 @@
 package com.ScienceFiction.DronePassAndroid.domain.model
 
 import com.ScienceFiction.DronePassAndroid.core.data.sync.isNewerUpdatedAt
-import com.ScienceFiction.DronePassAndroid.core.util.compareIosLocalizedStandardStrings
-import java.util.Locale
+import com.ScienceFiction.DronePassAndroid.core.util.nameThenIdComparator
 
 /**
  * 도형 태그 (도형당 하나, 색 없음). 경로 `users/{uid}/tags/{id}`.
@@ -25,18 +24,15 @@ data class TagModel(
         copy(deletedAt = now, updatedAt = now)
 }
 
-/** 활성 태그 (이름 가나다순, iOS localizedStandardCompare 정렬) */
-fun List<TagModel>.activeTags(locale: Locale = Locale.getDefault()): List<TagModel> =
-    filter { !it.isDeleted }.sortedWith(tagNameComparator(locale))
+/** 활성 태그 (드론과 같은 이름순, 같으면 id) */
+fun List<TagModel>.activeTags(): List<TagModel> =
+    filter { !it.isDeleted }.sortedWith(tagNameComparator)
 
 /** id 로 활성 태그를 찾는다. 삭제됐거나 없으면 null(= 태그 없음) */
 fun List<TagModel>.activeTag(id: String?): TagModel? =
     id?.let { tagId -> firstOrNull { it.id == tagId && !it.isDeleted } }
 
-private fun tagNameComparator(locale: Locale): Comparator<TagModel> = Comparator { first, second ->
-    val order = compareIosLocalizedStandardStrings(first.name, second.name, locale)
-    if (order != 0) order else first.id.compareTo(second.id)
-}
+private val tagNameComparator: Comparator<TagModel> = nameThenIdComparator(TagModel::name, TagModel::id)
 
 /**
  * 태그 필터 (지도·저장 목록 공용). 숨길 키를 저장하므로 새 태그는 자동으로 보인다. iOS `TagFilter` 정합.
@@ -75,7 +71,6 @@ internal data class TagMergeResult(
 internal fun mergeTags(
     local: List<TagModel>,
     server: List<TagModel>,
-    locale: Locale = Locale.getDefault(),
 ): TagMergeResult {
     val result = LinkedHashMap<String, TagModel>()
     val toUpload = LinkedHashMap<String, TagModel>()
@@ -92,7 +87,7 @@ internal fun mergeTags(
         toUpload.remove(serverTag.id)
     }
 
-    val comparator = tagNameComparator(locale)
+    val comparator = tagNameComparator
     return TagMergeResult(
         merged = result.values.sortedWith(comparator),
         toUpload = toUpload.values.sortedWith(comparator),

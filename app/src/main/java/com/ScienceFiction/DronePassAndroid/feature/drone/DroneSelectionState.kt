@@ -8,7 +8,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
-import com.ScienceFiction.DronePassAndroid.core.util.compareIosLocalizedStandardStrings
+import com.ScienceFiction.DronePassAndroid.core.data.repository.droneNameComparator
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 import kotlinx.coroutines.CoroutineScope
@@ -20,7 +20,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -312,27 +311,13 @@ internal fun selectedDronesForIosDropdown(
     activeDrones: List<DroneModel>,
     selectedDroneIds: Set<String>,
 ): List<DroneModel> {
-    return sortDronesByIosLocalizedStandardName(
+    return sortDronesByName(
         activeDrones.filter { it.id in selectedDroneIds },
     )
 }
 
-internal fun sortDronesByIosLocalizedStandardName(
-    drones: List<DroneModel>,
-    locale: Locale = Locale.getDefault(),
-): List<DroneModel> {
-    return drones.sortedWith { first, second ->
-        compareIosLocalizedStandardNames(first.name, second.name, locale)
-    }
-}
-
-internal fun compareIosLocalizedStandardNames(
-    first: String,
-    second: String,
-    locale: Locale = Locale.getDefault(),
-): Int {
-    return compareIosLocalizedStandardStrings(first, second, locale)
-}
+internal fun sortDronesByName(drones: List<DroneModel>): List<DroneModel> =
+    drones.sortedWith(droneNameComparator)
 
 /**
  * iOS MapViewModel.reloadOverlays / SavedTableListView.updateSortedShapes 의 드론 필터 규칙.

@@ -26,7 +26,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -81,11 +80,8 @@ class TagRepository @Inject constructor(
     /** 삭제 표시 포함 */
     fun getAllTags(): Flow<List<TagModel>> = tagDao.getAllTags().map { entities -> entities.map { it.toDomain() } }
 
-    /** 활성 태그 (이름 가나다순) */
-    fun getActiveTags(): Flow<List<TagModel>> {
-        val locale = Locale.getDefault()
-        return getAllTags().map { it.activeTags(locale) }
-    }
+    /** 활성 태그 (이름순) */
+    fun getActiveTags(): Flow<List<TagModel>> = getAllTags().map { it.activeTags() }
 
     val hiddenFilterKeys: Flow<Set<String>> =
         dataStore.data.map { it[TagPreferenceKeys.HIDDEN_FILTER_KEYS].orEmpty() }
