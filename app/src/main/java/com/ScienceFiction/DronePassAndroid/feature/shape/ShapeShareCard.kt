@@ -19,7 +19,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.NearMe
 import androidx.compose.material.icons.outlined.Place
-import androidx.compose.material.icons.outlined.Sell
 import androidx.compose.material.icons.filled.VerticalAlignTop
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
@@ -188,7 +187,7 @@ private fun ShapeShareCardSpecRow(content: ShapeShareCardContent) {
         }
         content.tagName?.let { tagName ->
             ShapeShareCardSpecItem(
-                icon = rememberVectorPainter(Icons.Outlined.Sell),
+                icon = null,
                 text = tagName,
                 modifier = Modifier.weight(1f, fill = false),
             )
@@ -197,13 +196,15 @@ private fun ShapeShareCardSpecRow(content: ShapeShareCardContent) {
 }
 
 @Composable
-private fun ShapeShareCardSpecItem(icon: Painter, text: String, modifier: Modifier = Modifier) {
+private fun ShapeShareCardSpecItem(icon: Painter?, text: String, modifier: Modifier = Modifier) {
     Row(
         modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(painter = icon, contentDescription = null, tint = CardSecondaryText, modifier = Modifier.size(13.dp))
+        if (icon != null) {
+            Icon(painter = icon, contentDescription = null, tint = CardSecondaryText, modifier = Modifier.size(13.dp))
+        }
         ShapeShareCardText(text = text, fontSize = 13.sp)
     }
 }

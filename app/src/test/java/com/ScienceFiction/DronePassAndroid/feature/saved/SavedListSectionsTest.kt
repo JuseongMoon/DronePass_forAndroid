@@ -608,6 +608,7 @@ class SavedListSectionsTest {
             SavedListEmptyIconStyle.SEARCH,
             resolveSavedListEmptyIconStyle(SavedListEmptyState.NO_MATCHING_SHAPES),
         )
+        assertNull("태그 필터 결과 없음은 태그 아이콘을 쓰지 않는다", resolveSavedListEmptyIconStyle(SavedListEmptyState.NO_TAG_MATCH))
         assertEquals(R.drawable.ic_drone, SavedListEmptyDroneIconRes)
     }
 

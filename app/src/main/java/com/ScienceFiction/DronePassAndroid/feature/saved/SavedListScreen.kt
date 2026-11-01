@@ -3,7 +3,6 @@ package com.ScienceFiction.DronePassAndroid.feature.saved
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material.icons.outlined.Inbox
-import androidx.compose.material.icons.outlined.Sell
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -554,7 +553,6 @@ internal enum class SavedListEmptyState {
 internal enum class SavedListEmptyIconStyle {
     INBOX,
     DRONE,
-    TAG,
     SEARCH,
 }
 
@@ -578,11 +576,12 @@ internal fun resolveSavedListEmptyState(
     }
 }
 
-internal fun resolveSavedListEmptyIconStyle(state: SavedListEmptyState): SavedListEmptyIconStyle {
+/** 태그 필터 결과 없음은 아이콘 없이 글자만 보인다(태그 아이콘을 쓰지 않는다) */
+internal fun resolveSavedListEmptyIconStyle(state: SavedListEmptyState): SavedListEmptyIconStyle? {
     return when (state) {
         SavedListEmptyState.NO_SHAPES -> SavedListEmptyIconStyle.INBOX
         SavedListEmptyState.NO_DRONE_SELECTED -> SavedListEmptyIconStyle.DRONE
-        SavedListEmptyState.NO_TAG_MATCH -> SavedListEmptyIconStyle.TAG
+        SavedListEmptyState.NO_TAG_MATCH -> null
         SavedListEmptyState.NO_MATCHING_SHAPES -> SavedListEmptyIconStyle.SEARCH
     }
 }
@@ -633,12 +632,7 @@ private fun EmptyState(
                     modifier = Modifier.size(SavedListEmptyIconSize),
                     tint = SavedListEmptySecondaryColor,
                 )
-                SavedListEmptyIconStyle.TAG -> Icon(
-                    imageVector = Icons.Outlined.Sell, // iOS tag
-                    contentDescription = null,
-                    modifier = Modifier.size(SavedListEmptyIconSize),
-                    tint = SavedListEmptySecondaryColor,
-                )
+                null -> Unit
                 SavedListEmptyIconStyle.SEARCH -> Icon(
                     imageVector = Icons.Default.Search,
                     contentDescription = null,

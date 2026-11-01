@@ -1038,7 +1038,6 @@
     <string name="shape_share_options_tag">태그</string>
     <string name="shape_share_options_footer">지도, 제목, 반경·고도, 로고는 항상 들어갑니다.</string>
     <string name="tag_none">태그 없음</string>
-    <string name="tag_filter_section">태그</string>
     <string name="tag_filter_active">태그 필터</string>
     <string name="tag_list_title">태그 관리</string>
     <string name="tag_list_section_my">내 태그</string>

@@ -3,7 +3,6 @@ package com.ScienceFiction.DronePassAndroid.feature.map.component
 import com.ScienceFiction.DronePassAndroid.domain.model.TagFilter
 import com.ScienceFiction.DronePassAndroid.core.data.repository.TagFilterState
 import androidx.compose.foundation.layout.height
-import androidx.compose.material.icons.filled.Sell
 import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGray
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -581,12 +580,6 @@ private fun TagFilterActiveChip(onClick: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            Icon(
-                imageVector = Icons.Filled.Sell,
-                contentDescription = null,
-                modifier = Modifier.size(DroneDropdownEmptyIconSize),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
             Text(
                 text = stringResource(R.string.tag_filter_active),
                 fontSize = DroneDropdownTextSize,
@@ -605,13 +598,6 @@ private fun TagFilterSection(tagFilter: TagFilterState, onToggle: (String) -> Un
             .fillMaxWidth()
             .height(4.dp)
             .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
-    )
-    Text(
-        text = stringResource(R.string.tag_filter_section),
-        fontSize = 12.sp,
-        fontWeight = FontWeight.SemiBold,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 2.dp),
     )
     TagFilterRow(
         key = TagFilter.UNTAGGED_KEY,

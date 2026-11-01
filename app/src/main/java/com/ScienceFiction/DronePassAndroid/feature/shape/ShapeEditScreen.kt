@@ -6,7 +6,6 @@ import com.ScienceFiction.DronePassAndroid.domain.model.activeTag
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.outlined.Sell
 import com.ScienceFiction.DronePassAndroid.ui.theme.IosPlaceholderText
 import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGray
 import com.ScienceFiction.DronePassAndroid.ui.theme.withLabelSafeLineHeights
@@ -1648,13 +1647,6 @@ private fun ShapeEditTagSection(
                     modifier = Modifier.clickable { showMenu = true },
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Sell,
-                        contentDescription = null,
-                        modifier = Modifier.size(14.dp),
-                        tint = IosSystemGray,
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = selectedTag?.name ?: stringResource(R.string.tag_none),
                         color = if (selectedTag != null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,

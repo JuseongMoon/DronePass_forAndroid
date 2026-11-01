@@ -1029,7 +1029,6 @@
     <string name="shape_share_options_tag">Tag</string>
     <string name="shape_share_options_footer">The map, title, radius, altitude and logo are always included.</string>
     <string name="tag_none">No Tag</string>
-    <string name="tag_filter_section">Tags</string>
     <string name="tag_filter_active">Tag filter</string>
     <string name="tag_list_title">Manage Tags</string>
     <string name="tag_list_section_my">My Tags</string>
