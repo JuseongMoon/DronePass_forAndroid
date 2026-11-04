@@ -21,14 +21,15 @@ class SunEventTimeTest {
     }
 
     @Test
-    fun afterSunsetWithoutTomorrowSunriseFallsBackToPlaceholderLikeIos() {
+    fun afterSunsetWithoutTomorrowSunriseShowsPlaceholderAtNightLikeIos() {
         val event = nextSunEvent(
             sunriseIsoList = listOf("2026-06-04T05:10"),
             sunsetIsoList = listOf("2026-06-04T19:40"),
             now = LocalDateTime.parse("2026-06-04T20:30"),
         )
 
-        assertTrue(event.isNextSunset)
+        // D-54: 밤인데 내일 일출을 모르면 밤(일출 아이콘)으로 두고 시간은 보여 주지 않는다.
+        assertFalse(event.isNextSunset)
         assertEquals("--:--", event.timeUntilFormatted)
     }
 

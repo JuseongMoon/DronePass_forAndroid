@@ -6,6 +6,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.ScienceFiction.DronePassAndroid.core.util.sunDisplayState
 import kotlinx.coroutines.delay
 import java.time.Duration
 import java.time.Instant
@@ -36,14 +37,10 @@ internal fun millisUntilSunDisplayChange(
     sunriseIsoList: List<String>,
     sunsetIsoList: List<String>,
 ): Long {
-    val next = (sunriseIsoList + sunsetIsoList)
-        .mapNotNull { runCatching { LocalDateTime.parse(it) }.getOrNull() }
-        .filter { it.isAfter(now) }
-        .minOrNull()
+    val refresh = sunDisplayState(sunriseIsoList, sunsetIsoList, now).nextRefresh
         ?: return SunEventRefreshIntervalMs
-    val remainingMillis = Duration.between(now, next).toMillis()
-    // floor(남은 ms / 1분)이 줄어드는 첫 순간: 나머지 + 1ms 뒤.
-    return remainingMillis % SunEventRefreshIntervalMs + 1
+    // nextRefresh 직후에 한 분 줄어든다(정확히 분 경계면 nextRefresh 는 now).
+    return Duration.between(now, refresh).toMillis().coerceAtLeast(0) + 1
 }
 
 /**

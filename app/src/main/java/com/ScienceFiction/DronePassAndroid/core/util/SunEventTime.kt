@@ -35,7 +35,6 @@ fun nextSunEvent(
         sunriseIsoList = sunriseIso?.let(::listOf),
         sunsetIsoList = sunsetIso?.let(::listOf),
         now = now,
-        useSameDayFallback = false,
     )
     if (eventFromDatedValues.timeUntilFormatted != "--:--") {
         return eventFromDatedValues
@@ -60,73 +59,81 @@ fun nextSunEvent(
     }
 }
 
+/** 남은 시간을 세는 대상(DATA_CONTRACT "일출·일몰 표시", D-54). */
+enum class SunDisplayTarget { TODAY_SUNSET, TODAY_SUNRISE, TOMORROW_SUNRISE }
+
 /**
- * 여러 날짜의 ISO 일출/일몰 문자열에서 현재 이후의 가장 가까운 이벤트를 고른다.
+ * 일출·일몰 표시 상태. iOS 와 같은 규칙으로 계산하고 공유 fixture(sun-display-cases)로 고정한다.
  *
- * iOS 는 WeatherManager 가 오늘 일출/일몰과 내일 일출을 함께 보관하고, 일몰 이후에는
- * `tomorrowSunriseTime` 까지의 남은 시간을 표시한다. WeatherKit daily 배열도 같은 정보를
- * 주므로 리스트 기반 계산을 우선 사용한다.
+ * @property isDaytime 오늘 일출·일몰을 모르면 null.
+ * @property display 남은 시간 `"HH:MM"`(내림), 대상이 없으면 `"--:--"`.
+ * @property nextRefresh 표시가 다음에 바뀌는 시각(이 시각 직후 한 분 줄어든다). 대상이 없으면 null.
+ */
+data class SunDisplayState(
+    val isDaytime: Boolean?,
+    val target: SunDisplayTarget?,
+    val targetTime: LocalDateTime?,
+    val display: String,
+    val nextRefresh: LocalDateTime?,
+)
+
+/**
+ * 기기 시간대의 날짜 붙은 일출·일몰 목록으로 표시 상태를 정한다(D-54).
+ *  - 오늘·내일은 [now] 의 날짜로 고른다. 오늘 일출이나 일몰이 없으면 아무것도 보여 주지 않는다.
+ *  - 초 단위로 `오늘 일출 <= now < 오늘 일몰` 이면 낮이다(일몰과 같은 시각은 밤, 일출과 같은 시각은 낮).
+ *  - 낮이면 오늘 일몰, 밤이면 오늘 일출이 아직이면 오늘 일출, 아니면 내일 일출까지 센다.
+ *  - 표시는 남은 초를 내린 "HH:MM", 다음 갱신은 `대상 - floor(남은 초/60)분`.
+ */
+fun sunDisplayState(
+    sunriseIsoList: List<String>?,
+    sunsetIsoList: List<String>?,
+    now: LocalDateTime,
+): SunDisplayState {
+    val sunrises = sunriseIsoList.orEmpty().mapNotNull(::parseDatedIso)
+    val sunsets = sunsetIsoList.orEmpty().mapNotNull(::parseDatedIso)
+    val today = now.toLocalDate()
+    val todaySunrise = sunrises.firstOrNull { it.toLocalDate() == today }
+    val todaySunset = sunsets.firstOrNull { it.toLocalDate() == today }
+    if (todaySunrise == null || todaySunset == null) {
+        return SunDisplayState(null, null, null, SunDisplayPlaceholder, null)
+    }
+    val isDaytime = !now.isBefore(todaySunrise) && now.isBefore(todaySunset)
+    val (target, targetTime) = when {
+        isDaytime -> SunDisplayTarget.TODAY_SUNSET to todaySunset
+        todaySunrise.isAfter(now) -> SunDisplayTarget.TODAY_SUNRISE to todaySunrise
+        else -> SunDisplayTarget.TOMORROW_SUNRISE to sunrises.firstOrNull { it.toLocalDate() == today.plusDays(1) }
+    }
+    if (targetTime == null || !targetTime.isAfter(now)) {
+        return SunDisplayState(isDaytime, null, null, SunDisplayPlaceholder, null)
+    }
+    val remainingSeconds = Duration.between(now, targetTime).seconds
+    val remainingMinutes = remainingSeconds / 60
+    return SunDisplayState(
+        isDaytime = isDaytime,
+        target = target,
+        targetTime = targetTime,
+        display = formatMinutes(remainingMinutes.toInt()),
+        nextRefresh = targetTime.minusMinutes(remainingMinutes),
+    )
+}
+
+private const val SunDisplayPlaceholder = "--:--"
+
+/**
+ * 여러 날짜의 ISO 일출/일몰 문자열로 다음 이벤트를 정한다. 규칙은 [sunDisplayState] 다.
+ * 오늘 값을 모르면 `("--:--", true)`, 밤인데 내일 일출을 모르면 `("--:--", false)`.
  */
 fun nextSunEvent(
     sunriseIsoList: List<String>?,
     sunsetIsoList: List<String>?,
     now: LocalDateTime = LocalDateTime.now(),
 ): NextSunEvent {
-    return nextSunEvent(
-        sunriseIsoList = sunriseIsoList,
-        sunsetIsoList = sunsetIsoList,
-        now = now,
-        useSameDayFallback = false,
-    )
+    val state = sunDisplayState(sunriseIsoList, sunsetIsoList, now)
+    return NextSunEvent(isNextSunset = state.isDaytime ?: true, timeUntilFormatted = state.display)
 }
 
-private fun nextSunEvent(
-    sunriseIsoList: List<String>?,
-    sunsetIsoList: List<String>?,
-    now: LocalDateTime,
-    useSameDayFallback: Boolean,
-): NextSunEvent {
-    val datedEvents = buildList {
-        sunriseIsoList.orEmpty().forEach { iso ->
-            parseIsoLocalDateTime(iso, now)?.let { add(false to it) }
-        }
-        sunsetIsoList.orEmpty().forEach { iso ->
-            parseIsoLocalDateTime(iso, now)?.let { add(true to it) }
-        }
-    }
-
-    val nextEvent = datedEvents
-        .filter { (_, dateTime) -> dateTime.isAfter(now) }
-        .minByOrNull { (_, dateTime) -> dateTime }
-
-    if (nextEvent != null) {
-        return NextSunEvent(
-            isNextSunset = nextEvent.first,
-            timeUntilFormatted = formatDuration(now, nextEvent.second),
-        )
-    }
-
-    if (!useSameDayFallback) {
-        return NextSunEvent(isNextSunset = true, timeUntilFormatted = "--:--")
-    }
-
-    return nextSunEvent(
-        sunriseIso = sunriseIsoList.orEmpty().firstOrNull(),
-        sunsetIso = sunsetIsoList.orEmpty().firstOrNull(),
-        now = now,
-    )
-}
-
-private fun parseIsoLocalDateTime(iso: String?, now: LocalDateTime): LocalDateTime? {
-    if (iso.isNullOrBlank()) return null
-    return try {
-        LocalDateTime.parse(iso)
-    } catch (_: Exception) {
-        parseIsoLocalTime(iso)?.let { time ->
-            now.toLocalDate().atTime(time)
-        }
-    }
-}
+private fun parseDatedIso(iso: String): LocalDateTime? =
+    runCatching { LocalDateTime.parse(iso) }.getOrNull()
 
 private fun parseIsoLocalTime(iso: String?): LocalTime? {
     if (iso.isNullOrBlank()) return null
@@ -136,11 +143,6 @@ private fun parseIsoLocalTime(iso: String?): LocalTime? {
     } catch (e: Exception) {
         null
     }
-}
-
-private fun formatDuration(from: LocalDateTime, to: LocalDateTime): String {
-    val totalMinutes = Duration.between(from, to).toMinutes().coerceAtLeast(0).toInt()
-    return formatMinutes(totalMinutes)
 }
 
 private fun formatDuration(from: LocalTime, to: LocalTime): String {
