@@ -147,8 +147,8 @@ internal fun mapWeatherKitResponse(
     val days = response.forecastDaily?.days.orEmpty()
         .sortedBy { it.forecastStart }
         .take(WEATHER_SUN_EVENT_DAYS)
-    val sunriseTimes = days.mapNotNull { it.sunrise.toLocalMinuteString(zone) }
-    val sunsetTimes = days.mapNotNull { it.sunset.toLocalMinuteString(zone) }
+    val sunriseTimes = days.mapNotNull { it.sunrise.toLocalSecondString(zone) }
+    val sunsetTimes = days.mapNotNull { it.sunset.toLocalSecondString(zone) }
 
     return WeatherData(
         current = current,
@@ -188,14 +188,15 @@ private fun WeatherKitHour.toHourlyWeatherData(): HourlyWeatherData? {
     )
 }
 
-private val LocalMinuteFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")
+private val LocalSecondFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
 
 /**
- * 일출·일몰 UTC 시각 → 기기 시간대의 "yyyy-MM-ddTHH:mm".
+ * 일출·일몰 UTC 시각 → 기기 시간대의 "yyyy-MM-ddTHH:mm:ss".
+ * 초까지 남겨 iOS 처럼 초 단위로 비교한다. 분으로 내리면 낮/밤이 최대 59초 일찍 바뀌었다.
  * 타임라인·알림 예약은 이 현지 시각 문자열과 [WeatherData.utcOffsetSeconds] 를 함께 쓴다.
  */
-private fun String?.toLocalMinuteString(zone: ZoneId): String? =
-    this?.let { runCatching { Instant.parse(it).atZone(zone).format(LocalMinuteFormatter) }.getOrNull() }
+private fun String?.toLocalSecondString(zone: ZoneId): String? =
+    this?.let { runCatching { Instant.parse(it).atZone(zone).format(LocalSecondFormatter) }.getOrNull() }
 
 private fun String?.toEpochMillisOrNull(): Long? =
     this?.let { runCatching { Instant.parse(it).toEpochMilli() }.getOrNull() }

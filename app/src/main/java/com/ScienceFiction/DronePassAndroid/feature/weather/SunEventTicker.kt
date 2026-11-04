@@ -7,11 +7,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.delay
+import java.time.Duration
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZoneOffset
 
+/** 남은 시간 표시 단위(1분). 다음 이벤트를 모를 때의 갱신 간격이기도 하다. */
 internal const val SunEventRefreshIntervalMs = 60_000L
 
 internal fun resolveSunEventNow(
@@ -25,18 +27,43 @@ internal fun resolveSunEventNow(
 }
 
 /**
- * iOS `SettingManager.setupTimeUpdateTimer` 와 동일하게 일출/일몰 남은 시간을 1분마다 갱신한다.
+ * 남은 시간 표시("HH:MM", 분 내림)가 다음에 바뀌는 순간까지의 밀리초.
+ * 남은 시간이 분 경계를 넘거나 일출·일몰이 지나는 바로 그 순간이다. 다음 이벤트를 모르면 1분 뒤.
+ * 1분 간격 타이머는 분 경계와 어긋나 표시가 최대 59초 늦게 바뀌었다(iOS 와 맞춘 규칙, 11/4 결정).
+ */
+internal fun millisUntilSunDisplayChange(
+    now: LocalDateTime,
+    sunriseIsoList: List<String>,
+    sunsetIsoList: List<String>,
+): Long {
+    val next = (sunriseIsoList + sunsetIsoList)
+        .mapNotNull { runCatching { LocalDateTime.parse(it) }.getOrNull() }
+        .filter { it.isAfter(now) }
+        .minOrNull()
+        ?: return SunEventRefreshIntervalMs
+    val remainingMillis = Duration.between(now, next).toMillis()
+    // floor(남은 ms / 1분)이 줄어드는 첫 순간: 나머지 + 1ms 뒤.
+    return remainingMillis % SunEventRefreshIntervalMs + 1
+}
+
+/**
+ * 일출/일몰 남은 시간을 표시 값이 바뀌는 순간마다 갱신한다([millisUntilSunDisplayChange]).
  */
 @Composable
-internal fun rememberSunEventNow(utcOffsetSeconds: Int? = null): LocalDateTime {
+internal fun rememberSunEventNow(
+    utcOffsetSeconds: Int? = null,
+    sunriseIsoList: List<String> = emptyList(),
+    sunsetIsoList: List<String> = emptyList(),
+): LocalDateTime {
     var now by remember(utcOffsetSeconds) {
         mutableStateOf(resolveSunEventNow(utcOffsetSeconds))
     }
 
-    LaunchedEffect(utcOffsetSeconds) {
+    LaunchedEffect(utcOffsetSeconds, sunriseIsoList, sunsetIsoList) {
         while (true) {
-            delay(SunEventRefreshIntervalMs)
-            now = resolveSunEventNow(utcOffsetSeconds)
+            val current = resolveSunEventNow(utcOffsetSeconds)
+            now = current
+            delay(millisUntilSunDisplayChange(current, sunriseIsoList, sunsetIsoList))
         }
     }
 

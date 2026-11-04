@@ -92,14 +92,14 @@ class WeatherRepositoryTest {
     }
 
     @Test
-    fun `sunrise and sunset become local minute strings for today tomorrow and the day after`() {
+    fun `sunrise and sunset become local second strings for today tomorrow and the day after`() {
         val data = mapWeatherKitResponse(fixture(), DroneCategory.IosDefault, fixtureNowMillis(), seoul)
 
         assertEquals(WEATHER_SUN_EVENT_DAYS, data.sunriseTimes.size)
-        // 2026-09-28T21:25:27Z → 서울 2026-09-29 06:25
-        assertEquals("2026-09-29T06:25", data.sunrise)
-        // 2026-09-29T09:19:01Z → 서울 18:19
-        assertEquals("2026-09-29T18:19", data.sunset)
+        // 2026-09-28T21:25:27Z → 서울 2026-09-29 06:25:27 (초까지 남겨 초 단위로 비교한다)
+        assertEquals("2026-09-29T06:25:27", data.sunrise)
+        // 2026-09-29T09:19:01Z → 서울 18:19:01
+        assertEquals("2026-09-29T18:19:01", data.sunset)
         assertEquals(9 * 60 * 60, data.utcOffsetSeconds)
     }
 
