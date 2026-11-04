@@ -938,8 +938,8 @@
     <string name="location_consent_required_review">동의 화면 보기</string>
     <string name="location_current_location_button">현재 위치</string>
     <string name="weather_basis_map_center">지도 중심 기준</string>
-    <string name="weather_sun_basis_current_location">현재 위치 기준으로 계산했습니다.</string>
-    <string name="weather_sun_basis_map_center">지도 중심 기준으로 계산했습니다. 위치 사용에 동의하면 현재 위치로 계산합니다.</string>
+    <string name="weather_sun_basis_current_location">현재 위치 기준으로 계산합니다.</string>
+    <string name="weather_sun_basis_map_center">지도 중심 기준으로 계산합니다. 위치 사용에 동의하면 현재 위치로 계산합니다.</string>
     <string name="settings_section_location">위치정보</string>
     <string name="settings_location_withdraw">철회</string>
     <string name="settings_location_os_hint">기기 설정에서 위치 권한도 끌 수 있습니다.</string>
