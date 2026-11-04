@@ -75,12 +75,19 @@ internal fun resolveWeatherLocationSource(result: DeviceLocationResult): Weather
 }
 
 /** 날씨·일출/일몰의 기준 위치. 화면(지도 카드·시트)에 표시한다(사양 v2 A-8). */
-enum class WeatherLocationBasis(@StringRes val labelRes: Int) {
+enum class WeatherLocationBasis(
+    @StringRes val labelRes: Int,
+    /** 날씨 시트의 일출·일몰 카드 아래 설명(D-54, iOS 와 같은 문안). */
+    @StringRes val sunBasisRes: Int,
+) {
     /** 날씨·일출/일몰(P2)에 동의해 기기 위치로 받았다. */
-    DEVICE(R.string.weather_basis_current_location),
+    DEVICE(R.string.weather_basis_current_location, R.string.weather_sun_basis_current_location),
 
-    /** 동의가 없어 이용자가 정한 지도 중심으로 받았다. */
-    MAP_CENTER(R.string.weather_basis_map_center),
+    /**
+     * 동의(또는 OS 권한)가 없어 이용자가 정한 지도 중심으로 받았다.
+     * 동의했는데 위치를 못 읽은 경우는 지도 중심으로 대체하지 않으므로 이 값이 되지 않는다.
+     */
+    MAP_CENTER(R.string.weather_basis_map_center, R.string.weather_sun_basis_map_center),
 }
 
 @HiltViewModel

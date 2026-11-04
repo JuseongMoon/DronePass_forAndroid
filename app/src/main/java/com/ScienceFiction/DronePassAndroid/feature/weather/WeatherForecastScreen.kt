@@ -197,13 +197,20 @@ private fun WeatherForecastBody(
 
         // ① 일출/일몰 카드
         item {
-            SunTimeline(
-                sunrise = data.sunrise,
-                sunset = data.sunset,
-                sunriseTimes = data.sunriseTimes,
-                sunsetTimes = data.sunsetTimes,
-                utcOffsetSeconds = data.utcOffsetSeconds,
-            )
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                SunTimeline(
+                    sunrise = data.sunrise,
+                    sunset = data.sunset,
+                    sunriseTimes = data.sunriseTimes,
+                    sunsetTimes = data.sunsetTimes,
+                    utcOffsetSeconds = data.utcOffsetSeconds,
+                )
+                // 일출·일몰을 어느 위치로 계산했는지 바로 아래에 작게 밝힌다(D-54). 지도 위 카드에는 두지 않는다.
+                // 일출·일몰을 아직 받지 못했으면("--:--") 계산하지 않았으므로 보이지 않는다.
+                if (locationBasis != null && (data.sunriseTimes.isNotEmpty() || data.sunrise != null)) {
+                    SunBasisNote(locationBasis)
+                }
+            }
         }
 
         // ② 현재 날씨 카드 (통합)
@@ -405,6 +412,20 @@ fun WeatherSheetHeader(
             thickness = WeatherSheetNavigationHeaderDividerThickness,
         )
     }
+}
+
+/** 일출·일몰 카드 아래 계산 기준 설명. */
+@Composable
+internal fun SunBasisNote(basis: WeatherLocationBasis, modifier: Modifier = Modifier) {
+    Text(
+        text = stringResource(basis.sunBasisRes),
+        fontSize = 12.sp,
+        lineHeight = 16.sp,
+        color = IosSecondaryLabel,
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp),
+    )
 }
 
 /** "현재 위치 기준" / "지도 중심 기준" 표시. */
