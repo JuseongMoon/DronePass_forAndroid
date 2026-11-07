@@ -1,6 +1,7 @@
 package com.ScienceFiction.DronePassAndroid.feature.map.tap
 
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.FlightZoneLayer
+import com.ScienceFiction.DronePassAndroid.feature.map.overlay.ShapeOverlayGlobalZIndex
 import com.naver.maps.map.overlay.PolygonOverlay
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -137,7 +138,7 @@ class MapTapResolverTest {
         val zoneBase = PolygonOverlay.DEFAULT_GLOBAL_Z_INDEX
         val prohibited = MapTapResolver.drawOrder(zoneBase, 100 - FlightZoneLayer.PROHIBITED.priority)
         val culturalHeritage = MapTapResolver.drawOrder(zoneBase, 100 - FlightZoneLayer.CULTURAL_HERITAGE.priority)
-        val myCircle = MapTapResolver.drawOrder(50, 0)
+        val myCircle = MapTapResolver.drawOrder(ShapeOverlayGlobalZIndex, 0)
         val sketch = MapTapResolver.drawOrder(100, 0) // SketchOverlayManager.SKETCH_Z_INDEX
 
         assertTrue("위험도가 높은 레이어가 위", prohibited > culturalHeritage)

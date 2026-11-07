@@ -16,6 +16,9 @@ import com.ScienceFiction.DronePassAndroid.feature.map.tap.MapTapShape
 import com.ScienceFiction.DronePassAndroid.feature.map.tap.MapTapSource
 import com.ScienceFiction.DronePassAndroid.feature.map.tap.MapTapTarget
 
+/** 내 도형 오버레이의 전역 z(비행구역 위, 스케치 아래) */
+internal const val ShapeOverlayGlobalZIndex = 50
+
 internal fun parseMapOverlayColorSafe(colorString: String): Int {
     return parseIosOpaqueRgbHexColor(colorString) ?: Color.BLACK
 }
@@ -217,6 +220,7 @@ class ShapeOverlayManager : MapTapSource {
         val removedIds = overlays.keys - newKeys.keys
         removedIds.forEach { id ->
             overlays.remove(id)?.map = null
+            tapShapeById.remove(id)
             appliedShapeKeys.remove(id)
         }
 
@@ -231,6 +235,7 @@ class ShapeOverlayManager : MapTapSource {
                 }
                 oldKey != newKey || didHighlightChange -> {
                     overlays.remove(shape.id)?.map = null
+                    tapShapeById.remove(shape.id)
                     addShapeOverlay(shape, map)
                     appliedShapeKeys[shape.id] = newKey
                 }
@@ -260,11 +265,21 @@ class ShapeOverlayManager : MapTapSource {
             }
             null -> return
         }.apply {
-            this.globalZIndex = 50
+            this.globalZIndex = ShapeOverlayGlobalZIndex
             this.map = map
             // 탭은 받지 않는다(클릭 리스너 없음). 지도 탭에서 MapTapResolver가 판정한다(11/7 대표, tapShapes·openTapped)
         }
         overlays[shape.id] = overlay
+        // 탭 판정 형상은 도형 값으로 미리 만든다(탭마다 오버레이 getter를 부르지 않는다)
+        val circle = overlay as? CircleOverlay
+        if (circle != null) {
+            tapShapeById[shape.id] = MapTapShape.circle(
+                target = MapTapTarget.Shape(shape.id),
+                drawOrder = MapTapResolver.drawOrder(ShapeOverlayGlobalZIndex, 0),
+                center = MapTapLatLng(shape.baseCoordinate.latitude, shape.baseCoordinate.longitude),
+                radiusM = shape.radius ?: circle.radius,
+            )
+        }
     }
 
     // ──────────────────────────────────────────────
@@ -337,18 +352,12 @@ class ShapeOverlayManager : MapTapSource {
     override val tapIndexed: Boolean get() = false
     override val tapSignature: Int get() = 0
 
-    /** 지금 지도에 보이는 내 원 */
+    /** 지도에 올린 내 원의 탭 판정 형상(오버레이를 올리고 내릴 때 함께 바뀐다) */
+    private val tapShapeById = mutableMapOf<String, MapTapShape>()
+
+    /** 지금 지도에 보이는 내 원. 올린 오버레이는 모두 보이고, 숨길 때는 오버레이와 함께 지운다 */
     override val tapShapes: List<MapTapShape>
-        get() = overlays.mapNotNull { (id, overlay) ->
-            val circle = overlay as? CircleOverlay ?: return@mapNotNull null
-            if (circle.map == null || !circle.isVisible) return@mapNotNull null
-            MapTapShape.circle(
-                target = MapTapTarget.Shape(id),
-                drawOrder = MapTapResolver.drawOrder(circle.globalZIndex, circle.zIndex),
-                center = MapTapLatLng(circle.center.latitude, circle.center.longitude),
-                radiusM = circle.radius,
-            )
-        }
+        get() = tapShapeById.values.toList()
 
     /** 판정 결과로 도형을 연다(전에 원 클릭 리스너가 하던 일) */
     override fun openTapped(target: MapTapTarget): Boolean {
@@ -374,6 +383,7 @@ class ShapeOverlayManager : MapTapSource {
     fun clearOverlays() {
         overlays.values.forEach { overlay -> overlay.map = null }
         overlays.clear()
+        tapShapeById.clear()
         appliedShapeKeys.clear()
 
         highlightOverlay?.map = null
