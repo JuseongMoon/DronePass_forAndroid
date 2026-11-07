@@ -332,7 +332,7 @@
     <!-- FlightZoneLayerSelector -->
     <string name="flight_zone_select_all">전체 선택</string>
     <string name="flight_zone_deselect_all">전체 해제</string>
-    <string name="flight_zone_legal_disclaimer">본 서비스는 국토교통부 디지털트윈국토 정보를 기반으로 제공하며, 실제 비행 허가 및 안전에 대한 책임은 사용자에게 있습니다.</string>
+    <string name="flight_zone_legal_disclaimer">출처: 국토교통부 공간정보 오픈플랫폼(V-World). 비행구역 정보는 V-World 오픈API로 표시하며, 실제 비행 허가 및 안전에 대한 책임은 사용자에게 있습니다.</string>
     <!-- FlightZoneLayerSelector - iOS 정합 신규 키 -->
     <string name="flight_zone_navigation_title">드론 비행 구역</string>
     <string name="flight_zone_navigation_done">완료</string>

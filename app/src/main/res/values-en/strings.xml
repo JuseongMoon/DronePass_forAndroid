@@ -522,7 +522,7 @@
         <item quantity="other">Are you sure you want to delete all %d sketches?</item>
     </plurals>
 
-    <string name="flight_zone_legal_disclaimer">This service provides information based on the Korean government\'s Digital Twin National Land data. Users are responsible for actual flight permits and safety.</string>
+    <string name="flight_zone_legal_disclaimer">Source: Spatial Information Open Platform (V-World), Ministry of Land, Infrastructure and Transport. Flight zones are shown using the V-World Open API. Users are responsible for actual flight permits and safety.</string>
     <string name="flight_zone_navigation_title">Drone Flight Zones</string>
     <string name="flight_zone_navigation_done">Done</string>
     <string name="flight_zone_stats_selected">Selected Layers</string>

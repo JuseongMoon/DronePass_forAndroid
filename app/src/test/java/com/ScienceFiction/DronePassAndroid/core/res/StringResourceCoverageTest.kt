@@ -704,7 +704,7 @@ class StringResourceCoverageTest {
     @Test
     fun `flight zone layer selector strings match iOS localizations`() {
         assertEquals(
-            "본 서비스는 국토교통부 디지털트윈국토 정보를 기반으로 제공하며, 실제 비행 허가 및 안전에 대한 책임은 사용자에게 있습니다.",
+            "출처: 국토교통부 공간정보 오픈플랫폼(V-World). 비행구역 정보는 V-World 오픈API로 표시하며, 실제 비행 허가 및 안전에 대한 책임은 사용자에게 있습니다.",
             stringResourceValue("values/strings.xml", "flight_zone_legal_disclaimer"),
         )
         assertEquals("드론 비행 구역", stringResourceValue("values/strings.xml", "flight_zone_navigation_title"))
@@ -733,7 +733,7 @@ class StringResourceCoverageTest {
         )
 
         assertEquals(
-            "This service provides information based on the Korean government's Digital Twin National Land data. Users are responsible for actual flight permits and safety.",
+            "Source: Spatial Information Open Platform (V-World), Ministry of Land, Infrastructure and Transport. Flight zones are shown using the V-World Open API. Users are responsible for actual flight permits and safety.",
             androidDisplayStringResourceValue("values-en/strings.xml", "flight_zone_legal_disclaimer"),
         )
         assertEquals("Drone Flight Zones", stringResourceValue("values-en/strings.xml", "flight_zone_navigation_title"))
