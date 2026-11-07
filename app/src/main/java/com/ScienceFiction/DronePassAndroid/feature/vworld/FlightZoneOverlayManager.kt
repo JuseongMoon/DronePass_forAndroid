@@ -11,18 +11,24 @@ import com.naver.maps.geometry.LatLng
 import com.naver.maps.geometry.LatLngBounds
 import com.naver.maps.map.NaverMap
 import com.naver.maps.map.overlay.PolygonOverlay
+import com.ScienceFiction.DronePassAndroid.feature.map.tap.MapTapLatLng
+import com.ScienceFiction.DronePassAndroid.feature.map.tap.MapTapResolver
+import com.ScienceFiction.DronePassAndroid.feature.map.tap.MapTapShape
+import com.ScienceFiction.DronePassAndroid.feature.map.tap.MapTapSource
+import com.ScienceFiction.DronePassAndroid.feature.map.tap.MapTapTarget
+import java.util.IdentityHashMap
 
 /**
  * 비행구역 오버레이 관리자
  *
  * 네이버 지도에 비행구역 폴리곤을 표시/관리한다.
- * 레이어별 표시/숨기기, 터치 핸들러, 메모리 최적화를 담당한다.
+ * 레이어별 표시/숨기기, 탭 판정 후보(MapTapSource), 메모리 최적화를 담당한다.
  */
 /** iOS FlightZoneOverlayManager 의 outlineWidth(pt). 기본 2, 선택 4. */
 internal const val FlightZoneOutlinePoints = 2
 internal const val FlightZoneSelectedOutlinePoints = 4
 
-class FlightZoneOverlayManager {
+class FlightZoneOverlayManager : MapTapSource {
 
     /** 외곽선 pt → px 변환용 display density. */
     private var density: Float = android.content.res.Resources.getSystem().displayMetrics.density
@@ -51,6 +57,12 @@ class FlightZoneOverlayManager {
 
     /** 현재 선택된 오버레이 (iOS 처럼 외곽선 두께로 강조) */
     private var selectedOverlay: PolygonOverlay? = null
+
+    /** 보이는 오버레이 집합이 바뀔 때마다 올린다(탭 판정 색인 서명) */
+    private var visibleVersion = 0
+
+    /** 오버레이별 탭 판정 형상(처음 볼 때 만들어 둔다) */
+    private val tapShapeCache = IdentityHashMap<PolygonOverlay, MapTapShape>()
 
     /** 구역 탭 시 호출되는 콜백 */
     var onZoneTapped: ((DroneZoneFeature) -> Unit)? = null
@@ -86,8 +98,10 @@ class FlightZoneOverlayManager {
                 if (selectedOverlay == overlay) selectedOverlay = null
                 overlay.map = null
                 overlayToZoneMap.remove(overlay)
+                tapShapeCache.remove(overlay)
             }
         }
+        if (removedIds.isNotEmpty()) visibleVersion++
 
         // 2. 신규 zone 만 PolygonOverlay 생성 (기존 id 는 정적 GIS 데이터이므로 skip)
         var added = 0
@@ -114,12 +128,7 @@ class FlightZoneOverlayManager {
                         // iOS 와 같이 전역 z 는 기본값(지도 글자·POI 아래)으로 두고, 같은 층 안 순서만 정한다.
                         this.zIndex = LAYER_Z_INDEX_BASE - layer.priority
                         this.map = map
-
-                        setOnClickListener {
-                            selectOverlay(overlay = this)
-                            onZoneTapped?.invoke(zone)
-                            true
-                        }
+                        // 탭은 받지 않는다(클릭 리스너 없음). 지도 탭에서 MapTapResolver가 판정한다(11/7 대표)
                     }
                     zoneOverlays.add(overlay)
                     overlayToZoneMap[overlay] = zone
@@ -130,6 +139,7 @@ class FlightZoneOverlayManager {
             layerCache[zone.id] = zoneOverlays
             if (zoneOverlays.isNotEmpty()) added++
         }
+        if (added > 0) visibleVersion++
 
         Log.d(TAG, "${layer.displayName}: 신규=$added, 유지=${currentIds.intersect(newZoneIds).size}, 제거=${removedIds.size}")
     }
@@ -141,6 +151,7 @@ class FlightZoneOverlayManager {
         overlayMap[layer]?.values?.flatten()?.forEach { overlay ->
             overlay.map = if (visible) naverMap else null
         }
+        visibleVersion++
     }
 
     /**
@@ -151,8 +162,10 @@ class FlightZoneOverlayManager {
             if (selectedOverlay == overlay) selectedOverlay = null
             overlay.map = null
             overlayToZoneMap.remove(overlay)
+            tapShapeCache.remove(overlay)
         }
         overlayMap.remove(layer)
+        visibleVersion++
     }
 
     /**
@@ -176,9 +189,11 @@ class FlightZoneOverlayManager {
                 viewEast = bounds.eastLongitude,
             )
             if (!isInBounds) {
+                if (overlay.map != null) visibleVersion++
                 overlay.map = null
             } else if (overlay.map == null) {
                 overlay.map = naverMap
+                visibleVersion++
             }
         }
     }
@@ -193,6 +208,8 @@ class FlightZoneOverlayManager {
         selectedOverlay = null
         overlayMap.clear()
         overlayToZoneMap.clear()
+        tapShapeCache.clear()
+        visibleVersion++
     }
 
     /**
@@ -255,6 +272,46 @@ class FlightZoneOverlayManager {
             radiusMeters = radiusMeters,
             zones = getAllDisplayedZones(),
         )
+    }
+
+    // ──────────────────────────────────────────────
+    // 지도 탭 판정 소스: 비행구역(많고 복잡해 격자 색인)
+    // ──────────────────────────────────────────────
+
+    override val tapIndexed: Boolean get() = true
+    override val tapSignature: Int get() = visibleVersion
+
+    /** 지금 보이는 비행구역 오버레이(레이어 끄기·화면 밖 숨김 제외) */
+    private fun visibleZoneOverlays(): List<PolygonOverlay> =
+        overlayMap.values.flatMap { it.values }.flatten().filter { it.map != null && it.isVisible }
+
+    /** 지금 보이는 비행구역의 탭 판정 형상 */
+    override val tapShapes: List<MapTapShape>
+        get() = visibleZoneOverlays().mapNotNull { overlay ->
+            tapShapeCache[overlay] ?: run {
+                val rings = listOf(overlay.coords) + overlay.holes
+                MapTapShape.polygon(
+                    target = MapTapTarget.Zone(overlay),
+                    drawOrder = MapTapResolver.drawOrder(overlay.globalZIndex, overlay.zIndex),
+                    rings = rings.map { ring -> ring.map { MapTapLatLng(it.latitude, it.longitude) } },
+                )?.also { tapShapeCache[overlay] = it }
+            }
+        }
+
+    /** 판정 결과로 상세를 연다(선택 외곽선 강조 포함) */
+    override fun openTapped(target: MapTapTarget): Boolean {
+        if (target !is MapTapTarget.Zone) return false
+        val overlay = target.key as? PolygonOverlay ?: return true
+        val zone = overlayToZoneMap[overlay] ?: return true
+        if (overlay.map == null) return true
+        selectOverlay(overlay)
+        onZoneTapped?.invoke(zone)
+        return true
+    }
+
+    /** 빈 곳 탭: 외곽선 강조만 푼다(상세 시트는 그대로) */
+    override fun clearTapHighlight() {
+        clearSelection()
     }
 
     private fun selectOverlay(overlay: PolygonOverlay) {

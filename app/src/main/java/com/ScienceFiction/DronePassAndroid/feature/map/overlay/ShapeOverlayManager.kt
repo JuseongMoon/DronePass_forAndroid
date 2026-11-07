@@ -10,6 +10,11 @@ import com.naver.maps.geometry.LatLng
 import com.naver.maps.map.NaverMap
 import com.naver.maps.map.overlay.CircleOverlay
 import com.naver.maps.map.overlay.Overlay
+import com.ScienceFiction.DronePassAndroid.feature.map.tap.MapTapLatLng
+import com.ScienceFiction.DronePassAndroid.feature.map.tap.MapTapResolver
+import com.ScienceFiction.DronePassAndroid.feature.map.tap.MapTapShape
+import com.ScienceFiction.DronePassAndroid.feature.map.tap.MapTapSource
+import com.ScienceFiction.DronePassAndroid.feature.map.tap.MapTapTarget
 
 internal fun parseMapOverlayColorSafe(colorString: String): Int {
     return parseIosOpaqueRgbHexColor(colorString) ?: Color.BLACK
@@ -129,7 +134,7 @@ internal fun uniqueMapOverlayShapesByFirstId(shapes: List<ShapeModel>): List<Sha
  * NaverMap 인스턴스를 받아서 iOS MapViewModel 과 같이 원형 ShapeModel 만 오버레이로 렌더링한다.
  * 도형 탭 이벤트, 하이라이트 표시, 오버레이 갱신/제거를 담당한다.
  */
-class ShapeOverlayManager {
+class ShapeOverlayManager : MapTapSource {
 
     private var naverMap: NaverMap? = null
 
@@ -150,7 +155,7 @@ class ShapeOverlayManager {
 
     private var highlightedDroneIds: Set<String> = emptySet()
 
-    /** 도형 탭 시 호출되는 콜백. shapeId를 전달한다. */
+    /** 도형 탭 판정 결과로 열 때 호출되는 콜백. shapeId를 전달한다. */
     var onShapeTapped: ((String) -> Unit)? = null
 
     /** Diff 비교를 위한 도형 속성 키 (변경 감지에 영향을 주는 모든 필드). */
@@ -257,10 +262,7 @@ class ShapeOverlayManager {
         }.apply {
             this.globalZIndex = 50
             this.map = map
-            setOnClickListener {
-                onShapeTapped?.invoke(shape.id)
-                true
-            }
+            // 탭은 받지 않는다(클릭 리스너 없음). 지도 탭에서 MapTapResolver가 판정한다(11/7 대표, tapShapes·openTapped)
         }
         overlays[shape.id] = overlay
     }
@@ -329,6 +331,40 @@ class ShapeOverlayManager {
     }
 
     // ──────────────────────────────────────────────
+    // 지도 탭 판정 소스: 내 원(수가 적어 색인하지 않고 탭마다 본다)
+    // ──────────────────────────────────────────────
+
+    override val tapIndexed: Boolean get() = false
+    override val tapSignature: Int get() = 0
+
+    /** 지금 지도에 보이는 내 원 */
+    override val tapShapes: List<MapTapShape>
+        get() = overlays.mapNotNull { (id, overlay) ->
+            val circle = overlay as? CircleOverlay ?: return@mapNotNull null
+            if (circle.map == null || !circle.isVisible) return@mapNotNull null
+            MapTapShape.circle(
+                target = MapTapTarget.Shape(id),
+                drawOrder = MapTapResolver.drawOrder(circle.globalZIndex, circle.zIndex),
+                center = MapTapLatLng(circle.center.latitude, circle.center.longitude),
+                radiusM = circle.radius,
+            )
+        }
+
+    /** 판정 결과로 도형을 연다(전에 원 클릭 리스너가 하던 일) */
+    override fun openTapped(target: MapTapTarget): Boolean {
+        if (target !is MapTapTarget.Shape) return false
+        if (overlays.containsKey(target.id)) onShapeTapped?.invoke(target.id)
+        return true
+    }
+
+    /** 빈 곳 탭: 지도 하이라이트만 푼다. 저장 목록 선택은 별개라 그대로 둔다 */
+    var onTapHighlightCleared: (() -> Unit)? = null
+
+    override fun clearTapHighlight() {
+        onTapHighlightCleared?.invoke()
+    }
+
+    // ──────────────────────────────────────────────
     // 오버레이 제거
     // ──────────────────────────────────────────────
 
@@ -352,6 +388,7 @@ class ShapeOverlayManager {
     fun detach() {
         clearOverlays()
         onShapeTapped = null
+        onTapHighlightCleared = null
         naverMap = null
     }
 }

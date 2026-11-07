@@ -112,7 +112,8 @@ internal fun calculateShapeFocusRadiusMeters(shape: ShapeModel): Double {
     return shape.radius ?: ShapeFocusDefaultRadiusMeters
 }
 
-internal fun shouldConsumeNaverMapSymbolTap(): Boolean = true
+/** POI 라벨 탭은 소비하지 않고 지도 탭으로 넘긴다(그 자리의 도형·구역을 판정, iOS 7d8fa898과 같음) */
+internal fun shouldConsumeNaverMapSymbolTap(): Boolean = false
 
 internal fun shouldSkipShapeFocusMove(
     currentSelectedShape: ShapeModel?,

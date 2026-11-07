@@ -44,6 +44,9 @@ import com.ScienceFiction.DronePassAndroid.app.LaunchPermissionSequence
 import com.ScienceFiction.DronePassAndroid.app.LegalLaunchSequence
 import com.ScienceFiction.DronePassAndroid.app.LocationConsentPrompt
 import com.ScienceFiction.DronePassAndroid.BuildConfig
+import com.ScienceFiction.DronePassAndroid.feature.map.tap.MapTapCoordinator
+import com.ScienceFiction.DronePassAndroid.feature.map.tap.MapTapLatLng
+import com.ScienceFiction.DronePassAndroid.feature.map.tap.MapTapResolver
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.domain.model.Coordinate
 import com.ScienceFiction.DronePassAndroid.feature.kp.KpViewModel
@@ -118,6 +121,23 @@ fun MapScreen(
     val overlayManager = remember { ShapeOverlayManager() }
     val sketchOverlayManager = remember { SketchOverlayManager() }
     val flightZoneOverlayManager = remember { FlightZoneOverlayManager() }
+    // 지도 탭 판정(11/7 대표). 내 원·비행구역이 같은 기준으로 후보를 낸다. 오버레이에는 클릭 리스너가 없다.
+    val tapCoordinator = remember {
+        MapTapCoordinator().apply {
+            register(overlayManager)
+            register(flightZoneOverlayManager)
+            if (BuildConfig.DEBUG) {
+                onResolved = { stats ->
+                    Log.d(
+                        "MapTap",
+                        "탭 판정 ${"%.3f".format(stats.ms)}ms, ${stats.result.reason.raw}, " +
+                            "색인 ${if (stats.rebuilt) "다시 만듦" else "재사용"}, 형상 ${stats.shapeCount}개",
+                    )
+                }
+            }
+        }
+    }
+    val tapTolerancePx = with(density) { MapTapResolver.LINE_TOLERANCE_PT.toFloat().dp.toPx() }
 
     // 디바이스 density 를 SketchOverlayManager 에 주입 (dp→px 정확도 향상)
     val displayDensity = density.density
@@ -456,8 +476,18 @@ fun MapScreen(
                         map.setContentPadding(0, 0, 0, mapBottomPaddingPx)
                         viewModel.updateCurrentBoundsFrom(map)
                         map.setOnSymbolClickListener {
-                            // iOS NaverMapView.Coordinator.didTap symbol 과 동일하게 POI 라벨 탭을 소비한다.
+                            // POI 라벨 자체 동작은 없다. 탭은 지도로 넘겨(false) 그 자리의 도형·구역을 판정한다(iOS와 같음).
                             shouldConsumeNaverMapSymbolTap()
+                        }
+                        map.setOnMapClickListener { point, latLng ->
+                            // 지도 탭 하나로 판정한다. 드래그·핀치는 이 이벤트가 오지 않는다.
+                            val tap = MapTapLatLng(latLng.latitude, latLng.longitude)
+                            val offset = map.projection.fromScreenLocation(PointF(point.x + tapTolerancePx, point.y))
+                            val toleranceM = MapTapCoordinator.toleranceMeters(
+                                tap = tap,
+                                offset = MapTapLatLng(offset.latitude, offset.longitude),
+                            )
+                            tapCoordinator.handleTap(tap, toleranceM)
                         }
 
                         val cameraListener = NaverMap.OnCameraIdleListener {
@@ -599,6 +629,7 @@ fun MapScreen(
                 cameraChangeListener?.let { map.removeOnCameraChangeListener(it) }
                 map.onMapLongClickListener = null
                 map.onSymbolClickListener = null
+                map.onMapClickListener = null
             }
             cameraIdleListener = null
             cameraChangeListener = null
@@ -608,6 +639,7 @@ fun MapScreen(
             overlayManager.detach()
             sketchOverlayManager.detach()
             flightZoneOverlayManager.detach()
+            tapCoordinator.clear()
 
             lifecycleOwner.lifecycle.removeObserver(observer)
             kpViewModel.stopAutoRefresh()

@@ -130,8 +130,8 @@ class MapCameraFocusTest {
     }
 
     @Test
-    fun `네이버 지도 POI 심볼 탭은 iOS처럼 항상 소비한다`() {
-        assertEquals(true, shouldConsumeNaverMapSymbolTap())
+    fun `네이버 지도 POI 심볼 탭은 iOS처럼 지도 탭으로 넘겨 그 자리를 판정한다`() {
+        assertEquals(false, shouldConsumeNaverMapSymbolTap())
     }
 
     @Test
