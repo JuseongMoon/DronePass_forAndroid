@@ -365,6 +365,24 @@ class MapViewModel @Inject constructor(
     val selectedShapeId: StateFlow<String?> = _selectedShapeId.asStateFlow()
 
     /**
+     * 지도 하이라이트 도형 ID(iOS MapViewModel.highlightedShapeID). 선택([selectedShapeId])과 함께 정해지지만,
+     * 빈 곳 탭은 이것만 푼다. 저장 목록 선택 표시와 열린 시트는 그대로 둔다(11/7 대표).
+     */
+    private val _highlightedShapeId = MutableStateFlow<String?>(null)
+    val highlightedShapeId: StateFlow<String?> = _highlightedShapeId.asStateFlow()
+
+    /** 선택과 지도 하이라이트를 함께 정한다(목록에서 고르거나 지도에서 탭할 때 등) */
+    private fun setSelectedShape(shapeId: String?) {
+        _selectedShapeId.value = shapeId
+        _highlightedShapeId.value = shapeId
+    }
+
+    /** 빈 곳 탭(판정 none): 지도 하이라이트만 푼다 */
+    fun clearMapTapHighlight() {
+        _highlightedShapeId.value = null
+    }
+
+    /**
      * 도형 상세 시트 표시 여부
      */
     private val _showShapeDetail = MutableStateFlow(false)
@@ -579,7 +597,7 @@ class MapViewModel @Inject constructor(
                 returnToShapeDetailAfterEditDismiss = false
                 dismissShapeEdit()
                 _showShapeDetail.value = false
-                _selectedShapeId.value = null
+                setSelectedShape(null)
                 _shapeEditTargetDeleted.tryEmit(Unit)
             }
         }
@@ -589,7 +607,7 @@ class MapViewModel @Inject constructor(
      * 도형 선택 (오버레이 터치 시 호출)
      */
     fun onShapeSelected(shapeId: String) {
-        _selectedShapeId.value = shapeId
+        setSelectedShape(shapeId)
         _showShapeDetail.value = true
     }
 
@@ -601,7 +619,7 @@ class MapViewModel @Inject constructor(
         val shape = activeShapes.value.firstOrNull { it.id == shapeId }
         val action = resolveShapeOverlayTapAction(shape) ?: return
 
-        _selectedShapeId.value = action.shapeId
+        setSelectedShape(action.shapeId)
         _showShapeDetail.value = action.showShapeDetail
         if (action.requestSavedListFocus) {
             viewModelScope.launchCatchingStorageErrors {
@@ -615,7 +633,7 @@ class MapViewModel @Inject constructor(
      * iOS SavedTableListView.handleShapeTap 처럼 상세 시트는 열지 않고 지도 하이라이트만 갱신한다.
      */
     fun selectShapeForMapFocus(shapeId: String) {
-        _selectedShapeId.value = shapeId
+        setSelectedShape(shapeId)
         _showShapeDetail.value = false
     }
 
@@ -623,7 +641,7 @@ class MapViewModel @Inject constructor(
      * 도형 선택 해제
      */
     fun clearSelection() {
-        _selectedShapeId.value = null
+        setSelectedShape(null)
         _showShapeDetail.value = false
     }
 
@@ -722,7 +740,7 @@ class MapViewModel @Inject constructor(
     }
 
     private fun resetShapeSelectionForNewShapeEdit() {
-        _selectedShapeId.value = null
+        setSelectedShape(null)
         _showShapeDetail.value = false
         _isDuplicateMode.value = false
         returnToShapeDetailAfterEditSave = false
@@ -744,7 +762,7 @@ class MapViewModel @Inject constructor(
         shape: ShapeModel,
         returnToDetailAfterSave: Boolean = false,
     ) {
-        _selectedShapeId.value = shape.id
+        setSelectedShape(shape.id)
         _isDuplicateMode.value = false
         returnToShapeDetailAfterEditSave = returnToDetailAfterSave
         returnToShapeDetailAfterEditDismiss = returnToDetailAfterSave
@@ -767,7 +785,7 @@ class MapViewModel @Inject constructor(
     }
 
     private fun openDuplicateShape(shape: ShapeModel, returnToDetailAfterDismiss: Boolean) {
-        _selectedShapeId.value = shape.id
+        setSelectedShape(shape.id)
         _isDuplicateMode.value = true
         returnToShapeDetailAfterEditSave = false
         returnToShapeDetailAfterEditDismiss = returnToDetailAfterDismiss
@@ -823,7 +841,7 @@ class MapViewModel @Inject constructor(
                 returnToShapeDetailAfterEditSave = false
                 returnToShapeDetailAfterEditDismiss = false
                 if (shouldSelectShapeImmediatelyAfterSave(postSaveAction)) {
-                    _selectedShapeId.value = updatedShape.id
+                    setSelectedShape(updatedShape.id)
                 }
 
                 when (postSaveAction) {
@@ -916,7 +934,7 @@ class MapViewModel @Inject constructor(
      * 도형 상세 시트 닫기
      */
     fun dismissShapeDetail() {
-        _selectedShapeId.value = null
+        setSelectedShape(null)
         _showShapeDetail.value = false
     }
 

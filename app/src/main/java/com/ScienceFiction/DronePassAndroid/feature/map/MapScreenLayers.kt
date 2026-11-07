@@ -117,7 +117,8 @@ internal fun MapOverlayEffects(
 ) {
     // 화면에 직접 그리지 않는 영역에서만 collect — recomposition 범위 격리
     val filteredShapes by viewModel.filteredShapes.collectAsStateWithLifecycle()
-    val selectedShapeId by viewModel.selectedShapeId.collectAsStateWithLifecycle()
+    // 지도 하이라이트는 선택과 별개다(빈 곳 탭은 하이라이트만 푼다)
+    val highlightedShapeId by viewModel.highlightedShapeId.collectAsStateWithLifecycle()
     val highlightedDroneIds by viewModel.highlightedDroneIds.collectAsStateWithLifecycle()
     val flightZones by viewModel.flightZones.collectAsStateWithLifecycle()
     val visibleLayers by viewModel.visibleLayers.collectAsStateWithLifecycle()
@@ -181,14 +182,14 @@ internal fun MapOverlayEffects(
     }
 
     // 선택 하이라이트
-    LaunchedEffect(selectedShapeId, filteredShapes, mapReady, isSketchMode) {
+    LaunchedEffect(highlightedShapeId, filteredShapes, mapReady, isSketchMode) {
         if (!shouldRenderShapeOverlays(mapReady = mapReady, isSketchMode = isSketchMode)) {
             if (mapReady && isSketchMode) {
                 overlayManager.clearOverlays()
             }
             return@LaunchedEffect
         }
-        overlayManager.setHighlight(selectedShapeId, filteredShapes)
+        overlayManager.setHighlight(highlightedShapeId, filteredShapes)
     }
 
     // 저장된 스케치 오버레이

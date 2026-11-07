@@ -496,7 +496,7 @@ class MapCameraFocusTest {
             source = source,
             tokens = listOf(
                 "fun onShapeOverlayTapped(shapeId: String)",
-                "_selectedShapeId.value = action.shapeId",
+                "setSelectedShape(action.shapeId)",
                 "_showShapeDetail.value = action.showShapeDetail",
                 "_savedShapeFocusEvent.emit(action.shapeId)",
             ),

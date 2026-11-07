@@ -247,6 +247,7 @@ fun MapScreen(
     SideEffect {
         overlayManager.onShapeTapped = { shapeId -> viewModel.onShapeOverlayTapped(shapeId) }
         flightZoneOverlayManager.onZoneTapped = { zone -> viewModel.onZoneSelected(zone) }
+        overlayManager.onTapHighlightCleared = { viewModel.clearMapTapHighlight() }
     }
 
     // 탭 간 연동: 저장 목록에서 도형 선택 시 해당 도형으로 포커스
