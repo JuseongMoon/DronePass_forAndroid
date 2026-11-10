@@ -302,7 +302,7 @@ class StringResourceCoverageTest {
         assertEquals("시작일 선택", stringResourceValue("values/strings.xml", "shape_edit_start_date_select"))
         assertEquals("종료일 선택", stringResourceValue("values/strings.xml", "shape_edit_end_date_select"))
         assertEquals(
-            "드론원스탑에서 승인받은 좌표를 복사&붙여넣기 하세요",
+            "드론원스톱에서 승인받은 좌표를 복사&붙여넣기 하세요",
             androidDisplayStringResourceValue("values/strings.xml", "coordinate_guide"),
         )
         assertEquals("지원하는 좌표 형식:", stringResourceValue("values/strings.xml", "coordinate_format_title"))
@@ -536,9 +536,9 @@ class StringResourceCoverageTest {
         assertEquals("주소로 위치 검색 및 내비게이션", stringResourceValue("values/strings.xml", "app_info_feature_search_desc"))
         assertEquals("클라우드 실시간 동기화", stringResourceValue("values/strings.xml", "app_info_feature_cloud_sync_title"))
         assertEquals("여러 기기 간 실시간 데이터 동기화", stringResourceValue("values/strings.xml", "app_info_feature_cloud_sync_desc"))
-        assertEquals("드론 원스톱 연계 최적화", stringResourceValue("values/strings.xml", "app_info_feature_drone_onestop_title"))
+        assertEquals("비행 승인 신청 데이터 구조", stringResourceValue("values/strings.xml", "app_info_feature_drone_onestop_title"))
         assertEquals(
-            "드론 원스톱 서비스 연계를 위한 데이터 구조",
+            "비행 승인 신청에 맞춘 데이터 구조",
             stringResourceValue("values/strings.xml", "app_info_feature_drone_onestop_desc"),
         )
         assertEquals("앱 버전", stringResourceValue("values/strings.xml", "app_info_version_app"))

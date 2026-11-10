@@ -195,7 +195,7 @@
     <string name="coordinate_cancel">취소</string>
     <string name="coordinate_confirm">확인</string>
     <string name="coordinate_placeholder">좌표를 입력해주세요</string>
-    <string name="coordinate_guide">드론원스탑에서 승인받은 좌표를 복사&amp;붙여넣기 하세요</string>
+    <string name="coordinate_guide">드론원스톱에서 승인받은 좌표를 복사&amp;붙여넣기 하세요</string>
     <string name="coordinate_format_title">지원하는 좌표 형식:</string>
     <string name="coordinate_example_dms">• 도/분/초: 37° 38′ 55″ N 126° 41′ 12″ E</string>
     <string name="coordinate_example_decimal_degrees">• 십진도: 37.648611°, 126.686667°</string>
@@ -493,8 +493,8 @@
     <string name="app_info_feature_search_desc">주소로 위치 검색 및 내비게이션</string>
     <string name="app_info_feature_cloud_sync_title">클라우드 실시간 동기화</string>
     <string name="app_info_feature_cloud_sync_desc">여러 기기 간 실시간 데이터 동기화</string>
-    <string name="app_info_feature_drone_onestop_title">드론 원스톱 연계 최적화</string>
-    <string name="app_info_feature_drone_onestop_desc">드론 원스톱 서비스 연계를 위한 데이터 구조</string>
+    <string name="app_info_feature_drone_onestop_title">비행 승인 신청 데이터 구조</string>
+    <string name="app_info_feature_drone_onestop_desc">비행 승인 신청에 맞춘 데이터 구조</string>
     <string name="app_info_version_app">앱 버전</string>
     <string name="app_info_version_build">빌드 번호</string>
     <string name="app_info_contact_company">Science Fiction Inc.</string>
