@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.Context
 import com.ScienceFiction.DronePassAndroid.core.account.AccountSessionFlows
 import com.ScienceFiction.DronePassAndroid.core.account.clearFirestorePersistenceIfNeeded
+import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.VWorldKeyProvider
 import com.ScienceFiction.DronePassAndroid.feature.settings.initializeAppLanguage
 import com.ScienceFiction.DronePassAndroid.feature.settings.localizedAppLanguageContext
 import com.ScienceFiction.DronePassAndroid.feature.settings.storedAppLanguageTag
@@ -27,6 +28,7 @@ class DronePassApplication : Application() {
 
     @Inject lateinit var notificationScheduleRestorer: NotificationScheduleRestorer
     @Inject lateinit var accountSessionFlows: AccountSessionFlows
+    @Inject lateinit var vWorldKeyProvider: VWorldKeyProvider
 
     /**
      * 앱 언어를 Application 리소스에도 적용한다. Android 12 이하는 앱별 언어를 시스템이 처리하지 않고
@@ -50,5 +52,7 @@ class DronePassApplication : Application() {
         // 알림 채널 생성 (Android 8.0+)
         FcmService.createNotificationChannel(this)
         notificationScheduleRestorer.rescheduleEnabledAlarmsAsync("app_start")
+        // V-World 원격 키를 백그라운드로 한 번 받는다. 지도 로딩은 기다리지 않는다.
+        vWorldKeyProvider.refreshInBackground()
     }
 }

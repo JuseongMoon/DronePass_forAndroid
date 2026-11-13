@@ -6,7 +6,15 @@ import com.ScienceFiction.DronePassAndroid.core.data.remote.VWorldContactsApi
 import com.ScienceFiction.DronePassAndroid.core.data.remote.kp.KpGfzApi
 import com.ScienceFiction.DronePassAndroid.core.data.remote.kp.KpNoaa27DayApi
 import com.ScienceFiction.DronePassAndroid.core.data.remote.kp.KpNoaaApi
+import android.util.Log
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.VWorldApi
+import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.VWorldKeyCallableSource
+import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.VWorldKeyConfigSource
+import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.VWorldKeyProvider
+import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.VWorldKeySource
+import com.google.firebase.functions.FirebaseFunctions
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import dagger.Module
@@ -148,12 +156,30 @@ object NetworkModule {
         return retrofit.create(VWorldApi::class.java)
     }
 
+    /**
+     * 요청마다 지금 쓸 V-World 키를 고른다. 원격 키(저장값)가 있으면 그것을, 없으면 내장 키를 쓴다.
+     * 키를 한 번 정해 주입하면 만료된 키를 실행 중에 바꿀 수 없어 제공자로 둔다.
+     */
     @Provides
     @Singleton
-    @Named("VWorldApiKey")
-    fun provideVWorldApiKey(): String {
-        return BuildConfig.VWORLD_API_KEY
-    }
+    fun provideVWorldKeyProvider(
+        dataStore: DataStore<Preferences>,
+        configSource: VWorldKeyConfigSource,
+    ): VWorldKeyProvider = VWorldKeyProvider(
+        dataStore = dataStore,
+        configSource = configSource,
+        builtInKey = BuildConfig.VWORLD_API_KEY,
+        log = { message -> Log.i("VWorldKeyProvider", message) },
+    )
+
+    @Provides
+    fun provideVWorldKeySource(provider: VWorldKeyProvider): VWorldKeySource = provider
+
+    @Provides
+    @Singleton
+    fun provideVWorldKeyConfigSource(
+        functions: FirebaseFunctions,
+    ): VWorldKeyConfigSource = VWorldKeyCallableSource(functions)
 
     // ===== VWorld 공공기관 연락처 (S3 텍스트 파일) =====
     // iOS VWorldContactManager 와 동일한 endpoint. JSON 변환 없이 ResponseBody 만 받는다.

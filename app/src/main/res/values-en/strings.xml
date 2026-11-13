@@ -53,7 +53,6 @@
     <string name="map_address_search_failed_title">Address Search Failed</string>
     <string name="map_address_search_failed_message">Unable to retrieve address for the selected location. Would you like to create the shape with coordinates only?</string>
     <string name="map_address_not_found">Address not found for this location</string>
-    <string name="map_flight_zones_error_invalid_key">VWorld API key is not registered. Please check VWORLD_API_KEY in local.properties.</string>
     <string name="map_flight_zones_error_service">Temporary VWorld service error</string>
     <string name="map_flight_zones_error_load_failed">Unable to load flight zone data</string>
 

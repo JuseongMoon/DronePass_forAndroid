@@ -1373,9 +1373,9 @@ class MapViewModel @Inject constructor(
             // 레이어·카메라가 바뀌어 다음 조회로 넘어간 것이다. 오류가 아니다.
             throw e
         } catch (e: VWorldServiceException.InvalidKey) {
-            // 사용자가 즉시 조치 가능한 에러. local.properties 의 VWORLD_API_KEY 점검 필요.
-            Log.e(TAG, "비행구역 로드 실패 - VWorld 인증키 미등록 (${e.message})")
-            _flightZonesError.emit(appContext.getString(R.string.map_flight_zones_error_invalid_key))
+            // 키 교체는 원격 설정으로 한다. 사용자가 할 수 있는 일이 없어 일반 서비스 오류 문구를 쓴다.
+            Log.e(TAG, "비행구역 로드 실패 - VWorld 키 오류 (${e.message})")
+            _flightZonesError.emit(appContext.getString(R.string.map_flight_zones_error_service))
         } catch (e: VWorldServiceException) {
             Log.e(TAG, "비행구역 로드 실패 - VWorld 서비스 오류: ${e.message}")
             _flightZonesError.emit(appContext.getString(R.string.map_flight_zones_error_service))
