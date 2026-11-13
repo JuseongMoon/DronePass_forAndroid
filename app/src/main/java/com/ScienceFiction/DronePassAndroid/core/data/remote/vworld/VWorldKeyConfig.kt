@@ -87,13 +87,14 @@ private val FeatureCollectionTypePattern =
 internal fun isVWorldFeatureCollectionBody(body: String): Boolean =
     body.trimStart().startsWith("{") && FeatureCollectionTypePattern.containsMatchIn(body)
 
+// iOS VWorldKeyStore.isKeyError 와 같은 정규식이며, 대소문자를 무시한다.
 private val ErrorCodePatterns = listOf(
-    // XML 속성: <ServiceException code="EXPIRE_KEY">. exceptionCode 같은 다른 이름은 제외한다.
-    Regex("(?<![A-Za-z0-9_:-])code\\s*=\\s*\"([^\"]*)\""),
+    // XML 속성: <ServiceException code="EXPIRE_KEY">
+    Regex("code\\s*=\\s*[\"']([^\"']*)[\"']", RegexOption.IGNORE_CASE),
     // XML 요소: <code>INCORRECT_KEY</code>
-    Regex("<code>\\s*([^<]*?)\\s*</code>"),
+    Regex("<code>\\s*([^<]*?)\\s*</code>", RegexOption.IGNORE_CASE),
     // JSON: "code":"INVALID_KEY"
-    Regex("\"code\"\\s*:\\s*\"([^\"]*)\""),
+    Regex("\"code\"\\s*:\\s*\"([^\"]*)\"", RegexOption.IGNORE_CASE),
 )
 
 /**
@@ -104,5 +105,5 @@ private val ErrorCodePatterns = listOf(
 internal fun isVWorldKeyErrorBody(body: String): Boolean {
     if (isVWorldFeatureCollectionBody(body)) return false
     val codes = ErrorCodePatterns.flatMap { pattern -> pattern.findAll(body).map { it.groupValues[1] } }
-    return codes.any { it.contains("KEY") } || body.contains("인증키")
+    return body.contains("인증키") || codes.any { it.uppercase().contains("KEY") }
 }

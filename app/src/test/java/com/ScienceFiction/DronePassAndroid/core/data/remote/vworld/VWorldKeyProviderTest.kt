@@ -95,6 +95,15 @@ class VWorldKeyProviderTest {
     }
 
     @Test
+    fun `key error codes are matched without regard to case like iOS`() {
+        assertTrue(isVWorldKeyErrorBody("""<ServiceException code="expire_key">x</ServiceException>"""))
+        assertTrue(isVWorldKeyErrorBody("""<ServiceException Code='Invalid_Key'>x</ServiceException>"""))
+        assertTrue(isVWorldKeyErrorBody("""<error><CODE>incorrect_key</CODE></error>"""))
+        assertTrue(isVWorldKeyErrorBody("""{"error":{"Code":"invalid_key"}}"""))
+        assertFalse(isVWorldKeyErrorBody("""<ServiceException code="PARAM_REQUIRED">x</ServiceException>"""))
+    }
+
+    @Test
     fun `other service exceptions and json are not key errors`() {
         val domain = """<ServiceExceptionReport><ServiceException code="INCORRECT_DOMAIN">도메인 오류</ServiceException></ServiceExceptionReport>"""
         assertFalse(isVWorldKeyErrorBody(domain))
