@@ -49,7 +49,7 @@ interface VWorldApi {
  * VWorld WFS 에러. 카테고리별 sealed 로 호출자가 사용자 메시지를 차별화하도록 한다.
  */
 sealed class VWorldServiceException(message: String) : RuntimeException(message) {
-    /** 인증키가 등록되지 않았거나 만료. `local.properties` 의 `VWORLD_API_KEY` 점검 필요. */
+    /** 내장 키와 원격 키를 모두 시도한 뒤에도 인증키가 등록되지 않았거나 만료됐다. */
     class InvalidKey(detail: String) :
         VWorldServiceException("VWorld INVALID_KEY: $detail")
 

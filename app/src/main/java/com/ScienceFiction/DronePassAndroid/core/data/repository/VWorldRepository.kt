@@ -6,7 +6,11 @@ import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.FlightZoneLay
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.GeoJSONFeature
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.GeoJSONFeatureCollection
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.VWorldApi
+import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.VWorldKeySource
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.VWorldServiceException
+import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.isVWorldKeyErrorBody
+import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.isVWorldServiceExceptionBody
+import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.requestWithVWorldKeyRetry
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.resolveZoneCode
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.sortedByLoadingPriority
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.stringProp
@@ -35,7 +39,7 @@ internal fun resolveParsedVWorldZoneCode(
 class VWorldRepository @Inject constructor(
     private val vWorldApi: VWorldApi,
     moshi: Moshi,
-    @javax.inject.Named("VWorldApiKey") private val apiKey: String
+    private val keys: VWorldKeySource,
 ) {
     // VWorld WFS 의 outputFormat=application/json 응답은 wrapper 없는 표준 GeoJSON
      // FeatureCollection 이다 (iOS 와 동일). 이전 `VWorldWfsResponse` (response.result.
@@ -88,20 +92,19 @@ class VWorldRepository @Inject constructor(
         if (cachedValid != null) return Result.success(cachedValid)
 
         return try {
-            val body = vWorldApi.getFeatures(
-                typeName = layer.typeName,
-                bbox = bbox,
-                key = apiKey
-            )
-            val text = body.string()
+            // 키 오류(만료·미등록)면 원격 설정을 다시 받아 다른 키로 한 번씩 재시도한다.
+            val text = requestWithVWorldKeyRetry(keys, ::isVWorldKeyErrorBody) { key ->
+                vWorldApi.getFeatures(
+                    typeName = layer.typeName,
+                    bbox = bbox,
+                    key = key
+                ).use { it.string() }
+            }
 
             // VWorld 는 인증/서비스 오류 시 JSON 이 아닌 XML <ServiceException> 을 반환한다.
             // Moshi 로 디코딩하면 의미 없는 JsonEncodingException 만 나오므로 본문을 먼저 검사한다.
-            val trimmed = text.trimStart()
-            if (trimmed.startsWith("<") || trimmed.startsWith("<?xml")) {
-                throw if (text.contains("INVALID_KEY", ignoreCase = true) ||
-                    text.contains("등록되지 않은 인증키")
-                ) {
+            if (isVWorldServiceExceptionBody(text)) {
+                throw if (isVWorldKeyErrorBody(text)) {
                     VWorldServiceException.InvalidKey(text.extractServiceExceptionDetail())
                 } else {
                     VWorldServiceException.Other(text.extractServiceExceptionDetail())
@@ -125,8 +128,8 @@ class VWorldRepository @Inject constructor(
             Log.d(TAG, "${layer.displayName}: ${zones.size}개 구역 로드 완료")
             Result.success(zones)
         } catch (e: VWorldServiceException.InvalidKey) {
-            // 사용자 액션 가능한 에러: BuildConfig.VWORLD_API_KEY (local.properties) 점검 필요.
-            Log.e(TAG, "${layer.displayName} - VWorld INVALID_KEY: local.properties 의 VWORLD_API_KEY 가 VWorld 측에 등록되지 않았거나 만료되었습니다. (${e.message})")
+            // 내장 키와 원격 키를 모두 시도한 뒤에도 키 오류다. 원격 설정의 키를 바꿔야 한다.
+            Log.e(TAG, "${layer.displayName} - VWorld 키 오류(재시도 뒤): ${e.message}")
             Result.failure(e)
         } catch (e: VWorldServiceException.Other) {
             Log.e(TAG, "${layer.displayName} - VWorld 서비스 오류: ${e.message}")
@@ -171,8 +174,8 @@ class VWorldRepository @Inject constructor(
         layers.sortedByLoadingPriority().map { layer ->
             async {
                 val result = fetchFlightZones(layer, bbox)
-                // 인증키 오류는 모든 레이어 공통 원인이므로 첫 발견 시 throw 하여
-                // 호출자(MapViewModel) 가 사용자에게 명확히 안내하게 한다.
+                // 재시도 뒤에도 남은 인증키 오류는 모든 레이어 공통 원인이므로 첫 발견 시 throw 하여
+                // 호출자(MapViewModel) 가 오류 안내를 한 번만 띄우게 한다.
                 result.exceptionOrNull()?.let { ex ->
                     if (ex is VWorldServiceException.InvalidKey) throw ex
                 }
