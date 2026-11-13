@@ -106,11 +106,10 @@ class VWorldKeyProvider internal constructor(
                     }
                 }
                 VWorldKeyConfigResult.MissingKey -> {
-                    if (remoteKey != null) {
-                        dataStore.edit { it.remove(RemoteKeyPreference) }
-                        remoteKey = null
-                        log("설정에 키가 없어 저장된 원격 키를 지웠습니다")
-                    }
+                    // 형식이 틀려 쓰지 않던 저장값도 지운다.
+                    dataStore.edit { it.remove(RemoteKeyPreference) }
+                    remoteKey = null
+                    log("설정에 키가 없어 저장된 원격 키를 지웠습니다")
                 }
                 VWorldKeyConfigResult.Ignored -> log("알 수 없는 설정 형식이라 무시합니다")
             }

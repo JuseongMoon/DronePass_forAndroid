@@ -77,19 +77,32 @@ internal fun parseVWorldKeyConfig(body: String, moshi: Moshi): VWorldKeyConfigRe
     return interpretVWorldKeyConfig(root)
 }
 
-/** V-World 는 인증·서비스 오류를 HTTP 200 XML `<ServiceException>` 으로 돌려준다. */
-internal fun isVWorldServiceExceptionBody(body: String): Boolean =
-    body.trimStart().startsWith("<")
-
-private val ServiceExceptionCodePattern =
-    Regex("<ServiceException[^>]*\\bcode\\s*=\\s*\"([^\"]*)\"", RegexOption.IGNORE_CASE)
+private val FeatureCollectionTypePattern =
+    Regex("\"type\"\\s*:\\s*\"FeatureCollection\"")
 
 /**
- * 키 오류인지 판정한다. ServiceException code 에 KEY 가 들어 있거나(EXPIRE_KEY, INVALID_KEY 등)
- * 본문에 인증키 오류 문구가 있으면 키 오류다.
+ * 정상 GeoJSON FeatureCollection 응답인지 본다. V-World 는 인증·서비스 오류를 HTTP 200 으로
+ * XML `<ServiceException>`, JSON 오류 객체, 점검 HTML 등으로 돌려준다.
+ */
+internal fun isVWorldFeatureCollectionBody(body: String): Boolean =
+    body.trimStart().startsWith("{") && FeatureCollectionTypePattern.containsMatchIn(body)
+
+private val ErrorCodePatterns = listOf(
+    // XML 속성: <ServiceException code="EXPIRE_KEY">. exceptionCode 같은 다른 이름은 제외한다.
+    Regex("(?<![A-Za-z0-9_:-])code\\s*=\\s*\"([^\"]*)\""),
+    // XML 요소: <code>INCORRECT_KEY</code>
+    Regex("<code>\\s*([^<]*?)\\s*</code>"),
+    // JSON: "code":"INVALID_KEY"
+    Regex("\"code\"\\s*:\\s*\"([^\"]*)\""),
+)
+
+/**
+ * 키 오류인지 판정한다. 정상 FeatureCollection 이 아닌 응답에서만 본다.
+ * code 속성, `<code>` 요소, JSON "code" 값에 KEY 가 들어 있거나(EXPIRE_KEY, INVALID_KEY 등)
+ * 본문에 '인증키'가 있으면 키 오류다.
  */
 internal fun isVWorldKeyErrorBody(body: String): Boolean {
-    if (!isVWorldServiceExceptionBody(body)) return false
-    val code = ServiceExceptionCodePattern.find(body)?.groupValues?.getOrNull(1).orEmpty()
-    return code.contains("KEY", ignoreCase = true) || body.contains("인증키")
+    if (isVWorldFeatureCollectionBody(body)) return false
+    val codes = ErrorCodePatterns.flatMap { pattern -> pattern.findAll(body).map { it.groupValues[1] } }
+    return codes.any { it.contains("KEY") } || body.contains("인증키")
 }

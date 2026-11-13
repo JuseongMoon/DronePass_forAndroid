@@ -98,8 +98,10 @@ class VWorldKeyProviderTest {
     fun `other service exceptions and json are not key errors`() {
         val domain = """<ServiceExceptionReport><ServiceException code="INCORRECT_DOMAIN">도메인 오류</ServiceException></ServiceExceptionReport>"""
         assertFalse(isVWorldKeyErrorBody(domain))
-        assertTrue(isVWorldServiceExceptionBody(domain))
-        assertFalse(isVWorldKeyErrorBody("""{"type":"FeatureCollection","features":[]}"""))
+        assertFalse(isVWorldFeatureCollectionBody(domain))
+        val collection = """{"type":"FeatureCollection","features":[{"properties":{"code":"KEY_ZONE","name":"인증키"}}]}"""
+        assertTrue(isVWorldFeatureCollectionBody(collection))
+        assertFalse(isVWorldKeyErrorBody(collection))
     }
 
     // ---- 키 선택·저장 ----
@@ -125,6 +127,14 @@ class VWorldKeyProviderTest {
         val store = testPreferencesDataStore(folder.root)
         store.edit { it[VWorldKeyProvider.RemoteKeyPreference] = "broken" }
         assertEquals(builtIn, provider(store, source = { error("unused") }).currentKey())
+    }
+
+    @Test
+    fun `received file without a key also clears a malformed stored value`() = runBlocking {
+        val store = testPreferencesDataStore(folder.root)
+        store.edit { it[VWorldKeyProvider.RemoteKeyPreference] = "broken" }
+        provider(store, source = { VWorldKeyConfigResult.MissingKey }).refresh()
+        assertNull(store.data.first()[VWorldKeyProvider.RemoteKeyPreference])
     }
 
     @Test

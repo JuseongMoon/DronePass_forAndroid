@@ -9,7 +9,7 @@ import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.VWorldApi
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.VWorldKeySource
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.VWorldServiceException
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.isVWorldKeyErrorBody
-import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.isVWorldServiceExceptionBody
+import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.isVWorldFeatureCollectionBody
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.requestWithVWorldKeyRetry
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.resolveZoneCode
 import com.ScienceFiction.DronePassAndroid.core.data.remote.vworld.sortedByLoadingPriority
@@ -101,9 +101,9 @@ class VWorldRepository @Inject constructor(
                 ).use { it.string() }
             }
 
-            // VWorld 는 인증/서비스 오류 시 JSON 이 아닌 XML <ServiceException> 을 반환한다.
-            // Moshi 로 디코딩하면 의미 없는 JsonEncodingException 만 나오므로 본문을 먼저 검사한다.
-            if (isVWorldServiceExceptionBody(text)) {
+            // VWorld 는 인증/서비스 오류도 HTTP 200 으로 XML <ServiceException>, JSON 오류 객체, 점검 HTML 등을 준다.
+            // 정상 FeatureCollection 이 아니면 디코딩하지 않고 오류로 돌린다(빈 결과로 보이지 않게).
+            if (!isVWorldFeatureCollectionBody(text)) {
                 throw if (isVWorldKeyErrorBody(text)) {
                     VWorldServiceException.InvalidKey(text.extractServiceExceptionDetail())
                 } else {
