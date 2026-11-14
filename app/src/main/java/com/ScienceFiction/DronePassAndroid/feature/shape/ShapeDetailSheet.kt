@@ -306,11 +306,14 @@ fun ShapeDetailSheet(
                 // 태그 (가리키는 태그가 없으면 태그 없음)
                 ShapeDetailRow(label = stringResource(R.string.shape_detail_tag)) {
                     if (detailTag != null) {
+                        // 예전에 만든 20자 넘는 이름은 한 줄로 줄여 보인다(D-71 ⑦)
                         Text(
                             text = detailTag.name,
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.End,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
                         )
                     } else {
                         Text(

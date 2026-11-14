@@ -1,5 +1,7 @@
 package com.ScienceFiction.DronePassAndroid.feature.shape
 
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.selected
 import com.ScienceFiction.DronePassAndroid.feature.tag.TagViewModel
 import com.ScienceFiction.DronePassAndroid.feature.tag.TagEditSheet
 import com.ScienceFiction.DronePassAndroid.domain.model.activeTag
@@ -1734,5 +1736,7 @@ private fun ShapeEditTagMenuItem(name: String, isSelected: Boolean, onClick: () 
             }
         },
         onClick = onClick,
+        // TalkBack 이 지금 고른 태그를 "선택됨"으로 읽는다(D-71 ⑤)
+        modifier = Modifier.semantics { selected = isSelected },
     )
 }

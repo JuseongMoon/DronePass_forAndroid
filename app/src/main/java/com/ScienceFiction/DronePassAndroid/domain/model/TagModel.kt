@@ -2,6 +2,8 @@ package com.ScienceFiction.DronePassAndroid.domain.model
 
 import com.ScienceFiction.DronePassAndroid.core.data.sync.isNewerUpdatedAt
 import com.ScienceFiction.DronePassAndroid.core.util.nameThenIdComparator
+import java.text.BreakIterator
+import java.util.Locale
 
 /**
  * 도형 태그 (도형당 하나, 색 없음). 경로 `users/{uid}/tags/{id}`.
@@ -23,6 +25,33 @@ data class TagModel(
     fun softDelete(now: Long = System.currentTimeMillis()): TagModel =
         copy(deletedAt = now, updatedAt = now)
 }
+
+/** 태그 이름 상한: 사용자가 보는 글자 20자(D-71 ⑦, team/DATA_CONTRACT.md "태그"). 서버 규칙은 길이를 검사하지 않는다 */
+const val TAG_NAME_MAX_LENGTH = 20
+
+/** 사용자가 보는 글자 수(문자 경계, 결합 문자·이모지 조합은 한 글자) */
+fun tagNameLength(name: String): Int {
+    if (name.isEmpty()) return 0
+    val iterator = BreakIterator.getCharacterInstance(Locale.ROOT).apply { setText(name) }
+    var count = 0
+    while (iterator.next() != BreakIterator.DONE) count++
+    return count
+}
+
+/**
+ * 입력 중 바뀐 이름을 받을지. 상한 안이면 받고, 이미 상한을 넘은 이름(예전에 만든 긴 이름)은 줄이는 것만 받는다.
+ * 막으면 긴 이름을 지우지도 못한다.
+ */
+fun shouldAcceptTagNameChange(oldName: String, newName: String): Boolean {
+    val newLength = tagNameLength(newName)
+    return newLength <= TAG_NAME_MAX_LENGTH || newLength < tagNameLength(oldName)
+}
+
+/** 저장해도 되는 길이인가(앞뒤 공백을 뺀 이름 기준) */
+fun isTagNameWithinLimit(name: String): Boolean = tagNameLength(name.trim()) <= TAG_NAME_MAX_LENGTH
+
+/** 같은 이름 판정용 키. 기기 로케일과 상관없이 같은 결과가 나오게 Locale.ROOT 로 소문자로 바꾼다 */
+fun tagNameDuplicateKey(name: String): String = name.lowercase(Locale.ROOT)
 
 /** 활성 태그 (드론과 같은 이름순, 같으면 id) */
 fun List<TagModel>.activeTags(): List<TagModel> =

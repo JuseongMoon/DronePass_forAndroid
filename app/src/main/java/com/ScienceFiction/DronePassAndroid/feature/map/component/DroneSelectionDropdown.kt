@@ -1,5 +1,8 @@
 package com.ScienceFiction.DronePassAndroid.feature.map.component
 
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.semantics.Role
+import androidx.compose.foundation.selection.toggleable
 import com.ScienceFiction.DronePassAndroid.domain.model.TagFilter
 import com.ScienceFiction.DronePassAndroid.core.data.repository.TagFilterState
 import androidx.compose.foundation.layout.height
@@ -628,7 +631,8 @@ private fun TagFilterRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onToggle(key) }
+            // TalkBack 이 체크박스로 읽고 보임 여부(선택됨/선택 안 됨)를 알려 준다
+            .toggleable(value = isVisible, role = Role.Checkbox, onValueChange = { onToggle(key) })
             .padding(
                 horizontal = DroneDropdownMenuItemHorizontalPadding,
                 vertical = DroneDropdownMenuItemVerticalPadding,
@@ -647,6 +651,8 @@ private fun TagFilterRow(
             fontSize = DroneDropdownTextSize,
             lineHeight = DroneDropdownMenuLineHeight,
             color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
     }
     if (!isLast) {

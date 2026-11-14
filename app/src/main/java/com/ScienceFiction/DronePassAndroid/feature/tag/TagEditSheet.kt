@@ -32,18 +32,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.domain.model.TagModel
-import com.ScienceFiction.DronePassAndroid.feature.drone.shouldAcceptDroneNameChange
+import com.ScienceFiction.DronePassAndroid.domain.model.isTagNameWithinLimit
+import com.ScienceFiction.DronePassAndroid.domain.model.shouldAcceptTagNameChange
 import com.ScienceFiction.DronePassAndroid.ui.component.DronePassModalBottomSheet
 import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedRowMinHeight
 import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedSection
@@ -69,19 +68,18 @@ internal fun TagEditSheet(
 ) {
     val isAddMode = tag == null
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val textMeasurer = rememberTextMeasurer()
-    val density = LocalDensity.current
     val nameTextStyle = MaterialTheme.typography.bodyLarge.copy(fontSize = 17.sp, letterSpacing = 0.sp)
-    val maxWidthPx = with(density) { TAG_NAME_MAX_WIDTH_DP.dp.toPx() }
     var name by remember(tag?.id) { mutableStateOf(tag?.name.orEmpty()) }
     var alertMessage by remember { mutableStateOf<String?>(null) }
     var isSaving by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
     val duplicateMessage = stringResource(R.string.tag_edit_alert_duplicate)
     val trimmedName = name.trim()
+    // 이름을 그대로 두면 길이를 묻지 않는다(예전에 만든 20자 넘는 이름도 그대로 닫을 수 있게)
+    val canSave = trimmedName.isNotEmpty() && (trimmedName == tag?.name || isTagNameWithinLimit(trimmedName))
 
     fun save() {
-        if (trimmedName.isEmpty() || isSaving) return
+        if (!canSave || isSaving) return
         // 이름을 그대로 두면 검사하지 않는다(가져오기로 같은 이름이 둘 생겨도 저장이 막히지 않게)
         if (trimmedName != tag?.name && viewModel.isDuplicateName(trimmedName, tag?.id)) {
             alertMessage = duplicateMessage
@@ -141,7 +139,7 @@ internal fun TagEditSheet(
                     modifier = Modifier.weight(1f),
                 )
                 Box(modifier = Modifier.width(TagEditHeaderSideWidth), contentAlignment = Alignment.CenterEnd) {
-                    TextButton(onClick = ::save, enabled = trimmedName.isNotEmpty() && !isSaving) {
+                    TextButton(onClick = ::save, enabled = canSave && !isSaving) {
                         Text(
                             stringResource(if (isAddMode) R.string.drone_edit_add else R.string.common_save),
                             fontSize = IosNavBarButtonFontSize,
@@ -155,13 +153,8 @@ internal fun TagEditSheet(
                 BasicTextField(
                     value = name,
                     onValueChange = { candidate ->
-                        val accept = shouldAcceptDroneNameChange(
-                            oldName = name,
-                            newName = candidate,
-                            maxWidthPx = maxWidthPx,
-                            measureTextWidth = { text -> textMeasurer.measure(text, nameTextStyle).size.width.toFloat() },
-                        )
-                        if (accept) name = candidate
+                        // 사용자가 보는 글자 20자까지(D-71 ⑦). 이미 넘은 이름은 줄이는 것만 받는다
+                        if (shouldAcceptTagNameChange(oldName = name, newName = candidate)) name = candidate
                     },
                     modifier = Modifier
                         .fillMaxWidth()
