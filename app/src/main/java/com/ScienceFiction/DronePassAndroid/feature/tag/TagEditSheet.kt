@@ -41,8 +41,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.domain.model.TagModel
-import com.ScienceFiction.DronePassAndroid.domain.model.isTagNameWithinLimit
-import com.ScienceFiction.DronePassAndroid.domain.model.shouldAcceptTagNameChange
+import com.ScienceFiction.DronePassAndroid.domain.model.TagName
+import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedHorizontalMargin
+import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedRowHorizontalPadding
+import com.ScienceFiction.DronePassAndroid.ui.theme.IosSecondaryLabel
+import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemOrange
+import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemRed
 import com.ScienceFiction.DronePassAndroid.ui.component.DronePassModalBottomSheet
 import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedRowMinHeight
 import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedSection
@@ -74,9 +78,14 @@ internal fun TagEditSheet(
     var isSaving by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
     val duplicateMessage = stringResource(R.string.tag_edit_alert_duplicate)
-    val trimmedName = name.trim()
-    // 이름을 그대로 두면 길이를 묻지 않는다(예전에 만든 20자 넘는 이름도 그대로 닫을 수 있게)
-    val canSave = trimmedName.isNotEmpty() && (trimmedName == tag?.name || isTagNameWithinLimit(trimmedName))
+    // 앞뒤 공백을 뗀 이름(계약 §태그 "이름", iOS TagName)
+    val trimmedName = TagName.normalized(name)
+    val nameLength = TagName.length(trimmedName)
+    // 20자를 넘는 옛 이름은 줄여야 저장할 수 있다
+    val isTooLong = nameLength > TagName.MAX_LENGTH
+    val canSave = TagName.isValid(name)
+    // 붙여 넣은 이름을 20자로 잘랐을 때 보이는 안내
+    var showsTruncatedNotice by remember { mutableStateOf(false) }
 
     fun save() {
         if (!canSave || isSaving) return
@@ -149,37 +158,47 @@ internal fun TagEditSheet(
                 }
             }
 
-            InsetGroupedSection(footer = stringResource(R.string.tag_edit_footer)) {
-                BasicTextField(
-                    value = name,
-                    onValueChange = { candidate ->
-                        // 사용자가 보는 글자 20자까지(D-71 ⑦). 이미 넘은 이름은 줄이는 것만 받는다
-                        if (shouldAcceptTagNameChange(oldName = name, newName = candidate)) name = candidate
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = InsetGroupedRowMinHeight)
-                        .focusRequester(focusRequester),
-                    singleLine = true,
-                    textStyle = nameTextStyle.copy(color = MaterialTheme.colorScheme.onSurface),
-                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                    keyboardActions = KeyboardActions(onDone = { save() }),
-                    decorationBox = { innerTextField ->
-                        Box(
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 11.dp),
-                            contentAlignment = Alignment.CenterStart,
-                        ) {
-                            if (name.isEmpty()) {
-                                Text(
-                                    text = stringResource(R.string.tag_edit_name_placeholder),
-                                    style = nameTextStyle,
-                                    color = IosPlaceholderText,
-                                )
+            // 입력란과 안내를 붙여 둔다(바깥 Column 의 20dp 간격이 끼지 않게)
+            Column {
+                InsetGroupedSection {
+                    BasicTextField(
+                        value = name,
+                        onValueChange = { candidate ->
+                            // 사용자가 보는 글자 20자까지(D-71 ⑦). 넘치면 앞 20자만 넣고 안내한다. 이미 넘은 옛 이름은 줄이는 것만 받는다
+                            val limited = TagName.limitedInput(old = name, new = candidate, isLoading = false)
+                            name = limited.text
+                            if (limited.truncated) showsTruncatedNotice = true
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = InsetGroupedRowMinHeight)
+                            .focusRequester(focusRequester),
+                        singleLine = true,
+                        textStyle = nameTextStyle.copy(color = MaterialTheme.colorScheme.onSurface),
+                        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = { save() }),
+                        decorationBox = { innerTextField ->
+                            Box(
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 11.dp),
+                                contentAlignment = Alignment.CenterStart,
+                            ) {
+                                if (name.isEmpty()) {
+                                    Text(
+                                        text = stringResource(R.string.tag_edit_name_placeholder),
+                                        style = nameTextStyle,
+                                        color = IosPlaceholderText,
+                                    )
+                                }
+                                innerTextField()
                             }
-                            innerTextField()
-                        }
-                    },
+                        },
+                    )
+                }
+                TagEditFooter(
+                    nameLength = nameLength,
+                    isTooLong = isTooLong,
+                    showsTruncatedNotice = showsTruncatedNotice,
                 )
             }
         }
@@ -193,6 +212,31 @@ internal fun TagEditSheet(
             confirmButton = {
                 TextButton(onClick = { alertMessage = null }) { Text(stringResource(R.string.common_confirm)) }
             },
+        )
+    }
+}
+
+/** 입력란 아래 안내: 줄여야 할 때(빨강) 또는 잘라 넣었을 때(주황) 한 줄, 그 아래 글자 수. iOS TagEditView footer 정합 */
+@Composable
+private fun TagEditFooter(nameLength: Int, isTooLong: Boolean, showsTruncatedNotice: Boolean) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = InsetGroupedHorizontalMargin + InsetGroupedRowHorizontalPadding)
+            .padding(top = 6.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        val warning = when {
+            isTooLong -> stringResource(R.string.tag_edit_too_long, nameLength) to IosSystemRed
+            showsTruncatedNotice -> stringResource(R.string.tag_edit_truncated) to IosSystemOrange
+            else -> null
+        }
+        warning?.let { (text, color) -> Text(text = text, fontSize = 13.sp, lineHeight = 18.sp, color = color) }
+        Text(
+            text = stringResource(R.string.tag_edit_footer_count, nameLength),
+            fontSize = 13.sp,
+            lineHeight = 18.sp,
+            color = IosSecondaryLabel,
         )
     }
 }

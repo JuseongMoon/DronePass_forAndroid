@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.tag
 
+import com.ScienceFiction.DronePassAndroid.domain.model.displayName
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.CustomAccessibilityAction
@@ -152,7 +153,7 @@ fun TagListScreen(viewModel: TagViewModel = hiltViewModel()) {
     deletingTag?.let { tag ->
         AlertDialog(
             onDismissRequest = { deletingTag = null },
-            title = { Text(stringResource(R.string.tag_delete_title, tag.name)) },
+            title = { Text(stringResource(R.string.tag_delete_title, tag.displayName)) },
             text = { Text(stringResource(R.string.tag_delete_message, shapeCounts[tag.id] ?: 0)) },
             confirmButton = {
                 TextButton(
@@ -184,7 +185,7 @@ private fun TagListItem(tag: TagModel, shapeCount: Int, onClick: () -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Text(
-            text = tag.name,
+            text = tag.displayName,
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurface,
             maxLines = 1,

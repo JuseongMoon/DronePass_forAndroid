@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.shape
 
+import com.ScienceFiction.DronePassAndroid.domain.model.displayName
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.selected
 import com.ScienceFiction.DronePassAndroid.feature.tag.TagViewModel
@@ -1650,7 +1651,7 @@ private fun ShapeEditTagSection(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = selectedTag?.name ?: stringResource(R.string.tag_none),
+                        text = selectedTag?.displayName ?: stringResource(R.string.tag_none),
                         color = if (selectedTag != null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -1676,7 +1677,7 @@ private fun ShapeEditTagSection(
                     activeTags.forEach { tag ->
                         IosMenuDivider()
                         ShapeEditTagMenuItem(
-                            name = tag.name,
+                            name = tag.displayName,
                             isSelected = tag.id == selectedTag?.id,
                             onClick = {
                                 onSelect(tag.id)

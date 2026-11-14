@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.shape
 
+import com.ScienceFiction.DronePassAndroid.domain.model.displayName
 import com.ScienceFiction.DronePassAndroid.core.util.shouldShowAppCopyConfirmation
 import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGray
 import androidx.compose.foundation.text.TextAutoSize
@@ -308,7 +309,7 @@ fun ShapeDetailSheet(
                     if (detailTag != null) {
                         // 예전에 만든 20자 넘는 이름은 한 줄로 줄여 보인다(D-71 ⑦)
                         Text(
-                            text = detailTag.name,
+                            text = detailTag.displayName,
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.End,

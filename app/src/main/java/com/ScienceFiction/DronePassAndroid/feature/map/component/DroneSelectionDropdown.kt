@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.map.component
 
+import com.ScienceFiction.DronePassAndroid.domain.model.displayName
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.selection.toggleable
@@ -612,7 +613,7 @@ private fun TagFilterSection(tagFilter: TagFilterState, onToggle: (String) -> Un
     tagFilter.activeTags.forEachIndexed { index, tag ->
         TagFilterRow(
             key = tag.id,
-            name = tag.name,
+            name = tag.displayName,
             isVisible = tagFilter.isKeyVisible(tag.id),
             isLast = index == tagFilter.activeTags.lastIndex,
             onToggle = onToggle,

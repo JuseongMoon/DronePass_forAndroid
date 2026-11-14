@@ -1049,7 +1049,9 @@
     <string name="tag_edit_title_add">New Tag</string>
     <string name="tag_edit_title_edit">Edit Tag</string>
     <string name="tag_edit_name_placeholder">Tag name</string>
-    <string name="tag_edit_footer">Keep it short. It appears at the top right of each shape in the saved list.</string>
+    <string name="tag_edit_footer_count">Up to 20 characters. It appears at the top right of each shape in the saved list. (%1$d/20)</string>
+    <string name="tag_edit_too_long">Shorten it to 20 characters to save. (Now %1$d)</string>
+    <string name="tag_edit_truncated">Only the first 20 characters were kept.</string>
     <string name="tag_edit_alert_title">Can\'t Save</string>
     <string name="tag_edit_alert_duplicate">A tag with this name already exists.</string>
     <string name="tag_delete_title">Delete the tag \'%1$s\'?</string>

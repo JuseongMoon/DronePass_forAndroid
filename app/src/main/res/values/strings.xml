@@ -1058,7 +1058,9 @@
     <string name="tag_edit_title_add">새 태그</string>
     <string name="tag_edit_title_edit">태그 편집</string>
     <string name="tag_edit_name_placeholder">태그 이름</string>
-    <string name="tag_edit_footer">짧게 입력해 주세요. 저장 목록에서 도형 오른쪽 위에 표시됩니다.</string>
+    <string name="tag_edit_footer_count">20자까지 입력할 수 있습니다. 저장 목록에서 도형 오른쪽 위에 표시됩니다. (%1$d/20)</string>
+    <string name="tag_edit_too_long">20자 이내로 줄여야 저장할 수 있습니다. (지금 %1$d자)</string>
+    <string name="tag_edit_truncated">20자가 넘어 앞의 20자만 넣었습니다.</string>
     <string name="tag_edit_alert_title">저장할 수 없습니다</string>
     <string name="tag_edit_alert_duplicate">같은 이름의 태그가 이미 있습니다.</string>
     <string name="tag_delete_title">\'%1$s\' 태그를 삭제할까요?</string>

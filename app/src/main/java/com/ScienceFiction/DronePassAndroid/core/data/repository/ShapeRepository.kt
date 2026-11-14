@@ -465,24 +465,13 @@ class ShapeRepository @Inject constructor(
 
     /**
      * 태그를 지운 뒤: 그 태그를 단 활성 도형의 태그를 비운다(도형은 지우지 않는다). 바꾼 도형 수를 돌려준다.
-     * D-71 ①(iOS TagManager.deleteTag 정합)으로 드론 색 맞춤([syncShapeColorsWithDrones])과 같은 절차를 따른다.
-     * - 관문이 닫혀 있으면(비로그인) 기기에서 비우고 updatedAt 을 올린다(가져오기 후보·다음 업로드에서 올라간다).
+     * D-71 ①(계약 §태그 "태그를 지우면", fixture deleteCases, iOS TagDeleteRepair 정합).
      * - 관문이 열려 있으면 그 도형들을 서버에서 읽어 병합한 뒤 비워 올린다([reconcileTagClearWithServer]).
-     *   서버를 읽지 못하면 기기에서 태그만 비우고 updatedAt 은 둔다([shapesTagClearedLocallyOnly]).
+     * - 서버를 읽지 못했거나 관문이 닫혀 있으면(비로그인) 기기에서 태그만 비우고 updatedAt 은 둔다
+     *   ([shapesTagClearedLocallyOnly]). 남은 옛 tagId 는 활성 태그를 가리키지 않아 어디서나 "태그 없음"이다.
      */
     suspend fun clearTagFromShapes(tagId: String): Int {
-        val ticket = session.syncTicket()
-        if (ticket == null) {
-            val now = System.currentTimeMillis()
-            val cleared = database.withTransaction {
-                shapeDao.getActiveShapesByTagId(tagId)
-                    .map { it.copy(tagId = null, updatedAt = now) }
-                    .also { if (it.isNotEmpty()) shapeDao.insertShapes(it) }
-            }
-            if (cleared.isEmpty()) return 0
-            markShapeLocalModification(now)
-            return cleared.size
-        }
+        val ticket = session.syncTicket() ?: return clearTagLocallyOnly(tagId)
         val candidateIds = shapeDao.getActiveShapesByTagId(tagId).map { it.id }
         if (candidateIds.isEmpty()) return 0
         val now = System.currentTimeMillis()
@@ -501,10 +490,7 @@ class ShapeRepository @Inject constructor(
             return 0
         } catch (e: Exception) {
             Log.w(TAG, "서버 도형을 읽지 못해 태그만 기기에서 비웁니다(updatedAt 그대로)", e)
-            return database.withTransaction {
-                shapesTagClearedLocallyOnly(shapeDao.getAllShapesOnce().map { it.toDomain() }, tagId)
-                    .also { changed -> if (changed.isNotEmpty()) shapeDao.insertShapes(changed.map { it.toEntity() }) }
-            }.size
+            return clearTagLocallyOnly(tagId)
         }
         if (result.localWrites.isNotEmpty()) reconcileEndDateAlarmsWithLocalShapes()
         if (result.toUpload.isEmpty()) return 0
@@ -521,6 +507,13 @@ class ShapeRepository @Inject constructor(
         }
         return result.toUpload.size
     }
+
+    /** 기기에서 태그만 비우고 updatedAt 은 둔다. 바꾼 도형 수를 돌려준다 */
+    private suspend fun clearTagLocallyOnly(tagId: String): Int =
+        database.withTransaction {
+            shapesTagClearedLocallyOnly(shapeDao.getAllShapesOnce().map { it.toDomain() }, tagId)
+                .also { changed -> if (changed.isNotEmpty()) shapeDao.insertShapes(changed.map { it.toEntity() }) }
+        }.size
 
     private suspend fun markShapeLocalModification(now: Long = System.currentTimeMillis()) {
         dataStore.edit { preferences ->

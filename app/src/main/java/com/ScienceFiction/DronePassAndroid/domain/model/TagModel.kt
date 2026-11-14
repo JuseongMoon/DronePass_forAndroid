@@ -26,29 +26,80 @@ data class TagModel(
         copy(deletedAt = now, updatedAt = now)
 }
 
-/** 태그 이름 상한: 사용자가 보는 글자 20자(D-71 ⑦, team/DATA_CONTRACT.md "태그"). 서버 규칙은 길이를 검사하지 않는다 */
-const val TAG_NAME_MAX_LENGTH = 20
-
-/** 사용자가 보는 글자 수(문자 경계, 결합 문자·이모지 조합은 한 글자) */
-fun tagNameLength(name: String): Int {
-    if (name.isEmpty()) return 0
-    val iterator = BreakIterator.getCharacterInstance(Locale.ROOT).apply { setText(name) }
-    var count = 0
-    while (iterator.next() != BreakIterator.DONE) count++
-    return count
-}
-
 /**
- * 입력 중 바뀐 이름을 받을지. 상한 안이면 받고, 이미 상한을 넘은 이름(예전에 만든 긴 이름)은 줄이는 것만 받는다.
- * 막으면 긴 이름을 지우지도 못한다.
+ * 태그 이름 규칙(D-71 ⑦, team/DATA_CONTRACT.md "태그 · 이름", fixture tag-cases.json nameCases·nameDisplayCases·nameInputCases).
+ * 앞뒤 공백을 뗀 뒤 사용자가 보는 글자(확장 문자소) 1~20자. 정규화(NFC 등)는 하지 않는다. 서버는 길이를 검사하지 않는다.
+ * iOS `TagName` 정합.
  */
-fun shouldAcceptTagNameChange(oldName: String, newName: String): Boolean {
-    val newLength = tagNameLength(newName)
-    return newLength <= TAG_NAME_MAX_LENGTH || newLength < tagNameLength(oldName)
+object TagName {
+    const val MAX_LENGTH = 20
+
+    /** 앞뒤에서 떼는 공백: Unicode Zs·Zl·Zp 와 U+0009~U+000D·U+0085 (Kotlin trim() 은 U+001C~001F 를 떼고 U+0085 를 남겨 다르다) */
+    private fun isTrimmable(codePoint: Int): Boolean =
+        codePoint in 0x09..0x0D || codePoint == 0x85 || when (Character.getType(codePoint)) {
+            Character.SPACE_SEPARATOR.toInt(),
+            Character.LINE_SEPARATOR.toInt(),
+            Character.PARAGRAPH_SEPARATOR.toInt(),
+            -> true
+            else -> false
+        }
+
+    fun normalized(raw: String): String {
+        var start = 0
+        var end = raw.length
+        while (start < end && isTrimmable(raw.codePointAt(start))) start += Character.charCount(raw.codePointAt(start))
+        while (end > start && isTrimmable(raw.codePointBefore(end))) end -= Character.charCount(raw.codePointBefore(end))
+        return raw.substring(start, end)
+    }
+
+    /** 문자 경계(확장 문자소) 끝 위치들 */
+    private fun boundaries(name: String): List<Int> {
+        if (name.isEmpty()) return emptyList()
+        val iterator = BreakIterator.getCharacterInstance(Locale.ROOT).apply { setText(name) }
+        val ends = mutableListOf<Int>()
+        var end = iterator.next()
+        while (end != BreakIterator.DONE) {
+            ends += end
+            end = iterator.next()
+        }
+        return ends
+    }
+
+    /** 사용자가 보는 글자 수 */
+    fun length(name: String): Int = boundaries(name).size
+
+    /** 앞에서부터 [count] 글자 */
+    fun prefix(name: String, count: Int): String {
+        val ends = boundaries(name)
+        return if (ends.size <= count) name else name.substring(0, ends[count - 1])
+    }
+
+    /** 저장해도 되는 이름인가: 공백을 뗀 뒤 1~20자 */
+    fun isValid(raw: String): Boolean {
+        val name = normalized(raw)
+        return name.isNotEmpty() && length(name) <= MAX_LENGTH
+    }
+
+    /** 표시용: 20자를 넘는 옛 이름은 앞 20자 + "…" (데이터는 바꾸지 않는다) */
+    fun display(name: String): String = if (length(name) > MAX_LENGTH) prefix(name, MAX_LENGTH) + "\u2026" else name
+
+    data class LimitedInput(val text: String, val truncated: Boolean)
+
+    /**
+     * 입력란 제한. 이미 20자를 넘는 옛 이름은 줄이는 변경(지우기)만 받는다. 20자 이하에서 넘치게 들어오면(붙여 넣기 등)
+     * 앞에서부터 20자까지만 남기고 [LimitedInput.truncated] 를 켠다. 처음 불러올 때는 막지 않는다.
+     */
+    fun limitedInput(old: String, new: String, isLoading: Boolean): LimitedInput {
+        if (isLoading || length(new) <= MAX_LENGTH) return LimitedInput(new, truncated = false)
+        if (length(old) > MAX_LENGTH) {
+            return if (length(new) < length(old)) LimitedInput(new, truncated = false) else LimitedInput(old, truncated = false)
+        }
+        return LimitedInput(prefix(new, MAX_LENGTH), truncated = true)
+    }
 }
 
-/** 저장해도 되는 길이인가(앞뒤 공백을 뺀 이름 기준) */
-fun isTagNameWithinLimit(name: String): Boolean = tagNameLength(name.trim()) <= TAG_NAME_MAX_LENGTH
+/** 화면에 보일 이름(20자를 넘으면 줄인다) */
+val TagModel.displayName: String get() = TagName.display(name)
 
 /** 같은 이름 판정용 키. 기기 로케일과 상관없이 같은 결과가 나오게 Locale.ROOT 로 소문자로 바꾼다 */
 fun tagNameDuplicateKey(name: String): String = name.lowercase(Locale.ROOT)

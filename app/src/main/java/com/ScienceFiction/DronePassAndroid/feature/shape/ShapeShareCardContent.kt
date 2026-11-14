@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.shape
 
+import com.ScienceFiction.DronePassAndroid.domain.model.displayName
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 import com.ScienceFiction.DronePassAndroid.domain.model.TagModel
@@ -70,7 +71,7 @@ internal fun buildShapeShareCardContent(
         height = shapeShareCardMeters(shape.height, locale),
         droneName = drone?.name?.takeIf { options.showDrone },
         droneColorHex = drone?.color?.takeIf { options.showDrone },
-        tagName = tag?.name?.takeIf { options.showTag },
+        tagName = tag?.displayName?.takeIf { options.showTag },
         coordinate = shape.baseCoordinate.formattedCoordinate.takeIf { options.showCoordinate },
         shapeColorHex = shape.color,
     )
