@@ -85,10 +85,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import com.ScienceFiction.DronePassAndroid.BuildConfig
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 import com.ScienceFiction.DronePassAndroid.domain.model.TagModel
+import com.ScienceFiction.DronePassAndroid.subscription.RemoteFeatureFlags
 import com.ScienceFiction.DronePassAndroid.ui.component.DronePassModalBottomSheet
 import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedDivider
 import com.ScienceFiction.DronePassAndroid.ui.component.InsetGroupedSection
@@ -145,8 +147,13 @@ internal fun ShapeSharePreviewSheet(
     val cardLayer = rememberGraphicsLayer()
     var mapStyle by remember { mutableStateOf(ShapeShareMapStyle.BASIC) }
     var isRendering by remember { mutableStateOf(false) }
-    // 공유 시점의 지도 스냅샷. 값이 있는 동안 숨긴 3배 카드를 그려 이미지로 기록한다
-    var renderSnapshot by remember { mutableStateOf<Bitmap?>(null) }
+    // 지도 카드인지는 화면을 열 때 한 번 정한다. 미리보기와 저장·복사·공유 이미지가 늘 같아야 한다(D-71)
+    val showsMap = remember {
+        effectiveShareCardMapEnabled(RemoteFeatureFlags.shareCardMapEnabled.value, BuildConfig.SHARE_CARD_MAP_FORCE)
+    }
+    val isReady = !showsMap || mapController.isReady
+    // 내보낼 카드 한 장. 값이 있는 동안 숨긴 3배 카드를 그려 이미지로 기록한다
+    var renderJob by remember { mutableStateOf<ShapeShareRenderJob?>(null) }
     var pendingExport by remember { mutableStateOf(ShapeShareExport.SHARE) }
     var showError by remember { mutableStateOf(false) }
     // 카드 글자는 시스템 글꼴 배율과 상관없이 고정 크기다 (iOS 카드도 고정 pt)
@@ -157,16 +164,20 @@ internal fun ShapeSharePreviewSheet(
     val storageDeniedMessage = stringResource(R.string.shape_share_save_permission_denied)
 
     fun export(action: ShapeShareExport) {
-        if (isRendering || !mapController.isReady) return
+        if (isRendering || !isReady) return
         isRendering = true
         pendingExport = action
+        if (!showsMap) {
+            renderJob = ShapeShareRenderJob(mapSnapshot = null)
+            return
+        }
         coroutineScope.launch {
             val snapshot = mapController.snapshot()
             if (snapshot == null) {
                 isRendering = false
                 showError = true
             } else {
-                renderSnapshot = snapshot
+                renderJob = ShapeShareRenderJob(mapSnapshot = snapshot)
             }
         }
     }
@@ -190,16 +201,16 @@ internal fun ShapeSharePreviewSheet(
         }
     }
 
-    LaunchedEffect(renderSnapshot) {
-        if (renderSnapshot == null) return@LaunchedEffect
+    LaunchedEffect(renderJob) {
+        if (renderJob == null) return@LaunchedEffect
         // 숨긴 카드가 한 번 그려져 레이어에 기록될 때까지 기다린다
         withFrameNanos {}
         withFrameNanos {}
         val action = pendingExport
-        // renderSnapshot 을 비우면 이 효과가 취소되므로, 내보내기를 다 마친 뒤에 비운다
+        // renderJob 을 비우면 이 효과가 취소되므로, 내보내기를 다 마친 뒤에 비운다
         val image = runCatching { cardLayer.toImageBitmap().asAndroidBitmap() }.getOrNull()
         if (image == null) {
-            renderSnapshot = null
+            renderJob = null
             isRendering = false
             showError = true
             return@LaunchedEffect
@@ -233,7 +244,7 @@ internal fun ShapeSharePreviewSheet(
             }
         }
         isRendering = false
-        renderSnapshot = null
+        renderJob = null
     }
 
     DronePassModalBottomSheet(
@@ -275,7 +286,9 @@ internal fun ShapeSharePreviewSheet(
                                 spotColor = Color.Black.copy(alpha = 0.12f),
                             ),
                         ) {
-                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            if (!showsMap) {
+                                ShapeShareNoMapArea()
+                            } else Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                                 ShapeShareMap(
                                     shape = shape,
                                     colorHex = content.shapeColorHex,
@@ -290,7 +303,8 @@ internal fun ShapeSharePreviewSheet(
                         }
                     }
 
-                    Text(
+                    // 지도 없는 카드는 위치 조정 안내와 지도 유형 선택을 두지 않는다
+                    if (showsMap) Text(
                         text = stringResource(R.string.shape_share_hint),
                         fontSize = 13.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -298,14 +312,14 @@ internal fun ShapeSharePreviewSheet(
                         modifier = Modifier.padding(horizontal = 16.dp),
                     )
 
-                    ShapeShareMapStylePicker(
+                    if (showsMap) ShapeShareMapStylePicker(
                         selected = mapStyle,
                         onSelect = { mapStyle = it },
                         modifier = Modifier.width(ShapeShareCardWidth),
                     )
 
                     ShapeShareActionButton(
-                        isReady = mapController.isReady,
+                        isReady = isReady,
                         isRendering = isRendering && pendingExport == ShapeShareExport.SHARE,
                         enabled = !isRendering,
                         onClick = { export(ShapeShareExport.SHARE) },
@@ -320,7 +334,7 @@ internal fun ShapeSharePreviewSheet(
                             text = stringResource(R.string.shape_share_save),
                             icon = { Icon(Icons.Outlined.Download, contentDescription = null, modifier = Modifier.size(18.dp)) },
                             isBusy = isRendering && pendingExport == ShapeShareExport.SAVE,
-                            enabled = mapController.isReady && !isRendering,
+                            enabled = isReady && !isRendering,
                             onClick = ::saveToGallery,
                             modifier = Modifier.weight(1f),
                         )
@@ -328,7 +342,7 @@ internal fun ShapeSharePreviewSheet(
                             text = stringResource(R.string.shape_share_copy),
                             icon = { Icon(Icons.Outlined.ContentCopy, contentDescription = null, modifier = Modifier.size(18.dp)) },
                             isBusy = isRendering && pendingExport == ShapeShareExport.COPY,
-                            enabled = mapController.isReady && !isRendering,
+                            enabled = isReady && !isRendering,
                             onClick = { export(ShapeShareExport.COPY) },
                             modifier = Modifier.weight(1f),
                         )
@@ -337,8 +351,8 @@ internal fun ShapeSharePreviewSheet(
             }
 
             // 공유 이미지 렌더링: 지도 스냅샷을 넣은 카드를 3배 밀도(360dp → 1080px)로 화면 밖 레이어에 기록한다
-            renderSnapshot?.let { snapshot ->
-                ShapeShareCardRenderer(content = content, mapSnapshot = snapshot, layer = cardLayer)
+            renderJob?.let { job ->
+                ShapeShareCardRenderer(content = content, mapSnapshot = job.mapSnapshot, layer = cardLayer)
             }
         }
     }
@@ -633,10 +647,10 @@ private fun ShapeShareSecondaryButton(
 @Composable
 private fun ShapeShareCardRenderer(
     content: ShapeShareCardContent,
-    mapSnapshot: Bitmap,
+    mapSnapshot: Bitmap?,
     layer: GraphicsLayer,
 ) {
-    val mapImage = remember(mapSnapshot) { mapSnapshot.asImageBitmap() }
+    val mapImage = remember(mapSnapshot) { mapSnapshot?.asImageBitmap() }
     Box(
         modifier = Modifier
             .size(0.dp)
@@ -649,7 +663,9 @@ private fun ShapeShareCardRenderer(
                     layer.record { this@drawWithContent.drawContent() }
                 },
             ) {
-                Image(
+                if (mapImage == null) {
+                    ShapeShareNoMapArea()
+                } else Image(
                     bitmap = mapImage,
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
@@ -660,6 +676,9 @@ private fun ShapeShareCardRenderer(
         }
     }
 }
+
+/** 내보낼 카드 한 장. 지도 없는 카드는 [mapSnapshot] 이 null 이다. 같은 값이라도 요청마다 새 객체라 효과가 다시 돈다. */
+private class ShapeShareRenderJob(val mapSnapshot: Bitmap?)
 
 /**
  * 모서리 투명을 지키려고 PNG 로 저장한다. 앱 캐시의 공유 전용 폴더에 둔다.

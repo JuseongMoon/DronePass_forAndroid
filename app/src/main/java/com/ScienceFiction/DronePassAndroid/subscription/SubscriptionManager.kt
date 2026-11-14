@@ -565,7 +565,7 @@ class SubscriptionManager @Inject constructor(
             _limits.value = _limits.value.raised(config.limits)
             cutoff = cutoff.extended(config.legacyCutoff)
             currentRemoteMinimum = config.minSupportedVersion
-            RemoteFeatureFlags.update(config)
+            RemoteFeatureFlags.updateFetched(config)
             proClaimEnabled = config.proClaimEnabled
             // 설정이 구매 조회보다 늦게 오면 시작 때 보낼 기회를 놓친다. 받은 뒤 한 번 더 확인한다(24시간 간격은 그대로).
             sendProClaimIfDue(force = false)
