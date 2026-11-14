@@ -444,6 +444,12 @@
     <string name="shape_share_action">공유하기</string>
     <string name="shape_share_loading">지도를 불러오는 중…</string>
     <string name="shape_share_error">카드 이미지를 만들지 못했습니다. 다시 시도해 주세요.</string>
+    <string name="shape_share_save">사진에 저장</string>
+    <string name="shape_share_copy">복사</string>
+    <string name="shape_share_saved">사진에 저장했습니다.</string>
+    <string name="shape_share_save_error">사진에 저장하지 못했습니다. 다시 시도해 주세요.</string>
+    <string name="shape_share_copied">카드 이미지를 복사했습니다.</string>
+    <string name="shape_share_save_permission_denied">사진에 저장하려면 저장공간 권한을 허용해 주세요.</string>
     <string name="shape_share_card_radius">반경 %1$s</string>
     <string name="shape_share_card_height">고도 %1$s</string>
     <string name="shape_detail_drone_deleted">삭제된 드론</string>

@@ -1,10 +1,21 @@
 package com.ScienceFiction.DronePassAndroid.feature.shape
 
+import android.Manifest
 import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.media.MediaScannerConnection
 import android.net.Uri
+import android.os.Build
+import android.os.Environment
+import android.provider.MediaStore
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -29,9 +40,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.IosShare
+import androidx.compose.material.icons.outlined.ContentCopy
+import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -68,6 +82,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
@@ -91,12 +106,20 @@ private val ShapeSharePreviewHeaderSideWidth = 72.dp
 private val ShapeSharePreviewCardShape = RoundedCornerShape(20.dp)
 private val ShapeShareSegmentTrack = Color(0x1F767680)
 private const val ShapeShareCacheDirectory = "shared_cards"
+/** 복사한 PNG 를 두는 하위 폴더. 붙여 넣는 앱이 언제 읽을지 몰라 다음 복사 때까지 남긴다 */
+private const val ShapeShareClipboardDirectory = "clipboard"
+/** 사진에 저장할 때의 앨범(폴더) 이름 */
+private const val ShapeShareGalleryAlbum = "DronePass"
 /** 공유한 PNG 를 남겨 두는 시간 (1시간) */
 private const val ShapeShareFileRetentionMs = 60 * 60 * 1000L
 
+/** 카드 이미지를 만든 뒤 할 일. iOS 는 시스템 공유 시트가 저장·복사를 함께 주지만 Android 는 따로 둔다(D-71 ④) */
+private enum class ShapeShareExport { SHARE, SAVE, COPY }
+
 /**
  * 공유 카드 미리보기 (iOS ShapeSharePreviewView 정합).
- * 지도 구도와 유형을 고른 뒤 카드 이미지(1080×1350 PNG, 모서리 투명)를 만들어 시스템 공유 시트로 내보낸다.
+ * 지도 구도와 유형을 고른 뒤 카드 이미지(1080×1350 PNG, 모서리 투명)를 만들어 시스템 공유 시트로 내보내거나,
+ * 사진에 저장하거나, 클립보드에 복사한다.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -122,13 +145,19 @@ internal fun ShapeSharePreviewSheet(
     var isRendering by remember { mutableStateOf(false) }
     // 공유 시점의 지도 스냅샷. 값이 있는 동안 숨긴 3배 카드를 그려 이미지로 기록한다
     var renderSnapshot by remember { mutableStateOf<Bitmap?>(null) }
+    var pendingExport by remember { mutableStateOf(ShapeShareExport.SHARE) }
     var showError by remember { mutableStateOf(false) }
     // 카드 글자는 시스템 글꼴 배율과 상관없이 고정 크기다 (iOS 카드도 고정 pt)
     val cardDensity = Density(density.density, fontScale = 1f)
+    val savedMessage = stringResource(R.string.shape_share_saved)
+    val saveFailedMessage = stringResource(R.string.shape_share_save_error)
+    val copiedMessage = stringResource(R.string.shape_share_copied)
+    val storageDeniedMessage = stringResource(R.string.shape_share_save_permission_denied)
 
-    fun share() {
+    fun export(action: ShapeShareExport) {
         if (isRendering || !mapController.isReady) return
         isRendering = true
+        pendingExport = action
         coroutineScope.launch {
             val snapshot = mapController.snapshot()
             if (snapshot == null) {
@@ -140,21 +169,62 @@ internal fun ShapeSharePreviewSheet(
         }
     }
 
+    // Android 9(API 28)만 공용 사진 폴더에 쓰려면 저장공간 권한이 필요하다. 10 이상은 MediaStore 로 권한 없이 저장한다
+    val storagePermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) {
+            export(ShapeShareExport.SAVE)
+        } else {
+            Toast.makeText(context, storageDeniedMessage, Toast.LENGTH_LONG).show()
+        }
+    }
+
+    fun saveToGallery() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q &&
+            ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
+        ) {
+            storagePermissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        } else {
+            export(ShapeShareExport.SAVE)
+        }
+    }
+
     LaunchedEffect(renderSnapshot) {
         if (renderSnapshot == null) return@LaunchedEffect
         // 숨긴 카드가 한 번 그려져 레이어에 기록될 때까지 기다린다
         withFrameNanos {}
         withFrameNanos {}
-        val uri = runCatching {
-            val image = cardLayer.toImageBitmap().asAndroidBitmap()
-            withContext(Dispatchers.IO) { writeShapeShareCardPng(context, image) }
-        }.getOrNull()
+        val action = pendingExport
+        val image = runCatching { cardLayer.toImageBitmap().asAndroidBitmap() }.getOrNull()
         renderSnapshot = null
-        isRendering = false
-        if (uri == null) {
+        if (image == null) {
+            isRendering = false
             showError = true
-        } else {
-            startShapeShareChooser(context, uri, content.title)
+            return@LaunchedEffect
+        }
+        when (action) {
+            ShapeShareExport.SHARE -> {
+                val uri = runCatching { withContext(Dispatchers.IO) { writeShapeShareCardPng(context, image) } }.getOrNull()
+                isRendering = false
+                if (uri == null) showError = true else startShapeShareChooser(context, uri, content.title)
+            }
+            ShapeShareExport.SAVE -> {
+                val saved = runCatching { withContext(Dispatchers.IO) { saveShapeShareCardToGallery(context, image) } }.isSuccess
+                isRendering = false
+                Toast.makeText(context, if (saved) savedMessage else saveFailedMessage, Toast.LENGTH_SHORT).show()
+            }
+            ShapeShareExport.COPY -> {
+                val uri = runCatching { withContext(Dispatchers.IO) { writeShapeShareClipboardPng(context, image) } }.getOrNull()
+                isRendering = false
+                if (uri == null) {
+                    showError = true
+                } else {
+                    copyShapeShareCardToClipboard(context, uri, content.title)
+                    // Android 13 이상은 시스템이 복사 확인을 띄우므로 앱 안내를 겹쳐 띄우지 않는다
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+                        Toast.makeText(context, copiedMessage, Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
         }
     }
 
@@ -228,10 +298,33 @@ internal fun ShapeSharePreviewSheet(
 
                     ShapeShareActionButton(
                         isReady = mapController.isReady,
-                        isRendering = isRendering,
-                        onClick = ::share,
+                        isRendering = isRendering && pendingExport == ShapeShareExport.SHARE,
+                        enabled = !isRendering,
+                        onClick = { export(ShapeShareExport.SHARE) },
                         modifier = Modifier.width(ShapeShareCardWidth),
                     )
+
+                    Row(
+                        modifier = Modifier.width(ShapeShareCardWidth),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        ShapeShareSecondaryButton(
+                            text = stringResource(R.string.shape_share_save),
+                            icon = { Icon(Icons.Outlined.Download, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                            isBusy = isRendering && pendingExport == ShapeShareExport.SAVE,
+                            enabled = mapController.isReady && !isRendering,
+                            onClick = ::saveToGallery,
+                            modifier = Modifier.weight(1f),
+                        )
+                        ShapeShareSecondaryButton(
+                            text = stringResource(R.string.shape_share_copy),
+                            icon = { Icon(Icons.Outlined.ContentCopy, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                            isBusy = isRendering && pendingExport == ShapeShareExport.COPY,
+                            enabled = mapController.isReady && !isRendering,
+                            onClick = { export(ShapeShareExport.COPY) },
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
                 }
             }
 
@@ -465,12 +558,13 @@ private fun ShapeShareMapStylePicker(
 private fun ShapeShareActionButton(
     isReady: Boolean,
     isRendering: Boolean,
+    enabled: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Button(
         onClick = onClick,
-        enabled = isReady && !isRendering,
+        enabled = isReady && enabled,
         shape = RoundedCornerShape(12.dp),
         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF007AFF)),
         modifier = modifier.heightIn(min = 44.dp),
@@ -490,6 +584,37 @@ private fun ShapeShareActionButton(
             fontSize = 17.sp,
             fontWeight = FontWeight.SemiBold,
         )
+    }
+}
+
+/** 사진에 저장·복사 버튼. 공유 버튼보다 한 단계 낮은 모양(테두리만) */
+@Composable
+private fun ShapeShareSecondaryButton(
+    text: String,
+    icon: @Composable () -> Unit,
+    isBusy: Boolean,
+    enabled: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    OutlinedButton(
+        onClick = onClick,
+        enabled = enabled,
+        shape = RoundedCornerShape(12.dp),
+        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF007AFF)),
+        modifier = modifier.heightIn(min = 44.dp),
+    ) {
+        if (isBusy) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(18.dp),
+                strokeWidth = 2.dp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        } else {
+            icon()
+        }
+        Spacer(modifier = Modifier.width(6.dp))
+        Text(text = text, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
     }
 }
 
@@ -534,21 +659,75 @@ private fun ShapeShareCardRenderer(
  * [ShapeShareFileRetentionMs] 가 지난 것만 지운다.
  */
 private fun writeShapeShareCardPng(context: Context, image: Bitmap): Uri {
-    val softwareImage = if (image.config == Bitmap.Config.HARDWARE) {
-        image.copy(Bitmap.Config.ARGB_8888, false)
-    } else {
-        image
-    }
+    val softwareImage = softwareBitmap(image)
     val directory = File(context.cacheDir, ShapeShareCacheDirectory).apply {
         mkdirs()
         val expiredBefore = System.currentTimeMillis() - ShapeShareFileRetentionMs
-        listFiles()?.filter { it.lastModified() < expiredBefore }?.forEach { it.delete() }
+        listFiles()?.filter { it.isFile && it.lastModified() < expiredBefore }?.forEach { it.delete() }
     }
     val file = File(directory, "DronePass-${System.currentTimeMillis()}.png")
-    file.outputStream().use { output ->
-        check(softwareImage.compress(Bitmap.CompressFormat.PNG, 100, output)) { "PNG 인코딩 실패" }
-    }
+    file.outputStream().use { output -> writeShapeShareCardPngBytes(softwareImage, output) }
     return FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+}
+
+private fun softwareBitmap(image: Bitmap): Bitmap =
+    if (image.config == Bitmap.Config.HARDWARE) image.copy(Bitmap.Config.ARGB_8888, false) else image
+
+private fun writeShapeShareCardPngBytes(image: Bitmap, output: java.io.OutputStream) {
+    check(softwareBitmap(image).compress(Bitmap.CompressFormat.PNG, 100, output)) { "PNG 인코딩 실패" }
+}
+
+/**
+ * 복사용 PNG. 붙여 넣는 앱이 언제 읽을지 모르므로 시간으로 지우지 않고, 다음 복사 때 이전 파일을 지운다.
+ * 공유용 파일과 같은 FileProvider 경로(shared_cards/) 아래에 둔다.
+ */
+private fun writeShapeShareClipboardPng(context: Context, image: Bitmap): Uri {
+    val directory = File(File(context.cacheDir, ShapeShareCacheDirectory), ShapeShareClipboardDirectory).apply {
+        mkdirs()
+        listFiles()?.forEach { it.delete() }
+    }
+    val file = File(directory, "DronePass-${System.currentTimeMillis()}.png")
+    file.outputStream().use { output -> writeShapeShareCardPngBytes(image, output) }
+    return FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+}
+
+/** 클립보드에 이미지 URI 를 넣는다. 붙여 넣는 앱에는 시스템이 읽기 권한을 준다(FileProvider grantUriPermissions) */
+private fun copyShapeShareCardToClipboard(context: Context, uri: Uri, label: String) {
+    val clipboard = context.getSystemService(ClipboardManager::class.java) ?: error("클립보드 없음")
+    clipboard.setPrimaryClip(ClipData.newUri(context.contentResolver, label, uri))
+}
+
+/**
+ * 사진 앱에서 보이도록 공용 사진 폴더(Pictures/DronePass)에 PNG 로 저장한다. 모서리 투명은 그대로 둔다.
+ * - Android 10 이상: MediaStore 에 IS_PENDING 으로 넣고 다 쓴 뒤 연다(권한 없음).
+ * - Android 9: 저장공간 권한을 받은 뒤 파일로 쓰고 미디어 스캔으로 사진 앱에 알린다.
+ */
+private fun saveShapeShareCardToGallery(context: Context, image: Bitmap) {
+    val fileName = "DronePass-${System.currentTimeMillis()}.png"
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        val resolver = context.contentResolver
+        val values = ContentValues().apply {
+            put(MediaStore.Images.Media.DISPLAY_NAME, fileName)
+            put(MediaStore.Images.Media.MIME_TYPE, "image/png")
+            put(MediaStore.Images.Media.RELATIVE_PATH, "${Environment.DIRECTORY_PICTURES}/$ShapeShareGalleryAlbum")
+            put(MediaStore.Images.Media.IS_PENDING, 1)
+        }
+        val uri = checkNotNull(resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)) { "MediaStore 항목을 만들지 못함" }
+        try {
+            checkNotNull(resolver.openOutputStream(uri)) { "출력 스트림 없음" }.use { output -> writeShapeShareCardPngBytes(image, output) }
+            resolver.update(uri, ContentValues().apply { put(MediaStore.Images.Media.IS_PENDING, 0) }, null, null)
+        } catch (e: Exception) {
+            resolver.delete(uri, null, null)
+            throw e
+        }
+    } else {
+        @Suppress("DEPRECATION")
+        val directory = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), ShapeShareGalleryAlbum)
+        check(directory.isDirectory || directory.mkdirs()) { "사진 폴더를 만들지 못함" }
+        val file = File(directory, fileName)
+        file.outputStream().use { output -> writeShapeShareCardPngBytes(image, output) }
+        MediaScannerConnection.scanFile(context, arrayOf(file.absolutePath), arrayOf("image/png"), null)
+    }
 }
 
 private fun startShapeShareChooser(context: Context, uri: Uri, title: String) {

@@ -371,6 +371,12 @@
     <string name="shape_share_action">Share</string>
     <string name="shape_share_loading">Loading map…</string>
     <string name="shape_share_error">Couldn\'t create the card image. Please try again.</string>
+    <string name="shape_share_save">Save to Photos</string>
+    <string name="shape_share_copy">Copy</string>
+    <string name="shape_share_saved">Saved to Photos.</string>
+    <string name="shape_share_save_error">Couldn\'t save to Photos. Please try again.</string>
+    <string name="shape_share_copied">Card image copied.</string>
+    <string name="shape_share_save_permission_denied">Allow storage access to save to Photos.</string>
     <string name="shape_share_card_radius">Radius %1$s</string>
     <string name="shape_share_card_height">Altitude %1$s</string>
     <string name="shape_detail_drone_deleted">Deleted drone</string>

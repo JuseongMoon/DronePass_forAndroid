@@ -100,7 +100,11 @@ internal data class ShapeShareCardOptions(
      * 저장값에는 이 키가 항상 들어가므로 이미 고른 사용자는 그 값을 그대로 쓴다.
      */
     val simplifyAddress: Boolean = true,
-    val showCoordinate: Boolean = true,
+    /**
+     * 좌표는 처음 기본값을 끔으로 둔다(D-71 ⑥, 2026-11-14). 저장값에는 이 키가 항상 들어가므로
+     * 이미 고른 사용자는 그 값을 그대로 쓴다.
+     */
+    val showCoordinate: Boolean = false,
     val showPeriod: Boolean = true,
     val showDrone: Boolean = true,
     val showTag: Boolean = false,

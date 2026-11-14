@@ -62,6 +62,10 @@
 
     <!-- 재부팅 후 알림 재예약을 위한 권한 -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- 공유 카드 사진에 저장: Android 9 만 공용 사진 폴더에 쓰려면 필요하다(10 이상은 MediaStore, 권한 없음) -->
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
 
     <application
         android:name=".app.DronePassApplication"
