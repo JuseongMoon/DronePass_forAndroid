@@ -372,4 +372,57 @@ class ShapeRepositoryTest {
             updatedAt = updatedAt,
         )
     }
+
+    // ===== 태그 삭제 뒤 도형 태그 비우기 (D-71 ①) =====
+
+    @Test
+    fun `태그 삭제는 서버의 더 새로운 수정을 남기고 태그만 비운다`() {
+        val staleLocal = colorShape("S1", "옛 제목", "#007AFF", tagId = "T1", updatedAt = 1_000L)
+        val server = colorShape("S1", "다른 기기에서 고친 제목", "#007AFF", tagId = "T1", updatedAt = 2_000L)
+        val result = reconcileTagClearWithServer(listOf(staleLocal), listOf(server), tagId = "T1", nowMillis = 9_000L)
+        val upload = result.toUpload.single()
+        assertEquals("다른 기기에서 고친 제목", upload.title)
+        assertNull(upload.tagId)
+        assertEquals(9_000L, upload.updatedAt)
+        assertEquals(listOf(upload), result.localWrites)
+    }
+
+    @Test
+    fun `다른 기기가 이미 태그를 바꾼 도형은 서버 값만 반영하고 올리지 않는다`() {
+        val staleLocal = colorShape("S1", "옛 제목", "#007AFF", tagId = "T1", updatedAt = 1_000L)
+        val server = colorShape("S1", "새 제목", "#007AFF", tagId = "T2", updatedAt = 2_000L)
+        val result = reconcileTagClearWithServer(listOf(staleLocal), listOf(server), tagId = "T1", nowMillis = 9_000L)
+        assertTrue(result.toUpload.isEmpty())
+        assertEquals(listOf(server), result.localWrites)
+    }
+
+    @Test
+    fun `기기에서 더 새로 고친 도형과 서버에 없는 도형은 기기 값에서 태그를 비운다`() {
+        val newerLocal = colorShape("S1", "기기에서 고침", "#007AFF", tagId = "T1", updatedAt = 3_000L)
+        val server = colorShape("S1", "서버", "#007AFF", tagId = "T1", updatedAt = 2_000L)
+        val localOnly = colorShape("S2", "기기에만", "#007AFF", tagId = "T1", updatedAt = 1_000L)
+        val result = reconcileTagClearWithServer(listOf(newerLocal, localOnly), listOf(server), tagId = "T1", nowMillis = 9_000L)
+        assertEquals(listOf("기기에서 고침", "기기에만"), result.toUpload.map { it.title })
+        assertTrue(result.toUpload.all { it.tagId == null && it.updatedAt == 9_000L })
+    }
+
+    @Test
+    fun `서버에서 지워진 도형과 다른 태그 도형은 건드리지 않는다`() {
+        val local = colorShape("S1", "기기", "#007AFF", tagId = "T1", updatedAt = 1_000L)
+        val serverDeleted = colorShape("S1", "기기", "#007AFF", tagId = "T1", updatedAt = 2_000L, deletedAt = 2_000L)
+        val other = colorShape("S2", "다른 태그", "#007AFF", tagId = "T2", updatedAt = 1_000L)
+        val result = reconcileTagClearWithServer(listOf(local, other), listOf(serverDeleted), tagId = "T1", nowMillis = 9_000L)
+        assertTrue(result.toUpload.isEmpty())
+        assertEquals(listOf(serverDeleted), result.localWrites)
+    }
+
+    @Test
+    fun `서버를 읽지 못하면 태그만 비우고 updatedAt 은 그대로 둔다`() {
+        val local = colorShape("S1", "옛 제목", "#007AFF", tagId = "T1", updatedAt = 1_000L)
+        val other = colorShape("S2", "다른 태그", "#007AFF", tagId = "T2", updatedAt = 1_000L)
+        val cleared = shapesTagClearedLocallyOnly(listOf(local, other), "T1").single()
+        assertEquals("S1", cleared.id)
+        assertNull(cleared.tagId)
+        assertEquals(1_000L, cleared.updatedAt)
+    }
 }
