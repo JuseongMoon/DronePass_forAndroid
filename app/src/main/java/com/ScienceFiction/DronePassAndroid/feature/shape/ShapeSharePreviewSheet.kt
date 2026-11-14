@@ -13,6 +13,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -110,6 +111,7 @@ private const val ShapeShareCacheDirectory = "shared_cards"
 private const val ShapeShareClipboardDirectory = "clipboard"
 /** 사진에 저장할 때의 앨범(폴더) 이름 */
 private const val ShapeShareGalleryAlbum = "DronePass"
+private const val ShapeShareLogTag = "ShapeSharePreview"
 /** 공유한 PNG 를 남겨 두는 시간 (1시간) */
 private const val ShapeShareFileRetentionMs = 60 * 60 * 1000L
 
@@ -194,27 +196,31 @@ internal fun ShapeSharePreviewSheet(
         withFrameNanos {}
         withFrameNanos {}
         val action = pendingExport
+        // renderSnapshot 을 비우면 이 효과가 취소되므로, 내보내기를 다 마친 뒤에 비운다
         val image = runCatching { cardLayer.toImageBitmap().asAndroidBitmap() }.getOrNull()
-        renderSnapshot = null
         if (image == null) {
+            renderSnapshot = null
             isRendering = false
             showError = true
             return@LaunchedEffect
         }
         when (action) {
             ShapeShareExport.SHARE -> {
-                val uri = runCatching { withContext(Dispatchers.IO) { writeShapeShareCardPng(context, image) } }.getOrNull()
-                isRendering = false
+                val uri = runCatching { withContext(Dispatchers.IO) { writeShapeShareCardPng(context, image) } }
+                    .onFailure { Log.w(ShapeShareLogTag, "공유 카드 파일 만들기 실패", it) }
+                    .getOrNull()
                 if (uri == null) showError = true else startShapeShareChooser(context, uri, content.title)
             }
             ShapeShareExport.SAVE -> {
-                val saved = runCatching { withContext(Dispatchers.IO) { saveShapeShareCardToGallery(context, image) } }.isSuccess
-                isRendering = false
+                val saved = runCatching { withContext(Dispatchers.IO) { saveShapeShareCardToGallery(context, image) } }
+                    .onFailure { Log.w(ShapeShareLogTag, "공유 카드 사진 저장 실패", it) }
+                    .isSuccess
                 Toast.makeText(context, if (saved) savedMessage else saveFailedMessage, Toast.LENGTH_SHORT).show()
             }
             ShapeShareExport.COPY -> {
-                val uri = runCatching { withContext(Dispatchers.IO) { writeShapeShareClipboardPng(context, image) } }.getOrNull()
-                isRendering = false
+                val uri = runCatching { withContext(Dispatchers.IO) { writeShapeShareClipboardPng(context, image) } }
+                    .onFailure { Log.w(ShapeShareLogTag, "공유 카드 복사 파일 만들기 실패", it) }
+                    .getOrNull()
                 if (uri == null) {
                     showError = true
                 } else {
@@ -226,6 +232,8 @@ internal fun ShapeSharePreviewSheet(
                 }
             }
         }
+        isRendering = false
+        renderSnapshot = null
     }
 
     DronePassModalBottomSheet(
