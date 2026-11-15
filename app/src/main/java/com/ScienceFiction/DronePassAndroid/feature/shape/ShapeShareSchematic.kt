@@ -193,9 +193,9 @@ internal data class ShapeShareSchematicPalette(val background: Rgb) {
     val compassRim: Rgb get() = if (isLight) Rgb(0.25, 0.26, 0.29) else Rgb(0.93, 0.94, 0.96)
     /**
      * 나침반 뒤 바탕 원(11/15 대표). 확대한 원 테두리가 나침반과 겹쳐도 북쪽 바늘이 보이게 한다. 축척에는 바탕을 두지 않는다.
-     * 값은 iOS 커밋이 나오면 맞춘다(지금은 밝음 = 흰색, 어두움 = 어두운 바탕색, 둘 다 [COMPASS_BACKGROUND_ALPHA]).
+     * 값은 iOS compassFace 와 같다(불투명도 [COMPASS_BACKGROUND_ALPHA]).
      */
-    val compassBackground: Rgb get() = if (isLight) Rgb(1.0, 1.0, 1.0) else darkBackground
+    val compassBackground: Rgb get() = if (isLight) Rgb(1.0, 1.0, 1.0) else Rgb(0.10, 0.11, 0.13)
 
     companion object {
         /** 지금 카드가 쓰는 바탕(카드는 다크 모드와 상관없이 늘 밝게 그린다) */
