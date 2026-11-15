@@ -141,7 +141,6 @@ Geocoding/Reverse Geocoding REST API는 `NAVER_MAP_KEY_ID`와
 | `POST_NOTIFICATIONS` | 알림 (Android 13+) |
 | `SCHEDULE_EXACT_ALARM` | 정확한 알람 예약 (Android 12+) |
 | `RECEIVE_BOOT_COMPLETED` | 재부팅 후 알림 재예약 |
-| `WRITE_EXTERNAL_STORAGE` (`maxSdkVersion="28"`) | 공유 카드 사진에 저장 (Android 9만. 10 이상은 MediaStore라 권한 없음) |
 
 같은 파일에 **제거 지시**(`tools:node="remove"`) 3건이 있습니다. 선언이 아니라 **라이브러리가 주입하는 것을
 막는 것**이므로 지우지 마십시오.

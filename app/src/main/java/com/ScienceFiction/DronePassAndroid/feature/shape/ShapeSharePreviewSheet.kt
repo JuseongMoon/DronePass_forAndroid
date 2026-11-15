@@ -203,7 +203,9 @@ internal fun ShapeSharePreviewSheet(
         }
     }
 
-    // Android 9(API 28)만 공용 사진 폴더에 쓰려면 저장공간 권한이 필요하다. 10 이상은 MediaStore 로 권한 없이 저장한다
+    // Android 9(API 28)만 공용 사진 폴더에 쓰려면 저장공간 권한이 필요하다. 10 이상은 MediaStore 로 권한 없이 저장한다.
+    // D-74: 공유 입구를 숨긴 동안은 매니페스트에 이 권한을 선언하지 않는다. 그동안 Android 9 에서는 요청이 바로 거절되어
+    // 안내 토스트만 뜬다. 공유 카드를 지도와 함께 낼 때 선언을 다시 넣는다.
     val storagePermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) {
             export(ShapeShareExport.SAVE)
