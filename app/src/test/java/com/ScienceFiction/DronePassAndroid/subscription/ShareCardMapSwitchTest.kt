@@ -52,6 +52,14 @@ class ShareCardMapSwitchTest {
         assertFalse(RemoteFeatureFlags.shareCardMapEnabled.value)
     }
 
+    @Test fun `이번 실행에서 앞서 켜졌어도 다음 받기가 실패하면 끈다`() {
+        RemoteFeatureFlags.updateFetched(parse("""{"locationAudit":{"uploadEnabled":true},"shareCardMap":{"enabled":true}}"""))
+        RemoteFeatureFlags.markFetchFailed()
+        assertFalse(RemoteFeatureFlags.shareCardMapEnabled.value)
+        // 다른 플래그는 그대로 둔다
+        assertTrue(RemoteFeatureFlags.locationAuditUploadEnabled.value)
+    }
+
     @Test fun `개발 빌드 강제 값이 원격 값보다 앞선다`() {
         assertTrue(effectiveShareCardMapEnabled(remoteFetchedEnabled = false, debugForce = "on"))
         assertFalse(effectiveShareCardMapEnabled(remoteFetchedEnabled = true, debugForce = "off"))

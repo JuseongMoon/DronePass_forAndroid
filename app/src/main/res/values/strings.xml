@@ -1044,6 +1044,11 @@
     <string name="shape_share_options_drone">드론 이름</string>
     <string name="shape_share_options_tag">태그</string>
     <string name="shape_share_options_footer">지도, 제목, 반경·고도, 로고는 항상 들어갑니다.</string>
+    <string name="shape_share_options_footer_no_map">제목, 반경·고도, 로고는 항상 들어갑니다.</string>
+    <string name="shape_share_schematic_a11y_circle">도형 그림: 반경 %1$s 원, 축척 막대 %2$s, 위쪽이 북쪽입니다.</string>
+    <string name="shape_share_schematic_a11y_point">도형 그림: 기준 위치를 점으로 표시했고, 위쪽이 북쪽입니다.</string>
+    <string name="shape_share_schematic_a11y_circle_rotated">도형 그림: 반경 %1$s 원, 축척 막대 %2$s, 북쪽은 위에서 시계 방향으로 %3$d° 돌아가 있습니다.</string>
+    <string name="shape_share_schematic_compass">북쪽을 위로</string>
     <string name="tag_none">태그 없음</string>
     <string name="tag_filter_active">태그 필터</string>
     <string name="tag_list_title">태그 관리</string>

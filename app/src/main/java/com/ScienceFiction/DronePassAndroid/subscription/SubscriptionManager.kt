@@ -560,8 +560,13 @@ class SubscriptionManager @Inject constructor(
                         readTimeout = 10_000
                     }).getInputStream().bufferedReader().use { it.readText() }
                 } catch (_: Exception) { null }
-            } ?: return@launch
-            val config = RemoteSubscriptionConfig.parse(json) ?: return@launch
+            }
+            // 공유 카드 지도는 받지 못하면 바로 끈다(오프라인이면 지도 타일도 받지 못한다). 다른 값은 지금처럼 유지(계약 §6)
+            val config = json?.let { RemoteSubscriptionConfig.parse(it) }
+            if (config == null) {
+                RemoteFeatureFlags.markFetchFailed()
+                return@launch
+            }
             _limits.value = _limits.value.raised(config.limits)
             cutoff = cutoff.extended(config.legacyCutoff)
             currentRemoteMinimum = config.minSupportedVersion

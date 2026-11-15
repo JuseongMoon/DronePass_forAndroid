@@ -141,4 +141,30 @@ class SubscriptionContractTest {
             assertEquals(row.int("count").toString(), row.string("expected"), countBucket(row.int("count")))
         }
     }
+    /**
+     * 공유 카드 지도 스위치(계약 §6, D-71). [SubscriptionManager] 순서대로 저장본을 되살린 뒤 이번 실행에서 받은 파일을 적용한다.
+     * 받은 파일이 없거나 설정으로 쓸 수 없으면 받기 실패로 본다.
+     */
+    @Test fun `all share card map cases match shared fixture`() {
+        val cases = fixture().cases("shareCardMapCases")
+        assertEquals(13, cases.size)
+        cases.forEach { row ->
+            val name = row.string("name")
+            RemoteFeatureFlags.markFetchFailed()
+            row.optionalString("cached")?.let { cached -> RemoteSubscriptionConfig.parse(cached)?.let(RemoteFeatureFlags::update) }
+            val fetched = row.optionalString("fetched")?.let { RemoteSubscriptionConfig.parse(it) }
+            if (fetched == null) RemoteFeatureFlags.markFetchFailed() else RemoteFeatureFlags.updateFetched(fetched)
+            check(row.containsKey("expectedFetchedFileUsed")) { "Missing expectedFetchedFileUsed" }
+            val expectedUsed = row["expectedFetchedFileUsed"] as Boolean?
+            if (row["fetched"] == null) {
+                assertNull(name, expectedUsed)
+            } else {
+                assertEquals(name, expectedUsed, fetched != null)
+            }
+            assertEquals(name, row.bool("expectedMapEnabled"), RemoteFeatureFlags.shareCardMapEnabled.value)
+            // 이 값의 형식이 틀려도 파일의 다른 섹션(한도)은 그대로 쓴다
+            if (fetched != null) assertNotNull(name, fetched.limits)
+        }
+        RemoteFeatureFlags.markFetchFailed()
+    }
 }

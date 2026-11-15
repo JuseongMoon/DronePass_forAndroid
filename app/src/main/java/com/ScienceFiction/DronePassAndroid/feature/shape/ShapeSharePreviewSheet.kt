@@ -54,10 +54,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animate
+import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -99,6 +103,7 @@ import com.ScienceFiction.DronePassAndroid.ui.component.IosNavBarButtonFontSize
 import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGroupedBackground
 import java.io.File
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -152,8 +157,24 @@ internal fun ShapeSharePreviewSheet(
         effectiveShareCardMapEnabled(RemoteFeatureFlags.shareCardMapEnabled.value, BuildConfig.SHARE_CARD_MAP_FORCE)
     }
     val isReady = !showsMap || mapController.isReady
+    // 지도 없는 카드의 회전(시계 방향 도, 0 = 북쪽 위)과 배율(칸에 맞춘 크기 = 1). 이 화면 안에서만 쓰고 저장하지 않는다
+    var schematicDegrees by remember { mutableDoubleStateOf(0.0) }
+    var schematicZoom by remember { mutableDoubleStateOf(1.0) }
+    var schematicAnimation by remember { mutableStateOf<Job?>(null) }
     // 내보낼 카드 한 장. 값이 있는 동안 숨긴 3배 카드를 그려 이미지로 기록한다
     var renderJob by remember { mutableStateOf<ShapeShareRenderJob?>(null) }
+
+    fun animateSchematic(toDegrees: Double, toZoom: Double, durationMillis: Int) {
+        val fromDegrees = schematicDegrees
+        val fromZoom = schematicZoom
+        schematicAnimation?.cancel()
+        schematicAnimation = coroutineScope.launch {
+            animate(0f, 1f, animationSpec = tween(durationMillis, easing = FastOutSlowInEasing)) { value, _ ->
+                schematicDegrees = fromDegrees + (toDegrees - fromDegrees) * value
+                schematicZoom = fromZoom + (toZoom - fromZoom) * value
+            }
+        }
+    }
     var pendingExport by remember { mutableStateOf(ShapeShareExport.SHARE) }
     var showError by remember { mutableStateOf(false) }
     // 카드 글자는 시스템 글꼴 배율과 상관없이 고정 크기다 (iOS 카드도 고정 pt)
@@ -168,7 +189,7 @@ internal fun ShapeSharePreviewSheet(
         isRendering = true
         pendingExport = action
         if (!showsMap) {
-            renderJob = ShapeShareRenderJob(mapSnapshot = null)
+            renderJob = ShapeShareRenderJob(mapSnapshot = null, schematicDegrees = schematicDegrees, schematicZoom = schematicZoom)
             return
         }
         coroutineScope.launch {
@@ -287,7 +308,33 @@ internal fun ShapeSharePreviewSheet(
                             ),
                         ) {
                             if (!showsMap) {
-                                ShapeShareNoMapArea()
+                                ShapeShareSchematic(
+                                    shape = shape,
+                                    colorHex = content.shapeColorHex,
+                                    rotationDegrees = schematicDegrees,
+                                    zoom = schematicZoom,
+                                    onTransform = { rotationDelta, zoomFactor ->
+                                        schematicAnimation?.cancel()
+                                        schematicDegrees += rotationDelta
+                                        schematicZoom = ShapeShareSchematicLayout.clampedZoom(schematicZoom * zoomFactor)
+                                    },
+                                    // 손을 떼면 북쪽에서 5° 안은 북쪽 위로, 1배에서 ±5% 안은 1배로 맞춘다
+                                    onTransformEnd = {
+                                        animateSchematic(
+                                            ShapeShareSchematicLayout.settledDegrees(schematicDegrees),
+                                            ShapeShareSchematicLayout.settledZoom(schematicZoom),
+                                            durationMillis = 150,
+                                        )
+                                    },
+                                    // 나침반은 회전만 되돌린다
+                                    onNorthUp = {
+                                        animateSchematic(
+                                            ShapeShareSchematicLayout.northUpDegrees(schematicDegrees),
+                                            schematicZoom,
+                                            durationMillis = 250,
+                                        )
+                                    },
+                                )
                             } else Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                                 ShapeShareMap(
                                     shape = shape,
@@ -352,7 +399,7 @@ internal fun ShapeSharePreviewSheet(
 
             // 공유 이미지 렌더링: 지도 스냅샷을 넣은 카드를 3배 밀도(360dp → 1080px)로 화면 밖 레이어에 기록한다
             renderJob?.let { job ->
-                ShapeShareCardRenderer(content = content, mapSnapshot = job.mapSnapshot, layer = cardLayer)
+                ShapeShareCardRenderer(content = content, shape = shape, job = job, layer = cardLayer)
             }
         }
     }
@@ -362,6 +409,7 @@ internal fun ShapeSharePreviewSheet(
             options = options,
             hasDrone = drone != null,
             hasTag = tag != null,
+            showsMap = showsMap,
             onChange = { updated ->
                 options = updated
                 preferences.edit().putString(ShapeShareCardOptions.STORAGE_KEY, updated.toJson()).apply()
@@ -427,6 +475,7 @@ private fun ShapeShareOptionsSheet(
     options: ShapeShareCardOptions,
     hasDrone: Boolean,
     hasTag: Boolean,
+    showsMap: Boolean,
     onChange: (ShapeShareCardOptions) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -502,7 +551,9 @@ private fun ShapeShareOptionsSheet(
             }
             InsetGroupedSection(
                 header = stringResource(R.string.shape_share_options_section_details),
-                footer = stringResource(R.string.shape_share_options_footer),
+                footer = stringResource(
+                    if (showsMap) R.string.shape_share_options_footer else R.string.shape_share_options_footer_no_map,
+                ),
             ) {
                 InsetGroupedToggleRow(
                     title = stringResource(R.string.shape_share_options_period),
@@ -647,10 +698,11 @@ private fun ShapeShareSecondaryButton(
 @Composable
 private fun ShapeShareCardRenderer(
     content: ShapeShareCardContent,
-    mapSnapshot: Bitmap?,
+    shape: ShapeModel,
+    job: ShapeShareRenderJob,
     layer: GraphicsLayer,
 ) {
-    val mapImage = remember(mapSnapshot) { mapSnapshot?.asImageBitmap() }
+    val mapImage = remember(job) { job.mapSnapshot?.asImageBitmap() }
     Box(
         modifier = Modifier
             .size(0.dp)
@@ -664,7 +716,13 @@ private fun ShapeShareCardRenderer(
                 },
             ) {
                 if (mapImage == null) {
-                    ShapeShareNoMapArea()
+                    // 미리보기와 같은 함수·같은 각도·같은 배율
+                    ShapeShareSchematic(
+                        shape = shape,
+                        colorHex = content.shapeColorHex,
+                        rotationDegrees = job.schematicDegrees,
+                        zoom = job.schematicZoom,
+                    )
                 } else Image(
                     bitmap = mapImage,
                     contentDescription = null,
@@ -677,8 +735,15 @@ private fun ShapeShareCardRenderer(
     }
 }
 
-/** 내보낼 카드 한 장. 지도 없는 카드는 [mapSnapshot] 이 null 이다. 같은 값이라도 요청마다 새 객체라 효과가 다시 돈다. */
-private class ShapeShareRenderJob(val mapSnapshot: Bitmap?)
+/**
+ * 내보낼 카드 한 장. 지도 없는 카드는 [mapSnapshot] 이 null 이고 누른 순간의 회전·배율로 그린다.
+ * 같은 값이라도 요청마다 새 객체라 효과가 다시 돈다.
+ */
+private class ShapeShareRenderJob(
+    val mapSnapshot: Bitmap?,
+    val schematicDegrees: Double = 0.0,
+    val schematicZoom: Double = 1.0,
+)
 
 /**
  * 모서리 투명을 지키려고 PNG 로 저장한다. 앱 캐시의 공유 전용 폴더에 둔다.

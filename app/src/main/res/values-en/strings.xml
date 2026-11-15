@@ -1035,6 +1035,11 @@
     <string name="shape_share_options_drone">Drone name</string>
     <string name="shape_share_options_tag">Tag</string>
     <string name="shape_share_options_footer">The map, title, radius, altitude and logo are always included.</string>
+    <string name="shape_share_options_footer_no_map">The title, radius, altitude and logo are always included.</string>
+    <string name="shape_share_schematic_a11y_circle">Shape diagram: circle with a %1$s radius, scale bar %2$s, north is up.</string>
+    <string name="shape_share_schematic_a11y_point">Shape diagram: the reference point is marked with a dot, north is up.</string>
+    <string name="shape_share_schematic_a11y_circle_rotated">Shape diagram: circle with a %1$s radius, scale bar %2$s, north is turned %3$d° clockwise from the top.</string>
+    <string name="shape_share_schematic_compass">North up</string>
     <string name="tag_none">No Tag</string>
     <string name="tag_filter_active">Tag filter</string>
     <string name="tag_list_title">Manage Tags</string>
