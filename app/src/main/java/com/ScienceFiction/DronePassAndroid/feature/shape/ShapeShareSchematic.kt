@@ -191,6 +191,11 @@ internal data class ShapeShareSchematicPalette(val background: Rgb) {
     val northNeedle: Rgb get() = Rgb(0.90, 0.22, 0.21)
     val southNeedle: Rgb get() = if (isLight) Rgb(0.66, 0.74, 0.84) else Rgb(0.62, 0.71, 0.83)
     val compassRim: Rgb get() = if (isLight) Rgb(0.25, 0.26, 0.29) else Rgb(0.93, 0.94, 0.96)
+    /**
+     * 나침반 뒤 바탕 원(11/15 대표). 확대한 원 테두리가 나침반과 겹쳐도 북쪽 바늘이 보이게 한다. 축척에는 바탕을 두지 않는다.
+     * 값은 iOS 커밋이 나오면 맞춘다(지금은 밝음 = 흰색, 어두움 = 어두운 바탕색, 둘 다 [COMPASS_BACKGROUND_ALPHA]).
+     */
+    val compassBackground: Rgb get() = if (isLight) Rgb(1.0, 1.0, 1.0) else darkBackground
 
     companion object {
         /** 지금 카드가 쓰는 바탕(카드는 다크 모드와 상관없이 늘 밝게 그린다) */
@@ -198,6 +203,8 @@ internal data class ShapeShareSchematicPalette(val background: Rgb) {
         /** 어두운 바탕 예시(지금은 쓰는 곳 없음, 렌더 확인용) */
         val darkBackground = Rgb(0.12, 0.13, 0.15)
         val light = ShapeShareSchematicPalette(lightBackground)
+        /** 나침반 바탕 원의 불투명도(불투명에 가깝게) */
+        const val COMPASS_BACKGROUND_ALPHA = 0.92f
     }
 }
 
@@ -383,6 +390,7 @@ private fun SchematicScaleBar(meters: Double, length: Dp, palette: ShapeShareSch
 
 /**
  * 북쪽을 가리키는 작은 나침반(빨강 바늘 = 북쪽, 옅은 청회색 바늘 = 남쪽). 그림이 돌아간 만큼 같이 돈다.
+ * 바탕 원 위에 테두리 링과 바늘을 그린다.
  * 누르기 쉽도록 둘레를 넓힌 영역을 두고, 그만큼 옮겨 그림 자리는 16dp 나침반과 같게 둔다.
  */
 @Composable
@@ -406,6 +414,10 @@ private fun SchematicCompass(degrees: Double, palette: ShapeShareSchematicPalett
                 // 외곽선은 테두리에만 둔다(바늘에 두르면 빨강 바늘 안쪽이 번진다)
                 val rim = 0.75.dp.toPx()
                 val rimRadius = size.minDimension / 2 - rim / 2
+                drawCircle(
+                    palette.compassBackground.color.copy(alpha = ShapeShareSchematicPalette.COMPASS_BACKGROUND_ALPHA),
+                    size.minDimension / 2,
+                )
                 drawCircle(palette.halo.color, rimRadius, style = Stroke(rim + haloPx * 2))
                 drawCircle(palette.compassRim.color.copy(alpha = 0.55f), rimRadius, style = Stroke(rim))
                 fun needle(tipY: Float) = Path().apply {

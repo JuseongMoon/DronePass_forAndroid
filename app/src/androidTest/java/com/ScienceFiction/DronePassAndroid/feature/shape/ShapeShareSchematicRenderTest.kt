@@ -54,6 +54,8 @@ class ShapeShareSchematicRenderTest {
             Case("${tag}_light_rot135", locale, degrees = 135.0),
             Case("${tag}_dark_rot30", locale, degrees = 30.0, dark = true),
             Case("${tag}_light_zoom2", locale, zoom = 2.0),
+            Case("${tag}_light_zoom2_rot30", locale, degrees = 30.0, zoom = 2.0),
+            Case("${tag}_dark_zoom2_rot30", locale, degrees = 30.0, zoom = 2.0, dark = true),
             Case("${tag}_light_zoom_half", locale, zoom = 0.5),
             Case("${tag}_light_point", locale, shapeType = ShapeType.POLYGON),
         )

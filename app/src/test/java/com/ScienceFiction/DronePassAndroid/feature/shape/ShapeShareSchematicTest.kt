@@ -116,6 +116,9 @@ class ShapeShareSchematicTest {
             assertTrue(contrast(palette.ink, palette.halo) > 4.5)
             assertTrue(palette.southNeedle.luminance > palette.northNeedle.luminance * 1.8)
             assertTrue(palette.southNeedle.b > palette.southNeedle.r)
+            // 나침반 바탕은 배경과 같은 톤이라 빨강 바늘이 원 테두리 위에서도 보인다
+            assertEquals(palette.tone, ShapeShareSchematicPalette(palette.compassBackground).tone)
+            assertTrue(contrast(palette.northNeedle, palette.compassBackground) > 3.0)
         }
         // 나침반 바늘은 확정 색(빨강 230,56,54 / 옅은 청회색 168,189,214)
         assertEquals(listOf(230, 56, 54), light.northNeedle.rgb255())
