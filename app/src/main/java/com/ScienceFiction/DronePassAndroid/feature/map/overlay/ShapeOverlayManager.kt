@@ -1,5 +1,7 @@
 package com.ScienceFiction.DronePassAndroid.feature.map.overlay
 
+import com.ScienceFiction.DronePassAndroid.feature.map.isMapShapeExpired
+import com.ScienceFiction.DronePassAndroid.feature.map.isMapShapeNotStarted
 import kotlin.math.roundToInt
 import android.graphics.Color
 import com.ScienceFiction.DronePassAndroid.core.util.parseIosOpaqueRgbHexColor
@@ -64,15 +66,20 @@ internal const val MapOverlaySystemGrayHex = "#8E8E93"
 internal const val MapOverlayFocusHighlightHex = "#FF3B30"
 internal const val MapOverlayDroneHighlightOutlineHex = "#333333"
 
+/*
+ * 만료·시작 전은 판정 시각 [nowMillis] 로 본다. 타임머신이 미래 시각을 가리키면 그 시각이다(D-85).
+ */
 internal fun calculateMapOverlayFillColor(
     shape: ShapeModel,
     highlightedDroneIds: Set<String>,
+    nowMillis: Long = System.currentTimeMillis(),
 ): Int {
-    val mainColor = mainMapOverlayColorFor(shape)
+    val mainColor = mainMapOverlayColorFor(shape, nowMillis)
     val isHighlighted = isMapDroneHighlighted(shape, highlightedDroneIds)
+    val notStarted = isMapShapeNotStarted(shape.flightStartDate, nowMillis)
     val alpha = when {
-        shape.isNotStarted && isHighlighted -> 0x80
-        shape.isNotStarted -> 0x33
+        notStarted && isHighlighted -> 0x80
+        notStarted -> 0x33
         isHighlighted -> 0xB3
         else -> 0x4D
     }
@@ -83,12 +90,14 @@ internal fun calculateMapOverlayFillColor(
 internal fun calculateMapOverlayOutlineColor(
     shape: ShapeModel,
     highlightedDroneIds: Set<String>,
+    nowMillis: Long = System.currentTimeMillis(),
 ): Int {
-    val mainColor = mainMapOverlayColorFor(shape)
+    val mainColor = mainMapOverlayColorFor(shape, nowMillis)
     val isHighlighted = isMapDroneHighlighted(shape, highlightedDroneIds)
+    val notStarted = isMapShapeNotStarted(shape.flightStartDate, nowMillis)
     return when {
-        shape.isNotStarted && isHighlighted -> parseMapOverlayColorSafe(MapOverlayDroneHighlightOutlineHex)
-        shape.isNotStarted -> withMapOverlayAlpha(mainColor, 0x80)
+        notStarted && isHighlighted -> parseMapOverlayColorSafe(MapOverlayDroneHighlightOutlineHex)
+        notStarted -> withMapOverlayAlpha(mainColor, 0x80)
         isHighlighted -> parseMapOverlayColorSafe(MapOverlayDroneHighlightOutlineHex)
         else -> mainColor
     }
@@ -104,12 +113,12 @@ internal fun mapOverlayPointsToPx(points: Int, density: Float): Int =
     (points * density).roundToInt().coerceAtLeast(1)
 
 /** iOS 와 같은 pt 값. 실제 SDK 에는 [mapOverlayPointsToPx] 로 바꿔 넣는다. */
-internal fun calculateMapOverlayOutlineWidth(shape: ShapeModel): Int {
-    return if (shape.isNotStarted) 1 else 2
+internal fun calculateMapOverlayOutlineWidth(shape: ShapeModel, nowMillis: Long = System.currentTimeMillis()): Int {
+    return if (isMapShapeNotStarted(shape.flightStartDate, nowMillis)) 1 else 2
 }
 
-private fun mainMapOverlayColorFor(shape: ShapeModel): Int {
-    return if (shape.isExpired) {
+private fun mainMapOverlayColorFor(shape: ShapeModel, nowMillis: Long): Int {
+    return if (isMapShapeExpired(shape.flightEndDate, nowMillis)) {
         parseMapOverlayColorSafe(MapOverlaySystemGrayHex)
     } else {
         parseMapOverlayColorSafe(shape.color)
@@ -175,6 +184,9 @@ class ShapeOverlayManager : MapTapSource {
         val updatedAt: Long
     )
 
+    /** 이번 갱신의 판정 시각(타임머신 시각 또는 지금). 상태가 바뀐 도형만 다시 그린다. */
+    private var renderNowMillis: Long = System.currentTimeMillis()
+
     private fun ShapeModel.toKey(): ShapeKey? {
         val kind = resolveMapShapeOverlayKind(this) ?: return null
         val coordinates = shapeOverlayCoordinates(this) ?: return null
@@ -186,8 +198,8 @@ class ShapeOverlayManager : MapTapSource {
             coordinates = coordinates,
             color = color,
             droneId = droneId,
-            isExpired = isExpired,
-            isNotStarted = isNotStarted,
+            isExpired = isMapShapeExpired(flightEndDate, renderNowMillis),
+            isNotStarted = isMapShapeNotStarted(flightStartDate, renderNowMillis),
             updatedAt = updatedAt
         )
     }
@@ -208,9 +220,14 @@ class ShapeOverlayManager : MapTapSource {
      * Diff: 신규는 add, 사라진 것은 remove, 속성 변경된 것만 재생성한다.
      * 한 도형의 updatedAt 만 변해도 100개를 전부 destroy/create 하던 동작을 피한다.
      */
-    fun updateOverlays(shapes: List<ShapeModel>, highlightedDroneIds: Set<String>) {
+    fun updateOverlays(
+        shapes: List<ShapeModel>,
+        highlightedDroneIds: Set<String>,
+        judgmentTimeMillis: Long? = null,
+    ) {
         val didHighlightChange = this.highlightedDroneIds != highlightedDroneIds
         this.highlightedDroneIds = highlightedDroneIds
+        renderNowMillis = judgmentTimeMillis ?: System.currentTimeMillis()
 
         val map = naverMap ?: return
         val uniqueShapes = uniqueMapOverlayShapesByFirstId(shapes)
@@ -323,18 +340,18 @@ class ShapeOverlayManager : MapTapSource {
      * - 만료 도형은 채움과 외곽선 모두 systemGray 기반
      */
     private fun calculateFillColor(shape: ShapeModel): Int {
-        return calculateMapOverlayFillColor(shape, highlightedDroneIds)
+        return calculateMapOverlayFillColor(shape, highlightedDroneIds, renderNowMillis)
     }
 
     /**
      * 도형의 상태에 따른 외곽선 색상을 계산한다.
      */
     private fun calculateOutlineColor(shape: ShapeModel): Int {
-        return calculateMapOverlayOutlineColor(shape, highlightedDroneIds)
+        return calculateMapOverlayOutlineColor(shape, highlightedDroneIds, renderNowMillis)
     }
 
     private fun calculateOutlineWidth(shape: ShapeModel): Int {
-        return calculateMapOverlayOutlineWidth(shape)
+        return calculateMapOverlayOutlineWidth(shape, renderNowMillis)
     }
 
     /**

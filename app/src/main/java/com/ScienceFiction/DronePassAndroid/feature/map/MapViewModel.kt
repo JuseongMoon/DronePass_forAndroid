@@ -1,5 +1,8 @@
 package com.ScienceFiction.DronePassAndroid.feature.map
 
+import com.ScienceFiction.DronePassAndroid.feature.timemachine.TimeMachineClock
+import com.ScienceFiction.DronePassAndroid.feature.timemachine.TimeMachineSelection
+import com.ScienceFiction.DronePassAndroid.feature.timemachine.timeMachineJudgmentTime
 import com.ScienceFiction.DronePassAndroid.core.util.launchCatchingStorageErrors
 import com.ScienceFiction.DronePassAndroid.core.location.LocationConsentRepository
 import com.ScienceFiction.DronePassAndroid.core.location.LocationPurpose
@@ -323,8 +326,12 @@ class MapViewModel @Inject constructor(
     private val subscriptionManager: SubscriptionManager,
     private val locationConsentRepository: LocationConsentRepository,
     private val mapCenterStore: MapCenterStore,
+    private val timeMachineClock: TimeMachineClock,
     @ApplicationContext private val appContext: Context,
 ) : ViewModel() {
+    /** 타임머신 선택(D-85). 미래 시각이면 지도 만료 회색·만료 숨김을 그 시각으로 판정한다. */
+    val timeMachineSelection: StateFlow<TimeMachineSelection?> = timeMachineClock.selection
+
     private var hasCheckedLegacyShapeMigration = false
     private var returnToShapeDetailAfterEditSave = false
     private var returnToShapeDetailAfterEditDismiss = false
@@ -1043,12 +1050,14 @@ class MapViewModel @Inject constructor(
         activeShapes,
         hideExpiredShapes,
         hideNotStartedShapes,
-        expirationTicker
-    ) { shapes, hideExpired, hideNotStarted, _ ->
+        expirationTicker,
+        timeMachineClock.selection,
+    ) { shapes, hideExpired, hideNotStarted, _, timeMachine ->
         filterShapesByMapVisibilitySettings(
             shapes = shapes,
             hideExpired = hideExpired,
             hideNotStarted = hideNotStarted,
+            now = timeMachineJudgmentTime(timeMachine, System.currentTimeMillis()),
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 

@@ -128,6 +128,7 @@ internal fun MapOverlayEffects(
 ) {
     // 화면에 직접 그리지 않는 영역에서만 collect — recomposition 범위 격리
     val filteredShapes by viewModel.filteredShapes.collectAsStateWithLifecycle()
+    val timeMachineSelection by viewModel.timeMachineSelection.collectAsStateWithLifecycle()
     // 지도 하이라이트는 선택과 별개다(빈 곳 탭은 하이라이트만 푼다)
     val highlightedShapeId by viewModel.highlightedShapeId.collectAsStateWithLifecycle()
     val highlightedDroneIds by viewModel.highlightedDroneIds.collectAsStateWithLifecycle()
@@ -182,14 +183,15 @@ internal fun MapOverlayEffects(
     }
 
     // 도형 오버레이 갱신 (만료/미시작 필터 적용된 filteredShapes 사용)
-    LaunchedEffect(filteredShapes, highlightedDroneIds, mapReady, isSketchMode) {
+    // 타임머신 시각이 바뀌면 만료·시작 전 상태가 바뀐 도형만 다시 그린다(D-85)
+    LaunchedEffect(filteredShapes, highlightedDroneIds, mapReady, isSketchMode, timeMachineSelection) {
         if (!shouldRenderShapeOverlays(mapReady = mapReady, isSketchMode = isSketchMode)) {
             if (mapReady && isSketchMode) {
                 overlayManager.clearOverlays()
             }
             return@LaunchedEffect
         }
-        overlayManager.updateOverlays(filteredShapes, highlightedDroneIds)
+        overlayManager.updateOverlays(filteredShapes, highlightedDroneIds, timeMachineSelection?.timeMillis)
     }
 
     // 선택 하이라이트

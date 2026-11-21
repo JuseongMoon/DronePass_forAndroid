@@ -79,6 +79,8 @@ fun SavedListScreen(
     val notStartedShapes by viewModel.notStartedShapes.collectAsStateWithLifecycle()
     val activeShapes by viewModel.activeFilteredShapes.collectAsStateWithLifecycle()
     val expiredShapes by viewModel.expiredShapes.collectAsStateWithLifecycle()
+    val listTimeMachine = rememberTimeMachineClock()
+    val listTimeMachineSelection by listTimeMachine.selection.collectAsStateWithLifecycle()
     val selectedShapeId by viewModel.selectedShapeId.collectAsStateWithLifecycle()
     val selectedShape by viewModel.selectedShape.collectAsStateWithLifecycle()
     var showShapeEditTargetDeleted by remember { mutableStateOf(false) }
@@ -227,6 +229,7 @@ fun SavedListScreen(
                                     },
                                     onDetailClick = { viewModel.onShapeSelected(shape.id) },
                                     tagName = tagFilterState.activeTags.activeTag(shape.tagId)?.name,
+                                    judgmentTimeMillis = listTimeMachineSelection?.timeMillis,
                                 )
                             }
                         }
@@ -257,6 +260,7 @@ fun SavedListScreen(
                                     },
                                     onDetailClick = { viewModel.onShapeSelected(shape.id) },
                                     tagName = tagFilterState.activeTags.activeTag(shape.tagId)?.name,
+                                    judgmentTimeMillis = listTimeMachineSelection?.timeMillis,
                                 )
                             }
                         }
@@ -287,6 +291,7 @@ fun SavedListScreen(
                                     },
                                     onDetailClick = { viewModel.onShapeSelected(shape.id) },
                                     tagName = tagFilterState.activeTags.activeTag(shape.tagId)?.name,
+                                    judgmentTimeMillis = listTimeMachineSelection?.timeMillis,
                                 )
                             }
                         }
@@ -297,7 +302,7 @@ fun SavedListScreen(
     }
 
     // 도형 상세 BottomSheet
-    val timeMachine = rememberTimeMachineClock()
+    val timeMachine = listTimeMachine
     if (showShapeDetail) {
         selectedShape?.let { shape ->
             ShapeDetailSheet(

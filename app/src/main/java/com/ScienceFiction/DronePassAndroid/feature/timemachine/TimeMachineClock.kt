@@ -9,6 +9,14 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
+ * 판정 시각(D-85): 타임머신이 미래 시각을 가리키면 그 시각, 아니면 지금.
+ * 저장 목록 분류·정렬, 지도 만료 회색, 만료 숨김만 이 시각을 쓴다.
+ * 무료 한도, 종료일 알림, 동기화, 저장 때 기간 검증은 언제나 실제 지금이다.
+ */
+internal fun timeMachineJudgmentTime(selection: TimeMachineSelection?, nowMillis: Long): Long =
+    selection?.timeMillis ?: nowMillis
+
+/**
  * 타임머신 상태(D-58 화면, D-83 NOTAM 제외). 지도 화면·카드·도형 상세가 같은 선택을 본다.
  * - 동그라미: 지금 "now", 미래 주황 D+N / +Nh / +N0m. 누르면 두 줄 패널을 펼친다(이미 두 줄이면 접는다).
  * - 지도 빈 곳 탭: 미래면 1줄만 남기고, 지금이면 모두 접는다.

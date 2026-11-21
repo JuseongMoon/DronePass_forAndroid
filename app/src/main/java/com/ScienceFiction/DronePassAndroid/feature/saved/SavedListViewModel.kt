@@ -1,5 +1,7 @@
 package com.ScienceFiction.DronePassAndroid.feature.saved
 
+import com.ScienceFiction.DronePassAndroid.feature.timemachine.TimeMachineClock
+import com.ScienceFiction.DronePassAndroid.feature.timemachine.timeMachineJudgmentTime
 import kotlinx.coroutines.flow.distinctUntilChanged
 import com.ScienceFiction.DronePassAndroid.core.util.launchCatchingStorageErrors
 import android.content.Context
@@ -269,6 +271,7 @@ class SavedListViewModel @Inject constructor(
     val naverGeocodingApi: NaverGeocodingApi,
     private val analyticsLogger: AnalyticsLogger,
     private val subscriptionManager: SubscriptionManager,
+    private val timeMachineClock: TimeMachineClock,
     @ApplicationContext private val appContext: Context,
 ) : ViewModel() {
 
@@ -388,7 +391,7 @@ class SavedListViewModel @Inject constructor(
         activeDrones,
         combine(selectedDroneIds, tagFilterState, ::Pair),
         sortSettings,
-        visibilitySettings,
+        combine(visibilitySettings, timeMachineClock.selection, ::Pair),
     ) { shapes, drones, filters, sort, visibility ->
         buildSavedShapeSections(
             shapes = shapes,
@@ -396,7 +399,9 @@ class SavedListViewModel @Inject constructor(
             selectedDroneIds = filters.first,
             sortOption = sort.first,
             sortDirection = sort.second,
-            visibilitySettings = visibility,
+            visibilitySettings = visibility.first,
+            // 타임머신이 미래 시각을 가리키면 시작 전·진행 중·만료와 만료 숨김을 그 시각으로 나눈다(D-85)
+            now = timeMachineJudgmentTime(visibility.second, System.currentTimeMillis()),
             tagFilter = filters.second,
         )
     }
