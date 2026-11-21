@@ -49,9 +49,14 @@ class ShapeShareCardContentTest {
         droneId = "drone-1",
     )
 
-    private fun content(shape: ShapeModel, drone: DroneModel? = null) = buildShapeShareCardContent(
+    private fun content(
+        shape: ShapeModel,
+        drone: DroneModel? = null,
+        options: ShapeShareCardOptions = ShapeShareCardOptions(),
+    ) = buildShapeShareCardContent(
         shape = shape,
         drone = drone,
+        options = options,
         dateTimeFormat = dateTimeFormat,
         dateFormat = dateFormat,
         timeZone = seoul,
@@ -61,7 +66,7 @@ class ShapeShareCardContentTest {
     @Test
     fun `값이 모두 있으면 모든 행을 채운다`() {
         val drone = DroneModel(id = "drone-1", name = "Mavic 3", color = "#34C759")
-        val content = content(makeShape(), drone)
+        val content = content(makeShape(), drone, ShapeShareCardOptions(showCoordinate = true))
 
         assertEquals("한강 공원", content.title)
         assertEquals("기본 옵션은 주소 간략히", "서울특별시 중구", content.address)
@@ -159,11 +164,11 @@ class ShapeShareCardContentTest {
         )
 
     @Test
-    fun `기본 옵션은 태그만 빼고 모두 보이고 주소는 간략히다`() {
+    fun `기본 옵션은 태그와 좌표만 빼고 모두 보이고 주소는 간략히다`() {
         val content = content(ShapeShareCardOptions())
         assertEquals("서울특별시 중구", content.address)
         assertTrue(content.period != null)
-        assertTrue(content.coordinate != null)
+        assertNull("좌표는 기본으로 끈다(D-71)", content.coordinate)
         assertEquals("Mini 4 Pro", content.droneName)
         assertNull("태그는 기본으로 끈다", content.tagName)
     }
@@ -229,5 +234,9 @@ class ShapeShareCardContentTest {
         assertTrue(ShapeShareCardOptions.fromJson(null).simplifyAddress)
         val remembered = ShapeShareCardOptions(simplifyAddress = false).toJson()
         assertFalse(ShapeShareCardOptions.fromJson(remembered).simplifyAddress)
+        // 좌표도 처음 기본값만 끔으로 바꿨다(D-71). 켜 둔 채 저장한 사용자는 그대로 켜져 있다
+        assertFalse(ShapeShareCardOptions.fromJson(null).showCoordinate)
+        assertTrue(ShapeShareCardOptions.fromJson(ShapeShareCardOptions(showCoordinate = true).toJson()).showCoordinate)
+        assertTrue(ShapeShareCardOptions.fromJson("""{"showCoordinate":true}""").showCoordinate)
     }
 }

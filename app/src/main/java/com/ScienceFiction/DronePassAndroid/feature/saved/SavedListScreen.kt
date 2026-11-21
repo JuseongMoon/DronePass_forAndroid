@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.saved
 
+import com.ScienceFiction.DronePassAndroid.domain.model.displayName
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material.icons.outlined.Inbox
@@ -225,7 +226,7 @@ fun SavedListScreen(
                                         onNavigateToMapWithShape(shape.id)
                                     },
                                     onDetailClick = { viewModel.onShapeSelected(shape.id) },
-                                    tagName = tagFilterState.activeTags.activeTag(shape.tagId)?.name,
+                                    tagName = tagFilterState.activeTags.activeTag(shape.tagId)?.displayName,
                                 )
                             }
                         }
@@ -255,7 +256,7 @@ fun SavedListScreen(
                                         onNavigateToMapWithShape(shape.id)
                                     },
                                     onDetailClick = { viewModel.onShapeSelected(shape.id) },
-                                    tagName = tagFilterState.activeTags.activeTag(shape.tagId)?.name,
+                                    tagName = tagFilterState.activeTags.activeTag(shape.tagId)?.displayName,
                                 )
                             }
                         }
@@ -285,7 +286,7 @@ fun SavedListScreen(
                                         onNavigateToMapWithShape(shape.id)
                                     },
                                     onDetailClick = { viewModel.onShapeSelected(shape.id) },
-                                    tagName = tagFilterState.activeTags.activeTag(shape.tagId)?.name,
+                                    tagName = tagFilterState.activeTags.activeTag(shape.tagId)?.displayName,
                                 )
                             }
                         }

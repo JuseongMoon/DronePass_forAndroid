@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.shape
 
+import com.ScienceFiction.DronePassAndroid.domain.model.displayName
 import com.ScienceFiction.DronePassAndroid.core.util.shouldShowAppCopyConfirmation
 import com.ScienceFiction.DronePassAndroid.ui.theme.IosSystemGray
 import androidx.compose.foundation.text.TextAutoSize
@@ -102,6 +103,7 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.core.net.toUri
+import com.ScienceFiction.DronePassAndroid.BuildConfig
 import com.ScienceFiction.DronePassAndroid.R
 import com.ScienceFiction.DronePassAndroid.core.ui.currentWindowSizeDp
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
@@ -269,7 +271,12 @@ fun ShapeDetailSheet(
                 ShapeDetailNavigationHeader(
                     menuExpanded = showMoreMenu,
                     onMenuExpandedChange = { showMoreMenu = it },
-                    onShare = { showSharePreview = true },
+                    // D-73: 공유 카드는 지도 허락 뒤 낸다. 입구가 꺼져 있으면 버튼을 그리지 않는다
+                    onShare = if (ShapeShareEntry.isVisible(BuildConfig.SHARE_CARD_ENTRY_FORCE)) {
+                        { showSharePreview = true }
+                    } else {
+                        null
+                    },
                     onEdit = {
                         showMoreMenu = false
                         hideAndThen(onEdit)
@@ -306,11 +313,14 @@ fun ShapeDetailSheet(
                 // 태그 (가리키는 태그가 없으면 태그 없음)
                 ShapeDetailRow(label = stringResource(R.string.shape_detail_tag)) {
                     if (detailTag != null) {
+                        // 예전에 만든 20자 넘는 이름은 한 줄로 줄여 보인다(D-71 ⑦)
                         Text(
-                            text = detailTag.name,
+                            text = detailTag.displayName,
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.End,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
                         )
                     } else {
                         Text(
@@ -524,13 +534,14 @@ fun ShapeDetailSheet(
 
 /**
  * iOS ShapeDetailView NavigationView inline title + trailing 공유·ellipsis.circle 정합.
- * 공유 버튼은 "..." 왼쪽에 둔다. 제목이 가운데에 오도록 왼쪽 빈 칸도 오른쪽 버튼 두 개 폭과 같게 둔다.
+ * 공유 버튼은 "..." 왼쪽에 둔다. 제목이 가운데에 오도록 왼쪽 빈 칸도 오른쪽 버튼 폭의 합과 같게 둔다.
+ * [onShare] 가 null 이면(D-73 공유 입구 숨김) 공유 버튼을 그리지 않고 "..." 만 남긴다.
  */
 @Composable
 private fun ShapeDetailNavigationHeader(
     menuExpanded: Boolean,
     onMenuExpandedChange: (Boolean) -> Unit,
-    onShare: () -> Unit,
+    onShare: (() -> Unit)?,
     onEdit: () -> Unit,
     onDuplicate: () -> Unit,
     onDelete: () -> Unit,
@@ -542,7 +553,8 @@ private fun ShapeDetailNavigationHeader(
             .padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Spacer(modifier = Modifier.width(ShapeDetailNavigationHeaderSideWidth * 2))
+        val trailingButtonCount = if (onShare != null) 2 else 1
+        Spacer(modifier = Modifier.width(ShapeDetailNavigationHeaderSideWidth * trailingButtonCount))
         Text(
             text = stringResource(R.string.shape_detail_navigation_title),
             style = MaterialTheme.typography.titleMedium,
@@ -550,16 +562,18 @@ private fun ShapeDetailNavigationHeader(
             textAlign = TextAlign.Center,
             modifier = Modifier.weight(1f),
         )
-        IconButton(
-            onClick = onShare,
-            modifier = Modifier.size(ShapeDetailNavigationHeaderSideWidth),
-        ) {
-            Icon(
-                imageVector = Icons.Filled.IosShare,
-                contentDescription = stringResource(R.string.shape_share_button),
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(ShapeDetailShareIconSize),
-            )
+        if (onShare != null) {
+            IconButton(
+                onClick = onShare,
+                modifier = Modifier.size(ShapeDetailNavigationHeaderSideWidth),
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.IosShare,
+                    contentDescription = stringResource(R.string.shape_share_button),
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(ShapeDetailShareIconSize),
+                )
+            }
         }
         Box(
             modifier = Modifier.width(ShapeDetailNavigationHeaderSideWidth),

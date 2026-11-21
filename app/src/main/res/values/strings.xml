@@ -444,6 +444,12 @@
     <string name="shape_share_action">공유하기</string>
     <string name="shape_share_loading">지도를 불러오는 중…</string>
     <string name="shape_share_error">카드 이미지를 만들지 못했습니다. 다시 시도해 주세요.</string>
+    <string name="shape_share_save">사진에 저장</string>
+    <string name="shape_share_copy">복사</string>
+    <string name="shape_share_saved">사진에 저장했습니다.</string>
+    <string name="shape_share_save_error">사진에 저장하지 못했습니다. 다시 시도해 주세요.</string>
+    <string name="shape_share_copied">카드 이미지를 복사했습니다.</string>
+    <string name="shape_share_save_permission_denied">사진에 저장하려면 저장공간 권한을 허용해 주세요.</string>
     <string name="shape_share_card_radius">반경 %1$s</string>
     <string name="shape_share_card_height">고도 %1$s</string>
     <string name="shape_detail_drone_deleted">삭제된 드론</string>
@@ -1038,6 +1044,11 @@
     <string name="shape_share_options_drone">드론 이름</string>
     <string name="shape_share_options_tag">태그</string>
     <string name="shape_share_options_footer">지도, 제목, 반경·고도, 로고는 항상 들어갑니다.</string>
+    <string name="shape_share_options_footer_no_map">제목, 반경·고도, 로고는 항상 들어갑니다.</string>
+    <string name="shape_share_schematic_a11y_circle">도형 그림: 반경 %1$s 원, 축척 막대 %2$s, 위쪽이 북쪽입니다.</string>
+    <string name="shape_share_schematic_a11y_point">도형 그림: 기준 위치를 점으로 표시했고, 위쪽이 북쪽입니다.</string>
+    <string name="shape_share_schematic_a11y_circle_rotated">도형 그림: 반경 %1$s 원, 축척 막대 %2$s, 북쪽은 위에서 시계 방향으로 %3$d° 돌아가 있습니다.</string>
+    <string name="shape_share_schematic_compass">북쪽을 위로</string>
     <string name="tag_none">태그 없음</string>
     <string name="tag_filter_active">태그 필터</string>
     <string name="tag_list_title">태그 관리</string>
@@ -1052,7 +1063,9 @@
     <string name="tag_edit_title_add">새 태그</string>
     <string name="tag_edit_title_edit">태그 편집</string>
     <string name="tag_edit_name_placeholder">태그 이름</string>
-    <string name="tag_edit_footer">짧게 입력해 주세요. 저장 목록에서 도형 오른쪽 위에 표시됩니다.</string>
+    <string name="tag_edit_footer_count">20자까지 입력할 수 있습니다. 저장 목록에서 도형 오른쪽 위에 표시됩니다. (%1$d/20)</string>
+    <string name="tag_edit_too_long">20자 이내로 줄여야 저장할 수 있습니다. (지금 %1$d자)</string>
+    <string name="tag_edit_truncated">20자가 넘어 앞의 20자만 넣었습니다.</string>
     <string name="tag_edit_alert_title">저장할 수 없습니다</string>
     <string name="tag_edit_alert_duplicate">같은 이름의 태그가 이미 있습니다.</string>
     <string name="tag_delete_title">\'%1$s\' 태그를 삭제할까요?</string>

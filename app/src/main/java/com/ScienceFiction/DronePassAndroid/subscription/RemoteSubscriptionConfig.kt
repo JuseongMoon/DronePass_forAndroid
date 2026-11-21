@@ -14,6 +14,11 @@ data class RemoteSubscriptionConfig(
      * `minSupportedVersion` 처럼 이번 실행에서 받은 설정에만 적용한다(저장본에는 남기지 않는다).
      */
     val proClaimEnabled: Boolean = false,
+    /**
+     * `features.shareCardMap.enabled`. true 일 때만 공유 카드에 지도를 넣는다. 키 없음·null·형식 오류는 false(지도 없는 카드).
+     * [proClaimEnabled] 와 같이 이번 실행에서 받은 설정에만 적용한다(저장본에는 남기지 않는다).
+     */
+    val shareCardMapEnabled: Boolean = false,
 ) {
     companion object {
         const val URL = "https://sciencefiction.co.kr/dronepass/config/limits.json"
@@ -45,7 +50,11 @@ data class RemoteSubscriptionConfig(
             val uploadEnabled = locationAudit?.get("uploadEnabled") as? Boolean ?: false
             val proClaim = (root["features"] as? Map<*, *>)?.get("proClaim") as? Map<*, *>
             val proClaimEnabled = proClaim?.get("enabled") as? Boolean ?: false
-            return RemoteSubscriptionConfig(limits, cutoff, minimum?.takeIf { it.isNotEmpty() }, uploadEnabled, proClaimEnabled)
+            val shareCardMap = (root["features"] as? Map<*, *>)?.get("shareCardMap") as? Map<*, *>
+            val shareCardMapEnabled = shareCardMap?.get("enabled") as? Boolean ?: false
+            return RemoteSubscriptionConfig(
+                limits, cutoff, minimum?.takeIf { it.isNotEmpty() }, uploadEnabled, proClaimEnabled, shareCardMapEnabled,
+            )
         }
     }
 }

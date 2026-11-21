@@ -122,6 +122,45 @@ internal fun reconcileShapeColorsWithServer(
     return ShapeColorReconcileResult(localWrites = localWrites, toUpload = recolored)
 }
 
+/** [localWrites] 는 기기에 쓸 도형, [toUpload] 는 태그를 비우고 updatedAt 을 올린 병합 사본이다. */
+internal data class ShapeTagClearResult(
+    val localWrites: List<ShapeModel>,
+    val toUpload: List<ShapeModel>,
+)
+
+/**
+ * 태그를 지운 뒤: 서버 도형(일부여도 된다)을 기기 도형과 LWW 로 병합하고, 병합본이 아직 [tagId] 를 단 활성 도형이면
+ * tagId 만 비우고 updatedAt 을 [nowMillis] 로 올린다(D-71 ①, iOS TagManager.deleteTag 정합).
+ * 기기 사본만 보고 비우면 updatedAt 만 올라, 아직 받지 못한 다른 기기의 새 제목·메모·기간을 기기의 옛 사본이 덮는다.
+ * 서버에 없는 기기 도형은 기기 값을 쓰고, 같은 시각(허용 오차 안)이면 서버 값을 쓴다.
+ */
+internal fun reconcileTagClearWithServer(
+    local: List<ShapeModel>,
+    server: List<ShapeModel>,
+    tagId: String,
+    nowMillis: Long,
+): ShapeTagClearResult {
+    val serverById = server.associateBy { it.id }
+    val localById = local.associateBy { it.id }
+    val merged = local.map { shape ->
+        val remote = serverById[shape.id] ?: return@map shape
+        if (isNewerUpdatedAt(shape.updatedAt, than = remote.updatedAt)) shape else remote
+    } + server.filter { it.id !in localById }
+    val cleared = merged
+        .filter { it.tagId == tagId && it.deletedAt == null }
+        .map { it.copy(tagId = null, updatedAt = nowMillis) }
+    val clearedById = cleared.associateBy { it.id }
+    val localWrites = merged.map { clearedById[it.id] ?: it }.filter { it != localById[it.id] }
+    return ShapeTagClearResult(localWrites = localWrites, toUpload = cleared)
+}
+
+/**
+ * 태그만 비우고 updatedAt 은 그대로 둔다. 서버를 읽지 못했을 때 쓴다: 기기 사본이 서버보다 새로워지지 않으므로
+ * 다른 기기의 더 새로운 수정을 덮지 않는다. 서버 사본에 남은 tagId 는 삭제된 태그라 "태그 없음"으로 보인다.
+ */
+internal fun shapesTagClearedLocallyOnly(shapes: List<ShapeModel>, tagId: String): List<ShapeModel> =
+    shapes.filter { it.tagId == tagId && it.deletedAt == null }.map { it.copy(tagId = null) }
+
 internal fun softDeleteExpiredShapeEntities(
     shapes: List<ShapeEntity>,
     now: Long,
@@ -425,21 +464,56 @@ class ShapeRepository @Inject constructor(
     }
 
     /**
-     * 태그를 지운 뒤: 그 태그를 단 활성 도형의 태그를 비우고 updatedAt 을 올려 저장한다(도형은 지우지 않는다).
-     * 관문이 열려 있으면 바로 올린다. 바꾼 도형 수를 돌려준다. iOS TagManager.deleteTag 정합.
+     * 태그를 지운 뒤: 그 태그를 단 활성 도형의 태그를 비운다(도형은 지우지 않는다). 바꾼 도형 수를 돌려준다.
+     * D-71 ①(계약 §태그 "태그를 지우면", fixture deleteCases, iOS TagDeleteRepair 정합).
+     * - 관문이 열려 있으면 그 도형들을 서버에서 읽어 병합한 뒤 비워 올린다([reconcileTagClearWithServer]).
+     * - 서버를 읽지 못했거나 관문이 닫혀 있으면(비로그인) 기기에서 태그만 비우고 updatedAt 은 둔다
+     *   ([shapesTagClearedLocallyOnly]). 남은 옛 tagId 는 활성 태그를 가리키지 않아 어디서나 "태그 없음"이다.
      */
     suspend fun clearTagFromShapes(tagId: String): Int {
+        val ticket = session.syncTicket() ?: return clearTagLocallyOnly(tagId)
+        val candidateIds = shapeDao.getActiveShapesByTagId(tagId).map { it.id }
+        if (candidateIds.isEmpty()) return 0
         val now = System.currentTimeMillis()
-        val cleared = database.withTransaction {
-            shapeDao.getActiveShapesByTagId(tagId)
-                .map { it.copy(tagId = null, updatedAt = now) }
-                .also { if (it.isNotEmpty()) shapeDao.insertShapes(it) }
+        val result = try {
+            val server = shapeFirebaseStore.loadShapes(ticket, candidateIds)
+            session.commit(ticket) {
+                // 서버를 읽는 동안 바뀐 기기 값으로 다시 병합한다(읽기와 쓰기를 한 트랜잭션으로)
+                database.withTransaction {
+                    val local = shapeDao.getAllShapesOnce().map { it.toDomain() }
+                    reconcileTagClearWithServer(local, server, tagId, now)
+                        .also { if (it.localWrites.isNotEmpty()) shapeDao.insertShapes(it.localWrites.map { shape -> shape.toEntity() }) }
+                }
+            }
+        } catch (e: StaleSyncTicketException) {
+            Log.d(TAG, "관문이 바뀌어 도형 태그 비우기를 건너뜁니다.")
+            return 0
+        } catch (e: Exception) {
+            Log.w(TAG, "서버 도형을 읽지 못해 태그만 기기에서 비웁니다(updatedAt 그대로)", e)
+            return clearTagLocallyOnly(tagId)
         }
-        if (cleared.isEmpty()) return 0
+        if (result.localWrites.isNotEmpty()) reconcileEndDateAlarmsWithLocalShapes()
+        if (result.toUpload.isEmpty()) return 0
         markShapeLocalModification(now)
-        syncShapesToFirebase(cleared.map { it.toDomain() })
-        return cleared.size
+        val valid = result.toUpload.filterValidForFirebaseWrite("clearTagFromShapes")
+        try {
+            if (valid.isNotEmpty()) {
+                shapeFirebaseStore.saveShapes(ticket, valid)
+                shapeFirebaseStore.updateServerMetadata(ticket)
+            }
+        } catch (e: Exception) {
+            // 기기 사본이 서버보다 새로우므로(병합 뒤 updatedAt=now) 다음 전체 동기화가 다시 올린다
+            Log.w(TAG, "태그 비운 도형 업로드 실패(다음 동기화에서 다시 올림)", e)
+        }
+        return result.toUpload.size
     }
+
+    /** 기기에서 태그만 비우고 updatedAt 은 둔다. 바꾼 도형 수를 돌려준다 */
+    private suspend fun clearTagLocallyOnly(tagId: String): Int =
+        database.withTransaction {
+            shapesTagClearedLocallyOnly(shapeDao.getAllShapesOnce().map { it.toDomain() }, tagId)
+                .also { changed -> if (changed.isNotEmpty()) shapeDao.insertShapes(changed.map { it.toEntity() }) }
+        }.size
 
     private suspend fun markShapeLocalModification(now: Long = System.currentTimeMillis()) {
         dataStore.edit { preferences ->
