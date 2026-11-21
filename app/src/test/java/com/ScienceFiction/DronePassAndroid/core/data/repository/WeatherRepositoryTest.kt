@@ -240,10 +240,62 @@ class WeatherRepositoryTest {
         assertEquals(WeatherServiceFailure.UNAVAILABLE, (failure as? WeatherServiceException)?.failure)
     }
 
+    @Test
+    fun `time machine weather keeps every hour the relay returns`() {
+        // 서버 배포 전에는 기존 응답(정시-3시간~+74시간)이 온다. 72시간으로 자르지 않고 받은 칸을 모두 쓴다.
+        val hours = mapTimeMachineHours(fixture())
+        assertEquals(77, hours.size)
+        assertTrue(hours.zipWithNext().all { (a, b) -> a.startMillis < b.startMillis })
+        assertTrue(hours.all { it.condition != null })
+    }
+
+    @Test
+    fun `time machine weather is cached per grid for one hour and retried after a failure`() = runBlocking {
+        val dataSource = FakeDataSource(fixture())
+        val repository = WeatherRepository(dataSource)
+        var now = fixtureNowMillis()
+
+        assertTrue(repository.needsTimeMachineWeather(37.5665, 126.978, now))
+        val first = repository.fetchTimeMachineWeather(37.5665, 126.978, nowMillis = { now }).getOrThrow()
+        assertEquals(1, dataSource.timeMachineCalls)
+        assertEquals(0, dataSource.calls)
+        assertEquals(37.57, first!!.gridLatitude, 0.0)
+        assertEquals(first, repository.timeMachineWeather.value)
+
+        // 같은 격자 안·1시간 안이면 다시 묻지 않는다
+        now += 59 * 60_000L
+        assertFalse(repository.needsTimeMachineWeather(37.5701, 126.9849, now))
+        repository.fetchTimeMachineWeather(37.5701, 126.9849, nowMillis = { now }).getOrThrow()
+        assertEquals(1, dataSource.timeMachineCalls)
+
+        // 격자가 바뀌면 바로, 1시간이 지나면 다시 묻는다
+        repository.fetchTimeMachineWeather(37.60, 126.978, nowMillis = { now }).getOrThrow()
+        assertEquals(2, dataSource.timeMachineCalls)
+        now += 60 * 60_000L
+        repository.fetchTimeMachineWeather(37.60, 126.978, nowMillis = { now }).getOrThrow()
+        assertEquals(3, dataSource.timeMachineCalls)
+
+        // 실패해도 1시간은 다시 묻지 않고, 이전 자료는 그대로 둔다(iOS 와 같음)
+        dataSource.failTimeMachine = true
+        repository.fetchTimeMachineWeather(37.70, 126.978, nowMillis = { now })
+        assertEquals(4, dataSource.timeMachineCalls)
+        assertFalse(repository.needsTimeMachineWeather(37.70, 126.978, now + 30 * 60_000L))
+        assertTrue(repository.needsTimeMachineWeather(37.70, 126.978, now + 60 * 60_000L))
+        assertEquals(37.60, repository.timeMachineWeather.value!!.gridLatitude, 0.0)
+    }
+
     private class FakeDataSource(var response: WeatherKitResponse) : WeatherKitDataSource {
         var calls = 0
+        var timeMachineCalls = 0
+        var failTimeMachine = false
         override suspend fun fetch(latitude: Double, longitude: Double, timezone: String): WeatherKitResponse {
             calls += 1
+            return response
+        }
+
+        override suspend fun fetchTimeMachine(latitude: Double, longitude: Double, timezone: String): WeatherKitResponse {
+            timeMachineCalls += 1
+            if (failTimeMachine) throw WeatherServiceException(WeatherServiceFailure.UNAVAILABLE)
             return response
         }
     }
