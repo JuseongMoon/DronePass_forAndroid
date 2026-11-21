@@ -795,6 +795,15 @@ class MapCameraFocusTest {
     }
 
     @Test
+    fun `길게 누르기 수정으로 연 편집이 끝나면 아직 있는 도형만 선택과 강조로 돌린다`() {
+        val active = setOf("A", "B")
+        assertEquals("A", restoredShapeIdIfActive("A", active))
+        assertNull(restoredShapeIdIfActive(null, active))
+        // 편집하는 사이 다른 기기에서 지워진 도형은 돌리지 않는다
+        assertNull(restoredShapeIdIfActive("GONE", active))
+    }
+
+    @Test
     fun `롱프레스 역지오코딩 성공은 iOS처럼 새 도형 확인창을 준비한다`() {
         val coordinate = Coordinate(37.5665, 126.9780)
         val request = pendingNewShapeRequestForReverseGeocodeResult(

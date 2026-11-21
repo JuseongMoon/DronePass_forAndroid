@@ -241,6 +241,16 @@ internal fun resolveHighlightAfterShapeLongPress(
     deletedShapeId: String? = null,
 ): String? = highlightBeforeLongPress?.takeIf { it != deletedShapeId }
 
+/** 길게 누르기 '수정'으로 연 편집이 끝나면 돌려 둘 선택과 강조 */
+internal data class ShapeLongPressEditRestore(
+    val selectedShapeId: String?,
+    val highlightedShapeId: String?,
+)
+
+/** 돌려 둘 도형이 아직 있으면 그 id, 그 사이 지워졌으면 null */
+internal fun restoredShapeIdIfActive(shapeId: String?, activeShapeIds: Set<String>): String? =
+    shapeId?.takeIf { it in activeShapeIds }
+
 /**
  * 주소 조회 뒤 확인 창 없이 편집 화면을 열지. 메뉴의 '여기에 새 도형'은 이미 고른 것이라 확인을 한 번 더 묻지 않는다.
  * 주소를 못 찾았으면 지금처럼 안내 창을 띄운다(iOS 같음).
@@ -592,6 +602,9 @@ class MapViewModel @Inject constructor(
     /** 길게 누르기 전 지도 강조. 메뉴를 그냥 닫으면 이것으로 돌린다 */
     private var highlightBeforeShapeLongPress: String? = null
 
+    /** 길게 누르기 '수정'으로 연 편집이 끝나면 돌려 둘 선택·강조. 다른 경로로 편집을 열면 비운다 */
+    private var selectionBeforeShapeLongPressEdit: ShapeLongPressEditRestore? = null
+
     /**
      * 카메라 이동 이벤트 (SharedFlow로 1회성 이벤트 처리).
      *
@@ -794,6 +807,7 @@ class MapViewModel @Inject constructor(
     }
 
     private fun resetShapeSelectionForNewShapeEdit() {
+        selectionBeforeShapeLongPressEdit = null
         setSelectedShape(null)
         _showShapeDetail.value = false
         _isDuplicateMode.value = false
@@ -816,10 +830,14 @@ class MapViewModel @Inject constructor(
     /**
      * 내 도형 위를 길게 눌렀다([com.ScienceFiction.DronePassAndroid.feature.map.tap.MapLongPressResolver]가 고른 도형).
      * 고른 도형을 강조하고 메뉴를 띄운다. 띄웠으면 true(화면이 진동을 준다).
+     * 그 사이 도형이 지워져 찾지 못하면 빈 곳처럼 새 도형 흐름으로 간다(iOS 같음).
      */
     fun onShapeLongPressed(shapeId: String, coordinate: Coordinate, anchorX: Float, anchorY: Float): Boolean {
         if (_shapeLongPressState.value != null) return false
-        if (activeShapes.value.none { it.id == shapeId }) return false
+        if (activeShapes.value.none { it.id == shapeId }) {
+            onCreateShapeAtCoordinate(coordinate)
+            return false
+        }
         highlightBeforeShapeLongPress = _highlightedShapeId.value
         _highlightedShapeId.value = shapeId
         _shapeLongPressState.value = ShapeLongPressState.Menu(shapeId, coordinate, anchorX, anchorY)
@@ -832,11 +850,28 @@ class MapViewModel @Inject constructor(
         endShapeLongPress(restoreHighlight = true)
     }
 
-    /** '수정': 기존 편집 화면을 연다 */
+    /**
+     * '수정': 기존 편집 화면을 연다. Android 편집 화면은 선택된 도형을 편집하므로 선택을 바꾸지만,
+     * 편집이 끝나면(저장·취소) 선택과 강조를 누르기 전으로 돌린다(iOS: 메뉴를 닫으면 강조를 원래대로).
+     */
     fun editFromShapeLongPress() {
         val shape = shapeForLongPress() ?: return dismissShapeLongPress()
+        val restore = ShapeLongPressEditRestore(
+            selectedShapeId = _selectedShapeId.value,
+            highlightedShapeId = highlightBeforeShapeLongPress,
+        )
         endShapeLongPress(restoreHighlight = false)
         onEditShapeRequested(shape)
+        selectionBeforeShapeLongPressEdit = restore
+    }
+
+    /** 길게 누르기로 연 편집이 끝났으면 선택과 강조를 누르기 전으로 돌린다(그 사이 지워진 도형은 비운다) */
+    private fun restoreSelectionAfterShapeLongPressEdit() {
+        val restore = selectionBeforeShapeLongPressEdit ?: return
+        selectionBeforeShapeLongPressEdit = null
+        val activeIds = activeShapes.value.mapTo(HashSet()) { it.id }
+        setSelectedShape(restoredShapeIdIfActive(restore.selectedShapeId, activeIds))
+        _highlightedShapeId.value = restoredShapeIdIfActive(restore.highlightedShapeId, activeIds)
     }
 
     /** '삭제': 확인 창으로 넘긴다. 확인 창이 떠 있는 동안 강조를 유지한다 */
@@ -894,6 +929,7 @@ class MapViewModel @Inject constructor(
         shape: ShapeModel,
         returnToDetailAfterSave: Boolean = false,
     ) {
+        selectionBeforeShapeLongPressEdit = null
         setSelectedShape(shape.id)
         _isDuplicateMode.value = false
         returnToShapeDetailAfterEditSave = returnToDetailAfterSave
@@ -917,6 +953,7 @@ class MapViewModel @Inject constructor(
     }
 
     private fun openDuplicateShape(shape: ShapeModel, returnToDetailAfterDismiss: Boolean) {
+        selectionBeforeShapeLongPressEdit = null
         setSelectedShape(shape.id)
         _isDuplicateMode.value = true
         returnToShapeDetailAfterEditSave = false
@@ -993,6 +1030,7 @@ class MapViewModel @Inject constructor(
                     }
                     ShapeEditPostSaveAction.CLOSE -> Unit
                 }
+                restoreSelectionAfterShapeLongPressEdit()
             } catch (error: Exception) {
                 Log.e(TAG, "도형 저장 실패", error)
                 onFailure(
@@ -1031,6 +1069,7 @@ class MapViewModel @Inject constructor(
     fun deleteShape(shape: ShapeModel) {
         viewModelScope.launchCatchingStorageErrors {
             softDeleteShapeAndLog(shape)
+            selectionBeforeShapeLongPressEdit = null
             returnToShapeDetailAfterEditSave = false
             returnToShapeDetailAfterEditDismiss = false
             clearSelection()
@@ -1091,6 +1130,7 @@ class MapViewModel @Inject constructor(
         _newShapeCoordinate.value = null
         _reverseGeocodedAddress.value = null
         _pendingNewShapeRequest.value = null
+        restoreSelectionAfterShapeLongPressEdit()
     }
 
     /**
