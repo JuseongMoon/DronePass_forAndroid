@@ -8,23 +8,18 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
@@ -46,6 +41,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.State
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
@@ -66,7 +63,6 @@ import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
@@ -76,7 +72,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.setProgress
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -111,11 +106,11 @@ private val TimeMachinePanelMaxWidthTablet = 420.dp
 private val TrackDay = Color(red = 1.0f, green = 0.86f, blue = 0.45f)
 private val TrackPastBlue = Color(0xFF007AFF)
 
-/** 동그라미 문구가 1분마다 줄어들도록(+Nh·+N0m) 화면이 보는 지금. */
+/** 동그라미 문구가 1분마다 줄어들도록(+Nh·+N0m) 화면이 보는 지금. 칸이 바뀌어도 다시 시작하지 않는다. */
 @Composable
-private fun rememberMinuteTick(clock: TimeMachineClock, key: Any?): Long {
+private fun rememberMinuteTick(clock: TimeMachineClock): Long {
     var tick by remember { mutableLongStateOf(clock.nowMillis()) }
-    LaunchedEffect(key) {
+    LaunchedEffect(Unit) {
         while (true) {
             tick = clock.nowMillis()
             delay(60_000)
@@ -139,7 +134,7 @@ internal fun timeMachineDateTimeText(millis: Long): String {
 @Composable
 fun TimeMachineCircleButton(clock: TimeMachineClock, modifier: Modifier = Modifier) {
     val selection by clock.selection.collectAsStateWithLifecycle()
-    val now = rememberMinuteTick(clock, selection)
+    val now = rememberMinuteTick(clock)
     val current = selection
     val isFuture = current != null
     val label = current?.let { TimeMachineSlot.label(it.timeMillis, now) } ?: stringResource(R.string.timemachine_now)
@@ -174,7 +169,8 @@ fun TimeMachineCircleButton(clock: TimeMachineClock, modifier: Modifier = Modifi
 
 /**
  * 두 줄 패널(D-58). 1줄: 날짜·시간(누르면 캘린더) + 현재로, 2줄: ‹ 슬라이더 ›.
- * @param sunCenter 슬라이더 일출·일몰 기준(지도 중심). 그릴 때마다 읽는다.
+ * 슬라이더를 끄는 동안 칸마다 바뀌는 선택은 날짜 글자·손잡이 그리기에서만 읽는다(패널 전체를 다시 구성하지 않는다).
+ * @param sunCenter 슬라이더 일출·일몰 기준(지도 중심). 날이 바뀔 때 읽는다.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -185,7 +181,7 @@ fun TimeMachinePanel(
     modifier: Modifier = Modifier,
 ) {
     val panel by clock.panel.collectAsStateWithLifecycle()
-    val selection by clock.selection.collectAsStateWithLifecycle()
+    val selection = clock.selection.collectAsStateWithLifecycle()
     var showsCalendar by remember { mutableStateOf(false) }
 
     Column(
@@ -198,10 +194,9 @@ fun TimeMachinePanel(
             exit = fadeOut(tween(180)) + shrinkVertically(tween(180)),
         ) {
             TimeMachineDateRow(
-                timeMillis = selection?.timeMillis ?: clock.nowMillis(),
-                isFuture = selection != null,
+                clock = clock,
+                selection = selection,
                 onCalendar = { showsCalendar = true },
-                onNow = { clock.returnToNow() },
             )
         }
         AnimatedVisibility(
@@ -231,19 +226,20 @@ private fun TimeMachinePill(modifier: Modifier = Modifier, content: @Composable 
 
 @Composable
 private fun TimeMachineDateRow(
-    timeMillis: Long,
-    isFuture: Boolean,
+    clock: TimeMachineClock,
+    selection: State<TimeMachineSelection?>,
     onCalendar: () -> Unit,
-    onNow: () -> Unit,
 ) {
+    val isFuture by remember { derivedStateOf { selection.value != null } }
     TimeMachinePill {
         Row(
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            // 날짜·시간이 남은 폭을 모두 쓴다(빈 칸과 나누면 한국어 날짜의 시각이 잘린다)
             Row(
                 modifier = Modifier
-                    .weight(1f, fill = false)
+                    .weight(1f)
                     .heightIn(min = 32.dp)
                     .clickable(onClick = onCalendar),
                 verticalAlignment = Alignment.CenterVertically,
@@ -251,16 +247,9 @@ private fun TimeMachineDateRow(
             ) {
                 val color = if (isFuture) TimeMachineOrange else MaterialTheme.colorScheme.onSurface
                 Icon(Icons.Default.CalendarMonth, contentDescription = null, tint = color, modifier = Modifier.size(18.dp))
-                Text(
-                    text = timeMachineDateTimeText(timeMillis),
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = color,
-                    maxLines = 1,
-                )
+                TimeMachineDateText(clock = clock, selection = selection, color = color)
             }
-            Spacer(modifier = Modifier.weight(1f))
-            TextButton(onClick = onNow, enabled = isFuture, modifier = Modifier.heightIn(min = 32.dp)) {
+            TextButton(onClick = { clock.returnToNow() }, enabled = isFuture, modifier = Modifier.heightIn(min = 32.dp)) {
                 Text(
                     text = stringResource(R.string.timemachine_back_to_now),
                     fontSize = 15.sp,
@@ -271,15 +260,27 @@ private fun TimeMachineDateRow(
     }
 }
 
+/** 칸마다 바뀌는 글자만 따로 둔다(이 함수만 다시 구성된다). */
+@Composable
+private fun TimeMachineDateText(clock: TimeMachineClock, selection: State<TimeMachineSelection?>, color: Color) {
+    Text(
+        text = timeMachineDateTimeText(selection.value?.timeMillis ?: clock.nowMillis()),
+        fontSize = 15.sp,
+        fontWeight = FontWeight.SemiBold,
+        color = color,
+        maxLines = 1,
+    )
+}
+
 @Composable
 private fun TimeMachineSliderRow(
     clock: TimeMachineClock,
-    selection: TimeMachineSelection?,
+    selection: State<TimeMachineSelection?>,
     sunCenter: () -> Pair<Double, Double>,
 ) {
-    // selection 이 바뀔 때마다 다시 그린다(canStepDay·slot 은 그 값을 읽는다)
-    val canBack = remember(selection) { clock.canStepDay(-1) }
-    val canForward = remember(selection) { clock.canStepDay(1) }
+    // 하루 넘기기 가능 여부는 날이 바뀔 때만 달라진다
+    val canBack by remember { derivedStateOf { selection.value?.dayStartMillis; clock.canStepDay(-1) } }
+    val canForward by remember { derivedStateOf { selection.value?.dayStartMillis; clock.canStepDay(1) } }
     TimeMachinePill {
         Row(
             modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
@@ -326,63 +327,38 @@ private fun DayStepButton(enabled: Boolean, description: String, forward: Boolea
     }
 }
 
-/** 그날 00:00~24:00 10분 슬라이더. 끄는 동안 칸마다 기준 시각을 바꾼다(카드가 바로 따라온다). */
+/**
+ * 그날 00:00~24:00 10분 슬라이더. 끄는 동안 칸마다 기준 시각을 바꾼다(카드가 바로 따라온다).
+ * 칸은 그리기 단계에서만 읽어 손잡이를 옮긴다. 다시 구성하는 것은 날이 바뀔 때(일출·일몰·오늘 과거)뿐이다.
+ */
 @Composable
 private fun TimeMachineSlider(
     clock: TimeMachineClock,
-    selection: TimeMachineSelection?,
+    selection: State<TimeMachineSelection?>,
     sunCenter: () -> Pair<Double, Double>,
     modifier: Modifier = Modifier,
 ) {
     val view = LocalView.current
-    val density = LocalDensity.current
     val dark = isSystemInDarkTheme()
-    val now = clock.nowMillis()
-    val day = selection?.dayStartMillis ?: TimeMachineSlot.dayStart(now)
-    val slot = clock.slot()
-    val center = sunCenter()
-    // 일출·일몰 칸(지도 중심 기준). 같은 날·같은 0.01° 안에서는 다시 계산하지 않는다
-    val latKey = (center.first * 100).roundToInt()
-    val lonKey = (center.second * 100).roundToInt()
-    val sun = remember(day, latKey, lonKey) { TimeMachineSun.slots(TimeMachineSun.times(day, center.first, center.second)) }
-    val past = if (day == TimeMachineSlot.dayStart(now)) TimeMachineSlot.firstSlot(day, now) else 0
-    val isFuture = selection != null
+    val day by remember { derivedStateOf { selection.value?.dayStartMillis ?: TimeMachineSlot.dayStart(clock.nowMillis()) } }
+    val isFuture = remember { derivedStateOf { selection.value != null } }
+    val slot = remember { derivedStateOf { selection.value?.slot ?: clock.slot() } }
+    // 일출·일몰 칸(지도 중심 기준)과 오늘의 과거 칸은 날이 바뀔 때 계산한다
+    val sun = remember(day) {
+        val center = sunCenter()
+        TimeMachineSun.slots(TimeMachineSun.times(day, center.first, center.second))
+    }
+    val past = remember(day) {
+        val now = clock.nowMillis()
+        if (day == TimeMachineSlot.dayStart(now)) TimeMachineSlot.firstSlot(day, now) else 0
+    }
     val latestSun by rememberUpdatedState(sun)
     val latestPast by rememberUpdatedState(past)
-
-    val a11yLabel = stringResource(R.string.timemachine_slider)
-    val beforeSunrise = stringResource(R.string.timemachine_before_sunrise)
-    val afterSunset = stringResource(R.string.timemachine_after_sunset)
-    val daytime = stringResource(R.string.timemachine_daytime)
-    val timeText = remember(day, slot) {
-        val minutes = slot * TimeMachineSlot.MINUTES
-        "%d:%02d".format(Locale.ROOT, minutes / 60, minutes % 60)
-    }
     val (rise, set) = sun
-    val part = when {
-        rise == null || set == null -> ""
-        slot < rise -> beforeSunrise
-        slot >= set -> afterSunset
-        else -> daytime
-    }
-    val a11yValue = if (part.isEmpty()) timeText else "$timeText, $part"
 
-    BoxWithConstraints(
+    Box(
         modifier = modifier
             .height(32.dp)
-            .semantics {
-                contentDescription = a11yLabel
-                stateDescription = a11yValue
-                progressBarRangeInfo = ProgressBarRangeInfo(
-                    current = slot.toFloat(),
-                    range = 0f..(TimeMachineSlot.COUNT - 1).toFloat(),
-                    steps = TimeMachineSlot.COUNT - 2,
-                )
-                setProgress { target ->
-                    clock.setSlot(target.roundToInt())
-                    true
-                }
-            }
             .pointerInput(Unit) {
                 // iOS DragGesture(minimumDistance: 0): 누른 곳으로 바로 가고 끄는 동안 칸마다 바꾼다
                 awaitEachGesture {
@@ -423,7 +399,6 @@ private fun TimeMachineSlider(
                 }
             },
     ) {
-        val widthPx = with(density) { maxWidth.toPx() }
         Canvas(modifier = Modifier.fillMaxSize()) {
             val h = 14.dp.toPx()
             val y = (size.height - h) / 2
@@ -472,19 +447,60 @@ private fun TimeMachineSlider(
             if (dark) {
                 drawPath(track, Color.White.copy(alpha = 0.15f), style = Stroke(width = 1.dp.toPx()))
             }
+            // 손잡이(22dp 흰 원, 그림자, 테두리 2dp — 미래 주황, 지금 회색). 칸은 여기서만 읽는다
+            val radius = 11.dp.toPx()
+            val center = Offset((slot.value + 0.5f) * unit, size.height / 2)
+            drawCircle(Color.Black.copy(alpha = 0.18f), radius = radius + 1.dp.toPx(), center = center + Offset(0f, 1.dp.toPx()))
+            drawCircle(Color.White, radius = radius, center = center)
+            drawCircle(
+                if (isFuture.value) TimeMachineOrange else Color.Gray,
+                radius = radius - 1.dp.toPx(),
+                center = center,
+                style = Stroke(width = 2.dp.toPx()),
+            )
         }
-        // 손잡이
-        val thumbRadiusPx = with(density) { 11.dp.toPx() }
-        Box(
-            modifier = Modifier
-                .align(Alignment.CenterStart)
-                .offset { IntOffset(((slot + 0.5f) * widthPx / TimeMachineSlot.COUNT - thumbRadiusPx).roundToInt(), 0) }
-                .size(22.dp)
-                .shadow(2.dp, CircleShape)
-                .background(Color.White, CircleShape)
-                .border(2.dp, if (isFuture) TimeMachineOrange else Color.Gray, CircleShape),
-        )
+        TimeMachineSliderSemantics(clock = clock, slot = slot, sun = sun, modifier = Modifier.matchParentSize())
     }
+}
+
+/** TalkBack: 현재 칸 시각과 낮·밤 구분, 위·아래 쓸기로 한 칸씩 조절. 칸마다 바뀌는 글은 이 층만 다시 구성한다. */
+@Composable
+private fun TimeMachineSliderSemantics(
+    clock: TimeMachineClock,
+    slot: State<Int>,
+    sun: Pair<Int?, Int?>,
+    modifier: Modifier,
+) {
+    val a11yLabel = stringResource(R.string.timemachine_slider)
+    val beforeSunrise = stringResource(R.string.timemachine_before_sunrise)
+    val afterSunset = stringResource(R.string.timemachine_after_sunset)
+    val daytime = stringResource(R.string.timemachine_daytime)
+    val current = slot.value
+    val minutes = current * TimeMachineSlot.MINUTES
+    val timeText = "%d:%02d".format(Locale.ROOT, minutes / 60, minutes % 60)
+    val (rise, set) = sun
+    val part = when {
+        rise == null || set == null -> ""
+        current < rise -> beforeSunrise
+        current >= set -> afterSunset
+        else -> daytime
+    }
+    val a11yValue = if (part.isEmpty()) timeText else "$timeText, $part"
+    Box(
+        modifier = modifier.semantics {
+            contentDescription = a11yLabel
+            stateDescription = a11yValue
+            progressBarRangeInfo = ProgressBarRangeInfo(
+                current = current.toFloat(),
+                range = 0f..(TimeMachineSlot.COUNT - 1).toFloat(),
+                steps = TimeMachineSlot.COUNT - 2,
+            )
+            setProgress { target ->
+                clock.setSlot(target.roundToInt())
+                true
+            }
+        },
+    )
 }
 
 /** 날짜 고르기(날짜만, 오늘~+27일, KST). 시각은 그대로 둔다. */

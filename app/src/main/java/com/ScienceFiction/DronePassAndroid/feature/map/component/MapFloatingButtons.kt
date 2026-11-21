@@ -148,8 +148,11 @@ fun MapFloatingButtons(
     sunriseTimes: List<String> = sunrise?.let(::listOf) ?: emptyList(),
     sunsetTimes: List<String> = sunset?.let(::listOf) ?: emptyList(),
     weatherUtcOffsetSeconds: Int? = null,
-    /** 타임머신 시각의 카드 값(D-59). null 이면 지금 값 그대로. */
-    timeMachineCards: TimeMachineCardValues? = null,
+    /**
+     * 타임머신 시각의 카드 값(D-59). null 이면 지금 값 그대로.
+     * 슬라이더 칸마다 바뀌므로 값 대신 읽는 함수를 받아 KP·날씨 카드 안에서만 읽는다(버튼 전체가 다시 그려지지 않게).
+     */
+    timeMachineCards: () -> TimeMachineCardValues? = { null },
     onWeatherClick: () -> Unit = {},
     isTabletLayout: Boolean = false,
     naverMap: NaverMap? = null,
@@ -243,9 +246,10 @@ fun MapFloatingButtons(
                         color = MaterialTheme.colorScheme.surface,
                         shadowElevation = MapKpButtonShadowElevation
                     ) {
-                        val shownKp = if (timeMachineCards != null) timeMachineCards.kp else currentKpValue
-                        val shownKpColor = if (timeMachineCards != null) {
-                            timeMachineCards.kp?.let { Color(KpLevel.fromKp(it).color.toInt()) } ?: Color.Gray
+                        val cards = timeMachineCards()
+                        val shownKp = if (cards != null) cards.kp else currentKpValue
+                        val shownKpColor = if (cards != null) {
+                            cards.kp?.let { Color(KpLevel.fromKp(it).color.toInt()) } ?: Color.Gray
                         } else {
                             kpLevelColor
                         }
@@ -286,7 +290,7 @@ fun MapFloatingButtons(
                         sunsetTimes = sunsetTimes,
                         onClick = onWeatherClick,
                         utcOffsetSeconds = weatherUtcOffsetSeconds,
-                        timeMachine = timeMachineCards,
+                        timeMachineCards = timeMachineCards,
                     )
                 }
             }

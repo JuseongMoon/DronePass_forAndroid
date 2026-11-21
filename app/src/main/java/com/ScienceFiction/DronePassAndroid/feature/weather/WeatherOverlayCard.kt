@@ -93,16 +93,23 @@ fun WeatherOverlayCard(
     sunriseTimes: List<String> = sunrise?.let(::listOf) ?: emptyList(),
     sunsetTimes: List<String> = sunset?.let(::listOf) ?: emptyList(),
     utcOffsetSeconds: Int? = null,
-    timeMachine: TimeMachineCardValues? = null,
+    /** 칸마다 바뀌는 값이라 이 카드 안에서만 읽는다. */
+    timeMachineCards: () -> TimeMachineCardValues? = { null },
 ) {
+    val timeMachine = timeMachineCards()
     val now = rememberSunEventNow(utcOffsetSeconds, sunriseTimes, sunsetTimes)
-    val currentSunEvent = nextSunEvent(
-        sunriseIsoList = sunriseTimes,
-        sunsetIsoList = sunsetTimes,
-        now = now,
-    )
-    val isNextSunset = timeMachine?.sunToSunset ?: currentSunEvent.isNextSunset
-    val sunText = timeMachine?.sunText ?: currentSunEvent.timeUntilFormatted
+    // 타임머신 값이 있으면 지금의 해 이벤트는 계산하지 않는다(칸마다 일출·일몰 문자열을 다시 읽지 않게)
+    val currentSunEvent = if (timeMachine == null) {
+        nextSunEvent(
+            sunriseIsoList = sunriseTimes,
+            sunsetIsoList = sunsetTimes,
+            now = now,
+        )
+    } else {
+        null
+    }
+    val isNextSunset = timeMachine?.sunToSunset ?: currentSunEvent?.isNextSunset ?: false
+    val sunText = timeMachine?.sunText ?: currentSunEvent?.timeUntilFormatted.orEmpty()
     val temperature = if (timeMachine != null) timeMachine.temperature else currentWeather?.temperature
     val windDirection = if (timeMachine != null) timeMachine.windDirection else currentWeather?.windDirection
     val condition = if (timeMachine != null) timeMachine.condition else currentWeather?.condition
