@@ -18,6 +18,7 @@ import com.ScienceFiction.DronePassAndroid.domain.model.TagFilter
 import com.ScienceFiction.DronePassAndroid.domain.model.TagModel
 import com.ScienceFiction.DronePassAndroid.domain.model.activeTags
 import com.ScienceFiction.DronePassAndroid.domain.model.mergeTags
+import com.ScienceFiction.DronePassAndroid.domain.model.tagNameDuplicateKey
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -94,7 +95,7 @@ class TagRepository @Inject constructor(
     /** 같은 이름의 활성 태그가 있는가 (대소문자 무시) */
     suspend fun isDuplicateName(name: String, excludingId: String? = null): Boolean =
         tagDao.getAllTagsOnce().any {
-            it.deletedAt == null && it.id != excludingId && it.name.lowercase() == name.lowercase()
+            it.deletedAt == null && it.id != excludingId && tagNameDuplicateKey(it.name) == tagNameDuplicateKey(name)
         }
 
     // ===== CRUD =====

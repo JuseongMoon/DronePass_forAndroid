@@ -1,5 +1,6 @@
 package com.ScienceFiction.DronePassAndroid.feature.shape
 
+import com.ScienceFiction.DronePassAndroid.domain.model.displayName
 import com.ScienceFiction.DronePassAndroid.domain.model.DroneModel
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 import com.ScienceFiction.DronePassAndroid.domain.model.TagModel
@@ -70,7 +71,7 @@ internal fun buildShapeShareCardContent(
         height = shapeShareCardMeters(shape.height, locale),
         droneName = drone?.name?.takeIf { options.showDrone },
         droneColorHex = drone?.color?.takeIf { options.showDrone },
-        tagName = tag?.name?.takeIf { options.showTag },
+        tagName = tag?.displayName?.takeIf { options.showTag },
         coordinate = shape.baseCoordinate.formattedCoordinate.takeIf { options.showCoordinate },
         shapeColorHex = shape.color,
     )
@@ -100,7 +101,11 @@ internal data class ShapeShareCardOptions(
      * 저장값에는 이 키가 항상 들어가므로 이미 고른 사용자는 그 값을 그대로 쓴다.
      */
     val simplifyAddress: Boolean = true,
-    val showCoordinate: Boolean = true,
+    /**
+     * 좌표는 처음 기본값을 끔으로 둔다(D-71 ⑥, 2026-11-14). 저장값에는 이 키가 항상 들어가므로
+     * 이미 고른 사용자는 그 값을 그대로 쓴다.
+     */
+    val showCoordinate: Boolean = false,
     val showPeriod: Boolean = true,
     val showDrone: Boolean = true,
     val showTag: Boolean = false,

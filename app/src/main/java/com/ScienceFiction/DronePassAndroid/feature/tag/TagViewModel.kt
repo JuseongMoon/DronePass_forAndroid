@@ -6,6 +6,7 @@ import com.ScienceFiction.DronePassAndroid.core.data.repository.ShapeRepository
 import com.ScienceFiction.DronePassAndroid.core.data.repository.TagRepository
 import com.ScienceFiction.DronePassAndroid.core.util.launchCatchingStorageErrors
 import com.ScienceFiction.DronePassAndroid.domain.model.TagModel
+import com.ScienceFiction.DronePassAndroid.domain.model.tagNameDuplicateKey
 import com.ScienceFiction.DronePassAndroid.subscription.QuotaAction
 import com.ScienceFiction.DronePassAndroid.subscription.SubscriptionManager
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -14,9 +15,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
-
-/** 태그 이름 한 줄 폭 상한(dp). 저장 목록 오른쪽 위 배지로 쓰므로 드론 이름보다 짧게 둔다 (iOS TagEditView.maxNameWidth) */
-internal const val TAG_NAME_MAX_WIDTH_DP = 140f
 
 /** 무료 한도 판정에 쓰는 paywall source (SUBSCRIPTION_CONTRACT §10) */
 internal const val TAG_ADD_PAYWALL_SOURCE = "tag_add"
@@ -42,7 +40,7 @@ class TagViewModel @Inject constructor(
 
     /** 같은 이름의 활성 태그가 있는가 (대소문자 무시) */
     fun isDuplicateName(name: String, excludingId: String?): Boolean =
-        activeTags.value.any { it.id != excludingId && it.name.lowercase() == name.lowercase() }
+        activeTags.value.any { it.id != excludingId && tagNameDuplicateKey(it.name) == tagNameDuplicateKey(name) }
 
     /** 무료 한도: 이름 입력 전에 미리 안내한다 (최종 판정은 저장 시). 막히면 페이월이 뜬다 */
     fun requestAdd(onAllowed: () -> Unit) {

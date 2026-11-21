@@ -53,6 +53,9 @@
     <string name="map_address_search_failed_title">Address Search Failed</string>
     <string name="map_address_search_failed_message">Unable to retrieve address for the selected location. Would you like to create the shape with coordinates only?</string>
     <string name="map_address_not_found">Address not found for this location</string>
+    <!-- 지도 도형 길게 누르기 메뉴(D-83 (2)). 메뉴 제목은 도형 이름, 삭제는 common_delete, 확인 창은 shape_detail_delete_* -->
+    <string name="map_shape_menu_edit">Edit</string>
+    <string name="map_shape_menu_new_shape_here">New Shape Here</string>
     <string name="map_flight_zones_error_service">Temporary VWorld service error</string>
     <string name="map_flight_zones_error_load_failed">Unable to load flight zone data</string>
 
@@ -371,6 +374,12 @@
     <string name="shape_share_action">Share</string>
     <string name="shape_share_loading">Loading map…</string>
     <string name="shape_share_error">Couldn\'t create the card image. Please try again.</string>
+    <string name="shape_share_save">Save to Photos</string>
+    <string name="shape_share_copy">Copy</string>
+    <string name="shape_share_saved">Saved to Photos.</string>
+    <string name="shape_share_save_error">Couldn\'t save to Photos. Please try again.</string>
+    <string name="shape_share_copied">Card image copied.</string>
+    <string name="shape_share_save_permission_denied">Allow storage access to save to Photos.</string>
     <string name="shape_share_card_radius">Radius %1$s</string>
     <string name="shape_share_card_height">Altitude %1$s</string>
     <string name="shape_detail_drone_deleted">Deleted drone</string>
@@ -1029,6 +1038,11 @@
     <string name="shape_share_options_drone">Drone name</string>
     <string name="shape_share_options_tag">Tag</string>
     <string name="shape_share_options_footer">The map, title, radius, altitude and logo are always included.</string>
+    <string name="shape_share_options_footer_no_map">The title, radius, altitude and logo are always included.</string>
+    <string name="shape_share_schematic_a11y_circle">Shape diagram: circle with a %1$s radius, scale bar %2$s, north is up.</string>
+    <string name="shape_share_schematic_a11y_point">Shape diagram: the reference point is marked with a dot, north is up.</string>
+    <string name="shape_share_schematic_a11y_circle_rotated">Shape diagram: circle with a %1$s radius, scale bar %2$s, north is turned %3$d° clockwise from the top.</string>
+    <string name="shape_share_schematic_compass">North up</string>
     <string name="tag_none">No Tag</string>
     <string name="tag_filter_active">Tag filter</string>
     <string name="tag_list_title">Manage Tags</string>
@@ -1043,7 +1057,9 @@
     <string name="tag_edit_title_add">New Tag</string>
     <string name="tag_edit_title_edit">Edit Tag</string>
     <string name="tag_edit_name_placeholder">Tag name</string>
-    <string name="tag_edit_footer">Keep it short. It appears at the top right of each shape in the saved list.</string>
+    <string name="tag_edit_footer_count">Up to 20 characters. It appears at the top right of each shape in the saved list. (%1$d/20)</string>
+    <string name="tag_edit_too_long">Shorten it to 20 characters to save. (Now %1$d)</string>
+    <string name="tag_edit_truncated">Only the first 20 characters were kept.</string>
     <string name="tag_edit_alert_title">Can\'t Save</string>
     <string name="tag_edit_alert_duplicate">A tag with this name already exists.</string>
     <string name="tag_delete_title">Delete the tag \'%1$s\'?</string>

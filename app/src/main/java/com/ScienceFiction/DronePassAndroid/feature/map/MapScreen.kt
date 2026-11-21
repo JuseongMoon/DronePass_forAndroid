@@ -8,6 +8,7 @@ import android.app.Activity
 import android.graphics.PointF
 import android.location.Location
 import android.util.Log
+import android.view.HapticFeedbackConstants
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -45,6 +46,10 @@ import com.ScienceFiction.DronePassAndroid.app.LegalLaunchSequence
 import com.ScienceFiction.DronePassAndroid.app.LocationConsentPrompt
 import com.ScienceFiction.DronePassAndroid.BuildConfig
 import com.ScienceFiction.DronePassAndroid.feature.timemachine.rememberTimeMachineClock
+import com.ScienceFiction.DronePassAndroid.feature.map.component.ShapeLongPressLayer
+import com.ScienceFiction.DronePassAndroid.feature.map.tap.MapLongPressAction
+import com.ScienceFiction.DronePassAndroid.feature.map.tap.MapLongPressCandidate
+import com.ScienceFiction.DronePassAndroid.feature.map.tap.MapLongPressResolver
 import com.ScienceFiction.DronePassAndroid.feature.map.tap.MapTapCoordinator
 import com.ScienceFiction.DronePassAndroid.feature.map.tap.MapTapLatLng
 import com.ScienceFiction.DronePassAndroid.feature.map.tap.MapTapResolver
@@ -75,10 +80,6 @@ import com.naver.maps.map.NaverMapSdk
 import com.naver.maps.map.util.FusedLocationSource
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
-
-internal fun shouldHandleMapLongClickForShapeCreation(
-    isSketchMode: Boolean,
-): Boolean = !isSketchMode
 
 /**
  * 지도 메인 화면.
@@ -485,12 +486,7 @@ fun MapScreen(
                         map.setOnMapClickListener { point, latLng ->
                             // 지도 탭 하나로 판정한다. 드래그·핀치는 이 이벤트가 오지 않는다.
                             val tap = MapTapLatLng(latLng.latitude, latLng.longitude)
-                            val offset = map.projection.fromScreenLocation(PointF(point.x + tapTolerancePx, point.y))
-                            val toleranceM = MapTapCoordinator.toleranceMeters(
-                                tap = tap,
-                                offset = MapTapLatLng(offset.latitude, offset.longitude),
-                            )
-                            val result = tapCoordinator.resolve(tap, toleranceM)
+                            val result = tapCoordinator.resolve(tap, map.tapToleranceMeters(point, tap, tapTolerancePx))
                             tapCoordinator.apply(result)
                             // 타임머신: 빈 곳 탭이면 미래는 1줄만 남기고, 지금이면 모두 접는다(D-58)
                             if (result.target == null) timeMachineClock.collapse()
@@ -517,13 +513,29 @@ fun MapScreen(
                         map.addOnCameraChangeListener(changeListener)
                         cameraChangeListener = changeListener
 
-                        val longClickListener = NaverMap.OnMapLongClickListener { _, latLng ->
-                            if (
-                                shouldHandleMapLongClickForShapeCreation(
-                                    isSketchMode = sketchViewModel.isSketchMode.value,
-                                )
-                            ) {
-                                viewModel.onCreateShapeAtCoordinate(Coordinate.fromLatLng(latLng))
+                        val longClickListener = NaverMap.OnMapLongClickListener { point, latLng ->
+                            // D-83 (2): 내 도형 위면 그 도형 메뉴, 아니면 지금처럼 새 도형. 스케치 모드는 무시.
+                            val press = MapTapLatLng(latLng.latitude, latLng.longitude)
+                            val action = MapLongPressResolver.resolve(
+                                p = press,
+                                toleranceM = map.tapToleranceMeters(point, press, tapTolerancePx),
+                                // 지도에 올린 내 도형만 들어 있다(필터로 숨긴 도형은 오버레이와 함께 빠진다)
+                                candidates = overlayManager.tapShapes.map { MapLongPressCandidate(it, isDrawn = true) },
+                                isSketchMode = sketchViewModel.isSketchMode.value,
+                            )
+                            when (action) {
+                                MapLongPressAction.Ignore -> Unit
+                                MapLongPressAction.NewShape ->
+                                    viewModel.onCreateShapeAtCoordinate(Coordinate.fromLatLng(latLng))
+                                is MapLongPressAction.ShapeMenu -> {
+                                    val opened = viewModel.onShapeLongPressed(
+                                        shapeId = action.shapeId,
+                                        coordinate = Coordinate.fromLatLng(latLng),
+                                        anchorX = point.x,
+                                        anchorY = point.y,
+                                    )
+                                    if (opened) mapView.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+                                }
                             }
                         }
                         map.setOnMapLongClickListener(longClickListener)
@@ -582,6 +594,9 @@ fun MapScreen(
                 modifier = Modifier.align(Alignment.BottomStart),
             )
         }
+
+        // 도형 길게 누르기 메뉴·삭제 확인(D-83 (2)). 메뉴는 누른 자리(지도 좌표 px)에 붙는다.
+        ShapeLongPressLayer(viewModel = viewModel)
 
         SnackbarHost(
             hostState = snackbarHostState,
@@ -666,6 +681,15 @@ private fun offsetLatLng(
     val offsetPoint = PointF(point.x + offsetX, point.y + offsetY)
     val offsetCenter = map.projection.fromScreenLocation(offsetPoint)
     return if (offsetCenter.isValid) offsetCenter else center
+}
+
+/** 화면 허용 거리([tolerancePx], 12dp)를 누른 자리·지금 줌의 m로. 탭과 길게 누르기가 같은 값을 쓴다 */
+private fun NaverMap.tapToleranceMeters(point: PointF, tap: MapTapLatLng, tolerancePx: Float): Double {
+    val offset = projection.fromScreenLocation(PointF(point.x + tolerancePx, point.y))
+    return MapTapCoordinator.toleranceMeters(
+        tap = tap,
+        offset = MapTapLatLng(offset.latitude, offset.longitude),
+    )
 }
 
 private fun MapViewModel.updateCurrentBoundsFrom(map: NaverMap) {

@@ -14,7 +14,30 @@ object RemoteFeatureFlags {
     /** 위치정보 이용사실 확인자료의 서버 업로드(사양 v2 B-6). 서버 함수가 배포된 뒤에 켠다. */
     val locationAuditUploadEnabled: StateFlow<Boolean> = _locationAuditUploadEnabled.asStateFlow()
 
+    private val _shareCardMapEnabled = MutableStateFlow(false)
+
+    /**
+     * 공유 카드에 지도를 넣을지(D-71, NCP 약관). **이번 실행에서 받은 설정**이 true 일 때만 켠다.
+     * 설정 받기 전·받기 실패(오프라인)·저장본뿐이면 false 다. 저장본에서 되살리는 [update] 는 이 값을 건드리지 않는다.
+     */
+    val shareCardMapEnabled: StateFlow<Boolean> = _shareCardMapEnabled.asStateFlow()
+
+    /** 저장본이나 이번 실행에서 받은 설정의 플래그. */
     internal fun update(config: RemoteSubscriptionConfig) {
         _locationAuditUploadEnabled.value = config.locationAuditUploadEnabled
+    }
+
+    /**
+     * 설정 받기에 실패했거나(오프라인 포함) 받은 파일을 설정으로 쓸 수 없을 때 부른다.
+     * 이번 실행에서 앞서 true 를 받았어도 공유 카드 지도는 끈다. 다른 플래그는 그대로 둔다(계약 §6).
+     */
+    internal fun markFetchFailed() {
+        _shareCardMapEnabled.value = false
+    }
+
+    /** 이번 실행에서 서버에서 받은 설정에만 부른다(계약 §6 저장본 규칙). */
+    internal fun updateFetched(config: RemoteSubscriptionConfig) {
+        update(config)
+        _shareCardMapEnabled.value = config.shareCardMapEnabled
     }
 }

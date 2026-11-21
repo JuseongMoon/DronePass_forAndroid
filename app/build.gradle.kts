@@ -224,6 +224,20 @@ android {
                 "PRO_CLAIM_FORCE_ENABLED",
                 (providers.gradleProperty("proClaimDebug").orNull == "true").toString(),
             )
+            // 공유 카드 지도 원격 스위치 시험(D-71): `-PshareCardMapDebug=on|off` 로 빌드한 디버그 앱에서만
+            // limits.json 의 features.shareCardMap.enabled 와 관계없이 지도 카드를 켜거나 끈다. 그 밖의 값은 원격 설정을 따른다.
+            buildConfigField(
+                "String",
+                "SHARE_CARD_MAP_FORCE",
+                "\"${providers.gradleProperty("shareCardMapDebug").orNull?.takeIf { it == "on" || it == "off" } ?: ""}\"",
+            )
+            // 공유 카드 입구 시험(D-73): `-PshareCardEntryDebug=on|off` 로 빌드한 디버그 앱에서만 도형 상세의 공유 버튼을
+            // ShapeShareEntry.isEnabledInRelease 와 관계없이 보이거나 숨긴다. 그 밖의 값은 상수를 따른다.
+            buildConfigField(
+                "String",
+                "SHARE_CARD_ENTRY_FORCE",
+                "\"${providers.gradleProperty("shareCardEntryDebug").orNull?.takeIf { it == "on" || it == "off" } ?: ""}\"",
+            )
         }
         release {
             isMinifyEnabled = true
@@ -231,6 +245,10 @@ android {
             isDebuggable = false
             // 릴리스는 원격 플래그(features.proClaim.enabled)로만 claim 을 켠다. 빌드 속성으로 켤 수 없다.
             buildConfigField("boolean", "PRO_CLAIM_FORCE_ENABLED", "false")
+            // 릴리스는 원격 플래그(features.shareCardMap.enabled)로만 지도 카드를 켠다. 빌드 속성으로 바꿀 수 없다.
+            buildConfigField("String", "SHARE_CARD_MAP_FORCE", "\"\"")
+            // 릴리스는 ShapeShareEntry.isEnabledInRelease 로만 공유 버튼을 보인다. 빌드 속성으로 바꿀 수 없다.
+            buildConfigField("String", "SHARE_CARD_ENTRY_FORCE", "\"\"")
             ndk {
                 debugSymbolLevel = "SYMBOL_TABLE"
             }

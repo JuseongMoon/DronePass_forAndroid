@@ -1,5 +1,9 @@
 package com.ScienceFiction.DronePassAndroid.feature.tag
 
+import com.ScienceFiction.DronePassAndroid.domain.model.displayName
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -149,7 +153,7 @@ fun TagListScreen(viewModel: TagViewModel = hiltViewModel()) {
     deletingTag?.let { tag ->
         AlertDialog(
             onDismissRequest = { deletingTag = null },
-            title = { Text(stringResource(R.string.tag_delete_title, tag.name)) },
+            title = { Text(stringResource(R.string.tag_delete_title, tag.displayName)) },
             text = { Text(stringResource(R.string.tag_delete_message, shapeCounts[tag.id] ?: 0)) },
             confirmButton = {
                 TextButton(
@@ -181,7 +185,7 @@ private fun TagListItem(tag: TagModel, shapeCount: Int, onClick: () -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Text(
-            text = tag.name,
+            text = tag.displayName,
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurface,
             maxLines = 1,
@@ -200,6 +204,7 @@ private fun TagListItem(tag: TagModel, shapeCount: Int, onClick: () -> Unit) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TagSwipeRow(onDeleteRequest: () -> Unit, content: @Composable () -> Unit) {
+    val deleteLabel = stringResource(R.string.tag_list_delete)
     val state = rememberSwipeToDismissBoxState(
         positionalThreshold = { distance -> distance * 0.4f },
         confirmValueChange = { value ->
@@ -209,6 +214,15 @@ private fun TagSwipeRow(onDeleteRequest: () -> Unit, content: @Composable () -> 
     )
     SwipeToDismissBox(
         state = state,
+        // TalkBack 은 밀기 동작을 쓸 수 없으므로 같은 삭제 확인을 동작 목록에 둔다(D-71 ⑤)
+        modifier = Modifier.semantics {
+            customActions = listOf(
+                CustomAccessibilityAction(deleteLabel) {
+                    onDeleteRequest()
+                    true
+                },
+            )
+        },
         enableDismissFromStartToEnd = false,
         backgroundContent = {
             val active = state.dismissDirection == SwipeToDismissBoxValue.EndToStart
