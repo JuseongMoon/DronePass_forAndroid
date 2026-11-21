@@ -53,6 +53,9 @@
     <string name="map_address_search_failed_title">Address Search Failed</string>
     <string name="map_address_search_failed_message">Unable to retrieve address for the selected location. Would you like to create the shape with coordinates only?</string>
     <string name="map_address_not_found">Address not found for this location</string>
+    <!-- 지도 도형 길게 누르기 메뉴(D-83 (2)). 메뉴 제목은 도형 이름, 삭제는 common_delete, 확인 창은 shape_detail_delete_* -->
+    <string name="map_shape_menu_edit">Edit</string>
+    <string name="map_shape_menu_new_shape_here">New Shape Here</string>
     <string name="map_flight_zones_error_service">Temporary VWorld service error</string>
     <string name="map_flight_zones_error_load_failed">Unable to load flight zone data</string>
 
