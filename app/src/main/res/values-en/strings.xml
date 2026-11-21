@@ -1064,4 +1064,16 @@
     <string name="tag_edit_alert_duplicate">A tag with this name already exists.</string>
     <string name="tag_delete_title">Delete the tag \'%1$s\'?</string>
     <string name="tag_delete_message">The tag will be removed from %1$d shapes. The shapes stay.</string>
+    <!-- Time machine (D-58, D-83). Same meaning as iOS -->
+    <string name="timemachine_now">now</string>
+    <string name="timemachine_back_to_now">Now</string>
+    <string name="timemachine_prev_day">Previous day</string>
+    <string name="timemachine_next_day">Next day</string>
+    <string name="timemachine_calendar_title">Pick a date</string>
+    <string name="timemachine_show_shape">View this flight schedule</string>
+    <string name="timemachine_before_sunrise">before sunrise</string>
+    <string name="timemachine_after_sunset">after sunset</string>
+    <string name="timemachine_daytime">daytime</string>
+    <string name="timemachine_circle_a11y">Viewing time: %1$s</string>
+    <string name="timemachine_slider">Viewing time</string>
 </resources>

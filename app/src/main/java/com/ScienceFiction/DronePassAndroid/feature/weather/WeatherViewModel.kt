@@ -10,6 +10,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ScienceFiction.DronePassAndroid.core.data.UserLocationKeys
+import com.ScienceFiction.DronePassAndroid.core.data.repository.TimeMachineWeather
 import com.ScienceFiction.DronePassAndroid.core.data.repository.WeatherRepository
 import com.ScienceFiction.DronePassAndroid.core.location.DeviceLocation
 import com.ScienceFiction.DronePassAndroid.core.location.DeviceLocationReader
@@ -138,6 +139,10 @@ class WeatherViewModel @Inject constructor(
      * 백그라운드 무한 새로고침으로 인한 배터리/요금 부담을 차단한다.
      */
     private var autoRefreshJob: Job? = null
+    private var timeMachineJob: Job? = null
+
+    /** 타임머신 시간별 예보(D-59). 없으면 null(카드의 날씨 칸은 '–'). */
+    val timeMachineWeather: StateFlow<TimeMachineWeather?> = weatherRepository.timeMachineWeather
 
     init {
         // 초기 1회 로드만 init 에서. 자동 갱신은 화면이 START 될 때만 시작.
@@ -223,6 +228,35 @@ class WeatherViewModel @Inject constructor(
     fun stopAutoRefresh() {
         autoRefreshJob?.cancel()
         autoRefreshJob = null
+    }
+
+    /** 마지막 날씨 요청의 기준 위치(타임머신 카드의 해 계산에 쓴다, 기기 안에서만). 아직 없으면 null. */
+    fun weatherBasisCoordinate(): Pair<Double, Double>? = weatherRepository.lastRequestedCoordinate()
+
+    /**
+     * 타임머신을 쓰는 동안 시간별 예보를 준비한다(D-59·D-84). 같은 격자에서 1시간 안이면 위치를 읽지 않는다.
+     * 기준 위치는 날씨 카드와 같은 규칙이다(동의·권한이 있으면 기기 위치, 없으면 지도 중심).
+     * 기기 위치는 [DeviceLocationReader] 로만 읽어 동의 확인과 위치정보 이용 기록이 함께 남는다.
+     * 칸을 옮길 때마다 부르지 않는다(타임머신에 들어갈 때와 날씨를 새로 받았을 때만).
+     */
+    fun ensureTimeMachineWeather() {
+        if (timeMachineJob?.isActive == true) return
+        val last = weatherRepository.lastRequestedCoordinate()
+        if (last != null && !weatherRepository.needsTimeMachineWeather(last.first, last.second, System.currentTimeMillis())) {
+            return
+        }
+        timeMachineJob = viewModelScope.launchCatchingStorageErrors {
+            val result = deviceLocationReader.read(
+                LocationUsage(LocationUsagePurpose.WEATHER, LocationRecipient.WEATHERKIT_VIA_SERVER),
+            )
+            val coordinate = when (resolveWeatherLocationSource(result)) {
+                WeatherLocationSource.DEVICE ->
+                    (result as DeviceLocationResult.Available).location.let { it.latitude to it.longitude }
+                WeatherLocationSource.MAP_CENTER -> mapCenterStore.weatherBasisCenter().let { it.latitude to it.longitude }
+                WeatherLocationSource.UNAVAILABLE -> null
+            } ?: return@launchCatchingStorageErrors
+            weatherRepository.fetchTimeMachineWeather(coordinate.first, coordinate.second)
+        }
     }
 
     /**

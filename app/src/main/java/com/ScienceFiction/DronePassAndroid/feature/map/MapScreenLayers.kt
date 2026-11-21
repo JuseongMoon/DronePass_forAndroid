@@ -77,7 +77,21 @@ import com.ScienceFiction.DronePassAndroid.feature.weather.WeatherForecastConten
 import com.ScienceFiction.DronePassAndroid.feature.weather.WeatherInfoTopic
 import com.ScienceFiction.DronePassAndroid.feature.weather.WeatherSheetHeader
 import com.ScienceFiction.DronePassAndroid.feature.weather.WeatherViewModel
+import com.ScienceFiction.DronePassAndroid.feature.timemachine.TimeMachineCircleButton
+import com.ScienceFiction.DronePassAndroid.feature.timemachine.TimeMachineCircleSize
+import com.ScienceFiction.DronePassAndroid.feature.timemachine.TimeMachineCircleSpacing
+import com.ScienceFiction.DronePassAndroid.feature.timemachine.TimeMachinePanel
+import com.ScienceFiction.DronePassAndroid.feature.timemachine.kpLongTermSeries
+import com.ScienceFiction.DronePassAndroid.feature.timemachine.kpThreeHourSeries
+import com.ScienceFiction.DronePassAndroid.feature.timemachine.rememberTimeMachineClock
+import com.ScienceFiction.DronePassAndroid.feature.timemachine.timeMachineCardValues
 import com.naver.maps.map.NaverMap
+import com.ScienceFiction.DronePassAndroid.feature.timemachine.TimeMachineCardValues
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.runtime.mutableIntStateOf
 import com.naver.maps.map.MapView
 import com.ScienceFiction.DronePassAndroid.ui.component.DronePassModalBottomSheet
 
@@ -117,6 +131,11 @@ internal fun MapOverlayEffects(
 ) {
     // 화면에 직접 그리지 않는 영역에서만 collect — recomposition 범위 격리
     val filteredShapes by viewModel.filteredShapes.collectAsStateWithLifecycle()
+    val timeMachineSelection = viewModel.timeMachineSelection.collectAsStateWithLifecycle()
+    // 타임머신 칸이 바뀌어도 도형 상태(시작 전·만료)가 바뀔 때만 오버레이를 다시 본다(D-85, 칸마다 전체 비교하지 않는다)
+    val overlayStatusKey by remember(filteredShapes) {
+        derivedStateOf { mapOverlayStatusKey(filteredShapes, timeMachineSelection.value?.timeMillis) }
+    }
     // 지도 하이라이트는 선택과 별개다(빈 곳 탭은 하이라이트만 푼다)
     val highlightedShapeId by viewModel.highlightedShapeId.collectAsStateWithLifecycle()
     val highlightedDroneIds by viewModel.highlightedDroneIds.collectAsStateWithLifecycle()
@@ -171,14 +190,15 @@ internal fun MapOverlayEffects(
     }
 
     // 도형 오버레이 갱신 (만료/미시작 필터 적용된 filteredShapes 사용)
-    LaunchedEffect(filteredShapes, highlightedDroneIds, mapReady, isSketchMode) {
+    // 타임머신 시각이 바뀌면 만료·시작 전 상태가 바뀐 도형만 다시 그린다(D-85)
+    LaunchedEffect(filteredShapes, highlightedDroneIds, mapReady, isSketchMode, overlayStatusKey) {
         if (!shouldRenderShapeOverlays(mapReady = mapReady, isSketchMode = isSketchMode)) {
             if (mapReady && isSketchMode) {
                 overlayManager.clearOverlays()
             }
             return@LaunchedEffect
         }
-        overlayManager.updateOverlays(filteredShapes, highlightedDroneIds)
+        overlayManager.updateOverlays(filteredShapes, highlightedDroneIds, timeMachineSelection.value?.timeMillis)
     }
 
     // 선택 하이라이트
@@ -270,7 +290,75 @@ internal fun MapFloatingControls(
         isTablet = isTabletLayout,
     )
 
+    // 타임머신(D-58·D-83): 드롭다운 자리에 두 줄 패널을 펼치고, 드롭다운·동그라미는 패널 높이만큼 내려간다.
+    // 슬라이더 칸마다 바뀌는 선택은 이 함수에서 직접 읽지 않는다(드롭다운·버튼 전체가 칸마다 다시 그려져 렉이 났다).
+    // 패널·동그라미·카드만 그 값을 읽는다.
+    val timeMachine = rememberTimeMachineClock()
+    val timeMachineSelection = timeMachine.selection.collectAsStateWithLifecycle()
+    val timeMachineWeather = weatherViewModel.timeMachineWeather.collectAsStateWithLifecycle()
+    val kpForecast by kpViewModel.forecastData.collectAsStateWithLifecycle()
+    val kpLongTerm by kpViewModel.longTermForecast.collectAsStateWithLifecycle()
+    val kpThreeHour = rememberUpdatedState(remember(kpForecast) { kpThreeHourSeries(kpForecast) })
+    val kpLongTermDays = rememberUpdatedState(remember(kpLongTerm) { kpLongTermSeries(kpLongTerm) })
+    val showsTimeMachine = shouldShowMapDroneDropdown(isSketchMode = isSketchMode)
+    val timeMachineActive by remember { derivedStateOf { timeMachineSelection.value != null } }
+    // 시간별 예보는 타임머신에 들어갈 때와 날씨를 새로 받았을 때만 확인한다(칸을 옮길 때마다 부르지 않는다)
+    LaunchedEffect(timeMachineActive, weatherData) {
+        if (timeMachineActive) weatherViewModel.ensureTimeMachineWeather()
+    }
+    val currentNaverMap by rememberUpdatedState(naverMap)
+    val mapCenter: () -> Pair<Double, Double> = remember {
+        {
+            currentNaverMap?.cameraPosition?.target?.let { it.latitude to it.longitude }
+                ?: (MapCreateShapeFallbackLatitude to MapCreateShapeFallbackLongitude)
+        }
+    }
+    // 카드의 해는 날씨 카드와 같은 기준 위치, 슬라이더의 일출·일몰 선은 지도 중심(iOS 와 같음)
+    val cardSunBasis = rememberUpdatedState(remember(weatherData) { weatherViewModel.weatherBasisCoordinate() })
+    val timeMachineCardsState = remember {
+        derivedStateOf {
+            timeMachineSelection.value?.let { selection ->
+                val basis = cardSunBasis.value ?: mapCenter()
+                timeMachineCardValues(
+                    selection,
+                    timeMachineWeather.value,
+                    kpThreeHour.value,
+                    kpLongTermDays.value,
+                    basis.first,
+                    basis.second,
+                )
+            }
+        }
+    }
+    val timeMachineCards: () -> TimeMachineCardValues? = remember { { timeMachineCardsState.value } }
+    val density = LocalDensity.current
+    var timeMachinePanelHeightPx by remember { mutableIntStateOf(0) }
+    val timeMachinePanelOffset = if (showsTimeMachine && timeMachinePanelHeightPx > 0) {
+        with(density) { timeMachinePanelHeightPx.toDp() } + 8.dp
+    } else {
+        0.dp
+    }
+    val dropdownTop = droneDropdownTopPadding + timeMachinePanelOffset
+
     Box(modifier = modifier.fillMaxSize()) {
+        if (showsTimeMachine) {
+            TimeMachinePanel(
+                clock = timeMachine,
+                sunCenter = mapCenter,
+                isTablet = isTabletLayout,
+                modifier = Modifier
+                    .align(if (isTabletLayout) Alignment.TopEnd else Alignment.TopCenter)
+                    .padding(top = droneDropdownTopPadding, start = 16.dp, end = 16.dp)
+                    .onSizeChanged { timeMachinePanelHeightPx = it.height },
+            )
+            TimeMachineCircleButton(
+                clock = timeMachine,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = dropdownTop, end = 16.dp),
+            )
+        }
+
         // 드론 선택 드롭다운 (상단 우측)
         // iOS `droneDropdownView`: .padding(.top, safeAreaInsets.top + dropdownTopPadding)
         // iOS 지도 화면은 ignoresSafeArea 안에서 측정해 safeAreaInsets.top 이 0 이다. 그래서 칩은
@@ -288,8 +376,8 @@ internal fun MapFloatingControls(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(
-                        top = droneDropdownTopPadding,
-                        end = 16.dp,
+                        top = dropdownTop,
+                        end = 16.dp + TimeMachineCircleSize + TimeMachineCircleSpacing,
                     ),
             )
         }
@@ -318,6 +406,7 @@ internal fun MapFloatingControls(
             sunriseTimes = weatherData?.sunriseTimes.orEmpty(),
             sunsetTimes = weatherData?.sunsetTimes.orEmpty(),
             weatherUtcOffsetSeconds = weatherData?.utcOffsetSeconds,
+            timeMachineCards = timeMachineCards,
             onWeatherClick = onShowWeather,
             isTabletLayout = isTabletLayout,
             naverMap = naverMap,
@@ -325,6 +414,22 @@ internal fun MapFloatingControls(
             modifier = Modifier.fillMaxSize(),
         )
     }
+}
+
+/**
+ * 도형 오버레이를 다시 봐야 하는지 가르는 키: 타임머신 여부와 각 도형의 상태(시작 전·만료).
+ * 지금(선택 없음)이면 상태를 실제 지금으로 계산하고, 시간이 흐르며 바뀌는 것은 60초 tick 이 filteredShapes 로 알린다.
+ */
+internal fun mapOverlayStatusKey(shapes: List<ShapeModel>, judgmentTimeMillis: Long?): List<Int> {
+    val t = judgmentTimeMillis ?: System.currentTimeMillis()
+    val key = ArrayList<Int>(shapes.size + 1)
+    key.add(if (judgmentTimeMillis == null) 0 else 1)
+    for (shape in shapes) {
+        val notStarted = isMapShapeNotStarted(shape.flightStartDate, t)
+        val expired = isMapShapeExpired(shape.flightEndDate, t)
+        key.add((if (notStarted) 1 else 0) or (if (expired) 2 else 0))
+    }
+    return key
 }
 
 internal fun hiddenFlightZoneLayers(
@@ -734,6 +839,7 @@ internal fun MapBottomSheets(
     var showKpInfoSheet by remember { mutableStateOf(false) }
     var showWeatherInfoSheet by remember { mutableStateOf(false) }
     var selectedWeatherInfoTopic by remember { mutableStateOf<WeatherInfoTopic?>(null) }
+    val timeMachine = rememberTimeMachineClock()
 
     // 도형 상세
     if (showShapeDetail) {
@@ -759,6 +865,15 @@ internal fun MapBottomSheets(
                 activeDrones = activeDrones,
                 koreaFeaturesEnabled = koreaFeaturesEnabled,
                 onExternalMapOpened = viewModel::logExternalMapOpened,
+                onShowSchedule = if (timeMachine.canShowSchedule(shape)) {
+                    {
+                        timeMachine.showShapeSchedule(shape)
+                        viewModel.dismissShapeDetail()
+                        viewModel.moveCameraToShape(shape)
+                    }
+                } else {
+                    null
+                },
             )
         }
     }

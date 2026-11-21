@@ -45,6 +45,7 @@ import com.ScienceFiction.DronePassAndroid.app.LaunchPermissionSequence
 import com.ScienceFiction.DronePassAndroid.app.LegalLaunchSequence
 import com.ScienceFiction.DronePassAndroid.app.LocationConsentPrompt
 import com.ScienceFiction.DronePassAndroid.BuildConfig
+import com.ScienceFiction.DronePassAndroid.feature.timemachine.rememberTimeMachineClock
 import com.ScienceFiction.DronePassAndroid.feature.map.component.ShapeLongPressLayer
 import com.ScienceFiction.DronePassAndroid.feature.map.tap.MapLongPressAction
 import com.ScienceFiction.DronePassAndroid.feature.map.tap.MapLongPressCandidate
@@ -123,6 +124,7 @@ fun MapScreen(
     val sketchOverlayManager = remember { SketchOverlayManager() }
     val flightZoneOverlayManager = remember { FlightZoneOverlayManager() }
     // 지도 탭 판정(11/7 대표). 내 원·비행구역이 같은 기준으로 후보를 낸다. 오버레이에는 클릭 리스너가 없다.
+    val timeMachineClock = rememberTimeMachineClock()
     val tapCoordinator = remember {
         MapTapCoordinator().apply {
             register(overlayManager)
@@ -484,7 +486,10 @@ fun MapScreen(
                         map.setOnMapClickListener { point, latLng ->
                             // 지도 탭 하나로 판정한다. 드래그·핀치는 이 이벤트가 오지 않는다.
                             val tap = MapTapLatLng(latLng.latitude, latLng.longitude)
-                            tapCoordinator.handleTap(tap, map.tapToleranceMeters(point, tap, tapTolerancePx))
+                            val result = tapCoordinator.resolve(tap, map.tapToleranceMeters(point, tap, tapTolerancePx))
+                            tapCoordinator.apply(result)
+                            // 타임머신: 빈 곳 탭이면 미래는 1줄만 남기고, 지금이면 모두 접는다(D-58)
+                            if (result.target == null) timeMachineClock.collapse()
                         }
 
                         val cameraListener = NaverMap.OnCameraIdleListener {

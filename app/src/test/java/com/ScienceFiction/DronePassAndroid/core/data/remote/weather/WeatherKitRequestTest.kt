@@ -21,6 +21,17 @@ class WeatherKitRequestTest {
     }
 
     @Test
+    fun `time machine request adds only the purpose key`() {
+        // D-84: 타임머신일 때만 purpose 키를 넣는다. 범위·이용자 정보는 보내지 않는다.
+        val request = weatherKitRequest(37.566535, 126.977969, "Asia/Seoul", purpose = WEATHER_PURPOSE_TIME_MACHINE)
+
+        assertEquals(setOf("latitude", "longitude", "timezone", "purpose"), request.keys)
+        assertEquals("timeMachine", request["purpose"])
+        assertEquals(37.57, request["latitude"] as Double, 0.0)
+        assertEquals(126.98, request["longitude"] as Double, 0.0)
+    }
+
+    @Test
     fun `grid coordinate matches server gridCoordinate`() {
         val cases = listOf(
             37.5665 to 37.57,

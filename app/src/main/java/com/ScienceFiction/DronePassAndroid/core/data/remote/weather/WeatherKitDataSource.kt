@@ -20,6 +20,13 @@ import kotlin.math.abs
 /** 날씨 원본 데이터 출처. 테스트에서는 fixture 를 돌려주는 가짜로 바꾼다. */
 interface WeatherKitDataSource {
     suspend fun fetch(latitude: Double, longitude: Double, timezone: String): WeatherKitResponse
+
+    /**
+     * 타임머신 전용 시간별 예보(D-84). 서버가 범위(현재 UTC 정시부터 +240시간)를 정하고 forecastHourly 만 준다.
+     * 이 요청을 모르는 서버는 기존 응답(+74시간)을 준다. 가짜 구현은 기존 응답을 그대로 쓴다.
+     */
+    suspend fun fetchTimeMachine(latitude: Double, longitude: Double, timezone: String): WeatherKitResponse =
+        fetch(latitude, longitude, timezone)
 }
 
 /** 중계 함수 오류 종류. 화면에서 원인별 안내 문구를 고르는 데 쓴다. */
@@ -40,6 +47,9 @@ class WeatherServiceException(
 ) : Exception(cause?.message ?: failure.name, cause)
 
 internal const val WEATHERKIT_CALLABLE_NAME = "getAndroidWeather"
+
+/** 타임머신 요청 표시(D-84). 서버는 정확히 이 값만 받고, 기존 요청에는 키를 넣지 않는다. */
+internal const val WEATHER_PURPOSE_TIME_MACHINE = "timeMachine"
 
 /** callable HTTP 프로토콜의 App Check 헤더. 이 요청에 붙는 헤더는 이것과 Content-Type 뿐이다. */
 internal const val AppCheckHeader = "X-Firebase-AppCheck"
@@ -70,8 +80,14 @@ class FirebaseWeatherKitDataSource @Inject constructor(
     private val moshi: Moshi,
 ) : WeatherKitDataSource {
 
-    override suspend fun fetch(latitude: Double, longitude: Double, timezone: String): WeatherKitResponse {
-        val body = weatherCallableBody(weatherKitRequest(latitude, longitude, timezone), moshi)
+    override suspend fun fetch(latitude: Double, longitude: Double, timezone: String): WeatherKitResponse =
+        call(weatherKitRequest(latitude, longitude, timezone))
+
+    override suspend fun fetchTimeMachine(latitude: Double, longitude: Double, timezone: String): WeatherKitResponse =
+        call(weatherKitRequest(latitude, longitude, timezone, purpose = WEATHER_PURPOSE_TIME_MACHINE))
+
+    private suspend fun call(data: Map<String, Any>): WeatherKitResponse {
+        val body = weatherCallableBody(data, moshi)
         val request = buildWeatherCallableRequest(url, body, appCheck.token())
         val (code, responseBody) = try {
             withContext(Dispatchers.IO) {
@@ -147,12 +163,19 @@ internal fun weatherFailureForHttp(httpCode: Int, status: String?): WeatherServi
 /**
  * 중계 함수 요청 본문. 측위 원본 좌표는 단말 밖으로 보내지 않고 0.01° 격자로 반올림해 보낸다.
  * 서버도 같은 격자로 Apple 에 요청하므로 날씨 결과는 같다.
+ * [purpose] 는 타임머신 요청일 때만 키를 넣는다(D-84). 이용자를 가리키는 값은 넣지 않는다.
  */
-internal fun weatherKitRequest(latitude: Double, longitude: Double, timezone: String): Map<String, Any> = mapOf(
-    "latitude" to weatherGridCoordinate(latitude),
-    "longitude" to weatherGridCoordinate(longitude),
-    "timezone" to timezone,
-)
+internal fun weatherKitRequest(
+    latitude: Double,
+    longitude: Double,
+    timezone: String,
+    purpose: String? = null,
+): Map<String, Any> = buildMap {
+    put("latitude", weatherGridCoordinate(latitude))
+    put("longitude", weatherGridCoordinate(longitude))
+    put("timezone", timezone)
+    if (purpose != null) put("purpose", purpose)
+}
 
 /**
  * 서버 `gridCoordinate` 와 같은 규칙: sign(v) * round((|v| + 1e-10) * 100) / 100, -0 은 0.

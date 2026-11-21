@@ -1073,4 +1073,16 @@
     <string name="tag_edit_alert_duplicate">같은 이름의 태그가 이미 있습니다.</string>
     <string name="tag_delete_title">\'%1$s\' 태그를 삭제할까요?</string>
     <string name="tag_delete_message">연결된 도형 %1$d개에서 태그가 빠집니다. 도형은 그대로 남습니다.</string>
+    <!-- 타임머신(D-58·D-83). 문구는 iOS 와 같은 뜻으로 쓴다 -->
+    <string name="timemachine_now">now</string>
+    <string name="timemachine_back_to_now">현재로</string>
+    <string name="timemachine_prev_day">하루 전</string>
+    <string name="timemachine_next_day">하루 뒤</string>
+    <string name="timemachine_calendar_title">날짜 고르기</string>
+    <string name="timemachine_show_shape">이 비행 일정으로 보기</string>
+    <string name="timemachine_before_sunrise">일출 전</string>
+    <string name="timemachine_after_sunset">일몰 뒤</string>
+    <string name="timemachine_daytime">낮</string>
+    <string name="timemachine_circle_a11y">보는 시각: %1$s</string>
+    <string name="timemachine_slider">보는 시각</string>
 </resources>

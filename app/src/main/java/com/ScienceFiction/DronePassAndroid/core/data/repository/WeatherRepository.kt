@@ -3,6 +3,7 @@ package com.ScienceFiction.DronePassAndroid.core.data.repository
 import com.ScienceFiction.DronePassAndroid.core.data.remote.weather.WeatherKitDataSource
 import com.ScienceFiction.DronePassAndroid.core.data.remote.weather.WeatherKitHour
 import com.ScienceFiction.DronePassAndroid.core.data.remote.weather.WeatherKitResponse
+import com.ScienceFiction.DronePassAndroid.core.data.remote.weather.weatherGridCoordinate
 import com.ScienceFiction.DronePassAndroid.core.util.CRICalculator
 import com.ScienceFiction.DronePassAndroid.core.util.CurrentCriSmoother
 import com.ScienceFiction.DronePassAndroid.core.util.DroneCategory
@@ -11,6 +12,9 @@ import com.ScienceFiction.DronePassAndroid.domain.model.CurrentWeatherData
 import com.ScienceFiction.DronePassAndroid.domain.model.HourlyWeatherData
 import com.ScienceFiction.DronePassAndroid.domain.model.WeatherCondition
 import com.ScienceFiction.DronePassAndroid.domain.model.WeatherData
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.time.Instant
@@ -38,6 +42,28 @@ private const val DUPLICATE_REQUEST_WINDOW_MS = 10_000L
 /** WeatherKit 격자(0.01°) 안의 위치 이동은 같은 예보다. */
 private const val WEATHERKIT_GRID_DEGREES = 0.01
 
+/** 타임머신 시간별 예보 캐시(D-59): 같은 격자에서 1시간. 실패해도 1시간 뒤 다시 묻는다(iOS 와 같음). */
+internal const val TIME_MACHINE_WEATHER_CACHE_MS = 60L * 60L * 1000L
+
+/** 타임머신 카드가 쓰는 한 시간 칸(정시 시작). 값은 iOS NotamHourWeather 와 같은 것만 둔다. */
+data class TimeMachineHour(
+    val startMillis: Long,
+    val temperature: Double?,
+    val windDirection: Double?,
+    val condition: WeatherCondition?,
+    /** mm — 그 시간 강수량. 시간별 예보는 iOS 처럼 강수량으로 아이콘을 고른다. */
+    val precipitation: Double,
+)
+
+/** 타임머신 시간별 예보. [starts] 는 [hours] 의 시작 시각을 정렬해 둔 것(칸마다 이분 탐색). */
+class TimeMachineWeather(
+    val gridLatitude: Double,
+    val gridLongitude: Double,
+    val hours: List<TimeMachineHour>,
+) {
+    val starts: LongArray = LongArray(hours.size) { hours[it].startMillis }
+}
+
 @Singleton
 class WeatherRepository @Inject constructor(
     private val dataSource: WeatherKitDataSource,
@@ -50,6 +76,12 @@ class WeatherRepository @Inject constructor(
     @Volatile private var lastLongitude: Double = Double.NaN
     @Volatile private var lastCategory: DroneCategory = DroneCategory.IosDefault
     @Volatile private var lastFetchedAtElapsed: Long = 0L
+
+    private val timeMachineMutex = Mutex()
+    private val _timeMachineWeather = MutableStateFlow<TimeMachineWeather?>(null)
+    /** 타임머신 시간별 예보(없으면 null — 카드 날씨 칸은 '–'). */
+    val timeMachineWeather: StateFlow<TimeMachineWeather?> = _timeMachineWeather.asStateFlow()
+    @Volatile private var timeMachineKey: Triple<Double, Double, Long>? = null
 
     suspend fun fetchWeather(
         latitude: Double,
@@ -91,6 +123,42 @@ class WeatherRepository @Inject constructor(
         abs(latitude - lastLatitude) < WEATHERKIT_GRID_DEGREES &&
         abs(longitude - lastLongitude) < WEATHERKIT_GRID_DEGREES &&
         nowMillis - lastFetchedAtElapsed in 0 until DUPLICATE_REQUEST_WINDOW_MS
+
+    /** 마지막 날씨 요청 좌표(카드 기준 위치). 타임머신 예보의 격자가 바뀌었는지만 본다. 없으면 null. */
+    fun lastRequestedCoordinate(): Pair<Double, Double>? =
+        if (lastResult != null && lastLatitude.isFinite() && lastLongitude.isFinite()) lastLatitude to lastLongitude else null
+
+    /** 이 좌표로 타임머신 예보를 다시 받아야 하는지: 처음이거나, 격자가 바뀌었거나, 1시간이 지났을 때. */
+    fun needsTimeMachineWeather(latitude: Double, longitude: Double, nowMillis: Long): Boolean {
+        val key = timeMachineKey ?: return true
+        return key.first != weatherGridCoordinate(latitude) ||
+            key.second != weatherGridCoordinate(longitude) ||
+            nowMillis - key.third !in 0 until TIME_MACHINE_WEATHER_CACHE_MS
+    }
+
+    /**
+     * 타임머신 시간별 예보를 받는다(D-59·D-84). 기존 날씨 요청과 따로 보내고, 같은 격자에서 1시간 다시 묻지 않는다.
+     * 서버가 아직 타임머신 요청을 모르면 기존 응답(+74시간)의 시간별만 쓴다(그 뒤 칸은 '–').
+     */
+    suspend fun fetchTimeMachineWeather(
+        latitude: Double,
+        longitude: Double,
+        nowMillis: () -> Long = System::currentTimeMillis,
+    ): Result<TimeMachineWeather?> = timeMachineMutex.withLock {
+        val now = nowMillis()
+        if (!needsTimeMachineWeather(latitude, longitude, now)) return@withLock Result.success(_timeMachineWeather.value)
+        val gridLatitude = weatherGridCoordinate(latitude)
+        val gridLongitude = weatherGridCoordinate(longitude)
+        timeMachineKey = Triple(gridLatitude, gridLongitude, now)
+        runCatching {
+            val response = dataSource.fetchTimeMachine(latitude, longitude, ZoneId.systemDefault().id)
+            TimeMachineWeather(
+                gridLatitude = gridLatitude,
+                gridLongitude = gridLongitude,
+                hours = mapTimeMachineHours(response),
+            ).also { _timeMachineWeather.value = it }
+        }
+    }
 
     /** 수동 새로고침·카테고리 변경: 중복 요청 창을 비워 서버에 다시 묻는다. */
     fun invalidateCache() {
@@ -163,6 +231,22 @@ internal fun mapWeatherKitResponse(
         dataSourceAttributionUrl = response.currentWeather?.metadata?.attributionURL,
     )
 }
+
+/** 타임머신 시간별: 서버가 준 칸을 모두 쓴다(72시간으로 자르지 않는다). */
+internal fun mapTimeMachineHours(response: WeatherKitResponse): List<TimeMachineHour> =
+    response.forecastHourly?.hours.orEmpty()
+        .mapNotNull { hour ->
+            val start = hour.forecastStart.toEpochMillisOrNull() ?: return@mapNotNull null
+            TimeMachineHour(
+                startMillis = start,
+                temperature = hour.temperature,
+                windDirection = hour.windDirection,
+                condition = WeatherCondition.fromAppleCode(hour.conditionCode),
+                precipitation = hour.precipitationAmount ?: 0.0,
+            )
+        }
+        .sortedBy { it.startMillis }
+        .distinctBy { it.startMillis }
 
 private fun WeatherKitHour.toHourlyWeatherData(): HourlyWeatherData? {
     val time = forecastStart.toEpochMillisOrNull() ?: return null

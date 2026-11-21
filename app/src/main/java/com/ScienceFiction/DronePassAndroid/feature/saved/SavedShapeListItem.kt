@@ -51,11 +51,13 @@ fun SavedShapeListItem(
     modifier: Modifier = Modifier,
     /** 오른쪽 위에 보일 태그 이름 (활성 태그가 없으면 null) */
     tagName: String? = null,
+    /** 만료 판정 시각. 타임머신이 미래 시각을 가리키면 그 시각(D-85), null 이면 지금. */
+    judgmentTimeMillis: Long? = null,
 ) {
     val currentLocale = Locale.getDefault()
     val dateFormat = remember(currentLocale) { savedShapeListDateFormat(currentLocale) }
     val shapeColor = resolveSavedShapeDisplayColor(shape.color)
-    val isExpired = isSavedShapeListItemExpired(shape.flightEndDate, now = System.currentTimeMillis())
+    val isExpired = isSavedShapeListItemExpired(shape.flightEndDate, now = judgmentTimeMillis ?: System.currentTimeMillis())
     val displayColor = if (isExpired) SavedShapeExpiredIndicatorColor else shapeColor
     val dateRangeText = formatSavedShapeDateRange(
         startDateMillis = shape.flightStartDate,

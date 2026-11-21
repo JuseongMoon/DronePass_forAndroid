@@ -61,6 +61,7 @@ import com.ScienceFiction.DronePassAndroid.ui.theme.IosSecondarySystemGroupedBac
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 import com.ScienceFiction.DronePassAndroid.feature.shape.ShapeDetailSheet
+import com.ScienceFiction.DronePassAndroid.feature.timemachine.rememberTimeMachineClock
 import com.ScienceFiction.DronePassAndroid.feature.shape.ShapeEditScreen
 import kotlinx.coroutines.delay
 
@@ -79,6 +80,8 @@ fun SavedListScreen(
     val notStartedShapes by viewModel.notStartedShapes.collectAsStateWithLifecycle()
     val activeShapes by viewModel.activeFilteredShapes.collectAsStateWithLifecycle()
     val expiredShapes by viewModel.expiredShapes.collectAsStateWithLifecycle()
+    val listTimeMachine = rememberTimeMachineClock()
+    val listTimeMachineSelection by listTimeMachine.selection.collectAsStateWithLifecycle()
     val selectedShapeId by viewModel.selectedShapeId.collectAsStateWithLifecycle()
     val selectedShape by viewModel.selectedShape.collectAsStateWithLifecycle()
     var showShapeEditTargetDeleted by remember { mutableStateOf(false) }
@@ -227,6 +230,7 @@ fun SavedListScreen(
                                     },
                                     onDetailClick = { viewModel.onShapeSelected(shape.id) },
                                     tagName = tagFilterState.activeTags.activeTag(shape.tagId)?.displayName,
+                                    judgmentTimeMillis = listTimeMachineSelection?.timeMillis,
                                 )
                             }
                         }
@@ -257,6 +261,7 @@ fun SavedListScreen(
                                     },
                                     onDetailClick = { viewModel.onShapeSelected(shape.id) },
                                     tagName = tagFilterState.activeTags.activeTag(shape.tagId)?.displayName,
+                                    judgmentTimeMillis = listTimeMachineSelection?.timeMillis,
                                 )
                             }
                         }
@@ -287,6 +292,7 @@ fun SavedListScreen(
                                     },
                                     onDetailClick = { viewModel.onShapeSelected(shape.id) },
                                     tagName = tagFilterState.activeTags.activeTag(shape.tagId)?.displayName,
+                                    judgmentTimeMillis = listTimeMachineSelection?.timeMillis,
                                 )
                             }
                         }
@@ -297,6 +303,7 @@ fun SavedListScreen(
     }
 
     // 도형 상세 BottomSheet
+    val timeMachine = listTimeMachine
     if (showShapeDetail) {
         selectedShape?.let { shape ->
             ShapeDetailSheet(
@@ -318,6 +325,16 @@ fun SavedListScreen(
                 activeDrones = activeDrones,
                 koreaFeaturesEnabled = koreaFeaturesEnabled,
                 onExternalMapOpened = viewModel::logExternalMapOpened,
+                onShowSchedule = if (timeMachine.canShowSchedule(shape)) {
+                    {
+                        // 지도로 가서 그 도형을 보이고, 그 비행 시작 시각으로 패널을 펼친다(iOS 와 같음)
+                        timeMachine.showShapeSchedule(shape)
+                        viewModel.dismissShapeDetail()
+                        onNavigateToMapWithShape(shape.id)
+                    }
+                } else {
+                    null
+                },
             )
         }
     }
