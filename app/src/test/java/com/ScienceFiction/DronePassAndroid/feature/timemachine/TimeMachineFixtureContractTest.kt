@@ -2,6 +2,12 @@ package com.ScienceFiction.DronePassAndroid.feature.timemachine
 
 import com.ScienceFiction.DronePassAndroid.core.data.remote.weather.weatherGridCoordinate
 import com.ScienceFiction.DronePassAndroid.core.data.repository.TIME_MACHINE_WEATHER_CACHE_MS
+import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
+import com.ScienceFiction.DronePassAndroid.feature.map.isMapShapeExpired
+import com.ScienceFiction.DronePassAndroid.feature.map.isMapShapeNotStarted
+import com.ScienceFiction.DronePassAndroid.feature.saved.isSavedListExpired
+import com.ScienceFiction.DronePassAndroid.feature.saved.isSavedListNotStarted
+import com.ScienceFiction.DronePassAndroid.feature.saved.isSavedShapeListItemExpired
 import com.squareup.moshi.Moshi
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -155,7 +161,6 @@ class TimeMachineFixtureContractTest {
                 nowMillis = instant(input.string("now")),
                 startMillis = instant(input.string("start")),
                 endMillis = input.optionalString("end")?.let(::instant),
-                dateOnly = input.required("dateOnly") as Boolean,
                 sunriseMillis = input.optionalString("sunrise")?.let(::instant),
                 zone = ZoneId.of(input.string("deviceTimeZone")),
             )
@@ -170,6 +175,35 @@ class TimeMachineFixtureContractTest {
                     assertEquals(case.name(), expected.string("label"), r.label)
                 }
                 else -> error("Unknown kind $kind")
+            }
+        }
+    }
+
+    @Test
+    fun `shape status cases`() {
+        // D-85: 지도·저장 목록이 실제로 쓰는 판정 함수가 같은 답을 내는지 본다(기기 시간대는 판정에 쓰지 않는다)
+        val cases = fixture().cases("shapeStatusCases")
+        assertTrue(cases.isNotEmpty())
+        for (case in cases) {
+            val input = case.map("input")
+            val expected = case.map("expected")
+            val t = instant(input.string("t"))
+            val start = instant(input.string("start"))
+            val end = input.optionalString("end")?.let(::instant)
+            val notStarted = expected.required("notStarted") as Boolean
+            val expired = expected.required("expired") as Boolean
+            val active = expected.required("active") as Boolean
+            withDefaultZone(input.optionalString("deviceTimeZone")) {
+                val status = TimeMachineShapeStatus.at(start, end, t)
+                assertEquals(case.name(), notStarted, status.notStarted)
+                assertEquals(case.name(), expired, status.expired)
+                assertEquals(case.name(), active, status.active)
+                assertEquals(case.name(), notStarted, isMapShapeNotStarted(start, t))
+                assertEquals(case.name(), expired, isMapShapeExpired(end, t))
+                val shape = ShapeModel(id = "s", flightStartDate = start, flightEndDate = end)
+                assertEquals(case.name(), notStarted, isSavedListNotStarted(shape, t))
+                assertEquals(case.name(), expired, isSavedListExpired(shape, t))
+                assertEquals(case.name(), expired, isSavedShapeListItemExpired(end, t))
             }
         }
     }

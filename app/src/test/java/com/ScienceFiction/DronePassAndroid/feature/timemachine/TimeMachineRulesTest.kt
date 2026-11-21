@@ -165,10 +165,10 @@ class TimeMachineRulesTest {
             TimeMachineShapeSchedule.resolve(shape(kst(2026, 12, 5, 9, 0), kst(2026, 12, 5, 10, 0)), now, TimeMachineZone),
         )
         assertEquals(kst(2026, 12, 4, 9, 0), at(shape(kst(2026, 12, 4, 9, 0), kst(2026, 12, 4, 10, 0))))
-        // 끝이 없는 도형은 시작 날 하루
+        // 종료가 없는 도형은 만료되지 않는다(지난달 시작이어도 진행 중)
         assertEquals(
-            kst(2026, 11, 10),
-            TimeMachineShapeSchedule.flightEnd(kst(2026, 11, 9, 13, 0), null, dateOnly = false, zone = TimeMachineZone),
+            TimeMachineShapeSchedule.Result.Now,
+            TimeMachineShapeSchedule.resolve(shape(kst(2026, 10, 1, 9, 0), null), now, TimeMachineZone),
         )
     }
 }
