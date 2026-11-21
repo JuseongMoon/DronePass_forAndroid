@@ -77,7 +77,18 @@ import com.ScienceFiction.DronePassAndroid.feature.weather.WeatherForecastConten
 import com.ScienceFiction.DronePassAndroid.feature.weather.WeatherInfoTopic
 import com.ScienceFiction.DronePassAndroid.feature.weather.WeatherSheetHeader
 import com.ScienceFiction.DronePassAndroid.feature.weather.WeatherViewModel
+import com.ScienceFiction.DronePassAndroid.feature.timemachine.TimeMachineCircleButton
+import com.ScienceFiction.DronePassAndroid.feature.timemachine.TimeMachineCircleSize
+import com.ScienceFiction.DronePassAndroid.feature.timemachine.TimeMachineCircleSpacing
+import com.ScienceFiction.DronePassAndroid.feature.timemachine.TimeMachinePanel
+import com.ScienceFiction.DronePassAndroid.feature.timemachine.kpLongTermSeries
+import com.ScienceFiction.DronePassAndroid.feature.timemachine.kpThreeHourSeries
+import com.ScienceFiction.DronePassAndroid.feature.timemachine.rememberTimeMachineClock
+import com.ScienceFiction.DronePassAndroid.feature.timemachine.timeMachineCardValues
 import com.naver.maps.map.NaverMap
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.runtime.mutableIntStateOf
 import com.naver.maps.map.MapView
 import com.ScienceFiction.DronePassAndroid.ui.component.DronePassModalBottomSheet
 
@@ -270,7 +281,60 @@ internal fun MapFloatingControls(
         isTablet = isTabletLayout,
     )
 
+    // 타임머신(D-58·D-83): 드롭다운 자리에 두 줄 패널을 펼치고, 드롭다운·동그라미는 패널 높이만큼 내려간다.
+    val timeMachine = rememberTimeMachineClock()
+    val timeMachineSelection by timeMachine.selection.collectAsStateWithLifecycle()
+    val timeMachineWeather by weatherViewModel.timeMachineWeather.collectAsStateWithLifecycle()
+    val kpForecast by kpViewModel.forecastData.collectAsStateWithLifecycle()
+    val kpLongTerm by kpViewModel.longTermForecast.collectAsStateWithLifecycle()
+    val kpThreeHour = remember(kpForecast) { kpThreeHourSeries(kpForecast) }
+    val kpLongTermDays = remember(kpLongTerm) { kpLongTermSeries(kpLongTerm) }
+    val showsTimeMachine = shouldShowMapDroneDropdown(isSketchMode = isSketchMode)
+    val timeMachineActive = timeMachineSelection != null
+    // 시간별 예보는 타임머신에 들어갈 때와 날씨를 새로 받았을 때만 확인한다(칸을 옮길 때마다 부르지 않는다)
+    LaunchedEffect(timeMachineActive, weatherData) {
+        if (timeMachineActive) weatherViewModel.ensureTimeMachineWeather()
+    }
+    val mapCenter: () -> Pair<Double, Double> = {
+        naverMap?.cameraPosition?.target?.let { it.latitude to it.longitude }
+            ?: (MapCreateShapeFallbackLatitude to MapCreateShapeFallbackLongitude)
+    }
+    // 카드의 해는 날씨 카드와 같은 기준 위치, 슬라이더의 일출·일몰 선은 지도 중심(iOS 와 같음)
+    val cardSunBasis = remember(weatherData) { weatherViewModel.weatherBasisCoordinate() }
+    val timeMachineCards = remember(timeMachineSelection, timeMachineWeather, kpThreeHour, kpLongTermDays, cardSunBasis) {
+        timeMachineSelection?.let { selection ->
+            val basis = cardSunBasis ?: mapCenter()
+            timeMachineCardValues(selection, timeMachineWeather, kpThreeHour, kpLongTermDays, basis.first, basis.second)
+        }
+    }
+    val density = LocalDensity.current
+    var timeMachinePanelHeightPx by remember { mutableIntStateOf(0) }
+    val timeMachinePanelOffset = if (showsTimeMachine && timeMachinePanelHeightPx > 0) {
+        with(density) { timeMachinePanelHeightPx.toDp() } + 8.dp
+    } else {
+        0.dp
+    }
+    val dropdownTop = droneDropdownTopPadding + timeMachinePanelOffset
+
     Box(modifier = modifier.fillMaxSize()) {
+        if (showsTimeMachine) {
+            TimeMachinePanel(
+                clock = timeMachine,
+                sunCenter = mapCenter,
+                isTablet = isTabletLayout,
+                modifier = Modifier
+                    .align(if (isTabletLayout) Alignment.TopEnd else Alignment.TopCenter)
+                    .padding(top = droneDropdownTopPadding, start = 16.dp, end = 16.dp)
+                    .onSizeChanged { timeMachinePanelHeightPx = it.height },
+            )
+            TimeMachineCircleButton(
+                clock = timeMachine,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = dropdownTop, end = 16.dp),
+            )
+        }
+
         // 드론 선택 드롭다운 (상단 우측)
         // iOS `droneDropdownView`: .padding(.top, safeAreaInsets.top + dropdownTopPadding)
         // iOS 지도 화면은 ignoresSafeArea 안에서 측정해 safeAreaInsets.top 이 0 이다. 그래서 칩은
@@ -288,8 +352,8 @@ internal fun MapFloatingControls(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(
-                        top = droneDropdownTopPadding,
-                        end = 16.dp,
+                        top = dropdownTop,
+                        end = 16.dp + TimeMachineCircleSize + TimeMachineCircleSpacing,
                     ),
             )
         }
@@ -318,6 +382,7 @@ internal fun MapFloatingControls(
             sunriseTimes = weatherData?.sunriseTimes.orEmpty(),
             sunsetTimes = weatherData?.sunsetTimes.orEmpty(),
             weatherUtcOffsetSeconds = weatherData?.utcOffsetSeconds,
+            timeMachineCards = timeMachineCards,
             onWeatherClick = onShowWeather,
             isTabletLayout = isTabletLayout,
             naverMap = naverMap,
@@ -734,6 +799,7 @@ internal fun MapBottomSheets(
     var showKpInfoSheet by remember { mutableStateOf(false) }
     var showWeatherInfoSheet by remember { mutableStateOf(false) }
     var selectedWeatherInfoTopic by remember { mutableStateOf<WeatherInfoTopic?>(null) }
+    val timeMachine = rememberTimeMachineClock()
 
     // 도형 상세
     if (showShapeDetail) {
@@ -759,6 +825,15 @@ internal fun MapBottomSheets(
                 activeDrones = activeDrones,
                 koreaFeaturesEnabled = koreaFeaturesEnabled,
                 onExternalMapOpened = viewModel::logExternalMapOpened,
+                onShowSchedule = if (timeMachine.canShowSchedule(shape)) {
+                    {
+                        timeMachine.showShapeSchedule(shape)
+                        viewModel.dismissShapeDetail()
+                        viewModel.moveCameraToShape(shape)
+                    }
+                } else {
+                    null
+                },
             )
         }
     }

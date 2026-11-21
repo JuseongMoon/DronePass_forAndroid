@@ -60,6 +60,7 @@ import com.ScienceFiction.DronePassAndroid.ui.theme.IosSecondarySystemGroupedBac
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 import com.ScienceFiction.DronePassAndroid.feature.shape.ShapeDetailSheet
+import com.ScienceFiction.DronePassAndroid.feature.timemachine.rememberTimeMachineClock
 import com.ScienceFiction.DronePassAndroid.feature.shape.ShapeEditScreen
 import kotlinx.coroutines.delay
 
@@ -296,6 +297,7 @@ fun SavedListScreen(
     }
 
     // 도형 상세 BottomSheet
+    val timeMachine = rememberTimeMachineClock()
     if (showShapeDetail) {
         selectedShape?.let { shape ->
             ShapeDetailSheet(
@@ -317,6 +319,16 @@ fun SavedListScreen(
                 activeDrones = activeDrones,
                 koreaFeaturesEnabled = koreaFeaturesEnabled,
                 onExternalMapOpened = viewModel::logExternalMapOpened,
+                onShowSchedule = if (timeMachine.canShowSchedule(shape)) {
+                    {
+                        // 지도로 가서 그 도형을 보이고, 그 비행 시작 시각으로 패널을 펼친다(iOS 와 같음)
+                        timeMachine.showShapeSchedule(shape)
+                        viewModel.dismissShapeDetail()
+                        onNavigateToMapWithShape(shape.id)
+                    }
+                } else {
+                    null
+                },
             )
         }
     }

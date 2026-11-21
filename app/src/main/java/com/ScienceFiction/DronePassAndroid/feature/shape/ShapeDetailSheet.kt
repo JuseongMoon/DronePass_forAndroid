@@ -55,7 +55,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.IosShare
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material3.AlertDialog
@@ -195,6 +197,8 @@ fun ShapeDetailSheet(
     tags: List<TagModel> = emptyList(),
     koreaFeaturesEnabled: Boolean = true,
     onExternalMapOpened: (String) -> Unit = {},
+    /** 타임머신 "이 비행 일정으로 보기"(D-83). null 이면 버튼을 숨긴다(끝난 일정·27일 밖). */
+    onShowSchedule: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val hapticFeedback = LocalHapticFeedback.current
@@ -426,6 +430,31 @@ fun ShapeDetailSheet(
                             text = dateFormat.format(Date(shape.flightEndDate)),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+
+                // 타임머신: 이 도형의 비행 시작 시각으로 날씨·KP 카드를 본다(패널 펼침, D-83)
+                if (onShowSchedule != null) {
+                    ShapeDetailRowDivider()
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = ShapeDetailRowMinHeight)
+                            .clickable { hideAndThen(onShowSchedule) }
+                            .padding(horizontal = InsetGroupedRowHorizontalPadding, vertical = 11.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.History,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                        Text(
+                            text = stringResource(R.string.timemachine_show_shape),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.primary,
                         )
                     }
                 }

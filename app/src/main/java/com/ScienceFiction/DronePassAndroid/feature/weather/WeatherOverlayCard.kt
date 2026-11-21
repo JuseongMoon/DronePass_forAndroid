@@ -30,6 +30,8 @@ import com.ScienceFiction.DronePassAndroid.domain.model.WeatherCondition
 import com.ScienceFiction.DronePassAndroid.core.util.interpolateTemperatureColor
 import com.ScienceFiction.DronePassAndroid.core.util.nextSunEvent
 import com.ScienceFiction.DronePassAndroid.domain.model.CurrentWeatherData
+import com.ScienceFiction.DronePassAndroid.feature.timemachine.TimeMachineCardValues
+import androidx.compose.ui.draw.alpha
 import java.util.Locale
 
 // iOS MainFloatingButtonView.weatherWindIconButton 의 색상을 그대로 매핑.
@@ -77,6 +79,9 @@ internal fun weatherOverlayWindRotationDegrees(windDirection: Double?): Float =
  *
  * `currentWeather` 가 null 이어도 카드 자체는 항상 표시되고 값은 "-" / "--:--" 로 폴백한다
  * (iOS WeatherManager 의 nil 처리와 동일).
+ *
+ * [timeMachine] 이 있으면 그 시각의 값을 보인다(D-59). 풍향이 없으면 화살표는 자리만 남긴다.
+ * null 이면 지금 동작 그대로다.
  */
 @Composable
 fun WeatherOverlayCard(
@@ -88,16 +93,24 @@ fun WeatherOverlayCard(
     sunriseTimes: List<String> = sunrise?.let(::listOf) ?: emptyList(),
     sunsetTimes: List<String> = sunset?.let(::listOf) ?: emptyList(),
     utcOffsetSeconds: Int? = null,
+    timeMachine: TimeMachineCardValues? = null,
 ) {
     val now = rememberSunEventNow(utcOffsetSeconds, sunriseTimes, sunsetTimes)
-    val sunEvent = nextSunEvent(
+    val currentSunEvent = nextSunEvent(
         sunriseIsoList = sunriseTimes,
         sunsetIsoList = sunsetTimes,
         now = now,
     )
-    val temperatureText = weatherOverlayTemperatureText(currentWeather?.temperature)
-    val windRotationDegrees = weatherOverlayWindRotationDegrees(currentWeather?.windDirection)
-    val temperatureColor = interpolateTemperatureColor(currentWeather?.temperature)
+    val isNextSunset = timeMachine?.sunToSunset ?: currentSunEvent.isNextSunset
+    val sunText = timeMachine?.sunText ?: currentSunEvent.timeUntilFormatted
+    val temperature = if (timeMachine != null) timeMachine.temperature else currentWeather?.temperature
+    val windDirection = if (timeMachine != null) timeMachine.windDirection else currentWeather?.windDirection
+    val condition = if (timeMachine != null) timeMachine.condition else currentWeather?.condition
+    val precipitation = if (timeMachine != null) timeMachine.precipitation else currentWeather?.precipitation
+    val showsWindArrow = timeMachine == null || timeMachine.windDirection != null
+    val temperatureText = weatherOverlayTemperatureText(temperature)
+    val windRotationDegrees = weatherOverlayWindRotationDegrees(windDirection)
+    val temperatureColor = interpolateTemperatureColor(temperature)
 
     // iOS .buttonStyle(.plain): 누름 효과 없음
     Surface(
@@ -126,8 +139,8 @@ fun WeatherOverlayCard(
             ) {
                 Icon(
                     imageVector = resolveWeatherOverlayWeatherIcon(
-                        condition = currentWeather?.condition,
-                        precipitation = currentWeather?.precipitation,
+                        condition = condition,
+                        precipitation = precipitation,
                     ),
                     contentDescription = null,
                     tint = WeatherIconColor,
@@ -139,6 +152,7 @@ fun WeatherOverlayCard(
                     tint = WindArrowColor,
                     modifier = Modifier
                         .size(WeatherOverlayCardIconSize)
+                        .alpha(if (showsWindArrow) 1f else 0f)
                         .rotate(windRotationDegrees),
                 )
                 Text(
@@ -157,7 +171,7 @@ fun WeatherOverlayCard(
                 Icon(
                     painter = painterResource(
                         iosSunEventDrawableRes(
-                            isSunrise = resolveSunEventOverlayIcon(sunEvent.isNextSunset) ==
+                            isSunrise = resolveSunEventOverlayIcon(isNextSunset) ==
                                 SunEventOverlayIcon.Sunrise,
                         ),
                     ),
@@ -166,7 +180,7 @@ fun WeatherOverlayCard(
                     modifier = Modifier.size(WeatherOverlayCardIconSize),
                 )
                 Text(
-                    text = sunEvent.timeUntilFormatted,
+                    text = sunText,
                     fontSize = WeatherOverlayCardTextSize,
                     fontWeight = FontWeight.Bold,
                     color = SunEventColor,

@@ -34,6 +34,8 @@ import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import com.ScienceFiction.DronePassAndroid.domain.model.KpLevel
+import com.ScienceFiction.DronePassAndroid.feature.timemachine.TimeMachineCardValues
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -146,6 +148,8 @@ fun MapFloatingButtons(
     sunriseTimes: List<String> = sunrise?.let(::listOf) ?: emptyList(),
     sunsetTimes: List<String> = sunset?.let(::listOf) ?: emptyList(),
     weatherUtcOffsetSeconds: Int? = null,
+    /** 타임머신 시각의 카드 값(D-59). null 이면 지금 값 그대로. */
+    timeMachineCards: TimeMachineCardValues? = null,
     onWeatherClick: () -> Unit = {},
     isTabletLayout: Boolean = false,
     naverMap: NaverMap? = null,
@@ -239,8 +243,14 @@ fun MapFloatingButtons(
                         color = MaterialTheme.colorScheme.surface,
                         shadowElevation = MapKpButtonShadowElevation
                     ) {
-                        val kpValueText = remember(currentKpValue) {
-                            formatMapKpValue(currentKpValue)
+                        val shownKp = if (timeMachineCards != null) timeMachineCards.kp else currentKpValue
+                        val shownKpColor = if (timeMachineCards != null) {
+                            timeMachineCards.kp?.let { Color(KpLevel.fromKp(it).color.toInt()) } ?: Color.Gray
+                        } else {
+                            kpLevelColor
+                        }
+                        val kpValueText = remember(shownKp) {
+                            formatMapKpValue(shownKp)
                         }
                         Row(
                             modifier = Modifier.padding(
@@ -254,13 +264,13 @@ fun MapFloatingButtons(
                                 text = "KP",
                                 fontSize = MapKpButtonTextSize,
                                 fontWeight = FontWeight.Bold,
-                                color = kpLevelColor
+                                color = shownKpColor
                             )
                             Text(
                                 text = kpValueText,
                                 fontSize = MapKpButtonTextSize,
                                 fontWeight = FontWeight.Bold,
-                                color = kpLevelColor
+                                color = shownKpColor
                             )
                         }
                     }
@@ -276,6 +286,7 @@ fun MapFloatingButtons(
                         sunsetTimes = sunsetTimes,
                         onClick = onWeatherClick,
                         utcOffsetSeconds = weatherUtcOffsetSeconds,
+                        timeMachine = timeMachineCards,
                     )
                 }
             }
