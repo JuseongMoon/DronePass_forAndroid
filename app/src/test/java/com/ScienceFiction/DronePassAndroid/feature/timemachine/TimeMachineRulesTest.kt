@@ -145,25 +145,30 @@ class TimeMachineRulesTest {
     @Test
     fun `도형 일정 시작 시각`() {
         val now = kst(2026, 11, 7, 14, 23)
+        fun at(shape: ShapeModel): Long =
+            (TimeMachineShapeSchedule.resolve(shape, now, TimeMachineZone) as TimeMachineShapeSchedule.Result.At).resolved.timeMillis
         // 시각까지 있는 도형 → 그 시각
-        assertEquals(
-            kst(2026, 11, 9, 13, 0),
-            TimeMachineShapeSchedule.scheduleStart(shape(kst(2026, 11, 9, 13, 0), kst(2026, 11, 9, 15, 0)), now),
-        )
+        assertEquals(kst(2026, 11, 9, 13, 0), at(shape(kst(2026, 11, 9, 13, 0), kst(2026, 11, 9, 15, 0))))
         // 날짜만 → 그날 일출(서울 11/9 약 07:04) → 칸 올림 07:10
-        val start = TimeMachineShapeSchedule.scheduleStart(shape(kst(2026, 11, 9), kst(2026, 11, 9, 23, 59)), now)
-        assertEquals(7, Instant.ofEpochMilli(start).atZone(TimeMachineZone).hour)
-        assertEquals(kst(2026, 11, 9, 7, 10), TimeMachineSlot.time(start, TimeMachineSlot.slotRoundingUp(start)))
-        // 진행 중 → 지금
-        assertEquals(now, TimeMachineShapeSchedule.scheduleStart(shape(kst(2026, 11, 5), kst(2026, 11, 20)), now))
-        // 끝난 도형·27일 넘는 도형은 버튼 없음
-        assertFalse(TimeMachineShapeSchedule.canShowSchedule(shape(kst(2026, 11, 1), kst(2026, 11, 2)), now))
-        assertFalse(TimeMachineShapeSchedule.canShowSchedule(shape(kst(2026, 12, 5, 9, 0), kst(2026, 12, 5, 10, 0)), now))
-        assertTrue(TimeMachineShapeSchedule.canShowSchedule(shape(kst(2026, 12, 4, 9, 0), kst(2026, 12, 4, 10, 0)), now))
+        assertEquals(kst(2026, 11, 9, 7, 10), at(shape(kst(2026, 11, 9), kst(2026, 11, 9, 23, 59))))
+        // 진행 중 → 지금, 끝난 도형·27일 넘는 도형은 버튼 없음
+        assertEquals(
+            TimeMachineShapeSchedule.Result.Now,
+            TimeMachineShapeSchedule.resolve(shape(kst(2026, 11, 5), kst(2026, 11, 20)), now, TimeMachineZone),
+        )
+        assertEquals(
+            TimeMachineShapeSchedule.Result.Unavailable,
+            TimeMachineShapeSchedule.resolve(shape(kst(2026, 11, 1), kst(2026, 11, 2)), now, TimeMachineZone),
+        )
+        assertEquals(
+            TimeMachineShapeSchedule.Result.Unavailable,
+            TimeMachineShapeSchedule.resolve(shape(kst(2026, 12, 5, 9, 0), kst(2026, 12, 5, 10, 0)), now, TimeMachineZone),
+        )
+        assertEquals(kst(2026, 12, 4, 9, 0), at(shape(kst(2026, 12, 4, 9, 0), kst(2026, 12, 4, 10, 0))))
         // 끝이 없는 도형은 시작 날 하루
         assertEquals(
             kst(2026, 11, 10),
-            TimeMachineShapeSchedule.flightPeriod(shape(kst(2026, 11, 9, 13, 0), null)).second,
+            TimeMachineShapeSchedule.flightEnd(kst(2026, 11, 9, 13, 0), null, dateOnly = false, zone = TimeMachineZone),
         )
     }
 }

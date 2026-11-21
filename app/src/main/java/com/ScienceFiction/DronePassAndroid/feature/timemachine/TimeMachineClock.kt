@@ -4,6 +4,7 @@ import com.ScienceFiction.DronePassAndroid.domain.model.ShapeModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import java.time.ZoneId
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -93,12 +94,7 @@ class TimeMachineClock internal constructor(private val now: () -> Long) {
         apply(TimeMachineSlot.resolve(now(), TimeMachineSlot.addDays(day(), delta), slot()))
     }
 
-    fun canStepDay(delta: Int): Boolean {
-        val today = TimeMachineSlot.dayStart(now())
-        val target = TimeMachineSlot.addDays(day(), delta)
-        val last = TimeMachineSlot.addDays(today, TimeMachineLimits.MAX_DAYS)
-        return target in today..last
-    }
+    fun canStepDay(delta: Int): Boolean = TimeMachineSlot.canStepDay(now(), day(), delta)
 
     /** 캘린더에서 날 고르기(시각 유지). */
     fun pickDay(dayMillis: Long) {
@@ -112,16 +108,15 @@ class TimeMachineClock internal constructor(private val now: () -> Long) {
     }
 
     /** 도형 "이 비행 일정으로 보기": 비행 시작 시각으로 보고 패널을 펼친다. 진행 중이면 지금 그대로 패널만 펼친다. */
-    fun showShapeSchedule(shape: ShapeModel) {
-        val n = now()
-        val start = TimeMachineShapeSchedule.scheduleStart(shape, n)
-        if (start <= n) {
-            _selection.value = null
-        } else {
-            apply(TimeMachineSlot.resolve(n, start, TimeMachineSlot.slotRoundingUp(start)), shapeId = shape.id)
+    fun showShapeSchedule(shape: ShapeModel, zone: ZoneId = ZoneId.systemDefault()) {
+        when (val result = TimeMachineShapeSchedule.resolve(shape, now(), zone)) {
+            TimeMachineShapeSchedule.Result.Unavailable -> return
+            TimeMachineShapeSchedule.Result.Now -> _selection.value = null
+            is TimeMachineShapeSchedule.Result.At -> apply(result.resolved, shapeId = shape.id)
         }
         _panel.value = Panel.FULL
     }
 
-    fun canShowSchedule(shape: ShapeModel): Boolean = TimeMachineShapeSchedule.canShowSchedule(shape, now())
+    fun canShowSchedule(shape: ShapeModel, zone: ZoneId = ZoneId.systemDefault()): Boolean =
+        TimeMachineShapeSchedule.resolve(shape, now(), zone) != TimeMachineShapeSchedule.Result.Unavailable
 }

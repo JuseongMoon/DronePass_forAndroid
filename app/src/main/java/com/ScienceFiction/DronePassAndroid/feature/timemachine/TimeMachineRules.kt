@@ -107,6 +107,13 @@ internal object TimeMachineSlot {
         return "+${(delta / HOUR_MILLIS.toDouble()).roundToLong()}h"
     }
 
+    /** ‹ › 하루 넘기기: 결과 날이 [오늘, 오늘 + 27일] 안이면 허용. */
+    fun canStepDay(nowMillis: Long, dayMillis: Long, delta: Int): Boolean {
+        val today = dayStart(nowMillis)
+        val target = addDays(dayStart(dayMillis), delta)
+        return target in today..addDays(today, TimeMachineLimits.MAX_DAYS)
+    }
+
     fun time(dayMillis: Long, slot: Int): Long = dayStart(dayMillis) + slot * SLOT_MILLIS
 
     /** 시각이 든 칸(내림). */
@@ -284,38 +291,76 @@ internal class KpSeries(val starts: LongArray, val values: DoubleArray) {
     }
 }
 
-/** 도형 "이 비행 일정으로 보기" 규칙. */
+/**
+ * 도형 "이 비행 일정으로 보기" 규칙(DATA_CONTRACT '타임머신' 도형 일정).
+ * 비행 기간의 날짜(일 단위 입력, 종료 없음)는 기기 시간대로 읽고, 보는 날·칸은 KST 로 정한다.
+ */
 internal object TimeMachineShapeSchedule {
-    private val KstTimeZone: TimeZone = TimeZone.getTimeZone(TimeMachineZone)
+    sealed interface Result {
+        /** 버튼을 숨긴다(끝났거나 +27일 밖에서 시작). */
+        data object Unavailable : Result
+        /** 진행 중: 지금 그대로 패널만 펼친다. */
+        data object Now : Result
+        data class At(val resolved: TimeMachineSlot.Resolved) : Result
+    }
 
-    /** 비행 기간: 일 단위 입력이면 끝 날 다음 날 00:00까지, 끝이 없으면 시작 날 다음 날 00:00까지(KST). */
-    fun flightPeriod(shape: ShapeModel): Pair<Long, Long> {
-        val start = shape.flightStartDate
-        val flightEnd = shape.flightEndDate
+    /** 비행 끝: 종료가 없으면 시작 날 다음 날 00:00, 일 단위 입력이면 종료 날 다음 날 00:00, 아니면 종료(날짜는 [zone]). */
+    fun flightEnd(startMillis: Long, endMillis: Long?, dateOnly: Boolean, zone: ZoneId): Long {
+        fun nextDayStart(millis: Long): Long =
+            Instant.ofEpochMilli(millis).atZone(zone).toLocalDate().plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
         val end = when {
-            flightEnd == null -> TimeMachineSlot.addDays(TimeMachineSlot.dayStart(start), 1)
-            shape.isDateOnlyFlight(KstTimeZone) -> TimeMachineSlot.addDays(TimeMachineSlot.dayStart(flightEnd), 1)
-            else -> flightEnd
+            endMillis == null -> nextDayStart(startMillis)
+            dateOnly -> nextDayStart(endMillis)
+            else -> endMillis
         }
-        return start to max(end, start)
+        return max(end, startMillis)
     }
 
-    /** 보기 시작 시각: 진행 중이면 지금, 시작이 00:00이면(일 단위 입력 등) 그날 일출(도형 위치), 아니면 비행 시작. */
-    fun scheduleStart(shape: ShapeModel, nowMillis: Long): Long {
-        val (start, _) = flightPeriod(shape)
-        if (start <= nowMillis) return nowMillis
-        if (start == TimeMachineSlot.dayStart(start)) {
-            val sun = TimeMachineSun.times(start, shape.baseCoordinate.latitude, shape.baseCoordinate.longitude)
-            return sun.sunriseMillis ?: start
+    /**
+     * @param sunriseMillis 시작이 든 KST 날의 일출(도형 위치). 시작이 기기 시간대 00:00:00이고 일출이 시작 뒤면 일출부터 본다.
+     */
+    fun resolve(
+        nowMillis: Long,
+        startMillis: Long,
+        endMillis: Long?,
+        dateOnly: Boolean,
+        sunriseMillis: Long?,
+        zone: ZoneId,
+    ): Result {
+        val end = flightEnd(startMillis, endMillis, dateOnly, zone)
+        val today = TimeMachineSlot.dayStart(nowMillis)
+        val beyond = TimeMachineSlot.addDays(today, TimeMachineLimits.MAX_DAYS + 1)
+        if (end <= nowMillis || startMillis >= beyond) return Result.Unavailable
+        if (startMillis <= nowMillis) return Result.Now
+        val startLocal = Instant.ofEpochMilli(startMillis).atZone(zone)
+        val atMidnight = startLocal.hour == 0 && startLocal.minute == 0 && startLocal.second == 0
+        val view = if (atMidnight && sunriseMillis != null && sunriseMillis > startMillis) sunriseMillis else startMillis
+        // 10분 칸으로 올림: 그날 칸을 넘으면 다음 날 0칸, 마지막 날을 넘으면 마지막 날 마지막 칸
+        val rounded = Math.floorDiv(view + TimeMachineSlot.SLOT_MILLIS - 1, TimeMachineSlot.SLOT_MILLIS) * TimeMachineSlot.SLOT_MILLIS
+        val lastDay = TimeMachineSlot.addDays(today, TimeMachineLimits.MAX_DAYS)
+        val roundedDay = TimeMachineSlot.dayStart(rounded)
+        val (day, slot) = if (roundedDay > lastDay) {
+            lastDay to TimeMachineSlot.COUNT - 1
+        } else {
+            roundedDay to TimeMachineSlot.slotOf(rounded)
         }
-        return start
+        return Result.At(TimeMachineSlot.resolve(nowMillis, day, slot))
     }
 
-    /** 버튼을 보일지: 비행이 끝나지 않았고 시작이 +27일 안. */
-    fun canShowSchedule(shape: ShapeModel, nowMillis: Long): Boolean {
-        val (start, end) = flightPeriod(shape)
-        if (end <= nowMillis) return false
-        val last = TimeMachineSlot.addDays(TimeMachineSlot.dayStart(nowMillis), TimeMachineLimits.MAX_DAYS + 1)
-        return start < last
+    /** 앱의 도형으로 판정한다. 일출은 시작이 든 KST 날, 도형 기준 좌표로 기기 안에서 계산한다. */
+    fun resolve(shape: ShapeModel, nowMillis: Long, zone: ZoneId = ZoneId.systemDefault()): Result {
+        val sunrise = TimeMachineSun.times(
+            shape.flightStartDate,
+            shape.baseCoordinate.latitude,
+            shape.baseCoordinate.longitude,
+        ).sunriseMillis
+        return resolve(
+            nowMillis = nowMillis,
+            startMillis = shape.flightStartDate,
+            endMillis = shape.flightEndDate,
+            dateOnly = shape.isDateOnlyFlight(TimeZone.getTimeZone(zone)),
+            sunriseMillis = sunrise,
+            zone = zone,
+        )
     }
 }
