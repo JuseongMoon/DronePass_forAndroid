@@ -86,13 +86,12 @@ fun TagListScreen(viewModel: TagViewModel = hiltViewModel()) {
                     tags.forEachIndexed { index, tag ->
                         // 행마다 스와이프 상태를 따로 둔다(삭제 뒤 같은 자리의 다음 행이 밀린 채 남지 않게)
                         androidx.compose.runtime.key(tag.id) {
-                            TagSwipeRow(onDeleteRequest = { deletingTag = tag }) {
-                                TagListItem(
-                                    tag = tag,
-                                    shapeCount = shapeCounts[tag.id] ?: 0,
-                                    onClick = { editingTag = tag },
-                                )
-                            }
+                            TagRow(
+                                tag = tag,
+                                shapeCount = shapeCounts[tag.id] ?: 0,
+                                onClick = { editingTag = tag },
+                                onDeleteRequest = { deletingTag = tag },
+                            )
                         }
                         if (index != tags.lastIndex) InsetGroupedDivider()
                     }
@@ -172,13 +171,32 @@ fun TagListScreen(viewModel: TagViewModel = hiltViewModel()) {
     }
 }
 
+/** 태그 한 행. 왼쪽으로 밀어 삭제를 요청하고, TalkBack 에서는 같은 요청을 행의 동작 목록 '삭제'로 한다 */
 @Composable
-private fun TagListItem(tag: TagModel, shapeCount: Int, onClick: () -> Unit) {
+internal fun TagRow(tag: TagModel, shapeCount: Int, onClick: () -> Unit, onDeleteRequest: () -> Unit) {
+    TagSwipeRow(onDeleteRequest = onDeleteRequest) {
+        TagListItem(tag = tag, shapeCount = shapeCount, onClick = onClick, onDeleteRequest = onDeleteRequest)
+    }
+}
+
+@Composable
+private fun TagListItem(tag: TagModel, shapeCount: Int, onClick: () -> Unit, onDeleteRequest: () -> Unit) {
+    val deleteLabel = stringResource(R.string.tag_list_delete)
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .background(IosSecondarySystemGroupedBackground)
             .clickable(onClick = onClick)
+            // TalkBack 은 밀기 동작을 쓸 수 없으므로 같은 삭제 확인을 동작 목록에 둔다(D-71 ⑤).
+            // TalkBack 이 초점을 두는 이 클릭 노드에 붙여야 동작 메뉴에 나온다(바깥 스와이프 상자에 두면 보이지 않는다).
+            .semantics {
+                customActions = listOf(
+                    CustomAccessibilityAction(deleteLabel) {
+                        onDeleteRequest()
+                        true
+                    },
+                )
+            }
             .heightIn(min = InsetGroupedRowMinHeight)
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -204,7 +222,6 @@ private fun TagListItem(tag: TagModel, shapeCount: Int, onClick: () -> Unit) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TagSwipeRow(onDeleteRequest: () -> Unit, content: @Composable () -> Unit) {
-    val deleteLabel = stringResource(R.string.tag_list_delete)
     val state = rememberSwipeToDismissBoxState(
         positionalThreshold = { distance -> distance * 0.4f },
         confirmValueChange = { value ->
@@ -214,15 +231,6 @@ private fun TagSwipeRow(onDeleteRequest: () -> Unit, content: @Composable () -> 
     )
     SwipeToDismissBox(
         state = state,
-        // TalkBack 은 밀기 동작을 쓸 수 없으므로 같은 삭제 확인을 동작 목록에 둔다(D-71 ⑤)
-        modifier = Modifier.semantics {
-            customActions = listOf(
-                CustomAccessibilityAction(deleteLabel) {
-                    onDeleteRequest()
-                    true
-                },
-            )
-        },
         enableDismissFromStartToEnd = false,
         backgroundContent = {
             val active = state.dismissDirection == SwipeToDismissBoxValue.EndToStart
