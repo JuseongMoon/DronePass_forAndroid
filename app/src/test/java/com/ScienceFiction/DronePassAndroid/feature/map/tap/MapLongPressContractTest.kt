@@ -12,8 +12,8 @@ import java.security.MessageDigest
  * (DATA_CONTRACT "지도 길게 누르기", D-83 (2)). 결과(ignore/shapeMenu/newShape)와 도형·이유가 모두 같아야 한다.
  * 메뉴 문구(menuStrings)도 Android 문구와 같은 뜻인지 본다.
  *
- * 맞춘 fixture: iOS feature/shape-long-press-3.7.0 04670354, 14건, SHA-256 앞 16자 e4c21ff36040f152.
- * iOS가 dev에 합친 뒤 내용이 바뀌면 이 테스트도 함께 맞춘다.
+ * 맞춘 fixture: iOS dev 30432b46(처음 나온 커밋 04670354), 14건, SHA-256 앞 16자 e4c21ff36040f152.
+ * 사례 수나 내용이 바뀌면 iOS와 함께 이 테스트도 바꾼다.
  */
 class MapLongPressContractTest {
     private val adapter = Moshi.Builder().build().adapter(Map::class.java)
