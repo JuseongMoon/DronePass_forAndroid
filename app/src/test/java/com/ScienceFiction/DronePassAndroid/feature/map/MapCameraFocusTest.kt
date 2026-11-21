@@ -765,10 +765,33 @@ class MapCameraFocusTest {
         )
     }
 
+    // 스케치 모드·도형 위·빈 곳·겹친 곳 판정은 tap/MapLongPressResolverTest 가 본다.
+
     @Test
-    fun `스케치 모드 중 지도 롱프레스는 iOS처럼 새 도형 생성을 열지 않는다`() {
-        assertEquals(false, shouldHandleMapLongClickForShapeCreation(isSketchMode = true))
-        assertEquals(true, shouldHandleMapLongClickForShapeCreation(isSketchMode = false))
+    fun `길게 누르기 메뉴의 여기에 새 도형은 주소를 찾으면 확인 창 없이 편집 화면으로 간다`() {
+        val coordinate = Coordinate(37.5665, 126.9780)
+        val found = pendingNewShapeRequestForReverseGeocodeResult(coordinate, "서울특별시 중구 세종대로 110")
+        val empty = pendingNewShapeRequestForReverseGeocodeResult(coordinate, "")
+        val failed = pendingNewShapeRequestForReverseGeocodeResult(coordinate, null)
+
+        assertEquals(true, shouldOpenNewShapeEditorWithoutConfirm(found, skipConfirm = true))
+        // 성공한 빈 주소도 지금처럼 주소 찾음(CONFIRM)으로 본다
+        assertEquals(true, shouldOpenNewShapeEditorWithoutConfirm(empty, skipConfirm = true))
+        // 주소를 못 찾으면 지금처럼 안내 창
+        assertEquals(false, shouldOpenNewShapeEditorWithoutConfirm(failed, skipConfirm = true))
+        // 빈 곳 길게 누르기는 지금처럼 확인 창
+        assertEquals(false, shouldOpenNewShapeEditorWithoutConfirm(found, skipConfirm = false))
+        assertEquals(false, shouldOpenNewShapeEditorWithoutConfirm(failed, skipConfirm = false))
+    }
+
+    @Test
+    fun `길게 누르기 메뉴를 닫으면 강조를 누르기 전으로 돌리고 지운 도형이면 비운다`() {
+        assertEquals("A", resolveHighlightAfterShapeLongPress(highlightBeforeLongPress = "A"))
+        assertNull(resolveHighlightAfterShapeLongPress(highlightBeforeLongPress = null))
+        // 다른 도형(B)을 지웠으면 A 강조는 그대로
+        assertEquals("A", resolveHighlightAfterShapeLongPress("A", deletedShapeId = "B"))
+        // 강조돼 있던 도형을 지웠으면 비운다
+        assertNull(resolveHighlightAfterShapeLongPress("A", deletedShapeId = "A"))
     }
 
     @Test

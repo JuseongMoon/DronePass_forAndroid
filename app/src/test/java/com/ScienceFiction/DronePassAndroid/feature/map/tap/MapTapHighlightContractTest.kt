@@ -36,8 +36,15 @@ class MapTapHighlightContractTest {
         val vm = source("feature/map/MapViewModel.kt")
         // 선택을 바꾸는 곳은 모두 하이라이트도 함께 정하는 setSelectedShape를 거친다
         assertEquals(1, Regex("""_selectedShapeId\.value = """).findAll(vm).count())
-        assertEquals(1, Regex("""_highlightedShapeId\.value = shapeId""").findAll(vm).count())
+        // 도형 id로 강조하는 곳은 선택(setSelectedShape)과 길게 누르기 메뉴(D-83 (2)) 두 곳뿐이다
+        assertEquals(2, Regex("""_highlightedShapeId\.value = shapeId""").findAll(vm).count())
         assertTrue(body(vm, "private fun setSelectedShape(").contains("_highlightedShapeId.value = shapeId"))
+        // 길게 누르기는 선택 없이 강조만 하고(목록·시트는 그대로), 메뉴를 닫으면 누르기 전 강조로 돌린다
+        val longPress = body(vm, "fun onShapeLongPressed(")
+        assertTrue(longPress.contains("_highlightedShapeId.value = shapeId"))
+        assertTrue(longPress.contains("highlightBeforeShapeLongPress = _highlightedShapeId.value"))
+        assertFalse(longPress.contains("_selectedShapeId.value"))
+        assertFalse(longPress.contains("_showShapeDetail") || longPress.contains("_showShapeEdit"))
 
         val clear = body(vm, "fun clearMapTapHighlight()")
         assertTrue(clear.contains("_highlightedShapeId.value = null"))
