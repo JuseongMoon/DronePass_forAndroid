@@ -12,11 +12,13 @@ import com.ScienceFiction.DronePassAndroid.domain.model.CurrentWeatherData
 import com.ScienceFiction.DronePassAndroid.domain.model.HourlyWeatherData
 import com.ScienceFiction.DronePassAndroid.domain.model.WeatherCondition
 import com.ScienceFiction.DronePassAndroid.domain.model.WeatherData
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -152,10 +154,12 @@ class WeatherRepository @Inject constructor(
         timeMachineKey = Triple(gridLatitude, gridLongitude, now)
         runCatching {
             val response = dataSource.fetchTimeMachine(latitude, longitude, ZoneId.systemDefault().id)
+            // 240시간을 바꾸는 일은 메인 스레드 밖에서 한다(패널을 열 때 슬라이더와 겹친다)
+            val hours = withContext(Dispatchers.Default) { mapTimeMachineHours(response) }
             TimeMachineWeather(
                 gridLatitude = gridLatitude,
                 gridLongitude = gridLongitude,
-                hours = mapTimeMachineHours(response),
+                hours = hours,
             ).also { _timeMachineWeather.value = it }
         }
     }

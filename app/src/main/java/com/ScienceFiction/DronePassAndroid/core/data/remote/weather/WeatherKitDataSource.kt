@@ -96,7 +96,8 @@ class FirebaseWeatherKitDataSource @Inject constructor(
         } catch (e: IOException) {
             throw WeatherServiceException(WeatherServiceFailure.OTHER, e)
         }
-        return parseWeatherCallableResponse(code, responseBody, moshi)
+        // 타임머신 응답은 240시간치(약 110KB)라 메인 스레드에서 읽으면 슬라이더 프레임이 밀린다
+        return withContext(Dispatchers.Default) { parseWeatherCallableResponse(code, responseBody, moshi) }
     }
 }
 
