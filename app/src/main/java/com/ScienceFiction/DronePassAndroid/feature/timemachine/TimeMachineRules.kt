@@ -69,41 +69,45 @@ internal object TimeMachineSlot {
 
     fun localDate(millis: Long): LocalDate = Instant.ofEpochMilli(millis).atZone(TimeMachineZone).toLocalDate()
 
-    /** 오늘이면 지금 뒤 첫 칸(올림), 다른 날이면 0. 오늘 남은 칸이 없으면 144. */
-    fun firstSlot(dayMillis: Long, nowMillis: Long): Int {
-        val today = dayStart(nowMillis)
-        if (dayStart(dayMillis) != today) return 0
-        val elapsed = nowMillis - today
-        return ((elapsed + SLOT_MILLIS - 1) / SLOT_MILLIS).toInt()
+    /** 고른 시각과 지금의 관계(D-87). 지금이 든 칸(t ≤ now < t + 10분)은 NOW 다. */
+    enum class Tense { FUTURE, NOW, PAST }
+
+    fun tense(timeMillis: Long, nowMillis: Long): Tense = when {
+        timeMillis > nowMillis -> Tense.FUTURE
+        nowMillis < timeMillis + SLOT_MILLIS -> Tense.NOW
+        else -> Tense.PAST
     }
 
-    /** 날은 [오늘, 오늘 + 27일], 칸은 [0, 143]. 오늘이면 지금 앞 칸 금지(남은 칸이 없으면 내일 0칸). */
+    /** 지난 시각 부호(U+2212, iOS constants.pastSign). */
+    const val PAST_SIGN = "\u2212"
+
+    /**
+     * 날은 [오늘, 오늘 + 27일](어제 이전 → 오늘, +27일 뒤 → +27일), 칸은 [0, 143]으로 자른다.
+     * 오늘 지난 칸(00:00부터)도 고를 수 있다(D-87).
+     */
     fun resolve(nowMillis: Long, dayMillis: Long, slot: Int): Resolved {
         val today = dayStart(nowMillis)
         val maxDay = addDays(today, TimeMachineLimits.MAX_DAYS)
-        var day = dayStart(dayMillis).coerceIn(today, maxDay)
-        var s = slot.coerceIn(0, COUNT - 1)
-        if (day == today) {
-            val first = firstSlot(day, nowMillis)
-            if (first > COUNT - 1) {
-                day = addDays(today, 1)
-                s = 0
-            } else {
-                s = max(s, first)
-            }
-        }
+        val day = dayStart(dayMillis).coerceIn(today, maxDay)
+        val s = slot.coerceIn(0, COUNT - 1)
         val t = time(day, s)
         return Resolved(timeMillis = t, dayStartMillis = day, slot = s, label = label(t, nowMillis))
     }
 
-    /** 동그라미 문구: 다른 날 "D+N", 같은 날 Δ ≤ 0이면 "now", 1시간 미만 "+N0m"(최소 10), 아니면 "+Nh". */
+    /**
+     * 동그라미 문구: 다른 날 "D+N"(지난 날 "D−N"), 같은 날 지금이 든 칸이면 "now",
+     * 그 밖에는 부호(미래 "+", 지난 "−")와 Δ < 1시간이면 "{max(10, round(Δ/10분)×10)}m", 아니면 "{round(Δ/1시간)}h".
+     */
     fun label(timeMillis: Long, nowMillis: Long): String {
         val days = daysBetween(nowMillis, timeMillis)
         if (days > 0) return "D+$days"
-        val delta = timeMillis - nowMillis
-        if (delta <= 0) return "now"
-        if (delta < HOUR_MILLIS) return "+${max(10L, (delta / SLOT_MILLIS.toDouble()).roundToLong() * 10)}m"
-        return "+${(delta / HOUR_MILLIS.toDouble()).roundToLong()}h"
+        if (days < 0) return "D$PAST_SIGN${-days}"
+        val tense = tense(timeMillis, nowMillis)
+        if (tense == Tense.NOW) return "now"
+        val sign = if (tense == Tense.FUTURE) "+" else PAST_SIGN
+        val delta = if (tense == Tense.FUTURE) timeMillis - nowMillis else nowMillis - timeMillis
+        if (delta < HOUR_MILLIS) return "$sign${max(10L, (delta / SLOT_MILLIS.toDouble()).roundToLong() * 10)}m"
+        return "$sign${(delta / HOUR_MILLIS.toDouble()).roundToLong()}h"
     }
 
     /** ‹ › 하루 넘기기: 결과 날이 [오늘, 오늘 + 27일] 안이면 허용. */

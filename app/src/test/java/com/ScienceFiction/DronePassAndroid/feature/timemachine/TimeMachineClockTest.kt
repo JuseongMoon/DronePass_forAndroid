@@ -28,14 +28,16 @@ class TimeMachineClockTest {
     @Test
     fun `칸 고르기 하루 넘기기 접기 현재로`() {
         val clock = TimeMachineClock { now }
-        assertFalse(clock.isFuture)
-        assertEquals(87, clock.slot())
+        assertFalse(clock.isPinned)
+        assertNull(clock.tense())
+        assertEquals(86, clock.slot())  // 지금(14:23)이 든 칸
         clock.expand()
         assertEquals(TimeMachineClock.Panel.FULL, clock.panel.value)
         // 내일 14:00
         clock.pickDay(TimeMachineSlot.addDays(today, 1))
         clock.setSlot(84)
-        assertTrue(clock.isFuture)
+        assertTrue(clock.isPinned)
+        assertEquals(TimeMachineSlot.Tense.FUTURE, clock.tense())
         assertEquals(84, clock.selection.value?.slot)
         assertEquals(kst(2026, 11, 8, 14, 0), clock.time())
         assertEquals("D+1", clock.badge())
@@ -43,24 +45,31 @@ class TimeMachineClockTest {
         clock.stepDay(1)
         assertEquals(84, clock.selection.value?.slot)
         assertEquals(TimeMachineSlot.addDays(today, 2), clock.selection.value?.dayStartMillis)
-        // 오늘보다 앞으로는 못 간다. 오늘로 오면 지금 뒤 첫 칸보다 앞이 아니다
+        // 오늘까지 돌아오면 그 칸(14:00)은 지난 칸 — 고를 수 있다(D-87)
         clock.stepDay(-1)
         clock.stepDay(-1)
         assertFalse(clock.canStepDay(-1))
         clock.stepDay(-1)
         assertEquals(today, clock.selection.value?.dayStartMillis)
-        assertTrue(clock.time() >= now)
-        // 오늘 지난 칸으로는 가지 않는다
-        clock.setSlot(10)
-        assertEquals(87, clock.selection.value?.slot)
-        // 빈 곳 탭: 미래면 1줄, 다시 동그라미 → 펼침
+        assertEquals(84, clock.selection.value?.slot)
+        assertEquals(TimeMachineSlot.Tense.PAST, clock.tense())
+        assertEquals("\u221220m", clock.badge())  // 14:23에 14:00 칸(23분 전)
+        // 오늘 00:00 칸
+        clock.setSlot(0)
+        assertEquals(0, clock.selection.value?.slot)
+        assertEquals("\u221214h", clock.badge())
+        // 지금이 든 칸 → now(주황)
+        clock.setSlot(86)
+        assertEquals(TimeMachineSlot.Tense.NOW, clock.tense())
+        assertEquals("now", clock.badge())
+        // 빈 곳 탭: 시각을 골랐으면 1줄, 다시 동그라미 → 펼침
         clock.collapse()
         assertEquals(TimeMachineClock.Panel.DATE_ONLY, clock.panel.value)
         clock.tapCircle()
         assertEquals(TimeMachineClock.Panel.FULL, clock.panel.value)
         // 현재로
         clock.returnToNow()
-        assertFalse(clock.isFuture)
+        assertFalse(clock.isPinned)
         assertEquals(TimeMachineClock.Panel.HIDDEN, clock.panel.value)
         assertNull(clock.badge())
         // 지금 상태로 펼쳤다가 빈 곳 탭 → 모두 접힘, 두 줄에서 동그라미 → 모두 접힘
@@ -101,7 +110,7 @@ class TimeMachineClockTest {
         // 진행 중 도형 → 지금 그대로(미래 아님) 패널만 펼침
         clock.collapse()
         clock.showShapeSchedule(shape(kst(2026, 11, 6), kst(2026, 11, 20)))
-        assertFalse(clock.isFuture)
+        assertFalse(clock.isPinned)
         assertEquals(TimeMachineClock.Panel.FULL, clock.panel.value)
         assertFalse(clock.canShowSchedule(shape(kst(2026, 11, 1), kst(2026, 11, 2))))
     }
@@ -122,7 +131,7 @@ class TimeMachineClockTest {
                 )
             },
         )
-        val three = kpThreeHourSeries(listOf(KpIndexData(timeTag = "2026-11-08 00:00:00", kp = 3.33, observed = "predicted")))
+        val three = kpThreeHourSeries(listOf(KpIndexData(timeTag = "2026-11-08 00:00:00", kp = 3.33, observed = "predicted")), now)
         val long = kpLongTermSeries(listOf(Kp27DayForecast(date = "2026 Nov 20", kp = 5.0, ap = 20)))
         // 내일 10:30 KST → 두 번째 칸(10:00), KP 3시간 칸(UTC 00:00~03:00 = KST 09:00~12:00)
         val inside = timeMachineCardValues(

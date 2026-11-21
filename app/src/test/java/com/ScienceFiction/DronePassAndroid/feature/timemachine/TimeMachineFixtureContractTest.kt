@@ -62,6 +62,9 @@ class TimeMachineFixtureContractTest {
         assertEquals(TimeMachineCardRules.HOUR_MILLIS / 1000, c.int("weatherBucketSeconds").toLong())
         assertEquals(TimeMachineCardRules.THREE_HOURS_MILLIS / 1000, c.int("kpThreeHourSeconds").toLong())
         assertEquals(2, c.int("weatherGridDecimals"))
+        // D-87: 가장 이른 칸은 오늘 KST 00:00, 지난 칸 부호는 U+2212
+        assertEquals("todayKST0000", c.string("earliest"))
+        assertEquals(TimeMachineSlot.PAST_SIGN, c.string("pastSign"))
     }
 
     @Test
@@ -78,6 +81,9 @@ class TimeMachineFixtureContractTest {
                 assertEquals(case.name(), expected.string("day"), kstDate(r.dayStartMillis))
                 assertEquals(case.name(), expected.int("slot"), r.slot)
                 assertEquals(case.name(), expected.string("label"), r.label)
+                expected.optionalString("tense")?.let { tense ->
+                    assertEquals(case.name(), tense.uppercase(), TimeMachineSlot.tense(r.timeMillis, instant(input.string("now"))).name)
+                }
             }
         }
     }

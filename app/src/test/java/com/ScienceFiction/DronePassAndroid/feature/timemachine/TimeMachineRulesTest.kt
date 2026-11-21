@@ -43,13 +43,19 @@ class TimeMachineRulesTest {
     @Test
     fun `칸 시각과 동그라미 문구`() {
         val now = kst(2026, 11, 7, 14, 23)
-        assertEquals(87, TimeMachineSlot.firstSlot(now, now))
-        assertEquals(0, TimeMachineSlot.firstSlot(kst(2026, 11, 8), now))
         assertEquals("+10m", TimeMachineSlot.label(kst(2026, 11, 7, 14, 30), now))
         assertEquals("+3h", TimeMachineSlot.label(kst(2026, 11, 7, 17, 0), now))
         assertEquals("D+2", TimeMachineSlot.label(kst(2026, 11, 9, 9, 0), now))
         assertEquals("D+1", TimeMachineSlot.label(kst(2026, 11, 8, 0, 0), now))
-        assertEquals("now", TimeMachineSlot.label(now, now))
+        // 지금이 든 칸(14:20)은 now, 지난 칸은 −(U+2212)
+        assertEquals("now", TimeMachineSlot.label(kst(2026, 11, 7, 14, 20), now))
+        assertEquals("\u221210m", TimeMachineSlot.label(kst(2026, 11, 7, 14, 10), now))
+        assertEquals("\u221214h", TimeMachineSlot.label(kst(2026, 11, 7, 0, 0), now))
+        // 자정을 넘겨 어제 시각이 남아 있으면 D−1
+        assertEquals("D\u22121", TimeMachineSlot.label(kst(2026, 11, 6, 23, 50), kst(2026, 11, 7, 0, 5)))
+        assertEquals(TimeMachineSlot.Tense.NOW, TimeMachineSlot.tense(kst(2026, 11, 7, 14, 20), now))
+        assertEquals(TimeMachineSlot.Tense.PAST, TimeMachineSlot.tense(kst(2026, 11, 7, 14, 10), now))
+        assertEquals(TimeMachineSlot.Tense.FUTURE, TimeMachineSlot.tense(kst(2026, 11, 7, 14, 30), now))
         assertEquals(87, TimeMachineSlot.slotOf(kst(2026, 11, 9, 14, 37)))
         assertEquals(88, TimeMachineSlot.slotRoundingUp(kst(2026, 11, 9, 14, 37)))
         assertEquals(87, TimeMachineSlot.slotRoundingUp(kst(2026, 11, 9, 14, 30)))
@@ -64,25 +70,47 @@ class TimeMachineRulesTest {
     }
 
     @Test
-    fun `오늘 지난 칸과 27일 뒤로는 가지 않는다`() {
+    fun `오늘 0시부터 27일 뒤까지 고른다`() {
         val now = kst(2026, 11, 7, 14, 23)
         val today = TimeMachineSlot.dayStart(now)
+        // 오늘 지난 칸도 그대로 고른다(D-87)
         val past = TimeMachineSlot.resolve(now, today, 10)
-        assertEquals(87, past.slot)
+        assertEquals(10, past.slot)
         assertEquals(today, past.dayStartMillis)
-        // 어제 → 오늘 지금 뒤 첫 칸
-        assertEquals(today, TimeMachineSlot.resolve(now, TimeMachineSlot.addDays(today, -1), 100).dayStartMillis)
+        assertEquals("\u221213h", past.label)
+        // 어제 → 오늘 같은 칸
+        val yesterday = TimeMachineSlot.resolve(now, TimeMachineSlot.addDays(today, -1), 100)
+        assertEquals(today, yesterday.dayStartMillis)
+        assertEquals(100, yesterday.slot)
         // +27일까지, 그 뒤는 +27일로 자른다
         val last = TimeMachineSlot.addDays(today, TimeMachineLimits.MAX_DAYS)
         assertEquals(last, TimeMachineSlot.resolve(now, TimeMachineSlot.addDays(today, 40), 5).dayStartMillis)
         assertEquals("D+27", TimeMachineSlot.resolve(now, last, 0).label)
         // 칸 범위
         assertEquals(TimeMachineSlot.COUNT - 1, TimeMachineSlot.resolve(now, last, 999).slot)
-        // 오늘 남은 칸이 없으면(23:51 이후) 내일 0칸
+        assertEquals(0, TimeMachineSlot.resolve(now, last, -3).slot)
+        // 오늘 23:55에도 오늘 23:50 칸은 지금이 든 칸(내일로 넘기지 않는다)
         val late = kst(2026, 11, 7, 23, 55)
         val r = TimeMachineSlot.resolve(late, late, 143)
-        assertEquals(TimeMachineSlot.addDays(today, 1), r.dayStartMillis)
-        assertEquals(0, r.slot)
+        assertEquals(today, r.dayStartMillis)
+        assertEquals("now", r.label)
+        // 하루 넘기기는 오늘에서 어제로 가지 않는다
+        assertFalse(TimeMachineSlot.canStepDay(now, today, -1))
+        assertTrue(TimeMachineSlot.canStepDay(now, today, 1))
+    }
+
+    @Test
+    fun `KP 3시간 칸은 끝이 오늘 0시 뒤인 것만 쓴다`() {
+        val now = kst(2026, 11, 21, 14, 23)
+        val rows = listOf(
+            com.ScienceFiction.DronePassAndroid.domain.model.KpIndexData(timeTag = "2026-11-20 12:00:00", kp = 5.0, observed = "observed"),
+            com.ScienceFiction.DronePassAndroid.domain.model.KpIndexData(timeTag = "2026-11-20 15:00:00", kp = 1.67, observed = "observed"),
+            com.ScienceFiction.DronePassAndroid.domain.model.KpIndexData(timeTag = "2026-11-21 06:00:00", kp = 3.67, observed = "predicted"),
+        )
+        val series = kpThreeHourSeries(rows, now)
+        // UTC 11/20 12:00~15:00 칸은 KST 11/20 21:00~24:00 — 끝이 오늘 0시와 같아 뺀다
+        assertEquals(listOf(utc("2026-11-20T15:00:00Z"), utc("2026-11-21T06:00:00Z")), series.starts.toList())
+        assertEquals(1.67, TimeMachineCardRules.kp(kst(2026, 11, 21, 0, 0), series, KpSeries.Empty)!!, 0.0)
     }
 
     @Test

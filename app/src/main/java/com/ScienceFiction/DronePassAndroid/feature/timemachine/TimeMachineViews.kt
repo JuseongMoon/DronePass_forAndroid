@@ -96,14 +96,25 @@ class TimeMachineViewModel @Inject constructor(val clock: TimeMachineClock) : Vi
 @Composable
 fun rememberTimeMachineClock(): TimeMachineClock = hiltViewModel<TimeMachineViewModel>().clock
 
-/** iOS .orange */
+/** iOS .orange — 미래·지금이 든 칸 */
 internal val TimeMachineOrange = Color(0xFFFF9500)
+/** iOS systemIndigo — 오늘 지난 칸(D-87). 라이트 #5856D6, 다크 #5E5CE6 */
+internal val TimeMachineIndigoLight = Color(0xFF5856D6)
+internal val TimeMachineIndigoDark = Color(0xFF5E5CE6)
+
+/** 고른 시각의 색(D-87): 미래·지금이 든 칸 주황, 지난 칸 남색. 고르지 않았으면 null. */
+internal fun timeMachineTint(tense: TimeMachineSlot.Tense?, dark: Boolean): Color? = when (tense) {
+    null -> null
+    TimeMachineSlot.Tense.PAST -> if (dark) TimeMachineIndigoDark else TimeMachineIndigoLight
+    TimeMachineSlot.Tense.FUTURE, TimeMachineSlot.Tense.NOW -> TimeMachineOrange
+}
 internal val TimeMachineCircleSize = 32.dp
 /** 드론 드롭다운 셰브런과 동그라미 사이. */
 internal val TimeMachineCircleSpacing = 8.dp
 private val TimeMachineShadow = 4.dp
 private val TimeMachinePanelMaxWidthTablet = 420.dp
 private val TrackDay = Color(red = 1.0f, green = 0.86f, blue = 0.45f)
+/** 오늘이면 지금 위치 선(iOS .blue). */
 private val TrackPastBlue = Color(0xFF007AFF)
 
 /** 동그라미 문구가 1분마다 줄어들도록(+Nh·+N0m) 화면이 보는 지금. 칸이 바뀌어도 다시 시작하지 않는다. */
@@ -130,19 +141,23 @@ internal fun timeMachineDateTimeText(millis: Long): String {
     return formatter.format(Instant.ofEpochMilli(millis))
 }
 
-/** 드론 드롭다운 셰브런 오른쪽 동그라미(지금 회색 "now", 미래 주황 D+N / +Nh / +N0m). */
+/**
+ * 드론 드롭다운 셰브런 오른쪽 동그라미. 지금: 흰 바탕 회색 "now", 미래·지금이 든 칸: 주황 바탕 흰 글자
+ * "+2h"·"D+3"·"now", 오늘 지난 칸: 남색 바탕 흰 글자 "−2h"·"−30m"(D-87).
+ */
 @Composable
 fun TimeMachineCircleButton(clock: TimeMachineClock, modifier: Modifier = Modifier) {
     val selection by clock.selection.collectAsStateWithLifecycle()
     val now = rememberMinuteTick(clock)
     val current = selection
-    val isFuture = current != null
+    val isPinned = current != null
+    val tint = timeMachineTint(current?.let { TimeMachineSlot.tense(it.timeMillis, now) }, isSystemInDarkTheme())
     val label = current?.let { TimeMachineSlot.label(it.timeMillis, now) } ?: stringResource(R.string.timemachine_now)
     val a11yTime = if (current != null) timeMachineDateTimeText(current.timeMillis) else stringResource(R.string.timemachine_now)
     val a11y = stringResource(R.string.timemachine_circle_a11y, a11yTime)
     Surface(
         shape = CircleShape,
-        color = if (isFuture) TimeMachineOrange else MaterialTheme.colorScheme.surface,
+        color = tint ?: MaterialTheme.colorScheme.surface,
         shadowElevation = TimeMachineShadow,
         modifier = modifier
             .requiredSize(TimeMachineCircleSize)
@@ -160,7 +175,7 @@ fun TimeMachineCircleButton(clock: TimeMachineClock, modifier: Modifier = Modifi
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
                 softWrap = false,
-                color = if (isFuture) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                color = if (isPinned) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = 2.dp),
             )
         }
@@ -230,7 +245,10 @@ private fun TimeMachineDateRow(
     selection: State<TimeMachineSelection?>,
     onCalendar: () -> Unit,
 ) {
-    val isFuture by remember { derivedStateOf { selection.value != null } }
+    val isPinned by remember { derivedStateOf { selection.value != null } }
+    // 시제는 칸이 바뀌어도 미래·지금·지난이 바뀔 때만 다시 그린다
+    val tense by remember { derivedStateOf { selection.value?.let { TimeMachineSlot.tense(it.timeMillis, clock.nowMillis()) } } }
+    val tint = timeMachineTint(tense, isSystemInDarkTheme())
     TimeMachinePill {
         Row(
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 4.dp),
@@ -245,11 +263,11 @@ private fun TimeMachineDateRow(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                val color = if (isFuture) TimeMachineOrange else MaterialTheme.colorScheme.onSurface
+                val color = tint ?: MaterialTheme.colorScheme.onSurface
                 Icon(Icons.Default.CalendarMonth, contentDescription = null, tint = color, modifier = Modifier.size(18.dp))
                 TimeMachineDateText(clock = clock, selection = selection, color = color)
             }
-            TextButton(onClick = { clock.returnToNow() }, enabled = isFuture, modifier = Modifier.heightIn(min = 32.dp)) {
+            TextButton(onClick = { clock.returnToNow() }, enabled = isPinned, modifier = Modifier.heightIn(min = 32.dp)) {
                 Text(
                     text = stringResource(R.string.timemachine_back_to_now),
                     fontSize = 15.sp,
@@ -329,6 +347,7 @@ private fun DayStepButton(enabled: Boolean, description: String, forward: Boolea
 
 /**
  * 그날 00:00~24:00 10분 슬라이더. 끄는 동안 칸마다 기준 시각을 바꾼다(카드가 바로 따라온다).
+ * 오늘이면 지금 위치에 파란 선을 긋고, 지난 칸도 고를 수 있다(D-87).
  * 칸은 그리기 단계에서만 읽어 손잡이를 옮긴다. 다시 구성하는 것은 날이 바뀔 때(일출·일몰·오늘 과거)뿐이다.
  */
 @Composable
@@ -341,19 +360,20 @@ private fun TimeMachineSlider(
     val view = LocalView.current
     val dark = isSystemInDarkTheme()
     val day by remember { derivedStateOf { selection.value?.dayStartMillis ?: TimeMachineSlot.dayStart(clock.nowMillis()) } }
-    val isFuture = remember { derivedStateOf { selection.value != null } }
+    val tense = remember { derivedStateOf { selection.value?.let { TimeMachineSlot.tense(it.timeMillis, clock.nowMillis()) } } }
     val slot = remember { derivedStateOf { selection.value?.slot ?: clock.slot() } }
-    // 일출·일몰 칸(지도 중심 기준)과 오늘의 과거 칸은 날이 바뀔 때 계산한다
+    // 일출·일몰 칸(지도 중심 기준)과 오늘의 지금 위치는 날이 바뀔 때 계산한다
     val sun = remember(day) {
         val center = sunCenter()
         TimeMachineSun.slots(TimeMachineSun.times(day, center.first, center.second))
     }
-    val past = remember(day) {
+    // 오늘이면 지금 위치(칸 단위, 소수). 지난 칸도 고를 수 있어 가리지 않고 선만 긋는다(D-87)
+    val nowAt: Float? = remember(day) {
         val now = clock.nowMillis()
-        if (day == TimeMachineSlot.dayStart(now)) TimeMachineSlot.firstSlot(day, now) else 0
+        if (day == TimeMachineSlot.dayStart(now)) (now - day) / TimeMachineSlot.SLOT_MILLIS.toFloat() else null
     }
     val latestSun by rememberUpdatedState(sun)
-    val latestPast by rememberUpdatedState(past)
+    val latestNowSlot by rememberUpdatedState(nowAt?.toInt())
     val (rise, set) = sun
 
     Box(
@@ -371,18 +391,19 @@ private fun TimeMachineSlider(
                         val before = clock.slot()
                         clock.setSlot(target)
                         val after = clock.slot()
-                        // 햅틱: 정시·일출·일몰을 지날 때 틱, 양 끝(오늘 지금 포함)에 닿으면 한 번(iOS 와 같음)
+                        // 햅틱: 정시·일출·일몰·지금을 지날 때 틱, 양 끝에 닿으면 한 번(iOS 와 같음)
                         if (after != before) {
                             val lo = minOf(before, after) + 1
                             val hi = maxOf(before, after)
                             val (r, s) = latestSun
-                            if ((lo..hi).any { it % 6 == 0 || it == r || it == s }) {
+                            val nowSlot = latestNowSlot
+                            if ((lo..hi).any { it % 6 == 0 || it == r || it == s || it == nowSlot }) {
                                 view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
                             }
                             hitEdge = false
                         }
-                        val atEdge = raw <= maxOf(0, latestPast) || raw >= TimeMachineSlot.COUNT - 1
-                        if (atEdge && !hitEdge && (after == target || raw < latestPast)) {
+                        val atEdge = raw <= 0 || raw >= TimeMachineSlot.COUNT - 1
+                        if (atEdge && !hitEdge && after == target) {
                             view.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK)
                             hitEdge = true
                         }
@@ -432,28 +453,25 @@ private fun TimeMachineSlider(
                         size = Size(1.dp.toPx(), 4.dp.toPx()),
                     )
                 }
-                // 오늘의 과거(고를 수 없음)
-                if (past > 0) {
-                    drawRect(Color.Gray.copy(alpha = 0.75f), topLeft = Offset(0f, y), size = Size(past * unit, h))
-                }
             }
-            if (past > 0) {
+            // 오늘이면 지금 위치(지난 칸과 앞 칸의 경계)
+            if (nowAt != null) {
                 drawRect(
                     TrackPastBlue,
-                    topLeft = Offset(past * unit - 1.dp.toPx(), y - 2.dp.toPx()),
+                    topLeft = Offset(nowAt * unit - 1.dp.toPx(), y - 2.dp.toPx()),
                     size = Size(2.dp.toPx(), h + 4.dp.toPx()),
                 )
             }
             if (dark) {
                 drawPath(track, Color.White.copy(alpha = 0.15f), style = Stroke(width = 1.dp.toPx()))
             }
-            // 손잡이(22dp 흰 원, 그림자, 테두리 2dp — 미래 주황, 지금 회색). 칸은 여기서만 읽는다
+            // 손잡이(22dp 흰 원, 그림자, 테두리 2dp — 미래·지금 칸 주황, 지난 칸 남색, 고르지 않음 회색). 칸은 여기서만 읽는다
             val radius = 11.dp.toPx()
             val center = Offset((slot.value + 0.5f) * unit, size.height / 2)
             drawCircle(Color.Black.copy(alpha = 0.18f), radius = radius + 1.dp.toPx(), center = center + Offset(0f, 1.dp.toPx()))
             drawCircle(Color.White, radius = radius, center = center)
             drawCircle(
-                if (isFuture.value) TimeMachineOrange else Color.Gray,
+                timeMachineTint(tense.value, dark) ?: Color.Gray,
                 radius = radius - 1.dp.toPx(),
                 center = center,
                 style = Stroke(width = 2.dp.toPx()),

@@ -12,6 +12,7 @@ import java.util.Locale
 
 /**
  * 타임머신 시각의 메인 화면 날씨·KP 카드 값(D-59). '예보' 표시는 하지 않는다(사용자가 미래 값임을 안다).
+ * 오늘 지난 칸(D-87)도 같은 규칙이다(날씨는 오늘 00:00부터 받은 시간별, KP 는 실측 칸).
  * 지금(now)이면 만들지 않는다 — 카드는 기존 동작 그대로다.
  * 범위 밖이면 값 자리가 '–'(지금 카드의 빈 값과 같은 "-")이고 풍향 화살표는 자리만 남긴다. 해 줄은 늘 계산한다.
  */
@@ -77,8 +78,17 @@ private val Kp27DayFormat = DateTimeFormatter.ofPattern("yyyy MMM d", Locale.US)
 internal fun kp27DayMillis(date: String): Long? =
     runCatching { LocalDate.parse(date, Kp27DayFormat).atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli() }.getOrNull()
 
-internal fun kpThreeHourSeries(forecast: List<KpIndexData>): KpSeries =
-    KpSeries.of(forecast.mapNotNull { item -> kpTimeTagMillis(item.timeTag)?.let { it to item.kp } })
+/**
+ * 타임머신이 쓰는 3시간 KP 칸: NOAA 자료(지난 7일 실측 observed·estimated + 예보) 중 끝(시작 + 3시간)이 오늘 KST 00:00 뒤인 칸(D-87).
+ * KP 그래프 화면의 −6h~+48h 거르기와는 따로다.
+ */
+internal fun kpThreeHourSeries(forecast: List<KpIndexData>, nowMillis: Long = System.currentTimeMillis()): KpSeries {
+    val today = TimeMachineSlot.dayStart(nowMillis)
+    return KpSeries.of(
+        forecast.mapNotNull { item -> kpTimeTagMillis(item.timeTag)?.let { it to item.kp } }
+            .filter { (start, _) -> start + TimeMachineCardRules.THREE_HOURS_MILLIS > today },
+    )
+}
 
 internal fun kpLongTermSeries(forecast: List<Kp27DayForecast>): KpSeries =
     KpSeries.of(forecast.mapNotNull { item -> kp27DayMillis(item.date)?.let { it to item.kp } })
